@@ -9,6 +9,8 @@ local GetTime = GetTime
 local InCombatLockdown = InCombatLockdown
 local wipe = wipe
 local issecretvalue = issecretvalue  -- WoW built-in: true if value is tainted/secret
+local C_UnitAuras = C_UnitAuras     -- localize for frequent hot-path calls
+local format = format                -- WoW global alias for string.format
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
@@ -203,6 +205,7 @@ end
 -- Each helpful aura is assigned to exactly one category: static/short/long.
 local function scan_helpful_shared(info, short_threshold, max_limit_hint)
     M.db.known_static_spell_ids = M.db.known_static_spell_ids or {}
+    M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
     M._helpful_shared = M._helpful_shared or {
         map = {},
         category_by_iid = {},
@@ -278,15 +281,39 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
         local duration = aura.duration
         local expiration = aura.expirationTime
         local rem = compute_remaining(duration, expiration)
+        local live_duration = C_UnitAuras.GetAuraDuration("player", iid)
+        local live_expiration = nil
+        local live_remaining = nil
+        if live_duration then
+            if live_duration.GetExpirationTime then
+                local e = live_duration:GetExpirationTime()
+                if e ~= nil and not issecretvalue(e) then
+                    live_expiration = e
+                end
+            end
+            local r = live_duration:GetRemainingDuration()
+            if r ~= nil and not issecretvalue(r) then
+                live_remaining = r
+            end
+        end
 
         local category = nil
 
+        -- Use the best available remaining time for classification.
+        -- live_remaining is preferred (readable via GetAuraDuration even in combat);
+        -- fall back to rem (from scan fields) which may be nil/secret.
+        local classify_rem = live_remaining or rem
+
         if safe_spell_id and M.db.known_static_spell_ids[safe_spell_id] then
             category = "show_static"
-        elseif rem ~= nil then
-            if rem == 0 then
+        elseif safe_spell_id and M.db.known_long_spell_ids[safe_spell_id] and classify_rem == nil then
+            -- Brand-new long buff in combat: all time fields are secret, but we
+            -- learned this spell was long-duration out-of-combat.
+            category = "show_long"
+        elseif classify_rem ~= nil then
+            if classify_rem == 0 then
                 category = "show_static"
-            elseif rem <= short_threshold then
+            elseif classify_rem <= short_threshold then
                 category = "show_short"
             else
                 category = "show_long"
@@ -305,9 +332,10 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
             if expires_known == false then
                 category = "show_static"
             elseif expires_known == true then
+                -- Refreshed buffs get a new auraInstanceID; prefer spell-based old cat.
                 local old_cat = old_cat_iid[iid] or (safe_spell_id and old_cat_spell[safe_spell_id])
-                if old_cat == "show_long" then
-                    category = "show_long"
+                if old_cat then
+                    category = old_cat
                 else
                     category = "show_short"
                 end
@@ -318,7 +346,6 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
                 elseif added_lookup[iid] and replacement_pref then
                     category = replacement_pref
                 else
-                    local live_duration = C_UnitAuras.GetAuraDuration("player", iid)
                     category = live_duration and "show_short" or "show_static"
                 end
             end
@@ -337,10 +364,14 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
                 or (old_entry and old_entry.duration)
                 or 0
             local safe_expiration = (not issecretvalue(expiration)) and expiration
+                or live_expiration
+                or (live_remaining and live_remaining > 0 and (GetTime() + live_remaining))
                 or (old_entry and old_entry.expiration)
                 or 0
             local safe_remaining = rem
-            if (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
+            if live_remaining and live_remaining > 0 then
+                safe_remaining = live_remaining
+            elseif (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
                 safe_remaining = math_max(0, safe_expiration - GetTime())
             elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
                 safe_remaining = old_entry.remaining
@@ -373,6 +404,10 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
             if category == "show_static" and safe_spell_id then
                 M.db.known_static_spell_ids[safe_spell_id] = true
             end
+            if category == "show_long" and safe_spell_id and classify_rem ~= nil then
+                -- Only learn from readable remaining so we don't lock in a wrong value.
+                M.db.known_long_spell_ids[safe_spell_id] = true
+            end
 
             count = count + 1
         end
@@ -391,6 +426,7 @@ end
 --   • Uses UNIT_AURA payload as a hint for brand-new unknown-timing auras
 local function full_scan(aura_map, filter, show_key, short_threshold, max_limit, info)
     M.db.known_static_spell_ids = M.db.known_static_spell_ids or {}
+    M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
     local get_fn = (filter == "HELPFUL")
         and C_UnitAuras.GetBuffDataByIndex
         or  C_UnitAuras.GetDebuffDataByIndex
