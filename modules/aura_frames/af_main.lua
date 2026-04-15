@@ -340,6 +340,7 @@ loader:SetScript("OnEvent", function(self, event, name)
             for _, frame in pairs(M.frames) do
                 if frame:IsVisible() then
                     local is_static_frame = (frame.category == "static")
+                    local show_timer_text = M.db and M.db["timer_"..frame.category]
                     for i = 1, #frame.icons do
                         local obj = frame.icons[i]
                         if obj:IsShown() and is_static_frame then
@@ -365,19 +366,31 @@ loader:SetScript("OnEvent", function(self, event, name)
                                 end
 
                                 if display_remaining and display_remaining > 0 then
-                                    if display_remaining > short_threshold then
-                                        obj.time_text:SetText(format_time(display_remaining))
+                                    if show_timer_text then
+                                        if display_remaining > short_threshold then
+                                            obj.time_text:SetText(format_time(display_remaining))
+                                        else
+                                            obj.time_text:SetFormattedText("%.1f", remaining)
+                                        end
                                     else
-                                        obj.time_text:SetFormattedText("%.1f", remaining)
+                                        obj.time_text:SetText("")
                                     end
                                 else
-                                    obj.time_text:SetFormattedText("%.1f", remaining)
+                                    if show_timer_text then
+                                        obj.time_text:SetFormattedText("%.1f", remaining)
+                                    else
+                                        obj.time_text:SetText("")
+                                    end
                                 end
                                 if obj.bar and obj.bar:IsShown() and obj.bar.SetTimerDuration and timer_direction and live_duration then
                                     obj.bar:SetTimerDuration(live_duration, nil, timer_direction)
                                 end
                             elseif remaining and remaining > 0 then
-                                obj.time_text:SetText(format_time(remaining))
+                                if show_timer_text then
+                                    obj.time_text:SetText(format_time(remaining))
+                                else
+                                    obj.time_text:SetText("")
+                                end
                                 if obj.bar and obj.bar:IsShown() then
                                     if obj.bar.SetTimerDuration and timer_direction and live_duration then
                                         obj.bar:SetTimerDuration(live_duration, nil, timer_direction)

@@ -687,7 +687,7 @@ end
 -- Render the aura_map into the icon pool.
 -- Uses C_UnitAuras.GetUnitAuraInstanceIDs for sort order (ElkBuffBars technique):
 -- the game provides a pre-sorted list of IDs; we display only those in our map.
-local function render_aura_map(self, aura_map, use_bars, color, max_limit, filter, sort_mode)
+local function render_aura_map(self, aura_map, use_bars, color, max_limit, filter, sort_mode, show_timer_text)
     -- Resolve sort parameters for GetUnitAuraInstanceIDs
     local sort_rule = Enum.UnitAuraSortRule.Default
     local sort_dir  = Enum.UnitAuraSortDirection.Normal
@@ -842,19 +842,31 @@ local function render_aura_map(self, aura_map, use_bars, color, max_limit, filte
                 end
 
                 if display_remaining and display_remaining > 0 then
-                    if display_remaining > short_threshold then
-                        obj.time_text:SetText(M.format_time(display_remaining))
+                    if show_timer_text then
+                        if display_remaining > short_threshold then
+                            obj.time_text:SetText(M.format_time(display_remaining))
+                        else
+                            obj.time_text:SetFormattedText("%.1f", rem)
+                        end
                     else
-                        obj.time_text:SetFormattedText("%.1f", rem)
+                        obj.time_text:SetText("")
                     end
                 else
-                    obj.time_text:SetFormattedText("%.1f", rem)
+                    if show_timer_text then
+                        obj.time_text:SetFormattedText("%.1f", rem)
+                    else
+                        obj.time_text:SetText("")
+                    end
                 end
                 if use_bars and obj.bar and obj.bar.SetTimerDuration and Enum and Enum.StatusBarTimerDirection then
                     obj.bar:SetTimerDuration(live_duration, nil, Enum.StatusBarTimerDirection.RemainingTime)
                 end
             elseif rem > 0 then
-                obj.time_text:SetText(M.format_time(rem))
+                if show_timer_text then
+                    obj.time_text:SetText(M.format_time(rem))
+                else
+                    obj.time_text:SetText("")
+                end
                 if use_bars then
                     if obj.bar and obj.bar.SetTimerDuration and Enum and Enum.StatusBarTimerDirection then
                         obj.bar:SetTimerDuration(live_duration, nil, Enum.StatusBarTimerDirection.RemainingTime)
@@ -873,7 +885,11 @@ local function render_aura_map(self, aura_map, use_bars, color, max_limit, filte
         elseif entry.duration > 0 then
             rem = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
             if rem > 0 then
-                obj.time_text:SetText(M.format_time(rem))
+                if show_timer_text then
+                    obj.time_text:SetText(M.format_time(rem))
+                else
+                    obj.time_text:SetText("")
+                end
                 if use_bars then
                     obj.bar:SetMinMaxValues(0, entry.duration)
                     obj.bar:SetValue(rem)
@@ -912,6 +928,7 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
     local frame_width = db["width_"..category] or 200
     local spacing = db[spacing_key] or 6
     local growth = db["growth_"..category] or "DOWN"
+    local show_timer_text = db["timer_"..category]
 
     local icon_size = 32
     local icon_footprint = icon_size + spacing
@@ -949,7 +966,11 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
 
             obj.time_text:ClearAllPoints()
             obj.time_text:SetPoint("RIGHT", obj.bar, "RIGHT", -4, 0)
-            obj.time_text:Show()
+            if show_timer_text then
+                obj.time_text:Show()
+            else
+                obj.time_text:Hide()
+            end
 
             obj.count_text:ClearAllPoints()
             obj.count_text:Hide()  -- stacks shown inline with name in bar mode
@@ -979,7 +1000,11 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
 
             obj.time_text:ClearAllPoints()
             obj.time_text:SetPoint("TOP", obj, "BOTTOM", 0, -2)
-            obj.time_text:Show()
+            if show_timer_text then
+                obj.time_text:Show()
+            else
+                obj.time_text:Hide()
+            end
 
             -- Stack count: bottom-right corner of icon (matches WoW default buff display)
             obj.count_text:ClearAllPoints()
@@ -989,6 +1014,7 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
 
     self._layout_cache = {
         use_bars      = use_bars,
+        show_timer_text = show_timer_text,
         icons_per_row = icons_per_row,
         frame_width   = frame_width,
         spacing       = spacing,
@@ -1009,6 +1035,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local spacing = db[spacing_key] or 6
     local color = db["color_"..category] or {r=1, g=1, b=1}
     local bgC = db["bg_color_"..category] or {r=0, g=0, b=0, a=0.5}
+    local show_timer_text = db[timer_key]
     local short_threshold = db.short_threshold or 60
     local growth = db["growth_"..category] or "DOWN"
     local max_limit = db["max_icons_"..category] or 40
@@ -1020,6 +1047,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         or (not InCombatLockdown()
         and (self._layout_cache.frame_width ~= frame_width
         or   self._layout_cache.use_bars    ~= use_bars
+        or   self._layout_cache.show_timer_text ~= show_timer_text
         or   self._layout_cache.spacing     ~= spacing
         or   self._layout_cache.growth      ~= growth
     )) then
@@ -1069,7 +1097,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     local display_count = render_aura_map(
-        self, self._aura_map, use_bars, color, max_limit, filter, sort_mode
+        self, self._aura_map, use_bars, color, max_limit, filter, sort_mode, show_timer_text
     )
 
     -- Frame height (only safe to resize out of combat)
