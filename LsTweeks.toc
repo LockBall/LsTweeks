@@ -1,6 +1,6 @@
 ## Title: L's Tweeks
 ## Title-enUS: L's Tweeks
-## Author: John P Lutz
+## Author: LockBall
 ## Notes: WIP UI adjustments and optional modules
 ## Notes-enUS: WIP UI adjustments and optional modules
 ## Category: User Interface

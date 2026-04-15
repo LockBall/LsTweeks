@@ -23,7 +23,7 @@ libs are unmodified
 This project is released under the MIT License.  
 Embedded libraries retain their original licenses as documented in `Libs/SOURCES.md`.  
 See the `LICENSE` file for full details.  
-Copyright © 2026 **John P. Lutz**  
+Copyright © 2026 **LockBall**  
 
 ## Credits
 - LibStub, CallbackHandler‑1.0, LibDataBroker‑1.1, and LibDBIcon‑1.0  
@@ -33,4 +33,4 @@ Copyright © 2026 **John P. Lutz**
 
 - Inspired by and based on the design and behavior of Elkano's BuffBars by Elkano.
 
-- Addon design and implementation by **John P. Lutz**.
+- Addon design and implementation by **LockBall**.
