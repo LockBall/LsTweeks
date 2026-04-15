@@ -378,6 +378,23 @@ function M.BuildSettings(parent)
                 print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
             end)
             pool_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left + 20, y)
+
+            if cat ~= "static" then
+                y = y - row
+
+                -- Bottom row: timer text visibility (not applicable to static frame)
+                local timer_cb_container, timer_cb, _ = addon.CreateCheckbox(
+                    p,
+                    "Show Time Remaining",
+                    M.db[data.timer_key],
+                    function(is_checked)
+                        M.db[data.timer_key] = is_checked
+                        update()
+                    end
+                )
+                timer_cb_container:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
+                M.controls[data.timer_key] = timer_cb
+            end
         end
 
         tabs[i], panels[i] = tab, p
