@@ -94,6 +94,43 @@ local function get_safe_spell_id(raw_spell_id, old_entry)
     return nil
 end
 
+-- Build a lookup of auraInstanceID -> aura data (or true) from UNIT_AURA info.
+-- Returns lookup table and count of added entries.
+local function build_added_lookup(info)
+    local lookup = {}
+    local count = 0
+    if not info then return lookup, count end
+    if info.addedAuras then
+        for _, added_aura in ipairs(info.addedAuras) do
+            local iid = added_aura and added_aura.auraInstanceID
+            if iid then
+                lookup[iid] = added_aura
+                count = count + 1
+            end
+        end
+    elseif info.addedAuraInstanceIDs then
+        for _, iid in ipairs(info.addedAuraInstanceIDs) do
+            if iid then
+                lookup[iid] = true
+                count = count + 1
+            end
+        end
+    end
+    return lookup, count
+end
+
+-- Build a key->earliest added_at map from an existing aura map (for stable ordering).
+local function build_added_by_key(map)
+    local by_key = {}
+    for _, entry in pairs(map) do
+        local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.filter)
+        if key and entry.added_at and (not by_key[key] or entry.added_at < by_key[key]) then
+            by_key[key] = entry.added_at
+        end
+    end
+    return by_key
+end
+
 -- Apply delta updates during combat using UNIT_AURA event info parameter.
 -- Supports both modern payloads (`addedAuras`) and ID-only payloads.
 local function apply_combat_delta(aura_map, info, filter, show_key, short_threshold)
@@ -204,8 +241,6 @@ end
 --   * C_UnitAuras.GetAuraDuration
 -- Each helpful aura is assigned to exactly one category: static/short/long.
 local function scan_helpful_shared(info, short_threshold, max_limit_hint)
-    M.db.known_static_spell_ids = M.db.known_static_spell_ids or {}
-    M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
     M._helpful_shared = M._helpful_shared or {
         map = {},
         category_by_iid = {},
@@ -217,34 +252,8 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
     local old_cat_iid = shared.category_by_iid or {}
     local old_cat_spell = shared.category_by_spell or {}
 
-    local old_added_by_key = {}
-    for _, entry in pairs(old_map) do
-        local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.filter)
-        if key and entry.added_at and (not old_added_by_key[key] or entry.added_at < old_added_by_key[key]) then
-            old_added_by_key[key] = entry.added_at
-        end
-    end
-
-    local added_lookup = {}
-    local added_count = 0
-    if info then
-        if info.addedAuras then
-            for _, added_aura in ipairs(info.addedAuras) do
-                local iid = added_aura and added_aura.auraInstanceID
-                if iid then
-                    added_lookup[iid] = added_aura
-                    added_count = added_count + 1
-                end
-            end
-        elseif info.addedAuraInstanceIDs then
-            for _, iid in ipairs(info.addedAuraInstanceIDs) do
-                if iid then
-                    added_lookup[iid] = true
-                    added_count = added_count + 1
-                end
-            end
-        end
-    end
+    local old_added_by_key = build_added_by_key(old_map)
+    local added_lookup, added_count = build_added_lookup(info)
 
     local removed_count = 0
     local replacement_pref = nil
@@ -425,34 +434,11 @@ end
 --   • Stores raw name/icon fields for rendering, even if secret
 --   • Uses UNIT_AURA payload as a hint for brand-new unknown-timing auras
 local function full_scan(aura_map, filter, show_key, short_threshold, max_limit, info)
-    M.db.known_static_spell_ids = M.db.known_static_spell_ids or {}
-    M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
     local get_fn = (filter == "HELPFUL")
         and C_UnitAuras.GetBuffDataByIndex
         or  C_UnitAuras.GetDebuffDataByIndex
 
-    local added_lookup
-    local added_count = 0
-    if info then
-        if info.addedAuras then
-            added_lookup = {}
-            for _, added_aura in ipairs(info.addedAuras) do
-                local iid = added_aura and added_aura.auraInstanceID
-                if iid then
-                    added_lookup[iid] = added_aura
-                    added_count = added_count + 1
-                end
-            end
-        elseif info.addedAuraInstanceIDs then
-            added_lookup = {}
-            for _, iid in ipairs(info.addedAuraInstanceIDs) do
-                if iid then
-                    added_lookup[iid] = true
-                    added_count = added_count + 1
-                end
-            end
-        end
-    end
+    local added_lookup, added_count = build_added_lookup(info)
 
     local removed_count = 0
     if info and info.removedAuraInstanceIDs then
@@ -471,13 +457,7 @@ local function full_scan(aura_map, filter, show_key, short_threshold, max_limit,
             end
         end
     end
-    local old_added_by_key = {}
-    for _, entry in pairs(old_map) do
-        local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.filter)
-        if key and entry.added_at and (not old_added_by_key[key] or entry.added_at < old_added_by_key[key]) then
-            old_added_by_key[key] = entry.added_at
-        end
-    end
+    local old_added_by_key = build_added_by_key(old_map)
     wipe(aura_map)
 
     local i, count = 1, 0

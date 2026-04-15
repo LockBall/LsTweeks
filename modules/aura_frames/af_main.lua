@@ -315,7 +315,11 @@ loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
         -- Ensure the sub-table exists and link the module to the core database
         if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
-        M.db = Ls_Tweeks_DB.aura_frames 
+        M.db = Ls_Tweeks_DB.aura_frames
+
+        -- Initialize learned spell-category tables once at load (not per-scan).
+        M.db.known_static_spell_ids = M.db.known_static_spell_ids or {}
+        M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
 
         -- Populate missing settings using the defaults defined in af_defaults.lua
         if M.defaults then deep_copy(M.defaults, M.db) end

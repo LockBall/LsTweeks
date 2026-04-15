@@ -29,7 +29,7 @@ local STRINGS = {
     help_text = 
         "Disabling portrait combat text hides the Blizzard damage and healing numbers on the player portrait."
         .. "\n\nThis does not affect floating combat text or other addons that display combat information."
-        .. "\n\nPortrait combat text does not seem to appear while fighting training dummies in rested areas, zzz",
+        .. "\n\nTestable while fighting training dummies in rested areas, zzz",
 }
 
 -- Cached reference for performance (avoids repeated frame hierarchy traversal)
