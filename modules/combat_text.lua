@@ -35,6 +35,7 @@ local STRINGS = {
 -- Cached reference for performance (avoids repeated frame hierarchy traversal)
 local hitIndicatorFrame = nil
 local hookApplied = false
+local hidePortraitText = false
 -- Post-Midnight: Supports both legacy and new UnitFrame paths
 local function get_hit_indicator()
     if hitIndicatorFrame then return hitIndicatorFrame end
@@ -64,7 +65,7 @@ local function setup_on_show_hook(frame)
     if hookApplied or not frame then return end
     
     frame:HookScript("OnShow", function(self)
-        self:SetAlpha(0)
+        self:SetAlpha(hidePortraitText and 0 or 1)
     end)
     hookApplied = true
 end
@@ -72,16 +73,16 @@ end
 -- Apply alpha change and persistence hook
 local function toggle_portrait_text(disable)
     local h = get_hit_indicator()
-    if not h then return false end
+    if not h then return end
+
+    hidePortraitText = disable and true or false
     
-    if disable then
+    if hidePortraitText then
         h:SetAlpha(0)
         setup_on_show_hook(h)
     else
         h:SetAlpha(1)
     end
-    
-    return true
 end
 
 -- Public update function for GUI and Login
@@ -100,9 +101,6 @@ loader:RegisterEvent("PLAYER_LOGOUT")
 local function init_complete(self)
     self:UnregisterEvent("ADDON_LOADED")
     self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-    self:SetScript("OnEvent", nil)
-    -- Register only logout to reset cache for realm changes
-    self:RegisterEvent("PLAYER_LOGOUT")
 end
 
 loader:SetScript("OnEvent", function(self, event, name)
@@ -123,7 +121,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local cfg = UI_CONFIG
                 local theme = addon.UI_THEME
                 
-                local cb_container, cb, cb_label = addon.CreateCheckbox(
+                local cb_container, cb = addon.CreateCheckbox(
                     parent,
                     STRINGS.checkbox_label,
                     Ls_Tweeks_DB.combat_text,
@@ -179,5 +177,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Reset cached frame reference on logout (handles realm changes)
         hitIndicatorFrame = nil
         hookApplied = false
+        hidePortraitText = false
     end
 end)
