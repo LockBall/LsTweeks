@@ -101,6 +101,7 @@ end
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff)
     local category = show_key:sub(6)
+    local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
     
@@ -181,6 +182,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     -- ICON POOL MANAGEMENT    Pre-create set number of icons/bars to avoid combat lockdown errors
     frame.icons = {}
     local pool_size = M.db["max_icons_"..category] or MAX_POOL_SIZE
+    local bar_bg_default = M.db["bar_bg_color_"..category] or M.db["color_"..category] or { r = 1, g = 1, b = 1, a = bar_bg_alpha }
 
     for i = 1, pool_size do
         local obj = CreateFrame("Frame", nil, frame, "BackdropTemplate")
@@ -193,6 +195,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         obj.bar = CreateFrame("StatusBar", nil, obj)
         obj.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
         obj.bar:SetMinMaxValues(0, 1)
+        obj.bar_bg = obj.bar:CreateTexture(nil, "BACKGROUND")
+        obj.bar_bg:SetAllPoints()
+        obj.bar_bg:SetColorTexture(bar_bg_default.r, bar_bg_default.g, bar_bg_default.b, bar_bg_default.a or bar_bg_alpha)
         obj.bar:Hide()
         
         -- Text Overlay Frame - created AFTER bar so it renders on top
@@ -323,6 +328,23 @@ loader:SetScript("OnEvent", function(self, event, name)
 
         -- Populate missing settings using the defaults defined in af_defaults.lua
         if M.defaults then deep_copy(M.defaults, M.db) end
+
+        local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
+
+        -- Migrate legacy neutral bar background defaults to color-matched default alpha.
+        -- Only updates untouched old default values.
+        local function is_legacy_bar_bg(c)
+            return type(c) == "table"
+                and c.r == 0.6 and c.g == 0.6 and c.b == 0.6
+                and (c.a == 0.25 or c.a == nil)
+        end
+        for _, cat in ipairs({ "static", "short", "long", "debuff" }) do
+            local bg_key = "bar_bg_color_" .. cat
+            if is_legacy_bar_bg(M.db[bg_key]) then
+                local fill = M.db["color_" .. cat] or { r = 1, g = 1, b = 1 }
+                M.db[bg_key] = { r = fill.r, g = fill.g, b = fill.b, a = bar_bg_alpha }
+            end
+        end
         
         -- Create the visual containers for each specific category
         M.create_aura_frame("show_static",  "move_static",  "timer_static", "bg_static",    "scale_static", "spacing_static",   "Static",   false)

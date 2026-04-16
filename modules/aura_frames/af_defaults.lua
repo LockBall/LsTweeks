@@ -12,6 +12,19 @@ M.frames = M.frames or {}
 M.controls = M.controls or {}
 M.db = M.db or {}
 
+-- Single source of truth for default background color and opacity.
+M.BAR_BG_ALPHA_DEFAULT = 0.50
+M.BAR_BG_GRAY_DEFAULT = 0.50
+
+local function default_bg_color()
+    return {
+        r = M.BAR_BG_GRAY_DEFAULT,
+        g = M.BAR_BG_GRAY_DEFAULT,
+        b = M.BAR_BG_GRAY_DEFAULT,
+        a = M.BAR_BG_ALPHA_DEFAULT,
+    }
+end
+
 -- The Data: strictly default values
 M.defaults = {
     -- Global Toggles
@@ -29,9 +42,10 @@ M.defaults = {
     width_static    = 200,
     use_bars_static = false,
     color_static    = { r = 0, g = 0.5, b = 1 },
+    bar_bg_color_static = default_bg_color(),
     max_icons_static = 40,
     growth_static = "RIGHT",
-    bg_color_static = { r = 0, g = 0, b = 0, a = 0.5 },
+    bg_color_static = default_bg_color(),
     sort_static  = "name",
 
     -- SHORT
@@ -44,9 +58,10 @@ M.defaults = {
     width_short     = 200,
     use_bars_short  = true,
     color_short     = { r = 0, g = 0.5, b = 1 },
+    bar_bg_color_short = default_bg_color(),
     max_icons_short = 40,
     growth_short = "DOWN",
-    bg_color_short = { r = 0, g = 0, b = 0, a = 0.5 },
+    bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
 
     -- LONG
@@ -59,9 +74,10 @@ M.defaults = {
     width_long      = 200,
     use_bars_long   = false,
     color_long      = { r = 0, g = 0.5, b = 1 },
+    bar_bg_color_long = default_bg_color(),
     max_icons_long  = 40,
     growth_long = "RIGHT",
-    bg_color_long = { r = 0, g = 0, b = 0, a = 0.5 },
+    bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
 
     -- DEBUFFS
@@ -74,9 +90,10 @@ M.defaults = {
     width_debuff    = 200,
     use_bars_debuff = true,
     color_debuff    = { r = 1, g = 0.2, b = 0.2 },
+    bar_bg_color_debuff = default_bg_color(),
     max_icons_debuff = 40,
     growth_debuff = "UP",
-    bg_color_debuff = { r = 0, g = 0, b = 0, a = 0.5 },
+    bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
     
     -- POSITIONS

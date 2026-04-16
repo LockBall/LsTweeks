@@ -687,7 +687,8 @@ end
 -- Render the aura_map into the icon pool.
 -- Uses C_UnitAuras.GetUnitAuraInstanceIDs for sort order (ElkBuffBars technique):
 -- the game provides a pre-sorted list of IDs; we display only those in our map.
-local function render_aura_map(self, aura_map, use_bars, color, max_limit, filter, sort_mode, show_timer_text)
+local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text)
+    local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     -- Resolve sort parameters for GetUnitAuraInstanceIDs
     local sort_rule = Enum.UnitAuraSortRule.Default
     local sort_dir  = Enum.UnitAuraSortDirection.Normal
@@ -799,6 +800,10 @@ local function render_aura_map(self, aura_map, use_bars, color, max_limit, filte
         if use_bars then
             obj.bar:Show()
             obj.bar:SetStatusBarColor(color.r, color.g, color.b)
+            if obj.bar_bg then
+                local bg = bar_bg_color or { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha }
+                obj.bar_bg:SetColorTexture(bg.r, bg.g, bg.b, bg.a or 1)
+            end
             -- In bar mode: append stack count to name if present
             obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
             obj.name_text:Show()
@@ -1029,11 +1034,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if not self or not self.icons then return end
 
     local db = M.db
+    local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local category = show_key:sub(6)
     local use_bars = db["use_bars_"..category]
     local frame_width = db["width_"..category] or 200
     local spacing = db[spacing_key] or 6
     local color = db["color_"..category] or {r=1, g=1, b=1}
+    local barBgC = db["bar_bg_color_"..category] or {r=color.r, g=color.g, b=color.b, a=bar_bg_alpha}
     local bgC = db["bg_color_"..category] or {r=0, g=0, b=0, a=0.5}
     local show_timer_text = db[timer_key]
     local short_threshold = db.short_threshold or 60
@@ -1097,7 +1104,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     local display_count = render_aura_map(
-        self, self._aura_map, use_bars, color, max_limit, filter, sort_mode, show_timer_text
+        self, self._aura_map, use_bars, color, barBgC, max_limit, filter, sort_mode, show_timer_text
     )
 
     -- Frame height (only safe to resize out of combat)
