@@ -1,5 +1,53 @@
 local addon_name, addon = ...
 
+addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tileSize = 256,
+    backdropInsets = { left = 5, right = 5, top = 5, bottom = 5 },
+    bgColor = { 0.65, 0.6, 0.75, 1.0 },
+    borderColor = { 0.6, 0.6, 0.6, 0.6 },
+    rivet = {
+        size = 10,
+        texture = "Interface\\Buttons\\WHITE8x8",
+        color = { 0.3, 0.3, 0.3, 1.0 },
+        shineSize = 3,
+        shineTexture = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
+        shineColor = { 0.8, 0.8, 0.8, 0.4 },
+        shineOffsetX = -2,
+        shineOffsetY = 2,
+        defaultInset = 14,
+    },
+}
+
+function addon.ApplyRivetedPanelStyle(frame, opts)
+    local style = addon.RIVETED_PANEL_STYLE
+    local options = opts or {}
+    local edgeSize = options.edgeSize or 36
+    local bgColor = options.bgColor or style.bgColor
+    local borderColor = options.borderColor or style.borderColor
+    local insets = options.insets or style.backdropInsets
+
+    frame:SetBackdrop({
+        bgFile   = options.bgFile or "Interface\\FrameGeneral\\UI-Background-Marble",
+        edgeFile = options.edgeFile or style.edgeFile,
+        tile     = true,
+        tileSize = options.tileSize or style.tileSize,
+        edgeSize = edgeSize,
+        insets   = { left = insets.left, right = insets.right, top = insets.top, bottom = insets.bottom }
+    })
+    frame:SetBackdropColor(bgColor[1], bgColor[2], bgColor[3], bgColor[4])
+    frame:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+
+    if options.addRivets ~= false then
+        addon.AddRivetCorners(
+            frame,
+            options.rivetInset or style.rivet.defaultInset,
+            options.rivetOffsetX,
+            options.rivetOffsetY
+        )
+    end
+end
+
 -- Create a riveted textured panel and return (panel, textFontString)
 -- parent            : parent frame
 -- width, height     : panel size (numbers)
@@ -8,54 +56,24 @@ local addon_name, addon = ...
 -- x, y              : offset from anchor (optional)
 -- frameLevelOffset  : panel frame level offset relative to parent (optional)
 function addon.CreateRivetedPanel(parent, width, height, anchorTo, anchorPoint, x, y, frameLevelOffset)
-    local anchorTo = anchorTo or parent
-    local anchorPoint = anchorPoint or "TOPLEFT"
-    local x = x or 0
-    local y = y or 0
-    local frameLevelOffset = frameLevelOffset or 8
+    local anchorTarget = anchorTo or parent
+    local point = anchorPoint or "TOPLEFT"
+    local offsetX = x or 0
+    local offsetY = y or 0
+    local levelOffset = frameLevelOffset or 8
     local edgeSize = 36
-    local rivet_inset = edgeSize - 22
+    local rivetInset = edgeSize - 22
 
     local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     panel:SetSize(width, height)
-    panel:SetPoint(anchorPoint, anchorTo, anchorPoint, x, y)
-    panel:SetFrameLevel(parent:GetFrameLevel() + frameLevelOffset)
+    panel:SetPoint(point, anchorTarget, point, offsetX, offsetY)
+    panel:SetFrameLevel(parent:GetFrameLevel() + levelOffset)
 
-    panel:SetBackdrop({
-        bgFile   = "Interface\\FrameGeneral\\UI-Background-Marble",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile     = true,
-        tileSize = 256,
+    addon.ApplyRivetedPanelStyle(panel, {
+        bgFile = "Interface\\FrameGeneral\\UI-Background-Marble",
         edgeSize = edgeSize,
-        insets   = { left = 5, right = 5, top = 5, bottom = 5 }
+        rivetInset = rivetInset,
     })
-    panel:SetBackdropColor(0.65, 0.6, 0.75, 1.0)
-    panel:SetBackdropBorderColor(0.6, 0.6, 0.6, 0.6)
-
-    local function CreateRivet(point, rx, ry)
-        local s = panel:CreateTexture(nil, "OVERLAY", nil, 6)
-        s:SetSize(10, 10)
-        s:SetTexture("Interface\\Buttons\\WHITE8x8")
-        s:SetVertexColor(0.3, 0.3, 0.3, 1.0)
-        s:SetPoint(point, panel, point, rx, ry)
-
-        local m = panel:CreateMaskTexture()
-        m:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-        m:SetAllPoints(s)
-        s:AddMaskTexture(m)
-
-        local shine = panel:CreateTexture(nil, "OVERLAY", nil, 7)
-        shine:SetSize(3, 3)
-        shine:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
-        shine:SetVertexColor(0.8, 0.8, 0.8, 0.4)
-        shine:SetPoint("CENTER", s, "CENTER", -2, 2)
-        shine:AddMaskTexture(m)
-    end
-
-    CreateRivet("TOPLEFT",     rivet_inset, -rivet_inset)
-    CreateRivet("TOPRIGHT",   -rivet_inset, -rivet_inset)
-    CreateRivet("BOTTOMLEFT",  rivet_inset,  rivet_inset)
-    CreateRivet("BOTTOMRIGHT", -rivet_inset,  rivet_inset)
 
     local inner = panel:CreateTexture(nil, "BORDER")
     inner:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -6)
@@ -76,14 +94,15 @@ end
 -- Optional offsets allow shifting all rivets together without changing inset.
 -- Used by both CreateRivetedPanel (above) and module_reset's CreateGlobalReset.
 function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
+    local rivetStyle = addon.RIVETED_PANEL_STYLE.rivet
     local ox = offsetX or 0
     local oy = offsetY or 0
 
     local function PaintRivet(point, rx, ry)
         local s = frame:CreateTexture(nil, "OVERLAY", nil, 6)
-        s:SetSize(10, 10)
-        s:SetTexture("Interface\\Buttons\\WHITE8x8")
-        s:SetVertexColor(0.3, 0.3, 0.3, 1.0)
+        s:SetSize(rivetStyle.size, rivetStyle.size)
+        s:SetTexture(rivetStyle.texture)
+        s:SetVertexColor(rivetStyle.color[1], rivetStyle.color[2], rivetStyle.color[3], rivetStyle.color[4])
         s:SetPoint(point, frame, point, rx, ry)
 
         local m = frame:CreateMaskTexture()
@@ -92,10 +111,10 @@ function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
         s:AddMaskTexture(m)
 
         local shine = frame:CreateTexture(nil, "OVERLAY", nil, 7)
-        shine:SetSize(3, 3)
-        shine:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
-        shine:SetVertexColor(0.8, 0.8, 0.8, 0.4)
-        shine:SetPoint("CENTER", s, "CENTER", -2, 2)
+        shine:SetSize(rivetStyle.shineSize, rivetStyle.shineSize)
+        shine:SetTexture(rivetStyle.shineTexture)
+        shine:SetVertexColor(rivetStyle.shineColor[1], rivetStyle.shineColor[2], rivetStyle.shineColor[3], rivetStyle.shineColor[4])
+        shine:SetPoint("CENTER", s, "CENTER", rivetStyle.shineOffsetX, rivetStyle.shineOffsetY)
         shine:AddMaskTexture(m)
     end
     PaintRivet("TOPLEFT",      inset + ox, -inset + oy)
