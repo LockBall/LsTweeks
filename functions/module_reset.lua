@@ -30,8 +30,8 @@ function addon.CreateGlobalReset(parent, db, defaults)
     local GROUP_PAD_X       = 6     -- Horizontal inner padding inside the group border
     local GROUP_PAD_TOP     = 4     -- Top inner padding inside the group border
     local GROUP_PAD_BOTTOM  = 4     -- Bottom inner padding inside the group border
-    local GROUP_BORDER_SIZE = 0     -- Border thickness. 1 Set to 0 to hide the group border.
-    local GROUP_BORDER_ALPHA = 0 -- Border opacity. 0.45 Set to 0 to make the border fully invisible.
+    local GROUP_BORDER_SIZE = 0     -- Border thickness. Set to 0 to hide the group border.
+    local GROUP_BORDER_ALPHA = 0    -- Border opacity. Set to 0 to make the border fully invisible.
 
     -- LAYOUT: Group Elements
     local INPUT_W           = 75    -- Width of the ARM code input box
@@ -50,20 +50,13 @@ function addon.CreateGlobalReset(parent, db, defaults)
     container:SetSize(PANEL_MIN_WIDTH, PANEL_HEIGHT)
     container:SetFrameLevel(parent:GetFrameLevel() + 10)
 
-    -- BACKDROP
-    container:SetBackdrop({
-        bgFile   = "Interface\\FrameGeneral\\UI-Background-Rock",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile     = true,
-        tileSize = 256,
+    addon.ApplyRivetedPanelStyle(container, {
+        bgFile = "Interface\\FrameGeneral\\UI-Background-Rock",
         edgeSize = 30,
-        insets   = { left = 5, right = 5, top = 5, bottom = 5 }
+        rivetInset = RIVET_INSET,
+        rivetOffsetX = RIVET_OFFSET_X,
+        rivetOffsetY = RIVET_OFFSET_Y,
     })
-    container:SetBackdropColor(0.65, 0.6, 0.75, 1.0)
-    container:SetBackdropBorderColor(0.6, 0.6, 0.6, 0.6)
-
-    -- RIVET DETAIL
-    addon.AddRivetCorners(container, RIVET_INSET, RIVET_OFFSET_X, RIVET_OFFSET_Y)
 
     -- TITLE
     local title = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
