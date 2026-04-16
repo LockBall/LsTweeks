@@ -273,14 +273,12 @@ function M.BuildSettings(parent)
             end)
             threshold:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
 
-            y = y - 50 -- Space below the slider
+            y = y - threshold:GetHeight() - 22 -- next row below slider
 
             -- Global Reset Button
-            addon.CreateGlobalReset(p, threshold, M.db, M.defaults)
-            if p.globalReset then
-                p.globalReset:ClearAllPoints()
-                p.globalReset:SetPoint("TOP", p, "TOP", 0, y)
-            end
+            local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
+            resetPanel:SetPoint("TOP", p, "TOP", 0, y)
+            y = y - resetPanel:GetHeight() - row
 
         else -- not in general
 

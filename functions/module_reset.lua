@@ -1,6 +1,6 @@
 local addon_name, addon = ...
 
-function addon.CreateGlobalReset(parent, anchorFrame, db, defaults)
+function addon.CreateGlobalReset(parent, db, defaults)
 
     -------- CONFIGURATION VARIABLES --------
     local DIM_ALPHA     = 0.5   -- Faded transparency when the button is locked
@@ -17,12 +17,37 @@ function addon.CreateGlobalReset(parent, anchorFrame, db, defaults)
     -- GLOW SIZE PARAMETERS
     local GLOW_SIZE     = 60
     local BEZEL_SPILL   = 7
+
+    -- LAYOUT: Panel
+    local PANEL_MIN_WIDTH   = 300   -- Minimum panel width (px)
+    local PANEL_HEIGHT      = 150   -- Panel height (px)
+    local PANEL_H_PADDING   = 100   -- Left+right padding around the control group
+    local TITLE_Y           = -20   -- Title offset from panel top
+
+    -- LAYOUT: Group
+    local GROUP_X           = 0     -- Horizontal offset of the control group from panel center
+    local GROUP_Y           = -45   -- Vertical offset of the control group from panel top
+    local GROUP_PAD_X       = 6     -- Horizontal inner padding inside the group border
+    local GROUP_PAD_TOP     = 4     -- Top inner padding inside the group border
+    local GROUP_PAD_BOTTOM  = 4     -- Bottom inner padding inside the group border
+    local GROUP_BORDER_SIZE = 0     -- Border thickness. 1 Set to 0 to hide the group border.
+    local GROUP_BORDER_ALPHA = 0 -- Border opacity. 0.45 Set to 0 to make the border fully invisible.
+
+    -- LAYOUT: Group Elements
+    local INPUT_W           = 75    -- Width of the ARM code input box
+    local INPUT_H           = 20    -- Height of the ARM code input box
+    local LABEL_GAP         = 10    -- Gap between input top and label bottom
+    local BTN_GAP           = 44    -- Gap between input right edge and button left edge
+    local BTN_SIZE          = 64    -- Width and height of the icon button
+    local RIVET_INSET       = 14    -- Distance of each rivet from panel corners
+    local RIVET_OFFSET_X    = 0     -- Horizontal shift for all rivets (px)
+    local RIVET_OFFSET_Y    = 0     -- Vertical shift for all rivets (px)
     -----------------------------------------
 
     -- CONTAINER
+    -- No default positioning — caller is responsible for SetPoint after creation.
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(parent:GetWidth() - 40, 120)
-    container:SetPoint("TOPLEFT", parent, "TOPLEFT", 20, -200)
+    container:SetSize(PANEL_MIN_WIDTH, PANEL_HEIGHT)
     container:SetFrameLevel(parent:GetFrameLevel() + 10)
 
     -- BACKDROP
@@ -37,35 +62,63 @@ function addon.CreateGlobalReset(parent, anchorFrame, db, defaults)
     container:SetBackdropColor(0.65, 0.6, 0.75, 1.0)
     container:SetBackdropBorderColor(0.6, 0.6, 0.6, 0.6)
 
-    -- BOLTED PANEL DETAIL
-    addon.AddRivetCorners(container, 14)
+    -- RIVET DETAIL
+    addon.AddRivetCorners(container, RIVET_INSET, RIVET_OFFSET_X, RIVET_OFFSET_Y)
 
     -- TITLE
     local title = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", container, "TOP", 0, -15)
+    title:SetPoint("TOP", container, "TOP", 0, TITLE_Y)
     title:SetText("Hal's Module Reset")
     title:SetTextColor(1, 0.82, 0)
 
-    -- INSTRUCTION LABEL
-    local label = container:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    label:SetPoint("TOPLEFT", container, "TOPLEFT", 28, -45)
-    label:SetText(" Input 'arm' code !?")
+    local control_row_width = INPUT_W + BTN_GAP + BTN_SIZE
+    local control_row_height = math.max(INPUT_H, BTN_SIZE)
+
+    -- Control group: keeps input, label, and button aligned as one movable unit.
+    local controlGroup = CreateFrame("Frame", nil, container, "BackdropTemplate")
+    controlGroup:SetSize(1, 1)
+    controlGroup:SetPoint("TOP", container, "TOP", GROUP_X, GROUP_Y)
+    controlGroup:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = GROUP_BORDER_SIZE,
+        insets = { left = 0, right = 0, top = 0, bottom = 0 }
+    })
+    controlGroup:SetBackdropColor(0, 0, 0, 0)
+    controlGroup:SetBackdropBorderColor(0.85, 0.85, 0.85, GROUP_BORDER_ALPHA)
 
     -- INPUT BOX
-    local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
-    eb:SetSize(75, 20)
-    eb:SetPoint("TOP", label, "TOP", 0, -16)
+    local eb = CreateFrame("EditBox", nil, controlGroup, "InputBoxTemplate")
+    eb:SetSize(INPUT_W, INPUT_H)
     eb:SetAutoFocus(false)
     eb:SetTextInsets(0, 7, 0, 0)
     eb:SetJustifyH("CENTER")
     eb:SetFontObject("NumberFontNormal")
     eb:SetTextColor(1, 1, 1)
 
+    -- INSTRUCTION LABEL
+    local label = controlGroup:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    label:SetText(" Input 'arm' code !?")
+
+    local label_w = math.ceil(label:GetStringWidth() or 0)
+    local label_h = math.ceil(label:GetStringHeight() or 0)
+    local content_w = math.max(control_row_width, label_w)
+    local top_extent = math.max(BTN_SIZE / 2, INPUT_H / 2 + LABEL_GAP + label_h)
+    local bottom_extent = math.max(BTN_SIZE / 2, INPUT_H / 2)
+    local content_h = top_extent + bottom_extent
+    local group_w = content_w + GROUP_PAD_X * 2
+    local group_h = content_h + GROUP_PAD_TOP + GROUP_PAD_BOTTOM
+
+    controlGroup:SetSize(group_w, group_h)
+
     -- BIG RED BUTTON ICON
-    local btn = CreateFrame("Button", nil, container)
-    btn:SetSize(64, 64)
-    btn:SetPoint("TOP", container, "TOP", 0, -40)
+    local btn = CreateFrame("Button", nil, controlGroup)
+    btn:SetSize(BTN_SIZE, BTN_SIZE)
+    btn:SetPoint("CENTER", controlGroup, "CENTER", GROUP_PAD_X + content_w / 2 - BTN_SIZE / 2, 0)
     btn:Disable()
+
+    eb:SetPoint("RIGHT", btn, "LEFT", -BTN_GAP, 0)
+    label:SetPoint("BOTTOM", eb, "TOP", 0, LABEL_GAP)
 
     -- STATIC BUTTON TEXTURE
     local bgTex = btn:CreateTexture(nil, "BACKGROUND")
@@ -98,6 +151,15 @@ function addon.CreateGlobalReset(parent, anchorFrame, db, defaults)
     -- PUSHED TEXTURE
     btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
     btn:GetPushedTexture():SetBlendMode("MOD")
+
+    -- Size the panel to its content instead of stretching to the tab width.
+    local panel_width = math.max(
+        PANEL_MIN_WIDTH,
+        math.ceil((title:GetStringWidth() or 0) + 56),
+        math.ceil((label:GetStringWidth() or 0) + 56),
+        math.ceil(controlGroup:GetWidth() + PANEL_H_PADDING)
+    )
+    container:SetWidth(panel_width)
 
     -- PULSE ANIMATION
     local ag = pulseTex:CreateAnimationGroup()
@@ -233,5 +295,7 @@ function addon.CreateGlobalReset(parent, anchorFrame, db, defaults)
         end
 
         print("|cff00ff00LsTweaks:|r Global reset complete and synchronized.")
-    end) 
+    end)
+
+    return container
 end

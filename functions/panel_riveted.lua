@@ -73,8 +73,12 @@ function addon.CreateRivetedPanel(parent, width, height, anchorTo, anchorPoint, 
 end
 
 -- Shared corner-rivet painter. Paints 4 masked screws at the corners of `frame`.
+-- Optional offsets allow shifting all rivets together without changing inset.
 -- Used by both CreateRivetedPanel (above) and module_reset's CreateGlobalReset.
-function addon.AddRivetCorners(frame, inset)
+function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
+    local ox = offsetX or 0
+    local oy = offsetY or 0
+
     local function PaintRivet(point, rx, ry)
         local s = frame:CreateTexture(nil, "OVERLAY", nil, 6)
         s:SetSize(10, 10)
@@ -94,8 +98,8 @@ function addon.AddRivetCorners(frame, inset)
         shine:SetPoint("CENTER", s, "CENTER", -2, 2)
         shine:AddMaskTexture(m)
     end
-    PaintRivet("TOPLEFT",      inset, -inset)
-    PaintRivet("TOPRIGHT",    -inset, -inset)
-    PaintRivet("BOTTOMLEFT",   inset,  inset)
-    PaintRivet("BOTTOMRIGHT", -inset,  inset)
+    PaintRivet("TOPLEFT",      inset + ox, -inset + oy)
+    PaintRivet("TOPRIGHT",    -inset + ox, -inset + oy)
+    PaintRivet("BOTTOMLEFT",   inset + ox,  inset + oy)
+    PaintRivet("BOTTOMRIGHT", -inset + ox,  inset + oy)
 end
