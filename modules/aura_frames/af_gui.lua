@@ -258,6 +258,7 @@ function M.BuildSettings(parent)
             -- GRID CONFIGURATION
             local x_left = 20 -- left edge of left column
             local x_mid = x_left + 160 -- color pickers
+            local x_far = x_mid + 195 -- bar bg color picker
             local x_right = x_mid + 140 -- reset buttons
             local y = -20 -- row spacing
             local row = 42 -- row height
@@ -323,10 +324,10 @@ function M.BuildSettings(parent)
 
             y = y - row -- new row
 
-            --Show Background
+            --Frame Background
             local bg_cb_container, bg_cb, _ = addon.CreateCheckbox(
                 p,
-                "Show Background",
+                "Frame Background",
                 M.db[data.bg_key],
                 function(is_checked)
                     M.db[data.bg_key] = is_checked
@@ -360,6 +361,10 @@ function M.BuildSettings(parent)
             -- bar color picker
             local color_pick = addon.CreateColorPicker(p, M.db, "color_"..cat, false, "Bar Color", M.defaults, update)
             color_pick:SetPoint("TOPLEFT", p, "TOPLEFT", x_mid, y)
+
+            -- bar background color picker
+            local bar_bg_pick = addon.CreateColorPicker(p, M.db, "bar_bg_color_"..cat, true, "Bar BG Color", M.defaults, update)
+            bar_bg_pick:SetPoint("TOPLEFT", p, "TOPLEFT", x_far, y)
 
             -- SLIDERS SECTION
             y = y - 60 
