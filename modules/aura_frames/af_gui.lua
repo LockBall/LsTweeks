@@ -9,9 +9,15 @@ local M = addon.aura_frames
 -- slider & editbox
 -- Uses MinimalSliderTemplate (available 10.0+) and creates labels as explicit children
 -- instead of relying on the deprecated _G[name..'Low/High/Text'] global pattern.
-function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key, callback)
+function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key, defaults_table, callback)
+    -- Backward compatibility: allow old call shape without defaults_table.
+    if type(defaults_table) == "function" and callback == nil then
+        callback = defaults_table
+        defaults_table = nil
+    end
+
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(250, 58)
+    container:SetSize(295, 58)
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -49,6 +55,12 @@ function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key
     eb:SetTextInsets(0, 0, 0, 0)
     eb:SetText(format(step < 1 and "%.2f" or "%.1f", M.db[db_key] or minV))
 
+    local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    reset:SetSize(42, 16)
+    reset:SetPoint("LEFT", eb, "RIGHT", 8, 0)
+    reset:SetText("Reset")
+    reset:SetNormalFontObject("GameFontNormalSmall")
+
     slider:SetScript("OnValueChanged", function(self, value)
         M.db[db_key] = value
         eb:SetText(format(step < 1 and "%.2f" or "%.1f", value))
@@ -63,6 +75,15 @@ function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key
         end
         self:ClearFocus()
     end)
+
+    reset:SetScript("OnClick", function()
+        local default_value = defaults_table and defaults_table[db_key]
+        if default_value == nil then
+            default_value = minV
+        end
+        slider:SetValue(default_value)
+    end)
+
     return container
 end
 
@@ -243,7 +264,7 @@ function M.BuildSettings(parent)
             y = y - slider_row -- next row
 
             -- Threshold Slider
-            local threshold = M.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold (s)", 10, 300, 10, "short_threshold", function()
+            local threshold = M.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold (s)", 10, 300, 10, "short_threshold", M.defaults, function()
                 for k, v in pairs(M.frames) do 
                     -- Corrected to sub(6) to handle keys like show_static, show_short, etc.
                     local cat = k:sub(6) 
@@ -397,17 +418,17 @@ function M.BuildSettings(parent)
             -- SLIDERS SECTION
             y = y - slider_row
 
-            local scale_slider = M.CreateSliderWithBox(addon_name..cat.."Scale", p, "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
+            local scale_slider = M.CreateSliderWithBox(addon_name..cat.."Scale", p, "Scale", 0.5, 2.5, 0.01, data.scale_key, M.defaults, update)
             scale_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
 
             y = y - slider_row
 
-            local space_slider = M.CreateSliderWithBox(addon_name..cat.."Spacing", p, "Spacing", 0, 40, 0.1, data.spacing_key, update)
+            local space_slider = M.CreateSliderWithBox(addon_name..cat.."Spacing", p, "Spacing", 0, 40, 0.1, data.spacing_key, M.defaults, update)
             space_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
 
             y = y - slider_row
 
-            local pool_slider = M.CreateSliderWithBox(addon_name..cat.."PoolSlider", p, "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, function()
+            local pool_slider = M.CreateSliderWithBox(addon_name..cat.."PoolSlider", p, "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, M.defaults, function()
                 print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
             end)
             pool_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
