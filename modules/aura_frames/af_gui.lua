@@ -10,8 +10,20 @@ local M = addon.aura_frames
 -- Uses MinimalSliderTemplate (available 10.0+) and creates labels as explicit children
 -- instead of relying on the deprecated _G[name..'Low/High/Text'] global pattern.
 function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key, callback)
-    local slider = CreateFrame("Slider", name, parent, "MinimalSliderTemplate")
+    local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    container:SetSize(250, 58)
+    container:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    container:SetBackdropColor(0, 0, 0, 0.3)
+    container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
+
+    local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")
     slider:SetSize(155, 16)
+    slider:SetPoint("TOPLEFT", container, "TOPLEFT", 12, -21)
     slider:SetMinMaxValues(minV, maxV)
     slider:SetValueStep(step)
     slider:SetObeyStepOnDrag(true)
@@ -29,10 +41,12 @@ function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key
     high_lbl:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
     high_lbl:SetText(maxV)
 
-    local eb = CreateFrame("EditBox", nil, slider, "InputBoxTemplate")
-    eb:SetSize(45, 20)
-    eb:SetPoint("LEFT", slider, "RIGHT", 30, 0)
+    local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
+    eb:SetSize(50, 20)
+    eb:SetPoint("LEFT", slider, "RIGHT", 18, 1)
     eb:SetAutoFocus(false)
+    eb:SetJustifyH("CENTER")
+    eb:SetTextInsets(0, 0, 0, 0)
     eb:SetText(format(step < 1 and "%.2f" or "%.1f", M.db[db_key] or minV))
 
     slider:SetScript("OnValueChanged", function(self, value)
@@ -49,7 +63,7 @@ function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key
         end
         self:ClearFocus()
     end)
-    return slider
+    return container
 end
 
 -- Shared click-blocker: sits behind all dropdown popups and dismisses the open one
@@ -236,7 +250,7 @@ function M.BuildSettings(parent)
                     M.update_auras(v, k, "move_"..cat, "timer_"..cat, "bg_"..cat, "scale_"..cat, "spacing_"..cat, k == "show_debuff" and "HARMFUL" or "HELPFUL") 
                 end
             end)
-            threshold:SetPoint("TOPLEFT", p, "TOPLEFT", x_left + 20, y)
+            threshold:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
 
             y = y - 50 -- Space below the slider
 
@@ -262,7 +276,7 @@ function M.BuildSettings(parent)
             local x_right = x_mid + 140 -- reset buttons
             local y = -20 -- row spacing
             local row = 42 -- row height
-            local slider_row = 50
+            local slider_row = 68
             local reset_btn_width = 110
 
             -- first ROW
@@ -363,28 +377,10 @@ function M.BuildSettings(parent)
             local bar_bg_pick = addon.CreateColorPicker(p, M.db, "bar_bg_color_"..cat, true, "Bar BG Color", M.defaults, update)
             bar_bg_pick:SetPoint("TOPLEFT", p, "TOPLEFT", x_far, y)
 
-            -- SLIDERS SECTION
-            y = y - 60 
-
-            local scale_slider = M.CreateSliderWithBox(addon_name..cat.."Scale", p, "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
-            scale_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left + 20, y)
-
-            y = y - slider_row
-
-            local space_slider = M.CreateSliderWithBox(addon_name..cat.."Spacing", p, "Spacing", 0, 40, 0.1, data.spacing_key, update)
-            space_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left + 20, y)
-
-            y = y - slider_row
-
-            local pool_slider = M.CreateSliderWithBox(addon_name..cat.."PoolSlider", p, "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, function()
-                print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
-            end)
-            pool_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left + 20, y)
-
             if cat ~= "static" then
                 y = y - row
 
-                -- Bottom row: timer text visibility (not applicable to static frame)
+                -- Fourth row: timer text visibility
                 local timer_cb_container, timer_cb, _ = addon.CreateCheckbox(
                     p,
                     "Show Time Remaining",
@@ -397,6 +393,24 @@ function M.BuildSettings(parent)
                 timer_cb_container:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
                 M.controls[data.timer_key] = timer_cb
             end
+
+            -- SLIDERS SECTION
+            y = y - slider_row
+
+            local scale_slider = M.CreateSliderWithBox(addon_name..cat.."Scale", p, "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
+            scale_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
+
+            y = y - slider_row
+
+            local space_slider = M.CreateSliderWithBox(addon_name..cat.."Spacing", p, "Spacing", 0, 40, 0.1, data.spacing_key, update)
+            space_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
+
+            y = y - slider_row
+
+            local pool_slider = M.CreateSliderWithBox(addon_name..cat.."PoolSlider", p, "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, function()
+                print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
+            end)
+            pool_slider:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
         end
 
         tabs[i], panels[i] = tab, p
