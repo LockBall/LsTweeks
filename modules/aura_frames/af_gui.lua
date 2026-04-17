@@ -291,20 +291,51 @@ function M.BuildSettings(parent)
             grid.y = grid.y - grid.slider_row
         end
 
+        local function create_bound_checkbox(label, db_key, column, y_offset, on_change, control_key)
+            local container, checkbox, _ = addon.CreateCheckbox(
+                p,
+                label,
+                M.db[db_key],
+                function(is_checked)
+                    M.db[db_key] = is_checked
+                    if on_change then
+                        on_change(is_checked)
+                    else
+                        update()
+                    end
+                end
+            )
+            place(container, column, y_offset)
+            M.controls[control_key or db_key] = checkbox
+            return container, checkbox
+        end
+
+        local function create_bound_color_picker(db_key, has_alpha, label, column, y_offset)
+            local picker = addon.CreateColorPicker(p, M.db, db_key, has_alpha, label, M.defaults, update)
+            place(picker, column, y_offset)
+            return picker
+        end
+
+        local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, on_change)
+            local slider = M.CreateSliderWithBox(
+                addon_name..cat..name_suffix,
+                p,
+                label,
+                min_v,
+                max_v,
+                step,
+                db_key,
+                M.defaults,
+                on_change or update
+            )
+            place(slider, "left")
+            return slider
+        end
+
         -- first ROW
 
         -- move mode
-        local move_cb_container, move_cb, _ = addon.CreateCheckbox(
-            p,
-            "Move Mode",
-            M.db[data.move_key],
-            function(is_checked)
-                M.db[data.move_key] = is_checked
-                update()
-            end
-        )
-        place(move_cb_container, "left")
-        M.controls[data.move_key] = move_cb
+        local move_cb_container, move_cb = create_bound_checkbox("Move Mode", data.move_key, "left")
 
         -- move Reset
         local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
@@ -335,93 +366,48 @@ function M.BuildSettings(parent)
         next_row() -- new row
 
         -- Enable Frame
-        local enable_cb_container, enable_cb, _ = addon.CreateCheckbox(
-            p,
-            "Enable Frame",
-            M.db[data.show_key],
-            function(is_checked)
-                M.db[data.show_key] = is_checked
-                update()
-            end
-        )
-        place(enable_cb_container, "left")
-        M.controls[data.show_key] = enable_cb
+        local enable_cb_container, enable_cb = create_bound_checkbox("Enable Frame", data.show_key, "left")
 
         -- Frame background (same row, right of Enable Frame)
-        local bg_cb_container, bg_cb, _ = addon.CreateCheckbox(
-            p,
-            "Frame BackGround",
-            M.db[data.bg_key],
-            function(is_checked)
-                M.db[data.bg_key] = is_checked
-                update()
-            end
-        )
-        place(bg_cb_container, "mid")
-        M.controls[data.bg_key] = bg_cb
+        local bg_cb_container, bg_cb = create_bound_checkbox("Frame BackGround", data.bg_key, "mid")
 
         -- Frame BG color picker (same row, right of Frame background)
-        local bg_picker = addon.CreateColorPicker(p, M.db, "bg_color_"..cat, true, "Frame BG Color", M.defaults, update)
-        place(bg_picker, "far", grid.picker_y)
+        local bg_picker = create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", "far", grid.picker_y)
 
         next_row()
 
         -- ROW
         -- bar mode
-        local bar_mode_cb_container, bar_mode_cb, _ = addon.CreateCheckbox(
-            p,
-            "Bar Mode",
-            M.db["use_bars_"..cat],
-            function(is_checked)
-                M.db["use_bars_"..cat] = is_checked
-                update()
-            end
-        )
-        place(bar_mode_cb_container, "left")
-        M.controls["use_bars_"..cat] = bar_mode_cb
+        local bar_mode_key = "use_bars_"..cat
+        local bar_mode_cb_container, bar_mode_cb = create_bound_checkbox("Bar Mode", bar_mode_key, "left")
 
         -- bar color picker
-        local color_pick = addon.CreateColorPicker(p, M.db, "color_"..cat, false, "Bar Color", M.defaults, update)
-        place(color_pick, "mid", grid.picker_y)
+        local color_pick = create_bound_color_picker("color_"..cat, false, "Bar Color", "mid", grid.picker_y)
 
         -- bar background color picker
-        local bar_bg_pick = addon.CreateColorPicker(p, M.db, "bar_bg_color_"..cat, true, "Bar BG Color", M.defaults, update)
-        place(bar_bg_pick, "far", grid.picker_y)
+        local bar_bg_pick = create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", "far", grid.picker_y)
 
         if cat ~= "static" then
             next_row()
 
             -- Fourth row: timer text visibility
-            local timer_cb_container, timer_cb, _ = addon.CreateCheckbox(
-                p,
-                "Show Time Remaining",
-                M.db[data.timer_key],
-                function(is_checked)
-                    M.db[data.timer_key] = is_checked
-                    update()
-                end
-            )
-            place(timer_cb_container, "left")
-            M.controls[data.timer_key] = timer_cb
+            local timer_cb_container, timer_cb = create_bound_checkbox("Show Time Remaining", data.timer_key, "left")
         end
 
         -- SLIDERS SECTION
         next_slider_row()
 
-        local scale_slider = M.CreateSliderWithBox(addon_name..cat.."Scale", p, "Scale", 0.5, 2.5, 0.01, data.scale_key, M.defaults, update)
-        place(scale_slider, "left")
+        local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key)
 
         next_slider_row()
 
-        local space_slider = M.CreateSliderWithBox(addon_name..cat.."Spacing", p, "Spacing", 0, 40, 0.1, data.spacing_key, M.defaults, update)
-        place(space_slider, "left")
+        local space_slider = create_bound_slider("Spacing", "Spacing", 0, 40, 0.1, data.spacing_key)
 
         next_slider_row()
 
-        local pool_slider = M.CreateSliderWithBox(addon_name..cat.."PoolSlider", p, "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, M.defaults, function()
+        local pool_slider = create_bound_slider("PoolSlider", "Max Icons (Requires /reload)", 5, 100, 1, "max_icons_"..cat, function()
             print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
         end)
-        place(pool_slider, "left")
     end
 
     for i, data in ipairs(tab_data) do
