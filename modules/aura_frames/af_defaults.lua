@@ -47,6 +47,7 @@ M.defaults = {
     growth_static = "RIGHT",
     bg_color_static = default_bg_color(),
     sort_static  = "name",
+    test_aura_static = false,
 
     -- SHORT
     show_short      = false,
@@ -63,6 +64,7 @@ M.defaults = {
     growth_short = "DOWN",
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
+    test_aura_short = false,
 
     -- LONG
     show_long       = false,
@@ -79,6 +81,7 @@ M.defaults = {
     growth_long = "RIGHT",
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
+    test_aura_long = false,
 
     -- DEBUFFS
     show_debuff     = false,
@@ -95,6 +98,7 @@ M.defaults = {
     growth_debuff = "UP",
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
+    test_aura_debuff = false,
     
     -- POSITIONS
     positions = {

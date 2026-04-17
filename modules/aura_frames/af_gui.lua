@@ -261,6 +261,7 @@ function M.BuildSettings(parent)
     local function build_category_tab(p, data)
         local cat = data.show_key:sub(6)
         local filter = data.is_debuff and "HARMFUL" or "HELPFUL"
+        local test_key = "test_aura_"..cat
         local function update() -- refreshes current category frame preview
             M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, filter)
         end
@@ -370,10 +371,13 @@ function M.BuildSettings(parent)
         -- Frame background (same row, right of Enable Frame)
         create_bound_checkbox("Frame Background", data.bg_key, "mid")
 
-        -- Frame BG color picker (same row, right of Frame background)
-        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", "far", grid.picker_y)
+        -- Test aura preview toggle
+        create_bound_checkbox("Show Test Aura", test_key, "far", nil, update)
 
         next_row()
+
+        -- Frame BG color picker
+        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", "far", grid.picker_y)
 
         -- ROW
         -- bar mode

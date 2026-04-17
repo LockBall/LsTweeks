@@ -1,0 +1,108 @@
+local addon_name, addon = ...
+
+addon.aura_frames = addon.aura_frames or {}
+local M = addon.aura_frames
+
+local math_floor = math.floor
+local math_max = math.max
+local math_min = math.min
+local GetTime = GetTime
+
+-- ============================================================================
+-- TEST AURA CONFIG
+-- Tune preview appearance and animation behavior here.
+
+local CFG = {
+    icon            = "Interface\\Icons\\INV_Misc_QuestionMark",
+    short_min       = 10,   -- minimum short preview duration (seconds)
+    short_max       = 30,   -- cap for short preview duration
+    long_extra_min  = 30,   -- minimum seconds added above threshold for long preview
+    long_extra_frac = 0.5,  -- fraction of threshold added for long preview
+    sec_per_stack   = 2.0,  -- seconds each stack value is held (0.1 increments)
+    stack_steps     = 4,    -- number of distinct steps in the cycle
+    stack_min       = 1,    -- lowest stack count shown during the cycle
+    stack_max       = 4,    -- highest stack count shown during the cycle
+    min_remaining   = 0.1,  -- floor for remaining time so bar never shows fully empty
+}
+
+-- Per-category preview label and sort order.
+local PREVIEW_META = {
+    show_static = { name = "Test Static Aura", sort_id = 1 },
+    show_short  = { name = "Test Short Aura",  sort_id = 2 },
+    show_long   = { name = "Test Long Aura",   sort_id = 3 },
+    show_debuff = { name = "Test Debuff",       sort_id = 4 },
+}
+
+function M.get_test_preview_state(show_key, short_threshold, now)
+    now = now or GetTime()
+
+    if show_key == "show_static" then
+        return 0, 0, 0
+    end
+
+    local threshold = short_threshold or 60
+    local short_duration = math_max(CFG.short_min, math_min(threshold, CFG.short_max))
+    local duration = (show_key == "show_long")
+        and (threshold + math_max(CFG.long_extra_min, math_floor(threshold * CFG.long_extra_frac)))
+        or  short_duration
+
+    local remaining = math_max(CFG.min_remaining, duration - (now % duration))
+
+    -- Stack count cycles on its own period, independent of the timer length.
+    -- Each stack value is held for sec_per_stack seconds (tunable in 0.1s increments).
+    local full_cycle = CFG.sec_per_stack * CFG.stack_steps
+    local stack_bucket = math_floor((now % full_cycle) / CFG.sec_per_stack) + 1
+    local count = math_min(CFG.stack_max, math_max(CFG.stack_min, stack_bucket))
+
+    return duration, remaining, count
+end
+
+function M.build_test_aura_entry(show_key, filter, short_threshold)
+    local now = GetTime()
+    local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
+    local meta = PREVIEW_META[show_key] or PREVIEW_META.show_debuff
+
+    return {
+        name            = meta.name,
+        icon            = CFG.icon,
+        duration        = duration,
+        expiration      = duration > 0 and (now + remaining) or 0,
+        remaining       = remaining,
+        count           = count,
+        filter          = filter,
+        added_at        = now,
+        preview_sort_id = meta.sort_id,
+        is_test_preview = true,
+    }
+end
+
+function M.append_test_aura(aura_map, show_key, filter, short_threshold)
+    aura_map["__test_preview__"] = M.build_test_aura_entry(show_key, filter, short_threshold)
+end
+
+function M.update_test_preview_display(obj, show_key, short_threshold, show_timer_text, use_bars, format_time, now)
+    local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
+
+    obj.aura_duration = duration
+    obj.aura_remaining = remaining
+    obj.aura_expiration = now + remaining
+    obj.aura_scan_time = now
+
+    if count and count > 1 then
+        obj.count_text:SetText(count)
+        obj.count_text:Show()
+    else
+        obj.count_text:Hide()
+    end
+
+    if show_timer_text and duration > 0 then
+        obj.time_text:SetText(format_time(remaining))
+    else
+        obj.time_text:SetText("")
+    end
+
+    if use_bars and obj.bar and obj.bar:IsShown() then
+        obj.bar:SetMinMaxValues(0, duration)
+        obj.bar:SetValue(remaining)
+    end
+end

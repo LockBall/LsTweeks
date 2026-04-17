@@ -70,6 +70,13 @@ local function make_entry(iid, name, icon, duration, expiration, spell_id, dispe
     }
 end
 
+local function get_entry_sort_id(entry)
+    if type(entry.instance_id) == "number" then
+        return entry.instance_id
+    end
+    return entry.preview_sort_id or 0
+end
+
 local function make_order_key(spell_id, name, icon, filter)
     local f = filter or ""
     local sid = (spell_id ~= nil and not issecretvalue(spell_id)) and tostring(spell_id) or nil
@@ -602,14 +609,23 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
     -- Build display list in game-sorted order, filtered to entries in this frame's map
     local list = {}
     if sorted_ids then
+        local seen = {}
         for _, iid in ipairs(sorted_ids) do
             local entry = aura_map[iid]
-            if entry then list[#list + 1] = entry end
+            if entry then
+                list[#list + 1] = entry
+                seen[iid] = true
+            end
+        end
+        for key, entry in pairs(aura_map) do
+            if not seen[key] then
+                list[#list + 1] = entry
+            end
         end
     else
         -- Fallback: iterate map directly (sorted_ids nil = API unavailable)
         for _, entry in pairs(aura_map) do list[#list + 1] = entry end
-        table.sort(list, function(a, b) return a.instance_id < b.instance_id end)
+        table.sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
     end
 
     -- Short frame ordering: stable per-aura order key so stack updates don't
@@ -645,7 +661,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
             local aa = a._short_order or 0
             local bb = b._short_order or 0
             if aa == bb then
-                return a.instance_id < b.instance_id
+                return get_entry_sort_id(a) < get_entry_sort_id(b)
             end
             return aa < bb
         end)
@@ -671,6 +687,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
         obj.aura_expiration = entry.expiration
         obj.aura_scan_time  = now
         obj.aura_spell_id   = entry.spell_id
+        obj.is_test_preview = entry.is_test_preview or false
 
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
 
@@ -944,6 +961,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local growth = db["growth_"..category] or "DOWN"
     local max_limit = db["max_icons_"..category] or 40
     local sort_mode = db["sort_"..category] or "timeleft"
+    local preview_enabled = db["test_aura_"..category]
 
     self:SetScale(db[scale_key] or 1.0)
 
@@ -960,7 +978,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     local is_moving = db[move_key]
 
-    if not db[show_key] and not is_moving then
+    if not db[show_key] and not is_moving and not preview_enabled then
         self:Hide()
         return
     end
@@ -975,13 +993,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         self.resizer:Hide()
     end
 
-    if is_moving and not db[show_key] then
+    if is_moving and not db[show_key] and not preview_enabled then
         if not InCombatLockdown() then self:SetHeight(44) end
         self:Show()
         return
     end
 
-    if db[show_key] then self:Show() end
+    if db[show_key] or preview_enabled then self:Show() end
 
     if not self._aura_map then self._aura_map = {} end
 
@@ -998,6 +1016,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     else
         -- Debuffs remain on per-frame scan logic.
         full_scan(self._aura_map, filter, show_key, short_threshold, max_limit, info)
+    end
+
+    if preview_enabled then
+        M.append_test_aura(self._aura_map, show_key, filter, short_threshold)
+    else
+        self._aura_map["__test_preview__"] = nil
     end
 
     local display_count = render_aura_map(
@@ -1020,14 +1044,14 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    if db[show_key] then
+    if db[show_key] or preview_enabled then
         self:Show()
         if not InCombatLockdown() then self:SetHeight(new_height) end
     elseif not is_moving then
         self:Hide()
     end
 
-    if db[show_key] and not self:IsVisible() then self:Show() end
+    if (db[show_key] or preview_enabled) and not self:IsVisible() then self:Show() end
 
     -- Backdrop colors
     local is_bg_enabled = db[bg_key]
