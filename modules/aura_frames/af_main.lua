@@ -363,10 +363,13 @@ loader:SetScript("OnEvent", function(self, event, name)
                 if frame:IsVisible() then
                     local is_static_frame = (frame.category == "static")
                     local show_timer_text = M.db and M.db["timer_"..frame.category]
+                    local use_bars = M.db and M.db["use_bars_"..frame.category]
                     for i = 1, #frame.icons do
                         local obj = frame.icons[i]
                         if obj:IsShown() and is_static_frame then
                             obj.time_text:SetText("")
+                        elseif obj:IsShown() and obj.is_test_preview then
+                            M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, use_bars, format_time, now)
                         elseif obj:IsShown() and obj.aura_index then
                             local remaining
                             local live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
