@@ -3,6 +3,8 @@ local M = addon.aura_frames
 
 -- CACHED GLOBALS AND CONSTANTS
 local MAX_POOL_SIZE = 40 -- Default pre-allocation count
+local MIN_FRAME_WIDTH = 180
+local MIN_FRAME_HEIGHT = 44
 local format = string.format
 
 -- safely copy default tables into saved variables without reference issues
@@ -35,7 +37,18 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:SetMovable(true) 
     frame:SetResizable(true) 
     frame:SetClampedToScreen(true)
-    frame:SetSize(M.db["width_"..category] or 200, 50)
+    if frame.SetResizeBounds then
+        frame:SetResizeBounds(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
+    end
+    if frame.SetMinResize then
+        frame:SetMinResize(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
+    end
+    local initial_width = M.db["width_"..category] or 200
+    if initial_width < MIN_FRAME_WIDTH then
+        initial_width = MIN_FRAME_WIDTH
+        M.db["width_"..category] = initial_width
+    end
+    frame:SetSize(initial_width, 50)
 
     local pos = M.db.positions and M.db.positions[category]
     if pos then
@@ -86,10 +99,25 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame.resizer:SetSize(16, 16)
     frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+
+    frame:SetScript("OnSizeChanged", function(s, w)
+        if s._clamping_size then return end
+        if w and w < MIN_FRAME_WIDTH then
+            s._clamping_size = true
+            s:SetWidth(MIN_FRAME_WIDTH)
+            s._clamping_size = nil
+        end
+    end)
+
     frame.resizer:SetScript("OnMouseDown", function() frame:StartSizing("RIGHT") end)
     frame.resizer:SetScript("OnMouseUp", function() 
         frame:StopMovingOrSizing() 
-        M.db["width_"..category] = frame:GetWidth()
+        local clamped_width = frame:GetWidth()
+        if clamped_width < MIN_FRAME_WIDTH then
+            clamped_width = MIN_FRAME_WIDTH
+            frame:SetWidth(clamped_width)
+        end
+        M.db["width_"..category] = clamped_width
         local params = frame.update_params
         if params then
             M.update_auras(frame, params.show_key, params.move_key, params.timer_key, params.bg_key, params.scale_key, params.spacing_key, params.filter)
