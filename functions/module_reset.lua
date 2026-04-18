@@ -260,7 +260,7 @@ function addon.CreateGlobalReset(parent, db, defaults)
                 end
                 
                 -- Invalidate cached UI tabs for rebuild
-                if (addon.af_gui and addon.af_gui.BuildSettings) or module.build_settings then
+                if module.BuildSettings or module.build_settings then
                     if addon.main_frame and addon.main_frame.tabs then
                         for tabName, tabFrame in pairs(addon.main_frame.tabs) do
                             if tabName ~= "About" then
