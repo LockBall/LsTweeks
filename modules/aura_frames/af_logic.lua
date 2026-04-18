@@ -87,7 +87,6 @@ end
 function M.tick_visible_icons(now)
     now = now or GetTime()
 
-    local timer_direction = Enum and Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime
     local short_threshold = (M.db and M.db.short_threshold) or 60
 
     for _, frame in pairs(M.frames) do
@@ -110,62 +109,45 @@ function M.tick_visible_icons(now)
                     else
                         obj.time_text:Hide()
                     end
+                    -- Compute remaining from scan-time expiration; no per-tick API calls.
+                    -- Previously called C_UnitAuras.GetAuraDuration every 100ms per icon
+                    -- (~200 calls/second with 20 visible auras). Now uses stored fields.
                     local remaining
-                    local live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
-                    if live_duration then
-                        remaining = live_duration:GetRemainingDuration()
-                    elseif obj.aura_expiration and obj.aura_expiration > 0 then
+                    if obj.aura_expiration and obj.aura_expiration > 0 then
                         remaining = math_max(0, obj.aura_expiration - now)
-                    elseif obj.aura_scan_time and obj.aura_remaining then
+                        elseif obj.aura_scan_time and obj.aura_remaining
+                            and not issecretvalue(obj.aura_remaining)
+                            and obj.aura_remaining > 0 then
                         remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
-                    else
-                        remaining = 0
                     end
-                    if remaining and issecretvalue(remaining) then
-                        local display_remaining = nil
-                        if obj.aura_expiration and obj.aura_expiration > 0 then
-                            display_remaining = math_max(0, obj.aura_expiration - now)
-                        elseif obj.aura_remaining and obj.aura_remaining > 0 then
-                            display_remaining = obj.aura_remaining
-                        end
-
-                        if display_remaining and display_remaining > 0 then
-                            if show_timer_text then
-                                if display_remaining > short_threshold then
-                                    obj.time_text:SetText(M.format_time(display_remaining))
-                                else
-                                    obj.time_text:SetFormattedText("%.1f", remaining)
-                                end
-                            else
-                                obj.time_text:SetText("")
-                            end
-                        else
-                            if show_timer_text then
-                                obj.time_text:SetFormattedText("%.1f", remaining)
-                            else
-                                obj.time_text:SetText("")
+                    local live_duration
+                    local live_remaining
+                    if remaining == nil then
+                        -- Secret-duration fallback: only query live duration when we
+                        -- cannot derive remaining from cached scan fields.
+                        live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
+                        if live_duration then
+                            live_remaining = live_duration:GetRemainingDuration()
+                            if live_remaining ~= nil and not issecretvalue(live_remaining) then
+                                remaining = live_remaining
                             end
                         end
-                        if obj.bar and obj.bar:IsShown() and obj.bar.SetTimerDuration and timer_direction and live_duration then
-                            obj.bar:SetTimerDuration(live_duration, nil, timer_direction)
-                        end
-                    elseif remaining and remaining > 0 then
+                    end
+                    -- remaining is nil only when duration is truly hidden (both expiration
+                    -- and remaining are secret). Keep the last rendered text in that case.
+                    if remaining and remaining > 0 then
                         if show_timer_text then
                             obj.time_text:SetText(M.format_time(remaining))
-                        else
-                            obj.time_text:SetText("")
                         end
                         if obj.bar and obj.bar:IsShown() then
-                            if obj.bar.SetTimerDuration and timer_direction and live_duration then
-                                obj.bar:SetTimerDuration(live_duration, nil, timer_direction)
-                            else
-                                obj.bar:SetValue(remaining)
-                            end
+                            obj.bar:SetValue(remaining)
                         end
                     elseif remaining == 0 then
                         obj.time_text:SetText("")
-                    else
-                        -- Unknown/secret value: keep last shown timer text.
+                    elseif live_remaining ~= nil and issecretvalue(live_remaining) then
+                        if show_timer_text then
+                            obj.time_text:SetFormattedText("%.1f", live_remaining)
+                        end
                     end
                 end
             end
@@ -362,7 +344,10 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
         local duration = aura.duration
         local expiration = aura.expirationTime
         local rem = compute_remaining(duration, expiration)
-        local live_duration = C_UnitAuras.GetAuraDuration("player", iid)
+        -- Only call GetAuraDuration when the raw scan fields are secret/nil.
+        -- Out of combat rem is always readable, so this avoids the API call entirely.
+        local need_live = (rem == nil) or issecretvalue(rem) or issecretvalue(expiration)
+        local live_duration = need_live and C_UnitAuras.GetAuraDuration("player", iid)
         local live_expiration = nil
         local live_remaining = nil
         if live_duration then
@@ -379,14 +364,25 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
         end
 
         local category = nil
+        local static_confirmed = false
 
         -- Use the best available remaining time for classification.
         -- live_remaining is preferred (readable via GetAuraDuration even in combat);
         -- fall back to rem (from scan fields) which may be nil/secret.
         local classify_rem = live_remaining or rem
 
+        -- Self-heal stale static-learning entries when we now see a readable duration.
+        if safe_spell_id
+                and M.db.known_static_spell_ids[safe_spell_id]
+                and classify_rem ~= nil
+                and not issecretvalue(classify_rem)
+                and classify_rem > 0 then
+            M.db.known_static_spell_ids[safe_spell_id] = nil
+        end
+
         if safe_spell_id and M.db.known_static_spell_ids[safe_spell_id] then
             category = "show_static"
+            static_confirmed = true
         elseif safe_spell_id and M.db.known_long_spell_ids[safe_spell_id] and classify_rem == nil then
             -- Brand-new long buff in combat: all time fields are secret, but we
             -- learned this spell was long-duration out-of-combat.
@@ -394,6 +390,7 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
         elseif classify_rem ~= nil then
             if classify_rem == 0 then
                 category = "show_static"
+                static_confirmed = true
             elseif classify_rem <= short_threshold then
                 category = "show_short"
             else
@@ -402,9 +399,7 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
         else
             local expires = C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
             local expires_known
-            if type(expires) ~= "boolean" then
-                expires_known = false
-            elseif issecretvalue(expires) then
+            if type(expires) ~= "boolean" or issecretvalue(expires) then
                 expires_known = nil
             else
                 expires_known = expires
@@ -412,6 +407,7 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
 
             if expires_known == false then
                 category = "show_static"
+                static_confirmed = true
             elseif expires_known == true then
                 -- Refreshed buffs get a new auraInstanceID; prefer spell-based old cat.
                 local old_cat = old_cat_iid[iid] or (safe_spell_id and old_cat_spell[safe_spell_id])
@@ -427,7 +423,9 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
                 elseif added_lookup[iid] and replacement_pref then
                     category = replacement_pref
                 else
-                    category = live_duration and "show_short" or "show_static"
+                    -- Unknown expiration state: prefer short over static to avoid
+                    -- permanently mis-learning timed buffs as static.
+                    category = "show_short"
                 end
             end
         end
@@ -482,7 +480,7 @@ local function scan_helpful_shared(info, short_threshold, max_limit_hint)
                 new_cat_spell[safe_spell_id] = category
             end
 
-            if category == "show_static" and safe_spell_id then
+            if category == "show_static" and safe_spell_id and static_confirmed then
                 M.db.known_static_spell_ids[safe_spell_id] = true
             end
             if category == "show_long" and safe_spell_id and classify_rem ~= nil then
@@ -842,7 +840,8 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
-        local live_duration = entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
+        -- Static frames never display timers or use bars, so skip the API calls.
+        local live_duration = (not is_static_frame) and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
         local live_remaining = live_duration and live_duration:GetRemainingDuration() or nil
         local live_count = entry.instance_id and C_UnitAuras.GetAuraApplicationDisplayCount("player", entry.instance_id)
 
@@ -1007,7 +1006,6 @@ end
 -- LAYOUT ENGINE: Pre-calculates positions. Only runs out of combat or on init.
 
 function M.setup_layout(self, show_key, spacing_key, use_bars)
-    if InCombatLockdown() then return end
     if not self or not self.icons then return end
 
     local db = M.db
@@ -1134,13 +1132,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     self:SetScale(db[scale_key] or 1.0)
 
     if not self._layout_cache
-        or (not InCombatLockdown()
-        and (self._layout_cache.frame_width ~= frame_width
+        or (self._layout_cache.frame_width ~= frame_width
         or   self._layout_cache.use_bars    ~= use_bars
         or   self._layout_cache.show_timer_text ~= show_timer_text
         or   self._layout_cache.spacing     ~= spacing
         or   self._layout_cache.growth      ~= growth
-    )) then
+    ) then
         M.setup_layout(self, show_key, spacing_key, use_bars)
     end
 
@@ -1162,7 +1159,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if is_moving and not db[show_key] and not preview_enabled then
-        if not InCombatLockdown() then self:SetHeight(44) end
+        self:SetHeight(44)
         self:Show()
         return
     end
@@ -1214,7 +1211,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     if db[show_key] or preview_enabled then
         self:Show()
-        if not InCombatLockdown() then self:SetHeight(new_height) end
+        self:SetHeight(new_height)
     elseif not is_moving then
         self:Hide()
     end

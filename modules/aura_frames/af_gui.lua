@@ -159,13 +159,17 @@ function M.BuildSettings(parent)
 
         y = y - slider_row -- next row
 
-        -- Threshold Slider
+        -- Threshold Slider — debounced so dragging doesn't trigger a full scan per step.
+        local threshold_debounce = nil
         local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold (s)", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
-            for k, v in pairs(M.frames) do
-                -- Corrected to sub(6) to handle keys like show_static, show_short, etc.
-                local cat = k:sub(6)
-                M.update_auras(v, k, "move_"..cat, "timer_"..cat, "bg_"..cat, "scale_"..cat, "spacing_"..cat, k == "show_debuff" and "HARMFUL" or "HELPFUL")
-            end
+            if threshold_debounce then threshold_debounce:Cancel() end
+            threshold_debounce = C_Timer.NewTimer(0.1, function()
+                threshold_debounce = nil
+                for k, v in pairs(M.frames) do
+                    local cat = k:sub(6)
+                    M.update_auras(v, k, "move_"..cat, "timer_"..cat, "bg_"..cat, "scale_"..cat, "spacing_"..cat, k == "show_debuff" and "HARMFUL" or "HELPFUL")
+                end
+            end)
         end)
         threshold:SetPoint("TOPLEFT", p, "TOPLEFT", x_left, y)
 
