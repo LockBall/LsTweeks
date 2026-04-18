@@ -3,10 +3,6 @@ local M = addon.aura_frames
 
 -- CACHED GLOBALS AND CONSTANTS
 local MAX_POOL_SIZE = 40 -- Default pre-allocation count
-local issecretvalue = issecretvalue or function() return false end
-local GetTime = GetTime
-local math_max = math.max
-local C_UnitAuras = C_UnitAuras
 local format = string.format
 
 -- BLIZZARD Buff & Debuff FRAME TOGGLES
@@ -41,51 +37,6 @@ function M.toggle_blizz_debuffs(hide)
     set_blizz_frame_state(DebuffFrame, hide)
 end
 
--- Merge UNIT_AURA payloads while a deferred scan is pending.
--- Blizzard can fire multiple UNIT_AURA events inside the 0.1s bucket window;
--- we need to union their added/updated/removed IDs so no aura changes are lost.
-local function merge_aura_info(dst, src)
-    if not src then return dst end
-    dst = dst or {}
-
-    local function merge_id_list(key, list)
-        if not list then return end
-        dst[key] = dst[key] or {}
-        dst[key.."_set"] = dst[key.."_set"] or {}
-        for _, iid in ipairs(list) do
-            if iid and not dst[key.."_set"][iid] then
-                dst[key.."_set"][iid] = true
-                dst[key][#dst[key] + 1] = iid
-            end
-        end
-    end
-
-    merge_id_list("removedAuraInstanceIDs", src.removedAuraInstanceIDs)
-    merge_id_list("updatedAuraInstanceIDs", src.updatedAuraInstanceIDs)
-
-    -- Modern payload: addedAuras = array of aura tables with auraInstanceID.
-    if src.addedAuras then
-        dst.addedAuras = dst.addedAuras or {}
-        dst.addedAuras_set = dst.addedAuras_set or {}
-        for _, aura in ipairs(src.addedAuras) do
-            local iid = aura and aura.auraInstanceID
-            if iid and not dst.addedAuras_set[iid] then
-                dst.addedAuras_set[iid] = true
-                dst.addedAuras[#dst.addedAuras + 1] = aura
-            end
-        end
-    end
-
-    -- Backward/alternate payload support.
-    merge_id_list("addedAuraInstanceIDs", src.addedAuraInstanceIDs)
-
-    if src.isFullUpdate then
-        dst.isFullUpdate = true
-    end
-
-    return dst
-end
-
 -- safely copy default tables into saved variables without reference issues
 local function deep_copy(src, dest)
     for k, v in pairs(src) do
@@ -105,8 +56,6 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
     
-    -- frame:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background", edgeFile = "Interface/Tooltips/UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 16, insets = { left = 4, right = 4, top = 4, bottom = 4 }})
-
     -- Updated Backdrop for smoother color filling
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8", -- Use a flat white texture for clean coloring
@@ -289,7 +238,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         --
         -- Merge UNIT_AURA payloads while waiting for the deferred scan.
         if event == "UNIT_AURA" then
-            self._pending_aura_info = merge_aura_info(self._pending_aura_info, info)
+            self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
         end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.
@@ -353,85 +302,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
 
         -- Single shared ticker for all frames at 0.1s (ElkBuffBars rate).
-        -- One ticker iterating all frames is far cheaper than 4 separate tickers.
-        local format_time = M.format_time
-        local timer_direction = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime
+        -- Logic is delegated so af_main stays focused on construction/bootstrap.
         C_Timer.NewTicker(0.1, function()
-            local now = GetTime()
-            local short_threshold = (M.db and M.db.short_threshold) or 60
-            for _, frame in pairs(M.frames) do
-                if frame:IsVisible() then
-                    local is_static_frame = (frame.category == "static")
-                    local show_timer_text = M.db and M.db["timer_"..frame.category]
-                    local use_bars = M.db and M.db["use_bars_"..frame.category]
-                    for i = 1, #frame.icons do
-                        local obj = frame.icons[i]
-                        if obj:IsShown() and is_static_frame then
-                            obj.time_text:SetText("")
-                        elseif obj:IsShown() and obj.is_test_preview then
-                            M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, use_bars, format_time, now)
-                        elseif obj:IsShown() and obj.aura_index then
-                            local remaining
-                            local live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
-                            if live_duration then
-                                remaining = live_duration:GetRemainingDuration()
-                            elseif obj.aura_expiration and obj.aura_expiration > 0 then
-                                remaining = math_max(0, obj.aura_expiration - now)
-                            elseif obj.aura_scan_time and obj.aura_remaining then
-                                remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
-                            else
-                                remaining = 0
-                            end
-                            if remaining and issecretvalue(remaining) then
-                                local display_remaining = nil
-                                if obj.aura_expiration and obj.aura_expiration > 0 then
-                                    display_remaining = math_max(0, obj.aura_expiration - now)
-                                elseif obj.aura_remaining and obj.aura_remaining > 0 then
-                                    display_remaining = obj.aura_remaining
-                                end
-
-                                if display_remaining and display_remaining > 0 then
-                                    if show_timer_text then
-                                        if display_remaining > short_threshold then
-                                            obj.time_text:SetText(format_time(display_remaining))
-                                        else
-                                            obj.time_text:SetFormattedText("%.1f", remaining)
-                                        end
-                                    else
-                                        obj.time_text:SetText("")
-                                    end
-                                else
-                                    if show_timer_text then
-                                        obj.time_text:SetFormattedText("%.1f", remaining)
-                                    else
-                                        obj.time_text:SetText("")
-                                    end
-                                end
-                                if obj.bar and obj.bar:IsShown() and obj.bar.SetTimerDuration and timer_direction and live_duration then
-                                    obj.bar:SetTimerDuration(live_duration, nil, timer_direction)
-                                end
-                            elseif remaining and remaining > 0 then
-                                if show_timer_text then
-                                    obj.time_text:SetText(format_time(remaining))
-                                else
-                                    obj.time_text:SetText("")
-                                end
-                                if obj.bar and obj.bar:IsShown() then
-                                    if obj.bar.SetTimerDuration and timer_direction and live_duration then
-                                        obj.bar:SetTimerDuration(live_duration, nil, timer_direction)
-                                    else
-                                        obj.bar:SetValue(remaining)
-                                    end
-                                end
-                            elseif remaining == 0 then
-                                obj.time_text:SetText("")
-                            else
-                                -- Unknown/secret value: keep last shown timer text.
-                            end
-                        end
-                    end
-                end
-            end
+            M.tick_visible_icons()
         end)
 
         -- Sync the Blizzard frame visibility based on user preferences
