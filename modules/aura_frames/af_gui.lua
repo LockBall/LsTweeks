@@ -6,87 +6,6 @@ local M = addon.aura_frames
 
 -- GUI COMPONENT BUILDERS
 
--- slider & editbox
--- Uses MinimalSliderTemplate (available 10.0+) and creates labels as explicit children
--- instead of relying on the deprecated _G[name..'Low/High/Text'] global pattern.
-function M.CreateSliderWithBox(name, parent, labelText, minV, maxV, step, db_key, defaults_table, callback)
-    -- Backward compatibility: allow old call shape without defaults_table.
-    if type(defaults_table) == "function" and callback == nil then
-        callback = defaults_table
-        defaults_table = nil
-    end
-
-    local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(295, 58)
-    container:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    container:SetBackdropColor(0, 0, 0, 0.3)
-    container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
-
-    local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")
-    slider:SetSize(155, 16)
-    slider:SetPoint("TOPLEFT", container, "TOPLEFT", 12, -21)
-    slider:SetMinMaxValues(minV, maxV)
-    slider:SetValueStep(step)
-    slider:SetObeyStepOnDrag(true)
-    slider:SetValue(M.db[db_key] or minV)
-
-    local title = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("BOTTOM", slider, "TOP", 0, 4)
-    title:SetText(labelText)
-
-    local low_lbl = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    low_lbl:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -2)
-    low_lbl:SetText(minV)
-
-    local high_lbl = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    high_lbl:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
-    high_lbl:SetText(maxV)
-
-    local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
-    eb:SetSize(50, 20)
-    eb:SetPoint("LEFT", slider, "RIGHT", 18, 1)
-    eb:SetAutoFocus(false)
-    eb:SetJustifyH("CENTER")
-    eb:SetTextInsets(0, 0, 0, 0)
-    eb:SetText(format(step < 1 and "%.2f" or "%.1f", M.db[db_key] or minV))
-
-    local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-    reset:SetSize(42, 16)
-    reset:SetPoint("LEFT", eb, "RIGHT", 8, 0)
-    reset:SetText("Reset")
-    reset:SetNormalFontObject("GameFontNormalSmall")
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        M.db[db_key] = value
-        eb:SetText(format(step < 1 and "%.2f" or "%.1f", value))
-        callback()
-    end)
-
-    eb:SetScript("OnEnterPressed", function(self)
-        local val = tonumber(self:GetText())
-        if val then
-            val = math.max(minV, math.min(maxV, val))
-            slider:SetValue(val)
-        end
-        self:ClearFocus()
-    end)
-
-    reset:SetScript("OnClick", function()
-        local default_value = defaults_table and defaults_table[db_key]
-        if default_value == nil then
-            default_value = minV
-        end
-        slider:SetValue(default_value)
-    end)
-
-    return container
-end
-
 -- Shared click-blocker: sits behind all dropdown popups and dismisses the open one
 -- when the user clicks anywhere outside it. One instance, reused by all dropdowns.
 local _dropdown_blocker = CreateFrame("Frame", "LsTweeksDropdownBlocker", UIParent)
@@ -241,7 +160,7 @@ function M.BuildSettings(parent)
         y = y - slider_row -- next row
 
         -- Threshold Slider
-        local threshold = M.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold (s)", 10, 300, 10, "short_threshold", M.defaults, function()
+        local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold (s)", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
             for k, v in pairs(M.frames) do
                 -- Corrected to sub(6) to handle keys like show_static, show_short, etc.
                 local cat = k:sub(6)
@@ -318,13 +237,14 @@ function M.BuildSettings(parent)
         end
 
         local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, on_change)
-            local slider = M.CreateSliderWithBox(
+            local slider = addon.CreateSliderWithBox(
                 addon_name..cat..name_suffix,
                 p,
                 label,
                 min_v,
                 max_v,
                 step,
+                M.db,
                 db_key,
                 M.defaults,
                 on_change or update
