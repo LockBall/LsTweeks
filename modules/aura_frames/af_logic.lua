@@ -120,12 +120,13 @@ function M.tick_visible_icons(now)
                             and obj.aura_remaining > 0 then
                         remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
                     end
-                    local live_duration
                     local live_remaining
-                    if remaining == nil then
+                    local need_live_fallback = (remaining == nil)
+                        and (show_timer_text or (obj.bar and obj.bar:IsShown()))
+                    if need_live_fallback then
                         -- Secret-duration fallback: only query live duration when we
                         -- cannot derive remaining from cached scan fields.
-                        live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
+                        local live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
                         if live_duration then
                             live_remaining = live_duration:GetRemainingDuration()
                             if live_remaining ~= nil and not issecretvalue(live_remaining) then
@@ -840,10 +841,12 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
-        -- Static frames never display timers or use bars, so skip the API calls.
-        local live_duration = (not is_static_frame) and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
+        local need_live_duration = (not is_static_frame) and (show_timer_text or use_bars)
+        local live_duration = need_live_duration and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
         local live_remaining = live_duration and live_duration:GetRemainingDuration() or nil
-        local live_count = entry.instance_id and C_UnitAuras.GetAuraApplicationDisplayCount("player", entry.instance_id)
+        local need_live_count = entry.instance_id
+            and ((entry.count == nil) or issecretvalue(entry.count) or entry.count <= 1)
+        local live_count = need_live_count and C_UnitAuras.GetAuraApplicationDisplayCount("player", entry.instance_id)
 
         obj.aura_index      = entry.instance_id
         obj.filter_type     = entry.filter
@@ -859,7 +862,9 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
 
         local stack_text = nil
-        if live_count ~= nil and not issecretvalue(live_count) then
+        if entry.count and not issecretvalue(entry.count) and entry.count > 1 then
+            stack_text = entry.count
+        elseif live_count ~= nil and not issecretvalue(live_count) then
             if type(live_count) == "number" then
                 if live_count > 1 then
                     stack_text = live_count
@@ -871,8 +876,6 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
             else
                 stack_text = live_count
             end
-        elseif entry.count and entry.count > 1 then
-            stack_text = entry.count
         else
             -- Secret live_count is safe to display, but we cannot compare it.
             -- Preserve combat behavior by showing it only when no safe fallback exists.
