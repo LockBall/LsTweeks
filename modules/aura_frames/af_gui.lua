@@ -152,7 +152,6 @@ function M.BuildSettings(parent)
         M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_cb
 
         -- Short Buff Threshold slider
-        local threshold_debounce = nil
         local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
             for k, v in pairs(M.frames) do
                 local cat = k:sub(6)
@@ -161,11 +160,9 @@ function M.BuildSettings(parent)
         end)
         threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
 
+
         -- Show Bar Section Outlines Checkbox
-        local outlines_container, outlines_btn, _ = addon.CreateCheckbox(
-            p,
-            "Show Bar Section Outlines",
-            Ls_Tweeks_DB.show_bar_section_outlines or false,
+        local outlines_container, outlines_btn, _ = addon.CreateCheckbox(p, "Show Bar Section Outlines", Ls_Tweeks_DB.show_bar_section_outlines == true,
             function(is_checked)
                 Ls_Tweeks_DB.show_bar_section_outlines = is_checked
                 if addon.aura_frames and addon.aura_frames.refresh_section_outlines then
@@ -176,7 +173,7 @@ function M.BuildSettings(parent)
         outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
         M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
-        -- Keep reset panel outside the grid-managed main area.
+        -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
         resetPanel:SetPoint("BOTTOM", p, "BOTTOM", 0, -50)
     end
@@ -231,16 +228,6 @@ function M.BuildSettings(parent)
             end
             control:SetPoint("TOPLEFT", p, "TOPLEFT", x, y + y_offset)
         end
-
-        -- Helper: center a control of given width in a grid column (from col_start to col_end)
-        local function place_centered_at(control, row, col_start, col_end, width, slot)
-            local col_w = col_end - col_start
-            local x = col_start + math.floor((col_w - width) / 2)
-            local base_y = grid.row_start - ((row - 1) * grid.row)
-            local y_offset = grid.offsets[slot or "default"] or 0
-            control:SetPoint("TOPLEFT", p, "TOPLEFT", x, base_y + y_offset)
-        end
-
 
         local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
             local container, checkbox, _ = addon.CreateCheckbox(p, label, M.db[db_key],
@@ -347,7 +334,7 @@ function M.BuildSettings(parent)
         -- Frame BG color picker (second row, far-right)
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
 
-        -- Row 3: Show Test Aura (left), Bold Numbers (far) (was row 4)
+        -- Row 3: Show Test Aura
         if cat ~= "static" then
             create_bound_checkbox("Show Test Aura", test_key, 3, 1, update, nil, nil, check_enable_frame)
         else

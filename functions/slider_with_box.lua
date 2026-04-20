@@ -102,6 +102,10 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         end)
     end
 
+    container:SetScript("OnHide", function()
+        if debounce_timer then debounce_timer:Cancel(); debounce_timer = nil end
+    end)
+
     slider:SetScript("OnValueChanged", function(self, value)
         if db_table then
             db_table[db_key] = value

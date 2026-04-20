@@ -69,7 +69,7 @@ local function build_settings_page(parent)
     local reload_container, reload_btn, _ = addon.CreateCheckbox(
         parent,
         "Open on Reload",
-        Ls_Tweeks_DB.open_on_reload or false,
+        Ls_Tweeks_DB.open_on_reload == true,
         function(is_checked)
             Ls_Tweeks_DB.open_on_reload = is_checked
         end
