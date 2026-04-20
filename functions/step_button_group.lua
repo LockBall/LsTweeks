@@ -1,7 +1,7 @@
 local addon_name, addon = ...
 
 function addon.CreateStepButtonGroup(parent, button_height, on_increment, on_decrement)
-    local button_width = 18
+    local button_width = 22
     local vertical_gap = 2
     
     local group = CreateFrame("Frame", nil, parent)
@@ -11,7 +11,7 @@ function addon.CreateStepButtonGroup(parent, button_height, on_increment, on_dec
     plus:SetSize(button_width, button_height)
     plus:SetPoint("TOPLEFT", group, "TOPLEFT", 0, 0)
     plus:SetText("+")
-    plus:SetNormalFontObject("GameFontNormalSmall")
+    plus:SetNormalFontObject("GameFontNormalLarge")
     plus:SetScript("OnClick", function()
         if type(on_increment) == "function" then
             on_increment()
@@ -22,7 +22,7 @@ function addon.CreateStepButtonGroup(parent, button_height, on_increment, on_dec
     minus:SetSize(button_width, button_height)
     minus:SetPoint("TOPLEFT", plus, "BOTTOMLEFT", 0, -vertical_gap)
     minus:SetText("-")
-    minus:SetNormalFontObject("GameFontNormalSmall")
+    minus:SetNormalFontObject("GameFontNormalLarge")
     minus:SetScript("OnClick", function()
         if type(on_decrement) == "function" then
             on_decrement()

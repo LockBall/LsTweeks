@@ -210,10 +210,6 @@ function M.BuildSettings(parent)
             control:SetPoint("TOPLEFT", p, "TOPLEFT", x, base_y + y_offset)
         end
 
-        local function place_slider(control, slider_index)
-            local y = grid.row_start - (grid.content_rows * grid.row) - ((slider_index - 1) * grid.slider_row)
-            control:SetPoint("TOPLEFT", p, "TOPLEFT", grid.left, y)
-        end
 
         local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
             local container, checkbox, _ = addon.CreateCheckbox(
@@ -246,7 +242,7 @@ function M.BuildSettings(parent)
             return picker
         end
 
-        local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, slider_index, on_change)
+        local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, on_change)
             local slider = addon.CreateSliderWithBox(
                 addon_name..cat..name_suffix,
                 p,
@@ -259,7 +255,6 @@ function M.BuildSettings(parent)
                 M.defaults,
                 on_change or update
             )
-            place_slider(slider, slider_index)
             return slider
         end
 
@@ -386,14 +381,14 @@ function M.BuildSettings(parent)
             M.controls["timer_number_font_size_dropdown_"..cat] = timer_font_size
         end
 
-        -- SLIDERS SECTION: All in row 6, side by side
-        local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, 1, update)
+        -- SLIDERS SECTION: row 6, side by side
+        local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
         place_at(scale_slider, 6, "left")
 
-        local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 40, 0.1, data.spacing_key, 2)
+        local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 40, 0.1, data.spacing_key)
         place_at(spacing_slider, 6, "mid")
 
-        local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 100, 1, "max_icons_"..cat, 3, function()
+        local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 100, 1, "max_icons_"..cat, function()
             print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
         end)
         place_at(max_icons_slider, 6, "far")
