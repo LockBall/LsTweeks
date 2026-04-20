@@ -40,6 +40,7 @@ local function format_time(s)
     if s >= 3600 then return format("%d h", floor(s/3600)) end
     if s >= 60 then return format("%d m", floor(s/60)) end
     if s >= 5 then return format("%d s", floor(s)) end
+    if s >= 1 then return format("%.1f s", s) end
     return format("%.1f s", s)
 end
 M.format_time = format_time
