@@ -69,6 +69,18 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:SetScript("OnEvent", on_event)
 
+-- AUTO-OPEN on reload/login if the setting is enabled
+local f2 = CreateFrame("Frame")
+f2:RegisterEvent("PLAYER_ENTERING_WORLD")
+f2:SetScript("OnEvent", function(self, event, isInitialLogin, isReloadingUi)
+    if (isInitialLogin or isReloadingUi) and Ls_Tweeks_DB and Ls_Tweeks_DB.open_on_reload then
+        if addon.main_frame then
+            addon.main_frame:Show()
+        end
+    end
+    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+end)
+
 -- SLASH COMMANDS
 -- Primary command: /lt (short for L's Tweeks)
 SLASH_LSTWEEKS1 = "/lt"

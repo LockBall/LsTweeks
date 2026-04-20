@@ -3,7 +3,7 @@ local addon_name, addon = ...
 -- Shared slider with paired numeric input and reset button.
 function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback)
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(160, 100)
+    container:SetSize(130, 95)
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -13,25 +13,22 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     container:SetBackdropColor(0, 0, 0, 0.3)
     container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
 
-    -- Center the container horizontally in its parent (column)
-    if parent then
-        container:ClearAllPoints()
-        container:SetPoint("TOP", parent, "TOP", 0, 0)
-        container:SetPoint("LEFT", parent, "LEFT", (parent:GetWidth() - container:GetWidth())/2, 0)
-    end
-
     local control_gap = 5
+
+    local eb_font_size = 12
     local eb_width = 35
-    local eb_height = 10
+    local eb_height = 12
+    
     local reset_width = 42
     local reset_height = 20
-    local slider_width = 140
-    local button_size = 18
+
+    local slider_width = 120
+    local button_size = 24
     local slider_inset = 3
 
     local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")
     slider:SetSize(slider_width, 16)
-    slider:SetPoint("CENTER", container, "CENTER", 0, 0)
+    slider:SetPoint("CENTER", container, "CENTER", 0, -control_gap/2)
     slider:SetMinMaxValues(min_v, max_v)
     slider:SetValueStep(step)
     slider:SetObeyStepOnDrag(true)
@@ -50,14 +47,15 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     max_lbl:SetPoint("BOTTOMRIGHT", slider, "TOPRIGHT", -slider_inset, control_gap)
     max_lbl:SetText(max_v)
 
-
     -- Edit box centered below the slider
     local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
     eb:SetSize(eb_width, eb_height)
-    eb:SetPoint("BOTTOM", slider, "TOP", 0, control_gap)
+    eb:SetPoint("BOTTOM", slider, "TOP", 2, control_gap)
     eb:SetAutoFocus(false)
     eb:SetJustifyH("CENTER")
     eb:SetTextInsets(-4, 0, 0, 0)
+    local font, _, flags = eb:GetFont()
+    eb:SetFont(font, eb_font_size, flags)
 
     -- Minus and plus buttons under the slider, left and right
     local minus_btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
