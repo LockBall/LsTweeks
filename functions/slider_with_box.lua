@@ -3,7 +3,7 @@ local addon_name, addon = ...
 -- Shared slider with paired numeric input and reset button.
 function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback)
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(160, 85)
+    container:SetSize(160, 100)
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -13,45 +13,71 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     container:SetBackdropColor(0, 0, 0, 0.3)
     container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
 
-    local control_gap = 6
-    local eb_width = 42
+    -- Center the container horizontally in its parent (column)
+    if parent then
+        container:ClearAllPoints()
+        container:SetPoint("TOP", parent, "TOP", 0, 0)
+        container:SetPoint("LEFT", parent, "LEFT", (parent:GetWidth() - container:GetWidth())/2, 0)
+    end
+
+    local control_gap = 5
+    local eb_width = 35
+    local eb_height = 10
     local reset_width = 42
-    local slider_width = 100
-
-    local title = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOP", container, "TOP", 0, -4)
-    title:SetText(label_text)
-
-    local step_buttons = addon.CreateStepButtonGroup(container, 16,
-        function()
-            slider:SetValue(slider:GetValue() + step)
-        end,
-        function()
-            slider:SetValue(slider:GetValue() - step)
-        end
-    )
-    step_buttons:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -control_gap)
-
-    local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
-    eb:SetSize(eb_width, 20)
-    eb:SetPoint("TOPLEFT", step_buttons, "TOPRIGHT", 2*control_gap, 0)
-    eb:SetAutoFocus(false)
-    eb:SetJustifyH("CENTER")
-    eb:SetTextInsets(-4, 0, 0, 0) 
-
-    local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
-    reset:SetSize(reset_width, 16)
-    reset:SetPoint("LEFT", eb, "RIGHT", control_gap, 0)
-    reset:SetText("Reset")
-    reset:SetNormalFontObject("GameFontNormalSmall")   
+    local reset_height = 20
+    local slider_width = 140
+    local button_size = 18
+    local slider_inset = 3
 
     local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")
     slider:SetSize(slider_width, 16)
-    slider:SetPoint("TOPLEFT", eb, "BOTTOMLEFT", -control_gap, -control_gap)
+    slider:SetPoint("CENTER", container, "CENTER", 0, 0)
     slider:SetMinMaxValues(min_v, max_v)
     slider:SetValueStep(step)
     slider:SetObeyStepOnDrag(true)
     slider:SetValue((db_table and db_table[db_key]) or min_v)
+
+    local title = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    title:SetPoint("TOP", container, "TOP", 0, -control_gap)
+    title:SetText(label_text)
+
+    -- Min/Max labels above the slider
+    local min_lbl = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    min_lbl:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", slider_inset, control_gap)
+    min_lbl:SetText(min_v)
+
+    local max_lbl = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    max_lbl:SetPoint("BOTTOMRIGHT", slider, "TOPRIGHT", -slider_inset, control_gap)
+    max_lbl:SetText(max_v)
+
+
+    -- Edit box centered below the slider
+    local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
+    eb:SetSize(eb_width, eb_height)
+    eb:SetPoint("BOTTOM", slider, "TOP", 0, control_gap)
+    eb:SetAutoFocus(false)
+    eb:SetJustifyH("CENTER")
+    eb:SetTextInsets(-4, 0, 0, 0)
+
+    -- Minus and plus buttons under the slider, left and right
+    local minus_btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    minus_btn:SetSize(button_size, button_size)
+    minus_btn:SetText("-")
+    minus_btn:SetNormalFontObject("GameFontNormalLarge")
+    minus_btn:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", slider_inset, -control_gap)
+
+    local plus_btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    plus_btn:SetSize(button_size, button_size)
+    plus_btn:SetText("+")
+    plus_btn:SetNormalFontObject("GameFontNormalLarge")
+    plus_btn:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -slider_inset, -control_gap)
+
+    local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    reset:SetSize(reset_width, reset_height)
+    reset:SetPoint("TOP", slider, "BOTTOM", 0, -control_gap)
+    reset:SetText("Reset")
+    reset:SetNormalFontObject("GameFontNormalSmall")
+
 
     local function format_display_value(v)
         if step >= 1 then
@@ -61,17 +87,6 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end
 
     eb:SetText(format_display_value((db_table and db_table[db_key]) or min_v))
-
-    local low_lbl = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    low_lbl:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -2)
-    low_lbl:SetText(min_v)
-
-    local high_lbl = slider:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    high_lbl:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -2)
-    high_lbl:SetText(max_v)
-
-
-
 
 
     local function run_callback()
@@ -95,6 +110,16 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
             slider:SetValue(val)
         end
         self:ClearFocus()
+    end)
+
+    minus_btn:SetScript("OnClick", function()
+        local v = slider:GetValue() - step
+        slider:SetValue(math.max(min_v, v))
+    end)
+
+    plus_btn:SetScript("OnClick", function()
+        local v = slider:GetValue() + step
+        slider:SetValue(math.min(max_v, v))
     end)
 
     reset:SetScript("OnClick", function()
