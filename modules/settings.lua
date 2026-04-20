@@ -64,6 +64,18 @@ local function build_settings_page(parent)
     M.controls.checkbox_container = checkbox_container
     M.controls.checkbox = checkbox_btn
     M.controls.checkbox_label = checkbox_label
+
+    -- Open on Reload Checkbox
+    local reload_container, reload_btn, _ = addon.CreateCheckbox(
+        parent,
+        "Open on Reload",
+        Ls_Tweeks_DB.open_on_reload or false,
+        function(is_checked)
+            Ls_Tweeks_DB.open_on_reload = is_checked
+        end
+    )
+    reload_container:SetPoint("TOPLEFT", checkbox_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
+    M.controls.reload_checkbox = reload_btn
 end
 
 -- Module initializer

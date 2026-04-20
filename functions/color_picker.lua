@@ -1,11 +1,13 @@
 local addon_name, addon = ...
 
+local control_gap = 5
+
 -- UNIVERSAL COLOR PICKER WITH PAIRED RESET
 function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback)
 
     -- Container
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(185, 34) 
+    container:SetSize(95, 45) 
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -15,27 +17,27 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     container:SetBackdropColor(0, 0, 0, 0.3)
     container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
 
-    -- The Picker
+    -- Label (independent of button)
+    local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    label:SetPoint("TOPLEFT", container, "TOPLEFT", control_gap, -control_gap)
+    label:SetText(label_text)
+
+    -- Color Picker Button
     local button = CreateFrame("Button", nil, container, "BackdropTemplate")
     button:SetSize(18, 18)
-    button:SetPoint("LEFT", container, "LEFT", 12, 0)
+    button:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -control_gap)
     button:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameColorSwatch", 
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
         edgeSize = 8
     })
 
-    -- The Label
-    button.Text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    button.Text:SetPoint("LEFT", button, "RIGHT", 6, 0)
-    button.Text:SetText(label_text)
-
-    -- The Reset Button
+    -- Reset Button
     local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     reset:SetSize(45, 16)
-    reset:SetPoint("RIGHT", container, "RIGHT", -10, 0)
     reset:SetText("Reset")
     reset:SetNormalFontObject("GameFontNormalSmall")
+    reset:SetPoint("LEFT", button, "RIGHT", control_gap, 0)
 
     -- Local update helper
     local function apply_and_refresh(r, g, b, a)

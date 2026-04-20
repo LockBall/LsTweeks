@@ -15,7 +15,7 @@ local function create_main_frame()
 
     -- MAIN CONTAINER
     local frame = CreateFrame("Frame", "Ls_Tweeks_main_frame", UIParent, "BackdropTemplate")
-    frame:SetSize(760, 600)
+    frame:SetSize(900, 740) -- increased size for more controls, rows, and columns
     frame:SetPoint("CENTER")
     frame:Hide()
 
@@ -91,6 +91,7 @@ function addon.init_main_frame()
         if selected_button then selected_button:UnlockHighlight() end
         btn:LockHighlight()
         selected_button = btn
+        if Ls_Tweeks_DB then Ls_Tweeks_DB.last_open_module = name end
 
         -- Hide all current tabs
         for _, tab in pairs(frame.tabs) do
@@ -130,10 +131,17 @@ function addon.init_main_frame()
             y = y - 26
         end
 
-        -- If nothing is selected, default to the first category (typically About)
+        -- If nothing is selected, restore last open module or default to first
         if not selected_button and #frame.buttons > 0 then
-            local first_cat = addon.categories[1]
-            select_tab(first_cat.name, first_cat.builder, frame.buttons[1])
+            local target_idx = 1
+            local saved = Ls_Tweeks_DB and Ls_Tweeks_DB.last_open_module
+            if saved then
+                for i, cat in ipairs(addon.categories) do
+                    if cat.name == saved then target_idx = i; break end
+                end
+            end
+            local cat = addon.categories[target_idx]
+            select_tab(cat.name, cat.builder, frame.buttons[target_idx])
         end
     end
 
