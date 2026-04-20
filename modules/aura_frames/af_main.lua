@@ -16,31 +16,52 @@ local function add_debug_outline(frame, r, g, b, a)
     if not is_outline_enabled() then return end
     if not frame then return end
     local t = 1
+
+    local top = frame:CreateTexture(nil, "OVERLAY")
+    top:SetColorTexture(r, g, b, a)
+    top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    top:SetHeight(t)
+    top._is_outline = true
+
+    local bottom = frame:CreateTexture(nil, "OVERLAY")
+    bottom:SetColorTexture(r, g, b, a)
+    bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+    bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    bottom:SetHeight(t)
+    bottom._is_outline = true
+
+    local left = frame:CreateTexture(nil, "OVERLAY")
+    left:SetColorTexture(r, g, b, a)
+    left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+    left:SetWidth(t)
+    left._is_outline = true
+
+    local right = frame:CreateTexture(nil, "OVERLAY")
+    right:SetColorTexture(r, g, b, a)
+    right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    right:SetWidth(t)
+    right._is_outline = true
+end
+
 -- Called when the outlines setting changes; refresh all aura frames
 function M.refresh_section_outlines()
     for _, frame in pairs(M.frames or {}) do
         if frame and frame.icons then
             for _, obj in ipairs(frame.icons) do
-                -- Remove all previous outline textures (OVERLAY, 1px)
                 local slots = { obj.stack_slot, obj.name_slot, obj.timer_slot }
                 for _, slot in ipairs(slots) do
                     local regions = { slot:GetRegions() }
                     for _, region in ipairs(regions) do
-                        if region and region:GetObjectType() == "Texture" then
+                        if region and region._is_outline then
                             region:Hide()
                             region:SetTexture(nil)
-                            region:SetParent(nil) -- fully detach from frame
                         end
                     end
                 end
-            end
-        end
-    end
-    -- Re-add outlines if enabled
-    if is_outline_enabled() then
-        for _, frame in pairs(M.frames or {}) do
-            if frame and frame.icons then
-                for _, obj in ipairs(frame.icons) do
+                if is_outline_enabled() then
                     add_debug_outline(obj.stack_slot, 1, 0.4, 0, 0.9)
                     add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
                     add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
@@ -48,31 +69,6 @@ function M.refresh_section_outlines()
             end
         end
     end
-end
-
-    local top = frame:CreateTexture(nil, "OVERLAY")
-    top:SetColorTexture(r, g, b, a)
-    top:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-    top:SetHeight(t)
-
-    local bottom = frame:CreateTexture(nil, "OVERLAY")
-    bottom:SetColorTexture(r, g, b, a)
-    bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-    bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    bottom:SetHeight(t)
-
-    local left = frame:CreateTexture(nil, "OVERLAY")
-    left:SetColorTexture(r, g, b, a)
-    left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-    left:SetWidth(t)
-
-    local right = frame:CreateTexture(nil, "OVERLAY")
-    right:SetColorTexture(r, g, b, a)
-    right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-    right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    right:SetWidth(t)
 end
 
 M.NUMBER_FONT_OPTIONS = {

@@ -15,15 +15,15 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     checkbox:SetChecked(is_checked)
     
     -- Label
+    local gap = 4
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label:SetPoint("LEFT", checkbox, "RIGHT", gap, 0)
     label:SetText(label_text)
     label:SetTextColor(1, 1, 1, 1)
-    
+
     -- Calculate dynamic width based on label text
     local label_width = label:GetStringWidth()
     local checkbox_width = 24
-    local gap = 4
     local padding = 4
     local total_width = checkbox_width + gap + label_width + padding
     container:SetWidth(total_width)
