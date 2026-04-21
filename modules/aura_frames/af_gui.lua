@@ -338,13 +338,7 @@ function M.BuildSettings(parent)
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
 
         -- Row 3: Show Test Aura
-        if cat ~= "static" then
-            create_bound_checkbox("Show Test Aura", test_key, 3, 1, update, nil, nil, check_enable_frame)
-        else
-            create_bound_checkbox("Show Test Aura", test_key, 3, 1, update, nil, nil, check_enable_frame)
-            M.controls["timer_number_font_dropdown_"..cat] = nil
-            M.controls["timer_number_font_size_dropdown_"..cat] = nil
-        end
+        create_bound_checkbox("Show Test Aura", test_key, 3, 1, update, nil, nil, check_enable_frame)
 
         -- Row 4: Bar Mode and color pickers
         local bar_mode_key = "use_bars_"..cat
@@ -468,15 +462,15 @@ function M.sync_general_controls_from_db()
         debuffs:SetChecked(M.db.disable_blizz_debuffs)
     end
 
-    for _, cat in ipairs({ "static", "short", "long", "debuff" }) do
+    for _, cat in ipairs({ "short", "long", "debuff" }) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then
             font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro")
         end
 
-        local font_size_dropdown = M.controls["timer_number_font_size_dropdown_"..cat]
-        if font_size_dropdown and font_size_dropdown.SetValue then
-            font_size_dropdown:SetValue((M.get_timer_number_font_size and M.get_timer_number_font_size(cat)) or 10)
+        local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
+        if font_size_slider and font_size_slider.slider then
+            font_size_slider.slider:SetValue(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or 10)
         end
     end
 

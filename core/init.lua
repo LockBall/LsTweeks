@@ -82,8 +82,8 @@ f2:SetScript("OnEvent", function(self, event, isInitialLogin, isReloadingUi)
 end)
 
 -- SLASH COMMANDS
--- Primary command: /lt (short for L's Tweeks)
-SLASH_LSTWEEKS1 = "/lt"
+-- Primary command: /lst (short for L's Tweeks)
+SLASH_LSTWEEKS = "/lst"
 SlashCmdList["LSTWEEKS"] = function(msg)
     if addon.main_frame then
         if addon.main_frame:IsShown() then
