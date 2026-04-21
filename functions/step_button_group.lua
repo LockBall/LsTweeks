@@ -34,5 +34,3 @@ function addon.CreateStepButtonGroup(parent, button_height, on_increment, on_dec
 
     return group
 end
-
-addon.CreateStepButtonStack = addon.CreateStepButtonGroup
