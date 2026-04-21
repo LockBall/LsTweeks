@@ -15,12 +15,7 @@ local format = format                -- WoW global alias for string.format
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- Snap a logical coordinate to the nearest physical pixel boundary.
--- effective_scale = frame:GetEffectiveScale() at the call site.
-local function pixel_snap(value, effective_scale)
-    if not effective_scale or effective_scale == 0 then return floor(value + 0.5) end
-    return floor(value * effective_scale + 0.5) / effective_scale
-end
+
 
 -- Categorize aura by remaining time.
 -- remaining == nil means duration was secret; caller handles that case separately.
@@ -1127,27 +1122,23 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
         and 1
         or math_max(1, floor((frame_width - 12 + spacing) / icon_footprint))
 
-    -- Pixel-snap all sizes and offsets so glyphs land on integer pixel boundaries.
-    local eff_scale = self:GetEffectiveScale()
-    local function snap(v) return pixel_snap(v, eff_scale) end
-
     for i = 1, #self.icons do
         local obj = self.icons[i]
         obj:ClearAllPoints()
         obj.texture:ClearAllPoints()
 
         if use_bars then
-            local bar_h = snap(bar_layout.row_height)
-            local step  = snap(bar_h + spacing)
-            obj:SetSize(snap(frame_width - bar_layout.frame_inner_width_pad), bar_h)
+            local bar_h = bar_layout.row_height
+            local step  = bar_h + spacing
+            obj:SetSize(frame_width - bar_layout.frame_inner_width_pad, bar_h)
 
             if growth == "UP" then
-                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", snap(bar_layout.frame_inset), snap((i - 1) * step + bar_layout.frame_inset))
+                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", bar_layout.frame_inset, (i - 1) * step + bar_layout.frame_inset)
             else
-                obj:SetPoint("TOPLEFT", self, "TOPLEFT", snap(bar_layout.frame_inset), -snap((i - 1) * step + bar_layout.frame_inset))
+                obj:SetPoint("TOPLEFT", self, "TOPLEFT", bar_layout.frame_inset, -((i - 1) * step + bar_layout.frame_inset))
             end
 
-            obj.texture:SetSize(snap(bar_layout.icon_size), snap(bar_layout.icon_size))
+            obj.texture:SetSize(bar_layout.icon_size, bar_layout.icon_size)
             obj.texture:SetPoint("LEFT", obj, "LEFT", 0, 0)
 
             obj.bar:ClearAllPoints()
@@ -1262,10 +1253,6 @@ end
 local function set_height_for_growth(self, new_height, growth)
     if not self then return end
 
-    -- Snap new_height to a pixel boundary before comparing/applying.
-    local eff_scale = self:GetEffectiveScale()
-    new_height = pixel_snap(new_height, eff_scale)
-
     local old_height = self:GetHeight()
     if old_height == new_height then return end
     local delta = new_height - old_height
@@ -1305,10 +1292,6 @@ local function set_height_for_growth(self, new_height, growth)
             y = y + (delta * 0.5)
         end
     end
-
-    -- Snap the final position to a pixel boundary.
-    x = pixel_snap(x, eff_scale)
-    y = pixel_snap(y, eff_scale)
 
     self:ClearAllPoints()
     self:SetPoint(point, relative_to or UIParent, relative_point, x, y)

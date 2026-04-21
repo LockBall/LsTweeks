@@ -8,8 +8,6 @@ M.defaults = {
     interface_alpha = 0.5,
 }
 
--- Register with global module defaults registry
-global_module_defaults = global_module_defaults or {}
 addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.st = M.defaults
 

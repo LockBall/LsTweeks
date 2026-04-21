@@ -52,10 +52,10 @@ local function build_settings_page(parent)
     )
     checkbox_container:SetPoint("TOPLEFT", title, "BOTTOMLEFT", cfg.title_offset_x, cfg.section_offset_y)
 
-    -- Caption to explain /lt command
+    -- Caption to explain /lst command
     local caption = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     caption:SetPoint("LEFT", checkbox_container, "RIGHT", 25, 0)
-    caption:SetText("(Type |cff00ff00/lt|r to access addon when disabled)")
+    caption:SetText("(Type |cff00ff00/lst|r to access addon when disabled)")
     caption:SetTextColor(0.8, 0.8, 0.8, 1)
     M.controls.caption = caption
 
@@ -65,7 +65,7 @@ local function build_settings_page(parent)
     M.controls.checkbox_label = checkbox_label
 
     -- Open on Reload Checkbox
-    local reload_container, reload_btn, _ = addon.CreateCheckbox(
+    local reload_container, _, _ = addon.CreateCheckbox(
         parent,
         "Open on Reload",
         Ls_Tweeks_DB.open_on_reload or defaults.open_on_reload,
@@ -74,7 +74,6 @@ local function build_settings_page(parent)
         end
     )
     reload_container:SetPoint("TOPLEFT", checkbox_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
-    M.controls.reload_checkbox = reload_btn
 
     -- Alpha Slider for Interface Transparency
     local function apply_alpha()
@@ -92,7 +91,6 @@ local function build_settings_page(parent)
         apply_alpha
     )
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
-    M.controls.alpha_slider = alpha_slider
 
     apply_alpha()
 end

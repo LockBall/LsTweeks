@@ -1,8 +1,28 @@
 # LsTweeks — Claude Code Context
 
+## Changelog
+
+### 2026-04-21 (2)
+- Removed pixel snapping: deleted `pixel_snap` helper and all call sites in af_logic.lua (`snap()` local, `eff_scale` fetches, and three `pixel_snap` calls in `set_height_for_growth`)
+- Removed pixel snap rule from Architecture Rules in CLAUDE.md
+
+### 2026-04-21
+- Dead code pass: removed `CreateStepButtonStack` alias, `global_module_defaults` orphan global, stale `M.controls` refs in st_main, redundant static-category nil assignments in af_gui
+- Fixed `sync_general_controls_from_db`: now iterates `short/long/debuff` only (static has no font controls), corrected key from `font_size_dropdown` → `font_size_slider`, uses `slider:SetValue` for proper display sync
+- Updated slash command references in st_main.lua from `/lt` → `/lst` to match `SLASH_LSTWEEKS` in init.lua
+
+### 2026-04-20
+- Refactored `modules/settings.lua` → `modules/settings/st_defaults.lua` + `modules/settings/st_main.lua`
+- Added interface transparency slider to Settings tab; reset returns to default (0.5) correctly
+- Simplify pass: fixed `gap` forward-reference in checkbox.lua; added OnHide debounce cancel in slider_with_box; fixed `refresh_section_outlines` structural nesting in af_main; removed dead `place_centered_at` helper and `threshold_debounce` var from af_gui
+- af_main: texture removal now uses `._is_outline` tag + `Hide()`/`SetTexture(nil)` instead of `SetParent(nil)`
+- CLAUDE.md: added Layout Rules, Saved Variables map, af_gui layout system, Debug Outlines sections
+
+---
+
 ## What This Is
 **L's Tweeks** — a modular WoW UI addon (patch 12.0 / Interface 120000) by LockBall.  
-Slash command: `/lt`. SavedVariables: `Ls_Tweeks_DB`. Note the intentional "Tweeks" spelling throughout.
+Slash command: `/lst`. SavedVariables: `Ls_Tweeks_DB`. Note the intentional "Tweeks" spelling throughout.
 
 ## File Map
 ```
@@ -20,7 +40,9 @@ functions/
   step_button_group.lua — addon.CreateStepButtonGroup()
 modules/
   about.lua        — intro/version page
-  settings.lua     — minimap toggle
+  settings/
+    st_defaults.lua — default values for settings module (interface_alpha, minimap, open_on_reload)
+    st_main.lua     — minimap toggle, open-on-reload, interface transparency slider
   combat_text.lua  — hide portrait combat text
   aura_frames/
     af_defaults.lua  — all default config values, single source of truth
@@ -39,7 +61,6 @@ media/fonts/     — monospace TTFs: SourceCodePro, Inconsolata, JetBrainsMono, 
 - **Init pattern:** every module creates a loader frame, registers ADDON_LOADED, and unregisters after first fire.
 - **Hot paths:** cache WoW globals at file top — `local floor = math.floor`, `local GetTime = GetTime`, etc.
 - **Theme constants:** spacing, fonts, widths live in `addon.UI_THEME` (set in `core/init.lua`) — don't hardcode.
-- **Pixel snapping:** use the pixel_snap helper in af_logic for any sub-pixel positioning.
 - **Deferred batching:** UNIT_AURA events are bucketed at 0.05s; timer ticker runs at 0.1s.
 - **InCombatLockdown:** defer layout changes; never call protected WoW API during combat.
 
