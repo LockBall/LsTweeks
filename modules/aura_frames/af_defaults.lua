@@ -68,7 +68,7 @@ M.defaults = {
     timer_short     = true,
     bg_short        = false,
     scale_short     = 1.0,
-    spacing_short   = 0.5,
+    spacing_short   = 1.5,
     width_short     = 200,
     use_bars_short  = true,
     color_short     = { r = 0, g = 0.5, b = 1 },
