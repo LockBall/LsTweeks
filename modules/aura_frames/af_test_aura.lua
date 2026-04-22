@@ -79,7 +79,7 @@ function M.append_test_aura(aura_map, show_key, filter, short_threshold)
     aura_map["__test_preview__"] = M.build_test_aura_entry(show_key, filter, short_threshold)
 end
 
-function M.update_test_preview_display(obj, show_key, short_threshold, show_timer_text, use_bars, now)
+function M.update_test_preview_display(obj, show_key, short_threshold, show_timer_text, bar_mode, now)
     local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
 
     obj.aura_duration = duration
@@ -87,24 +87,39 @@ function M.update_test_preview_display(obj, show_key, short_threshold, show_time
     obj.aura_expiration = now + remaining
     obj.aura_scan_time = now
 
-    if count and count > 1 then
-        obj.count_text:SetText(count)
-        obj.count_text:Show()
-    else
-        obj.count_text:Hide()
-    end
-
-    if show_timer_text and duration > 0 then
-        obj.time_text:Show()
-        -- Use the shared timer formatter so preview always inherits the same
-        -- formatting behavior as live auras.
-        M.set_timer_text(obj.time_text, show_key:sub(6), remaining)
-    else
-        obj.time_text:Hide()
-    end
-
-    if use_bars and obj.bar and obj.bar:IsShown() then
+    -- Unify test aura display for all categories (short, long, debuff)
+    if bar_mode and obj.bar and obj.bar:IsShown() then
         obj.bar:SetMinMaxValues(0, duration)
         obj.bar:SetValue(remaining)
+        -- In bar mode: stack count shown inline with name if >1
+        if count and count > 1 then
+            obj.count_text:SetText(count)
+            obj.count_text:SetPoint("LEFT", obj.bar, "LEFT", 4, 0)
+            obj.count_text:Show()
+        else
+            obj.count_text:Hide()
+        end
+        if show_timer_text and duration > 0 then
+            obj.time_text:Show()
+            M.set_timer_text(obj.time_text, show_key:sub(6), remaining)
+        else
+            obj.time_text:Hide()
+        end
+    else
+        -- Icon mode: stack count at bottom-right if >1
+        if count and count > 1 then
+            obj.count_text:SetText(count)
+            obj.count_text:ClearAllPoints()
+            obj.count_text:SetPoint("BOTTOMRIGHT", obj, "BOTTOMRIGHT", 0, 1)
+            obj.count_text:Show()
+        else
+            obj.count_text:Hide()
+        end
+        if show_timer_text and duration > 0 then
+            obj.time_text:Show()
+            M.set_timer_text(obj.time_text, show_key:sub(6), remaining)
+        else
+            obj.time_text:Hide()
+        end
     end
 end

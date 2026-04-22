@@ -186,13 +186,13 @@ function M.tick_visible_icons(now)
         if frame:IsVisible() then
             local is_static_frame = (frame.category == "static")
             local show_timer_text = is_timer_text_enabled(M.db, frame.category)
-            local use_bars = M.db and M.db["use_bars_"..frame.category]
+            local bar_mode = M.db and M.db["bar_mode_"..frame.category]
             for i = 1, #frame.icons do
                 local obj = frame.icons[i]
                 if obj:IsShown() and is_static_frame then
                     obj.time_text:SetText("")
                 elseif obj:IsShown() and obj.is_test_preview then
-                    M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, use_bars, now)
+                    M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
                 elseif obj:IsShown() and obj.aura_index then
                     -- Enforce time_text visibility from the live setting each tick.
                     -- setup_layout is blocked in combat lockdown, so this is the only
@@ -851,7 +851,7 @@ end
 -- Render the aura_map into the icon pool.
 -- Uses C_UnitAuras.GetUnitAuraInstanceIDs for sort order (ElkBuffBars technique):
 -- the game provides a pre-sorted list of IDs; we display only those in our map.
-local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text)
+local function render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text)
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     -- Resolve sort parameters for GetUnitAuraInstanceIDs
     local sort_rule = Enum.UnitAuraSortRule.Default
@@ -934,7 +934,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
-        local need_live_duration = (not is_static_frame) and (show_timer_text or use_bars)
+        local need_live_duration = (not is_static_frame) and (show_timer_text or bar_mode)
         local live_duration = need_live_duration and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
         local live_remaining = live_duration and live_duration:GetRemainingDuration() or nil
         local need_live_count = entry.instance_id
@@ -974,7 +974,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
             -- Preserve combat behavior by showing it only when no safe fallback exists.
             stack_text = live_count
         end
-        if use_bars then
+        if bar_mode then
             obj.bar:Show()
             obj.bar:SetStatusBarColor(color.r, color.g, color.b)
             if obj.bar_bg then
@@ -1006,7 +1006,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
         -- Static frame buffs are effectively permanent; never display a timer string.
         if is_static_frame then
             obj.time_text:SetText("")
-            if use_bars then
+            if bar_mode then
                 obj.bar:SetMinMaxValues(0, 1)
                 obj.bar:SetValue(1)
             end
@@ -1036,7 +1036,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
                         obj.time_text:SetText("")
                     end
                 end
-                if use_bars and obj.bar and obj.bar.SetTimerDuration and Enum and Enum.StatusBarTimerDirection then
+                if bar_mode and obj.bar and obj.bar.SetTimerDuration and Enum and Enum.StatusBarTimerDirection then
                     obj.bar:SetTimerDuration(live_duration, nil, Enum.StatusBarTimerDirection.RemainingTime)
                 end
             elseif rem > 0 then
@@ -1045,7 +1045,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
                 else
                     obj.time_text:SetText("")
                 end
-                if use_bars then
+                if bar_mode then
                     if obj.bar and obj.bar.SetTimerDuration and Enum and Enum.StatusBarTimerDirection then
                         obj.bar:SetTimerDuration(live_duration, nil, Enum.StatusBarTimerDirection.RemainingTime)
                     else
@@ -1055,7 +1055,7 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
                 end
             else
                 obj.time_text:SetText("")
-                if use_bars then
+                if bar_mode then
                     obj.bar:SetMinMaxValues(0, 1)
                     obj.bar:SetValue(1)
                 end
@@ -1068,13 +1068,13 @@ local function render_aura_map(self, aura_map, use_bars, color, bar_bg_color, ma
                 else
                     obj.time_text:SetText("")
                 end
-                if use_bars then
+                if bar_mode then
                     obj.bar:SetMinMaxValues(0, entry.duration)
                     obj.bar:SetValue(rem)
                 end
             else
                 obj.time_text:SetText("")
-                if use_bars then
+                if bar_mode then
                     obj.bar:SetMinMaxValues(0, 1)
                     obj.bar:SetValue(1)
                 end
@@ -1097,7 +1097,7 @@ end
 -- ============================================================================
 -- LAYOUT ENGINE: Pre-calculates positions. Only runs out of combat or on init.
 
-function M.setup_layout(self, show_key, spacing_key, use_bars)
+function M.setup_layout(self, show_key, spacing_key, bar_mode)
     if not self or not self.icons then return end
 
     local db = M.db
@@ -1127,7 +1127,7 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
         obj:ClearAllPoints()
         obj.texture:ClearAllPoints()
 
-        if use_bars then
+        if bar_mode then
             local bar_h = bar_layout.row_height
             local step  = bar_h + spacing
             obj:SetSize(frame_width - bar_layout.frame_inner_width_pad, bar_h)
@@ -1199,10 +1199,11 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
             local row_idx = floor((i - 1) / icons_per_row)
             local row_h   = icon_size + spacing + 12
 
-            if growth == "DOWN" then
-                obj:SetPoint("TOPLEFT", self, "TOPLEFT", 6, -(row_idx * row_h + 6))
-            elseif growth == "UP" then
+            -- Always anchor according to growth direction, even for test/preview icon
+            if growth == "UP" then
                 obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 6, row_idx * row_h + 6)
+            elseif growth == "DOWN" then
+                obj:SetPoint("TOPLEFT", self, "TOPLEFT", 6, -(row_idx * row_h + 6))
             elseif growth == "LEFT" then
                 obj:SetPoint("TOPRIGHT", self, "TOPRIGHT",
                     -(col_idx * icon_footprint + 6), -(row_idx * row_h + 6))
@@ -1243,7 +1244,7 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
     end
 
     self._layout_cache = {
-        use_bars        = use_bars,
+        bar_mode        = bar_mode,
         show_timer_text = show_timer_text,
         icons_per_row   = icons_per_row,
         frame_width     = frame_width,
@@ -1309,7 +1310,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local db = M.db
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local category = show_key:sub(6)
-    local use_bars = db["use_bars_"..category]
+    local bar_mode = db["bar_mode_"..category]
     local frame_width = db["width_"..category] or 200
     local spacing = db[spacing_key] or 6
     local color = db["color_"..category] or {r=1, g=1, b=1}
@@ -1325,21 +1326,27 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local scale = db[scale_key] or 1.0
     self:SetScale(scale)
     local _pos = M.db.positions and M.db.positions[category]
+    local _width = db["width_"..category] or 200
+    local _height = self:GetHeight() or 50
+    if _width < 1 then _width = 200 end
+    if _height < 1 then _height = 50 end
+    -- Always enforce DB position and size, regardless of preview/test state
+    self:ClearAllPoints()
     if _pos then
-        self:ClearAllPoints()
-        -- Divide offsets by scale: SetPoint interprets them in the frame's own coordinate
-        -- space, so screen-pixel coordinates must be divided by scale to stay in place.
         self:SetPoint("TOPLEFT", UIParent, "CENTER", (_pos.x or 0) / scale, (_pos.y or 0) / scale)
+    else
+        self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, category == "debuff" and -25 or 75)
     end
+    self:SetSize(_width, _height)
 
     if not self._layout_cache
         or (self._layout_cache.frame_width ~= frame_width
-        or   self._layout_cache.use_bars    ~= use_bars
+        or   self._layout_cache.bar_mode    ~= bar_mode
         or   self._layout_cache.show_timer_text ~= show_timer_text
         or   self._layout_cache.spacing     ~= spacing
         or   self._layout_cache.growth      ~= growth
     ) then
-        M.setup_layout(self, show_key, spacing_key, use_bars)
+        M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
 
     local is_moving = db[move_key]
@@ -1360,7 +1367,18 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if is_moving and not db[show_key] and not preview_enabled then
-        set_height_for_growth(self, 44, growth)
+        -- Match minimum height for current mode (bar or icon)
+        local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category)) or 10
+        local bar_layout = get_bar_layout_params(timer_font_size)
+        local spacing = db[spacing_key] or 6
+        local bar_mode = db["bar_mode_"..category]
+        local min_height
+        if bar_mode then
+            min_height = (bar_layout.row_height or 18) + spacing + 12
+        else
+            min_height = (bar_layout.icon_size or 32) + spacing + 12
+        end
+        set_height_for_growth(self, min_height, growth)
         self:Show()
         return
     end
@@ -1391,15 +1409,16 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     local display_count = render_aura_map(
-        self, self._aura_map, use_bars, color, barBgC, max_limit, filter, sort_mode, show_timer_text
+        self, self._aura_map, bar_mode, color, barBgC, max_limit, filter, sort_mode, show_timer_text
     )
 
     -- Frame height (only safe to resize out of combat)
-    local new_height = 44
+    local lc0 = self._layout_cache
+    local new_height = bar_mode and ((lc0 and lc0.row_height or 18) + spacing + 12)
+                                 or  ((lc0 and lc0.icon_size or 32) + spacing + 12)
     if display_count > 0 then
-        local lc = self._layout_cache
-        if use_bars then
-            -- row_height from bar_layout + spacing per row, plus frame_inset top and bottom (6 * 2 = 12)
+        local lc = lc0
+        if bar_mode then
             local bar_row_h = lc and lc.row_height or 18
             new_height = display_count * (bar_row_h + spacing) + 12
         elseif lc and (lc.growth == "DOWN" or lc.growth == "UP") then

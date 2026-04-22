@@ -248,6 +248,10 @@ function M.BuildSettings(parent)
                     end
                     if on_change then
                         on_change(is_checked)
+                    elseif label == "Test Aura" then
+                        if is_checked then
+                            update()
+                        end
                     else
                         update()
                     end
@@ -319,6 +323,7 @@ function M.BuildSettings(parent)
                     M.db[data.show_key] = true
                 end
             end
+            update()
         end)
 
         -- move Reset
@@ -349,23 +354,25 @@ function M.BuildSettings(parent)
             if ys and ys.slider then ys.slider:SetValue(dPos.y) end
         end)
 
-        -- Test Aura
-        create_bound_checkbox("Test Aura", test_key, 1, 2, update, nil, nil, check_enable_frame)
-
         add_row_separator(1)
 
         -- Row 2
-        create_bound_checkbox("Enable Frame", data.show_key, 2, 1, nil, nil, uncheck_test_aura)
+        local enable_frame_container = select(1, create_bound_checkbox("Enable Frame", data.show_key, 2, 1, nil, nil, uncheck_test_aura))
+
+        -- Test Aura: stacked below Enable Frame in the same cell
+        local test_aura_container = select(1, create_bound_checkbox("Test Aura", test_key, 2, 1, update, nil, nil, check_enable_frame))
+        test_aura_container:ClearAllPoints()
+        test_aura_container:SetPoint("TOPLEFT", enable_frame_container, "BOTTOMLEFT", 0, 0)
 
         -- Frame background
-        create_bound_checkbox("Frame BG", data.bg_key, 2, 2)
+        create_bound_checkbox("Frame BG", data.bg_key, 2, 3)
 
         -- Frame BG color picker (second row, far-right)
-        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
+        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 4)
         add_row_separator(2)
 
         -- Row 3: Bar Mode and color pickers
-        local bar_mode_key = "use_bars_"..cat
+        local bar_mode_key = "bar_mode_"..cat
         create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
         create_bound_color_picker("color_"..cat, false, "Bar Color", 3, 2)
         create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
