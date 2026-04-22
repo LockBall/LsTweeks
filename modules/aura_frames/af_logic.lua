@@ -1249,6 +1249,7 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
         frame_width     = frame_width,
         spacing         = spacing,
         growth          = growth,
+        row_height      = bar_layout.row_height,
     }
 end
 
@@ -1394,7 +1395,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if display_count > 0 then
         local lc = self._layout_cache
         if use_bars then
-            new_height = display_count * (20 + spacing) + 12
+            -- row_height from bar_layout + spacing per row, plus frame_inset top and bottom (6 * 2 = 12)
+            local bar_row_h = lc and lc.row_height or 18
+            new_height = display_count * (bar_row_h + spacing) + 12
         elseif lc and (lc.growth == "DOWN" or lc.growth == "UP") then
             new_height = display_count * (32 + spacing + 12) + 6
         elseif lc and lc.icons_per_row then
