@@ -38,7 +38,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     title:SetPoint("TOP", container, "TOP", 0, -control_gap)
     title:SetText(label_text)
 
-    -- Min/Max labels above the slider
+    -- Min/Max labels
     local min_lbl = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     min_lbl:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", slider_inset, control_gap)
     min_lbl:SetText(min_v)
@@ -47,14 +47,14 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     max_lbl:SetPoint("BOTTOMRIGHT", slider, "TOPRIGHT", -slider_inset, control_gap)
     max_lbl:SetText(max_v)
 
-    -- Edit box centered below the slider
+    -- Edit box
     local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
     eb:SetSize(eb_width, eb_height)
-    eb:SetPoint("BOTTOM", slider, "TOP", 2, control_gap)
+    eb:SetPoint("TOP", title, "BOTTOM", 0, -1.5*control_gap)
     eb:SetAutoFocus(false)
     eb:SetJustifyH("CENTER")
     eb:SetTextInsets(-4, 0, 0, 0)
-    local font, _, flags = eb:GetFont()
+    local font, _, flags = eb:GetFont() 
     eb:SetFont(font, eb_font_size, flags)
 
     -- Minus and plus buttons under the slider, left and right

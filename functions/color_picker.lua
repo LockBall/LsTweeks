@@ -17,7 +17,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     container:SetBackdropColor(0, 0, 0, 0.3)
     container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
 
-    -- Label (independent of button)
+    -- Label
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     label:SetPoint("TOPLEFT", container, "TOPLEFT", control_gap, -control_gap)
     label:SetText(label_text)
