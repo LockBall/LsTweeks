@@ -1300,7 +1300,10 @@ local function set_height_for_growth(self, new_height, growth)
     self:SetPoint(point, relative_to or UIParent, relative_point, x, y)
 
     if M.db and M.db.positions and self.category then
-        M.db.positions[self.category] = { point = point, x = x, y = y }
+        local pos = M.db.positions[self.category]
+        pos.point = point
+        pos.x = x
+        pos.y = y
     end
 end
 
