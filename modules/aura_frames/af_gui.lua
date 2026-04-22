@@ -192,6 +192,7 @@ function M.BuildSettings(parent)
         -- col_width = centering zone within each column (controls how wide the center target is)
         local col_gap   = 150  -- adjust to spread or compress columns
         local col_width = 190  -- adjust independently from gap if needed
+        local row_gap   = 20   -- fixed space between rows; separators sit at half this
         local grid = {
             [1] = 0,
             [2] = col_gap,
@@ -200,6 +201,7 @@ function M.BuildSettings(parent)
             col_width = col_width,
             col_align = { "center", "center", "center", "center" },
             row_start = -20,
+            row_gap = row_gap,
             --             1   2   3   4   5   6
             row_heights = {40, 60, 60, 110, 110, 110},
             reset_btn_width = 110,
@@ -218,6 +220,10 @@ function M.BuildSettings(parent)
             local y = grid.row_start
             for i = 1, (row - 1) do
                 y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
+            end
+            -- valign="bottom": descend one more row height to land at the row's bottom edge
+            if opts.valign == "bottom" then
+                y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
             end
             local y_offset = grid.offsets[slot or "default"] or 0
             if opts.y_offset then y_offset = y_offset + opts.y_offset end
@@ -274,6 +280,18 @@ function M.BuildSettings(parent)
             return slider
         end
 
+        -- Draw a 1px horizontal separator at the bottom edge of the given row.
+        local function add_row_separator(row)
+            local line = p:CreateTexture(nil, "BACKGROUND") -- "BACKGROUND" keeps it behind all widgets
+            line:SetColorTexture(1, 1, 1, 0.08)             -- white at 8% alpha: subtle, not distracting
+            line:SetHeight(1)                                -- 1px tall = a hairline rule
+            -- place_at with valign="bottom" lands at the row's bottom edge, col 1 left-aligned (x=0).
+            -- y_offset of half row_gap centers the line in the fixed space between rows.
+            -- SetWidth spans the full grid: col 4 start + col_width = right edge of the last column.
+            place_at(line, row, 1, nil, {valign = "bottom", align = "left", y_offset = math.floor(grid.row_gap / 2)})
+            line:SetWidth(grid[4] + grid.col_width)
+        end
+
         -- Row 1
 
         -- move mode
@@ -309,6 +327,7 @@ function M.BuildSettings(parent)
 
         -- Growth Direction
         place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 1, 4, "dropdown")
+        add_row_separator(1)
 
         -- Row 2
 
@@ -340,12 +359,14 @@ function M.BuildSettings(parent)
 
         -- Frame BG color picker (second row, far-right)
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
+        add_row_separator(2)
 
         -- Row 3: Bar Mode and color pickers
         local bar_mode_key = "use_bars_"..cat
         create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
         create_bound_color_picker("color_"..cat, false, "Bar Color", 3, 2)
         create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
+        add_row_separator(3)
 
         -- Row 4: Timer Text, Font & Font Size
         if cat ~= "static" then
@@ -387,6 +408,7 @@ function M.BuildSettings(parent)
             place_at(font_size_slider, 4, 3)
             M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
         end
+        add_row_separator(4)
 
         -- Row 5: Scale and Spacing sliders
         local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
