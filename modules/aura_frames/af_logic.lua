@@ -70,7 +70,7 @@ local function get_bar_layout_params(timer_font_size)
         -- Outer bar row geometry and frame inset.
         frame_inset = 6,
         frame_inner_width_pad = 12,
-        row_height = 20,
+        row_height = 18,
 
         -- Icon + bar composition.
         icon_size = 18,
@@ -1171,9 +1171,11 @@ function M.setup_layout(self, show_key, spacing_key, use_bars)
             obj.name_text:ClearAllPoints()
             obj.name_text:SetPoint("LEFT", obj.name_slot, "LEFT", bar_layout.name_text_left_pad, 0)
             obj.name_text:SetPoint("RIGHT", obj.name_slot, "RIGHT", -bar_layout.name_text_right_pad, 0)
+            obj.name_text:SetJustifyV("MIDDLE")
             obj.name_text:Show()
 
             obj.time_text:ClearAllPoints()
+            obj.time_text:SetJustifyV("MIDDLE")
             obj.time_text:SetPoint(timer_anchor_point, obj.timer_slot, timer_anchor_point, 0, 0)
             obj.time_text:SetWidth(bar_timer_slot_width)
             obj.time_text:SetJustifyH(timer_text_align)

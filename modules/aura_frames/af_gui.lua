@@ -191,7 +191,7 @@ function M.BuildSettings(parent)
         -- col_gap  = distance between column start positions (moves columns apart/together)
         -- col_width = centering zone within each column (controls how wide the center target is)
         local col_gap   = 150  -- adjust to spread or compress columns
-        local col_width = 184  -- adjust independently from gap if needed
+        local col_width = 190  -- adjust independently from gap if needed
         local grid = {
             [1] = 0,
             [2] = col_gap,
@@ -201,7 +201,7 @@ function M.BuildSettings(parent)
             col_align = { "center", "center", "center", "center" },
             row_start = -20,
             --             1   2   3   4   5   6
-            row_heights = {40, 60, 40, 75, 110, 110},
+            row_heights = {40, 60, 60, 110, 110, 110},
             reset_btn_width = 110,
             offsets = {
                 default = 0,
@@ -282,27 +282,33 @@ function M.BuildSettings(parent)
         -- move Reset
         local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
         move_reset:SetSize(grid.reset_btn_width, 22)
-        place_at(move_reset, 1, 2)
+        place_at(move_reset, 1, 3)
         move_reset:SetText("Move Reset")
         move_reset:SetScript("OnClick", function()
             local dPos = M.defaults.positions[cat]
             local dMove = M.defaults[data.move_key]
+            local dWidth = M.defaults["width_"..cat] or 200
             M.db.positions[cat].point = dPos.point
             M.db.positions[cat].x = dPos.x
             M.db.positions[cat].y = dPos.y
             M.db[data.move_key] = dMove
+            M.db["width_"..cat] = dWidth
             move_cb:SetChecked(dMove)
             local f = M.frames[data.show_key]
 
             if f then
                 f:ClearAllPoints()
                 f:SetPoint(dPos.point, UIParent, dPos.point, dPos.x, dPos.y)
+                f:SetWidth(dWidth)
                 update()
             end
         end)
 
+        -- Test Aura
+        create_bound_checkbox("Test Aura", test_key, 1, 2, update, nil, nil, check_enable_frame)
+
         -- Growth Direction
-        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 1, 3, "dropdown")
+        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 1, 4, "dropdown")
 
         -- Row 2
 
@@ -335,21 +341,17 @@ function M.BuildSettings(parent)
         -- Frame BG color picker (second row, far-right)
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
 
-        -- Row 3: Show Test Aura
-        create_bound_checkbox("Show Test Aura", test_key, 3, 1, update, nil, nil, check_enable_frame)
-
-        -- Row 4: Bar Mode and color pickers
+        -- Row 3: Bar Mode and color pickers
         local bar_mode_key = "use_bars_"..cat
-        create_bound_checkbox("Bar Mode", bar_mode_key, 4, 1)
-        create_bound_color_picker("color_"..cat, false, "Bar Color", 4, 2)
-        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 4, 3)
+        create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
+        create_bound_color_picker("color_"..cat, false, "Bar Color", 3, 2)
+        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
 
-        
-        -- Row 5: Timer Text, Font & Font Size
+        -- Row 4: Timer Text, Font & Font Size
         if cat ~= "static" then
-            local timer_text_container = select(1, create_bound_checkbox("Timer Text", data.timer_key, 5, 1))
+            local timer_text_container = select(1, create_bound_checkbox("Timer Text", data.timer_key, 4, 1))
 
-            local timer_bold_container = select(1, create_bound_checkbox("Timer Bold", "timer_number_font_bold_"..cat, 5, 1, function()
+            local timer_bold_container = select(1, create_bound_checkbox("Timer Bold", "timer_number_font_bold_"..cat, 4, 1, function()
                 if M.apply_number_font_to_all then M.apply_number_font_to_all() end
                 update()
             end))
@@ -370,7 +372,7 @@ function M.BuildSettings(parent)
                 120 -- reduced width
             )
 
-            place_at(timer_font, 5, 2, nil, {width=120, y_offset=-15})
+            place_at(timer_font, 4, 2, nil, {width=120, y_offset=-15})
             M.controls["timer_number_font_dropdown_"..cat] = timer_font
 
             local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
@@ -382,21 +384,21 @@ function M.BuildSettings(parent)
                     update()
                 end
             )
-            place_at(font_size_slider, 5, 3)
+            place_at(font_size_slider, 4, 3)
             M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
         end
 
-        -- Row 6: Scale and Spacing sliders
+        -- Row 5: Scale and Spacing sliders
         local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
-        place_at(scale_slider, 6, 1)
+        place_at(scale_slider, 5, 1)
 
-        local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 40, 0.1, data.spacing_key)
-        place_at(spacing_slider, 6, 2)
+        local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, data.spacing_key)
+        place_at(spacing_slider, 5, 2)
 
         local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 100, 1, "max_icons_"..cat, function()
             print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
         end)
-        place_at(max_icons_slider, 6, 3)
+        place_at(max_icons_slider, 5, 3)
     end
 
     for i, data in ipairs(tab_data) do
