@@ -310,7 +310,16 @@ function M.BuildSettings(parent)
         end
 
         -- move mode
-        local _, move_cb = create_bound_checkbox("Move Mode", data.move_key, 1, 1)
+        local _, move_cb = create_bound_checkbox("Move Mode", data.move_key, 1, 1, function(is_checked)
+            if is_checked then
+                -- Also check Enable Frame if not already checked
+                local enable_cb = M.controls and M.controls[data.show_key]
+                if enable_cb and enable_cb.SetChecked and not enable_cb:GetChecked() then
+                    enable_cb:SetChecked(true)
+                    M.db[data.show_key] = true
+                end
+            end
+        end)
 
         -- move Reset
         local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
