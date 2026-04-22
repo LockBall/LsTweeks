@@ -11,7 +11,7 @@ local function is_outline_enabled()
     return Ls_Tweeks_DB and Ls_Tweeks_DB.show_bar_section_outlines
 end
 
--- Draw a simple 1px border using textures (safe alternative to Backdrop).
+-- Draw a simple 1px border using textures; used for debugging section boundaries in bar mode.
 local function add_debug_outline(frame, r, g, b, a)
     if not is_outline_enabled() then return end
     if not frame then return end
@@ -243,10 +243,16 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         tb:EnableMouse(true)
         tb:RegisterForDrag("LeftButton")
         tb:SetScript("OnDragStart", function() parent:StartMoving() end)
-        tb:SetScript("OnDragStop", function() 
-            parent:StopMovingOrSizing() 
-            local p, _, _, x, y = parent:GetPoint()
-            M.db.positions[parent.category] = { point = p, x = x, y = y }
+        tb:SetScript("OnDragStop", function()
+            parent:StopMovingOrSizing()
+            local cx, cy = parent:GetCenter()
+            local ucx, ucy = UIParent:GetCenter()
+            local x = math.floor(cx - ucx + 0.5)
+            local y = math.floor(cy - ucy + 0.5)
+            local pos = M.db.positions[parent.category]
+            pos.point = "CENTER"
+            pos.x = x
+            pos.y = y
         end)
         return tb
     end
@@ -505,6 +511,25 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_aura_frame("show_short",   "move_short",   "timer_short",  "bg_short",     "scale_short",  "spacing_short",    "Short",    false)
         M.create_aura_frame("show_long",    "move_long",    "timer_long",   "bg_long",      "scale_long",   "spacing_long",     "Long",     false)
         M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
+
+        -- Migrate any stored positions that are not CENTER-relative.
+        -- Old saves used whatever anchor WoW returned after drag (usually TOPLEFT).
+        -- Defer one frame so GetCenter() returns valid screen coordinates.
+        C_Timer.After(0, function()
+            local ucx, ucy = UIParent:GetCenter()
+            for show_key, frame in pairs(M.frames) do
+                local cat = show_key:sub(6)
+                local pos = M.db.positions and M.db.positions[cat]
+                if pos and pos.point ~= "CENTER" then
+                    local cx, cy = frame:GetCenter()
+                    if cx and cy then
+                        pos.x = math.floor(cx - ucx + 0.5)
+                        pos.y = math.floor(cy - ucy + 0.5)
+                        pos.point = "CENTER"
+                    end
+                end
+            end
+        end)
 
         -- Single shared ticker for all frames at 0.1s (ElkBuffBars rate).
         -- Logic is delegated so af_main stays focused on construction/bootstrap.

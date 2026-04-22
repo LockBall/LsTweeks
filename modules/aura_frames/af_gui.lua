@@ -411,17 +411,84 @@ function M.BuildSettings(parent)
         add_row_separator(4)
 
 
-        -- Row 5: Scale, Spacing, Growth Direction
+
+        -- Row 5: Scale, Spacing, X/Y Position sliders
         local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
         place_at(scale_slider, 5, 1)
 
         local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, data.spacing_key)
         place_at(spacing_slider, 5, 2)
 
+        -- X/Y Position sliders (fine-tune frame position).
+        -- Always anchors CENTER→CENTER so slider values are screen-center-relative,
+        -- consistent with the defaults and how drag saves position.
+        local function update_frame_position()
+            local pos = M.db.positions[cat]
+            local f = M.frames[data.show_key]
+            if f and pos then
+                f:ClearAllPoints()
+                f:SetPoint("CENTER", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+            end
+        end
+
+        -- X Position slider
+        local x_slider = addon.CreateSliderWithBox(
+            addon_name..cat.."XPosSlider",
+            p,
+            "X Position",
+            -1000, 1000, 1,
+            M.db.positions[cat], "x", M.defaults.positions[cat]
+        )
+        x_slider.slider:HookScript("OnValueChanged", update_frame_position)
+        place_at(x_slider, 5, 3)
+
+        -- Y Position slider
+        local y_slider = addon.CreateSliderWithBox(
+            addon_name..cat.."YPosSlider",
+            p,
+            "Y Position",
+            -1000, 1000, 1,
+            M.db.positions[cat], "y", M.defaults.positions[cat]
+        )
+        y_slider.slider:HookScript("OnValueChanged", update_frame_position)
+        place_at(y_slider, 5, 4)
+
         -- Growth Direction dropdown now in row 3, col 4, vertically centered
         place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
 
         add_row_separator(5)
+
+        -- Sync X/Y sliders to the frame's current position (called after a drag).
+        -- Defined here so it closes over x_slider/y_slider/cat.
+        local function sync_xy_sliders_to_frame()
+            local f = M.frames[data.show_key]
+            if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
+            local cx, cy = f:GetCenter()
+            local ucx, ucy = UIParent:GetCenter()
+            if cx and cy and ucx and ucy then
+                local x = math.floor(cx - ucx + 0.5)
+                local y = math.floor(cy - ucy + 0.5)
+                M.db.positions[cat].x = x
+                M.db.positions[cat].y = y
+                M.db.positions[cat].point = "CENTER"
+                x_slider.slider:SetValue(x)
+                y_slider.slider:SetValue(y)
+            end
+        end
+
+        -- Hook both title bars so dragging from either handle syncs the sliders.
+        local f = M.frames[data.show_key]
+        if f then
+            for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
+                if tb then
+                    local old_drag_stop = tb:GetScript("OnDragStop")
+                    tb:SetScript("OnDragStop", function(...)
+                        if old_drag_stop then old_drag_stop(...) end
+                        sync_xy_sliders_to_frame()
+                    end)
+                end
+            end
+        end
 
         -- Row 6: Max Icons slider
         local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 40, 1, "max_icons_"..cat, function()
