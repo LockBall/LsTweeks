@@ -6,70 +6,6 @@ local MAX_POOL_SIZE = 20 -- Default pool size
 local MIN_FRAME_WIDTH = 180
 local MIN_FRAME_HEIGHT = 44
 local format = string.format
--- Outline debug helper: now dynamic
-local function is_outline_enabled()
-    return Ls_Tweeks_DB and Ls_Tweeks_DB.show_bar_section_outlines
-end
-
--- bar mode, section debug border. Draw a simple 1px border using textures
-
-local function add_debug_outline(frame, r, g, b, a)
-    if not is_outline_enabled() or not frame then return end
-    local t = 1
-    -- Remove any existing outline textures first (avoid stacking)
-    local regions = { frame:GetRegions() }
-    for _, region in ipairs(regions) do
-        if region and region._is_outline then
-            region:Hide()
-            region:SetTexture(nil)
-        end
-    end
-    -- Draw new outline using a loop for each side
-    local outline_defs = {
-        { points = { {"TOPLEFT", 0, 0}, {"TOPRIGHT", 0, 0} }, size = { "Height", t } },
-        { points = { {"BOTTOMLEFT", 0, 0}, {"BOTTOMRIGHT", 0, 0} }, size = { "Height", t } },
-        { points = { {"TOPLEFT", 0, 0}, {"BOTTOMLEFT", 0, 0} }, size = { "Width", t } },
-        { points = { {"TOPRIGHT", 0, 0}, {"BOTTOMRIGHT", 0, 0} }, size = { "Width", t } },
-    }
-    for _, def in ipairs(outline_defs) do
-        local tex = frame:CreateTexture(nil, "OVERLAY")
-        tex:SetColorTexture(r, g, b, a)
-        tex:SetPoint(def.points[1][1], frame, def.points[1][1], def.points[1][2], def.points[1][3])
-        tex:SetPoint(def.points[2][1], frame, def.points[2][1], def.points[2][2], def.points[2][3])
-        tex["Set"..def.size[1]](tex, def.size[2])
-        tex._is_outline = true
-    end
-end
-
--- Called when the outlines setting changes; refresh all aura frames
-function M.refresh_section_outlines()
-    for _, frame in pairs(M.frames or {}) do
-        if frame and frame.icons then
-            for _, obj in ipairs(frame.icons) do
-                local slots = { obj.stack_slot, obj.name_slot, obj.timer_slot }
-                for _, slot in ipairs(slots) do
-                    local regions = { slot:GetRegions() }
-                    for _, region in ipairs(regions) do
-                        if region and region._is_outline then
-                            region:Hide()
-                            region:SetTexture(nil)
-                        end
-                    end
-                end
-                if is_outline_enabled() then
-                    local slot_colors = {
-                        {obj.stack_slot, 1, 0.4, 0, 0.9},
-                        {obj.name_slot, 0, 0.6, 1, 0.9},
-                        {obj.timer_slot, 0, 1, 0.3, 0.9},
-                    }
-                    for _, v in ipairs(slot_colors) do
-                        add_debug_outline(v[1], v[2], v[3], v[4], v[5])
-                    end
-                end
-            end
-        end
-    end
-end
 
 M.NUMBER_FONT_OPTIONS = {
     {
@@ -317,11 +253,11 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
         -- Stack slot: left zone of bar (stack count display area)
         obj.stack_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        add_debug_outline(obj.stack_slot, 1, 0.4, 0, 0.9)
+        M.add_debug_outline(obj.stack_slot, 1, 0.4, 0, 0.9)
 
         -- Name slot: middle zone of bar
         obj.name_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
+        M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
 
         -- Text - create as children of text_overlay so they render above the bar
         obj.name_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
@@ -334,7 +270,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         -- Timer slot: right zone of bar; timer text anchors here so glyph width
         -- changes do not affect the timer's reference position.
         obj.timer_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
+        M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
 
         obj.time_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
         M.apply_number_font_to_text(obj.time_text, category)
