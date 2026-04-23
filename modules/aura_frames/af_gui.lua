@@ -103,7 +103,7 @@ function M.BuildSettings(parent)
     local function build_frames_tab(p)
         -- Left tree sidebar
         local TREE_W         = 120
-        local TREE_H         = 575  -- height of the tree list; adjust to fit content
+        local TREE_H         = 465  -- height of the tree list; adjust to fit content
         local TREE_GAP_LEFT  = 2    -- space between panel left edge and tree frame (panel already has ~10px inherent offset from sidebar)
         local TREE_GAP_RIGHT = 10   -- space between tree right edge and grid content
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
@@ -357,27 +357,28 @@ function M.BuildSettings(parent)
         -- Grid Layout Configuration (row/column placement for controls)
         -- col_gap  = distance between column start positions (moves columns apart/together)
         -- col_width = centering zone within each column (controls how wide the center target is)
-        local col_gap   = 150  -- adjust to spread or compress columns
-        local col_width = 190  -- adjust independently from gap if needed
-        local row_gap   = 20   -- fixed space between rows; separators sit at half this
+        local col_gap    = 150  -- adjust to spread or compress columns
+        local col_width  = 190  -- adjust independently from gap if needed
+        local col_offset = -20  -- shift entire grid left (negative = left)
+        local row_gap    = 20   -- fixed space between rows; separators sit at half this
         local grid = {
-            [1] = 0,
-            [2] = col_gap,
-            [3] = col_gap * 2,
-            [4] = col_gap * 3,
+            [1] = col_offset,
+            [2] = col_gap + col_offset,
+            [3] = col_gap * 2 + col_offset,
+            [4] = col_gap * 3 + col_offset,
             col_width = col_width,
-            col_align = { "left", "center", "center", "center" },
+            col_align = { "center", "center", "center", "center" },
             row_start = -20,
             row_gap = row_gap,
-            --             1    2   3   4   5   6
-            row_heights = {110, 60, 60, 110, 110, 110},
+            --             1    2   3   4   5
+            row_heights = {110, 60, 60, 110, 110},
             reset_btn_width = 110,
             offsets = {
                 default = 0,
                 dropdown = 8,
                 picker = 4,
             },
-            content_rows = 6,
+            content_rows = 5,
         }
 
         local function place_at(control, row, column, slot, opts)
@@ -627,17 +628,20 @@ function M.BuildSettings(parent)
 
         add_row_separator(4)
 
-        -- Row 5: Scale, Spacing
+        -- Row 5: Scale, Spacing, Max Icons
         local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
         place_at(scale_slider, 5, 1)
 
         local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, data.spacing_key)
         place_at(spacing_slider, 5, 2)
 
-        -- Growth Direction dropdown now in row 3, col 4, vertically centered
-        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
+        local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 40, 1, "max_icons_"..cat, function()
+            print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
+        end)
+        place_at(max_icons_slider, 5, 4)
 
-        add_row_separator(5)
+        -- Growth Direction dropdown in row 3, col 4, vertically centered
+        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
 
         -- Sync X/Y sliders to the frame's current position (called after a drag).
         -- Defined here so it closes over x_slider/y_slider/cat.
@@ -671,12 +675,6 @@ function M.BuildSettings(parent)
                 end
             end
         end
-
-        -- Row 6: Max Icons slider
-        local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 40, 1, "max_icons_"..cat, function()
-            print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
-        end)
-        place_at(max_icons_slider, 6, 3)
     end
 
     for i, data in ipairs(tab_data) do
@@ -699,7 +697,7 @@ function M.BuildSettings(parent)
 
         local p = CreateFrame("Frame", nil, parent)
         p:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -80)
-        p:SetSize(parent:GetWidth() - 20, 500)
+        p:SetSize(parent:GetWidth() - 20, 50)  -- tab content panel: width fills parent, height controls grid/tree list visible area
         p:Hide()
 
         if data.is_general then
