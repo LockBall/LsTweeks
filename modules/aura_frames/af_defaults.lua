@@ -34,16 +34,6 @@ M.defaults = {
     timer_number_font = "source_code_pro",
     timer_number_font_size = 10,
     timer_number_font_bold = false,
-    -- ...
-    timer_number_alignment = "center",
-    timer_cell_align = "center",
-    timer_cell_outer_padding = 0,
-    timer_cell_inner_padding = 0,
-    timer_cell_vertical_padding = 0,
-    timer_cell_char_align = "center",
-    timer_cell_char_padding = 0,
-    timer_cell_text_pad_x = 0,
-    timer_cell_text_pad_y = 0,
 
     -- STATIC
     show_static     = false,

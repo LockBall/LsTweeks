@@ -83,11 +83,6 @@ function M.BuildSettings(parent)
         }
     end
 
-    local size_options = {}
-    for i = 8, 14, 2 do
-        size_options[#size_options + 1] = { value = i, text = tostring(i) }
-    end
-
     local tabs, panels = {}, {}
     local tab_data = {
         { name = "General", is_general = true },
@@ -611,11 +606,6 @@ function M.sync_general_controls_from_db()
         if cat_bold_cb and cat_bold_cb.SetChecked then
             cat_bold_cb:SetChecked(M.db["timer_number_font_bold_"..cat] or false)
         end
-    end
-
-    local timer_align_dropdown = M.controls["timer_number_alignment_dropdown"]
-    if timer_align_dropdown and timer_align_dropdown.SetValue then
-        timer_align_dropdown:SetValue(M.db.timer_number_alignment or "center")
     end
 
 end

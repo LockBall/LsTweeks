@@ -1417,16 +1417,15 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local new_height = bar_mode and ((lc0 and lc0.row_height or 18) + spacing + 12)
                                  or  ((lc0 and lc0.icon_size or 32) + spacing + 12)
     if display_count > 0 then
-        local lc = lc0
         if bar_mode then
-            local bar_row_h = lc and lc.row_height or 18
+            local bar_row_h = lc0 and lc0.row_height or 18
             new_height = display_count * (bar_row_h + spacing) + 12
-        elseif lc and (lc.growth == "DOWN" or lc.growth == "UP") then
-            local isz = (lc and lc.icon_size) or 32
+        elseif lc0 and (lc0.growth == "DOWN" or lc0.growth == "UP") then
+            local isz = lc0.icon_size or 32
             new_height = display_count * (isz + spacing + 12) + 6
-        elseif lc and lc.icons_per_row then
-            local isz = (lc and lc.icon_size) or 32
-            local rows = math_ceil(display_count / lc.icons_per_row)
+        elseif lc0 and lc0.icons_per_row then
+            local isz = lc0.icon_size or 32
+            local rows = math_ceil(display_count / lc0.icons_per_row)
             new_height = rows * (isz + spacing + 12) + 6
         else
             new_height = display_count * 44
