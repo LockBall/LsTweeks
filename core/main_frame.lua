@@ -15,7 +15,7 @@ local function create_main_frame()
 
     -- MAIN CONTAINER
     local frame = CreateFrame("Frame", "Ls_Tweeks_main_frame", UIParent, "BackdropTemplate")
-    frame:SetSize(1150, 780)
+    frame:SetSize(925, 625)
     frame:SetPoint("CENTER")
     frame:Hide()
 

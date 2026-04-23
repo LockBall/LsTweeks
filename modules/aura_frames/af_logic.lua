@@ -1201,11 +1201,14 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
 
             local col_idx = (i - 1) % icons_per_row
             local row_idx = floor((i - 1) / icons_per_row)
-            local row_h   = icon_size + spacing + 12
+            local timer_h = show_timer_text and 12 or 0
+            local row_h   = icon_size + spacing + timer_h
 
             -- Always anchor according to growth direction, even for test/preview icon
+            -- UP growth: lift icon by timer_h+2 so the timer slot fits inside the frame below it.
+            local up_offset = 6 + (timer_h > 0 and (timer_h + 2) or 0)
             if growth == "UP" then
-                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 6, row_idx * row_h + 6)
+                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 6, row_idx * row_h + up_offset)
             elseif growth == "DOWN" then
                 obj:SetPoint("TOPLEFT", self, "TOPLEFT", 6, -(row_idx * row_h + 6))
             elseif growth == "LEFT" then
@@ -1380,7 +1383,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         if bar_mode then
             min_height = (bar_layout.row_height or 18) + spacing + 12
         else
-            min_height = (bar_layout.icon_size or 32) + spacing + 12
+            local timer_h = show_timer_text and 12 or 0
+            local bot_pad = show_timer_text and 14 or 12
+            min_height = (bar_layout.icon_size or 32) + timer_h + bot_pad
         end
         set_height_for_growth(self, min_height, growth)
         self:Show()
@@ -1418,19 +1423,25 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     -- Frame height (only safe to resize out of combat)
     local lc = self._layout_cache
+    local icon_timer_h = show_timer_text and 12 or 0
+    -- Bottom pad: 6px below timer slot (timer sits 2px below icon + 12px tall = 14 total clearance
+    -- needed to give 6px breathing room); without timer, just 6px below the icon = 12 total (6+6).
+    local icon_bot_pad = show_timer_text and 14 or 12
+    -- Subtract trailing row-spacing: the last row has no following row, so its spacing
+    -- would otherwise inflate the bottom gap beyond the intended padding.
     local new_height = bar_mode and ((lc and lc.row_height or 18) + spacing + 12)
-                                 or  ((lc and lc.icon_size or 32) + spacing + 12)
+                                 or  ((lc and lc.icon_size or 32) + icon_timer_h + icon_bot_pad)
     if display_count > 0 then
         if bar_mode then
             local bar_row_h = lc and lc.row_height or 18
             new_height = display_count * (bar_row_h + spacing) + 12
         elseif lc and (lc.growth == "DOWN" or lc.growth == "UP") then
             local isz = lc.icon_size or 32
-            new_height = display_count * (isz + spacing + 12) + 6
+            new_height = display_count * (isz + spacing + icon_timer_h) - spacing + icon_bot_pad
         elseif lc and lc.icons_per_row then
             local isz = lc.icon_size or 32
             local rows = math_ceil(display_count / lc.icons_per_row)
-            new_height = rows * (isz + spacing + 12) + 6
+            new_height = rows * (isz + spacing + icon_timer_h) - spacing + icon_bot_pad
         else
             new_height = display_count * 44
         end
