@@ -84,12 +84,18 @@ function M.BuildSettings(parent)
     end
 
     local tabs, panels = {}, {}
+
+    -- Category definitions shared between the tree and grid builders
+    local frames_data = {
+        { name = "Static", show_key = "show_static", move_key = "move_static", timer_key = "timer_static", bg_key = "bg_static", scale_key = "scale_static", spacing_key = "spacing_static" },
+        { name = "Short",  show_key = "show_short",  move_key = "move_short",  timer_key = "timer_short",  bg_key = "bg_short",  scale_key = "scale_short",  spacing_key = "spacing_short" },
+        { name = "Long",   show_key = "show_long",   move_key = "move_long",   timer_key = "timer_long",   bg_key = "bg_long",   scale_key = "scale_long",   spacing_key = "spacing_long" },
+        { name = "Debuffs",show_key = "show_debuff", move_key = "move_debuff", timer_key = "timer_debuff", bg_key = "bg_debuff", scale_key = "scale_debuff", spacing_key = "spacing_debuff", is_debuff = true },
+    }
+
     local tab_data = {
         { name = "General", is_general = true },
-        { name = "Static", show_key = "show_static", move_key = "move_static", timer_key = "timer_static", bg_key = "bg_static", scale_key = "scale_static", spacing_key = "spacing_static" },
-        { name = "Short", show_key = "show_short", move_key = "move_short", timer_key = "timer_short", bg_key = "bg_short", scale_key = "scale_short", spacing_key = "spacing_short" },
-        { name = "Long", show_key = "show_long", move_key = "move_long", timer_key = "timer_long", bg_key = "bg_long", scale_key = "scale_long", spacing_key = "spacing_long" },
-        { name = "Debuffs", show_key = "show_debuff", move_key = "move_debuff", timer_key = "timer_debuff", bg_key = "bg_debuff", scale_key = "scale_debuff", spacing_key = "spacing_debuff", is_debuff = true }
+        { name = "Frames",  is_frames  = true },
     }
 
     local function build_general_tab(p)
@@ -409,16 +415,16 @@ function M.BuildSettings(parent)
         test_aura_container:SetPoint("TOPLEFT", enable_frame_container, "BOTTOMLEFT", 0, 0)
 
         -- Frame background
-        create_bound_checkbox("Frame BG", data.bg_key, 2, 3)
+        create_bound_checkbox("Frame BG", data.bg_key, 2, 2)
 
-        -- Frame BG color picker (second row, far-right)
-        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 4)
+        -- Frame BG color picker
+        create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
         add_row_separator(2)
 
         -- Row 3: Bar Mode and color pickers
         local bar_mode_key = "bar_mode_"..cat
         create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
-        create_bound_color_picker("color_"..cat, false, "Bar Color", 3, 2)
+        create_bound_color_picker("color_"..cat, true, "Bar Color", 3, 2)
         create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
         add_row_separator(3)
 
@@ -450,7 +456,7 @@ function M.BuildSettings(parent)
             place_at(timer_font, 4, 2, nil, {width=120, y_offset=-15})
             M.controls["timer_number_font_dropdown_"..cat] = timer_font
 
-            local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
+            local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Timer Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
                 M.defaults,
                 function()
                     if M.apply_number_font_to_all then
@@ -519,6 +525,172 @@ function M.BuildSettings(parent)
         place_at(max_icons_slider, 6, 3)
     end
 
+    local function build_frames_tab(p)
+        -- Left tree sidebar
+        local TREE_W = 160
+        local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
+        tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", 0, 0)
+        tree_frame:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 0, 0)
+        tree_frame:SetWidth(TREE_W)
+        tree_frame:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 10,
+            insets = { left = 2, right = 2, top = 2, bottom = 2 },
+        })
+        tree_frame:SetBackdropColor(0.08, 0.08, 0.08, 0.9)
+        tree_frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.6)
+        addon.alpha_affected_frames = addon.alpha_affected_frames or {}
+        table.insert(addon.alpha_affected_frames, { frame = tree_frame, r = 0.08, g = 0.08, b = 0.08 })
+        if addon.apply_interface_alpha then addon.apply_interface_alpha() end
+
+        -- Divider line between tree and content
+        local divider = p:CreateTexture(nil, "BACKGROUND")
+        divider:SetWidth(1)
+        divider:SetColorTexture(0.2, 0.2, 0.2, 1)
+        divider:SetPoint("TOPLEFT",    p, "TOPLEFT",    TREE_W, 0)
+        divider:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", TREE_W, 0)
+
+        -- Right content area
+        local content = CreateFrame("Frame", nil, p)
+        content:SetPoint("TOPLEFT",    p, "TOPLEFT",    TREE_W + 1, 0)
+        content:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", 0, 0)
+        content:SetFrameLevel(p:GetFrameLevel() + 1)
+
+        -- Lazy-built content panels, keyed by node string
+        local node_panels = {}
+        local current_panel = nil
+
+        local function show_node(key, builder)
+            if current_panel then current_panel:Hide() end
+            if not node_panels[key] then
+                local pnl = CreateFrame("Frame", nil, content)
+                pnl:SetAllPoints(content)
+                pnl:SetFrameLevel(content:GetFrameLevel() + 1)
+                builder(pnl)
+                node_panels[key] = pnl
+            end
+            node_panels[key]:Show()
+            current_panel = node_panels[key]
+            if M.db then M.db.last_frames_node = key end
+        end
+
+        -- Per-category placeholder builder for Aura List nodes
+        local function build_aura_list_placeholder(pnl, cat_name)
+            local lbl = pnl:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            lbl:SetPoint("CENTER", pnl, "CENTER")
+            lbl:SetText(cat_name .. " Aura List\n(Coming soon)")
+        end
+
+        -- Tree expand state (ephemeral, not persisted)
+        local expanded = { static = true, short = true, long = true, debuff = true }
+
+        -- Selection tracking: highlight the active node label gold, reset the previous to white
+        local selected_fs = nil
+        local SEL_COLOR   = { 1, 0.82, 0 }  -- gold
+        local NORM_COLOR  = { 1, 1,    1 }  -- white
+        local HOVER_COLOR = { 1, 1,  0.6 }  -- pale yellow on hover
+
+        local function set_selected(fs)
+            if selected_fs then selected_fs:SetTextColor(unpack(NORM_COLOR)) end
+            selected_fs = fs
+            if fs then fs:SetTextColor(unpack(SEL_COLOR)) end
+        end
+
+        -- Helper: button with a label; OnClick wired externally so callers can include set_selected
+        local function make_tree_btn(parent_f, label, x, y, w)
+            local btn = CreateFrame("Button", nil, parent_f)
+            btn:SetSize(w, 22)
+            btn:SetPoint("TOPLEFT", parent_f, "TOPLEFT", x, y)
+            local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            fs:SetPoint("LEFT", btn, "LEFT", 4, 0)
+            fs:SetText(label)
+            btn:SetScript("OnEnter", function()
+                if fs ~= selected_fs then fs:SetTextColor(unpack(HOVER_COLOR)) end
+            end)
+            btn:SetScript("OnLeave", function()
+                if fs ~= selected_fs then fs:SetTextColor(unpack(NORM_COLOR)) end
+            end)
+            return btn, fs
+        end
+
+        -- Build tree rows; also collect fs refs keyed by node for restore selection
+        local node_fs_map = {}
+        local y = -8
+        for _, data in ipairs(frames_data) do
+            local cat = data.show_key:sub(6)
+            local child_btns = {}
+
+            -- Expand/collapse arrow
+            local arrow_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
+            arrow_btn:SetSize(18, 18)
+            arrow_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", 4, y)
+            arrow_btn:SetNormalFontObject("GameFontNormalLarge")
+            local arrow_fs = arrow_btn:GetFontString()
+            arrow_fs:SetText(expanded[cat] and "-" or "+")
+
+            -- Category row button
+            local cat_w = TREE_W - 22 - 6
+            local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, 22, y, cat_w)
+            cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
+            node_fs_map[cat] = cat_fs
+            cat_btn:SetScript("OnClick", function()
+                set_selected(cat_fs)
+                show_node(cat, function(pnl) build_category_tab(pnl, data) end)
+            end)
+
+            y = y - 24
+
+            -- Child: Aura List
+            local aura_key = cat .. "_aura_list"
+            local aura_btn, aura_fs = make_tree_btn(tree_frame, "  Aura List", 28, y, TREE_W - 28 - 6)
+            node_fs_map[aura_key] = aura_fs
+            aura_btn:SetScript("OnClick", function()
+                set_selected(aura_fs)
+                show_node(aura_key, function(pnl) build_aura_list_placeholder(pnl, data.name) end)
+            end)
+            aura_btn:SetShown(expanded[cat])
+            table.insert(child_btns, aura_btn)
+
+            y = y - 24
+
+            -- Wire expand/collapse
+            local captured_child_btns = child_btns
+            arrow_btn:SetScript("OnClick", function()
+                expanded[cat] = not expanded[cat]
+                arrow_fs:SetText(expanded[cat] and "-" or "+")
+                for _, cb in ipairs(captured_child_btns) do
+                    cb:SetShown(expanded[cat])
+                end
+            end)
+        end
+
+        -- Restore last selected node, defaulting to first category
+        local last = (M.db and M.db.last_frames_node) or "static"
+        local restored = false
+        for _, data in ipairs(frames_data) do
+            local cat = data.show_key:sub(6)
+            if last == cat then
+                set_selected(node_fs_map[cat])
+                show_node(cat, function(pnl) build_category_tab(pnl, data) end)
+                restored = true
+                break
+            elseif last == cat .. "_aura_list" then
+                local aura_key = cat .. "_aura_list"
+                set_selected(node_fs_map[aura_key])
+                show_node(last, function(pnl) build_aura_list_placeholder(pnl, data.name) end)
+                restored = true
+                break
+            end
+        end
+        if not restored and #frames_data > 0 then
+            local data = frames_data[1]
+            local cat = data.show_key:sub(6)
+            set_selected(node_fs_map[cat])
+            show_node(cat, function(pnl) build_category_tab(pnl, data) end)
+        end
+    end
+
     for i, data in ipairs(tab_data) do
         local tab = CreateFrame("Button", addon_name.."Tab"..i, parent, "PanelTabButtonTemplate")
         tab:SetText(data.name)
@@ -539,21 +711,20 @@ function M.BuildSettings(parent)
 
         local p = CreateFrame("Frame", nil, parent)
         p:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -80)
-        p:SetSize(parent:GetWidth() - 20, 400)
+        p:SetSize(parent:GetWidth() - 20, 500)
         p:Hide()
 
         if data.is_general then
             build_general_tab(p)
-
-        else -- not in general
-            build_category_tab(p, data)
+        elseif data.is_frames then
+            build_frames_tab(p)
         end
 
         tabs[i], panels[i] = tab, p
     end
 
     PanelTemplates_SetNumTabs(parent, #tab_data)
-    local restore_tab = (M.db and M.db.last_tab_index) or 1
+    local restore_tab = math.min((M.db and M.db.last_tab_index) or 1, #tab_data)
     for i = 1, #tab_data do
         if i == restore_tab then
             panels[i]:Show()
