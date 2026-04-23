@@ -15,7 +15,7 @@ local function create_main_frame()
 
     -- MAIN CONTAINER
     local frame = CreateFrame("Frame", "Ls_Tweeks_main_frame", UIParent, "BackdropTemplate")
-    frame:SetSize(900, 740) -- increased size for more controls, rows, and columns
+    frame:SetSize(1150, 780)
     frame:SetPoint("CENTER")
     frame:Hide()
 
@@ -23,49 +23,64 @@ local function create_main_frame()
     frame:EnableMouse(true)
     frame:SetClampedToScreen(true)
 
+    -- Standard WoW dialog backdrop — border renders at the outer frame edge
     frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true, tileSize = 32, edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
     })
-    frame:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
-    frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    frame:SetBackdropColor(1, 1, 1, 0.95)
 
-    -- TITLE BAR
-    local title_bar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    -- Border insets from UI-DialogBox-Border (edgeSize 32): 12px top/sides, 11px bottom
+    local B = { t = 12, b = 11, l = 12, r = 12 }
+
+    -- Transparent drag handle — no backdrop so the frame border shows through
+    local title_bar = CreateFrame("Frame", nil, frame)
     title_bar:SetHeight(26)
-    title_bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
-    title_bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
-    title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-    title_bar:SetBackdropColor(0.12, 0.12, 0.12, 0.95)
+    title_bar:SetPoint("TOPLEFT",  frame, "TOPLEFT",  B.l,  -B.t)
+    title_bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -B.r, -B.t)
     title_bar:EnableMouse(true)
     title_bar:RegisterForDrag("LeftButton")
     title_bar:SetScript("OnDragStart", function() frame:StartMoving() end)
     title_bar:SetScript("OnDragStop", function() frame:StopMovingOrSizing() end)
-    
-    local title_text = title_bar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    title_text:SetPoint("CENTER", title_bar, "CENTER", 0, -1)
+
+    -- Title label: floating box centered on the top border, high frame level
+    local title_label = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    title_label:SetSize(120, 32)
+    title_label:SetPoint("CENTER", frame, "TOP", 0, -6)
+    title_label:SetFrameLevel(frame:GetFrameLevel() + 50)
+    title_label:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true, tileSize = 32, edgeSize = 16,
+        insets = { left = 6, right = 6, top = 6, bottom = 6 },
+    })
+    title_label:SetBackdropColor(0.10, 0.08, 0.02, 0.95)
+
+    local title_text = title_label:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title_text:SetPoint("CENTER")
     title_text:SetText("L's Tweeks")
+    title_text:SetTextColor(1, 0.82, 0)
 
     -- CLOSE BUTTON
     local close_button = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close_button:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
+    close_button:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -B.r, -B.t)
     close_button:SetScript("OnClick", function() frame:Hide() end)
 
     -- SIDEBAR (Left)
     local sidebar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    sidebar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -28)
+    sidebar:SetPoint("TOPLEFT",    frame, "TOPLEFT",  B.l, -(B.t + 26))
+    sidebar:SetPoint("BOTTOMLEFT", frame,     "BOTTOMLEFT",    B.l, B.b)
     sidebar:SetWidth(140)
-    sidebar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
     sidebar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
     sidebar:SetBackdropColor(0.10, 0.10, 0.10, 0.9)
     frame.sidebar = sidebar
 
     -- CONTENT AREA (Right)
     local content_area = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    content_area:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 1, 0)
-    content_area:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+    content_area:SetPoint("TOPLEFT",     sidebar, "TOPRIGHT",    0,    0)
+    content_area:SetPoint("BOTTOMRIGHT", frame,   "BOTTOMRIGHT", -B.r, B.b)
     content_area:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
     content_area:SetBackdropColor(0.08, 0.08, 0.08, 0.9)
     content_area:SetFrameLevel(frame:GetFrameLevel() + 1)

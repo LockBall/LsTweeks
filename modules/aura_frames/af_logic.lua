@@ -982,7 +982,7 @@ local function render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, ma
         end
         if bar_mode then
             obj.bar:Show()
-            obj.bar:SetStatusBarColor(color.r, color.g, color.b)
+            obj.bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
             if obj.bar_bg then
                 local bg = bar_bg_color or { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha }
                 obj.bar_bg:SetColorTexture(bg.r, bg.g, bg.b, bg.a or 1)

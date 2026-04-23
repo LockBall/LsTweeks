@@ -27,6 +27,8 @@ end
 
 -- The Data: strictly default values
 M.defaults = {
+    last_frames_node = "static",
+
     -- Global Toggles
     disable_blizz_buffs = false,
     disable_blizz_debuffs = false,
