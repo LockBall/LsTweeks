@@ -1,57 +1,68 @@
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
-local GRID_SIZE   = 20   -- matches Blizzard Edit Mode grid spacing
-local GRID_OFFSET_X = -1.5  -- shift grid center right (positive, no sign) or left (negative, -)
-local GRID_OFFSET_Y = -0.5  -- shift grid center up (positive, no sign) or down (negative, -)
+local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
+local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)
+local GRID_OFFSET_Y = -0.5  -- up (positive, no + sign) or down (negative)
 
 function M.build_grid_lines()
     local overlay = M.grid_overlay
     if not overlay then return end
 
-    if M.grid_lines then
-        for _, t in ipairs(M.grid_lines) do t:Hide() end
-    end
-    M.grid_lines = {}
-
-    local w  = UIParent:GetWidth()
-    local h  = UIParent:GetHeight()
+    local w   = UIParent:GetWidth()
+    local h   = UIParent:GetHeight()
     local ucx, ucy = UIParent:GetCenter()
-    local cx = math.floor(ucx - UIParent:GetLeft() + 0.5) + GRID_OFFSET_X
-    local cy = math.floor(UIParent:GetTop() - ucy + 0.5) - GRID_OFFSET_Y
+    local cx  = math.floor(ucx - UIParent:GetLeft() + 0.5) + GRID_OFFSET_X
+    local cy  = math.floor(UIParent:GetTop() - ucy  + 0.5) - GRID_OFFSET_Y
 
-    local lines = M.grid_lines
-    local function make_vline(x, alpha)
-        local t = overlay:CreateTexture(nil, "BACKGROUND")
-        t:SetColorTexture(1, 1, 1, alpha)
-        t:SetSize(1, h)
-        t:SetPoint("TOPLEFT", overlay, "TOPLEFT", x, 0)
-        lines[#lines + 1] = t
-    end
-    local function make_hline(y, alpha)
-        local t = overlay:CreateTexture(nil, "BACKGROUND")
-        t:SetColorTexture(1, 1, 1, alpha)
-        t:SetSize(w, 1)
-        t:SetPoint("TOPLEFT", overlay, "TOPLEFT", 0, -y)
-        lines[#lines + 1] = t
-    end
+    -- build flat list of line specs
+    local specs = {}
+    local function vspec(x, a) specs[#specs+1] = { v=true,  pos=x, alpha=a } end
+    local function hspec(y, a) specs[#specs+1] = { v=false, pos=y, alpha=a } end
 
-    make_vline(cx, 0.25)
-    make_hline(cy, 0.25)
-
+    vspec(cx, 0.25)
+    hspec(cy, 0.25)
     local step = GRID_SIZE
     while step <= math.max(cx, w - cx) + GRID_SIZE do
-        make_vline(cx + step, 0.10)
-        make_vline(cx - step, 0.10)
+        vspec(cx + step, 0.10)
+        vspec(cx - step, 0.10)
         step = step + GRID_SIZE
     end
     step = GRID_SIZE
     while step <= math.max(cy, h - cy) + GRID_SIZE do
-        make_hline(cy + step, 0.10)
-        make_hline(cy - step, 0.10)
+        hspec(cy + step, 0.10)
+        hspec(cy - step, 0.10)
         step = step + GRID_SIZE
+    end
+
+    -- Reuse pooled textures; only allocate when pool is exhausted.
+    -- WoW cannot destroy textures, so the pool grows to the high-water mark
+    -- and stabilises there — no unbounded accumulation across rebuilds.
+    M.grid_lines = M.grid_lines or {}
+    local pool = M.grid_lines
+    for i, s in ipairs(specs) do
+        local t = pool[i]
+        if not t then
+            t = overlay:CreateTexture(nil, "BACKGROUND")
+            pool[i] = t
+        else
+            t:ClearAllPoints()
+        end
+        t:SetColorTexture(1, 1, 1, s.alpha)
+        if s.v then
+            t:SetSize(1, h)
+            t:SetPoint("TOPLEFT", overlay, "TOPLEFT", s.pos, 0)
+        else
+            t:SetSize(w, 1)
+            t:SetPoint("TOPLEFT", overlay, "TOPLEFT", 0, -s.pos)
+        end
+        t:Show()
+    end
+    -- hide pool entries beyond what this layout needs
+    for i = #specs + 1, #pool do
+        pool[i]:Hide()
     end
 end
 

@@ -110,11 +110,10 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
     
-    -- Updated Backdrop for smoother color filling
     frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8", -- Use a flat white texture for clean coloring
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
-        tile = true, tileSize = 16, edgeSize = 12, -- Reduced edgeSize slightly for a sleeker look
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 }
     })
 
@@ -123,9 +122,6 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:SetClampedToScreen(true)
     if frame.SetResizeBounds then
         frame:SetResizeBounds(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
-    end
-    if frame.SetMinResize then
-        frame:SetMinResize(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
     end
     local initial_width = M.db["width_"..category] or 200
     if initial_width < MIN_FRAME_WIDTH then
@@ -444,7 +440,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_aura_frame("show_long",    "move_long",    "timer_long",   "bg_long",      "scale_long",   "spacing_long",     "Long",     false)
         M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
 
-        -- Migrate any stored positions that are not CENTER-relative.
         -- Migrate any stored positions to TOPLEFT-anchor format.
         -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
         C_Timer.After(0, function()
@@ -492,6 +487,7 @@ function M.on_reset_complete()
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     M.apply_number_font_to_all()
+    if M.set_grid_visible then M.set_grid_visible(M.db.show_grid == true) end
 
     if M.sync_general_controls_from_db then
         M.sync_general_controls_from_db()
