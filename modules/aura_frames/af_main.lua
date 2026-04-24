@@ -104,17 +104,6 @@ function M.apply_number_font_to_all()
 end
 
 -- safely copy default tables into saved variables without reference issues
-local function deep_copy(src, dest)
-    for k, v in pairs(src) do
-        if type(v) == "table" then
-            dest[k] = dest[k] or {}
-            deep_copy(v, dest[k])
-        else
-            if dest[k] == nil then dest[k] = v end
-        end
-    end
-end
-
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff)
     local category = show_key:sub(6)
@@ -401,7 +390,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.db.known_long_spell_ids   = M.db.known_long_spell_ids   or {}
 
         -- Populate missing settings using the defaults defined in af_defaults.lua
-        if M.defaults then deep_copy(M.defaults, M.db) end
+        if M.defaults then addon.apply_defaults(M.defaults, M.db) end
 
         if not M.db.timer_number_font then
             M.db.timer_number_font = "source_code_pro"

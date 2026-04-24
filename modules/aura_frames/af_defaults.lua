@@ -114,6 +114,10 @@ M.defaults = {
     timer_number_font_size_debuff = 10,
     timer_number_font_bold_debuff = false,
     
+    -- Runtime-learned spell classification tables (reset clears the learned set)
+    known_static_spell_ids = {},
+    known_long_spell_ids   = {},
+
     -- POSITIONS
     -- pos.x = left edge offset from screen center; pos.y = top edge offset from screen center
     positions = {
