@@ -741,6 +741,16 @@ function M.sync_general_controls_from_db()
         debuffs:SetChecked(M.db.enable_blizz_debuffs)
     end
 
+    local snap_cb = M.controls["snap_to_grid_checkbox"]
+    if snap_cb and snap_cb.SetChecked then
+        snap_cb:SetChecked(M.db.snap_to_grid == true)
+    end
+
+    local grid_cb = M.controls["show_grid_checkbox"]
+    if grid_cb and grid_cb.SetChecked then
+        grid_cb:SetChecked(M.db.show_grid == true)
+    end
+
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then
@@ -751,11 +761,6 @@ function M.sync_general_controls_from_db()
         if font_size_slider and font_size_slider.slider then
             font_size_slider.slider:SetValue(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or 10)
         end
-    end
-
-    local bold_cb = M.controls["timer_number_font_bold"]
-    if bold_cb and bold_cb.SetChecked then
-        bold_cb:SetChecked(M.db.timer_number_font_bold)
     end
 
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
