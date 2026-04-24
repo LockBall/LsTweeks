@@ -103,7 +103,6 @@ function M.apply_number_font_to_all()
     end
 end
 
--- safely copy default tables into saved variables without reference issues
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff)
     local category = show_key:sub(6)
@@ -178,6 +177,12 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             pos.point = "TOPLEFT"
             pos.x = math.floor(parent:GetLeft() - ucx + 0.5)
             pos.y = math.floor(parent:GetTop()  - ucy + 0.5)
+            if M.db and M.db.snap_to_grid and M.snap_to_grid then
+                pos.x = M.snap_to_grid(pos.x, false)
+                pos.y = M.snap_to_grid(pos.y, true)
+                parent:ClearAllPoints()
+                parent:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+            end
         end)
         return tb
     end
@@ -475,6 +480,8 @@ loader:SetScript("OnEvent", function(self, event, name)
         if addon.register_category and M.BuildSettings then
             addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end)
         end
+
+        M.create_grid_overlay()
 
         self:UnregisterEvent("ADDON_LOADED")
     end
