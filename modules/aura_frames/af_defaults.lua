@@ -37,6 +37,8 @@ M.defaults = {
     -- Global Toggles
     enable_blizz_buffs = true,
     enable_blizz_debuffs = true,
+    snap_to_grid   = false,
+    show_grid      = false,
     short_threshold = 60,
     timer_number_font = "source_code_pro",
     timer_number_font_size = 10,
