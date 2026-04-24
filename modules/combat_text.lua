@@ -133,7 +133,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 cb_container:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
 
                 -- Riveted panel & note
-                local panelWidth = math.min(theme.panel_max_width, parent:GetWidth() - theme.panel_margin)
+                local panelWidth = math.min(theme.panel_max_width, 741 - theme.panel_margin)
                 local notePanel, noteText = addon.CreateRivetedPanel(
                     parent,                -- parent frame
                     panelWidth,            -- width
@@ -163,9 +163,6 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local textHeight = noteText:GetHeight()
                 notePanel:SetHeight(math.max(theme.panel_min_height, textHeight + (pad * 2)))
 
-                -- Store references
-                M.controls.portraitNotePanel = notePanel
-                M.controls.portraitNoteText = noteText
             end)
         end
     

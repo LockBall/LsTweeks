@@ -36,15 +36,13 @@ local function build_about_page(parent)
     local title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
     title:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, cfg.title_offset_y)
     title:SetText(STRINGS.title)
-    M.controls.title = title
 
     local version = parent:CreateFontString(nil, "OVERLAY", theme.font_subtitle)
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, cfg.version_offset_y)
     version:SetText(STRINGS.version_label .. (addon.version or "0.1.0"))
-    M.controls.version = version
 
     -- Create riveted panel for description
-    local panelWidth = math.min(theme.panel_max_width, parent:GetWidth() - theme.panel_margin)
+    local panelWidth = math.min(theme.panel_max_width, 741 - theme.panel_margin)
     local descPanel, descText = addon.CreateRivetedPanel(
         parent,                 -- parent frame
         panelWidth,             -- width
@@ -74,9 +72,6 @@ local function build_about_page(parent)
     local textHeight = descText:GetHeight()
     descPanel:SetHeight(math.max(theme.panel_min_height, textHeight + (pad * 2)))
     
-    -- Store references
-    M.controls.descPanel = descPanel
-    M.controls.descText = descText
 end
 
 -- Module initializer

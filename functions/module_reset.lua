@@ -198,28 +198,23 @@ function addon.CreateGlobalReset(parent, db, defaults)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
 
-        -- Wipe and restore all module DBs from their registered defaults
-        if addon.module_defaults then
-            for mod_abbr, mod_defaults in pairs(addon.module_defaults) do
-                db[mod_abbr] = db[mod_abbr] or {}
-                table.wipe(db[mod_abbr])
-                for k, v in pairs(mod_defaults) do
-                    if type(v) == "table" then
-                        db[mod_abbr][k] = {}
-                        for subK, subV in pairs(v) do
-                            if type(subV) == "table" then
-                                db[mod_abbr][k][subK] = {}
-                                for innerK, innerV in pairs(subV) do
-                                    db[mod_abbr][k][subK][innerK] = innerV
-                                end
-                            else
-                                db[mod_abbr][k][subK] = subV
-                            end
+        -- Wipe and restore this module's DB from its defaults
+        table.wipe(db)
+        for k, v in pairs(defaults) do
+            if type(v) == "table" then
+                db[k] = {}
+                for subK, subV in pairs(v) do
+                    if type(subV) == "table" then
+                        db[k][subK] = {}
+                        for innerK, innerV in pairs(subV) do
+                            db[k][subK][innerK] = innerV
                         end
                     else
-                        db[mod_abbr][k] = v
+                        db[k][subK] = subV
                     end
                 end
+            else
+                db[k] = v
             end
         end
 

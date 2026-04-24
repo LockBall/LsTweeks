@@ -53,7 +53,6 @@ local function build_settings_page(parent)
     local title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
     title:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, cfg.title_offset_y)
     title:SetText(STRINGS.title)
-    M.controls.title = title
 
     -- Minimap Icon Checkbox
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}
@@ -76,12 +75,6 @@ local function build_settings_page(parent)
     caption:SetPoint("LEFT", checkbox_container, "RIGHT", 25, 0)
     caption:SetText("(Type |cff00ff00/lst|r to access addon when disabled)")
     caption:SetTextColor(0.8, 0.8, 0.8, 1)
-    M.controls.caption = caption
-
-    -- Store references
-    M.controls.checkbox_container = checkbox_container
-    M.controls.checkbox = checkbox_btn
-    M.controls.checkbox_label = checkbox_label
 
     -- Open on Reload Checkbox
     local reload_container, _, _ = addon.CreateCheckbox(
