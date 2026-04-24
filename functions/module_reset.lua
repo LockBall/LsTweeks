@@ -200,23 +200,7 @@ function addon.CreateGlobalReset(parent, db, defaults)
 
         -- Wipe and restore this module's DB from its defaults
         table.wipe(db)
-        for k, v in pairs(defaults) do
-            if type(v) == "table" then
-                db[k] = {}
-                for subK, subV in pairs(v) do
-                    if type(subV) == "table" then
-                        db[k][subK] = {}
-                        for innerK, innerV in pairs(subV) do
-                            db[k][subK][innerK] = innerV
-                        end
-                    else
-                        db[k][subK] = subV
-                    end
-                end
-            else
-                db[k] = v
-            end
-        end
+        addon.deep_copy_into(defaults, db)
 
         -- Universal Frame & UI Sync
         for moduleName, module in pairs(addon) do
