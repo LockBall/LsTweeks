@@ -355,8 +355,8 @@ function M.BuildSettings(parent)
             col_align = { "center", "center", "center", "center" },
             row_start = -20,
             row_gap = row_gap,
-            --             1    2   3   4   5
-            row_heights = {110, 60, 60, 110, 110},
+            -- row #       1    2   3   4   5
+            row_heights = {130, 60, 60, 110, 110},
             reset_btn_width = 110,
             offsets = {
                 default = 0,
@@ -519,10 +519,28 @@ function M.BuildSettings(parent)
         place_at(y_slider, 1, 3)
         place_at(width_slider, 1, 4)
 
-        -- move Reset: stacked below Move Mode in col 1
+        -- Snap to Grid / Show Grid: global toggles stacked below Move Mode
+        local snap_container, snap_btn, _ = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
+            function(is_checked)
+                M.db.snap_to_grid = is_checked
+            end
+        )
+        snap_container:SetPoint("TOPLEFT", move_mode_container, "BOTTOMLEFT", 0, -4)
+        M.controls.snap_to_grid_checkbox = snap_btn
+
+        local show_grid_container, show_grid_btn, _ = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
+            function(is_checked)
+                M.db.show_grid = is_checked
+                if M.set_grid_visible then M.set_grid_visible(is_checked) end
+            end
+        )
+        show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
+        M.controls.show_grid_checkbox = show_grid_btn
+
+        -- move Reset: stacked below Show Grid in col 1
         local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
         move_reset:SetSize(grid.reset_btn_width, 22)
-        move_reset:SetPoint("TOPLEFT", move_mode_container, "BOTTOMLEFT", 0, -6)
+        move_reset:SetPoint("TOPLEFT", show_grid_container, "BOTTOMLEFT", 0, -6)
         move_reset:SetText("Move Reset")
         move_reset:SetScript("OnClick", function()
             local dPos = M.defaults.positions[cat]
