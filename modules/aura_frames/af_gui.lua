@@ -536,7 +536,7 @@ function M.BuildSettings(parent)
             local f = M.frames[data.show_key]
             if f then
                 f:ClearAllPoints()
-                f:SetPoint("LEFT", UIParent, "CENTER", dPos.x, dPos.y)
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", dPos.x, dPos.y)
                 f:SetWidth(dWidth)
                 update()
             end
