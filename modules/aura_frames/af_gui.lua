@@ -723,7 +723,7 @@ function M.sync_general_controls_from_db()
         debuffs:SetChecked(not M.db.disable_blizz_debuffs)
     end
 
-    for _, cat in ipairs({ "short", "long", "debuff" }) do
+    for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then
             font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro")
@@ -740,7 +740,7 @@ function M.sync_general_controls_from_db()
         bold_cb:SetChecked(M.db.timer_number_font_bold)
     end
 
-    for _, cat in ipairs({ "short", "long", "debuff" }) do
+    for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local cat_bold_cb = M.controls["timer_number_font_bold_"..cat]
         if cat_bold_cb and cat_bold_cb.SetChecked then
             cat_bold_cb:SetChecked(M.db["timer_number_font_bold_"..cat] or false)

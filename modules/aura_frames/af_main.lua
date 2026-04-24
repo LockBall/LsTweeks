@@ -401,7 +401,7 @@ loader:SetScript("OnEvent", function(self, event, name)
 
         -- Migrate legacy global font settings to per-category settings.
         -- Static frame has no timer text, so it does not need per-category timer font settings.
-        for _, cat in ipairs({ "short", "long", "debuff" }) do
+        for _, cat in ipairs(M.TIMER_CATEGORIES) do
             local font_key = "timer_number_font_"..cat
             local size_key = "timer_number_font_size_"..cat
             if not M.db[font_key] then
@@ -425,7 +425,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 and c.r == 0.6 and c.g == 0.6 and c.b == 0.6
                 and (c.a == 0.25 or c.a == nil)
         end
-        for _, cat in ipairs({ "static", "short", "long", "debuff" }) do
+        for _, cat in ipairs(M.CATEGORIES) do
             local bg_key = "bar_bg_color_" .. cat
             if is_legacy_bar_bg(M.db[bg_key]) then
                 local fill = M.db["color_" .. cat] or { r = 1, g = 1, b = 1 }

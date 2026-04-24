@@ -12,6 +12,11 @@ M.frames = M.frames or {}
 M.controls = M.controls or {}
 M.db = M.db or {}
 
+-- Single source of truth for category iteration.
+-- Static has no timer controls, so it is excluded from TIMER_CATEGORIES.
+M.CATEGORIES       = { "static", "short", "long", "debuff" }
+M.TIMER_CATEGORIES = { "short", "long", "debuff" }
+
 -- Single source of truth for default background color and opacity.
 M.BAR_BG_ALPHA_DEFAULT = 0.50
 M.BAR_BG_GRAY_DEFAULT = 0.50
