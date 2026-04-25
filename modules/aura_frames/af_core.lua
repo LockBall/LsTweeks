@@ -23,8 +23,8 @@ function M.tick_visible_icons(now)
     for _, frame in pairs(M.frames) do
         if frame:IsVisible() then
             local is_static_frame = (frame.category == "static")
-            local show_timer_text = M.is_timer_text_enabled(db, frame.category)
-            local bar_mode = db and db["bar_mode_"..frame.category]
+            local show_timer_text = frame._show_timer_text
+            local bar_mode = frame._bar_mode
             for i = 1, #frame.icons do
                 local obj = frame.icons[i]
                 if obj:IsShown() and is_static_frame then
@@ -91,10 +91,6 @@ local function set_blizz_frame_state(frame, hide)
         frame:RegisterEvent("UNIT_AURA")
         frame:RegisterEvent("PLAYER_ENTERING_WORLD")
         frame:Show()
-        local refresh = frame.UpdateAuras or frame.UpdateLayout
-        if refresh then
-            C_Timer.After(0, function() refresh(frame) end)
-        end
     end
 end
 
@@ -122,6 +118,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local barBgC = db["bar_bg_color_"..category] or {r=color.r, g=color.g, b=color.b, a=bar_bg_alpha}
     local bgC = db["bg_color_"..category] or {r=0, g=0, b=0, a=0.5}
     local show_timer_text = M.is_timer_text_enabled(db, category, timer_key)
+    self._show_timer_text = show_timer_text
+    self._bar_mode = bar_mode
     local short_threshold = db.short_threshold or 60
     local growth = db["growth_"..category] or "DOWN"
     local max_limit = db["max_icons_"..category] or 40

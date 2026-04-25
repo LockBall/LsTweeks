@@ -232,7 +232,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.aura_icon       = entry.icon
         obj.aura_duration   = entry.duration
         obj.aura_remaining  = entry.remaining
-        obj.aura_expiration = entry.expiration
+        obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
+                              and (now + live_remaining)
+                              or entry.expiration
         obj.aura_scan_time  = now
         obj.aura_spell_id   = entry.spell_id
         obj.is_test_preview = entry.is_test_preview or false
