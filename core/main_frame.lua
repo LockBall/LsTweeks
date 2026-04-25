@@ -36,10 +36,12 @@ local function create_main_frame()
     local B = { t = 12, b = 11, l = 12, r = 12 }
 
     -- Transparent drag handle — no backdrop so the frame border shows through
-    local title_bar = CreateFrame("Frame", nil, frame)
+    local title_bar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     title_bar:SetHeight(26)
     title_bar:SetPoint("TOPLEFT",  frame, "TOPLEFT",  B.l,  -B.t)
     title_bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -B.r, -B.t)
+    title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+    title_bar:SetBackdropColor(0.12, 0.12, 0.12, 0.5)
     local title_bar_line = title_bar:CreateTexture(nil, "BACKGROUND")
     title_bar_line:SetHeight(1)
     title_bar_line:SetColorTexture(0.4, 0.4, 0.4, 0.8)
@@ -128,6 +130,7 @@ local function create_main_frame()
         end
     end)
 
+    frame.title_bar = title_bar
     addon.main_frame = frame
     return frame
 end
