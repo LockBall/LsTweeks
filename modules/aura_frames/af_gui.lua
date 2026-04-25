@@ -101,6 +101,7 @@ function M.BuildSettings(parent)
             is_debuff   = opts and opts.is_debuff,
         }
     end
+
     local frames_data = {
         make_cat("Static"),
         make_cat("Debuffs", { is_debuff = true }),
@@ -400,6 +401,9 @@ function M.BuildSettings(parent)
             content_rows = 5,
         }
 
+        
+        -- Anchors a control into the content grid. row/column index into grid.row_heights and grid[column].
+        -- slot offsets the Y by grid.offsets[slot] (e.g. "dropdown", "picker"). opts: align, valign, y_offset, width.
         local function place_at(control, row, column, slot, opts)
             if not control then return end
             opts = opts or {}
