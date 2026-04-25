@@ -68,6 +68,7 @@ local function build_settings_page(parent)
             addon.toggle_minimap_button(is_checked)
         end
     )
+    M.controls["minimap_checkbox"] = checkbox_btn
     checkbox_container:SetPoint("TOPLEFT", title, "BOTTOMLEFT", cfg.title_offset_x, cfg.section_offset_y)
 
     -- Caption to explain /lst command
@@ -77,7 +78,7 @@ local function build_settings_page(parent)
     caption:SetTextColor(0.8, 0.8, 0.8, 1)
 
     -- Open on Reload Checkbox
-    local reload_container, _, _ = addon.CreateCheckbox(
+    local reload_container, reload_btn, _ = addon.CreateCheckbox(
         parent,
         "Open on Reload",
         Ls_Tweeks_DB.open_on_reload or defaults.open_on_reload,
@@ -85,15 +86,36 @@ local function build_settings_page(parent)
             Ls_Tweeks_DB.open_on_reload = is_checked
         end
     )
+    M.controls["open_on_reload_checkbox"] = reload_btn
     reload_container:SetPoint("TOPLEFT", checkbox_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
 
     -- Alpha Slider for Interface Transparency
-    Ls_Tweeks_DB.interface_alpha = Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha
     local alpha_slider = addon.CreateSliderWithBox(
         addon_name.."AlphaSlider", parent, "Interface Transparency", 0.0, 1, 0.05, Ls_Tweeks_DB, "interface_alpha", defaults,
         apply_interface_alpha
     )
+    M.controls["alpha_slider"] = alpha_slider
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
+end
+
+function M.on_reset_complete()
+    if not Ls_Tweeks_DB then return end
+    local defaults = addon.module_defaults and addon.module_defaults.st or {}
+    addon.apply_defaults(defaults, Ls_Tweeks_DB)
+    apply_interface_alpha()
+
+    local minimap_cb = M.controls["minimap_checkbox"]
+    if minimap_cb and minimap_cb.SetChecked then
+        minimap_cb:SetChecked(not Ls_Tweeks_DB.minimap.hide)
+    end
+    local reload_cb = M.controls["open_on_reload_checkbox"]
+    if reload_cb and reload_cb.SetChecked then
+        reload_cb:SetChecked(Ls_Tweeks_DB.open_on_reload or false)
+    end
+    local alpha_slider = M.controls["alpha_slider"]
+    if alpha_slider and alpha_slider.slider then
+        alpha_slider.slider:SetValue(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
+    end
 end
 
 -- Module initializer
@@ -103,7 +125,7 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
         local defaults = addon.module_defaults and addon.module_defaults.st or {}
-        Ls_Tweeks_DB.interface_alpha = Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha
+        addon.apply_defaults(defaults, Ls_Tweeks_DB)
         if addon.register_category then
             addon.register_category(STRINGS.category_name, build_settings_page)
         end

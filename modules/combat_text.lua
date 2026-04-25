@@ -91,6 +91,16 @@ function M.update_combat_text()
     toggle_portrait_text(Ls_Tweeks_DB.combat_text)
 end
 
+function M.on_reset_complete()
+    if not Ls_Tweeks_DB then return end
+    addon.apply_defaults(defaults, Ls_Tweeks_DB)
+    M.update_combat_text()
+    local cb = M.controls["combat_text_checkbox"]
+    if cb and cb.SetChecked then
+        cb:SetChecked(Ls_Tweeks_DB.combat_text or false)
+    end
+end
+
 -- Module initializer - consolidated event handling
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
@@ -108,11 +118,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         
         -- Initialize Database Defaults
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-        for k, v in pairs(defaults) do
-            if Ls_Tweeks_DB[k] == nil then
-                Ls_Tweeks_DB[k] = v
-            end
-        end
+        addon.apply_defaults(defaults, Ls_Tweeks_DB)
         
         -- Register the GUI Category early to allow UI setup
         if addon.register_category then
@@ -129,6 +135,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                         M.update_combat_text()
                     end
                 )
+                M.controls["combat_text_checkbox"] = cb
                 cb_container:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
 
                 -- Riveted panel & note
