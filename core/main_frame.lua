@@ -45,6 +45,7 @@ local function create_main_frame()
     title_bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -B.r, -B.t)
     title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
     title_bar:SetBackdropColor(0.12, 0.12, 0.12, 0.5)
+
     local title_bar_line = title_bar:CreateTexture(nil, "BACKGROUND")
     title_bar_line:SetHeight(1)
     title_bar_line:SetColorTexture(0.4, 0.4, 0.4, 0.8)
@@ -86,6 +87,7 @@ local function create_main_frame()
     sidebar:SetWidth(140)
     sidebar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
     sidebar:SetBackdropColor(0.10, 0.10, 0.10, 0.9)
+
     local sidebar_line = sidebar:CreateTexture(nil, "BACKGROUND")
     sidebar_line:SetWidth(1)
     sidebar_line:SetColorTexture(0.4, 0.4, 0.4, 0.8)
@@ -137,9 +139,6 @@ local function create_main_frame()
     addon.main_frame = frame
     return frame
 end
-
--- ABOUT PAGE CONTENT
--- (Moved to modules/about.lua as a self-registering module)
 
 -- INITIALIZER (Dynamic Tab & Sidebar System)
 function addon.init_main_frame()
