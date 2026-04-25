@@ -60,6 +60,20 @@ local function make_entry(iid, name, icon, duration, expiration, spell_id, dispe
     }
 end
 
+-- Update an existing entry table in place (avoids allocation on unchanged auras).
+local function update_entry(entry, name, icon, duration, expiration, spell_id, dispel_name, rem, count, live_rem, live_cnt)
+    entry.name          = name
+    entry.icon          = icon
+    entry.duration      = duration
+    entry.expiration    = expiration
+    entry.spell_id      = spell_id
+    entry.dispel_name   = dispel_name
+    entry.remaining     = rem
+    entry.count         = count
+    entry.live_remaining = live_rem
+    entry.live_count     = live_cnt
+end
+
 local function get_entry_sort_id(entry)
     if type(entry.instance_id) == "number" then
         return entry.instance_id
@@ -169,9 +183,12 @@ function M.scan_helpful_shared(info, short_threshold, max_limit_hint)
     )
     local max_limit = math_max(max_limit_hint or 0, shared_max)
 
-    local new_map = {}
-    local new_cat_iid = {}
-    local new_cat_spell = {}
+    -- Update shared maps in place: track which IIDs are seen this scan,
+    -- then remove stale ones after the loop. Avoids wipe + full realloc.
+    local cur_map      = shared.map
+    local cur_cat_iid  = shared.category_by_iid
+    local cur_cat_spell = shared.category_by_spell
+    local seen_iids = {}
 
     local i, count = 1, 0
     while count < max_limit do
@@ -281,6 +298,8 @@ function M.scan_helpful_shared(info, short_threshold, max_limit_hint)
 
             local applications = aura.applications
             local stacks = (not issecretvalue(applications) and applications and applications > 1) and applications or 0
+            local need_live_count = (stacks == 0)
+            local live_count = need_live_count and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid) or nil
 
             local safe_duration = (not issecretvalue(duration)) and duration
                 or (old_entry and old_entry.duration)
@@ -299,28 +318,25 @@ function M.scan_helpful_shared(info, short_threshold, max_limit_hint)
                 safe_remaining = old_entry.remaining
             end
 
-            local key = make_order_key(aura.spellId, name, icon, "HELPFUL")
-            local recovered_added_at = (old_entry and old_entry.added_at)
-                or (key and old_added_by_key[key] or nil)
-
-            local entry = make_entry(
-                iid,
-                name,
-                icon,
-                safe_duration,
-                safe_expiration,
-                safe_spell_id,
-                dispel,
-                safe_remaining or 0,
-                stacks,
-                "HELPFUL",
-                recovered_added_at or GetTime()
-            )
-
-            new_map[iid] = entry
-            new_cat_iid[iid] = category
+            local entry = cur_map[iid]
+            if entry then
+                update_entry(entry, name, icon, safe_duration, safe_expiration,
+                    safe_spell_id, dispel, safe_remaining or 0, stacks, live_remaining, live_count)
+            else
+                local key = make_order_key(aura.spellId, name, icon, "HELPFUL")
+                local recovered_added_at = (old_entry and old_entry.added_at)
+                    or (key and old_added_by_key[key] or nil)
+                entry = make_entry(iid, name, icon, safe_duration, safe_expiration,
+                    safe_spell_id, dispel, safe_remaining or 0, stacks,
+                    "HELPFUL", recovered_added_at or GetTime())
+                entry.live_remaining = live_remaining
+                entry.live_count     = live_count
+                cur_map[iid] = entry
+            end
+            seen_iids[iid] = true
+            cur_cat_iid[iid] = category
             if safe_spell_id then
-                new_cat_spell[safe_spell_id] = category
+                cur_cat_spell[safe_spell_id] = category
             end
 
             if category == "show_static" and safe_spell_id and static_confirmed then
@@ -335,9 +351,24 @@ function M.scan_helpful_shared(info, short_threshold, max_limit_hint)
         end
     end
 
-    shared.map = new_map
-    shared.category_by_iid = new_cat_iid
-    shared.category_by_spell = new_cat_spell
+    -- Remove IIDs that were not seen in this scan pass.
+    for iid in pairs(cur_map) do
+        if not seen_iids[iid] then
+            cur_map[iid] = nil
+            cur_cat_iid[iid] = nil
+        end
+    end
+    -- Purge stale spell->category entries (a spell may have changed category).
+    for spell_id in pairs(cur_cat_spell) do
+        if not seen_iids[spell_id] then
+            -- spell_id key is used, not iid; only purge if no live entry holds it
+            local still_live = false
+            for _, entry in pairs(cur_map) do
+                if entry.spell_id == spell_id then still_live = true; break end
+            end
+            if not still_live then cur_cat_spell[spell_id] = nil end
+        end
+    end
     return shared
 end
 
@@ -361,9 +392,10 @@ function M.full_scan(aura_map, filter, show_key, short_threshold, max_limit, inf
         removed_count = #info.removedAuraInstanceIDs
     end
 
-    -- Snapshot pre-wipe so we can restore entries when fields turn secret
-    local old_map = {}
-    for iid, entry in pairs(aura_map) do old_map[iid] = entry end
+    -- Snapshot the pre-scan state without copying (we need old data for secret-field fallback).
+    -- Use a cheap alias; full_scan will update aura_map in place.
+    local old_map = aura_map  -- same table reference — we read before writing each slot
+    local seen_iids = {}
     local frame_had_removal = false
     if info and info.removedAuraInstanceIDs then
         for _, rid in ipairs(info.removedAuraInstanceIDs) do
@@ -374,7 +406,6 @@ function M.full_scan(aura_map, filter, show_key, short_threshold, max_limit, inf
         end
     end
     local old_added_by_key = build_added_by_key(old_map)
-    wipe(aura_map)
 
     local i, count = 1, 0
     while count < max_limit do
@@ -540,13 +571,13 @@ function M.full_scan(aura_map, filter, show_key, short_threshold, max_limit, inf
             if belongs then
                 -- Restore the previous entry when available (keeps full name/icon/duration from OOC).
                 -- New auras with entirely secret fields get a minimal stub.
-                local entry = old_map[iid]
-                if not entry then
+                if not old_map[iid] then
                     local key = make_order_key(aura.spellId, name, icon, filter)
                     local recovered_added_at = key and old_added_by_key[key] or nil
-                    entry = make_entry(iid, name, icon, 0, 0, safe_spell_id, dispel, 0, stacks, filter, recovered_added_at or GetTime())
+                    aura_map[iid] = make_entry(iid, name, icon, 0, 0, safe_spell_id, dispel, 0, stacks, filter, recovered_added_at or GetTime())
                 end
-                aura_map[iid] = entry
+                -- existing entry stays in place (already in aura_map)
+                seen_iids[iid] = true
                 count = count + 1
             end
         else
@@ -574,28 +605,40 @@ function M.full_scan(aura_map, filter, show_key, short_threshold, max_limit, inf
                 local safe_count = (not issecretvalue(applications) and applications and applications > 1) and applications
                     or (old_entry and old_entry.count)
                     or 0
+                local need_live_count = (safe_count == 0)
+                local live_count = need_live_count and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid) or nil
                 local safe_remaining = rem
                 if (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
                     safe_remaining = math_max(0, safe_expiration - GetTime())
                 elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
                     safe_remaining = old_entry.remaining
                 end
-                local key = make_order_key(aura.spellId, name, icon, filter)
-                local recovered_added_at = (old_entry and old_entry.added_at)
-                    or (key and old_added_by_key[key] or nil)
-                aura_map[iid] = make_entry(
-                    iid, name, icon,
-                    safe_duration, safe_expiration,
-                    safe_spell_id, dispel,
-                    safe_remaining or 0, safe_count, filter,
-                    recovered_added_at or GetTime()
-                )
+                if old_entry then
+                    update_entry(old_entry, name, icon, safe_duration, safe_expiration,
+                        safe_spell_id, dispel, safe_remaining or 0, safe_count, nil, live_count)
+                else
+                    local key = make_order_key(aura.spellId, name, icon, filter)
+                    local recovered_added_at = key and old_added_by_key[key] or nil
+                    local e = make_entry(iid, name, icon, safe_duration, safe_expiration,
+                        safe_spell_id, dispel, safe_remaining or 0, safe_count, filter,
+                        recovered_added_at or GetTime())
+                    e.live_count = live_count
+                    aura_map[iid] = e
+                end
+                seen_iids[iid] = true
 
                 if show_key == "show_static" and safe_spell_id then
                     M.db.known_static_spell_ids[safe_spell_id] = true
                 end
                 count = count + 1
             end
+        end
+    end
+
+    -- Remove IIDs that were not seen in this scan pass (aura expired/removed).
+    for iid in pairs(aura_map) do
+        if not seen_iids[iid] then
+            aura_map[iid] = nil
         end
     end
 end
