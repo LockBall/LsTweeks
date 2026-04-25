@@ -28,14 +28,17 @@ function M.tick_visible_icons(now)
             for i = 1, #frame.icons do
                 local obj = frame.icons[i]
                 if obj:IsShown() and is_static_frame then
-                    obj.time_text:SetText("")
+                    if obj.time_text._last_text ~= "" then
+                        obj.time_text:SetText("")
+                        obj.time_text._last_text = ""
+                    end
                 elseif obj:IsShown() and obj.is_test_preview then
                     M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
                 elseif obj:IsShown() and obj.aura_index then
                     if show_timer_text then
-                        obj.time_text:Show()
+                        if not obj.time_text:IsShown() then obj.time_text:Show() end
                     else
-                        obj.time_text:Hide()
+                        if obj.time_text:IsShown() then obj.time_text:Hide() end
                     end
                     local remaining
                     if obj.aura_expiration and obj.aura_expiration > 0 then
@@ -65,7 +68,10 @@ function M.tick_visible_icons(now)
                             obj.bar:SetValue(remaining)
                         end
                     elseif remaining == 0 then
-                        obj.time_text:SetText("")
+                        if obj.time_text._last_text ~= "" then
+                            obj.time_text:SetText("")
+                            obj.time_text._last_text = ""
+                        end
                     elseif live_remaining ~= nil and issecretvalue(live_remaining) then
                         if show_timer_text then
                             M.set_timer_text(obj.time_text, frame.category, live_remaining)
@@ -111,7 +117,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local db = M.db
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local category = show_key:sub(6)
-    local bar_mode = db["bar_mode_"..category]
+    local bar_mode_key = self._bar_mode_key or ("bar_mode_" .. category)
+    self._bar_mode_key = bar_mode_key
+    local bar_mode = db[bar_mode_key]
     local frame_width = db["width_"..category] or 200
     local spacing = db[spacing_key] or 6
     local color = db["color_"..category] or {r=1, g=1, b=1}
@@ -187,6 +195,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if db[show_key] or preview_enabled then self:Show() end
 
     if not self._aura_map then self._aura_map = {} end
+    self._sorted_ids_cache = nil  -- invalidate per-render sort cache
 
     if filter == "HELPFUL" then
         local shared = M.scan_helpful_shared(info, short_threshold, max_limit)

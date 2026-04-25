@@ -57,7 +57,10 @@ function M.set_timer_text(font_string, category, seconds)
     if not font_string then return end
 
     if seconds == nil then
-        font_string:SetText("")
+        if font_string._last_text ~= "" then
+            font_string:SetText("")
+            font_string._last_text = ""
+        end
         return
     end
 
@@ -65,20 +68,29 @@ function M.set_timer_text(font_string, category, seconds)
 
     if issecretvalue(seconds) then
         font_string:SetFormattedText("%.1f", seconds)
+        font_string._last_text = nil  -- secret value, can't cache
         return
     end
 
     if seconds <= 0 then
-        font_string:SetText("")
+        if font_string._last_text ~= "" then
+            font_string:SetText("")
+            font_string._last_text = ""
+        end
         return
     end
 
     local is_short = (category == "short" or category == "show_short")
+    local text
     if is_short then
         local rounded = floor((seconds * 10) + 0.5) / 10
-        font_string:SetText(format("%.1f", rounded))
+        text = format("%.1f", rounded)
     else
-        font_string:SetText(format_time(seconds))
+        text = format_time(seconds)
+    end
+    if font_string._last_text ~= text then
+        font_string:SetText(text)
+        font_string._last_text = text
     end
 end
 
@@ -149,7 +161,15 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     end
 
     local wow_filter = (filter == "HELPFUL") and "HELPFUL" or "HARMFUL"
-    local sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
+    local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
+    local sorted_ids
+    if self._sorted_ids_cache and self._sorted_ids_cache_key == cache_key then
+        sorted_ids = self._sorted_ids_cache
+    else
+        sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
+        self._sorted_ids_cache = sorted_ids
+        self._sorted_ids_cache_key = cache_key
+    end
 
     -- Build display list in game-sorted order, filtered to entries in this frame's map
     local list = {}
@@ -219,12 +239,10 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
+        local live_count = entry.live_count
         local need_live_duration = (not is_static_frame) and (show_timer_text or bar_mode)
         local live_duration = need_live_duration and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
-        local live_remaining = live_duration and live_duration:GetRemainingDuration() or nil
-        local need_live_count = entry.instance_id
-            and ((entry.count == nil) or issecretvalue(entry.count) or entry.count <= 1)
-        local live_count = need_live_count and C_UnitAuras.GetAuraApplicationDisplayCount("player", entry.instance_id)
+        local live_remaining = live_duration and live_duration:GetRemainingDuration() or entry.live_remaining
 
         obj.aura_index      = entry.instance_id
         obj.filter_type     = entry.filter
