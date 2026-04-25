@@ -83,7 +83,7 @@ end)
 
 -- SLASH COMMANDS
 -- Primary command: /lst (short for L's Tweeks)
-SLASH_LSTWEEKS = "/lst"
+SLASH_LSTWEEKS1 = "/lst"
 SlashCmdList["LSTWEEKS"] = function(msg)
     if addon.main_frame then
         if addon.main_frame:IsShown() then
