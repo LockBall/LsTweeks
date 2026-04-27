@@ -549,6 +549,7 @@ function M.build_custom_child_panel(p, entry)
 
     local cap_rows = {}
 
+    local ICON_SIZE = ROW_H - 2
     local function rebuild_cap_list()
         for _, row in ipairs(cap_rows) do row:Hide() end
         local ry = 0
@@ -559,9 +560,13 @@ function M.build_custom_child_panel(p, entry)
                 row:SetHeight(ROW_H)
                 row:SetScript("OnEnter", function(s) s.lbl:SetTextColor(1, 1, 0.6) end)
                 row:SetScript("OnLeave", function(s) s.lbl:SetTextColor(1, 1, 1) end)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(ICON_SIZE, ICON_SIZE)
+                row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
+                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                 row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.lbl:SetPoint("LEFT", row, "LEFT", 4, 0)
-                row.lbl:SetWidth(CAP_W - 55)
+                row.lbl:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
+                row.lbl:SetWidth(CAP_W - ICON_SIZE - 55)
                 row.lbl:SetJustifyH("LEFT")
                 row.lbl:SetWordWrap(false)
                 row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -572,14 +577,31 @@ function M.build_custom_child_panel(p, entry)
             row:SetWidth(CAP_W - 8)
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", cap_content, "TOPLEFT", 0, -ry)
-            row.lbl:SetText(item.name)
-            row.id_lbl:SetText(tostring(item.spell_id))
-            local sid, sname = item.spell_id, item.name
-            row:SetScript("OnClick", function()
-                if not entry.whitelist then entry.whitelist = {} end
-                entry.whitelist[sid] = sname
-                rebuild_whitelist()
-            end)
+            local sid, sname, sicon = item.spell_id, item.name, item.icon
+            if sicon then
+                row.icon:SetTexture(sicon)
+                row.icon:Show()
+            else
+                row.icon:SetTexture(nil)
+                row.icon:Hide()
+            end
+            if sid then
+                row.lbl:SetTextColor(1, 1, 1)
+                row.id_lbl:SetText(tostring(sid))
+                row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
+                row:SetScript("OnClick", function()
+                    if not entry.whitelist then entry.whitelist = {} end
+                    entry.whitelist[sid] = sname
+                    rebuild_whitelist()
+                end)
+            else
+                -- Name-only: pending backfill after combat ends.
+                row.lbl:SetTextColor(0.6, 0.6, 0.6)
+                row.id_lbl:SetText("...")
+                row.id_lbl:SetTextColor(0.4, 0.4, 0.4)
+                row:SetScript("OnClick", nil)
+            end
+            row.lbl:SetText(sname)
             row:Show()
             ry = ry + ROW_H
         end
@@ -598,24 +620,79 @@ function M.build_custom_child_panel(p, entry)
 
     local function do_capture_scan()
         local want_helpful = (entry.filter == "HELPFUL")
-        local seen = {}
-        for _, ae in pairs(M._aura_map or {}) do
-            if ae.is_helpful == want_helpful and ae.spell_id and not issecretvalue(ae.spell_id) then
-                local sid   = ae.spell_id
-                local sname = (ae.name and not issecretvalue(ae.name)) and tostring(ae.name) or ("Spell " .. tostring(sid))
-                if not seen[sid] then seen[sid] = sname end
+        -- Force a fresh unified scan so we don't read a stale map between UNIT_AURA events.
+        -- Reuses the same stamp-guard as af_core so back-to-back calls don't double-scan.
+        local now = GetTime()
+        if not M._last_unified_scan_time or (now - M._last_unified_scan_time) > 0.1 then
+            M.unified_scan(nil, M.db and M.db.short_threshold, nil, nil)
+            M._last_unified_scan_time = now
+        end
+        local seen_by_sid  = {}  -- sid  -> { name, icon }
+        local seen_by_iid  = {}  -- iid  -> { name, icon }  (no readable sid yet)
+        for iid, ae in pairs(M._aura_map or {}) do
+            if ae.is_helpful == want_helpful then
+                local sid  = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
+                -- name and icon may be secretvalues but are safe to display/render.
+                local name = ae.name
+                local icon = ae.icon
+                if sid then
+                    if not seen_by_sid[sid] then
+                        seen_by_sid[sid] = { name = name, icon = icon }
+                    end
+                elseif iid and name then
+                    seen_by_iid[iid] = { name = name, icon = icon }
+                end
             end
         end
+
         -- Accumulate: never prune captured auras mid-session so transient
         -- buffs/debuffs remain clickable after they expire.
-        local existing_ids = {}
-        for _, item in ipairs(cap_auras) do existing_ids[item.spell_id] = true end
-        for sid, sname in pairs(seen) do
+        local existing_ids  = {}
+        local existing_iids = {}
+        for _, item in ipairs(cap_auras) do
+            if item.spell_id then existing_ids[item.spell_id] = true end
+            if item.iid      then existing_iids[item.iid]     = true end
+        end
+        for sid, info in pairs(seen_by_sid) do
             if not existing_ids[sid] and #cap_auras < CAP_MAX then
-                table.insert(cap_auras, { spell_id = sid, name = sname })
+                table.insert(cap_auras, { spell_id = sid, name = info.name, icon = info.icon })
+            end
+        end
+        for iid, info in pairs(seen_by_iid) do
+            if not existing_iids[iid] and #cap_auras < CAP_MAX then
+                table.insert(cap_auras, { spell_id = nil, iid = iid, name = info.name, icon = info.icon })
             end
         end
         rebuild_cap_list()
+    end
+
+    -- After combat: backfill spell IDs and icons for iid-only entries captured during combat.
+    -- Post-combat M._aura_map entries have readable spell_id and icon.
+    local function backfill_spell_ids()
+        local info_by_iid = {}
+        for iid, ae in pairs(M._aura_map or {}) do
+            local sid  = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
+            local icon = ae.icon
+            if sid then info_by_iid[iid] = { sid = sid, icon = icon } end
+        end
+        local changed = false
+        local existing_ids = {}
+        for _, item in ipairs(cap_auras) do
+            if item.spell_id then existing_ids[item.spell_id] = true end
+        end
+        for _, item in ipairs(cap_auras) do
+            if not item.spell_id and item.iid then
+                local info = info_by_iid[item.iid]
+                if info and not existing_ids[info.sid] then
+                    item.spell_id = info.sid
+                    item.iid      = nil
+                    if not item.icon then item.icon = info.icon end
+                    existing_ids[info.sid] = true
+                    changed = true
+                end
+            end
+        end
+        if changed then rebuild_cap_list() end
     end
 
     -- Wire checkbox callback now that do_capture_scan is in scope
@@ -636,6 +713,14 @@ function M.build_custom_child_panel(p, entry)
     end)
 
     p:HookScript("OnHide", function() if cap_active then stop_capture() end end)
+
+    -- Backfill spell IDs for name-only entries captured during combat.
+    local regen_frame = CreateFrame("Frame")
+    regen_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    regen_frame:SetScript("OnEvent", function()
+        if #cap_auras > 0 then backfill_spell_ids() end
+    end)
+    p:HookScript("OnHide", function() regen_frame:UnregisterAllEvents() end)
 
     rebuild_whitelist()
     rebuild_cap_list()
