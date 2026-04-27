@@ -297,15 +297,35 @@ function M.build_custom_child_panel(p, entry)
     local id       = entry.id
     local show_key = "show_" .. id
 
-    local header = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    header:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -10)
-    header:SetText(entry.name .. " — Whitelist")
+    -- ----------------------------------------------------------------
+    -- 2-COLUMN GRID  (content panel p is ~653px wide)
+    -- col 1 (x=0,  w=300): controls then whitelist frame below them
+    -- col 2 (x=310, w=335): captured auras, full height
+    -- row 1 (y=-10):  header + aura type
+    -- row 2 (y=-70):  add by ID + capture checkbox + status
+    -- row 3 (y=-155): whitelist frame (col 1 only)
+    -- ----------------------------------------------------------------
+    local COL1_W = 300              -- col 1 width (controls + whitelist)
+    local COL  = { 0, COL1_W + 10 } -- col 1: controls+whitelist  col 2: captured auras
+    local ROW  = { 10, -20, -50, -75, -100, -130 }  -- 1:header  2:aura type  3:add by ID  4:capture mode  5:cap status  6:whitelist
+    local ROW_H = 22                -- height of a single list row
+    local WL_W  = 275               -- whitelist frame width
+    local WL_H  = 300               -- whitelist frame height
+    local CAP_W = 275               -- captured auras frame width
+    local CAP_H = 400               -- captured auras frame height (full height, matches tree list)
+
+    local function col_x(c) return COL[c] end
+    local function row_y(r) return ROW[r] end
 
     -- ----------------------------------------------------------------
-    -- BUFF / DEBUFF TOGGLE
+    -- COL 1, ROW 1: header + aura type
     -- ----------------------------------------------------------------
+    local header = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    header:SetPoint("TOP", p, "TOPLEFT", COL1_W / 2, row_y(1))
+    header:SetText(entry.name .. " — Whitelist")
+
     local filter_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    filter_lbl:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -14)
+    filter_lbl:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(2))
     filter_lbl:SetText("Aura Type:")
 
     local buff_btn   = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
@@ -314,8 +334,8 @@ function M.build_custom_child_panel(p, entry)
     debuff_btn:SetSize(70, 22)
     buff_btn:SetText("Buffs")
     debuff_btn:SetText("Debuffs")
-    buff_btn:SetPoint("LEFT", filter_lbl, "RIGHT", 5, 0)
-    debuff_btn:SetPoint("LEFT", buff_btn, "RIGHT", 5, 0)
+    buff_btn:SetPoint("LEFT",  filter_lbl, "RIGHT", 8, 0)
+    debuff_btn:SetPoint("LEFT", buff_btn,  "RIGHT", 6, 0)
 
     local function refresh_filter_btns()
         local is_buff = (entry.filter == "HELPFUL")
@@ -350,16 +370,64 @@ function M.build_custom_child_panel(p, entry)
     debuff_btn:SetScript("OnClick", function() switch_filter("HARMFUL") end)
 
     -- ----------------------------------------------------------------
-    -- WHITELIST PANEL
+    -- COL 1, ROW 2: capture mode checkbox + status
     -- ----------------------------------------------------------------
-    local WL_X  = 10
-    local WL_Y  = -130
-    local WL_W  = 280
-    local WL_H  = 280
-    local ROW_H = 22
+    local CAP_INTERVAL = 1.0
+    local CAP_MAX      = 20
+    local cap_active   = false
+    local cap_timer    = nil
+    local cap_auras    = {}
 
+    local cap_checkbox_container, cap_checkbox
+
+    -- FontString directly on p in OVERLAY so no Frame stacking issues
+    local cap_status = p:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    cap_status:SetWidth(150)
+    cap_status:SetJustifyH("LEFT")
+    cap_status:SetText("")
+    cap_status:SetTextColor(1, 0.8, 0, 1)
+
+    local function stop_capture()
+        cap_active = false
+        if cap_timer then cap_timer:Cancel(); cap_timer = nil end
+        cap_status:SetText("")
+        if cap_checkbox and cap_checkbox.SetChecked then cap_checkbox:SetChecked(false) end
+    end
+
+    -- ----------------------------------------------------------------
+    -- COL 1, ROW 2: add by spell ID
+    -- ----------------------------------------------------------------
+    local add_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    add_lbl:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(3))
+    add_lbl:SetText("Add by Spell ID:")
+
+    local id_box = CreateFrame("EditBox", nil, p, "InputBoxTemplate")
+    id_box:SetSize(80, 22)
+    id_box:SetPoint("LEFT", add_lbl, "RIGHT", 6, 0)
+    id_box:SetNumeric(true)
+    id_box:SetMaxLetters(8)
+    id_box:SetAutoFocus(false)
+
+    local add_id_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    add_id_btn:SetSize(46, 22)
+    add_id_btn:SetPoint("LEFT", id_box, "RIGHT", 4, 0)
+    add_id_btn:SetText("Add")
+
+    -- checkbox wired after do_capture_scan is defined; container placed here for layout
+    cap_checkbox_container, cap_checkbox = addon.CreateCheckbox(p, "Capture Mode", false, function() end)
+    cap_checkbox_container:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(4))
+
+    local cap_hint = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    cap_hint:SetPoint("LEFT",    cap_checkbox_container, "RIGHT",      6, 0)
+    cap_hint:SetText(string.format("(%d max)", CAP_MAX))
+
+    cap_status:SetPoint("LEFT", cap_hint, "RIGHT", 8, 0)
+
+    -- ----------------------------------------------------------------
+    -- COL 1, ROW 3: whitelist frame
+    -- ----------------------------------------------------------------
     local wl_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    wl_frame:SetPoint("TOPLEFT", p, "TOPLEFT", WL_X, WL_Y)
+    wl_frame:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(6))
     wl_frame:SetSize(WL_W, WL_H)
     wl_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
@@ -374,20 +442,15 @@ function M.build_custom_child_panel(p, entry)
     wl_title:SetPoint("TOP", wl_frame, "TOP", 0, -5)
     wl_title:SetText("Whitelist")
 
-    local wl_scroll = CreateFrame("ScrollFrame", nil, wl_frame, "UIPanelScrollFrameTemplate")
-    wl_scroll:SetPoint("TOPLEFT",     wl_frame, "TOPLEFT",     4, -20)
-    wl_scroll:SetPoint("BOTTOMRIGHT", wl_frame, "BOTTOMRIGHT", -24, 4)
-
-    local wl_content = CreateFrame("Frame", nil, wl_scroll)
-    wl_content:SetWidth(WL_W - 28)
-    wl_content:SetHeight(1)
-    wl_scroll:SetScrollChild(wl_content)
+    local wl_content = CreateFrame("Frame", nil, wl_frame)
+    wl_content:SetPoint("TOPLEFT",     wl_frame, "TOPLEFT",     4, -20)
+    wl_content:SetPoint("BOTTOMRIGHT", wl_frame, "BOTTOMRIGHT", -4,  4)
+    wl_content:SetClipsChildren(true)
 
     local wl_rows = {}
 
     local function rebuild_whitelist()
         for _, row in ipairs(wl_rows) do row:Hide() end
-
         local row_y   = 0
         local row_idx = 0
         for spell_id, spell_name in pairs(entry.whitelist or {}) do
@@ -396,47 +459,38 @@ function M.build_custom_child_panel(p, entry)
             if not row then
                 row = CreateFrame("Frame", nil, wl_content)
                 row:SetHeight(ROW_H)
-
                 row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 row.lbl:SetPoint("LEFT", row, "LEFT", 4, 0)
                 row.lbl:SetWidth(WL_W - 70)
                 row.lbl:SetJustifyH("LEFT")
                 row.lbl:SetWordWrap(false)
-
                 row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 row.id_lbl:SetPoint("LEFT", row.lbl, "RIGHT", 4, 0)
                 row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
-
                 row.del = CreateFrame("Button", nil, row, "UIPanelCloseButton")
                 row.del:SetSize(16, 16)
                 row.del:SetPoint("RIGHT", row, "RIGHT", -2, 0)
-
                 wl_rows[row_idx] = row
             end
-
-            row:SetWidth(wl_content:GetWidth())
+            row:SetWidth(WL_W - 8)
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", wl_content, "TOPLEFT", 0, -row_y)
             row.lbl:SetText(spell_name)
             row.id_lbl:SetText("[" .. tostring(spell_id) .. "]")
-
             local sid = spell_id
             row.del:SetScript("OnClick", function()
                 entry.whitelist[sid] = nil
                 rebuild_whitelist()
             end)
-
             row:Show()
             row_y = row_y + ROW_H
         end
-
         wl_content:SetHeight(math.max(1, row_y))
-
         if row_idx == 0 then
             if not wl_content._empty_lbl then
                 wl_content._empty_lbl = wl_content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
                 wl_content._empty_lbl:SetPoint("CENTER", wl_content, "CENTER", 0, -20)
-                wl_content._empty_lbl:SetText("Whitelist is empty.\nUse Capture or Add ID below.")
+                wl_content._empty_lbl:SetText("Whitelist is empty.\nUse Capture or Add ID.")
             end
             wl_content._empty_lbl:Show()
         else
@@ -446,24 +500,6 @@ function M.build_custom_child_panel(p, entry)
 
     p._rebuild_whitelist = rebuild_whitelist
 
-    -- ----------------------------------------------------------------
-    -- MANUAL SPELL ID ENTRY
-    -- ----------------------------------------------------------------
-    local add_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    add_lbl:SetPoint("TOPLEFT", wl_frame, "BOTTOMLEFT", 0, -10)
-    add_lbl:SetText("Add by Spell ID:")
-
-    local id_box = CreateFrame("EditBox", nil, p, "InputBoxTemplate")
-    id_box:SetSize(90, 22)
-    id_box:SetPoint("LEFT", add_lbl, "RIGHT", 8, 0)
-    id_box:SetNumeric(true)
-    id_box:SetMaxLetters(8)
-    id_box:SetAutoFocus(false)
-
-    local add_id_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    add_id_btn:SetSize(50, 22)
-    add_id_btn:SetPoint("LEFT", id_box, "RIGHT", 4, 0)
-    add_id_btn:SetText("Add")
     add_id_btn:SetScript("OnClick", function()
         local raw = id_box:GetNumber()
         if raw and raw > 0 then
@@ -488,21 +524,10 @@ function M.build_custom_child_panel(p, entry)
     id_box:SetScript("OnEnterPressed", function() add_id_btn:Click() end)
 
     -- ----------------------------------------------------------------
-    -- CAPTURE MODE
+    -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
-    local CAP_INTERVAL = 1.0
-    local CAP_MAX      = 20
-
-    local cap_active = false
-    local cap_timer  = nil
-
-    local CAP_X   = WL_X + WL_W + 16
-    local CAP_W   = 275
-    local CAP_TOP = 10   -- aligns with TREE_TOP_Y in af_gui.lua
-    local CAP_H   = 480   -- TREE_H from af_gui.lua
-
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT", p, "TOPLEFT", CAP_X, CAP_TOP)
+    cap_frame:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(2), row_y(1))
     cap_frame:SetSize(CAP_W, CAP_H)
     cap_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
@@ -517,25 +542,16 @@ function M.build_custom_child_panel(p, entry)
     cap_header:SetPoint("TOP", cap_frame, "TOP", 0, -5)
     cap_header:SetText("Captured Auras")
 
-    local cap_status = cap_frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    cap_status:SetPoint("TOPRIGHT", cap_frame, "TOPRIGHT", -6, -5)
-    cap_status:SetText("")
+    local cap_content = CreateFrame("Frame", nil, cap_frame)
+    cap_content:SetPoint("TOPLEFT",     cap_frame, "TOPLEFT",     4, -20)
+    cap_content:SetPoint("BOTTOMRIGHT", cap_frame, "BOTTOMRIGHT", -4,  4)
+    cap_content:SetClipsChildren(true)
 
-    local cap_scroll = CreateFrame("ScrollFrame", nil, cap_frame, "UIPanelScrollFrameTemplate")
-    cap_scroll:SetPoint("TOPLEFT",     cap_frame, "TOPLEFT",     4, -20)
-    cap_scroll:SetPoint("BOTTOMRIGHT", cap_frame, "BOTTOMRIGHT", -24, 4)
-
-    local cap_content = CreateFrame("Frame", nil, cap_scroll)
-    cap_content:SetWidth(CAP_W - 28)
-    cap_content:SetHeight(1)
-    cap_scroll:SetScrollChild(cap_content)
-
-    local cap_rows  = {}
-    local cap_auras = {}
+    local cap_rows = {}
 
     local function rebuild_cap_list()
         for _, row in ipairs(cap_rows) do row:Hide() end
-        local row_y = 0
+        local ry = 0
         for idx, item in ipairs(cap_auras) do
             local row = cap_rows[idx]
             if not row then
@@ -543,39 +559,31 @@ function M.build_custom_child_panel(p, entry)
                 row:SetHeight(ROW_H)
                 row:SetScript("OnEnter", function(s) s.lbl:SetTextColor(1, 1, 0.6) end)
                 row:SetScript("OnLeave", function(s) s.lbl:SetTextColor(1, 1, 1) end)
-
                 row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 row.lbl:SetPoint("LEFT", row, "LEFT", 4, 0)
-                row.lbl:SetWidth(CAP_W - 50)
+                row.lbl:SetWidth(CAP_W - 55)
                 row.lbl:SetJustifyH("LEFT")
                 row.lbl:SetWordWrap(false)
-
                 row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 row.id_lbl:SetPoint("RIGHT", row, "RIGHT", -4, 0)
                 row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
-
                 cap_rows[idx] = row
             end
-
-            row:SetWidth(cap_content:GetWidth())
+            row:SetWidth(CAP_W - 8)
             row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", cap_content, "TOPLEFT", 0, -row_y)
+            row:SetPoint("TOPLEFT", cap_content, "TOPLEFT", 0, -ry)
             row.lbl:SetText(item.name)
             row.id_lbl:SetText(tostring(item.spell_id))
-
-            local sid   = item.spell_id
-            local sname = item.name
+            local sid, sname = item.spell_id, item.name
             row:SetScript("OnClick", function()
                 if not entry.whitelist then entry.whitelist = {} end
                 entry.whitelist[sid] = sname
                 rebuild_whitelist()
             end)
-
             row:Show()
-            row_y = row_y + ROW_H
+            ry = ry + ROW_H
         end
-        cap_content:SetHeight(math.max(1, row_y))
-
+        cap_content:SetHeight(math.max(1, ry))
         if #cap_auras == 0 then
             if not cap_content._empty_lbl then
                 cap_content._empty_lbl = cap_content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
@@ -598,51 +606,34 @@ function M.build_custom_child_panel(p, entry)
                 if not seen[sid] then seen[sid] = sname end
             end
         end
-        -- Accumulate: add newly seen auras but never remove ones that expired.
-        -- Transient auras (short buffs, debuffs) would disappear before the user
-        -- can click them if we pruned on every tick.
+        -- Accumulate: never prune captured auras mid-session so transient
+        -- buffs/debuffs remain clickable after they expire.
         local existing_ids = {}
         for _, item in ipairs(cap_auras) do existing_ids[item.spell_id] = true end
         for sid, sname in pairs(seen) do
             if not existing_ids[sid] and #cap_auras < CAP_MAX then
                 table.insert(cap_auras, { spell_id = sid, name = sname })
-                existing_ids[sid] = true
             end
         end
         rebuild_cap_list()
     end
 
-    local cap_checkbox_container, cap_checkbox
-
-    local function stop_capture()
-        cap_active = false
-        if cap_timer then cap_timer:Cancel(); cap_timer = nil end
-        cap_status:SetText("")
-        if cap_checkbox and cap_checkbox.SetChecked then cap_checkbox:SetChecked(false) end
-    end
-
+    -- Wire checkbox callback now that do_capture_scan is in scope
     local function start_capture()
         if cap_active then return end
         cap_active = true
         cap_auras  = {}
         do_capture_scan()
+        cap_status:SetText(string.format("Capturing: %d/%d", #cap_auras, CAP_MAX))
         cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
             cap_status:SetText(string.format("Capturing: %d/%d", #cap_auras, CAP_MAX))
             do_capture_scan()
             if #cap_auras >= CAP_MAX then stop_capture() end
         end)
     end
-
-    cap_checkbox_container, cap_checkbox = addon.CreateCheckbox(p, "Capture Mode", false,
-        function(is_checked)
-            if is_checked then start_capture() else stop_capture() end
-        end
-    )
-    cap_checkbox_container:SetPoint("TOPLEFT", filter_lbl, "BOTTOMLEFT", 0, -14)
-
-    local cap_hint = p:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    cap_hint:SetPoint("LEFT", cap_checkbox_container, "RIGHT", 8, 0)
-    cap_hint:SetText(string.format("(stops on close or %d auras)", CAP_MAX))
+    cap_checkbox:SetScript("OnClick", function(self)
+        if self:GetChecked() then start_capture() else stop_capture() end
+    end)
 
     p:HookScript("OnHide", function() if cap_active then stop_capture() end end)
 
