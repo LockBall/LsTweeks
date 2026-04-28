@@ -136,6 +136,7 @@ function M.BuildSettings(parent)
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
         tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
         tree_frame:SetSize(TREE_W, TREE_H)
+        M.frames_tree_frame = tree_frame  -- shared anchor for child panels
         tree_frame:SetBackdrop({
             bgFile   = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
