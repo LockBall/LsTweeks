@@ -310,9 +310,7 @@ function M.build_custom_child_panel(p, entry)
     local ROW  = { 10, -20, -50, -75, -100, -130 }  -- 1:header  2:aura type  3:add by ID  4:capture mode  5:cap status  6:whitelist
     local ROW_H = 22                -- height of a single list row
     local WL_W  = 275               -- whitelist frame width
-    local WL_H  = 300               -- whitelist frame height
     local CAP_W = 275               -- captured auras frame width
-    local CAP_H = 400               -- captured auras frame height (full height, matches tree list)
 
     local function col_x(c) return COL[c] end
     local function row_y(r) return ROW[r] end
@@ -427,8 +425,9 @@ function M.build_custom_child_panel(p, entry)
     -- COL 1, ROW 3: whitelist frame
     -- ----------------------------------------------------------------
     local wl_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    wl_frame:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(6))
-    wl_frame:SetSize(WL_W, WL_H)
+    wl_frame:SetPoint("TOPLEFT",  p, "TOPLEFT", col_x(1), row_y(6))
+    wl_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", col_x(1), 0)
+    wl_frame:SetWidth(WL_W)
     wl_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -527,8 +526,9 @@ function M.build_custom_child_panel(p, entry)
     -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(2), row_y(1))
-    cap_frame:SetSize(CAP_W, CAP_H)
+    cap_frame:SetPoint("TOPLEFT",   p, "TOPLEFT", col_x(2), row_y(1))
+    cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", col_x(2), 0)
+    cap_frame:SetWidth(CAP_W)
     cap_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
