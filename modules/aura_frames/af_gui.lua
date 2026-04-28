@@ -175,9 +175,10 @@ function M.BuildSettings(parent)
         -- Invalidate a cached panel so it is rebuilt next time it is shown.
         -- Used after a custom frame rename/delete to force fresh content.
         local function invalidate_node(key)
-            if node_panels[key] then
-                node_panels[key]:Hide()
-                node_panels[key]:SetParent(nil)
+            local pnl = node_panels[key]
+            if pnl then
+                pnl:Hide()
+                if current_panel == pnl then current_panel = nil end
                 node_panels[key] = nil
             end
         end
@@ -305,17 +306,16 @@ function M.BuildSettings(parent)
                             -- Update the WoW frame title bars
                             local frame = M.frames["show_" .. id]
                             if frame then
-                                if frame.title_bar then
-                                    local tb_fs = frame.title_bar:GetFontString()
-                                    if tb_fs then tb_fs:SetText(new_name) end
+                                if frame.title_bar and frame.title_bar.label_text then
+                                    frame.title_bar.label_text:SetText(new_name)
                                 end
-                                if frame.bottom_title_bar then
-                                    local btb_fs = frame.bottom_title_bar:GetFontString()
-                                    if btb_fs then btb_fs:SetText(new_name) end
+                                if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
+                                    frame.bottom_title_bar.label_text:SetText(new_name)
                                 end
                             end
                             -- Rebuild cached settings panel so its header reflects the new name
                             invalidate_node(cat_key)
+                            show_node(cat_key, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
                         end
                     end
 

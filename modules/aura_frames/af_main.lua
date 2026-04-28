@@ -157,6 +157,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         local text = tb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         text:SetPoint("CENTER")
         text:SetText(label)
+        tb.label_text = text
         tb:EnableMouse(true)
         tb:RegisterForDrag("LeftButton")
         tb:SetScript("OnDragStart", function() parent:StartMoving() end)
