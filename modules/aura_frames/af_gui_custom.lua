@@ -310,6 +310,7 @@ function M.build_custom_child_panel(p, entry)
     local COL       = { GAP, GAP + COL_W + GAP * 2 }            -- col start x positions
     local WL_W      = COL_W                                      -- whitelist = col width
     local CAP_W     = COL_W                                      -- captured auras = same
+    local ICON_SIZE = 16                                         -- shared icon size for both lists
     local ROW  = { 10, -20, -50, -75, -100, -130 }
     local ROW_H = 22
 
@@ -372,7 +373,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 1, ROW 2: capture mode checkbox + status
     -- ----------------------------------------------------------------
     local CAP_INTERVAL = 1.0
-    local CAP_MAX      = 20
+    local CAP_MAX      = 24
     local cap_active   = false
     local cap_timer    = nil
     local cap_auras    = {}
@@ -485,13 +486,28 @@ function M.build_custom_child_panel(p, entry)
                 row.id_lbl:SetPoint("RIGHT", row.del, "LEFT", -10, 0)
                 row.id_lbl:SetJustifyH("RIGHT")
                 row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
+                row.icon = row:CreateTexture(nil, "ARTWORK")
+                row.icon:SetSize(ICON_SIZE, ICON_SIZE)
+                row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
+                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                 row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.lbl:SetPoint("LEFT",  row,        "LEFT",  4,  0)
-                row.lbl:SetPoint("RIGHT", row.id_lbl, "LEFT", -4,  0)
+                row.lbl:SetPoint("LEFT",  row.icon,   "RIGHT",  4,  0)
+                row.lbl:SetPoint("RIGHT", row.id_lbl, "LEFT",  -4,  0)
                 row.lbl:SetJustifyH("LEFT")
                 row.lbl:SetWordWrap(false)
                 wl_rows[row_idx] = row
             end
+            -- look up icon from aura map
+            local icon = nil
+            if M._aura_map then
+                for _, ae in pairs(M._aura_map) do
+                    if ae.spell_id == spell_id and ae.icon then
+                        icon = ae.icon
+                        break
+                    end
+                end
+            end
+            row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
             row:SetWidth(WL_W - 8)
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", wl_content, "TOPLEFT", 0, -row_y)
@@ -547,7 +563,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 40)  -- +40 raises top above the row grid to gain extra height
+    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 55)  -- +40 raises top above the row grid to gain extra height
     cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
     cap_frame:SetWidth(CAP_W)
     cap_frame:SetBackdrop({
@@ -570,7 +586,6 @@ function M.build_custom_child_panel(p, entry)
 
     local cap_rows = {}
 
-    local ICON_SIZE = ROW_H - 2
     local function rebuild_cap_list()
         for _, row in ipairs(cap_rows) do row:Hide() end
         local ry = 0
@@ -722,7 +737,7 @@ function M.build_custom_child_panel(p, entry)
         cap_active = true
         cap_auras  = {}
         do_capture_scan()
-        cap_status:SetText(string.format("Capturing: %d/%d", #cap_auras, CAP_MAX))
+        cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
         cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
             cap_status:SetText(string.format("Capturing: %d/%d", #cap_auras, CAP_MAX))
             do_capture_scan()
@@ -733,7 +748,10 @@ function M.build_custom_child_panel(p, entry)
         if self:GetChecked() then start_capture() else stop_capture() end
     end)
 
-    p:HookScript("OnHide", function() if cap_active then stop_capture() end end)
+    -- Stop capture only when the main LsTweeks window closes, not on tab/node switches.
+    if addon.main_frame then
+        addon.main_frame:HookScript("OnHide", function() if cap_active then stop_capture() end end)
+    end
 
     -- Backfill spell IDs for name-only entries captured during combat.
     local regen_frame = CreateFrame("Frame")
