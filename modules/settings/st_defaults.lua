@@ -7,7 +7,7 @@ local M = {}
 M.defaults = {
     minimap = { hide = false },
     open_on_reload = false,
-    interface_alpha = 0.5,
+    interface_alpha = 0.65,
 }
 
 addon.module_defaults = addon.module_defaults or {}
