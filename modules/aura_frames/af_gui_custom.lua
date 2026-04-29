@@ -497,16 +497,7 @@ function M.build_custom_child_panel(p, entry)
                 row.lbl:SetWordWrap(false)
                 wl_rows[row_idx] = row
             end
-            -- look up icon from aura map
-            local icon = nil
-            if M._aura_map then
-                for _, ae in pairs(M._aura_map) do
-                    if ae.spell_id == spell_id and ae.icon then
-                        icon = ae.icon
-                        break
-                    end
-                end
-            end
+            local icon = entry.whitelist_icons and entry.whitelist_icons[spell_id]
             row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
             row:SetWidth(WL_W - 8)
             row:ClearAllPoints()
@@ -543,15 +534,21 @@ function M.build_custom_child_panel(p, entry)
             if not entry.whitelist then entry.whitelist = {} end
             if not entry.whitelist[sid] then
                 local display_name = "Spell " .. tostring(sid)
+                local found_icon   = nil
                 if M._aura_map then
                     for _, ae in pairs(M._aura_map) do
                         if ae.spell_id == sid and ae.name and not issecretvalue(ae.name) then
                             display_name = tostring(ae.name)
+                            if ae.icon and not issecretvalue(ae.icon) then found_icon = ae.icon end
                             break
                         end
                     end
                 end
                 entry.whitelist[sid] = display_name
+                if found_icon then
+                    entry.whitelist_icons = entry.whitelist_icons or {}
+                    entry.whitelist_icons[sid] = found_icon
+                end
                 rebuild_whitelist()
             end
             id_box:SetText("")
@@ -563,7 +560,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 55)  -- +40 raises top above the row grid to gain extra height
+    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 68)  -- +40 raises top above the row grid to gain extra height
     cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
     cap_frame:SetWidth(CAP_W)
     cap_frame:SetBackdrop({
@@ -628,12 +625,16 @@ function M.build_custom_child_panel(p, entry)
                 row:SetScript("OnClick", function()
                     if not entry.whitelist then entry.whitelist = {} end
                     entry.whitelist[sid] = sname
+                    if sicon then
+                        entry.whitelist_icons = entry.whitelist_icons or {}
+                        entry.whitelist_icons[sid] = sicon
+                    end
                     rebuild_whitelist()
                 end)
             else
-                -- Name-only: pending backfill after combat ends.
+                -- sid not yet known (still secret); dim the row, click does nothing useful yet.
                 row.lbl:SetTextColor(0.6, 0.6, 0.6)
-                row.id_lbl:SetText("...")
+                row.id_lbl:SetText("?")
                 row.id_lbl:SetTextColor(0.4, 0.4, 0.4)
                 row:SetScript("OnClick", nil)
             end
@@ -654,76 +655,67 @@ function M.build_custom_child_panel(p, entry)
         end
     end
 
+    -- Lookup tables for dedup. All keys must be plain (non-secret) types.
+    -- iid is a secretvalue — use tostring(iid). ae.instance_id is a plain number (same value).
+    -- spell_id is always a plain number. name/icon stored as values (not keys): secretvalue-safe.
+    local cap_by_iid  = {}  -- tostring(iid)   -> item  (stable per-scan tick during combat)
+    local cap_by_inst = {}  -- ae.instance_id   -> item  (persists as long as aura is active)
+    local cap_by_sid  = {}  -- spell_id         -> item  (available once combat ends)
+
     local function do_capture_scan()
         local want_helpful = (entry.filter == "HELPFUL")
-        -- Force a fresh unified scan so we don't read a stale map between UNIT_AURA events.
-        -- Reuses the same stamp-guard as af_core so back-to-back calls don't double-scan.
-        local now = GetTime()
-        if not M._last_unified_scan_time or (now - M._last_unified_scan_time) > 0.1 then
-            M.unified_scan(nil, M.db and M.db.short_threshold, nil, nil)
-            M._last_unified_scan_time = now
-        end
-        local seen_by_sid  = {}  -- sid  -> { name, icon }
-        local seen_by_iid  = {}  -- iid  -> { name, icon }  (no readable sid yet)
+        -- M._aura_map is already kept current by the main aura update pipeline.
+        local changed = false
         for iid, ae in pairs(M._aura_map or {}) do
             if ae.is_helpful == want_helpful then
-                local sid  = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
-                -- name and icon may be secretvalues but are safe to display/render.
-                local name = ae.name
-                local icon = ae.icon
-                if sid then
-                    if not seen_by_sid[sid] then
-                        seen_by_sid[sid] = { name = name, icon = icon }
+                local iid_key = tostring(iid)
+                local inst_id = ae.instance_id  -- plain number, always safe as table key
+                local sid     = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
+                local existing = cap_by_iid[iid_key] or cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
+                if existing then
+                    -- Promote: fill in any fields now readable that weren't before.
+                    if sid and not existing.spell_id then
+                        existing.spell_id  = sid
+                        cap_by_sid[sid]    = existing
+                        changed = true
                     end
-                elseif iid and name then
-                    seen_by_iid[iid] = { name = name, icon = icon }
+                    if not existing.name then existing.name = ae.name; changed = true end
+                    if not existing.icon then existing.icon = ae.icon; changed = true end
+                    -- Keep iid and inst lookups current.
+                    cap_by_iid[iid_key]  = existing
+                    cap_by_inst[inst_id] = existing
+                elseif #cap_auras < CAP_MAX then
+                    local item = { spell_id = sid, name = ae.name, icon = ae.icon }
+                    cap_by_iid[iid_key]  = item
+                    cap_by_inst[inst_id] = item
+                    if sid then cap_by_sid[sid] = item end
+                    table.insert(cap_auras, item)
+                    changed = true
                 end
             end
         end
-
-        -- Accumulate: never prune captured auras mid-session so transient
-        -- buffs/debuffs remain clickable after they expire.
-        local existing_ids  = {}
-        local existing_iids = {}
-        for _, item in ipairs(cap_auras) do
-            if item.spell_id then existing_ids[item.spell_id] = true end
-            if item.iid      then existing_iids[item.iid]     = true end
-        end
-        for sid, info in pairs(seen_by_sid) do
-            if not existing_ids[sid] and #cap_auras < CAP_MAX then
-                table.insert(cap_auras, { spell_id = sid, name = info.name, icon = info.icon })
-            end
-        end
-        for iid, info in pairs(seen_by_iid) do
-            if not existing_iids[iid] and #cap_auras < CAP_MAX then
-                table.insert(cap_auras, { spell_id = nil, iid = iid, name = info.name, icon = info.icon })
-            end
-        end
-        rebuild_cap_list()
+        if changed then rebuild_cap_list() end
     end
 
-    -- After combat: backfill spell IDs and icons for iid-only entries captured during combat.
-    -- Post-combat M._aura_map entries have readable spell_id and icon.
+    -- Post-combat: iids may be new but instance_ids and spell_ids persist.
+    -- Iterate M._aura_map (already refreshed by update_auras) and promote any
+    -- captured items that still have no spell_id, matching by instance_id or sid.
     local function backfill_spell_ids()
-        local info_by_iid = {}
-        for iid, ae in pairs(M._aura_map or {}) do
-            local sid  = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
-            local icon = ae.icon
-            if sid then info_by_iid[iid] = { sid = sid, icon = icon } end
-        end
         local changed = false
-        local existing_ids = {}
-        for _, item in ipairs(cap_auras) do
-            if item.spell_id then existing_ids[item.spell_id] = true end
-        end
-        for _, item in ipairs(cap_auras) do
-            if not item.spell_id and item.iid then
-                local info = info_by_iid[item.iid]
-                if info and not existing_ids[info.sid] then
-                    item.spell_id = info.sid
-                    item.iid      = nil
-                    if not item.icon then item.icon = info.icon end
-                    existing_ids[info.sid] = true
+        for _, ae in pairs(M._aura_map or {}) do
+            if ae.is_helpful == (entry.filter == "HELPFUL") then
+                local inst_id = ae.instance_id
+                local sid     = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
+                local item    = cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
+                if item and sid then
+                    if not item.spell_id then
+                        item.spell_id     = sid
+                        cap_by_sid[sid]   = item
+                        changed = true
+                    end
+                    -- Freshen name/icon now that secretvalue restriction is lifted.
+                    item.name = ae.name
+                    item.icon = ae.icon
                     changed = true
                 end
             end
@@ -734,8 +726,11 @@ function M.build_custom_child_panel(p, entry)
     -- Wire checkbox callback now that do_capture_scan is in scope
     local function start_capture()
         if cap_active then return end
-        cap_active = true
-        cap_auras  = {}
+        cap_active    = true
+        cap_auras     = {}
+        cap_by_iid    = {}
+        cap_by_inst   = {}
+        cap_by_sid    = {}
         do_capture_scan()
         cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
         cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
@@ -753,13 +748,17 @@ function M.build_custom_child_panel(p, entry)
         addon.main_frame:HookScript("OnHide", function() if cap_active then stop_capture() end end)
     end
 
-    -- Backfill spell IDs for name-only entries captured during combat.
+    -- Backfill spell IDs for iid-only entries after combat ends.
+    -- Force a fresh scan first so post-combat spell_ids are readable, then resolve.
     local regen_frame = CreateFrame("Frame")
     regen_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     regen_frame:SetScript("OnEvent", function()
-        if #cap_auras > 0 then backfill_spell_ids() end
+        if #cap_auras == 0 then return end
+        backfill_spell_ids()
     end)
-    p:HookScript("OnHide", function() regen_frame:UnregisterAllEvents() end)
+    if addon.main_frame then
+        addon.main_frame:HookScript("OnHide", function() regen_frame:UnregisterAllEvents() end)
+    end
 
     rebuild_whitelist()
     rebuild_cap_list()
