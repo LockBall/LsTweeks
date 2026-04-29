@@ -4,12 +4,18 @@
 local addon_name, addon = ...
 
 local control_gap = 5
+local CONTAINER_W  = 95
+local CONTAINER_H  = 45
+local BTN_SIZE     = 18
+local RESET_W      = 45
+local RESET_H      = 16
+local GROUP_W      = BTN_SIZE + control_gap + RESET_W
 
 function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback)
 
     -- Container
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(95, 45) 
+    container:SetSize(CONTAINER_W, CONTAINER_H)
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -25,15 +31,14 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     label:SetJustifyH("CENTER")
     label:SetText(label_text)
 
-    -- Group frame: centers button + reset as a unit below the label
+    -- Group centers button + reset as a unit below the label
     local group = CreateFrame("Frame", nil, container)
-    group:SetSize(18 + control_gap + 45, 18)
+    group:SetSize(GROUP_W, BTN_SIZE)
     group:SetPoint("TOP", label, "BOTTOM", 0, -control_gap)
-    group:SetPoint("CENTER", container, "CENTER", 0, 0)
 
     -- Color Picker Button
     local button = CreateFrame("Button", nil, group, "BackdropTemplate")
-    button:SetSize(18, 18)
+    button:SetSize(BTN_SIZE, BTN_SIZE)
     button:SetPoint("LEFT", group, "LEFT", 0, 0)
     button:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameColorSwatch",
@@ -43,7 +48,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
 
     -- Reset Button
     local reset = CreateFrame("Button", nil, group, "UIPanelButtonTemplate")
-    reset:SetSize(45, 16)
+    reset:SetSize(RESET_W, RESET_H)
     reset:SetText("Reset")
     reset:SetNormalFontObject("GameFontNormalSmall")
     reset:SetPoint("LEFT", button, "RIGHT", control_gap, 0)
