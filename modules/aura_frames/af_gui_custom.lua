@@ -193,10 +193,14 @@ function M.build_custom_settings_panel(p, entry)
     bound_picker("bg_color", true, "Frame BG Color", 2, 3)
     add_row_separator(2)
 
-    -- ---- Row 3: Bar Mode, Bar Color, Bar BG Color, Growth Direction ----
-    bound_cb("Bar Mode", "bar_mode", 3, 1)
-    bound_picker("color", true, "Bar Color", 3, 2)
-    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
+    -- ---- Row 3: Bar Mode, Bar Color, Bar BG Color, Bar Text Color, Growth Direction ----
+    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1)
+
+    local bar_color_picker = addon.CreateColorPicker(p, entry, "color", true, "Bar Color", M.CUSTOM_FRAME_TEMPLATE, update)
+    bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+
+    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 2)
+    bound_picker("bar_text_color", false, "Bar Text Color", 3, 3)
 
     local dir_options = {}
     for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do
@@ -243,6 +247,12 @@ function M.build_custom_settings_panel(p, entry)
             update()
         end)
     place_at(font_size_slider, 4, 3)
+
+    local timer_color_picker = addon.CreateColorPicker(p, entry, "timer_color", false, "Timer Color", M.CUSTOM_FRAME_TEMPLATE, function()
+        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        update()
+    end)
+    timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
     add_row_separator(4)
 
     -- ---- Row 5: Scale, Spacing, Max Icons ----

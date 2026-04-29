@@ -153,7 +153,7 @@ end
 -- Render the aura_map into the icon pool.
 -- Uses C_UnitAuras.GetUnitAuraInstanceIDs for sort order (ElkBuffBars technique):
 -- the game provides a pre-sorted list of IDs; we display only those in our map.
-function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text)
+function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text, bar_text_color)
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     -- Resolve sort parameters for GetUnitAuraInstanceIDs
     local sort_rule = SORT_RULE_DEFAULT
@@ -293,6 +293,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             end
             -- In bar mode: append stack count to name if present
             obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
+            if bar_text_color then
+                obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
+            end
             obj.name_text:Show()
             if stack_text ~= nil then
                 obj.count_text:SetText(stack_text)

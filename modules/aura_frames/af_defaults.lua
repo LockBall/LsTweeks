@@ -62,6 +62,8 @@ M.defaults = {
     sort_static  = "name",
     test_aura_static = true,
 
+    bar_text_color_static = { r = 1, g = 1, b = 1 },
+
     -- SHORT
     show_short      = true,
     move_short      = true,
@@ -81,6 +83,8 @@ M.defaults = {
     timer_number_font_short = "source_code_pro",
     timer_number_font_size_short = 10,
     timer_number_font_bold_short = false,
+    timer_color_short = { r = 1, g = 1, b = 1 },
+    bar_text_color_short = { r = 1, g = 1, b = 1 },
 
     -- LONG
     show_long       = true,
@@ -101,6 +105,8 @@ M.defaults = {
     timer_number_font_long = "source_code_pro",
     timer_number_font_size_long = 10,
     timer_number_font_bold_long = false,
+    timer_color_long = { r = 1, g = 1, b = 1 },
+    bar_text_color_long = { r = 1, g = 1, b = 1 },
 
     -- DEBUFFS
     show_debuff     = true,
@@ -121,7 +127,9 @@ M.defaults = {
     timer_number_font_debuff = "source_code_pro",
     timer_number_font_size_debuff = 10,
     timer_number_font_bold_debuff = false,
-    
+    timer_color_debuff = { r = 1, g = 1, b = 1 },
+    bar_text_color_debuff = { r = 1, g = 1, b = 1 },
+
     -- Custom whitelist frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
     custom_frames = {},
 
@@ -168,6 +176,8 @@ M.CUSTOM_FRAME_TEMPLATE = {
     timer_number_font      = "source_code_pro",
     timer_number_font_size = 10,
     timer_number_font_bold = false,
+    timer_color     = { r = 1, g = 1, b = 1 },
+    bar_text_color  = { r = 1, g = 1, b = 1 },
 
     -- Position
     position = { point = "TOPLEFT", x = 0, y = 50 },

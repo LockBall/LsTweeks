@@ -35,6 +35,7 @@ modules/
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
     af_core.lua          — tick_visible_icons(), update_auras(), toggle_blizz_buffs/debuffs()
     af_gui.lua           — settings tab builder; M.BuildSettings(), sync_general_controls_from_db()
+    af_gui_custom.lua    — custom whitelist frame panels; M.build_custom_settings_panel(), M.build_custom_child_panel()
     af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
@@ -44,7 +45,7 @@ media/fonts/     — monospace TTFs: SourceCodePro (selectable), Inconsolata, Je
 ```
 
 ## File Header Standard
-Every lua file must open with a brief comment (a few sentences) explaining what the file does, placed before `local addon_name, addon = ...`. The comment should describe the file's role/responsibility in plain terms and mention its key public functions or how it fits into the larger system. Do not use a bare filename label as a substitute.
+Every lua file must open with a brief comment (up to a few sentences) explaining what the file does, placed before `local addon_name, addon = ...`. The comment should describe the file's role/responsibility in plain terms and mention its key public functions or how it fits into the larger system. Do not use a bare filename label as a substitute.
 
 ## Architecture Rules
 - **Module pattern:** `local addon_name, addon = ...` at top of every file; modules share the `addon` namespace table.
@@ -82,10 +83,16 @@ Ls_Tweeks_DB = {
     snap_to_grid = bool,
     show_grid = bool,
     show_bar_section_outlines = bool,  -- debug outline toggle (now under aura_frames, not root)
+    show_spell_id = bool,              -- show spell/aura ID in icon tooltips
     known_static_spell_ids = table,    -- learned permanent-aura spell IDs
     known_long_spell_ids = table,      -- learned long-aura spell IDs
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
     positions = { static={x,y}, short={x,y}, long={x,y}, debuff={x,y} },
+    custom_frames = {                  -- array of custom whitelist frame entry tables
+      -- each entry: { id, name, filter, whitelist={[spell_id]=name}, position={x,y},
+      --               show, move, bg, bg_color, bar_mode, color, bar_bg_color,
+      --               growth, timer, scale, spacing, max_icons, width, ... }
+    },
   }
 }
 ```
@@ -96,14 +103,14 @@ DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static
 Positions are stored under `aura_frames.positions.<category>`.
 
 ## af_gui.lua Layout System
-`BuildSettings` has two tabs: **General** (manual anchoring) and **Frames** (tree + grid).
+`BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Aura ID** (tooltip spell ID toggle).
 
-**Frames tab** has a left tree sidebar (120px wide) listing Static/Short/Long/Debuffs with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
+**Frames tab** has a left tree sidebar (140px wide) listing Static/Debuff/Short/Long plus custom entries with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
 - `col_width=190` — centering zone within each column
 - All 4 columns center-aligned by default (`col_align = {"center","center","center","center"}`)
 - `opts.align` overrides per-call ("left", "center", "right")
-- 5 rows: `row_heights = {130, 60, 60, 110, 110}`, `row_start=-20`, `row_gap=20`
+- 5 rows: `row_heights = {130, 60, 60, 110, 110}`, `row_start=10`, `row_gap=20`
 - `slot` maps to `grid.offsets`: `dropdown=8`, `picker=4`, `default=0`
 - `opts.valign="bottom"` descends one extra row height
 

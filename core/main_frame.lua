@@ -18,7 +18,7 @@ local function create_main_frame()
 
     -- MAIN CONTAINER
     local frame = CreateFrame("Frame", "Ls_Tweeks_main_frame", UIParent, "BackdropTemplate")
-    frame:SetSize(925, 636)
+    frame:SetSize(950, 650)
     frame:SetPoint("CENTER")
     frame:Hide()
 
@@ -26,17 +26,22 @@ local function create_main_frame()
     frame:EnableMouse(true)
     frame:SetClampedToScreen(true)
 
-    -- Standard WoW dialog backdrop — border renders at the outer frame edge
+    -- B defines how far the border art visually occupies from each frame edge.
+    -- The backdrop has two layers: bgFile fills the interior starting at the inset boundary,
+    -- and edgeFile renders decorative border art at the outer edge — it is NOT a solid fill
+    -- and has transparency between the outer ring and where bgFile takes over.
+    -- B must always match the backdrop insets exactly. If they diverge, a transparent gap
+    -- appears between the border art and any child frame positioned at the inset boundary
+    -- (such as the title bar). Keeping them as one source of truth prevents this.
+    local B = { t = 12, b = 11, l = 11, r = 12 }
+
     frame:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
         tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+        insets = { left = B.l, right = B.r, top = B.t, bottom = B.b },
     })
     frame:SetBackdropColor(1, 1, 1, 0.95)
-
-    -- Border insets from UI-DialogBox-Border (edgeSize 32): 12px top/sides, 11px bottom
-    local B = { t = 12, b = 11, l = 12, r = 12 }
 
     -- Transparent drag handle — no backdrop so the frame border shows through
     local title_bar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
