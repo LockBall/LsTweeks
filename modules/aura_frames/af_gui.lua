@@ -648,7 +648,7 @@ function M.BuildSettings(parent)
             row_start = 10, -- y position of start of first row 
             row_gap = row_gap,
             -- row #       1    2   3   4   5
-            row_heights = {130, 60, 60, 110, 110},
+            row_heights = {130, 60, 90, 120, 110},
             reset_btn_width = 110,
             offsets = {
                 default = 0,
@@ -879,25 +879,29 @@ function M.BuildSettings(parent)
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
         add_row_separator(2)
 
-        -- Row 3: Bar Mode and color pickers
+        -- Row 3: Bar Mode, color pickers
         local bar_mode_key = "bar_mode_"..cat
-        create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
-        create_bound_color_picker("color_"..cat, true, "Bar Color", 3, 2)
-        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
+        local bar_mode_container = create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
+
+        local bar_color_picker = addon.CreateColorPicker(p, M.db, "color_"..cat, true, "Bar Color", M.defaults, update)
+        bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+
+        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 2)
+        create_bound_color_picker("bar_text_color_"..cat, false, "Bar Text Color", 3, 3)
         add_row_separator(3)
 
         -- Row 4: Timer Text, Font & Font Size
         if cat ~= "static" then
             local timer_text_container = create_bound_checkbox("Timer Text", data.timer_key, 4, 1)
 
-            local timer_bold_container = create_bound_checkbox("Timer Bold", "timer_number_font_bold_"..cat, 4, 1, function()
+            local timer_bold_container = create_bound_checkbox("Bold", "timer_number_font_bold_"..cat, 4, 1, function()
                 if M.apply_number_font_to_all then M.apply_number_font_to_all() end
                 update()
             end)
             timer_bold_container:ClearAllPoints()
             timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
 
-            local timer_font = M.CreateListDropdown(addon_name..cat.."TimerFont", p, "Timer Font", font_options,
+            local timer_font = M.CreateListDropdown(addon_name..cat.."TimerFont", p, "Font", font_options,
                 function()
                     return M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro"
                 end,
@@ -914,7 +918,7 @@ function M.BuildSettings(parent)
             place_at(timer_font, 4, 2, nil, {width=120, y_offset=-15})
             M.controls["timer_number_font_dropdown_"..cat] = timer_font
 
-            local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Timer Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
+            local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
                 M.defaults,
                 function()
                     if M.apply_number_font_to_all then
@@ -925,6 +929,13 @@ function M.BuildSettings(parent)
             )
             place_at(font_size_slider, 4, 3)
             M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
+
+            local timer_color_picker = addon.CreateColorPicker(p, M.db, "timer_color_"..cat, false, "Color", M.defaults, function()
+                if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+                update()
+            end)
+            timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
+            M.controls["timer_color_picker_"..cat] = timer_color_picker
         end
 
         add_row_separator(4)

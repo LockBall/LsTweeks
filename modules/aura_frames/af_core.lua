@@ -134,6 +134,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local spacing       = cfg_db[spacing_key] or cfg_db["spacing"] or 6
     local color         = cfg_db["color_" .. category] or cfg_db["color"] or { r = 1, g = 1, b = 1 }
     local barBgC        = cfg_db["bar_bg_color_" .. category] or cfg_db["bar_bg_color"] or { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha }
+    local barTextC      = cfg_db["bar_text_color_" .. category] or cfg_db["bar_text_color"] or { r = 1, g = 1, b = 1 }
     local bgC           = cfg_db["bg_color_" .. category] or cfg_db["bg_color"] or { r = 0, g = 0, b = 0, a = 0.5 }
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
     self._show_timer_text = show_timer_text
@@ -257,7 +258,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     local display_count = M.render_aura_map(
-        self, self._aura_map, bar_mode, color, barBgC, max_limit, filter, sort_mode, show_timer_text
+        self, self._aura_map, bar_mode, color, barBgC, max_limit, filter, sort_mode, show_timer_text, barTextC
     )
 
     local lc = self._layout_cache

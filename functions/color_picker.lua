@@ -21,21 +21,28 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
 
     -- Label
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    label:SetPoint("TOPLEFT", container, "TOPLEFT", control_gap, -control_gap)
+    label:SetPoint("TOP", container, "TOP", 0, -control_gap)
+    label:SetJustifyH("CENTER")
     label:SetText(label_text)
 
+    -- Group frame: centers button + reset as a unit below the label
+    local group = CreateFrame("Frame", nil, container)
+    group:SetSize(18 + control_gap + 45, 18)
+    group:SetPoint("TOP", label, "BOTTOM", 0, -control_gap)
+    group:SetPoint("CENTER", container, "CENTER", 0, 0)
+
     -- Color Picker Button
-    local button = CreateFrame("Button", nil, container, "BackdropTemplate")
+    local button = CreateFrame("Button", nil, group, "BackdropTemplate")
     button:SetSize(18, 18)
-    button:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -control_gap)
+    button:SetPoint("LEFT", group, "LEFT", 0, 0)
     button:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameColorSwatch", 
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", 
+        bgFile = "Interface\\ChatFrame\\ChatFrameColorSwatch",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 8
     })
 
     -- Reset Button
-    local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+    local reset = CreateFrame("Button", nil, group, "UIPanelButtonTemplate")
     reset:SetSize(45, 16)
     reset:SetText("Reset")
     reset:SetNormalFontObject("GameFontNormalSmall")

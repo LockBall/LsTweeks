@@ -55,7 +55,7 @@ function M.get_number_font_options()
     return M.NUMBER_FONT_OPTIONS
 end
 
-function M.apply_number_font_to_text(font_string, category)
+function M.apply_number_font_to_text(font_string, category, cfg_db)
     if not font_string or not font_string.SetFont then return end
     local def = get_number_font_def(nil, category)
     local size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category))
@@ -87,6 +87,16 @@ function M.apply_number_font_to_text(font_string, category)
     else
         font_string:SetFontObject(GameFontHighlightSmall)
     end
+
+    if cfg_db or M.db then
+        -- Custom frames store timer_color directly; preset frames use timer_color_<cat>.
+        local c = cfg_db and cfg_db.timer_color
+            or (category and M.db and M.db["timer_color_"..category])
+            or (M.db and M.db.timer_color)
+        if c then
+            font_string:SetTextColor(c.r or 1, c.g or 1, c.b or 1, 1)
+        end
+    end
 end
 
 function M.apply_number_font_to_all()
@@ -94,9 +104,10 @@ function M.apply_number_font_to_all()
     for _, frame in pairs(M.frames) do
         if frame and frame.icons then
             local category = frame.category
+            local cfg_db = frame._cfg_db
             for _, obj in ipairs(frame.icons) do
                 if obj and obj.time_text then
-                    M.apply_number_font_to_text(obj.time_text, category)
+                    M.apply_number_font_to_text(obj.time_text, category, cfg_db)
                 end
             end
         end
