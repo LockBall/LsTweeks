@@ -885,9 +885,10 @@ function M.BuildSettings(parent)
 
         local bar_color_picker = addon.CreateColorPicker(p, M.db, "color_"..cat, true, "Bar Color", M.defaults, update)
         bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+        M.controls["bar_color_picker_"..cat] = bar_color_picker
 
-        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 2)
-        create_bound_color_picker("bar_text_color_"..cat, false, "Bar Text Color", 3, 3)
+        create_bound_color_picker("bar_text_color_"..cat, false, "Bar Text Color", 3, 2)
+        create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
         add_row_separator(3)
 
         -- Row 4: Timer Text, Font & Font Size
@@ -953,7 +954,7 @@ function M.BuildSettings(parent)
         place_at(max_icons_slider, 5, 4)
 
         -- Growth Direction dropdown in row 3, col 4, vertically centered
-        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
+        place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -15 })
 
         -- Sync X/Y sliders to the frame's current position (called after a drag).
         -- Defined here so it closes over x_slider/y_slider/cat.

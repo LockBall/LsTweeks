@@ -198,9 +198,10 @@ function M.build_custom_settings_panel(p, entry)
 
     local bar_color_picker = addon.CreateColorPicker(p, entry, "color", true, "Bar Color", M.CUSTOM_FRAME_TEMPLATE, update)
     bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+    M.controls["custom_" .. id .. "_bar_color"] = bar_color_picker
 
-    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 2)
-    bound_picker("bar_text_color", false, "Bar Text Color", 3, 3)
+    bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
+    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
 
     local dir_options = {}
     for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do

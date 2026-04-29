@@ -72,12 +72,13 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
 
     if def.path then
         local use_bold = false
-        if M.db then
+        local db = cfg_db or M.db
+        if db then
             local bold_key = category and ("timer_number_font_bold_"..category)
-            if bold_key and M.db[bold_key] ~= nil then
-                use_bold = M.db[bold_key]
+            if bold_key and db[bold_key] ~= nil then
+                use_bold = db[bold_key]
             else
-                use_bold = M.db.timer_number_font_bold or false
+                use_bold = db.timer_number_font_bold or false
             end
         end
         local bold_path = use_bold and M.NUMBER_FONT_BOLD_PATHS[def.key]

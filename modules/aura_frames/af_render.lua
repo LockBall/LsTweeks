@@ -293,9 +293,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             end
             -- In bar mode: append stack count to name if present
             obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
-            if bar_text_color then
-                obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
-            end
+            obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
             obj.name_text:Show()
             if stack_text ~= nil then
                 obj.count_text:SetText(stack_text)
