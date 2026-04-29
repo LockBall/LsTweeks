@@ -417,10 +417,28 @@ function M.build_custom_child_panel(p, entry)
     cap_checkbox_container:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(4))
 
     local cap_hint = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    cap_hint:SetPoint("LEFT",    cap_checkbox_container, "RIGHT",      6, 0)
+    cap_hint:SetPoint("LEFT", cap_checkbox_container, "RIGHT", 6, 0)
     cap_hint:SetText(string.format("(%d max)", CAP_MAX))
 
     cap_status:SetPoint("LEFT", cap_hint, "RIGHT", 8, 0)
+
+    local test_aura_container, test_aura_cb = addon.CreateCheckbox(p, "Test Aura", entry.test_aura == true,
+        function(is_checked)
+            entry.test_aura = is_checked
+            if is_checked then
+                entry.show = true
+                local en_cb = M.controls["custom_" .. id .. "_show"]
+                if en_cb and en_cb.SetChecked then en_cb:SetChecked(true) end
+            end
+            local frame = M.frames[show_key]
+            if frame then
+                M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing",
+                    (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+            end
+        end
+    )
+    test_aura_container:SetPoint("TOPLEFT", cap_checkbox_container, "BOTTOMLEFT", 0, -4)
+    M.controls["custom_" .. id .. "_test_aura_child"] = test_aura_cb
 
     -- ----------------------------------------------------------------
     -- COL 1, ROW 3: whitelist frame
