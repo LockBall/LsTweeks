@@ -124,7 +124,7 @@ function M.BuildSettings(parent)
         -- Left tree list sidebar
         local TREE_W         = 140
         local TREE_H         = 480
-        local TREE_GAP_LEFT  = 2
+        local TREE_GAP_LEFT  = 10
         local TREE_GAP_RIGHT = 10
         local TREE_TOP_Y     = 10
         local PAD            = 10
@@ -136,7 +136,8 @@ function M.BuildSettings(parent)
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
         tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
         tree_frame:SetSize(TREE_W, TREE_H)
-        M.frames_tree_frame = tree_frame  -- shared anchor for child panels
+        M.frames_tree_frame  = tree_frame                             -- shared bottom anchor for child panels
+        M.frames_content_w   = 741 - (TREE_GAP_LEFT + TREE_W + TREE_GAP_RIGHT)  -- node panel width
         tree_frame:SetBackdrop({
             bgFile   = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
