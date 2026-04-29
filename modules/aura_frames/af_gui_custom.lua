@@ -545,7 +545,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1))
+    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 40)  -- +40 raises top above the row grid to gain extra height
     cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
     cap_frame:SetWidth(CAP_W)
     cap_frame:SetBackdrop({
