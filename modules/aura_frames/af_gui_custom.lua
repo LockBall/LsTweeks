@@ -298,19 +298,20 @@ function M.build_custom_child_panel(p, entry)
     local show_key = "show_" .. id
 
     -- ----------------------------------------------------------------
-    -- 2-COLUMN GRID  (content panel p is ~653px wide)
-    -- col 1 (x=0,  w=300): controls then whitelist frame below them
-    -- col 2 (x=310, w=335): captured auras, full height
-    -- row 1 (y=-10):  header + aura type
-    -- row 2 (y=-70):  add by ID + capture checkbox + status
-    -- row 3 (y=-155): whitelist frame (col 1 only)
+    -- 2-COLUMN GRID
+    -- GAP is the single spacing driver: left margin, inter-column gap, and bottom gap all equal GAP.
+    -- col 1 starts at GAP; col 2 starts at GAP + COL_W + GAP. Both columns equal width.
+    -- Frame widths derived so right edges sit GAP inside their column boundary.
+    -- Bottoms anchored to tree_frame bottom (BOTTOMLEFT y=0) — no height math needed.
     -- ----------------------------------------------------------------
-    local COL1_W = 300              -- col 1 width (controls + whitelist)
-    local COL  = { 0, COL1_W + 10 } -- col 1: controls+whitelist  col 2: captured auras
-    local ROW  = { 10, -20, -50, -75, -100, -130 }  -- 1:header  2:aura type  3:add by ID  4:capture mode  5:cap status  6:whitelist
-    local ROW_H = 22                -- height of a single list row
-    local WL_W  = 275               -- whitelist frame width
-    local CAP_W = 275               -- captured auras frame width
+    local GAP       = 10                                          -- single spacing driver
+    local content_w = M.frames_content_w or 581
+    local COL_W     = math.floor((content_w - GAP * 4) / 2)     -- equal width for both frames
+    local COL       = { GAP, GAP + COL_W + GAP * 2 }            -- col start x positions
+    local WL_W      = COL_W                                      -- whitelist = col width
+    local CAP_W     = COL_W                                      -- captured auras = same
+    local ROW  = { 10, -20, -50, -75, -100, -130 }
+    local ROW_H = 22
 
     local function col_x(c) return COL[c] end
     local function row_y(r) return ROW[r] end
@@ -319,7 +320,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 1, ROW 1: header + aura type
     -- ----------------------------------------------------------------
     local header = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    header:SetPoint("TOP", p, "TOPLEFT", COL1_W / 2, row_y(1))
+    header:SetPoint("TOP", p, "TOPLEFT", GAP + COL_W / 2, row_y(1))
     header:SetText(entry.name .. " — Whitelist")
 
     local filter_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -425,8 +426,8 @@ function M.build_custom_child_panel(p, entry)
     -- COL 1, ROW 3: whitelist frame
     -- ----------------------------------------------------------------
     local wl_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    wl_frame:SetPoint("TOPLEFT",  p, "TOPLEFT", col_x(1), row_y(6))
-    wl_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", col_x(1), 0)
+    wl_frame:SetPoint("TOPLEFT",    p,                  "TOPLEFT",    col_x(1), row_y(6))
+    wl_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
     wl_frame:SetWidth(WL_W)
     wl_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
@@ -526,8 +527,8 @@ function M.build_custom_child_panel(p, entry)
     -- COL 2, ROW 1: captured auras frame (full height)
     -- ----------------------------------------------------------------
     local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT",   p, "TOPLEFT", col_x(2), row_y(1))
-    cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", col_x(2), 0)
+    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1))
+    cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
     cap_frame:SetWidth(CAP_W)
     cap_frame:SetBackdrop({
         bgFile   = "Interface\\Buttons\\WHITE8x8",
