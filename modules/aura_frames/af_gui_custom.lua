@@ -373,7 +373,7 @@ function M.build_custom_child_panel(p, entry)
     -- COL 1, ROW 2: capture mode checkbox + status
     -- ----------------------------------------------------------------
     local CAP_INTERVAL = 1.0
-    local CAP_MAX      = 24
+    local CAP_MAX      = 22
     local cap_active   = false
     local cap_timer    = nil
     local cap_auras    = {}
@@ -508,6 +508,13 @@ function M.build_custom_child_panel(p, entry)
             row.del:SetScript("OnClick", function()
                 entry.whitelist[sid] = nil
                 rebuild_whitelist()
+                -- Immediately refresh the custom frame so removed entries
+                -- disappear from the visible aura frame without reload.
+                local f = M.frames[show_key]
+                if f then
+                    M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
+                        (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+                end
             end)
             row:Show()
             row_y = row_y + ROW_H
@@ -550,6 +557,13 @@ function M.build_custom_child_panel(p, entry)
                     entry.whitelist_icons[sid] = found_icon
                 end
                 rebuild_whitelist()
+                -- Immediately refresh the custom frame's auras so the newly
+                -- whitelisted spell appears without requiring a reload.
+                local f = M.frames[show_key]
+                if f then
+                    M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
+                        (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+                end
             end
             id_box:SetText("")
         end
@@ -630,6 +644,12 @@ function M.build_custom_child_panel(p, entry)
                         entry.whitelist_icons[sid] = sicon
                     end
                     rebuild_whitelist()
+                    -- Refresh the visible custom frame immediately
+                    local f = M.frames[show_key]
+                    if f then
+                        M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
+                            (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+                    end
                 end)
             else
                 -- sid not yet known (still secret); dim the row, click does nothing useful yet.
@@ -734,7 +754,7 @@ function M.build_custom_child_panel(p, entry)
         do_capture_scan()
         cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
         cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
-            cap_status:SetText(string.format("Capturing: %d/%d", #cap_auras, CAP_MAX))
+            cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
             do_capture_scan()
             if #cap_auras >= CAP_MAX then stop_capture() end
         end)
