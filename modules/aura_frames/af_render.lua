@@ -49,15 +49,6 @@ local function get_entry_sort_id(entry)
     return entry.preview_sort_id or 0
 end
 
-local function make_order_key(spell_id, name, icon, filter)
-    local f = filter or ""
-    local sid = (spell_id ~= nil and not issecretvalue(spell_id)) and tostring(spell_id) or nil
-    local n = (name ~= nil and not issecretvalue(name)) and tostring(name) or nil
-    local i = (icon ~= nil and not issecretvalue(icon)) and tostring(icon) or nil
-    if not sid and not n and not i then return nil end
-    return f .. "|" .. (sid or "") .. "|" .. (n or "") .. "|" .. (i or "")
-end
-
 -- ============================================================================
 -- TIMER TEXT
 
@@ -214,10 +205,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local seen_keys = _scratch_seen_keys
         wipe(seen_keys)
         for _, entry in ipairs(list) do
-            local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.filter)
-            if not key then
-                key = "iid:" .. tostring(entry.instance_id)
-            end
+            local key = entry.order_key or ("iid:" .. tostring(entry.instance_id))
 
             if not self._short_order_map[key] then
                 self._short_order_map[key] = self._short_order_next
