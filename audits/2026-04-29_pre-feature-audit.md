@@ -56,8 +56,8 @@ All `print()` calls are user-facing (warnings, confirmations, errors) — accept
 | 1 | ~~High~~ | FALSE POSITIVE | ~~O(n×m) nested loop~~ — lines 183–194 are two sequential O(n) loops with O(1) hash lookup; already correct | `af_render.lua:183` |
 | 2 | **High** | [x] DONE | `list/seen/seen_keys = {}` allocated per render call — replaced with module-level scratch tables + wipe() | `af_render.lua:180,182,207` |
 | 3 | ~~Medium~~ | FALSE POSITIVE | ~~`C_UnitAuras` not cached~~ — already a file-top local at line 13; af_core.lua line 58 is also fine | `af_render.lua:13` |
-| 4 | **Medium** | [ ] | `make_order_key()` string concat rebuilt every scan loop — cache by instance ID | `af_scan.lua:85` |
+| 4 | **Medium** | [x] DONE | `make_order_key()` string concat: cached `order_key` on entries in make_entry/update_entry; build_added_by_key reads cached field | `af_scan.lua:85` |
 | 5 | **Medium** | [ ] | `"iid:" ..` string concat in render loop — pre-build keys on entry creation | `af_render.lua:211` |
-| 6 | **Medium** | [ ] | `build_added_by_key` allocates `{}` per scan — module-level scratch + wipe() | `af_scan.lua:93` |
+| 6 | **Medium** | [x] DONE | Per-scan `{}` allocations (old_map, old_cat_by_spell, seen_iids, by_key) replaced with module-level scratch tables + wipe() | `af_scan.lua:93` |
 | 7 | **Low** | [ ] | `rebuild_tree()` calls CreateFrame on every expand — pool or lazy-build nodes | `af_gui.lua:265` |
 | 8 | **Low** | [ ] | Two passes over short-order data per render — merge into one pass | `af_render.lua:208` |
