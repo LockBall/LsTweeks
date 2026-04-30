@@ -22,6 +22,11 @@ local TIMER_DIR_REMAINING  = Enum.StatusBarTimerDirection and Enum.StatusBarTime
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+-- Scratch tables reused every render_aura_map call to avoid per-frame allocation.
+local _scratch_list      = {}
+local _scratch_seen      = {}
+local _scratch_seen_keys = {}
+
 -- ============================================================================
 -- TIME FORMATTING
 
@@ -177,9 +182,11 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     end
 
     -- Build display list in game-sorted order, filtered to entries in this frame's map
-    local list = {}
+    local list = _scratch_list
+    wipe(list)
     if sorted_ids then
-        local seen = {}
+        local seen = _scratch_seen
+        wipe(seen)
         for _, iid in ipairs(sorted_ids) do
             local entry = aura_map[iid]
             if entry then
@@ -204,7 +211,8 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         self._short_order_map = self._short_order_map or {}
         self._short_order_next = self._short_order_next or 1
 
-        local seen_keys = {}
+        local seen_keys = _scratch_seen_keys
+        wipe(seen_keys)
         for _, entry in ipairs(list) do
             local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.filter)
             if not key then
