@@ -780,12 +780,17 @@ function M.build_custom_child_panel(p, entry)
     end
 
     -- Backfill spell IDs for iid-only entries after combat ends.
-    -- Force a fresh scan first so post-combat spell_ids are readable, then resolve.
+    -- Defer past the 0.1s scan bucket so M._aura_map has readable post-combat values,
+    -- then force a fresh unified_scan before resolving captured entries.
     local regen_frame = CreateFrame("Frame")
     regen_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     regen_frame:SetScript("OnEvent", function()
         if #cap_auras == 0 then return end
-        backfill_spell_ids()
+        C_Timer.After(0.15, function()
+            M._last_unified_scan_time = nil
+            M.unified_scan(nil, M.db and M.db.short_threshold or 60)
+            backfill_spell_ids()
+        end)
     end)
     if addon.main_frame then
         addon.main_frame:HookScript("OnHide", function() regen_frame:UnregisterAllEvents() end)
