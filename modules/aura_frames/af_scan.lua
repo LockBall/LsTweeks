@@ -17,6 +17,12 @@ local format        = format
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+-- Scratch tables reused every unified_scan call to avoid per-scan allocation.
+local _scratch_old_map      = {}
+local _scratch_old_cat      = {}
+local _scratch_seen_iids    = {}
+local _scratch_added_by_key = {}
+
 -- Session-scoped spell classification memory (reset on every login/reload, never persisted).
 -- Prevents mid-session category jumps when aura fields go secret in combat.
 M._known_static = M._known_static or {}  -- spell_id -> true (confirmed permanent)
@@ -24,6 +30,15 @@ M._known_long   = M._known_long   or {}  -- spell_id -> true (confirmed long-dur
 
 -- ============================================================================
 -- SHARED HELPERS
+
+local function make_order_key(spell_id, name, icon, is_helpful)
+    local f = is_helpful and "H" or "D"
+    local sid = (spell_id ~= nil and not issecretvalue(spell_id)) and tostring(spell_id) or nil
+    local n   = (name    ~= nil and not issecretvalue(name))     and tostring(name)     or nil
+    local ic  = (icon    ~= nil and not issecretvalue(icon))     and tostring(icon)     or nil
+    if not sid and not n and not ic then return nil end
+    return f .. "|" .. (sid or "") .. "|" .. (n or "") .. "|" .. (ic or "")
+end
 
 -- Returns remaining seconds, or nil if duration is nil/secret.
 local function compute_remaining(duration, expiration)
@@ -52,6 +67,7 @@ local function make_entry(iid, name, icon, duration, expiration, spell_id, dispe
         category     = category,
         filter       = is_helpful and "HELPFUL" or "HARMFUL",
         added_at     = added_at or GetTime(),
+        order_key    = make_order_key(spell_id, name, icon, is_helpful),
     }
 end
 
@@ -67,6 +83,7 @@ local function update_entry(entry, name, icon, duration, expiration, spell_id, d
     entry.count         = count
     entry.live_remaining = live_rem
     entry.live_count    = live_cnt
+    entry.order_key     = make_order_key(spell_id, name, icon, entry.is_helpful)
     if category then entry.category = category end
 end
 
@@ -80,19 +97,11 @@ local function get_safe_spell_id(raw_spell_id, old_entry)
     return nil
 end
 
-local function make_order_key(spell_id, name, icon, is_helpful)
-    local f = is_helpful and "H" or "D"
-    local sid = (spell_id ~= nil and not issecretvalue(spell_id)) and tostring(spell_id) or nil
-    local n   = (name    ~= nil and not issecretvalue(name))     and tostring(name)     or nil
-    local ic  = (icon    ~= nil and not issecretvalue(icon))     and tostring(icon)     or nil
-    if not sid and not n and not ic then return nil end
-    return f .. "|" .. (sid or "") .. "|" .. (n or "") .. "|" .. (ic or "")
-end
-
 local function build_added_by_key(map)
-    local by_key = {}
+    local by_key = _scratch_added_by_key
+    wipe(by_key)
     for _, entry in pairs(map) do
-        local key = make_order_key(entry.spell_id, entry.name, entry.icon, entry.is_helpful)
+        local key = entry.order_key
         if key and entry.added_at and (not by_key[key] or entry.added_at < by_key[key]) then
             by_key[key] = entry.added_at
         end
@@ -139,7 +148,8 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
     -- Snapshot old map for stable added_at and secret-field fallback.
     -- We build a shallow copy of keys only (old entries are referenced, not cloned).
-    local old_map = {}
+    local old_map = _scratch_old_map
+    wipe(old_map)
     for iid, entry in pairs(cur_map) do old_map[iid] = entry end
 
     local old_added_by_key = build_added_by_key(old_map)
@@ -157,7 +167,8 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     end
 
     local db = M.db
-    local seen_iids = {}
+    local seen_iids = _scratch_seen_iids
+    wipe(seen_iids)
 
     -- -------------------------------------------------------------------------
     -- PASS 1: HELPFUL (buffs)
@@ -169,7 +180,8 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
     -- Track old category by spell for cross-session refresh hinting.
     -- Built lazily from old_map each scan — no persistent table needed.
-    local old_cat_by_spell = {}
+    local old_cat_by_spell = _scratch_old_cat
+    wipe(old_cat_by_spell)
     for _, entry in pairs(old_map) do
         if entry.is_helpful and entry.spell_id and entry.category then
             old_cat_by_spell[entry.spell_id] = entry.category
