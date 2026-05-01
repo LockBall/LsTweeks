@@ -175,7 +175,11 @@ function M.build_custom_settings_panel(p, entry)
             entry.test_aura = false
             local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
             if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
+            local ta_child = M.controls["custom_" .. id .. "_test_aura_child"]
+            if ta_child and ta_child.SetChecked then ta_child:SetChecked(false) end
         end
+        local show_child = M.controls["custom_" .. id .. "_show_child"]
+        if show_child and show_child.SetChecked then show_child:SetChecked(is_checked) end
         update()
     end)
 
@@ -449,7 +453,29 @@ function M.build_custom_child_panel(p, entry)
             end
         end
     )
-    test_aura_container:SetPoint("TOPLEFT", cap_checkbox_container, "BOTTOMLEFT", 0, -4)
+    local child_enable_container, child_enable_cb = addon.CreateCheckbox(p, "Enable Frame", entry.show == true,
+        function(is_checked)
+            entry.show = is_checked
+            local settings_cb = M.controls["custom_" .. id .. "_show"]
+            if settings_cb and settings_cb.SetChecked then settings_cb:SetChecked(is_checked) end
+            if not is_checked then
+                entry.test_aura = false
+                local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
+                if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
+                local ta_child = M.controls["custom_" .. id .. "_test_aura_child"]
+                if ta_child and ta_child.SetChecked then ta_child:SetChecked(false) end
+            end
+            local frame = M.frames[show_key]
+            if frame then
+                M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing",
+                    (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+            end
+        end
+    )
+    child_enable_container:SetPoint("TOPLEFT", cap_checkbox_container, "BOTTOMLEFT", 0, -4)
+    M.controls["custom_" .. id .. "_show_child"] = child_enable_cb
+
+    test_aura_container:SetPoint("LEFT", child_enable_container, "RIGHT", 12, 0)
     M.controls["custom_" .. id .. "_test_aura_child"] = test_aura_cb
 
     -- ----------------------------------------------------------------
