@@ -9,6 +9,7 @@ local issecretvalue = issecretvalue
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+
 -- ============================================================================
 -- CUSTOM SETTINGS PANEL
 -- Same 4-column grid layout as the preset build_category_tab, but reads/writes
@@ -594,13 +595,19 @@ function M.build_custom_child_panel(p, entry)
                     entry.whitelist_icons[sid] = found_icon
                 end
                 rebuild_whitelist()
-                -- Immediately refresh the custom frame's auras so the newly
-                -- whitelisted spell appears without requiring a reload.
-                local f = M.frames[show_key]
-                if f then
-                    M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
-                        (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-                end
+                M.ResolveSpellID(sid, function(name, icon)
+                    if name then entry.whitelist[sid] = name end
+                    if icon then
+                        entry.whitelist_icons = entry.whitelist_icons or {}
+                        entry.whitelist_icons[sid] = icon
+                    end
+                    rebuild_whitelist()
+                    local f = M.frames[show_key]
+                    if f then
+                        M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
+                            (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
+                    end
+                end)
             end
             id_box:SetText("")
         end
@@ -626,6 +633,16 @@ function M.build_custom_child_panel(p, entry)
     local cap_header = cap_frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     cap_header:SetPoint("TOP", cap_frame, "TOP", 0, -5)
     cap_header:SetText("Captured Auras")
+
+    local cap_clear_btn = CreateFrame("Button", nil, cap_frame, "UIPanelButtonTemplate")
+    cap_clear_btn:SetSize(44, 16)
+    cap_clear_btn:SetPoint("TOPRIGHT", cap_frame, "TOPRIGHT", -2, -2)
+    cap_clear_btn:SetText("Clear")
+    cap_clear_btn:SetScript("OnClick", function()
+        cap_auras = {}
+        stop_capture()
+        rebuild_cap_list()
+    end)
 
     local cap_content = CreateFrame("Frame", nil, cap_frame)
     cap_content:SetPoint("TOPLEFT",     cap_frame, "TOPLEFT",     4, -20)
@@ -712,38 +729,30 @@ function M.build_custom_child_panel(p, entry)
         end
     end
 
-    -- Lookup tables for dedup. All keys must be plain (non-secret) types.
-    -- iid is a secretvalue — use tostring(iid). ae.instance_id is a plain number (same value).
-    -- spell_id is always a plain number. name/icon stored as values (not keys): secretvalue-safe.
-    local cap_by_iid  = {}  -- tostring(iid)   -> item  (stable per-scan tick during combat)
-    local cap_by_inst = {}  -- ae.instance_id   -> item  (persists as long as aura is active)
-    local cap_by_sid  = {}  -- spell_id         -> item  (available once combat ends)
+    -- Two dedup tables: inst_id is a plain number (safe key), sid available once not secret.
+    local cap_by_inst = {}  -- ae.instance_id -> item
+    local cap_by_sid  = {}  -- spell_id       -> item
 
     local function do_capture_scan()
         local want_helpful = (entry.filter == "HELPFUL")
         -- M._aura_map is already kept current by the main aura update pipeline.
         local changed = false
-        for iid, ae in pairs(M._aura_map or {}) do
+        for _, ae in pairs(M._aura_map or {}) do
             if ae.is_helpful == want_helpful then
-                local iid_key = tostring(iid)
-                local inst_id = ae.instance_id  -- plain number, always safe as table key
+                local inst_id = ae.instance_id
                 local sid     = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
-                local existing = cap_by_iid[iid_key] or cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
+                local existing = cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
                 if existing then
-                    -- Promote: fill in any fields now readable that weren't before.
                     if sid and not existing.spell_id then
-                        existing.spell_id  = sid
-                        cap_by_sid[sid]    = existing
+                        existing.spell_id = sid
+                        cap_by_sid[sid]   = existing
                         changed = true
                     end
                     if not existing.name then existing.name = ae.name; changed = true end
                     if not existing.icon then existing.icon = ae.icon; changed = true end
-                    -- Keep iid and inst lookups current.
-                    cap_by_iid[iid_key]  = existing
                     cap_by_inst[inst_id] = existing
                 elseif #cap_auras < CAP_MAX then
                     local item = { spell_id = sid, name = ae.name, icon = ae.icon }
-                    cap_by_iid[iid_key]  = item
                     cap_by_inst[inst_id] = item
                     if sid then cap_by_sid[sid] = item end
                     table.insert(cap_auras, item)
@@ -785,7 +794,6 @@ function M.build_custom_child_panel(p, entry)
         if cap_active then return end
         cap_active    = true
         cap_auras     = {}
-        cap_by_iid    = {}
         cap_by_inst   = {}
         cap_by_sid    = {}
         do_capture_scan()
