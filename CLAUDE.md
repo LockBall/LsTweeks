@@ -83,7 +83,7 @@ Ls_Tweeks_DB = {
     snap_to_grid = bool,
     show_grid = bool,
     show_bar_section_outlines = bool,  -- debug outline toggle (now under aura_frames, not root)
-    show_spell_id = bool,              -- show spell/aura ID in icon tooltips
+    show_spell_id = bool,              -- show spell ID in icon tooltips
     known_static_spell_ids = table,    -- learned permanent-aura spell IDs
     known_long_spell_ids = table,      -- learned long-aura spell IDs
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
@@ -103,7 +103,7 @@ DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static
 Positions are stored under `aura_frames.positions.<category>`.
 
 ## af_gui.lua Layout System
-`BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Aura ID** (tooltip spell ID toggle).
+`BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
 
 **Frames tab** has a left tree sidebar (140px wide) listing Static/Debuff/Short/Long plus custom entries with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
