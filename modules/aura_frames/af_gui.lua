@@ -115,7 +115,7 @@ function M.BuildSettings(parent)
     local tab_data = {
         { name = "General", is_general  = true },
         { name = "Frames",  is_frames   = true },
-        { name = "Aura ID", is_aura_id  = true },
+        { name = "Spell ID", is_aura_id  = true },
     }
 
     local build_category_tab  -- forward declaration so build_frames_tab can reference it
@@ -537,9 +537,9 @@ function M.BuildSettings(parent)
     local function build_aura_id_tab(p)
         local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
-        lbl:SetText("Show spell/aura/buff IDs in icon tooltips.")
+        lbl:SetText("Show spell ID in icon tooltips.")
 
-        local spell_id_container, spell_id_btn, _ = addon.CreateCheckbox(p, "Show Aura / Spell ID in Tooltip", M.db.show_spell_id == true,
+        local spell_id_container, spell_id_btn, _ = addon.CreateCheckbox(p, "Show Spell ID in Tooltip", M.db.show_spell_id == true,
             function(is_checked)
                 M.db.show_spell_id = is_checked
             end
