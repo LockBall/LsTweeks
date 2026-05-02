@@ -1,7 +1,6 @@
 -- Spell resolver utilities for aura_frames: resolve spell name/icon by spell ID.
 -- M.ResolveSpellID(sid, on_success) resolves immediately if data is loaded, otherwise
 -- requests load and polls. M.TryGetSpellInfo(sid) is a synchronous-only attempt.
--- M.af_log(msg) appends a timestamped entry to M.db.debug_log when debug_logging is on.
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -9,17 +8,7 @@ local M = addon.aura_frames
 
 local issecretvalue = issecretvalue
 local C_Spell       = C_Spell
-local GetTime       = GetTime
-local date          = date
 local tonumber      = tonumber
-
-function M.af_log(msg)
-    if not (M.db and M.db.debug_logging) then return end
-    M.db.debug_log = M.db.debug_log or {}
-    local t = date("%H:%M:%S") .. " [" .. string.format("%.1f", GetTime() % 1000) .. "] "
-    M.db.debug_log[#M.db.debug_log + 1] = t .. tostring(msg)
-    if #M.db.debug_log > 200 then table.remove(M.db.debug_log, 1) end
-end
 
 function M.TryGetSpellInfo(sid)
     sid = tonumber(sid) or sid

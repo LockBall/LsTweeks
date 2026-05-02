@@ -1,7 +1,7 @@
 -- Renders the current aura_map into visible icon frames for each category (static / short / long / debuff).
 -- render_aura_map() assigns textures, counts, and timer text to pooled icon frames
 -- set_timer_text() formats the countdown
--- merge_aura_info() combines stacked aura entries before display.
+-- merge_aura_info() combines pending UNIT_AURA payloads before the deferred scan.
 
 local addon_name, addon = ...
 
@@ -40,7 +40,7 @@ local function format_time(s)
 end
 
 -- ============================================================================
--- SORT HELPERS (also used in af_scan.lua — kept local, tiny pure functions)
+-- SORT HELPERS
 
 local function get_entry_sort_id(entry)
     if type(entry.instance_id) == "number" then

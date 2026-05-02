@@ -3,8 +3,10 @@
 This is the single source-of-truth document for aura frame behavior in this addon.
 
 Scope:
-- modules/aura_frames/af_logic.lua
-- modules/aura_frames/AF_main.lua
+- modules/aura_frames/af_scan.lua
+- modules/aura_frames/af_core.lua
+- modules/aura_frames/af_render.lua
+- modules/aura_frames/af_main.lua
 
 ## 1. Architecture and Flow
 
@@ -30,15 +32,15 @@ make_entry() stores per-aura records keyed by auraInstanceID:
 
 Runtime maps:
 - frame._aura_map: per-frame cache used for rendering
-- M._helpful_shared.map: shared HELPFUL authoritative map
-- M._helpful_shared.category_by_iid: final category assignment per helpful aura
-- M._helpful_shared.category_by_spell: category memory by spell ID
+- M._aura_map: shared unified scan cache keyed by auraInstanceID
 
 ## 3. Classification Behavior
 
-### Helpful Auras (single authority)
+### Unified Scan
 
-scan_helpful_shared() assigns each helpful aura to exactly one category:
+M.unified_scan() scans helpful and harmful player auras into M._aura_map.
+
+Helpful auras are assigned exactly one category:
 - show_static
 - show_short
 - show_long
@@ -48,21 +50,19 @@ Classification uses best readable timing first:
 - rem from compute_remaining(duration, expiration)
 
 Stability helpers:
-- M.db.known_static_spell_ids
-- M.db.known_long_spell_ids
+- M._known_static
+- M._known_long
 
 Fallback logic uses:
 - C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
 - old category memory (by iid/spell)
 - replacement preference when one aura is removed and one is added
 
-### Harmful Auras
-
-Debuffs continue to use full_scan() per frame:
+Harmful auras are scanned in the same unified pass:
 - Reads by index via GetDebuffDataByIndex
 - Uses guarded readable checks for timing/fields
 - Recovers old entry data when current fields are secret
-- Applies per-frame membership with categorize_aura() and dispel-type visibility
+- Uses category = "debuff"
 
 ## 4. Taint and Secret-Value Strategy
 
@@ -73,16 +73,16 @@ Core rules:
 4. Preserve old cached entry data when current fields are unreadable.
 
 Where this is enforced:
-- AF_main.lua
+- af_main.lua
   - merge_aura_info() unions payload deltas
   - OnEvent queues one deferred scan and deduplicates rapid events
-- af_logic.lua
+- af_scan.lua
   - compute_remaining() returns nil for unreadable timing
-  - scan_helpful_shared()/full_scan() branch by readability
+  - unified_scan() branches by readability
   - safe_duration/safe_expiration/safe_remaining fallback chains preserve continuity
 
 Guardrails:
-- Keep HELPFUL classification in shared one-pass scan
+- Keep HELPFUL classification in unified_scan()
 - Avoid reintroducing independent per-frame HELPFUL scans
 - Any new math/comparison on aura fields must check readability first
 
@@ -131,9 +131,3 @@ Short-frame stabilization:
 
 - For this addon target/build, TOC Interface should remain 120000.
 - The module is written against modern C_UnitAuras APIs and avoids legacy UnitAura usage.
-
-## 9. Legacy Helper Note
-
-apply_combat_delta() still exists in af_logic.lua, but current update_auras() routing uses:
-- HELPFUL -> scan_helpful_shared()
-- HARMFUL -> full_scan()

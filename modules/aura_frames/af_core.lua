@@ -270,10 +270,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         local want_helpful = (custom_entry.filter == "HELPFUL")
         local spell_cache = M.db and M.db.spell_name_cache or {}
 
-        -- First pass: match entries that have a readable spell_id or name.
-        -- Collect unmatched entries whose spell_id is nil/secret (private aura candidates).
-        local nil_sid_entries = {}
-        local cleu_matched = {}  -- sid -> true, already assigned to an entry
+        -- Match entries that have a readable spell_id or name.
         for iid, entry in pairs(M._aura_map) do
             if entry.is_helpful == want_helpful then
                 local sid = normalize_spell_id(entry.spell_id)
@@ -287,35 +284,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
                 end
                 if sid and whitelist_by_id[sid] then
                     self._aura_map[iid] = entry
-                    cleu_matched[sid] = true
-                elseif not sid then
-                    -- All identifying fields are secret — candidate for CLEU matching.
-                    nil_sid_entries[#nil_sid_entries + 1] = { iid = iid, entry = entry }
-                end
-            end
-        end
-
-        -- Second pass: for whitelisted spell_ids seen in CLEU but not yet matched,
-        -- assign one nil-sid entry per spell_id and patch its icon from the spell cache.
-        if M._cleu_active and #nil_sid_entries > 0 then
-            local pool_idx = 1
-            for raw_sid in pairs(M._cleu_active) do
-                local sid = normalize_spell_id(raw_sid)
-                if sid and whitelist_by_id[sid] and not cleu_matched[sid] then
-                    local slot = nil_sid_entries[pool_idx]
-                    if not slot then break end
-                    pool_idx = pool_idx + 1
-                    local patched = slot.entry
-                    -- Patch icon from cache so the icon renders even though entry.icon is SECRET.
-                    local cached = spell_cache[sid] or spell_cache[tostring(sid)]
-                    if cached and cached.iconID then
-                        patched = {}
-                        for k, v in pairs(slot.entry) do patched[k] = v end
-                        patched.icon = cached.iconID
-                        patched.spell_id = sid
-                    end
-                    self._aura_map[slot.iid] = patched
-                    cleu_matched[sid] = true
                 end
             end
         end
