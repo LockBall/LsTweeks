@@ -139,6 +139,7 @@ M.defaults = {
     bar_text_color_important = { r = 1, g = 1, b = 1 },
 
     -- ESSENTIAL
+    cooldown_mode_essential = false,
     show_essential      = true,
     move_essential      = true,
     timer_essential     = true,

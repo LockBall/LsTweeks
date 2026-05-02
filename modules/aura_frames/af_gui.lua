@@ -1158,6 +1158,12 @@ function M.BuildSettings(parent)
 
         -- Frame BG color picker
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
+
+        -- Cooldown Mode toggle (essential only): show cooldown remaining instead of aura duration
+        if cat == "essential" then
+            create_bound_checkbox("Cooldown Mode", "cooldown_mode_essential", 2, 4, update)
+        end
+
         add_row_separator(2)
 
         -- Row 3: Bar Mode, color pickers

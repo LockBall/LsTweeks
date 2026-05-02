@@ -4,7 +4,6 @@
 local addon_name, addon = ...
 
 local C_UnitAuras   = C_UnitAuras
-local C_CooldownViewer = C_CooldownViewer
 local issecretvalue = issecretvalue
 local tonumber      = tonumber
 local tostring      = tostring
@@ -18,7 +17,6 @@ local FULL_AURA_SCAN_LIMIT = 255
 local LAST_SEEN_TTL = 20
 local _debug_last = {}
 M._custom_debug_lines = M._custom_debug_lines or {}
-M._custom_debug_baseline_done = M._custom_debug_baseline_done or false
 
 local function value_state(value)
     if value == nil then return "nil" end
@@ -52,7 +50,6 @@ end
 function M.clear_custom_debug_log()
     wipe(M._custom_debug_lines)
     wipe(_debug_last)
-    M._custom_debug_baseline_done = false
     if DEFAULT_CHAT_FRAME then
         DEFAULT_CHAT_FRAME:AddMessage("|cff88ccffLsT custom|r debug log cleared")
     end
@@ -64,82 +61,6 @@ function M.print_custom_debug_log()
     for _, line in ipairs(M._custom_debug_lines or {}) do
         DEFAULT_CHAT_FRAME:AddMessage(line)
     end
-end
-
-local function cdm_category(name, fallback)
-    local enum = Enum and Enum.CooldownViewerCategory
-    return (enum and enum[name]) or fallback
-end
-
-local function probe_cooldown_viewer(frame, sid)
-    if not (M.db and M.db.debug_custom_aura) then return end
-    local api_ok = C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet
-        and C_CooldownViewer.GetCooldownViewerCooldownInfo
-    local icon_viewer = _G["BuffIconCooldownViewer"]
-    local bar_viewer = _G["BuffBarCooldownViewer"]
-    debug_custom_match(frame, sid,
-        "cdv api=" .. (api_ok and "yes" or "no")
-        .. " iconViewer=" .. (icon_viewer and "yes" or "no")
-        .. " barViewer=" .. (bar_viewer and "yes" or "no"))
-
-    if api_ok then
-        local categories = {
-            cdm_category("TrackedBuff", 2),
-            cdm_category("TrackedBar", 3),
-        }
-        for _, category in ipairs(categories) do
-            local ok, ids = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, category, true)
-            local count = (ok and ids) and #ids or 0
-            local found = "no"
-            if ok and ids then
-                for _, cooldown_id in ipairs(ids) do
-                    local info_ok, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
-                    if info and info.spellID == sid then
-                        found = "cd=" .. tostring(cooldown_id)
-                            .. " hasAura=" .. safe_value(info.hasAura)
-                            .. " name=" .. safe_value(info.name)
-                            .. " icon=" .. safe_value(info.icon)
-                        break
-                    end
-                end
-            end
-            debug_custom_match(frame, sid,
-                "cdv cat=" .. tostring(category)
-                .. " count=" .. tostring(count)
-                .. " sid=" .. tostring(sid)
-                .. " found=" .. found)
-        end
-    end
-
-    local function probe_viewer(viewer, label)
-        if not viewer then return end
-        local children = { viewer:GetChildren() }
-        debug_custom_match(frame, sid, "cdv " .. label .. " children=" .. tostring(#children))
-        for idx = 1, math.min(#children, 5) do
-            local child = children[idx]
-            local cooldown_id = child.cooldownID or child.cooldownId or child.id
-                or (child.GetCooldownID and child:GetCooldownID())
-            local spell_id = child.spellID or child.spellId
-            debug_custom_match(frame, sid,
-                "cdv " .. label .. idx
-                .. " shown=" .. safe_value(child:IsShown())
-                .. " cd=" .. safe_value(cooldown_id)
-                .. " spell=" .. safe_value(spell_id)
-                .. " name=" .. safe_value(child:GetName()))
-        end
-    end
-    probe_viewer(icon_viewer, "icon")
-    probe_viewer(bar_viewer, "bar")
-end
-
-local function probe_cooldown_viewer_baseline(frame)
-    if not (M.db and M.db.debug_custom_aura) then return end
-    if M._custom_debug_baseline_done then return end
-    M._custom_debug_baseline_done = true
-
-    debug_custom_match(frame, "baseline", "baseline begin")
-    probe_cooldown_viewer(frame, -1)
-    debug_custom_match(frame, "baseline", "baseline end")
 end
 
 local function normalize_spell_id(sid)
@@ -262,7 +183,6 @@ end
 
 function M.filter_custom_aura_map(frame, custom_entry, shared_map)
     if not (frame and custom_entry and shared_map) then return end
-    probe_cooldown_viewer_baseline(frame)
 
     local whitelist_by_id, whitelist_by_name = build_whitelist_lookups(custom_entry.whitelist)
     local want_helpful = (custom_entry.filter == "HELPFUL")
@@ -363,7 +283,6 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
                     debug_custom_match(frame, sid, "replay sid=" .. tostring(sid) .. " age=" .. tostring(math.floor(now - (remembered.seen_at or now))))
                 end
                 local cached = spell_cache and (spell_cache[sid] or spell_cache[tostring(sid)])
-                probe_cooldown_viewer(frame, sid)
                 debug_custom_match(frame, sid,
                     "miss sid=" .. tostring(sid)
                     .. " cache=" .. (cached and "yes" or "no")

@@ -1,8 +1,6 @@
 -- Unified aura scanning and classification for all aura frame categories.
 -- M.unified_scan() runs one pass over all player buffs and debuffs, classifying each into M._aura_map
 -- with an entry.category ("static"/"short"/"long"/"debuff") and entry.is_helpful flag.
--- Additional boolean tags are layered per entry for filter-backed buckets:
---   is_important, is_essential, is_utility, is_tracked_buffs, is_tracked_bars
 -- Spell learning (M._known_static, M._known_long) is session-scoped only — never written to DB.
 -- Custom frames post-filter M._aura_map by whitelist; preset frames filter by entry.category.
 
@@ -14,9 +12,7 @@ local GetTime    = GetTime
 local wipe       = wipe
 local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
-local C_CooldownViewer = C_CooldownViewer
 local C_Spell       = C_Spell
-local Enum          = Enum
 local format        = format
 
 addon.aura_frames = addon.aura_frames or {}
@@ -140,91 +136,6 @@ local function learn_important_aura(spell_id, name, icon)
     cached.seen = time()
 end
 
-local function get_cooldown_viewer_category(name, fallback)
-    local enum = Enum and Enum.CooldownViewerCategory
-    return (enum and enum[name]) or fallback
-end
-
-local COOLDOWN_VIEWER_FRAME_NAMES = {
-    essential = "EssentialCooldownViewer",
-    utility = "UtilityCooldownViewer",
-    tracked_buffs = "BuffIconCooldownViewer",
-    tracked_bars = "BuffBarCooldownViewer",
-}
-
-local function get_cooldown_viewer_layout_ids(category)
-    local frame_name = COOLDOWN_VIEWER_FRAME_NAMES[category]
-    local frame = frame_name and _G and _G[frame_name]
-    if not (frame and frame.GetChildren) then return nil end
-
-    local ok, children = pcall(function()
-        return { frame:GetChildren() }
-    end)
-    if not ok then return nil end
-
-    local ids = {}
-    for _, child in ipairs(children) do
-        local cooldown_id = child and child.cooldownID
-        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
-            ids[#ids + 1] = cooldown_id
-        end
-    end
-
-    return ids
-end
-
-local function make_spell_signature(name, icon)
-    local safe_name = (name ~= nil and not issecretvalue(name)) and tostring(name) or nil
-    local safe_icon = (icon ~= nil and not issecretvalue(icon)) and tostring(icon) or nil
-    if not safe_name and not safe_icon then return nil end
-    return (safe_name or "") .. "|" .. (safe_icon or "")
-end
-
-local function add_cooldown_info_spell_ids(set, info)
-    if not (set and info) then return end
-    -- Cooldown viewer payloads are not fully stable across entries/builds.
-    -- Collect a conservative list of known spell-id fields.
-    local keys = {
-        "spellID", "spellId",
-        "baseSpellID", "baseSpellId",
-        "auraSpellID", "auraSpellId",
-        "overrideSpellID", "overrideSpellId",
-        "parentSpellID", "parentSpellId",
-    }
-    for _, key in ipairs(keys) do
-        local sid = info[key]
-        if sid ~= nil and not issecretvalue(sid) then
-            sid = tonumber(sid) or sid
-            if sid then set[sid] = true end
-        end
-    end
-end
-
-local function get_cooldown_info_spell_id(info)
-    if not info then return nil end
-    local sid = info.overrideSpellID or info.overrideSpellId
-        or info.spellID or info.spellId
-        or info.overrideTooltipSpellID or info.overrideTooltipSpellId
-    if sid ~= nil and not issecretvalue(sid) then
-        return tonumber(sid) or sid
-    end
-    return nil
-end
-
-local function get_cooldown_info_linked_ids(info)
-    local linked_ids = {}
-    local linked = info and (info.linkedSpellIDs or info.linkedSpellIds)
-    if type(linked) == "table" then
-        for _, sid in ipairs(linked) do
-            if sid ~= nil and not issecretvalue(sid) then
-                sid = tonumber(sid) or sid
-                if sid then linked_ids[sid] = true end
-            end
-        end
-    end
-    return linked_ids
-end
-
 local function get_spell_display(spell_id)
     if not (spell_id and C_Spell and C_Spell.GetSpellInfo) then return nil, nil end
     local ok, info = pcall(C_Spell.GetSpellInfo, spell_id)
@@ -234,175 +145,132 @@ local function get_spell_display(spell_id)
     return nil, nil
 end
 
-local function make_cooldown_category_entry(category, cooldown_id, info)
-    local spell_id = get_cooldown_info_spell_id(info)
-    if not spell_id then return nil end
+-- Blizzard global frame names for each WoW Cooldown Manager category.
+-- Children of these frames carry an auraInstanceID field when their aura is active.
+local VIEWER_FRAME_NAMES = {
+    essential     = "EssentialCooldownViewer",
+    utility       = "UtilityCooldownViewer",
+    tracked_buffs = "BuffIconCooldownViewer",
+    tracked_bars  = "BuffBarCooldownViewer",
+}
 
-    local name = info and info.name
-    local icon = info and info.icon
-    if name == nil or issecretvalue(name) or icon == nil or issecretvalue(icon) then
-        local spell_name, spell_icon = get_spell_display(spell_id)
-        if name == nil or issecretvalue(name) then name = spell_name end
-        if icon == nil or issecretvalue(icon) then icon = spell_icon end
-    end
-    if not icon then return nil end
+-- Cache populated by hooks on Blizzard's Cooldown widgets.
+-- Keyed by spellID: { expiration, duration }
+-- Captures timing at the moment Blizzard sets it — before it becomes secret to addon code.
+M._cd_hook_cache = M._cd_hook_cache or {}
 
-    local duration = 0
-    local expiration = 0
-    local remaining = 0
-    if (category == "essential" or category == "utility") and C_Spell and C_Spell.GetSpellCooldown then
-        local ok, cd = pcall(C_Spell.GetSpellCooldown, spell_id)
-        if ok and cd then
-            local cd_duration = cd.duration
-            local cd_start = cd.startTime
-            if cd_duration ~= nil and cd_start ~= nil
-                    and not issecretvalue(cd_duration)
-                    and not issecretvalue(cd_start)
-                    and cd_duration > 1.5 then
-                expiration = cd_start + cd_duration
-                remaining = math_max(0, expiration - GetTime())
-                if remaining > 0 then
-                    duration = cd_duration
-                else
-                    expiration = 0
-                    remaining = 0
-                end
+-- Lazily attaches hooks to a CooldownViewer child frame on first encounter.
+-- SetCooldown arguments (start, duration) are readable in the hook even during combat
+-- because they are passed explicitly by Blizzard code — only C API return values are secret.
+-- SetCooldownFromDurationObject uses the Duration object path instead.
+-- child._lstweeks_spell_id caches the spell ID when first seen readable (OOC),
+-- so the hook and scan can still key the cache entry while spellID is secret in combat.
+local function hook_cd_item_frame(child)
+    if child._lstweeks_cd_hooked then return end
+    local cd = child.Cooldown
+    if not cd then return end
+    child._lstweeks_cd_hooked = true
+
+    local cache = M._cd_hook_cache
+
+    local function get_spell_id()
+        local info = child.cooldownInfo
+        if info then
+            local sid = info.overrideSpellID or info.spellID
+            if sid and not issecretvalue(sid) then
+                child._lstweeks_spell_id = sid  -- refresh cache whenever readable
+                return sid
             end
         end
+        return child._lstweeks_spell_id  -- fall back to last-known value in combat
     end
 
-    return {
-        instance_id = "cdv:" .. category .. ":" .. tostring(cooldown_id),
-        is_spell_cooldown = true,
-        name = name or tostring(spell_id),
-        icon = icon,
-        duration = duration,
-        expiration = expiration,
-        remaining = remaining,
-        count = 0,
-        spell_id = spell_id,
-        linked_spell_ids = get_cooldown_info_linked_ids(info),
-        is_helpful = true,
-        category = category,
-        filter = "HELPFUL",
-        added_at = GetTime(),
-    }
+    -- Standard cooldown path: arguments are not secret, read directly.
+    pcall(hooksecurefunc, cd, "SetCooldown", function(_, start, duration)
+        if not (start and duration) then return end
+        if issecretvalue(start) or issecretvalue(duration) then return end
+        if duration <= 1.5 then return end  -- GCD
+        local sid = get_spell_id()
+        if sid then cache[sid] = { expiration = start + duration, duration = duration } end
+    end)
+
+    -- Duration-object path (12.x combat cooldowns): read via the Duration object methods,
+    -- which are accessible to addons in combat unlike raw C_Spell.GetSpellCooldown fields.
+    if cd.SetCooldownFromDurationObject then
+        pcall(hooksecurefunc, cd, "SetCooldownFromDurationObject", function(_, dur_obj)
+            if not dur_obj then return end
+            local ok_r, remaining  = pcall(function() return dur_obj:GetRemainingDuration() end)
+            local ok_e, expiration = pcall(function() return dur_obj:GetExpirationTime()    end)
+            if not (ok_r and ok_e and remaining and expiration) then return end
+            if issecretvalue(remaining) or issecretvalue(expiration) then return end
+            if remaining <= 1.5 then return end  -- GCD
+            local sid = get_spell_id()
+            if sid then cache[sid] = { expiration = expiration, duration = remaining } end
+        end)
+    end
 end
 
-local function category_entry_matches_aura(category_entry, aura_entry)
-    if not (category_entry and aura_entry) then return false end
-    if category_entry.spell_id and aura_entry.spell_id and category_entry.spell_id == aura_entry.spell_id then
-        return true
-    end
-    if category_entry.linked_spell_ids and aura_entry.spell_id and category_entry.linked_spell_ids[aura_entry.spell_id] then
-        return true
-    end
-    if category_entry.name ~= nil and aura_entry.name ~= nil
-            and not issecretvalue(category_entry.name)
-            and not issecretvalue(aura_entry.name)
-            and tostring(category_entry.name) == tostring(aura_entry.name) then
-        return true
-    end
-    if category_entry.icon ~= nil and aura_entry.icon ~= nil
-            and not issecretvalue(category_entry.icon)
-            and not issecretvalue(aura_entry.icon)
-            and tostring(category_entry.icon) == tostring(aura_entry.icon) then
-        return true
-    end
-    return false
-end
-
-local function find_matching_aura_entry(aura_map, category_entry)
-    if not (aura_map and category_entry) then return nil end
-    for _, aura_entry in pairs(aura_map) do
-        if not aura_entry.is_spell_cooldown and category_entry_matches_aura(category_entry, aura_entry) then
-            return aura_entry
-        end
-    end
-    return nil
-end
-
+-- Populates target_map by walking the Blizzard CooldownViewer frame for this category.
+-- Aura mode:     reads child.auraInstanceID → maps directly to M._aura_map entries.
+-- Cooldown mode: hooks Blizzard's Cooldown widgets to capture timing on write, then reads
+--                from that cache — never queries secret values at scan time.
 function M.add_cooldown_viewer_category_entries(target_map, category)
-    if not target_map then return end
-    if not (C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo) then return end
+    local frame_name = VIEWER_FRAME_NAMES[category]
+    if not frame_name then return end
+    local viewer = _G[frame_name]
+    if not viewer then return end
 
-    local ids = get_cooldown_viewer_layout_ids(category)
-    if not (ids and #ids > 0) then return end
+    local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]
 
-    for _, cooldown_id in ipairs(ids) do
-        local ok_info, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
-        if ok_info and info then
-            local category_entry = make_cooldown_category_entry(category, cooldown_id, info)
-            if category_entry then
-                if category == "tracked_buffs" or category == "tracked_bars" then
-                    local aura_entry = find_matching_aura_entry(M._aura_map, category_entry)
-                    if aura_entry then
-                        target_map[aura_entry.instance_id] = aura_entry
-                    else
-                        target_map[category_entry.instance_id] = category_entry
-                    end
-                else
-                    target_map[category_entry.instance_id] = category_entry
+    if cooldown_mode then
+        local now   = GetTime()
+        local cache = M._cd_hook_cache
+        for _, child in ipairs({viewer:GetChildren()}) do
+            hook_cd_item_frame(child)  -- no-op after first call per child; also seeds _lstweeks_spell_id
+            -- Prefer readable cooldownInfo, fall back to the per-child cached ID set by the hook.
+            local spell_id
+            local info = child.cooldownInfo
+            if info then
+                local sid = info.overrideSpellID or info.spellID
+                if sid and not issecretvalue(sid) then
+                    child._lstweeks_spell_id = sid
+                    spell_id = sid
+                end
+            end
+            if not spell_id then spell_id = child._lstweeks_spell_id end
+            if spell_id then
+                local cached = cache[spell_id]
+                if cached and cached.expiration and cached.expiration > now then
+                    local remaining = cached.expiration - now
+                    local key = "cd_" .. spell_id
+                    target_map[key] = {
+                        instance_id       = key,
+                        is_spell_cooldown = true,
+                        spell_id          = spell_id,
+                        name              = C_Spell.GetSpellName(spell_id),
+                        icon              = C_Spell.GetSpellTexture(spell_id),
+                        duration          = cached.duration,
+                        remaining         = remaining,
+                        expiration        = cached.expiration,
+                        count             = 0,
+                        live_count        = nil,
+                        is_helpful        = true,
+                        category          = category,
+                        filter            = "HELPFUL",
+                        order_key         = "cd|" .. tostring(spell_id),
+                    }
                 end
             end
         end
-    end
-end
-
-function M.invalidate_cooldown_viewer_cache()
-    M._cooldown_viewer_spell_ids_cache = nil
-    M._cooldown_viewer_spell_ids_cache_time = nil
-    M._cooldown_viewer_spell_ids_dirty = true
-end
-
-local function refresh_cooldown_viewer_spell_ids()
-    local now = GetTime()
-    local cache = M._cooldown_viewer_spell_ids_cache
-    local dirty = M._cooldown_viewer_spell_ids_dirty == true
-    local cache_age = (M._cooldown_viewer_spell_ids_cache_time and (now - M._cooldown_viewer_spell_ids_cache_time)) or nil
-    local stale = cache_age and cache_age > 60
-    if cache and (not dirty) and (not stale) then
-        return cache
-    end
-
-    local api_ok = C_CooldownViewer
-        and C_CooldownViewer.GetCooldownViewerCategorySet
-        and C_CooldownViewer.GetCooldownViewerCooldownInfo
-    if not api_ok then return cache end
-
-    local spell_ids = {
-        essential = { by_sid = {}, by_sig = {} },
-        utility = { by_sid = {}, by_sig = {} },
-        tracked_buffs = { by_sid = {}, by_sig = {} },
-        tracked_bars = { by_sid = {}, by_sig = {} },
-    }
-    local categories = {
-        { id = get_cooldown_viewer_category("Essential", 0), key = "essential" },
-        { id = get_cooldown_viewer_category("Utility", 1), key = "utility" },
-        { id = get_cooldown_viewer_category("TrackedBuff", 2), key = "tracked_buffs" },
-        { id = get_cooldown_viewer_category("TrackedBar", 3), key = "tracked_bars" },
-    }
-
-    for _, category in ipairs(categories) do
-        local ok, ids = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, category.id, true)
-        if ok and ids then
-            for _, cooldown_id in ipairs(ids) do
-                local info_ok, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
-                if info_ok and info then
-                    add_cooldown_info_spell_ids(spell_ids[category.key].by_sid, info)
-                end
-                local sig = info_ok and info and make_spell_signature(info.name, info.icon)
-                if sig then
-                    spell_ids[category.key].by_sig[sig] = true
-                end
+    else
+        for _, child in ipairs({viewer:GetChildren()}) do
+            local iid = child.auraInstanceID
+            if iid then
+                local entry = M._aura_map[iid]
+                if entry then target_map[iid] = entry end
             end
         end
     end
-
-    M._cooldown_viewer_spell_ids_cache = spell_ids
-    M._cooldown_viewer_spell_ids_cache_time = now
-    M._cooldown_viewer_spell_ids_dirty = false
-    return spell_ids
 end
 
 local function build_added_by_key(map)
@@ -461,10 +329,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     for iid, entry in pairs(cur_map) do old_map[iid] = entry end
     for _, entry in pairs(cur_map) do
         entry.is_important = nil
-        entry.is_essential = nil
-        entry.is_utility = nil
-        entry.is_tracked_buffs = nil
-        entry.is_tracked_bars = nil
     end
 
     local old_added_by_key = build_added_by_key(old_map)
@@ -482,7 +346,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     end
 
     local db = M.db
-    local cooldown_viewer_spell_ids = refresh_cooldown_viewer_spell_ids()
     local seen_iids = _scratch_seen_iids
     wipe(seen_iids)
 
@@ -632,30 +495,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 entry.live_remaining = live_remaining
                 entry.live_count     = live_count
                 cur_map[iid] = entry
-            end
-            if cooldown_viewer_spell_ids then
-                local aura_sig = make_spell_signature(name, icon)
-                local essential_set = cooldown_viewer_spell_ids.essential
-                local utility_set = cooldown_viewer_spell_ids.utility
-                local tracked_buffs_set = cooldown_viewer_spell_ids.tracked_buffs
-                local tracked_bars_set = cooldown_viewer_spell_ids.tracked_bars
-
-                if (safe_spell_id and essential_set and essential_set.by_sid[safe_spell_id])
-                        or (aura_sig and essential_set and essential_set.by_sig[aura_sig]) then
-                    entry.is_essential = true
-                end
-                if (safe_spell_id and utility_set and utility_set.by_sid[safe_spell_id])
-                        or (aura_sig and utility_set and utility_set.by_sig[aura_sig]) then
-                    entry.is_utility = true
-                end
-                if (safe_spell_id and tracked_buffs_set and tracked_buffs_set.by_sid[safe_spell_id])
-                        or (aura_sig and tracked_buffs_set and tracked_buffs_set.by_sig[aura_sig]) then
-                    entry.is_tracked_buffs = true
-                end
-                if (safe_spell_id and tracked_bars_set and tracked_bars_set.by_sid[safe_spell_id])
-                        or (aura_sig and tracked_bars_set and tracked_bars_set.by_sig[aura_sig]) then
-                    entry.is_tracked_bars = true
-                end
             end
             learn_aura_identity(safe_spell_id, name, icon, "HELPFUL")
             seen_iids[iid] = true
