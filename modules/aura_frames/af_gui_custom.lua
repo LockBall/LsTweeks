@@ -641,6 +641,8 @@ function M.build_custom_child_panel(p, entry)
     cap_header:SetPoint("TOP", cap_frame, "TOP", 0, -5)
     cap_header:SetText("Captured Auras")
 
+    local rebuild_cap_list
+
     local cap_clear_btn = CreateFrame("Button", nil, cap_frame, "UIPanelButtonTemplate")
     cap_clear_btn:SetSize(44, 16)
     cap_clear_btn:SetPoint("TOPRIGHT", cap_frame, "TOPRIGHT", -2, -2)
@@ -658,7 +660,7 @@ function M.build_custom_child_panel(p, entry)
 
     local cap_rows = {}
 
-    local function rebuild_cap_list()
+    rebuild_cap_list = function()
         for _, row in ipairs(cap_rows) do row:Hide() end
         local ry = 0
         for idx, item in ipairs(cap_auras) do

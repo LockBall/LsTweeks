@@ -23,10 +23,13 @@ af_test_aura.lua       — fake preview aura system
 af_scan.lua            — aura data acquisition
 af_render.lua          — visual output per frame
 af_icon_layout.lua     — geometry and positioning of icons within each category frame
+af_custom_filter.lua   — custom-frame whitelist matching and combat lookup fallback
 af_core.lua            — ticker, blizz toggles, main update loop
 af_spell_resolver.lua  — spell metadata resolution and aura registry
 af_gui.lua             — settings tab builder
+af_gui_custom.lua      — custom-frame settings and aura capture UI
 af_debug_outlines.lua  — developer slot outlines
+af_grid.lua            — layout grid helpers for the settings UI
 af_main.lua            — frame construction and addon bootstrap  (loads last)
 ```
 
@@ -135,6 +138,20 @@ Defines:
 - `M.set_height_for_growth(self, new_height, growth)` — resizes the aura frame while keeping the
   correct edge anchored. DOWN growth keeps the top edge fixed; UP growth keeps the bottom edge
   fixed. Adjusts the stored y offset to compensate so the frame does not jump on screen.
+
+---
+
+### af_custom_filter.lua
+**Role:** Custom whitelist matching for user-created aura frames. Keeps the custom-frame specifics
+out of the core update loop.
+
+Defines:
+- `M.get_custom_scan_limits(db)` — tells `af_scan` when custom frames need the broader 255-slot
+  helpful/harmful scan, limited to visible/moving custom whitelist frames or active capture.
+- `M.filter_custom_aura_map(frame, custom_entry, shared_map)` — filters the shared scan results into
+  one custom frame by whitelist and aura filter. It uses readable spell IDs/names when available,
+  the persisted aura registry when combat hides fields, per-frame `auraInstanceID -> spellID` memory
+  for already-proven auras, and direct whitelisted spell-ID lookup for newly applied combat auras.
 
 ---
 
