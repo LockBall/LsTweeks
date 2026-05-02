@@ -52,4 +52,7 @@ on reload, a window is immediately displayed with a message and 2 buttons, disab
 
 LsTweeks has been blocked from an action only available tot he Blizzard UI. You can disable this addon and relaod the UI.
 
+TODO:
+- Refactor test aura previews toward "fake data, real rendering" so they follow the same render/ticker/layout rules as real aura and CDM entries. Avoid separate visual behavior in `af_test_aura.lua` except for generating placeholder icon/duration/count data.
+
 

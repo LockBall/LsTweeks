@@ -88,6 +88,8 @@ end
 
 function M.update_test_preview_display(obj, show_key, short_threshold, show_timer_text, bar_mode, now)
     local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
+    local category = show_key:sub(6)
+    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay and M.uses_cooldown_icon_overlay(category, bar_mode, M.db)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining
@@ -108,7 +110,7 @@ function M.update_test_preview_display(obj, show_key, short_threshold, show_time
         end
         if show_timer_text and duration > 0 then
             obj.time_text:Show()
-            M.set_timer_text(obj.time_text, show_key:sub(6), remaining)
+            M.set_timer_text(obj.time_text, category, remaining)
         else
             obj.time_text:Hide()
         end
@@ -122,9 +124,9 @@ function M.update_test_preview_display(obj, show_key, short_threshold, show_time
         else
             obj.count_text:Hide()
         end
-        if show_timer_text and duration > 0 then
+        if show_timer_text and duration > 0 and not cooldown_icon_overlay then
             obj.time_text:Show()
-            M.set_timer_text(obj.time_text, show_key:sub(6), remaining)
+            M.set_timer_text(obj.time_text, category, remaining)
         else
             obj.time_text:Hide()
         end
