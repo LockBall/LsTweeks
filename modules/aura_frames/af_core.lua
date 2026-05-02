@@ -9,75 +9,9 @@ local GetTime        = GetTime
 local issecretvalue  = issecretvalue
 local C_UnitAuras    = C_UnitAuras
 local wipe           = wipe
-local tonumber       = tonumber
-local tostring       = tostring
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
-
-local FULL_AURA_SCAN_LIMIT = 255
-
-local function normalize_spell_id(sid)
-    if sid == nil or issecretvalue(sid) then return nil end
-    return tonumber(sid) or sid
-end
-
-local function build_whitelist_lookups(whitelist)
-    local by_id = {}
-    local by_name = {}
-    for raw_sid, wname in pairs(whitelist or {}) do
-        local sid = normalize_spell_id(raw_sid)
-        if sid then by_id[sid] = wname or true end
-        if wname then by_name[wname] = sid end
-    end
-    return by_id, by_name
-end
-
-local function has_whitelist_entries(whitelist)
-    for sid in pairs(whitelist or {}) do
-        if normalize_spell_id(sid) then return true end
-    end
-    return false
-end
-
-local function cache_aura_identity(sid, entry)
-    if sid and M.CacheAuraInfo and entry then
-        M.CacheAuraInfo(sid, entry.name, entry.icon, entry.filter)
-    end
-end
-
-local function patch_entry_from_registry(entry, sid, registry)
-    local cached = registry and sid and (registry[sid] or registry[tostring(sid)])
-    if not cached then return entry end
-    local needs_name = entry.name == nil or issecretvalue(entry.name)
-    local needs_icon = entry.icon == nil or issecretvalue(entry.icon)
-    if not ((needs_name and cached.name) or (needs_icon and cached.iconID)) then
-        return entry
-    end
-
-    local patched = {}
-    for k, v in pairs(entry) do patched[k] = v end
-    if needs_name and cached.name then patched.name = cached.name end
-    if needs_icon and cached.iconID then patched.icon = cached.iconID end
-    patched.spell_id = sid
-    return patched
-end
-
-local function custom_scan_limits(db)
-    local helpful, harmful = 0, 0
-    local capture_runtime = M._custom_capture_runtime or {}
-    for _, entry in ipairs((db and db.custom_frames) or {}) do
-        local runtime = entry.id and capture_runtime[entry.id]
-        local needs_full_scan = (runtime and runtime.capture_active)
-            or (has_whitelist_entries(entry.whitelist) and (entry.show or entry.move))
-        if needs_full_scan and entry.filter == "HARMFUL" then
-            harmful = FULL_AURA_SCAN_LIMIT
-        elseif needs_full_scan then
-            helpful = FULL_AURA_SCAN_LIMIT
-        end
-    end
-    return helpful, harmful
-end
 
 -- ============================================================================
 -- TIMER TICKER
@@ -291,7 +225,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- was already populated within the last 0.1s, reuse it.
     local now_scan = GetTime()
     if not M._last_unified_scan_time or (now_scan - M._last_unified_scan_time) > 0.1 then
-        local custom_helpful_limit, custom_harmful_limit = custom_scan_limits(db)
+        local custom_helpful_limit, custom_harmful_limit = 0, 0
+        if M.get_custom_scan_limits then
+            custom_helpful_limit, custom_harmful_limit = M.get_custom_scan_limits(db)
+        end
         M.unified_scan(info, short_threshold, custom_helpful_limit, custom_harmful_limit)
         M._last_unified_scan_time = now_scan
     end
@@ -299,44 +236,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- Filter the shared map into this frame's per-frame map.
     wipe(self._aura_map)
     if is_custom then
-        -- Custom frame: match by whitelist and filter type (HELPFUL or HARMFUL).
-        local whitelist_by_id, whitelist_by_name = build_whitelist_lookups(custom_entry.whitelist)
-        local want_helpful = (custom_entry.filter == "HELPFUL")
-        local spell_cache = M.db and M.db.spell_name_cache or {}
-        self._custom_iid_to_sid = self._custom_iid_to_sid or {}
-        local iid_to_sid = self._custom_iid_to_sid
-
-        -- Match by readable spell_id/name, or by a previously proven auraInstanceID.
-        local seen_iids = {}
-        for iid, entry in pairs(M._aura_map) do
-            if entry.is_helpful == want_helpful then
-                local sid = normalize_spell_id(entry.spell_id)
-                if not sid and entry.name and not issecretvalue(entry.name) then
-                    sid = whitelist_by_name[entry.name]
-                end
-                if not sid and entry.name and not issecretvalue(entry.name) then
-                    for csid, cdata in pairs(spell_cache) do
-                        if cdata.name == entry.name then sid = normalize_spell_id(csid); break end
-                    end
-                end
-                if sid and whitelist_by_id[sid] then
-                    iid_to_sid[iid] = sid
-                    cache_aura_identity(sid, entry)
-                    self._aura_map[iid] = patch_entry_from_registry(entry, sid, spell_cache)
-                elseif not sid then
-                    local remembered_sid = iid_to_sid[iid]
-                    if remembered_sid and whitelist_by_id[remembered_sid] then
-                        self._aura_map[iid] = patch_entry_from_registry(entry, remembered_sid, spell_cache)
-                        seen_iids[iid] = true
-                    end
-                end
-                seen_iids[iid] = self._aura_map[iid] ~= nil
-            end
-        end
-        for iid in pairs(iid_to_sid) do
-            if not seen_iids[iid] then
-                iid_to_sid[iid] = nil
-            end
+        if M.filter_custom_aura_map then
+            M.filter_custom_aura_map(self, custom_entry, M._aura_map)
         end
     else
         -- Preset frame: match by category string.
