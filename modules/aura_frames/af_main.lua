@@ -12,6 +12,13 @@ local MIN_FRAME_WIDTH = 180
 local MIN_FRAME_HEIGHT = 44
 local format = string.format
 
+local WOW_COOLDOWN_SHOW_KEYS = {
+    "show_essential",
+    "show_utility",
+    "show_tracked_buffs",
+    "show_tracked_bars",
+}
+
 M.NUMBER_FONT_OPTIONS = {
     {
         key = "source_code_pro",
@@ -112,6 +119,30 @@ function M.apply_number_font_to_all()
                 end
             end
         end
+    end
+end
+
+function M.refresh_wow_cooldown_frames(delay)
+    if M.invalidate_cooldown_viewer_cache then
+        M.invalidate_cooldown_viewer_cache()
+    end
+
+    local function refresh()
+        if not M.frames then return end
+        for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
+            local frame = M.frames[show_key]
+            local p = frame and frame.update_params
+            if p then
+                frame._sorted_ids_cache = nil
+                M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.filter)
+            end
+        end
+    end
+
+    if delay and delay > 0 and C_Timer and C_Timer.After then
+        C_Timer.After(delay, refresh)
+    else
+        refresh()
     end
 end
 
@@ -638,10 +669,11 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_grid_overlay()
 
         -- Cooldown viewer category sets can change via Blizzard settings.
-        -- Mark cache dirty when settings emit data-change notifications.
-        if EventRegistry and EventRegistry.RegisterCallback and M.invalidate_cooldown_viewer_cache then
+        -- Re-read the player-edited Blizzard viewer layout after settings changes.
+        if EventRegistry and EventRegistry.RegisterCallback and M.refresh_wow_cooldown_frames then
             EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
-                M.invalidate_cooldown_viewer_cache()
+                M.refresh_wow_cooldown_frames(0.1)
+                M.refresh_wow_cooldown_frames(0.5)
             end)
         end
 

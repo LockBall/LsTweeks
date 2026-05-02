@@ -15,6 +15,7 @@ local wipe       = wipe
 local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local C_CooldownViewer = C_CooldownViewer
+local C_Spell       = C_Spell
 local Enum          = Enum
 local format        = format
 
@@ -144,6 +145,34 @@ local function get_cooldown_viewer_category(name, fallback)
     return (enum and enum[name]) or fallback
 end
 
+local COOLDOWN_VIEWER_FRAME_NAMES = {
+    essential = "EssentialCooldownViewer",
+    utility = "UtilityCooldownViewer",
+    tracked_buffs = "BuffIconCooldownViewer",
+    tracked_bars = "BuffBarCooldownViewer",
+}
+
+local function get_cooldown_viewer_layout_ids(category)
+    local frame_name = COOLDOWN_VIEWER_FRAME_NAMES[category]
+    local frame = frame_name and _G and _G[frame_name]
+    if not (frame and frame.GetChildren) then return nil end
+
+    local ok, children = pcall(function()
+        return { frame:GetChildren() }
+    end)
+    if not ok then return nil end
+
+    local ids = {}
+    for _, child in ipairs(children) do
+        local cooldown_id = child and child.cooldownID
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+            ids[#ids + 1] = cooldown_id
+        end
+    end
+
+    return ids
+end
+
 local function make_spell_signature(name, icon)
     local safe_name = (name ~= nil and not issecretvalue(name)) and tostring(name) or nil
     local safe_icon = (icon ~= nil and not issecretvalue(icon)) and tostring(icon) or nil
@@ -167,6 +196,155 @@ local function add_cooldown_info_spell_ids(set, info)
         if sid ~= nil and not issecretvalue(sid) then
             sid = tonumber(sid) or sid
             if sid then set[sid] = true end
+        end
+    end
+end
+
+local function get_cooldown_info_spell_id(info)
+    if not info then return nil end
+    local sid = info.overrideSpellID or info.overrideSpellId
+        or info.spellID or info.spellId
+        or info.overrideTooltipSpellID or info.overrideTooltipSpellId
+    if sid ~= nil and not issecretvalue(sid) then
+        return tonumber(sid) or sid
+    end
+    return nil
+end
+
+local function get_cooldown_info_linked_ids(info)
+    local linked_ids = {}
+    local linked = info and (info.linkedSpellIDs or info.linkedSpellIds)
+    if type(linked) == "table" then
+        for _, sid in ipairs(linked) do
+            if sid ~= nil and not issecretvalue(sid) then
+                sid = tonumber(sid) or sid
+                if sid then linked_ids[sid] = true end
+            end
+        end
+    end
+    return linked_ids
+end
+
+local function get_spell_display(spell_id)
+    if not (spell_id and C_Spell and C_Spell.GetSpellInfo) then return nil, nil end
+    local ok, info = pcall(C_Spell.GetSpellInfo, spell_id)
+    if ok and info then
+        return info.name, info.iconID or info.originalIconID
+    end
+    return nil, nil
+end
+
+local function make_cooldown_category_entry(category, cooldown_id, info)
+    local spell_id = get_cooldown_info_spell_id(info)
+    if not spell_id then return nil end
+
+    local name = info and info.name
+    local icon = info and info.icon
+    if name == nil or issecretvalue(name) or icon == nil or issecretvalue(icon) then
+        local spell_name, spell_icon = get_spell_display(spell_id)
+        if name == nil or issecretvalue(name) then name = spell_name end
+        if icon == nil or issecretvalue(icon) then icon = spell_icon end
+    end
+    if not icon then return nil end
+
+    local duration = 0
+    local expiration = 0
+    local remaining = 0
+    if (category == "essential" or category == "utility") and C_Spell and C_Spell.GetSpellCooldown then
+        local ok, cd = pcall(C_Spell.GetSpellCooldown, spell_id)
+        if ok and cd then
+            local cd_duration = cd.duration
+            local cd_start = cd.startTime
+            if cd_duration ~= nil and cd_start ~= nil
+                    and not issecretvalue(cd_duration)
+                    and not issecretvalue(cd_start)
+                    and cd_duration > 1.5 then
+                expiration = cd_start + cd_duration
+                remaining = math_max(0, expiration - GetTime())
+                if remaining > 0 then
+                    duration = cd_duration
+                else
+                    expiration = 0
+                    remaining = 0
+                end
+            end
+        end
+    end
+
+    return {
+        instance_id = "cdv:" .. category .. ":" .. tostring(cooldown_id),
+        is_spell_cooldown = true,
+        name = name or tostring(spell_id),
+        icon = icon,
+        duration = duration,
+        expiration = expiration,
+        remaining = remaining,
+        count = 0,
+        spell_id = spell_id,
+        linked_spell_ids = get_cooldown_info_linked_ids(info),
+        is_helpful = true,
+        category = category,
+        filter = "HELPFUL",
+        added_at = GetTime(),
+    }
+end
+
+local function category_entry_matches_aura(category_entry, aura_entry)
+    if not (category_entry and aura_entry) then return false end
+    if category_entry.spell_id and aura_entry.spell_id and category_entry.spell_id == aura_entry.spell_id then
+        return true
+    end
+    if category_entry.linked_spell_ids and aura_entry.spell_id and category_entry.linked_spell_ids[aura_entry.spell_id] then
+        return true
+    end
+    if category_entry.name ~= nil and aura_entry.name ~= nil
+            and not issecretvalue(category_entry.name)
+            and not issecretvalue(aura_entry.name)
+            and tostring(category_entry.name) == tostring(aura_entry.name) then
+        return true
+    end
+    if category_entry.icon ~= nil and aura_entry.icon ~= nil
+            and not issecretvalue(category_entry.icon)
+            and not issecretvalue(aura_entry.icon)
+            and tostring(category_entry.icon) == tostring(aura_entry.icon) then
+        return true
+    end
+    return false
+end
+
+local function find_matching_aura_entry(aura_map, category_entry)
+    if not (aura_map and category_entry) then return nil end
+    for _, aura_entry in pairs(aura_map) do
+        if not aura_entry.is_spell_cooldown and category_entry_matches_aura(category_entry, aura_entry) then
+            return aura_entry
+        end
+    end
+    return nil
+end
+
+function M.add_cooldown_viewer_category_entries(target_map, category)
+    if not target_map then return end
+    if not (C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo) then return end
+
+    local ids = get_cooldown_viewer_layout_ids(category)
+    if not (ids and #ids > 0) then return end
+
+    for _, cooldown_id in ipairs(ids) do
+        local ok_info, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
+        if ok_info and info then
+            local category_entry = make_cooldown_category_entry(category, cooldown_id, info)
+            if category_entry then
+                if category == "tracked_buffs" or category == "tracked_bars" then
+                    local aura_entry = find_matching_aura_entry(M._aura_map, category_entry)
+                    if aura_entry then
+                        target_map[aura_entry.instance_id] = aura_entry
+                    else
+                        target_map[category_entry.instance_id] = category_entry
+                    end
+                else
+                    target_map[category_entry.instance_id] = category_entry
+                end
+            end
         end
     end
 end
@@ -348,7 +526,11 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
         -- GetAuraDuration is readable even when scan fields are secret (combat).
         local need_live = (rem == nil) or issecretvalue(rem) or issecretvalue(expiration)
-        local live_duration   = need_live and C_UnitAuras.GetAuraDuration("player", iid)
+        local live_duration = nil
+        if need_live then
+            local ok_live, result = pcall(C_UnitAuras.GetAuraDuration, "player", iid)
+            if ok_live then live_duration = result end
+        end
         local live_expiration = nil
         local live_remaining  = nil
         if live_duration then

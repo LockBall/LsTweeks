@@ -9,9 +9,17 @@ local GetTime        = GetTime
 local issecretvalue  = issecretvalue
 local C_UnitAuras    = C_UnitAuras
 local wipe           = wipe
+local InCombatLockdown = InCombatLockdown
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
+
+local WOW_COOLDOWN_CATEGORIES = {
+    essential = true,
+    utility = true,
+    tracked_buffs = true,
+    tracked_bars = true,
+}
 
 -- ============================================================================
 -- TIMER TICKER
@@ -37,7 +45,7 @@ function M.tick_visible_icons(now)
                     end
                 elseif obj:IsShown() and obj.is_test_preview then
                     M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
-                elseif obj:IsShown() and obj.aura_index then
+                elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown) then
                     if show_timer_text then
                         if not obj.time_text:IsShown() then obj.time_text:Show() end
                     else
@@ -52,10 +60,11 @@ function M.tick_visible_icons(now)
                         remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
                     end
                     local live_remaining
-                    local need_live_fallback = (remaining == nil)
+                    local need_live_fallback = (remaining == nil) and (type(obj.aura_index) == "number")
                         and (show_timer_text or (obj.bar and obj.bar:IsShown()))
                     if need_live_fallback then
-                        local live_duration = C_UnitAuras.GetAuraDuration("player", obj.aura_index)
+                        local ok, live_duration = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
+                        if not ok then live_duration = nil end
                         if live_duration then
                             live_remaining = live_duration:GetRemainingDuration()
                             if live_remaining ~= nil and not issecretvalue(live_remaining) then
@@ -240,17 +249,23 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             M.filter_custom_aura_map(self, custom_entry, M._aura_map)
         end
     else
-        -- Preset frame: match by category string.
-        for iid, entry in pairs(M._aura_map) do
-            if entry.category == category
-                    or (category == "important" and entry.is_important)
-                    or (category == "essential" and entry.is_essential)
-                    or (category == "utility" and entry.is_utility)
-                    or (category == "tracked_buffs" and entry.is_tracked_buffs)
-                    or (category == "tracked_bars" and entry.is_tracked_bars) then
-                self._aura_map[iid] = entry
+        if WOW_COOLDOWN_CATEGORIES[category] and M.add_cooldown_viewer_category_entries then
+            M.add_cooldown_viewer_category_entries(self._aura_map, category)
+        else
+            -- Preset frame: match by category string.
+            for iid, entry in pairs(M._aura_map) do
+                if entry.category == category
+                        or (category == "important" and entry.is_important) then
+                    self._aura_map[iid] = entry
+                end
             end
         end
+    end
+
+    if WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
+        self:SetAlpha((InCombatLockdown and InCombatLockdown()) and 1 or (M.db.wow_cooldown_ooc_alpha or 0.35))
+    else
+        self:SetAlpha(1)
     end
 
     if preview_enabled then
