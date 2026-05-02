@@ -503,6 +503,15 @@ function M.destroy_custom_frame(id)
             end
         end
     end
+    if M._custom_capture_runtime and M._custom_capture_runtime[id] then
+        local runtime = M._custom_capture_runtime[id]
+        if runtime.stop_capture then runtime.stop_capture() end
+        if runtime.regen_frame then
+            runtime.regen_frame:UnregisterAllEvents()
+            runtime.regen_frame:SetScript("OnEvent", nil)
+        end
+        M._custom_capture_runtime[id] = nil
+    end
 end
 
 -- ============================================================================

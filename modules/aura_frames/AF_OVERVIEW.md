@@ -24,6 +24,7 @@ af_scan.lua            — aura data acquisition
 af_render.lua          — visual output per frame
 af_icon_layout.lua     — geometry and positioning of icons within each category frame
 af_core.lua            — ticker, blizz toggles, main update loop
+af_spell_resolver.lua  — spell metadata resolution and aura registry
 af_gui.lua             — settings tab builder
 af_debug_outlines.lua  — developer slot outlines
 af_main.lua            — frame construction and addon bootstrap  (loads last)
@@ -163,6 +164,19 @@ Defines:
   7. Calls `M.render_aura_map` → gets `display_count`.
   8. Computes new frame height from display count and calls `M.set_height_for_growth`.
   9. Sets backdrop color for move-mode vs. normal display.
+
+---
+
+### af_spell_resolver.lua
+**Role:** Resolves spell IDs to names/icons and maintains the persisted aura registry used by
+custom whitelist frames.
+
+Defines:
+- `M.CacheAuraInfo(spell_id, name, icon, filter)` — stores known metadata for a spell ID.
+- `M.TryGetSpellInfo(spell_id)` — synchronous spell metadata lookup.
+- `M.ResolveSpellID(spell_id, callback)` — requests spell data if needed and invokes the callback
+  once name/icon are available.
+- Startup whitelist normalization and metadata backfill for saved custom frames.
 
 ---
 

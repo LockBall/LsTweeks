@@ -312,6 +312,9 @@ end
 function M.build_custom_child_panel(p, entry)
     local id       = entry.id
     local show_key = "show_" .. id
+    M._custom_capture_runtime = M._custom_capture_runtime or {}
+    local capture_runtime = M._custom_capture_runtime[id] or {}
+    M._custom_capture_runtime[id] = capture_runtime
 
     -- ----------------------------------------------------------------
     -- 2-COLUMN GRID
@@ -405,10 +408,12 @@ function M.build_custom_child_panel(p, entry)
 
     local function stop_capture()
         cap_active = false
+        capture_runtime.capture_active = nil
         if cap_timer then cap_timer:Cancel(); cap_timer = nil end
         cap_status:SetText("")
         if cap_checkbox and cap_checkbox.SetChecked then cap_checkbox:SetChecked(false) end
     end
+    capture_runtime.stop_capture = stop_capture
 
     -- ----------------------------------------------------------------
     -- COL 1, ROW 2: add by spell ID
@@ -594,6 +599,7 @@ function M.build_custom_child_panel(p, entry)
                     entry.whitelist_icons = entry.whitelist_icons or {}
                     entry.whitelist_icons[sid] = found_icon
                 end
+                if M.CacheAuraInfo then M.CacheAuraInfo(sid, display_name, found_icon, entry.filter) end
                 rebuild_whitelist()
                 M.ResolveSpellID(sid, function(name, icon)
                     if name then entry.whitelist[sid] = name end
@@ -601,6 +607,7 @@ function M.build_custom_child_panel(p, entry)
                         entry.whitelist_icons = entry.whitelist_icons or {}
                         entry.whitelist_icons[sid] = icon
                     end
+                    if M.CacheAuraInfo then M.CacheAuraInfo(sid, name, icon, entry.filter) end
                     rebuild_whitelist()
                     local f = M.frames[show_key]
                     if f then
@@ -697,6 +704,7 @@ function M.build_custom_child_panel(p, entry)
                         entry.whitelist_icons = entry.whitelist_icons or {}
                         entry.whitelist_icons[sid] = sicon
                     end
+                    if M.CacheAuraInfo then M.CacheAuraInfo(sid, sname, sicon, entry.filter) end
                     rebuild_whitelist()
                     -- Refresh the visible custom frame immediately
                     local f = M.frames[show_key]
@@ -793,9 +801,16 @@ function M.build_custom_child_panel(p, entry)
     local function start_capture()
         if cap_active then return end
         cap_active    = true
+        capture_runtime.capture_active = true
         cap_auras     = {}
         cap_by_inst   = {}
         cap_by_sid    = {}
+        M._last_unified_scan_time = nil
+        if M.unified_scan then
+            local helpful_hint = (entry.filter == "HARMFUL") and 0 or 255
+            local harmful_hint = (entry.filter == "HARMFUL") and 255 or 0
+            M.unified_scan(nil, M.db and M.db.short_threshold or 60, helpful_hint, harmful_hint)
+        end
         do_capture_scan()
         cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
         cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
@@ -809,14 +824,23 @@ function M.build_custom_child_panel(p, entry)
     end)
 
     -- Stop capture only when the main LsTweeks window closes, not on tab/node switches.
-    if addon.main_frame then
-        addon.main_frame:HookScript("OnHide", function() if cap_active then stop_capture() end end)
+    if addon.main_frame and not capture_runtime.stop_hide_hooked then
+        capture_runtime.stop_hide_hooked = true
+        addon.main_frame:HookScript("OnHide", function()
+            if capture_runtime.stop_capture then
+                capture_runtime.stop_capture()
+            end
+        end)
     end
 
     -- Backfill spell IDs for iid-only entries after combat ends.
     -- Defer past the 0.1s scan bucket so M._aura_map has readable post-combat values,
     -- then force a fresh unified_scan before resolving captured entries.
-    local regen_frame = CreateFrame("Frame")
+    local regen_frame = capture_runtime.regen_frame
+    if not regen_frame then
+        regen_frame = CreateFrame("Frame")
+        capture_runtime.regen_frame = regen_frame
+    end
     regen_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     regen_frame:SetScript("OnEvent", function()
         if #cap_auras == 0 then return end
@@ -826,8 +850,13 @@ function M.build_custom_child_panel(p, entry)
             backfill_spell_ids()
         end)
     end)
-    if addon.main_frame then
-        addon.main_frame:HookScript("OnHide", function() regen_frame:UnregisterAllEvents() end)
+    if addon.main_frame and not capture_runtime.regen_hide_hooked then
+        capture_runtime.regen_hide_hooked = true
+        addon.main_frame:HookScript("OnHide", function()
+            regen_frame:UnregisterAllEvents()
+            regen_frame:SetScript("OnEvent", nil)
+            capture_runtime.capture_active = nil
+        end)
     end
 
     rebuild_whitelist()

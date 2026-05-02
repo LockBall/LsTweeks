@@ -10,6 +10,22 @@ local issecretvalue = issecretvalue
 local C_Spell       = C_Spell
 local tonumber      = tonumber
 
+local function normalize_spell_id(sid)
+    if sid == nil or issecretvalue(sid) then return nil end
+    return tonumber(sid) or sid
+end
+
+function M.CacheAuraInfo(sid, name, icon, filter)
+    sid = normalize_spell_id(sid)
+    if not (M.db and sid) then return end
+    M.db.spell_name_cache = M.db.spell_name_cache or {}
+    local cached = M.db.spell_name_cache[sid] or {}
+    if name and not issecretvalue(name) then cached.name = name end
+    if icon and not issecretvalue(icon) then cached.iconID = icon end
+    if filter then cached.filter = filter end
+    M.db.spell_name_cache[sid] = cached
+end
+
 function M.TryGetSpellInfo(sid)
     sid = tonumber(sid) or sid
     if not sid or sid == 0 then return nil end
@@ -18,19 +34,12 @@ function M.TryGetSpellInfo(sid)
     return nil
 end
 
-local function cache_spell(sid, name, icon)
-    sid = tonumber(sid) or sid
-    if not (M.db and sid and name) then return end
-    M.db.spell_name_cache = M.db.spell_name_cache or {}
-    M.db.spell_name_cache[sid] = { name = name, iconID = icon }
-end
-
 function M.ResolveSpellID(sid, on_success)
-    sid = tonumber(sid) or sid
+    sid = normalize_spell_id(sid)
     if not sid or sid == 0 then return end
     local name, icon = M.TryGetSpellInfo(sid)
     if name then
-        cache_spell(sid, name, icon)
+        M.CacheAuraInfo(sid, name, icon)
         if on_success then on_success(name, icon) end
         return
     end
@@ -43,7 +52,7 @@ function M.ResolveSpellID(sid, on_success)
         local n, ic = M.TryGetSpellInfo(sid)
         if n then
             done = true; t:Cancel()
-            cache_spell(sid, n, ic)
+            M.CacheAuraInfo(sid, n, ic)
             if on_success then on_success(n, ic) end
         elseif attempts >= 20 then
             done = true; t:Cancel()
@@ -62,21 +71,32 @@ do
             if not (M.db and M.db.custom_frames) then return end
             for _, entry in ipairs(M.db.custom_frames) do
                 if entry.whitelist then
+                    local remap = {}
                     for sid, stored_name in pairs(entry.whitelist) do
-                        local nsid = tonumber(sid) or sid
+                        local nsid = normalize_spell_id(sid)
                         if nsid ~= sid then
-                            if entry.whitelist[nsid] == nil then
-                                entry.whitelist[nsid] = stored_name
-                            end
-                            entry.whitelist[sid] = nil
-                            if entry.whitelist_icons and entry.whitelist_icons[sid] and not entry.whitelist_icons[nsid] then
-                                entry.whitelist_icons[nsid] = entry.whitelist_icons[sid]
-                                entry.whitelist_icons[sid] = nil
-                            end
+                            remap[#remap + 1] = { old = sid, new = nsid, name = stored_name }
+                        end
+                    end
+                    for _, item in ipairs(remap) do
+                        if entry.whitelist[item.new] == nil then
+                            entry.whitelist[item.new] = item.name
+                        end
+                        entry.whitelist[item.old] = nil
+                        if entry.whitelist_icons and entry.whitelist_icons[item.old] and not entry.whitelist_icons[item.new] then
+                            entry.whitelist_icons[item.new] = entry.whitelist_icons[item.old]
+                            entry.whitelist_icons[item.old] = nil
+                        end
+                    end
+                    for sid, stored_name in pairs(entry.whitelist) do
+                        local nsid = normalize_spell_id(sid)
+                        if nsid then
+                            local icon = entry.whitelist_icons and entry.whitelist_icons[nsid]
+                            M.CacheAuraInfo(nsid, stored_name, icon, entry.filter)
                         end
                         local need_name = (not stored_name) or tostring(stored_name):match("^Spell %d+$")
-                        local need_icon = not (entry.whitelist_icons and (entry.whitelist_icons[nsid] or entry.whitelist_icons[sid]))
-                        if need_name or need_icon then
+                        local need_icon = nsid and not (entry.whitelist_icons and entry.whitelist_icons[nsid])
+                        if nsid and (need_name or need_icon) then
                             M.ResolveSpellID(nsid, function(name, icon)
                                 if name then
                                     entry.whitelist[nsid] = name
@@ -85,6 +105,7 @@ do
                                     entry.whitelist_icons = entry.whitelist_icons or {}
                                     entry.whitelist_icons[nsid] = icon
                                 end
+                                M.CacheAuraInfo(nsid, name, icon, entry.filter)
                                 local show_key = "show_" .. (entry.id or "")
                                 local fr = M.frames and M.frames[show_key]
                                 if fr then
