@@ -102,6 +102,38 @@ local function get_timer_category(frame, entry)
     return frame.category
 end
 
+local function get_duration_object_remaining(duration_object)
+    if not duration_object or type(duration_object.GetRemainingDuration) ~= "function" then
+        return nil
+    end
+    local ok, remaining = pcall(function()
+        return duration_object:GetRemainingDuration()
+    end)
+    if ok then
+        return remaining
+    end
+    return nil
+end
+
+local function apply_cooldown_overlay(obj, duration_object, expiration, duration)
+    local cooldown = obj and obj.cooldown
+    if not cooldown then return end
+
+    cooldown:Show()
+    if duration_object and cooldown.SetCooldownFromDurationObject then
+        local ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object, true)
+        if ok then return end
+        ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object)
+        if ok then return end
+    end
+
+    if expiration and duration and duration > 0 then
+        cooldown:SetCooldown(expiration - duration, duration)
+    elseif cooldown.Clear then
+        cooldown:Clear()
+    end
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -250,13 +282,18 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
+        local show_cooldown_overlay = (not bar_mode) and M.db and M.db["cooldown_mode_" .. self.category]
         local need_live_duration = (not is_static_frame) and (not is_spell_cooldown) and (show_timer_text or bar_mode)
         local live_duration = nil
         if need_live_duration and type(entry.instance_id) == "number" then
             local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
             if ok then live_duration = result end
         end
-        local live_remaining = live_duration and live_duration:GetRemainingDuration() or entry.live_remaining
+        local cooldown_duration = is_spell_cooldown and entry.duration_object or nil
+        if cooldown_duration then
+            live_duration = cooldown_duration
+        end
+        local live_remaining = get_duration_object_remaining(live_duration) or entry.live_remaining
 
         obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
         obj.filter_type     = entry.filter
@@ -274,6 +311,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.is_spell_cooldown = is_spell_cooldown
 
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
+        if obj.cooldown then
+            obj.cooldown:Hide()
+        end
 
         local stack_text = nil
         if entry.count and not issecretvalue(entry.count) and entry.count > 1 then
@@ -316,6 +356,11 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         else
             obj.bar:Hide()
             obj.name_text:Hide()
+            if show_cooldown_overlay and live_duration then
+                apply_cooldown_overlay(obj, live_duration, entry.expiration, entry.duration)
+            elseif is_spell_cooldown then
+                apply_cooldown_overlay(obj, cooldown_duration, entry.expiration, entry.duration)
+            end
             -- In icon mode: stack count at bottom-right of icon
             if stack_text ~= nil then
                 obj.count_text:SetText(stack_text)
@@ -345,13 +390,13 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 end
 
                 if display_remaining and display_remaining > 0 then
-                    if show_timer_text then
+                    if show_timer_text and not show_cooldown_overlay then
                         M.set_timer_text(obj.time_text, timer_category, display_remaining)
                     else
                         obj.time_text:SetText("")
                     end
                 else
-                    if show_timer_text then
+                    if show_timer_text and not show_cooldown_overlay then
                         M.set_timer_text(obj.time_text, timer_category, rem)
                     else
                         obj.time_text:SetText("")
@@ -361,7 +406,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                     obj.bar:SetTimerDuration(live_duration, nil, TIMER_DIR_REMAINING)
                 end
             elseif rem > 0 then
-                if show_timer_text then
+                if show_timer_text and not show_cooldown_overlay then
                     M.set_timer_text(obj.time_text, timer_category, rem)
                 else
                     obj.time_text:SetText("")
@@ -381,10 +426,20 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                     obj.bar:SetValue(1)
                 end
             end
+        elseif cooldown_duration then
+            obj.time_text:SetText("")
+            if bar_mode then
+                if obj.bar and obj.bar.SetTimerDuration and TIMER_DIR_REMAINING then
+                    obj.bar:SetTimerDuration(cooldown_duration, nil, TIMER_DIR_REMAINING)
+                else
+                    obj.bar:SetMinMaxValues(0, 1)
+                    obj.bar:SetValue(1)
+                end
+            end
         elseif entry.duration > 0 then
             rem = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
             if rem > 0 then
-                if show_timer_text then
+                if show_timer_text and not show_cooldown_overlay then
                     M.set_timer_text(obj.time_text, timer_category, rem)
                 else
                     obj.time_text:SetText("")
@@ -392,6 +447,8 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 if bar_mode then
                     obj.bar:SetMinMaxValues(0, entry.duration)
                     obj.bar:SetValue(rem)
+                else
+                    apply_cooldown_overlay(obj, nil, entry.expiration, entry.duration)
                 end
             else
                 obj.time_text:SetText("")
@@ -409,6 +466,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     for i = display_count + 1, #self.icons do
         self.icons[i].is_spell_cooldown = false
         self.icons[i].aura_index = nil
+        if self.icons[i].cooldown then
+            self.icons[i].cooldown:Hide()
+        end
         self.icons[i]:Hide()
     end
 

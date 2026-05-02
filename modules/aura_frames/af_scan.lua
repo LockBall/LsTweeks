@@ -145,6 +145,14 @@ local function get_spell_display(spell_id)
     return nil, nil
 end
 
+local function get_spell_cooldown_duration_object(spell_id)
+    if not (spell_id and C_Spell and C_Spell.GetSpellCooldownDuration) then return nil end
+    if issecretvalue(spell_id) then return nil end
+    local ok, duration_object = pcall(C_Spell.GetSpellCooldownDuration, spell_id)
+    if ok then return duration_object end
+    return nil
+end
+
 -- Blizzard global frame names for each WoW Cooldown Manager category.
 -- Children of these frames carry an auraInstanceID field when their aura is active.
 local VIEWER_FRAME_NAMES = {
@@ -155,34 +163,86 @@ local VIEWER_FRAME_NAMES = {
 }
 
 -- Cache populated by hooks on Blizzard's Cooldown widgets.
--- Keyed by spellID: { expiration, duration }
+-- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }
 -- Captures timing at the moment Blizzard sets it — before it becomes secret to addon code.
 M._cd_hook_cache = M._cd_hook_cache or {}
+
+local function queue_cooldown_viewer_refresh()
+    if M._cd_hook_refresh_pending then return end
+    M._cd_hook_refresh_pending = true
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function()
+            M._cd_hook_refresh_pending = false
+            if M.refresh_wow_cooldown_frames then
+                M.refresh_wow_cooldown_frames()
+            end
+        end)
+    else
+        M._cd_hook_refresh_pending = false
+    end
+end
 
 -- Lazily attaches hooks to a CooldownViewer child frame on first encounter.
 -- SetCooldown arguments (start, duration) are readable in the hook even during combat
 -- because they are passed explicitly by Blizzard code — only C API return values are secret.
 -- SetCooldownFromDurationObject uses the Duration object path instead.
--- child._lstweeks_spell_id caches the spell ID when first seen readable (OOC),
--- so the hook and scan can still key the cache entry while spellID is secret in combat.
+-- child._lstweeks_cooldown_id is stable even when spell fields go secret.
 local function hook_cd_item_frame(child)
-    if child._lstweeks_cd_hooked then return end
     local cd = child.Cooldown
     if not cd then return end
-    child._lstweeks_cd_hooked = true
+    if child._lstweeks_cd_hooked == cd then
+        return
+    end
+    child._lstweeks_cd_hooked = cd
 
     local cache = M._cd_hook_cache
 
-    local function get_spell_id()
+    local function refresh_child_identity()
+        local cooldown_id = child.cooldownID
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+            child._lstweeks_cooldown_id = cooldown_id
+        end
+
         local info = child.cooldownInfo
         if info then
+            local cid = info.cooldownID or info.cooldownId
+            if cid ~= nil and not issecretvalue(cid) then
+                child._lstweeks_cooldown_id = cid
+            end
             local sid = info.overrideSpellID or info.spellID
             if sid and not issecretvalue(sid) then
-                child._lstweeks_spell_id = sid  -- refresh cache whenever readable
-                return sid
+                child._lstweeks_spell_id = sid
             end
         end
-        return child._lstweeks_spell_id  -- fall back to last-known value in combat
+
+        local sid = child._lstweeks_spell_id
+        if sid then
+            local cached = cache[child._lstweeks_cooldown_id]
+            if not (cached and cached.name and cached.icon) then
+                local name, icon = get_spell_display(sid)
+                if name or icon then
+                    child._lstweeks_cd_name = name or child._lstweeks_cd_name
+                    child._lstweeks_cd_icon = icon or child._lstweeks_cd_icon
+                end
+            end
+        end
+
+        return child._lstweeks_cooldown_id
+    end
+
+    local function cache_timing(expiration, duration, duration_object)
+        local cooldown_id = refresh_child_identity()
+        if not cooldown_id then return end
+        local sid = child._lstweeks_spell_id
+        cache[cooldown_id] = {
+            expiration = expiration,
+            duration = duration,
+            duration_object = duration_object,
+            spell_id = sid,
+            name = child._lstweeks_cd_name,
+            icon = child._lstweeks_cd_icon,
+        }
+        queue_cooldown_viewer_refresh()
     end
 
     -- Standard cooldown path: arguments are not secret, read directly.
@@ -190,22 +250,58 @@ local function hook_cd_item_frame(child)
         if not (start and duration) then return end
         if issecretvalue(start) or issecretvalue(duration) then return end
         if duration <= 1.5 then return end  -- GCD
-        local sid = get_spell_id()
-        if sid then cache[sid] = { expiration = start + duration, duration = duration } end
+        cache_timing(start + duration, duration, nil)
     end)
 
-    -- Duration-object path (12.x combat cooldowns): read via the Duration object methods,
-    -- which are accessible to addons in combat unlike raw C_Spell.GetSpellCooldown fields.
+    -- Duration-object path (12.x combat cooldowns): preserve the object and only
+    -- use numeric methods when readable. The renderer can pass the object onward.
     if cd.SetCooldownFromDurationObject then
         pcall(hooksecurefunc, cd, "SetCooldownFromDurationObject", function(_, dur_obj)
             if not dur_obj then return end
-            local ok_r, remaining  = pcall(function() return dur_obj:GetRemainingDuration() end)
-            local ok_e, expiration = pcall(function() return dur_obj:GetExpirationTime()    end)
-            if not (ok_r and ok_e and remaining and expiration) then return end
-            if issecretvalue(remaining) or issecretvalue(expiration) then return end
-            if remaining <= 1.5 then return end  -- GCD
-            local sid = get_spell_id()
-            if sid then cache[sid] = { expiration = expiration, duration = remaining } end
+            local remaining, expiration
+            local ok_r, result_r = pcall(function() return dur_obj:GetRemainingDuration() end)
+            if ok_r and result_r and not issecretvalue(result_r) then
+                remaining = result_r
+            end
+            local ok_e, result_e = pcall(function() return dur_obj:GetExpirationTime() end)
+            if ok_e and result_e and not issecretvalue(result_e) then
+                expiration = result_e
+            end
+            if remaining and remaining <= 1.5 then return end  -- GCD
+            cache_timing(expiration, remaining, dur_obj)
+        end)
+    end
+
+    refresh_child_identity()
+end
+
+local function install_cooldown_viewer_item_hooks()
+    if M._lstweeks_cdv_item_hooks_installed then return end
+    if not (CooldownViewerItemDataMixin and hooksecurefunc) then return end
+    M._lstweeks_cdv_item_hooks_installed = true
+
+    local function on_item_changed(child, cooldown_id)
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+            child._lstweeks_cooldown_id = cooldown_id
+        end
+        hook_cd_item_frame(child)
+        queue_cooldown_viewer_refresh()
+    end
+
+    if CooldownViewerItemDataMixin.SetCooldownID then
+        pcall(hooksecurefunc, CooldownViewerItemDataMixin, "SetCooldownID", on_item_changed)
+    end
+
+    if CooldownViewerItemDataMixin.SetCooldownInfo then
+        pcall(hooksecurefunc, CooldownViewerItemDataMixin, "SetCooldownInfo", function(child)
+            on_item_changed(child)
+        end)
+    end
+
+    if CooldownViewerItemDataMixin.ClearCooldownID then
+        pcall(hooksecurefunc, CooldownViewerItemDataMixin, "ClearCooldownID", function(child)
+            child._lstweeks_cooldown_id = nil
+            queue_cooldown_viewer_refresh()
         end)
     end
 end
@@ -223,43 +319,78 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
     local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]
 
     if cooldown_mode then
+        install_cooldown_viewer_item_hooks()
         local now   = GetTime()
         local cache = M._cd_hook_cache
         for _, child in ipairs({viewer:GetChildren()}) do
-            hook_cd_item_frame(child)  -- no-op after first call per child; also seeds _lstweeks_spell_id
-            -- Prefer readable cooldownInfo, fall back to the per-child cached ID set by the hook.
-            local spell_id
+            hook_cd_item_frame(child)
+
+            local iid = child.auraInstanceID
+            if iid then
+                local aura_entry = M._aura_map[iid]
+                if aura_entry then
+                    target_map[iid] = aura_entry
+                end
+            end
+
+            -- Prefer readable cooldownID, fall back to the per-child cached ID set by hooks.
+            local cooldown_id = child.cooldownID
+            if cooldown_id ~= nil and issecretvalue(cooldown_id) then cooldown_id = nil end
             local info = child.cooldownInfo
             if info then
+                local cid = info.cooldownID or info.cooldownId
+                if cid ~= nil and not issecretvalue(cid) then
+                    child._lstweeks_cooldown_id = cid
+                    cooldown_id = cid
+                end
                 local sid = info.overrideSpellID or info.spellID
                 if sid and not issecretvalue(sid) then
                     child._lstweeks_spell_id = sid
-                    spell_id = sid
                 end
             end
-            if not spell_id then spell_id = child._lstweeks_spell_id end
-            if spell_id then
-                local cached = cache[spell_id]
-                if cached and cached.expiration and cached.expiration > now then
-                    local remaining = cached.expiration - now
-                    local key = "cd_" .. spell_id
-                    target_map[key] = {
-                        instance_id       = key,
-                        is_spell_cooldown = true,
-                        spell_id          = spell_id,
-                        name              = C_Spell.GetSpellName(spell_id),
-                        icon              = C_Spell.GetSpellTexture(spell_id),
-                        duration          = cached.duration,
-                        remaining         = remaining,
-                        expiration        = cached.expiration,
-                        count             = 0,
-                        live_count        = nil,
-                        is_helpful        = true,
-                        category          = category,
-                        filter            = "HELPFUL",
-                        order_key         = "cd|" .. tostring(spell_id),
-                    }
-                end
+            cooldown_id = cooldown_id or child._lstweeks_cooldown_id
+
+            local spell_id = child._lstweeks_spell_id
+            local name = child._lstweeks_cd_name
+            local icon = child._lstweeks_cd_icon
+            if spell_id and (not name or not icon) then
+                local spell_name, spell_icon = get_spell_display(spell_id)
+                name = name or spell_name
+                icon = icon or spell_icon
+                child._lstweeks_cd_name = name
+                child._lstweeks_cd_icon = icon
+            end
+
+            local cached = cooldown_id and cache[cooldown_id]
+            if cached then
+                name = name or cached.name
+                icon = icon or cached.icon
+                spell_id = spell_id or cached.spell_id
+            end
+
+            if (not iid) and cooldown_id and icon then
+                local expiration = cached and cached.expiration or 0
+                local duration = cached and cached.duration or 0
+                local remaining = (expiration and expiration > now) and (expiration - now) or 0
+                local duration_object = (cached and cached.duration_object) or get_spell_cooldown_duration_object(spell_id)
+                local key = "cd_" .. tostring(cooldown_id)
+                target_map[key] = {
+                    instance_id       = key,
+                    is_spell_cooldown = true,
+                    spell_id          = spell_id,
+                    name              = name or tostring(spell_id or cooldown_id),
+                    icon              = icon,
+                    duration          = duration,
+                    duration_object   = duration_object,
+                    remaining         = remaining,
+                    expiration        = expiration,
+                    count             = 0,
+                    live_count        = nil,
+                    is_helpful        = true,
+                    category          = category,
+                    filter            = "HELPFUL",
+                    order_key         = "cd|" .. tostring(cooldown_id),
+                }
             end
         end
     else

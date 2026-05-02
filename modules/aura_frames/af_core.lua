@@ -47,8 +47,15 @@ function M.tick_visible_icons(now)
                 elseif obj:IsShown() and obj.is_test_preview then
                     M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
                 elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown) then
+                    local show_cooldown_overlay = (not bar_mode) and db and db["cooldown_mode_" .. frame.category]
                     if show_timer_text then
-                        if not obj.time_text:IsShown() then obj.time_text:Show() end
+                        if show_cooldown_overlay then
+                            if obj.time_text:IsShown() then obj.time_text:Hide() end
+                            obj.time_text:SetText("")
+                            obj.time_text._last_text = ""
+                        elseif not obj.time_text:IsShown() then
+                            obj.time_text:Show()
+                        end
                     else
                         if obj.time_text:IsShown() then obj.time_text:Hide() end
                     end
@@ -74,7 +81,7 @@ function M.tick_visible_icons(now)
                         end
                     end
                     if remaining and remaining > 0 then
-                        if show_timer_text then
+                        if show_timer_text and not show_cooldown_overlay then
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
                         end
                         if obj.bar and obj.bar:IsShown() then
@@ -86,7 +93,7 @@ function M.tick_visible_icons(now)
                             obj.time_text._last_text = ""
                         end
                     elseif live_remaining ~= nil and issecretvalue(live_remaining) then
-                        if show_timer_text then
+                        if show_timer_text and not show_cooldown_overlay then
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
                     end
@@ -147,6 +154,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local barTextC      = cfg_db["bar_text_color_" .. category] or cfg_db["bar_text_color"] or { r = 1, g = 1, b = 1 }
     local bgC           = cfg_db["bg_color_" .. category] or cfg_db["bg_color"] or { r = 0, g = 0, b = 0, a = 0.5 }
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
+    local cooldown_icon_overlay = (not bar_mode) and cfg_db["cooldown_mode_" .. category]
+    local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or 60
@@ -184,6 +193,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         or self._layout_cache.frame_width     ~= frame_width
         or self._layout_cache.bar_mode        ~= bar_mode
         or self._layout_cache.show_timer_text ~= show_timer_text
+        or self._layout_cache.layout_show_timer_text ~= layout_show_timer_text
+        or self._layout_cache.cooldown_icon_overlay ~= cooldown_icon_overlay
         or self._layout_cache.spacing         ~= spacing
         or self._layout_cache.growth          ~= growth
     then
@@ -215,8 +226,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         if bar_mode then
             min_height = (bar_layout.row_height or 18) + spacing + 12
         else
-            local timer_h  = show_timer_text and 12 or 0
-            local bot_pad  = show_timer_text and 14 or 12
+            local timer_h  = layout_show_timer_text and 12 or 0
+            local bot_pad  = layout_show_timer_text and 14 or 12
             min_height = 32 + timer_h + bot_pad
         end
         M.set_height_for_growth(self, min_height, growth)
@@ -280,8 +291,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     )
 
     local lc = self._layout_cache
-    local icon_timer_h = show_timer_text and 12 or 0
-    local icon_bot_pad = show_timer_text and 14 or 12
+    local icon_timer_h = layout_show_timer_text and 12 or 0
+    local icon_bot_pad = layout_show_timer_text and 14 or 12
     local new_height = bar_mode and ((lc and lc.row_height or 18) + spacing + 12)
                                 or  ((lc and lc.icon_size  or 32) + icon_timer_h + icon_bot_pad)
     if display_count > 0 then

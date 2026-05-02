@@ -274,7 +274,17 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         
         -- Icon Texture
         obj.texture = obj:CreateTexture(nil, "ARTWORK")
-        
+
+        -- Native cooldown overlay for spell-cooldown mode. Pre-created so combat
+        -- updates can feed Blizzard DurationObjects without creating frames.
+        obj.cooldown = CreateFrame("Cooldown", nil, obj, "CooldownFrameTemplate")
+        obj.cooldown:SetAllPoints(obj)
+        obj.cooldown:SetDrawEdge(false)
+        obj.cooldown:SetDrawSwipe(true)
+        obj.cooldown:SetDrawBling(false)
+        obj.cooldown:SetHideCountdownNumbers(false)
+        obj.cooldown:Hide()
+
         -- Status Bar (for bar mode)
         obj.bar = CreateFrame("StatusBar", nil, obj)
         obj.bar:EnableMouse(false)
@@ -376,9 +386,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")  -- Combat start
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")   -- Combat end
     frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    -- Cooldown-viewer frames also react to spell cooldown changes for cooldown-mode display.
     if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
         frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+        frame:RegisterEvent("SPELL_UPDATE_CHARGES")
     end
     
     -- Store parameters on frame itself for robust access during callbacks
@@ -403,6 +413,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             or event == "PLAYER_REGEN_ENABLED"
             or event == "PLAYER_SPECIALIZATION_CHANGED"
             or event == "SPELL_UPDATE_COOLDOWN"
+            or event == "SPELL_UPDATE_CHARGES"
 
         if not relevant then return end
 
