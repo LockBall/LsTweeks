@@ -40,6 +40,7 @@ M.defaults = {
     show_grid      = false,
     show_bar_section_outlines = false,
     show_spell_id = false,
+    debug_custom_aura = false,
     spell_name_cache = {},  -- persisted aura registry: spell_id -> {name, iconID, filter}
     short_threshold = 60,
     timer_number_font = "source_code_pro",

@@ -95,6 +95,13 @@ function M.set_timer_text(font_string, category, seconds)
     end
 end
 
+local function get_timer_category(frame, entry)
+    if frame.is_custom and entry and entry.category then
+        return entry.category
+    end
+    return frame.category
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -240,6 +247,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
+        local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
         local need_live_duration = (not is_static_frame) and (show_timer_text or bar_mode)
         local live_duration = need_live_duration and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
@@ -256,6 +264,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                               or entry.expiration
         obj.aura_scan_time  = now
         obj.aura_spell_id   = entry.spell_id
+        obj.aura_category   = timer_category
         obj.is_test_preview = entry.is_test_preview or false
 
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
@@ -331,13 +340,13 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
                 if display_remaining and display_remaining > 0 then
                     if show_timer_text then
-                        M.set_timer_text(obj.time_text, self.category, display_remaining)
+                        M.set_timer_text(obj.time_text, timer_category, display_remaining)
                     else
                         obj.time_text:SetText("")
                     end
                 else
                     if show_timer_text then
-                        M.set_timer_text(obj.time_text, self.category, rem)
+                        M.set_timer_text(obj.time_text, timer_category, rem)
                     else
                         obj.time_text:SetText("")
                     end
@@ -347,7 +356,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 end
             elseif rem > 0 then
                 if show_timer_text then
-                    M.set_timer_text(obj.time_text, self.category, rem)
+                    M.set_timer_text(obj.time_text, timer_category, rem)
                 else
                     obj.time_text:SetText("")
                 end
@@ -370,7 +379,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             rem = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
             if rem > 0 then
                 if show_timer_text then
-                    M.set_timer_text(obj.time_text, self.category, rem)
+                    M.set_timer_text(obj.time_text, timer_category, rem)
                 else
                     obj.time_text:SetText("")
                 end

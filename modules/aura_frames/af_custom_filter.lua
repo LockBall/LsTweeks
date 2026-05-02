@@ -4,14 +4,141 @@
 local addon_name, addon = ...
 
 local C_UnitAuras   = C_UnitAuras
+local C_CooldownViewer = C_CooldownViewer
 local issecretvalue = issecretvalue
 local tonumber      = tonumber
 local tostring      = tostring
+local GetTime       = GetTime
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local FULL_AURA_SCAN_LIMIT = 255
+local _debug_last = {}
+M._custom_debug_lines = M._custom_debug_lines or {}
+M._custom_debug_baseline_done = M._custom_debug_baseline_done or false
+
+local function value_state(value)
+    if value == nil then return "nil" end
+    if issecretvalue(value) then return "secret" end
+    return "value"
+end
+
+local function safe_value(value)
+    if value == nil then return "nil" end
+    if issecretvalue(value) then return "secret" end
+    return tostring(value)
+end
+
+local function debug_custom_match(frame, sid, message)
+    if not (M.db and M.db.debug_custom_aura) then return end
+    local key = (frame and frame.category or "?") .. ":" .. tostring(sid) .. ":" .. message
+    local now = GetTime()
+    if _debug_last[key] and (now - _debug_last[key]) < 2 then return end
+    _debug_last[key] = now
+    local line = string.format("%.1f %s", now, message)
+    local lines = M._custom_debug_lines
+    lines[#lines + 1] = line
+    if #lines > 80 then
+        table.remove(lines, 1)
+    end
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff88ccffLsT custom|r " .. message)
+    end
+end
+
+function M.clear_custom_debug_log()
+    wipe(M._custom_debug_lines)
+    wipe(_debug_last)
+    M._custom_debug_baseline_done = false
+    if DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff88ccffLsT custom|r debug log cleared")
+    end
+end
+
+function M.print_custom_debug_log()
+    if not DEFAULT_CHAT_FRAME then return end
+    DEFAULT_CHAT_FRAME:AddMessage("|cff88ccffLsT custom|r debug log:")
+    for _, line in ipairs(M._custom_debug_lines or {}) do
+        DEFAULT_CHAT_FRAME:AddMessage(line)
+    end
+end
+
+local function cdm_category(name, fallback)
+    local enum = Enum and Enum.CooldownViewerCategory
+    return (enum and enum[name]) or fallback
+end
+
+local function probe_cooldown_viewer(frame, sid)
+    if not (M.db and M.db.debug_custom_aura) then return end
+    local api_ok = C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet
+        and C_CooldownViewer.GetCooldownViewerCooldownInfo
+    local icon_viewer = _G["BuffIconCooldownViewer"]
+    local bar_viewer = _G["BuffBarCooldownViewer"]
+    debug_custom_match(frame, sid,
+        "cdv api=" .. (api_ok and "yes" or "no")
+        .. " iconViewer=" .. (icon_viewer and "yes" or "no")
+        .. " barViewer=" .. (bar_viewer and "yes" or "no"))
+
+    if api_ok then
+        local categories = {
+            cdm_category("TrackedBuff", 2),
+            cdm_category("TrackedBar", 3),
+        }
+        for _, category in ipairs(categories) do
+            local ok, ids = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, category, true)
+            local count = (ok and ids) and #ids or 0
+            local found = "no"
+            if ok and ids then
+                for _, cooldown_id in ipairs(ids) do
+                    local info_ok, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
+                    if info and info.spellID == sid then
+                        found = "cd=" .. tostring(cooldown_id)
+                            .. " hasAura=" .. safe_value(info.hasAura)
+                            .. " name=" .. safe_value(info.name)
+                            .. " icon=" .. safe_value(info.icon)
+                        break
+                    end
+                end
+            end
+            debug_custom_match(frame, sid,
+                "cdv cat=" .. tostring(category)
+                .. " count=" .. tostring(count)
+                .. " sid=" .. tostring(sid)
+                .. " found=" .. found)
+        end
+    end
+
+    local function probe_viewer(viewer, label)
+        if not viewer then return end
+        local children = { viewer:GetChildren() }
+        debug_custom_match(frame, sid, "cdv " .. label .. " children=" .. tostring(#children))
+        for idx = 1, math.min(#children, 5) do
+            local child = children[idx]
+            local cooldown_id = child.cooldownID or child.cooldownId or child.id
+                or (child.GetCooldownID and child:GetCooldownID())
+            local spell_id = child.spellID or child.spellId
+            debug_custom_match(frame, sid,
+                "cdv " .. label .. idx
+                .. " shown=" .. safe_value(child:IsShown())
+                .. " cd=" .. safe_value(cooldown_id)
+                .. " spell=" .. safe_value(spell_id)
+                .. " name=" .. safe_value(child:GetName()))
+        end
+    end
+    probe_viewer(icon_viewer, "icon")
+    probe_viewer(bar_viewer, "bar")
+end
+
+local function probe_cooldown_viewer_baseline(frame)
+    if not (M.db and M.db.debug_custom_aura) then return end
+    if M._custom_debug_baseline_done then return end
+    M._custom_debug_baseline_done = true
+
+    debug_custom_match(frame, "baseline", "baseline begin")
+    probe_cooldown_viewer(frame, -1)
+    debug_custom_match(frame, "baseline", "baseline end")
+end
 
 local function normalize_spell_id(sid)
     if sid == nil or issecretvalue(sid) then return nil end
@@ -27,6 +154,31 @@ local function build_whitelist_lookups(whitelist)
         if wname then by_name[wname] = sid end
     end
     return by_id, by_name
+end
+
+local function find_whitelist_sid_by_registry(entry, whitelist_by_id, registry)
+    if not (entry and registry) then return nil end
+    local entry_name = entry.name
+    local entry_icon = entry.icon
+    local has_name = entry_name ~= nil and not issecretvalue(entry_name)
+    local has_icon = entry_icon ~= nil and not issecretvalue(entry_icon)
+    if not has_name and not has_icon then return nil end
+
+    local matched_sid
+    for sid in pairs(whitelist_by_id) do
+        local cached = registry[sid] or registry[tostring(sid)]
+        if cached then
+            local name_match = has_name and cached.name and cached.name == entry_name
+            local icon_match = has_icon and cached.iconID and cached.iconID == entry_icon
+            if name_match or icon_match then
+                if matched_sid and matched_sid ~= sid then
+                    return nil
+                end
+                matched_sid = sid
+            end
+        end
+    end
+    return matched_sid
 end
 
 local function has_whitelist_entries(whitelist)
@@ -102,6 +254,7 @@ end
 
 function M.filter_custom_aura_map(frame, custom_entry, shared_map)
     if not (frame and custom_entry and shared_map) then return end
+    probe_cooldown_viewer_baseline(frame)
 
     local whitelist_by_id, whitelist_by_name = build_whitelist_lookups(custom_entry.whitelist)
     local want_helpful = (custom_entry.filter == "HELPFUL")
@@ -111,16 +264,26 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
 
     local seen_iids = {}
     local matched_sids = {}
+    local same_filter_count = 0
+    local no_sid_count = 0
+    local readable_name_count = 0
+    local readable_icon_count = 0
+    local candidates = {}
     for iid, entry in pairs(shared_map) do
         if entry.is_helpful == want_helpful then
+            same_filter_count = same_filter_count + 1
             local sid = normalize_spell_id(entry.spell_id)
+            if not sid then no_sid_count = no_sid_count + 1 end
+            if entry.name and not issecretvalue(entry.name) then readable_name_count = readable_name_count + 1 end
+            if entry.icon and not issecretvalue(entry.icon) then readable_icon_count = readable_icon_count + 1 end
+            if not sid and #candidates < 3 then
+                candidates[#candidates + 1] = entry
+            end
             if not sid and entry.name and not issecretvalue(entry.name) then
                 sid = whitelist_by_name[entry.name]
             end
-            if not sid and entry.name and not issecretvalue(entry.name) then
-                for csid, cdata in pairs(spell_cache) do
-                    if cdata.name == entry.name then sid = normalize_spell_id(csid); break end
-                end
+            if not sid then
+                sid = find_whitelist_sid_by_registry(entry, whitelist_by_id, spell_cache)
             end
             if sid and whitelist_by_id[sid] then
                 iid_to_sid[iid] = sid
@@ -154,6 +317,34 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
                 end
                 frame._aura_map[iid] = patch_entry_from_registry(entry, sid, spell_cache)
                 seen_iids[iid] = true
+            else
+                local cached = spell_cache and (spell_cache[sid] or spell_cache[tostring(sid)])
+                probe_cooldown_viewer(frame, sid)
+                debug_custom_match(frame, sid,
+                    "miss sid=" .. tostring(sid)
+                    .. " cache=" .. (cached and "yes" or "no")
+                    .. " lookup_iid=" .. tostring(iid)
+                    .. " lookup_aura=" .. (aura and "yes" or "no")
+                    .. " map_entry=" .. (entry and "yes" or "no")
+                    .. " map_sid=" .. value_state(entry and entry.spell_id)
+                    .. " map_name=" .. value_state(entry and entry.name)
+                    .. " map_icon=" .. value_state(entry and entry.icon))
+                debug_custom_match(frame, sid,
+                    "scan sid=" .. tostring(sid)
+                    .. " total=" .. tostring(same_filter_count)
+                    .. " no_sid=" .. tostring(no_sid_count)
+                    .. " readable_name=" .. tostring(readable_name_count)
+                    .. " readable_icon=" .. tostring(readable_icon_count))
+                for idx, candidate in ipairs(candidates) do
+                    debug_custom_match(frame, sid,
+                        "cand" .. tostring(idx)
+                        .. " iid=" .. safe_value(candidate.instance_id)
+                        .. " cat=" .. safe_value(candidate.category)
+                        .. " sid=" .. value_state(candidate.spell_id)
+                        .. " name=" .. value_state(candidate.name)
+                        .. " icon=" .. value_state(candidate.icon)
+                        .. " iconv=" .. safe_value(candidate.icon))
+                end
             end
         end
     end

@@ -613,9 +613,40 @@ function M.BuildSettings(parent)
         outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
         M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
+        local debug_container, debug_btn, _ = addon.CreateCheckbox(p, "Custom Aura Debug", M.db.debug_custom_aura == true,
+            function(is_checked)
+                M.db.debug_custom_aura = is_checked
+                if is_checked and M.clear_custom_debug_log then
+                    M.clear_custom_debug_log()
+                end
+            end
+        )
+        debug_container:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -12)
+        M.controls.debug_custom_aura_checkbox = debug_btn
+
+        local clear_debug_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+        clear_debug_btn:SetSize(96, 20)
+        clear_debug_btn:SetPoint("LEFT", debug_container, "RIGHT", 12, 0)
+        clear_debug_btn:SetText("Clear Debug")
+        clear_debug_btn:SetScript("OnClick", function()
+            if M.clear_custom_debug_log then
+                M.clear_custom_debug_log()
+            end
+        end)
+
+        local print_debug_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+        print_debug_btn:SetSize(96, 20)
+        print_debug_btn:SetPoint("LEFT", clear_debug_btn, "RIGHT", 8, 0)
+        print_debug_btn:SetText("Print Debug")
+        print_debug_btn:SetScript("OnClick", function()
+            if M.print_custom_debug_log then
+                M.print_custom_debug_log()
+            end
+        end)
+
         -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
-        resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
+        resetPanel:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -16)
     end
 
     -- Custom panel builders (settings grid + whitelist/capture child) live in
@@ -1089,6 +1120,11 @@ function M.sync_general_controls_from_db()
     local outlines_cb = M.controls["show_bar_section_outlines_checkbox"]
     if outlines_cb and outlines_cb.SetChecked then
         outlines_cb:SetChecked(M.db.show_bar_section_outlines == true)
+    end
+
+    local custom_debug_cb = M.controls["debug_custom_aura_checkbox"]
+    if custom_debug_cb and custom_debug_cb.SetChecked then
+        custom_debug_cb:SetChecked(M.db.debug_custom_aura == true)
     end
 
 end
