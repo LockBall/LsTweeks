@@ -340,6 +340,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:RegisterEvent("PLAYER_ENTERING_WORLD")
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")  -- Combat start
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")   -- Combat end
+    frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
     
     -- Store parameters on frame itself for robust access during callbacks
     frame.update_params = {
@@ -361,6 +362,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             or event == "PLAYER_ENTERING_WORLD"
             or event == "PLAYER_REGEN_DISABLED"
             or event == "PLAYER_REGEN_ENABLED"
+            or event == "PLAYER_SPECIALIZATION_CHANGED"
 
         if not relevant then return end
 
@@ -374,6 +376,13 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         -- Merge UNIT_AURA payloads while waiting for the deferred scan.
         if event == "UNIT_AURA" then
             self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
+        elseif event == "PLAYER_ENTERING_WORLD"
+                or event == "PLAYER_REGEN_DISABLED"
+                or event == "PLAYER_REGEN_ENABLED"
+                or event == "PLAYER_SPECIALIZATION_CHANGED" then
+            if M.invalidate_cooldown_viewer_cache then
+                M.invalidate_cooldown_viewer_cache()
+            end
         end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.
@@ -576,6 +585,11 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_aura_frame("show_static",  "move_static",  "timer_static", "bg_static",    "scale_static", "spacing_static",   "Static",   false)
         M.create_aura_frame("show_short",   "move_short",   "timer_short",  "bg_short",     "scale_short",  "spacing_short",    "Short",    false)
         M.create_aura_frame("show_long",    "move_long",    "timer_long",   "bg_long",      "scale_long",   "spacing_long",     "Long",     false)
+        M.create_aura_frame("show_important", "move_important", "timer_important", "bg_important", "scale_important", "spacing_important", "Important", false)
+        M.create_aura_frame("show_essential", "move_essential", "timer_essential", "bg_essential", "scale_essential", "spacing_essential", "Essential", false)
+        M.create_aura_frame("show_utility", "move_utility", "timer_utility", "bg_utility", "scale_utility", "spacing_utility", "Utility", false)
+        M.create_aura_frame("show_tracked_buffs", "move_tracked_buffs", "timer_tracked_buffs", "bg_tracked_buffs", "scale_tracked_buffs", "spacing_tracked_buffs", "Tracked Buffs", false)
+        M.create_aura_frame("show_tracked_bars", "move_tracked_bars", "timer_tracked_bars", "bg_tracked_bars", "scale_tracked_bars", "spacing_tracked_bars", "Tracked Bars", false)
         M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
 
         -- Create saved custom whitelist frames.
@@ -622,6 +636,14 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
 
         M.create_grid_overlay()
+
+        -- Cooldown viewer category sets can change via Blizzard settings.
+        -- Mark cache dirty when settings emit data-change notifications.
+        if EventRegistry and EventRegistry.RegisterCallback and M.invalidate_cooldown_viewer_cache then
+            EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
+                M.invalidate_cooldown_viewer_cache()
+            end)
+        end
 
         self:UnregisterEvent("ADDON_LOADED")
     end

@@ -787,11 +787,19 @@ function M.build_custom_child_panel(p, entry)
                     if not item.spell_id then
                         item.spell_id     = sid
                         cap_by_sid[sid]   = item
+                        if M.CacheAuraInfo then
+                            M.CacheAuraInfo(sid, item.name, item.icon, entry.filter)
+                        end
                         changed = true
                     end
                     -- Freshen name/icon now that secretvalue restriction is lifted.
                     item.name = ae.name
                     item.icon = ae.icon
+                    if M.CacheAuraInfo then
+                        local cname = (item.name and not issecretvalue(item.name)) and item.name or nil
+                        local cicon = (item.icon and not issecretvalue(item.icon)) and item.icon or nil
+                        M.CacheAuraInfo(sid, cname, cicon, entry.filter)
+                    end
                     changed = true
                 end
             end

@@ -1,6 +1,8 @@
--- Unified aura scanning and classification for all aura frame categories (static/short/long/debuff/custom).
+-- Unified aura scanning and classification for all aura frame categories.
 -- M.unified_scan() runs one pass over all player buffs and debuffs, classifying each into M._aura_map
 -- with an entry.category ("static"/"short"/"long"/"debuff") and entry.is_helpful flag.
+-- Additional boolean tags are layered per entry for filter-backed buckets:
+--   is_important, is_essential, is_utility, is_tracked_buffs, is_tracked_bars
 -- Spell learning (M._known_static, M._known_long) is session-scoped only — never written to DB.
 -- Custom frames post-filter M._aura_map by whitelist; preset frames filter by entry.category.
 
@@ -12,6 +14,8 @@ local GetTime    = GetTime
 local wipe       = wipe
 local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
+local C_CooldownViewer = C_CooldownViewer
+local Enum          = Enum
 local format        = format
 
 addon.aura_frames = addon.aura_frames or {}
@@ -97,6 +101,132 @@ local function get_safe_spell_id(raw_spell_id, old_entry)
     return nil
 end
 
+local function get_aura_spell_id(aura, fallback_entry)
+    local sid = get_safe_spell_id(aura and aura.spellId, nil)
+    if sid then return sid end
+    sid = get_safe_spell_id(aura and aura.spellID, nil)
+    if sid then return sid end
+    return get_safe_spell_id(nil, fallback_entry)
+end
+
+-- Persist known aura identity when fields are readable.
+local function learn_aura_identity(spell_id, name, icon, filter)
+    if not (M.CacheAuraInfo and spell_id) then return end
+    if issecretvalue(spell_id) then return end
+    local safe_name = (name ~= nil and not issecretvalue(name)) and name or nil
+    local safe_icon = (icon ~= nil and not issecretvalue(icon)) and icon or nil
+    if safe_name or safe_icon then
+        M.CacheAuraInfo(spell_id, safe_name, safe_icon, filter)
+    end
+end
+
+local function learn_important_aura(spell_id, name, icon)
+    if not (M.db and spell_id) then return end
+    if issecretvalue(spell_id) then return end
+
+    local safe_name = (name ~= nil and not issecretvalue(name)) and name or nil
+    local safe_icon = (icon ~= nil and not issecretvalue(icon)) and icon or nil
+    if not (safe_name or safe_icon) then return end
+
+    M.db.important_aura_cache = M.db.important_aura_cache or {}
+    local cached = M.db.important_aura_cache[spell_id]
+    if not cached then
+        cached = {}
+        M.db.important_aura_cache[spell_id] = cached
+    end
+    if safe_name then cached.name = safe_name end
+    if safe_icon then cached.icon = safe_icon end
+    cached.seen = time()
+end
+
+local function get_cooldown_viewer_category(name, fallback)
+    local enum = Enum and Enum.CooldownViewerCategory
+    return (enum and enum[name]) or fallback
+end
+
+local function make_spell_signature(name, icon)
+    local safe_name = (name ~= nil and not issecretvalue(name)) and tostring(name) or nil
+    local safe_icon = (icon ~= nil and not issecretvalue(icon)) and tostring(icon) or nil
+    if not safe_name and not safe_icon then return nil end
+    return (safe_name or "") .. "|" .. (safe_icon or "")
+end
+
+local function add_cooldown_info_spell_ids(set, info)
+    if not (set and info) then return end
+    -- Cooldown viewer payloads are not fully stable across entries/builds.
+    -- Collect a conservative list of known spell-id fields.
+    local keys = {
+        "spellID", "spellId",
+        "baseSpellID", "baseSpellId",
+        "auraSpellID", "auraSpellId",
+        "overrideSpellID", "overrideSpellId",
+        "parentSpellID", "parentSpellId",
+    }
+    for _, key in ipairs(keys) do
+        local sid = info[key]
+        if sid ~= nil and not issecretvalue(sid) then
+            sid = tonumber(sid) or sid
+            if sid then set[sid] = true end
+        end
+    end
+end
+
+function M.invalidate_cooldown_viewer_cache()
+    M._cooldown_viewer_spell_ids_cache = nil
+    M._cooldown_viewer_spell_ids_cache_time = nil
+    M._cooldown_viewer_spell_ids_dirty = true
+end
+
+local function refresh_cooldown_viewer_spell_ids()
+    local now = GetTime()
+    local cache = M._cooldown_viewer_spell_ids_cache
+    local dirty = M._cooldown_viewer_spell_ids_dirty == true
+    local cache_age = (M._cooldown_viewer_spell_ids_cache_time and (now - M._cooldown_viewer_spell_ids_cache_time)) or nil
+    local stale = cache_age and cache_age > 60
+    if cache and (not dirty) and (not stale) then
+        return cache
+    end
+
+    local api_ok = C_CooldownViewer
+        and C_CooldownViewer.GetCooldownViewerCategorySet
+        and C_CooldownViewer.GetCooldownViewerCooldownInfo
+    if not api_ok then return cache end
+
+    local spell_ids = {
+        essential = { by_sid = {}, by_sig = {} },
+        utility = { by_sid = {}, by_sig = {} },
+        tracked_buffs = { by_sid = {}, by_sig = {} },
+        tracked_bars = { by_sid = {}, by_sig = {} },
+    }
+    local categories = {
+        { id = get_cooldown_viewer_category("Essential", 0), key = "essential" },
+        { id = get_cooldown_viewer_category("Utility", 1), key = "utility" },
+        { id = get_cooldown_viewer_category("TrackedBuff", 2), key = "tracked_buffs" },
+        { id = get_cooldown_viewer_category("TrackedBar", 3), key = "tracked_bars" },
+    }
+
+    for _, category in ipairs(categories) do
+        local ok, ids = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, category.id, true)
+        if ok and ids then
+            for _, cooldown_id in ipairs(ids) do
+                local info_ok, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldown_id)
+                if info_ok and info then
+                    add_cooldown_info_spell_ids(spell_ids[category.key].by_sid, info)
+                end
+                local sig = info_ok and info and make_spell_signature(info.name, info.icon)
+                if sig then
+                    spell_ids[category.key].by_sig[sig] = true
+                end
+            end
+        end
+    end
+
+    M._cooldown_viewer_spell_ids_cache = spell_ids
+    M._cooldown_viewer_spell_ids_cache_time = now
+    M._cooldown_viewer_spell_ids_dirty = false
+    return spell_ids
+end
+
 local function build_added_by_key(map)
     local by_key = _scratch_added_by_key
     wipe(by_key)
@@ -151,6 +281,13 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     local old_map = _scratch_old_map
     wipe(old_map)
     for iid, entry in pairs(cur_map) do old_map[iid] = entry end
+    for _, entry in pairs(cur_map) do
+        entry.is_important = nil
+        entry.is_essential = nil
+        entry.is_utility = nil
+        entry.is_tracked_buffs = nil
+        entry.is_tracked_bars = nil
+    end
 
     local old_added_by_key = build_added_by_key(old_map)
     local added_lookup, added_count = build_added_lookup(info)
@@ -167,6 +304,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     end
 
     local db = M.db
+    local cooldown_viewer_spell_ids = refresh_cooldown_viewer_spell_ids()
     local seen_iids = _scratch_seen_iids
     wipe(seen_iids)
 
@@ -175,7 +313,12 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     local max_helpful = math_max(
         max_helpful_hint or 0,
-        math_max(db.max_icons_static or 40, math_max(db.max_icons_short or 40, db.max_icons_long or 40))
+            math_max(db.max_icons_static or 40,
+                math_max(db.max_icons_short or 40,
+                    math_max(db.max_icons_long or 40,
+                    math_max(db.max_icons_essential or 40,
+                        math_max(db.max_icons_utility or 40,
+                            math_max(db.max_icons_tracked_buffs or 40, db.max_icons_tracked_bars or 40))))))
     )
 
     -- Track old category by spell for cross-session refresh hinting.
@@ -198,7 +341,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         if not iid then break end
 
         local old_entry     = old_map[iid]
-        local safe_spell_id = get_safe_spell_id(aura.spellId, old_entry)
+        local safe_spell_id = get_aura_spell_id(aura, old_entry)
         local duration      = aura.duration
         local expiration    = aura.expirationTime
         local rem           = compute_remaining(duration, expiration)
@@ -308,6 +451,31 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 entry.live_count     = live_count
                 cur_map[iid] = entry
             end
+            if cooldown_viewer_spell_ids then
+                local aura_sig = make_spell_signature(name, icon)
+                local essential_set = cooldown_viewer_spell_ids.essential
+                local utility_set = cooldown_viewer_spell_ids.utility
+                local tracked_buffs_set = cooldown_viewer_spell_ids.tracked_buffs
+                local tracked_bars_set = cooldown_viewer_spell_ids.tracked_bars
+
+                if (safe_spell_id and essential_set and essential_set.by_sid[safe_spell_id])
+                        or (aura_sig and essential_set and essential_set.by_sig[aura_sig]) then
+                    entry.is_essential = true
+                end
+                if (safe_spell_id and utility_set and utility_set.by_sid[safe_spell_id])
+                        or (aura_sig and utility_set and utility_set.by_sig[aura_sig]) then
+                    entry.is_utility = true
+                end
+                if (safe_spell_id and tracked_buffs_set and tracked_buffs_set.by_sid[safe_spell_id])
+                        or (aura_sig and tracked_buffs_set and tracked_buffs_set.by_sig[aura_sig]) then
+                    entry.is_tracked_buffs = true
+                end
+                if (safe_spell_id and tracked_bars_set and tracked_bars_set.by_sid[safe_spell_id])
+                        or (aura_sig and tracked_bars_set and tracked_bars_set.by_sig[aura_sig]) then
+                    entry.is_tracked_bars = true
+                end
+            end
+            learn_aura_identity(safe_spell_id, name, icon, "HELPFUL")
             seen_iids[iid] = true
 
             -- Session-scoped learning.
@@ -318,6 +486,67 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 M._known_long[safe_spell_id] = true
             end
 
+            count = count + 1
+        end
+    end
+
+    -- -------------------------------------------------------------------------
+    -- PASS 1B: HELPFUL IMPORTANT
+    -- -------------------------------------------------------------------------
+    if C_UnitAuras.GetAuraDataByIndex then
+        local max_important = db.max_icons_important or 40
+        i, count = 1, 0
+        while count < max_important do
+            local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL|IMPORTANT")
+            if not ok or not aura then break end
+            i = i + 1
+
+            local iid = aura.auraInstanceID
+            if not iid then break end
+
+            local old_entry     = old_map[iid]
+            local current_entry = cur_map[iid]
+            local safe_spell_id = get_aura_spell_id(aura, current_entry or old_entry)
+            local name          = aura.name
+            local icon          = aura.icon
+            local duration      = aura.duration
+            local expiration    = aura.expirationTime
+            local rem           = compute_remaining(duration, expiration)
+            local category      = classify_helpful(rem, short_threshold) or (old_entry and old_entry.category) or "short"
+            local applications  = aura.applications
+            local stacks = (not issecretvalue(applications) and applications and applications > 1) and applications or 0
+
+            local safe_duration = (not issecretvalue(duration)) and duration
+                or (old_entry and old_entry.duration) or 0
+            local safe_expiration = (not issecretvalue(expiration)) and expiration
+                or (old_entry and old_entry.expiration) or 0
+            local safe_remaining = rem
+            if (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
+                safe_remaining = math_max(0, safe_expiration - GetTime())
+            elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
+                safe_remaining = old_entry.remaining
+            end
+
+            local entry = cur_map[iid]
+            if entry then
+                if not seen_iids[iid] then
+                    update_entry(entry, name, icon, safe_duration, safe_expiration,
+                        safe_spell_id, nil, safe_remaining or 0, stacks, nil, nil, category)
+                    entry.is_helpful = true
+                end
+                entry.is_important = true
+                if not entry.category then entry.category = category end
+            else
+                entry = make_entry(iid, name, icon, safe_duration, safe_expiration,
+                    safe_spell_id, nil, safe_remaining or 0, stacks,
+                    true, category, (old_entry and old_entry.added_at) or GetTime())
+                entry.is_important = true
+                cur_map[iid] = entry
+            end
+            seen_iids[iid] = true
+            local learn_spell_id = (entry and entry.spell_id) or safe_spell_id
+            learn_aura_identity(learn_spell_id, name, icon, "HELPFUL")
+            learn_important_aura(learn_spell_id, name, icon)
             count = count + 1
         end
     end
@@ -418,6 +647,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 entry.live_count = live_count
                 cur_map[iid] = entry
             end
+            learn_aura_identity(safe_spell_id, name, icon, "HARMFUL")
             seen_iids[iid] = true
             count = count + 1
         end

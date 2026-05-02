@@ -31,7 +31,12 @@ local PREVIEW_META = {
     show_static = { name = "Test Static Buff", sort_id = 1 },
     show_short  = { name = "Test Short Buff",  sort_id = 2 },
     show_long   = { name = "Test Long Buff",   sort_id = 3 },
-    show_debuff = { name = "Test DeBuff",       sort_id = 4 },
+    show_important = { name = "Test Important Buff", sort_id = 4 },
+    show_essential = { name = "Test Essential Buff", sort_id = 5 },
+    show_utility = { name = "Test Utility Buff", sort_id = 6 },
+    show_tracked_buffs = { name = "Test Tracked Buff", sort_id = 7 },
+    show_tracked_bars = { name = "Test Tracked Bar", sort_id = 8 },
+    show_debuff = { name = "Test DeBuff",       sort_id = 9 },
 }
 
 function M.get_test_preview_state(show_key, short_threshold, now)
