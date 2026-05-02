@@ -65,7 +65,7 @@ function M.tick_visible_icons(now)
                     end
                     if remaining and remaining > 0 then
                         if show_timer_text then
-                            M.set_timer_text(obj.time_text, frame.category, remaining)
+                            M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
                         end
                         if obj.bar and obj.bar:IsShown() then
                             obj.bar:SetValue(remaining)
@@ -77,7 +77,7 @@ function M.tick_visible_icons(now)
                         end
                     elseif live_remaining ~= nil and issecretvalue(live_remaining) then
                         if show_timer_text then
-                            M.set_timer_text(obj.time_text, frame.category, live_remaining)
+                            M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
                     end
                 end
