@@ -71,17 +71,11 @@ from live auras.
 af_render and af_core. No UI code lives here.
 
 Defines:
-- `M.full_scan(aura_map, filter, show_key, short_threshold, max_limit, info)` — scans debuffs
-  (HARMFUL filter). Processes incremental UNIT_AURA payloads (`info.addedAuras`,
-  `info.updatedAuraInstanceIDs`, `info.removedAuraInstanceIDs`) when available; falls back to a
-  full `AuraUtil.ForEachAura` sweep on `isFullUpdate` or initial load.
-- `M.scan_helpful_shared(info, short_threshold, max_limit)` — one-pass shared scan for all three
-  helpful categories (static/short/long). Returns a table with `.map` (auraInstanceID → entry)
-  and `.category_by_iid` (auraInstanceID → show_key). Stores results in `M._helpful_shared` so
-  each call can reference the previous scan's map and category assignments for carry-forward logic
-  (stable re-categorization when aura fields become secret in combat). Each of the three HELPFUL
-  frames runs this independently on its own deferred timer; `M._helpful_shared` is the shared
-  cross-call state, not a within-event deduplication cache.
+- `M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint)` — scans helpful and
+  harmful player auras into `M._aura_map` in one pass. Helpful entries get category `static`,
+  `short`, or `long`; harmful entries get category `debuff`.
+- Session-scoped category memory (`M._known_static`, `M._known_long`) and old-entry carry-forward
+  keep classification stable when aura fields become secret in combat.
 
 **Aura classification:** static = permanent (duration == 0), short = remaining ≤ threshold,
 long = remaining > threshold. Each aura belongs to exactly one category at a time.
@@ -107,8 +101,6 @@ is_test_preview — true only for fake preview entries
 math (slot sizes/positions are set by af_icon_layout); render only sets textures, text, bar values.
 
 Defines:
-- `M.format_time(s)` — converts seconds to a human-readable string (`"2 h"`, `"45 m"`, `"12 s"`,
-  `"3.2 s"`). Used by both the render path and the ticker.
 - `M.set_timer_text(font_string, category, seconds)` — single timer text writer for all display
   paths (live + test). Short/show_short categories format to one decimal (`"3.2"`); all others use
   `format_time`. Handles nil seconds (clear), `issecretvalue` (live fallback), and zero (clear).
@@ -165,7 +157,8 @@ Defines:
   2. Sets scale and position from DB (always enforces DB state).
   3. Checks `_layout_cache`; calls `M.setup_layout` if any layout param changed.
   4. Decides frame visibility and move-mode chrome (title bars, resizer).
-  5. Calls `M.scan_helpful_shared` (HELPFUL) or `M.full_scan` (HARMFUL) to refresh `_aura_map`.
+  5. Calls `M.unified_scan` when the shared scan cache is stale, then filters `M._aura_map` into
+     the frame's `_aura_map`.
   6. Injects or removes the test preview entry.
   7. Calls `M.render_aura_map` → gets `display_count`.
   8. Computes new frame height from display count and calls `M.set_height_for_growth`.
@@ -239,7 +232,7 @@ WoW Event (UNIT_AURA)
         C_Timer.After(0.1) ──────────────────────────────────────┐
                                                                   ▼
                                                         af_core: update_auras
-                                                          ├─ af_scan: scan_helpful_shared / full_scan
+                                                          ├─ af_scan: unified_scan
                                                           │     └─► _aura_map populated
                                                           ├─ af_test_aura: append_test_aura (if preview on)
                                                           ├─ af_icon_layout: setup_layout (if layout changed)
@@ -263,9 +256,7 @@ C_Timer.NewTicker(0.1)
   `InCombatLockdown()`. The ticker handles mid-combat timer/bar updates without touching geometry.
 - **Pool is fixed at load time.** Icon frames are created once in `create_aura_frame`. Adding icons
   requires a reload. `max_icons_<cat>` controls the pool size.
-- **Shared scan for HELPFUL.** Static, short, and long each call `scan_helpful_shared` on their
-  own deferred timers. `M._helpful_shared` carries the previous scan's map and category assignments
-  forward so combat-secret aura fields can be re-categorized stably across calls. Each call is a
-  full independent sweep; the shared state enables carry-forward, not scan deduplication.
+- **Unified scan cache.** `M.unified_scan` populates `M._aura_map` at most once per 0.1s update
+  window. Preset frames filter by category, while custom frames filter by whitelist.
 - **`_layout_cache` guards redundant re-layouts.** `update_auras` compares the five layout-relevant
   DB keys against the cache and only calls `setup_layout` when something changed.
