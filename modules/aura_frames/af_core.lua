@@ -22,6 +22,10 @@ M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {
 }
 local WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES
 
+function M.uses_cooldown_icon_overlay(category, bar_mode, db)
+    return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
+end
+
 -- ============================================================================
 -- TIMER TICKER
 
@@ -63,7 +67,7 @@ function M.tick_visible_icons(now)
                 elseif obj:IsShown() and obj.is_test_preview then
                     M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
                 elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown) then
-                    local show_cooldown_overlay = (not bar_mode) and db and db["cooldown_mode_" .. frame.category]
+                    local show_cooldown_overlay = M.uses_cooldown_icon_overlay(frame.category, bar_mode, db)
                     if show_timer_text then
                         if show_cooldown_overlay then
                             if obj.time_text:IsShown() then obj.time_text:Hide() end
@@ -189,7 +193,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local barTextC      = cfg_db["bar_text_color_" .. category] or cfg_db["bar_text_color"] or { r = 1, g = 1, b = 1 }
     local bgC           = cfg_db["bg_color_" .. category] or cfg_db["bg_color"] or { r = 0, g = 0, b = 0, a = 0.5 }
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
-    local cooldown_icon_overlay = (not bar_mode) and cfg_db["cooldown_mode_" .. category]
+    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
     self._bar_mode        = bar_mode
