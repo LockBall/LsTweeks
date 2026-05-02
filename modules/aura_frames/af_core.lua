@@ -14,12 +14,13 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
-local WOW_COOLDOWN_CATEGORIES = {
+M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {
     essential = true,
     utility = true,
     tracked_buffs = true,
     tracked_bars = true,
 }
+local WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES
 
 -- ============================================================================
 -- TIMER TICKER

@@ -19,6 +19,8 @@ local WOW_COOLDOWN_SHOW_KEYS = {
     "show_tracked_bars",
 }
 
+local WOW_COOLDOWN_STARTUP_REFRESH_DELAYS = { 0.2, 0.6, 1.2, 2.5, 5.0 }
+
 M.NUMBER_FONT_OPTIONS = {
     {
         key = "source_code_pro",
@@ -123,10 +125,6 @@ function M.apply_number_font_to_all()
 end
 
 function M.refresh_wow_cooldown_frames(delay)
-    if M.invalidate_cooldown_viewer_cache then
-        M.invalidate_cooldown_viewer_cache()
-    end
-
     local function refresh()
         if not M.frames then return end
         for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
@@ -143,6 +141,12 @@ function M.refresh_wow_cooldown_frames(delay)
         C_Timer.After(delay, refresh)
     else
         refresh()
+    end
+end
+
+function M.queue_wow_cooldown_startup_refreshes()
+    for _, delay in ipairs(WOW_COOLDOWN_STARTUP_REFRESH_DELAYS) do
+        M.refresh_wow_cooldown_frames(delay)
     end
 end
 
@@ -372,6 +376,10 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:RegisterEvent("PLAYER_REGEN_DISABLED")  -- Combat start
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")   -- Combat end
     frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+    -- Cooldown-viewer frames also react to spell cooldown changes for cooldown-mode display.
+    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
+        frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    end
     
     -- Store parameters on frame itself for robust access during callbacks
     frame.update_params = {
@@ -394,6 +402,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             or event == "PLAYER_REGEN_DISABLED"
             or event == "PLAYER_REGEN_ENABLED"
             or event == "PLAYER_SPECIALIZATION_CHANGED"
+            or event == "SPELL_UPDATE_COOLDOWN"
 
         if not relevant then return end
 
@@ -407,13 +416,6 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         -- Merge UNIT_AURA payloads while waiting for the deferred scan.
         if event == "UNIT_AURA" then
             self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
-        elseif event == "PLAYER_ENTERING_WORLD"
-                or event == "PLAYER_REGEN_DISABLED"
-                or event == "PLAYER_REGEN_ENABLED"
-                or event == "PLAYER_SPECIALIZATION_CHANGED" then
-            if M.invalidate_cooldown_viewer_cache then
-                M.invalidate_cooldown_viewer_cache()
-            end
         end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.
@@ -667,15 +669,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
 
         M.create_grid_overlay()
-
-        -- Cooldown viewer category sets can change via Blizzard settings.
-        -- Re-read the player-edited Blizzard viewer layout after settings changes.
-        if EventRegistry and EventRegistry.RegisterCallback and M.refresh_wow_cooldown_frames then
-            EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
-                M.refresh_wow_cooldown_frames(0.1)
-                M.refresh_wow_cooldown_frames(0.5)
-            end)
-        end
 
         self:UnregisterEvent("ADDON_LOADED")
     end
