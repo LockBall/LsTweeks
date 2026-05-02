@@ -884,9 +884,19 @@ function M.BuildSettings(parent)
             end
         end)
 
+        local refresh_cooldown_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+        refresh_cooldown_btn:SetSize(128, 20)
+        refresh_cooldown_btn:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -12)
+        refresh_cooldown_btn:SetText("Refresh CDM")
+        refresh_cooldown_btn:SetScript("OnClick", function()
+            if M.refresh_wow_cooldown_frames then
+                M.refresh_wow_cooldown_frames(0.1)
+            end
+        end)
+
         -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
-        resetPanel:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -16)
+        resetPanel:SetPoint("TOPLEFT", refresh_cooldown_btn, "BOTTOMLEFT", 0, -16)
     end
 
     -- Custom panel builders (settings grid + whitelist/capture child) live in

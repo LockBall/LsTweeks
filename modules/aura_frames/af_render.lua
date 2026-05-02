@@ -249,11 +249,16 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local entry = list[i]
         local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
-        local need_live_duration = (not is_static_frame) and (show_timer_text or bar_mode)
-        local live_duration = need_live_duration and entry.instance_id and C_UnitAuras.GetAuraDuration("player", entry.instance_id)
+        local is_spell_cooldown = entry.is_spell_cooldown == true
+        local need_live_duration = (not is_static_frame) and (not is_spell_cooldown) and (show_timer_text or bar_mode)
+        local live_duration = nil
+        if need_live_duration and type(entry.instance_id) == "number" then
+            local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
+            if ok then live_duration = result end
+        end
         local live_remaining = live_duration and live_duration:GetRemainingDuration() or entry.live_remaining
 
-        obj.aura_index      = entry.instance_id
+        obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
         obj.filter_type     = entry.filter
         obj.aura_name       = entry.name
         obj.aura_icon       = entry.icon
@@ -266,6 +271,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.aura_spell_id   = entry.spell_id
         obj.aura_category   = timer_category
         obj.is_test_preview = entry.is_test_preview or false
+        obj.is_spell_cooldown = is_spell_cooldown
 
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
 
@@ -401,6 +407,8 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     end
 
     for i = display_count + 1, #self.icons do
+        self.icons[i].is_spell_cooldown = false
+        self.icons[i].aura_index = nil
         self.icons[i]:Hide()
     end
 
