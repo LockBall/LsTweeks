@@ -847,8 +847,10 @@ function M.build_custom_child_panel(p, entry)
     regen_frame:SetScript("OnEvent", function()
         if #cap_auras == 0 then return end
         C_Timer.After(0.15, function()
+            local helpful_hint = (entry.filter == "HARMFUL") and 0 or 255
+            local harmful_hint = (entry.filter == "HARMFUL") and 255 or 0
             M._last_unified_scan_time = nil
-            M.unified_scan(nil, M.db and M.db.short_threshold or 60)
+            M.unified_scan(nil, M.db and M.db.short_threshold or 60, helpful_hint, harmful_hint)
             backfill_spell_ids()
         end)
     end)
