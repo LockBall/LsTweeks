@@ -127,6 +127,9 @@ end
 function M.refresh_wow_cooldown_frames(delay)
     local function refresh()
         if not M.frames then return end
+        if M.clear_cooldown_viewer_child_cache then
+            M.clear_cooldown_viewer_child_cache("essential")
+        end
         for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
             local frame = M.frames[show_key]
             local p = frame and frame.update_params
@@ -148,6 +151,13 @@ function M.queue_wow_cooldown_startup_refreshes()
     for _, delay in ipairs(WOW_COOLDOWN_STARTUP_REFRESH_DELAYS) do
         M.refresh_wow_cooldown_frames(delay)
     end
+end
+
+function M.queue_wow_cooldown_settings_refreshes()
+    M.refresh_wow_cooldown_frames(0)
+    M.refresh_wow_cooldown_frames(0.2)
+    M.refresh_wow_cooldown_frames(0.6)
+    M.refresh_wow_cooldown_frames(1.2)
 end
 
 -- AURA CONTAINER GENERATOR

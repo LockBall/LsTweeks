@@ -618,6 +618,23 @@ function M.BuildSettings(parent)
         cooldown_group_title_btn:Hide()
         cooldown_group_title_btn:SetText("WoW Cooldown")
         cooldown_group_title_btn:SetScript("OnClick", function()
+            local function queue_cdm_refreshes()
+                if M.queue_wow_cooldown_settings_refreshes then
+                    M.queue_wow_cooldown_settings_refreshes()
+                elseif M.refresh_wow_cooldown_frames then
+                    M.refresh_wow_cooldown_frames(0.1)
+                end
+            end
+
+            local function hook_cdm_settings_panel(panel)
+                if not panel or panel._lstweeks_refresh_hooked then return end
+                panel._lstweeks_refresh_hooked = true
+                if panel.HookScript then
+                    panel:HookScript("OnShow", queue_cdm_refreshes)
+                    panel:HookScript("OnHide", queue_cdm_refreshes)
+                end
+            end
+
             if C_AddOns and C_AddOns.LoadAddOn then
                 pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
             elseif LoadAddOn then
@@ -625,6 +642,8 @@ function M.BuildSettings(parent)
             end
 
             local panel = _G["CooldownViewerSettings"]
+            hook_cdm_settings_panel(panel)
+            queue_cdm_refreshes()
             if panel and panel.Show then
                 panel:Show()
                 if panel.Raise then panel:Raise() end
@@ -633,6 +652,10 @@ function M.BuildSettings(parent)
 
             if Settings and Settings.OpenToCategory then
                 pcall(Settings.OpenToCategory, "Cooldown Viewer")
+                C_Timer.After(0.2, function()
+                    hook_cdm_settings_panel(_G["CooldownViewerSettings"])
+                    queue_cdm_refreshes()
+                end)
             end
         end)
 
@@ -889,7 +912,9 @@ function M.BuildSettings(parent)
         refresh_cooldown_btn:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -12)
         refresh_cooldown_btn:SetText("Refresh CDM")
         refresh_cooldown_btn:SetScript("OnClick", function()
-            if M.refresh_wow_cooldown_frames then
+            if M.queue_wow_cooldown_settings_refreshes then
+                M.queue_wow_cooldown_settings_refreshes()
+            elseif M.refresh_wow_cooldown_frames then
                 M.refresh_wow_cooldown_frames(0.1)
             end
         end)
@@ -1161,7 +1186,15 @@ function M.BuildSettings(parent)
 
         -- Cooldown Mode toggle (essential only): show cooldown remaining instead of aura duration
         if cat == "essential" then
-            create_bound_checkbox("Cooldown Mode", "cooldown_mode_essential", 2, 4, update)
+            local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_essential", 2, 4, update)
+            local hide_blizz_cdm_container = create_bound_checkbox("Hide WoW Essential", "hide_blizz_cdm_essential", 2, 4, function()
+                if M.update_blizz_cdm_visibility then
+                    M.update_blizz_cdm_visibility("essential")
+                end
+                update()
+            end)
+            hide_blizz_cdm_container:ClearAllPoints()
+            hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
         end
 
         add_row_separator(2)

@@ -153,6 +153,34 @@ local function get_spell_cooldown_duration_object(spell_id)
     return nil
 end
 
+local function values_match(a, b)
+    return a ~= nil and b ~= nil
+        and not issecretvalue(a)
+        and not issecretvalue(b)
+        and a == b
+end
+
+local function find_active_helpful_aura_by_spell(spell_id, name, icon)
+    if not (spell_id and M._aura_map) then return nil end
+    if issecretvalue(spell_id) then return nil end
+    local cached = M.db and M.db.spell_name_cache and M.db.spell_name_cache[spell_id]
+    name = name or (cached and cached.name)
+    icon = icon or (cached and cached.icon)
+
+    for iid, entry in pairs(M._aura_map) do
+        if type(iid) == "number"
+                and entry
+                and entry.is_helpful then
+            if values_match(entry.spell_id, spell_id)
+                    or values_match(entry.name, name)
+                    or values_match(entry.icon, icon) then
+                return iid, entry
+            end
+        end
+    end
+    return nil
+end
+
 -- Blizzard global frame names for each WoW Cooldown Manager category.
 -- Children of these frames carry an auraInstanceID field when their aura is active.
 local VIEWER_FRAME_NAMES = {
@@ -166,6 +194,19 @@ local VIEWER_FRAME_NAMES = {
 -- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }
 -- Captures timing at the moment Blizzard sets it — before it becomes secret to addon code.
 M._cd_hook_cache = M._cd_hook_cache or {}
+
+function M.clear_cooldown_viewer_child_cache(category)
+    local frame_name = VIEWER_FRAME_NAMES and VIEWER_FRAME_NAMES[category]
+    local viewer = frame_name and _G[frame_name]
+    if not viewer then return end
+    for _, child in ipairs({viewer:GetChildren()}) do
+        child._lstweeks_cooldown_id = nil
+        child._lstweeks_spell_id = nil
+        child._lstweeks_cd_name = nil
+        child._lstweeks_cd_icon = nil
+        child._lstweeks_cd_order = nil
+    end
+end
 
 local function queue_cooldown_viewer_refresh()
     if M._cd_hook_refresh_pending then return end
@@ -315,6 +356,9 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
     if not frame_name then return end
     local viewer = _G[frame_name]
     if not viewer then return end
+    if M.update_blizz_cdm_visibility then
+        M.update_blizz_cdm_visibility(category)
+    end
 
     local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]
 
@@ -322,13 +366,20 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
         install_cooldown_viewer_item_hooks()
         local now   = GetTime()
         local cache = M._cd_hook_cache
-        for _, child in ipairs({viewer:GetChildren()}) do
+        for child_index, child in ipairs({viewer:GetChildren()}) do
+            local cdm_order = child_index
+            local left = child.GetLeft and child:GetLeft()
+            local top = child.GetTop and child:GetTop()
+            if left and top and not issecretvalue(left) and not issecretvalue(top) then
+                cdm_order = (top * -10000) + left
+            end
             hook_cd_item_frame(child)
 
             local iid = child.auraInstanceID
             if iid then
                 local aura_entry = M._aura_map[iid]
                 if aura_entry then
+                    aura_entry.cdm_order = cdm_order
                     target_map[iid] = aura_entry
                 end
             end
@@ -337,16 +388,28 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             local cooldown_id = child.cooldownID
             if cooldown_id ~= nil and issecretvalue(cooldown_id) then cooldown_id = nil end
             local info = child.cooldownInfo
+            local saw_identity = false
             if info then
                 local cid = info.cooldownID or info.cooldownId
                 if cid ~= nil and not issecretvalue(cid) then
                     child._lstweeks_cooldown_id = cid
                     cooldown_id = cid
+                    saw_identity = true
                 end
                 local sid = info.overrideSpellID or info.spellID
                 if sid and not issecretvalue(sid) then
                     child._lstweeks_spell_id = sid
+                    saw_identity = true
                 end
+            end
+            if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+                saw_identity = true
+            end
+            if not saw_identity then
+                child._lstweeks_cooldown_id = nil
+                child._lstweeks_spell_id = nil
+                child._lstweeks_cd_name = nil
+                child._lstweeks_cd_icon = nil
             end
             cooldown_id = cooldown_id or child._lstweeks_cooldown_id
 
@@ -368,11 +431,21 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 spell_id = spell_id or cached.spell_id
             end
 
+            if not iid and spell_id then
+                local active_iid, active_entry = find_active_helpful_aura_by_spell(spell_id, name, icon)
+                if active_iid and active_entry then
+                    active_entry.cdm_order = cdm_order
+                    target_map[active_iid] = active_entry
+                    iid = active_iid
+                end
+            end
+
             if (not iid) and cooldown_id and icon then
                 local expiration = cached and cached.expiration or 0
                 local duration = cached and cached.duration or 0
                 local remaining = (expiration and expiration > now) and (expiration - now) or 0
                 local duration_object = (cached and cached.duration_object) or get_spell_cooldown_duration_object(spell_id)
+                local cooldown_active = child.Cooldown and child.Cooldown:IsShown()
                 local key = "cd_" .. tostring(cooldown_id)
                 target_map[key] = {
                     instance_id       = key,
@@ -382,6 +455,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                     icon              = icon,
                     duration          = duration,
                     duration_object   = duration_object,
+                    cooldown_active   = cooldown_active,
                     remaining         = remaining,
                     expiration        = expiration,
                     count             = 0,
@@ -389,7 +463,8 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                     is_helpful        = true,
                     category          = category,
                     filter            = "HELPFUL",
-                    order_key         = "cd|" .. tostring(cooldown_id),
+                    cdm_order         = cdm_order,
+                    order_key         = "cdm|" .. tostring(cdm_order),
                 }
             end
         end
