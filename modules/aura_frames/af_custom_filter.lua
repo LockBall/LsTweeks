@@ -9,11 +9,13 @@ local issecretvalue = issecretvalue
 local tonumber      = tonumber
 local tostring      = tostring
 local GetTime       = GetTime
+local InCombatLockdown = InCombatLockdown
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local FULL_AURA_SCAN_LIMIT = 255
+local LAST_SEEN_TTL = 20
 local _debug_last = {}
 M._custom_debug_lines = M._custom_debug_lines or {}
 M._custom_debug_baseline_done = M._custom_debug_baseline_done or false
@@ -211,6 +213,12 @@ local function patch_entry_from_registry(entry, sid, registry)
     return patched
 end
 
+local function clone_entry(entry)
+    local copy = {}
+    for k, v in pairs(entry or {}) do copy[k] = v end
+    return copy
+end
+
 local function lookup_player_aura_iid_by_spell(sid, want_helpful)
     if not sid then return nil end
     local aura
@@ -260,7 +268,10 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
     local want_helpful = (custom_entry.filter == "HELPFUL")
     local spell_cache = M.db and M.db.spell_name_cache or {}
     frame._custom_iid_to_sid = frame._custom_iid_to_sid or {}
+    frame._custom_last_seen_by_sid = frame._custom_last_seen_by_sid or {}
     local iid_to_sid = frame._custom_iid_to_sid
+    local last_seen_by_sid = frame._custom_last_seen_by_sid
+    local now = GetTime()
 
     local seen_iids = {}
     local matched_sids = {}
@@ -289,12 +300,22 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
                 iid_to_sid[iid] = sid
                 matched_sids[sid] = true
                 cache_aura_identity(sid, entry)
-                frame._aura_map[iid] = patch_entry_from_registry(entry, sid, spell_cache)
+                local patched = patch_entry_from_registry(entry, sid, spell_cache)
+                frame._aura_map[iid] = patched
+                last_seen_by_sid[sid] = {
+                    seen_at = now,
+                    entry = clone_entry(patched),
+                }
             elseif not sid then
                 local remembered_sid = iid_to_sid[iid]
                 if remembered_sid and whitelist_by_id[remembered_sid] then
                     matched_sids[remembered_sid] = true
-                    frame._aura_map[iid] = patch_entry_from_registry(entry, remembered_sid, spell_cache)
+                    local patched = patch_entry_from_registry(entry, remembered_sid, spell_cache)
+                    frame._aura_map[iid] = patched
+                    last_seen_by_sid[remembered_sid] = {
+                        seen_at = now,
+                        entry = clone_entry(patched),
+                    }
                     seen_iids[iid] = true
                 end
             end
@@ -317,7 +338,30 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
                 end
                 frame._aura_map[iid] = patch_entry_from_registry(entry, sid, spell_cache)
                 seen_iids[iid] = true
+                last_seen_by_sid[sid] = {
+                    seen_at = now,
+                    entry = clone_entry(frame._aura_map[iid]),
+                }
             else
+                local remembered = last_seen_by_sid[sid]
+                local can_replay = InCombatLockdown()
+                    and same_filter_count > 0
+                    and no_sid_count > 0
+                local remembered_duration = remembered and remembered.entry and remembered.entry.duration
+                local has_timed_aura = remembered_duration and not issecretvalue(remembered_duration) and remembered_duration > 0
+                if can_replay and remembered and remembered.entry
+                        and has_timed_aura
+                        and (now - (remembered.seen_at or 0) <= LAST_SEEN_TTL) then
+                    local key = "__remembered_" .. tostring(sid)
+                    local replay = clone_entry(remembered.entry)
+                    replay.spell_id = sid
+                    replay.filter = custom_entry.filter
+                    replay.is_helpful = want_helpful
+                    frame._aura_map[key] = replay
+                    matched_sids[sid] = true
+                    seen_iids[key] = true
+                    debug_custom_match(frame, sid, "replay sid=" .. tostring(sid) .. " age=" .. tostring(math.floor(now - (remembered.seen_at or now))))
+                end
                 local cached = spell_cache and (spell_cache[sid] or spell_cache[tostring(sid)])
                 probe_cooldown_viewer(frame, sid)
                 debug_custom_match(frame, sid,
@@ -352,6 +396,11 @@ function M.filter_custom_aura_map(frame, custom_entry, shared_map)
     for iid in pairs(iid_to_sid) do
         if not seen_iids[iid] then
             iid_to_sid[iid] = nil
+        end
+    end
+    for sid, remembered in pairs(last_seen_by_sid) do
+        if not remembered or (now - (remembered.seen_at or 0) > LAST_SEEN_TTL) then
+            last_seen_by_sid[sid] = nil
         end
     end
 end

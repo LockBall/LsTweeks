@@ -11,9 +11,13 @@ M.controls = M.controls or {}
 M.db = M.db or {}
 
 -- Single source of truth for category iteration.
+-- Core aura buckets:
+--   static, short, long, important, debuff
+-- Blizzard cooldown-manager buckets mirrored as addon frames:
+--   essential, utility, tracked_buffs, tracked_bars
 -- Static has no timer controls, so it is excluded from TIMER_CATEGORIES.
-M.CATEGORIES       = { "static", "short", "long", "debuff" }
-M.TIMER_CATEGORIES = { "short", "long", "debuff" }
+M.CATEGORIES       = { "static", "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
+M.TIMER_CATEGORIES = { "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
 
 -- Single source of truth for default background color and opacity.
 M.BAR_BG_ALPHA_DEFAULT = 0.50
@@ -110,6 +114,116 @@ M.defaults = {
     timer_color_long = { r = 1, g = 1, b = 1 },
     bar_text_color_long = { r = 1, g = 1, b = 1 },
 
+    -- IMPORTANT
+    show_important      = true,
+    move_important      = true,
+    timer_important     = true,
+    bg_important        = false,
+    scale_important     = 1.0,
+    spacing_important   = 1.5,
+    width_important     = 200,
+    bar_mode_important  = true,
+    color_important     = { r = 1, g = 0.75, b = 0.15 },
+    bar_bg_color_important = default_bg_color(),
+    max_icons_important = 20,
+    growth_important = "DOWN",
+    bg_color_important = default_bg_color(),
+    sort_important = "timeleft",
+    test_aura_important = true,
+    timer_number_font_important = "source_code_pro",
+    timer_number_font_size_important = 10,
+    timer_number_font_bold_important = false,
+    timer_color_important = { r = 1, g = 1, b = 1 },
+    bar_text_color_important = { r = 1, g = 1, b = 1 },
+
+    -- ESSENTIAL
+    show_essential      = true,
+    move_essential      = true,
+    timer_essential     = true,
+    bg_essential        = false,
+    scale_essential     = 1.0,
+    spacing_essential   = 1.5,
+    width_essential     = 200,
+    bar_mode_essential  = true,
+    color_essential     = { r = 1, g = 0.45, b = 0.25 },
+    bar_bg_color_essential = default_bg_color(),
+    max_icons_essential = 20,
+    growth_essential = "DOWN",
+    bg_color_essential = default_bg_color(),
+    sort_essential = "timeleft",
+    test_aura_essential = true,
+    timer_number_font_essential = "source_code_pro",
+    timer_number_font_size_essential = 10,
+    timer_number_font_bold_essential = false,
+    timer_color_essential = { r = 1, g = 1, b = 1 },
+    bar_text_color_essential = { r = 1, g = 1, b = 1 },
+
+    -- UTILITY
+    show_utility      = true,
+    move_utility      = true,
+    timer_utility     = true,
+    bg_utility        = false,
+    scale_utility     = 1.0,
+    spacing_utility   = 1.5,
+    width_utility     = 200,
+    bar_mode_utility  = true,
+    color_utility     = { r = 0.65, g = 0.55, b = 1 },
+    bar_bg_color_utility = default_bg_color(),
+    max_icons_utility = 20,
+    growth_utility = "DOWN",
+    bg_color_utility = default_bg_color(),
+    sort_utility = "timeleft",
+    test_aura_utility = true,
+    timer_number_font_utility = "source_code_pro",
+    timer_number_font_size_utility = 10,
+    timer_number_font_bold_utility = false,
+    timer_color_utility = { r = 1, g = 1, b = 1 },
+    bar_text_color_utility = { r = 1, g = 1, b = 1 },
+
+    -- TRACKED BUFFS
+    show_tracked_buffs      = true,
+    move_tracked_buffs      = true,
+    timer_tracked_buffs     = true,
+    bg_tracked_buffs        = false,
+    scale_tracked_buffs     = 1.0,
+    spacing_tracked_buffs   = 1.5,
+    width_tracked_buffs     = 200,
+    bar_mode_tracked_buffs  = false,
+    color_tracked_buffs     = { r = 0.2, g = 0.85, b = 0.55 },
+    bar_bg_color_tracked_buffs = default_bg_color(),
+    max_icons_tracked_buffs = 20,
+    growth_tracked_buffs = "RIGHT",
+    bg_color_tracked_buffs = default_bg_color(),
+    sort_tracked_buffs = "timeleft",
+    test_aura_tracked_buffs = true,
+    timer_number_font_tracked_buffs = "source_code_pro",
+    timer_number_font_size_tracked_buffs = 10,
+    timer_number_font_bold_tracked_buffs = false,
+    timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
+    bar_text_color_tracked_buffs = { r = 1, g = 1, b = 1 },
+
+    -- TRACKED BARS
+    show_tracked_bars      = true,
+    move_tracked_bars      = true,
+    timer_tracked_bars     = true,
+    bg_tracked_bars        = false,
+    scale_tracked_bars     = 1.0,
+    spacing_tracked_bars   = 1.5,
+    width_tracked_bars     = 200,
+    bar_mode_tracked_bars  = true,
+    color_tracked_bars     = { r = 0.2, g = 0.65, b = 1 },
+    bar_bg_color_tracked_bars = default_bg_color(),
+    max_icons_tracked_bars = 20,
+    growth_tracked_bars = "DOWN",
+    bg_color_tracked_bars = default_bg_color(),
+    sort_tracked_bars = "timeleft",
+    test_aura_tracked_bars = true,
+    timer_number_font_tracked_bars = "source_code_pro",
+    timer_number_font_size_tracked_bars = 10,
+    timer_number_font_bold_tracked_bars = false,
+    timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
+    bar_text_color_tracked_bars = { r = 1, g = 1, b = 1 },
+
     -- DEBUFFS
     show_debuff     = true,
     move_debuff     = true,
@@ -134,6 +248,7 @@ M.defaults = {
 
     -- Custom whitelist frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
     custom_frames = {},
+    important_aura_cache = {},
 
     -- POSITIONS
     -- pos.x = left edge offset from screen center; pos.y = top edge offset from screen center
@@ -141,7 +256,12 @@ M.defaults = {
         static = { point = "TOPLEFT", x = -100, y = 175 },
         short  = { point = "TOPLEFT", x = -100, y = 125 },
         long   = { point = "TOPLEFT", x = -100, y =  75 },
-        debuff = { point = "TOPLEFT", x = -100, y = -25 },
+        important = { point = "TOPLEFT", x = -100, y = 25 },
+        essential = { point = "TOPLEFT", x = -100, y = -25 },
+        utility = { point = "TOPLEFT", x = -100, y = -75 },
+        tracked_buffs = { point = "TOPLEFT", x = -100, y = -125 },
+        tracked_bars = { point = "TOPLEFT", x = -100, y = -175 },
+        debuff = { point = "TOPLEFT", x = -100, y = -225 },
     }
 }
 

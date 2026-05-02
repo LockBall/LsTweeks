@@ -242,7 +242,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     else
         -- Preset frame: match by category string.
         for iid, entry in pairs(M._aura_map) do
-            if entry.category == category then
+            if entry.category == category
+                    or (category == "important" and entry.is_important)
+                    or (category == "essential" and entry.is_essential)
+                    or (category == "utility" and entry.is_utility)
+                    or (category == "tracked_buffs" and entry.is_tracked_buffs)
+                    or (category == "tracked_bars" and entry.is_tracked_bars) then
                 self._aura_map[iid] = entry
             end
         end

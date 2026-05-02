@@ -89,10 +89,11 @@ function M.BuildSettings(parent)
 
     local tabs, panels = {}, {}
 
-    -- Category definitions. Keys follow pattern <prefix>_<cat> where cat = name:lower().
-    -- prefixes: show, move, timer, bg, scale, spacing  |  cats: static, debuff, short, long
+    -- Category definitions. Keys follow pattern <prefix>_<cat>.
+    -- `opts.key` lets display labels diverge from DB keys (for example "Tracked Buffs" -> tracked_buffs).
+    -- prefixes: show, move, timer, bg, scale, spacing
     local function make_cat(name, opts)
-        local k = name:lower()
+        local k = (opts and opts.key) or name:lower()
         return {
             name        = name,
             show_key    = "show_"    .. k,
@@ -110,6 +111,11 @@ function M.BuildSettings(parent)
         make_cat("Debuff", { is_debuff = true }),
         make_cat("Short"),
         make_cat("Long"),
+        make_cat("Important"),
+        make_cat("Essential"),
+        make_cat("Utility"),
+        make_cat("Tracked Buffs", { key = "tracked_buffs" }),
+        make_cat("Tracked Bars", { key = "tracked_bars" }),
     }
 
     local tab_data = {
@@ -132,6 +138,14 @@ function M.BuildSettings(parent)
         local ROW_GAP        = 2
         local ARROW_W        = 18
         local INDENT_CHILD   = 12
+        local CD_GROUP_KEYS  = {
+            essential = true,
+            utility = true,
+            tracked_buffs = true,
+            tracked_bars = true,
+        }
+        local CD_GROUP_LABEL_H = 24
+        local CD_GROUP_PAD = 5
 
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
         tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
@@ -233,6 +247,124 @@ function M.BuildSettings(parent)
 
         local node_fs_map = {}
 
+        local function build_learned_aura_panel(panel, opts)
+            opts = opts or {}
+            local cache_key = opts.cache_key
+            local header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            header:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
+            header:SetText(opts.title or "Learned Auras")
+
+            local count_lbl = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            count_lbl:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -8)
+
+            local list_frame = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+            list_frame:SetPoint("TOPLEFT", count_lbl, "BOTTOMLEFT", 0, -24)
+            list_frame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16, 16)
+            list_frame:SetBackdrop({
+                bgFile   = "Interface\\Buttons\\WHITE8x8",
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                tile = true, tileSize = 8, edgeSize = 1,
+                insets = { left = 0, right = 0, top = 0, bottom = 0 },
+            })
+            list_frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
+            list_frame:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
+
+            local rows = {}
+
+            local function rebuild_learned()
+                for _, row in ipairs(rows) do row:Hide() end
+
+                local learned = {}
+                for sid, info in pairs((M.db and cache_key and M.db[cache_key]) or {}) do
+                    if type(info) == "table" then
+                        learned[#learned + 1] = {
+                            spell_id = sid,
+                            name = info.name or ("Spell " .. tostring(sid)),
+                            icon = info.icon,
+                            source = info.source,
+                        }
+                    end
+                end
+                table.sort(learned, function(a, b)
+                    local an, bn = tostring(a.name), tostring(b.name)
+                    if an == bn then return tostring(a.spell_id) < tostring(b.spell_id) end
+                    return an < bn
+                end)
+
+                count_lbl:SetText(tostring(#learned) .. " learned")
+
+                local row_y = 14
+                for i, item in ipairs(learned) do
+                    local row = rows[i]
+                    if not row then
+                        row = CreateFrame("Frame", nil, list_frame)
+                        row:SetHeight(22)
+                        row.icon = row:CreateTexture(nil, "ARTWORK")
+                        row.icon:SetSize(18, 18)
+                        row.icon:SetPoint("LEFT", row, "LEFT", 6, 0)
+                        row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                        row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                        row.id_lbl:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+                        row.id_lbl:SetJustifyH("RIGHT")
+                        row.id_lbl:SetTextColor(0.55, 0.55, 0.55)
+                        row.name_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                        row.name_lbl:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+                        row.name_lbl:SetPoint("RIGHT", row.id_lbl, "LEFT", -8, 0)
+                        row.name_lbl:SetJustifyH("LEFT")
+                        row.name_lbl:SetWordWrap(false)
+                        rows[i] = row
+                    end
+                    row:ClearAllPoints()
+                    row:SetPoint("TOPLEFT", list_frame, "TOPLEFT", 0, -row_y)
+                    row:SetPoint("RIGHT", list_frame, "RIGHT", 0, 0)
+                    row.icon:SetTexture(item.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+                    row.name_lbl:SetText(item.name)
+                    row.id_lbl:SetText("[" .. tostring(item.spell_id) .. "]")
+                    if item.source then
+                        row.id_lbl:SetText("[" .. tostring(item.spell_id) .. "] " .. tostring(item.source))
+                    end
+                    row:Show()
+                    row_y = row_y + 22
+                end
+
+                if #learned == 0 then
+                    if not list_frame._empty_lbl then
+                        list_frame._empty_lbl = list_frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+                        list_frame._empty_lbl:SetPoint("CENTER", list_frame, "CENTER", 0, 0)
+                        list_frame._empty_lbl:SetText(opts.empty_text or "No auras learned yet.")
+                    end
+                    list_frame._empty_lbl:Show()
+                elseif list_frame._empty_lbl then
+                    list_frame._empty_lbl:Hide()
+                end
+            end
+
+            local refresh_btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+            refresh_btn:SetSize(70, 22)
+            refresh_btn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -12)
+            refresh_btn:SetText("Refresh")
+            refresh_btn:SetScript("OnClick", rebuild_learned)
+
+            local clear_btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+            clear_btn:SetSize(70, 22)
+            clear_btn:SetPoint("RIGHT", refresh_btn, "LEFT", -6, 0)
+            clear_btn:SetText("Clear")
+            clear_btn:SetScript("OnClick", function()
+                if M.db and cache_key then M.db[cache_key] = {} end
+                rebuild_learned()
+            end)
+
+            rebuild_learned()
+        end
+
+        local function build_important_learned_panel(panel)
+            build_learned_aura_panel(panel, {
+                cache_key = "important_aura_cache",
+                title = "Learned Important Auras",
+                empty_text = "No Important auras learned yet.",
+            })
+        end
+
         -- ----------------------------------------------------------------
         -- Rebuild function: clears and redraws the entire tree contents.
         -- Called once at build time and again after add/delete/rename.
@@ -245,9 +377,11 @@ function M.BuildSettings(parent)
             end
             custom_row_frames = {}
 
-            -- Start y below preset rows. Preset rows are static, so we compute
-            -- their total height once: 4 cats × (ROW_H + ROW_GAP) = 4 × 24.
-            local preset_rows_height = #frames_data * (ROW_H + ROW_GAP)
+            local preset_child_rows = 0
+            if M._important_expanded ~= false then preset_child_rows = preset_child_rows + 1 end
+            local cooldown_group_extra_h = CD_GROUP_LABEL_H + (CD_GROUP_PAD * 2)
+            local preset_rows_height = (#frames_data + preset_child_rows) * (ROW_H + ROW_GAP)
+                + cooldown_group_extra_h
             local y = -PAD - preset_rows_height
 
             -- ---- Custom frame rows ----
@@ -435,15 +569,16 @@ function M.BuildSettings(parent)
             local max_reached = M.db and M.db.custom_frames
                 and #M.db.custom_frames >= (M.MAX_CUSTOM_FRAMES or 4)
 
+            local add_y = math.min(y - 4, -TREE_H + PAD + ROW_H)
             if add_btn_ref then
                 add_btn_ref:ClearAllPoints()
-                add_btn_ref:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y - 4)
+                add_btn_ref:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, add_y)
                 add_btn_ref:SetEnabled(not max_reached)
                 add_btn_ref:SetAlpha(max_reached and 0.4 or 1)
             else
                 local add_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
                 add_btn:SetSize(TREE_W - PAD * 2, ROW_H)
-                add_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y - 4)
+                add_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, add_y)
                 add_btn:SetText("+ Custom")
                 add_btn:SetEnabled(not max_reached)
                 add_btn:SetAlpha(max_reached and 0.4 or 1)
@@ -469,11 +604,69 @@ function M.BuildSettings(parent)
         -- PRESET ROWS (static rows, built once above the custom section)
         -- ----------------------------------------------------------------
         local y = -PAD
+        local cooldown_group_box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
+        cooldown_group_box:SetBackdrop({
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 },
+        })
+        cooldown_group_box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
+        cooldown_group_box:Hide()
+
+        local cooldown_group_title_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
+        cooldown_group_title_btn:SetSize(120, 22)
+        cooldown_group_title_btn:Hide()
+        cooldown_group_title_btn:SetText("WoW Cooldown")
+        cooldown_group_title_btn:SetScript("OnClick", function()
+            if C_AddOns and C_AddOns.LoadAddOn then
+                pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
+            elseif LoadAddOn then
+                pcall(LoadAddOn, "Blizzard_CooldownViewer")
+            end
+
+            local panel = _G["CooldownViewerSettings"]
+            if panel and panel.Show then
+                panel:Show()
+                if panel.Raise then panel:Raise() end
+                return
+            end
+
+            if Settings and Settings.OpenToCategory then
+                pcall(Settings.OpenToCategory, "Cooldown Viewer")
+            end
+        end)
+
+        local cooldown_group_top_y
+        local cooldown_group_bottom_y
+
         for _, data in ipairs(frames_data) do
             local cat = data.show_key:sub(6)
+            if CD_GROUP_KEYS[cat] and not cooldown_group_top_y then
+                y = y - (CD_GROUP_LABEL_H + CD_GROUP_PAD)
+                cooldown_group_top_y = y + CD_GROUP_LABEL_H + CD_GROUP_PAD
+                cooldown_group_title_btn:Show()
+                y = y - CD_GROUP_PAD
+            end
+            local learned_key, expanded_key, learned_builder
+            if cat == "important" then
+                learned_key = "important_learned"
+                expanded_key = "_important_expanded"
+                learned_builder = build_important_learned_panel
+            end
+            local has_learned_child = learned_key ~= nil
+            if has_learned_child and M[expanded_key] == nil then M[expanded_key] = true end
 
-            -- Preset categories have no children now, so no expand arrow.
-            local cat_x = PAD
+            local arrow, arrow_fs
+            if has_learned_child then
+                arrow = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
+                arrow:SetSize(ARROW_W, ARROW_W)
+                arrow:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y)
+                arrow:SetNormalFontObject("GameFontNormalLarge")
+                arrow_fs = arrow:GetFontString()
+                arrow_fs:SetText(M[expanded_key] and "-" or "+")
+            end
+
+            local cat_x = has_learned_child and (PAD + ARROW_W + 2) or PAD
             local cat_w = TREE_W - cat_x - PAD
             local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
             cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
@@ -484,6 +677,43 @@ function M.BuildSettings(parent)
             end)
 
             y = y - (ROW_H + ROW_GAP)
+            if CD_GROUP_KEYS[cat] then cooldown_group_bottom_y = y end
+
+            if has_learned_child then
+                local child_key = learned_key
+                local child_btn, child_fs = make_tree_btn(tree_frame, "Learned", PAD + INDENT_CHILD, y, TREE_W - PAD - INDENT_CHILD - PAD)
+                node_fs_map[child_key] = child_fs
+                child_btn:SetShown(M[expanded_key])
+                child_btn:SetScript("OnClick", function()
+                    set_selected(child_fs)
+                    invalidate_node(child_key)
+                    show_node(child_key, learned_builder)
+                end)
+                if M[expanded_key] then
+                    y = y - (ROW_H + ROW_GAP)
+                end
+
+                arrow:SetScript("OnClick", function()
+                    M[expanded_key] = not M[expanded_key]
+                    arrow_fs:SetText(M[expanded_key] and "-" or "+")
+                    child_btn:SetShown(M[expanded_key])
+
+                    if not M[expanded_key] and M.db and M.db.last_frames_node == child_key then
+                        set_selected(cat_fs)
+                        show_node(cat, function(pnl) build_category_tab(pnl, data) end)
+                    end
+
+                    rebuild_tree()
+                end)
+            end
+        end
+
+        if cooldown_group_top_y and cooldown_group_bottom_y then
+            cooldown_group_box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD - 2, cooldown_group_top_y)
+            cooldown_group_box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD + 2, cooldown_group_bottom_y + 2)
+            cooldown_group_box:Show()
+            cooldown_group_title_btn:ClearAllPoints()
+            cooldown_group_title_btn:SetPoint("TOP", cooldown_group_box, "TOP", 0, -3)
         end
 
         -- Build initial custom rows + + Custom button
@@ -503,6 +733,16 @@ function M.BuildSettings(parent)
                 show_node(cat, function(pnl) build_category_tab(pnl, data) end)
                 restored = true
                 break
+            end
+        end
+
+        -- Check learned child nodes
+        if not restored then
+            if last == "important_learned" then
+                local fs = node_fs_map.important_learned
+                if fs then set_selected(fs) end
+                show_node(last, build_important_learned_panel)
+                restored = true
             end
         end
 
