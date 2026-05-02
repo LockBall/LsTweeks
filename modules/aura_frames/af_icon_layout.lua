@@ -132,6 +132,8 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local growth = db["growth_"..category] or db["growth"] or "DOWN"
 
     local show_timer_text = M.is_timer_text_enabled(db, category, db["timer"] ~= nil and "timer" or nil)
+    local cooldown_icon_overlay = (not bar_mode) and db["cooldown_mode_" .. category]
+    local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category)) or 10
     local bar_layout = M.get_bar_layout_params(timer_font_size)
     local timer_text_align = (category == "long") and "CENTER" or "RIGHT"
@@ -217,7 +219,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
 
             local col_idx = (i - 1) % icons_per_row
             local row_idx = floor((i - 1) / icons_per_row)
-            local timer_h = show_timer_text and 12 or 0
+            local timer_h = layout_show_timer_text and 12 or 0
             local row_h   = icon_size + spacing + timer_h
 
             local up_offset = 6 + (timer_h > 0 and (timer_h + 2) or 0)
@@ -250,7 +252,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             obj.time_text:SetPoint(timer_anchor_point, obj.timer_slot, timer_anchor_point, 0, 0)
             obj.time_text:SetWidth(icon_size)
             obj.time_text:SetJustifyH(timer_text_align)
-            if show_timer_text then
+            if layout_show_timer_text then
                 obj.timer_slot:Show()
                 obj.time_text:Show()
             else
@@ -266,6 +268,8 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     self._layout_cache = {
         bar_mode        = bar_mode,
         show_timer_text = show_timer_text,
+        layout_show_timer_text = layout_show_timer_text,
+        cooldown_icon_overlay = cooldown_icon_overlay,
         icons_per_row   = icons_per_row,
         frame_width     = frame_width,
         spacing         = spacing,
