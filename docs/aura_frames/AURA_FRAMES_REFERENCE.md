@@ -32,7 +32,9 @@ make_entry() stores per-aura records keyed by auraInstanceID:
 
 Runtime maps:
 - frame._aura_map: per-frame cache used for rendering
+- frame._custom_iid_to_sid: custom-frame session memory for proven auraInstanceID -> spellID matches
 - M._aura_map: shared unified scan cache keyed by auraInstanceID
+- M.db.spell_name_cache: persisted aura registry keyed by spellID
 
 ## 3. Classification Behavior
 
