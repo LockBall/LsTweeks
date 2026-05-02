@@ -25,6 +25,22 @@ local WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES
 -- ============================================================================
 -- TIMER TICKER
 
+local function set_icon_greyed(texture, greyed)
+    if not texture then return end
+    if texture.SetDesaturated then
+        texture:SetDesaturated(greyed and true or false)
+    elseif texture.SetDesaturation then
+        texture:SetDesaturation(greyed and 1 or 0)
+    end
+    if texture.SetVertexColor then
+        if greyed then
+            texture:SetVertexColor(0.75, 0.75, 0.75, 1)
+        else
+            texture:SetVertexColor(1, 1, 1, 1)
+        end
+    end
+end
+
 -- Shared ticker update path for all visible aura icon objects.
 -- Runs at 0.1s from af_main.lua and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
@@ -97,6 +113,11 @@ function M.tick_visible_icons(now)
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
                     end
+                    if show_cooldown_overlay and obj.is_spell_cooldown then
+                        set_icon_greyed(obj.texture, obj.cooldown_active or (remaining ~= nil and remaining > 0))
+                    elseif obj.texture then
+                        set_icon_greyed(obj.texture, false)
+                    end
                 end
             end
         end
@@ -125,6 +146,20 @@ end
 
 function M.toggle_blizz_debuffs(hide)
     set_blizz_frame_state(DebuffFrame, hide)
+end
+
+local BLIZZ_CDM_VIEWER_FRAMES = {
+    essential = "EssentialCooldownViewer",
+}
+
+function M.update_blizz_cdm_visibility(category)
+    local frame_name = BLIZZ_CDM_VIEWER_FRAMES[category]
+    local frame = frame_name and _G[frame_name]
+    if not frame then return end
+
+    local hide = M.db and M.db["hide_blizz_cdm_" .. category]
+    frame:SetAlpha(hide and 0 or 1)
+    frame:EnableMouse(not hide)
 end
 
 -- ============================================================================

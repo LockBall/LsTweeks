@@ -140,6 +140,7 @@ M.defaults = {
 
     -- ESSENTIAL
     cooldown_mode_essential = false,
+    hide_blizz_cdm_essential = false,
     show_essential      = true,
     move_essential      = true,
     timer_essential     = true,

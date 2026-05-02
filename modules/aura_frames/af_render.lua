@@ -134,6 +134,22 @@ local function apply_cooldown_overlay(obj, duration_object, expiration, duration
     end
 end
 
+local function set_icon_greyed(texture, greyed)
+    if not texture then return end
+    if texture.SetDesaturated then
+        texture:SetDesaturated(greyed and true or false)
+    elseif texture.SetDesaturation then
+        texture:SetDesaturation(greyed and 1 or 0)
+    end
+    if texture.SetVertexColor then
+        if greyed then
+            texture:SetVertexColor(0.75, 0.75, 0.75, 1)
+        else
+            texture:SetVertexColor(1, 1, 1, 1)
+        end
+    end
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -270,6 +286,15 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             end
             return aa < bb
         end)
+    elseif M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[self.category] then
+        table_sort(list, function(a, b)
+            local aa = a.cdm_order or 9999
+            local bb = b.cdm_order or 9999
+            if aa == bb then
+                return get_entry_sort_id(a) < get_entry_sort_id(b)
+            end
+            return aa < bb
+        end)
     end
 
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
@@ -309,8 +334,16 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.aura_category   = timer_category
         obj.is_test_preview = entry.is_test_preview or false
         obj.is_spell_cooldown = is_spell_cooldown
+        obj.cooldown_active = entry.cooldown_active == true
 
+        local cooldown_remaining = live_remaining
+        if cooldown_remaining ~= nil and issecretvalue(cooldown_remaining) then
+            cooldown_remaining = nil
+        end
+        local cooldown_is_active = is_spell_cooldown
+            and (obj.cooldown_active or (cooldown_remaining and cooldown_remaining > 0) or (entry.expiration and entry.expiration > now))
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
+        set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
         if obj.cooldown then
             obj.cooldown:Hide()
         end
@@ -465,7 +498,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
     for i = display_count + 1, #self.icons do
         self.icons[i].is_spell_cooldown = false
+        self.icons[i].cooldown_active = false
         self.icons[i].aura_index = nil
+        set_icon_greyed(self.icons[i].texture, false)
         if self.icons[i].cooldown then
             self.icons[i].cooldown:Hide()
         end
