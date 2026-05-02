@@ -1,6 +1,7 @@
 -- Spell resolver utilities for aura_frames: resolve spell name/icon by spell ID.
 -- M.ResolveSpellID(sid, on_success) resolves immediately if data is loaded, otherwise
 -- requests load and polls. M.TryGetSpellInfo(sid) is a synchronous-only attempt.
+-- M.af_log(msg) appends a timestamped entry to M.db.debug_log when debug_logging is on.
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -8,18 +9,39 @@ local M = addon.aura_frames
 
 local issecretvalue = issecretvalue
 local C_Spell       = C_Spell
+local GetTime       = GetTime
+local date          = date
+local tonumber      = tonumber
+
+function M.af_log(msg)
+    if not (M.db and M.db.debug_logging) then return end
+    M.db.debug_log = M.db.debug_log or {}
+    local t = date("%H:%M:%S") .. " [" .. string.format("%.1f", GetTime() % 1000) .. "] "
+    M.db.debug_log[#M.db.debug_log + 1] = t .. tostring(msg)
+    if #M.db.debug_log > 200 then table.remove(M.db.debug_log, 1) end
+end
 
 function M.TryGetSpellInfo(sid)
+    sid = tonumber(sid) or sid
     if not sid or sid == 0 then return nil end
     local info = C_Spell.GetSpellInfo(sid)
     if info and info.name and not issecretvalue(info.name) then return info.name, info.iconID end
     return nil
 end
 
+local function cache_spell(sid, name, icon)
+    sid = tonumber(sid) or sid
+    if not (M.db and sid and name) then return end
+    M.db.spell_name_cache = M.db.spell_name_cache or {}
+    M.db.spell_name_cache[sid] = { name = name, iconID = icon }
+end
+
 function M.ResolveSpellID(sid, on_success)
+    sid = tonumber(sid) or sid
     if not sid or sid == 0 then return end
     local name, icon = M.TryGetSpellInfo(sid)
     if name then
+        cache_spell(sid, name, icon)
         if on_success then on_success(name, icon) end
         return
     end
@@ -32,6 +54,7 @@ function M.ResolveSpellID(sid, on_success)
         local n, ic = M.TryGetSpellInfo(sid)
         if n then
             done = true; t:Cancel()
+            cache_spell(sid, n, ic)
             if on_success then on_success(n, ic) end
         elseif attempts >= 20 then
             done = true; t:Cancel()
@@ -51,14 +74,27 @@ do
             for _, entry in ipairs(M.db.custom_frames) do
                 if entry.whitelist then
                     for sid, stored_name in pairs(entry.whitelist) do
+                        local nsid = tonumber(sid) or sid
+                        if nsid ~= sid then
+                            if entry.whitelist[nsid] == nil then
+                                entry.whitelist[nsid] = stored_name
+                            end
+                            entry.whitelist[sid] = nil
+                            if entry.whitelist_icons and entry.whitelist_icons[sid] and not entry.whitelist_icons[nsid] then
+                                entry.whitelist_icons[nsid] = entry.whitelist_icons[sid]
+                                entry.whitelist_icons[sid] = nil
+                            end
+                        end
                         local need_name = (not stored_name) or tostring(stored_name):match("^Spell %d+$")
-                        local need_icon = not (entry.whitelist_icons and entry.whitelist_icons[sid])
+                        local need_icon = not (entry.whitelist_icons and (entry.whitelist_icons[nsid] or entry.whitelist_icons[sid]))
                         if need_name or need_icon then
-                            M.ResolveSpellID(sid, function(name, icon)
-                                if name then entry.whitelist[sid] = name end
+                            M.ResolveSpellID(nsid, function(name, icon)
+                                if name then
+                                    entry.whitelist[nsid] = name
+                                end
                                 if icon then
                                     entry.whitelist_icons = entry.whitelist_icons or {}
-                                    entry.whitelist_icons[sid] = icon
+                                    entry.whitelist_icons[nsid] = icon
                                 end
                                 local show_key = "show_" .. (entry.id or "")
                                 local fr = M.frames and M.frames[show_key]

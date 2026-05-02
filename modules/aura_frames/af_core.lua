@@ -9,9 +9,41 @@ local GetTime        = GetTime
 local issecretvalue  = issecretvalue
 local C_UnitAuras    = C_UnitAuras
 local wipe           = wipe
+local tonumber       = tonumber
+local tostring       = tostring
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
+
+local FULL_AURA_SCAN_LIMIT = 255
+
+local function normalize_spell_id(sid)
+    if sid == nil or issecretvalue(sid) then return nil end
+    return tonumber(sid) or sid
+end
+
+local function build_whitelist_lookups(whitelist)
+    local by_id = {}
+    local by_name = {}
+    for raw_sid, wname in pairs(whitelist or {}) do
+        local sid = normalize_spell_id(raw_sid)
+        if sid then by_id[sid] = wname or true end
+        if wname then by_name[wname] = sid end
+    end
+    return by_id, by_name
+end
+
+local function custom_scan_limits(db)
+    local helpful, harmful = 0, 0
+    for _, entry in ipairs((db and db.custom_frames) or {}) do
+        if entry.filter == "HARMFUL" then
+            harmful = FULL_AURA_SCAN_LIMIT
+        else
+            helpful = FULL_AURA_SCAN_LIMIT
+        end
+    end
+    return helpful, harmful
+end
 
 -- ============================================================================
 -- TIMER TICKER
@@ -222,10 +254,11 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- Run the unified scan once per deferred-callback batch.
     -- Each frame fires its own C_Timer.After(0.1), but they all land within the same
     -- game frame. We use a wall-clock stamp to skip redundant scans: if M._aura_map
-    -- was already populated within the last 0.05s, reuse it.
+    -- was already populated within the last 0.1s, reuse it.
     local now_scan = GetTime()
     if not M._last_unified_scan_time or (now_scan - M._last_unified_scan_time) > 0.1 then
-        M.unified_scan(info, short_threshold, nil, nil)
+        local custom_helpful_limit, custom_harmful_limit = custom_scan_limits(db)
+        M.unified_scan(info, short_threshold, custom_helpful_limit, custom_harmful_limit)
         M._last_unified_scan_time = now_scan
     end
 
@@ -233,13 +266,57 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     wipe(self._aura_map)
     if is_custom then
         -- Custom frame: match by whitelist and filter type (HELPFUL or HARMFUL).
-        local whitelist   = custom_entry.whitelist or {}
+        local whitelist_by_id, whitelist_by_name = build_whitelist_lookups(custom_entry.whitelist)
         local want_helpful = (custom_entry.filter == "HELPFUL")
+        local spell_cache = M.db and M.db.spell_name_cache or {}
+
+        -- First pass: match entries that have a readable spell_id or name.
+        -- Collect unmatched entries whose spell_id is nil/secret (private aura candidates).
+        local nil_sid_entries = {}
+        local cleu_matched = {}  -- sid -> true, already assigned to an entry
         for iid, entry in pairs(M._aura_map) do
-            if entry.is_helpful == want_helpful
-                    and entry.spell_id
-                    and whitelist[entry.spell_id] then
-                self._aura_map[iid] = entry
+            if entry.is_helpful == want_helpful then
+                local sid = normalize_spell_id(entry.spell_id)
+                if not sid and entry.name and not issecretvalue(entry.name) then
+                    sid = whitelist_by_name[entry.name]
+                end
+                if not sid and entry.name and not issecretvalue(entry.name) then
+                    for csid, cdata in pairs(spell_cache) do
+                        if cdata.name == entry.name then sid = normalize_spell_id(csid); break end
+                    end
+                end
+                if sid and whitelist_by_id[sid] then
+                    self._aura_map[iid] = entry
+                    cleu_matched[sid] = true
+                elseif not sid then
+                    -- All identifying fields are secret — candidate for CLEU matching.
+                    nil_sid_entries[#nil_sid_entries + 1] = { iid = iid, entry = entry }
+                end
+            end
+        end
+
+        -- Second pass: for whitelisted spell_ids seen in CLEU but not yet matched,
+        -- assign one nil-sid entry per spell_id and patch its icon from the spell cache.
+        if M._cleu_active and #nil_sid_entries > 0 then
+            local pool_idx = 1
+            for raw_sid in pairs(M._cleu_active) do
+                local sid = normalize_spell_id(raw_sid)
+                if sid and whitelist_by_id[sid] and not cleu_matched[sid] then
+                    local slot = nil_sid_entries[pool_idx]
+                    if not slot then break end
+                    pool_idx = pool_idx + 1
+                    local patched = slot.entry
+                    -- Patch icon from cache so the icon renders even though entry.icon is SECRET.
+                    local cached = spell_cache[sid] or spell_cache[tostring(sid)]
+                    if cached and cached.iconID then
+                        patched = {}
+                        for k, v in pairs(slot.entry) do patched[k] = v end
+                        patched.icon = cached.iconID
+                        patched.spell_id = sid
+                    end
+                    self._aura_map[slot.iid] = patched
+                    cleu_matched[sid] = true
+                end
             end
         end
     else

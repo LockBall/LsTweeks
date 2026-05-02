@@ -613,9 +613,43 @@ function M.BuildSettings(parent)
         outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
         M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
+        local logging_container, logging_btn, _ = addon.CreateCheckbox(p, "Debug Logging", M.db.debug_logging == true,
+            function(is_checked)
+                M.db.debug_logging = is_checked
+                if not is_checked then
+                    M.db.debug_log = {}
+                end
+            end
+        )
+        logging_container:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -8)
+        M.controls.debug_logging_checkbox = logging_btn
+
+        local clear_log_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+        clear_log_btn:SetSize(72, 22)
+        clear_log_btn:SetText("Clear Log")
+        clear_log_btn:SetPoint("LEFT", logging_container, "RIGHT", 10, 0)
+        clear_log_btn:SetScript("OnClick", function()
+            M.db.debug_log = {}
+        end)
+
+        local print_log_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+        print_log_btn:SetSize(72, 22)
+        print_log_btn:SetText("Print Log")
+        print_log_btn:SetPoint("LEFT", clear_log_btn, "RIGHT", 4, 0)
+        print_log_btn:SetScript("OnClick", function()
+            local log = M.db and M.db.debug_log
+            if not log or #log == 0 then
+                print("|cFFFFAA00LsT:|r debug log is empty")
+                return
+            end
+            for _, line in ipairs(log) do
+                print("|cFFFFAA00LsT:|r " .. line)
+            end
+        end)
+
         -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
-        resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
+        resetPanel:SetPoint("TOPLEFT", logging_container, "BOTTOMLEFT", 0, -16)
     end
 
     -- Custom panel builders (settings grid + whitelist/capture child) live in
@@ -1089,6 +1123,11 @@ function M.sync_general_controls_from_db()
     local outlines_cb = M.controls["show_bar_section_outlines_checkbox"]
     if outlines_cb and outlines_cb.SetChecked then
         outlines_cb:SetChecked(M.db.show_bar_section_outlines == true)
+    end
+
+    local logging_cb = M.controls["debug_logging_checkbox"]
+    if logging_cb and logging_cb.SetChecked then
+        logging_cb:SetChecked(M.db.debug_logging == true)
     end
 end
 
