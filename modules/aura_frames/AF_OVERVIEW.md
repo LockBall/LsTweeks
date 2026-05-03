@@ -41,11 +41,13 @@ af_main.lua            — frame construction and addon bootstrap  (loads last)
 **Role:** Single source of truth for all constant values and default settings.
 
 Defines:
-- `M.CATEGORIES` — `{ "static", "short", "long", "debuff" }` — used wherever code must iterate all four frames.
-- `M.TIMER_CATEGORIES` — `{ "short", "long", "debuff" }` — static has no timer, excluded from font/timer loops.
+- `M.CATEGORIES` — all preset aura-frame categories, including WoW Cooldown Manager-backed frames.
+- `M.TIMER_CATEGORIES` — categories with timer controls; static is excluded.
+- `M.CDM_CATEGORIES` / `M.WOW_COOLDOWN_CATEGORIES` — ordered CDM category list plus runtime lookup.
 - `M.BAR_BG_ALPHA_DEFAULT`, `M.BAR_BG_GRAY_DEFAULT` — shared opacity/color constants.
 - `M.defaults` — full table of every per-category DB key with its default value.
-- `M.get_timer_number_font_size(category)` — resolves font size: category-specific → global → hardcoded 10.
+- `M.get_timer_number_font_size(category, cfg_db)` — resolves font size: custom frame config →
+  category-specific → global → hardcoded 10.
 
 Nothing else in the module should hard-code default values. If a default changes, change it here.
 
@@ -55,14 +57,9 @@ Nothing else in the module should hard-code default values. If a default changes
 **Role:** Fake aura preview system for the settings GUI "Test Aura" toggle.
 
 Defines:
-- `M.get_test_preview_state(show_key, short_threshold, now)` — returns `duration, remaining, count`
-  computed from `GetTime()` so the test aura animates realistically (timer counts down, stack
-  count cycles through 1–4 on its own period).
-- `M.build_test_aura_entry(show_key, filter, short_threshold)` — returns an aura-map entry table
-  that looks identical to a real scanned aura, keyed `"__test_preview__"`.
 - `M.append_test_aura(aura_map, show_key, filter, short_threshold)` — inserts the fake entry into
   a live aura map so the normal render path handles it without special casing.
-- `M.update_test_preview_display(obj, show_key, ...)` — called from the ticker to advance the
+- `M.update_test_preview_state(obj, show_key, ...)` — called from the ticker to advance the
   fake timer and stack count each 0.1s tick without triggering a full re-scan.
 
 The fake entry carries `is_test_preview = true` so the ticker can identify and update it separately
@@ -164,11 +161,15 @@ Defines:
   frames and their icon pools. For each visible live-aura slot: derives `remaining` from the cached
   `aura_expiration` (no per-tick API calls for normal auras); falls back to `C_UnitAuras.GetAuraDuration`
   only when both expiration and remaining are absent (secret-duration auras). Updates `time_text`
-  and bar value. Delegates test-preview slots to `M.update_test_preview_display`.
+  and bar value. Greyed icon state and stack count text are cached so unchanged setter calls are
+  skipped. Delegates test-preview slots to `M.update_test_preview_state`.
 - `set_blizz_frame_state(frame, hide)` (local) — hides or restores BuffFrame / DebuffFrame by
   toggling event registration and visibility.
 - `M.toggle_blizz_buffs(hide)` / `M.toggle_blizz_debuffs(hide)` — public wrappers called from
   af_main at load and from the GUI reset callback.
+- `M.ensure_blizz_cdm_loaded()` / `M.prepare_blizz_cdm_viewer(category)` — load and show CDM
+  viewers outside combat during scheduled startup/settings refreshes so hidden utility viewers
+  still populate. Runtime scan code does not mutate CDM visibility.
 - `M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, filter, info)` —
   the main per-frame update. Called from each frame's deferred OnEvent. Steps:
   1. Reads all relevant DB keys for this category.
@@ -236,10 +237,14 @@ have already populated `M`.
 
 Responsibilities:
 - Defines `M.NUMBER_FONT_OPTIONS` and `M.NUMBER_FONT_BOLD_PATHS` — font registry for timer text.
-- `M.apply_number_font_to_text(font_string, category)` — sets the correct TTF + size + bold on any
-  FontString. Clamps size to 6–18. Called at pool construction time and after font settings change.
+- `M.apply_number_font_to_text(font_string, category, cfg_db)` — sets the correct TTF + size + bold
+  on any FontString. Preset frames use category keys; custom frames pass their entry table as
+  `cfg_db`. Clamps size to 6–18. Called at pool construction time and after font settings change.
 - `M.apply_number_font_to_all()` — re-applies font to every time_text in every frame; used after a
   settings change.
+- `M.refresh_wow_cooldown_frames(delay, prepare_viewers)` — refreshes addon CDM-backed frames.
+  Startup/settings refreshes pass `prepare_viewers = true`; hook-driven refreshes leave Blizzard
+  viewers alone.
 - `M.create_aura_frame(show_key, ...)` — allocates the WoW Frame, title bars, resizer, and the
   entire icon pool. Each icon slot gets: texture, StatusBar + background, text_overlay frame,
   stack_slot, name_slot, timer_slot, name_text, time_text, count_text, and a tooltip handler. Wires
@@ -247,8 +252,8 @@ Responsibilities:
   single pending scan per frame via `_scan_pending` guard).
 - ADDON_LOADED handler — links `M.db` to `Ls_Tweeks_DB.aura_frames`, applies defaults, runs DB
   migrations (font key migration, legacy bar-bg color migration, position anchor migration), calls
-  `create_aura_frame` for all four categories, starts the 0.1s ticker, toggles Blizzard frames,
-  and registers the settings tab.
+  `create_aura_frame` for all preset categories, creates saved custom frames, starts the 0.1s
+  ticker, toggles Blizzard frames, schedules CDM startup refreshes, and registers the settings tab.
 - `M.on_reset_complete()` — called by the Hal's reset button after defaults are restored. Re-syncs
   Blizzard frame state, re-applies fonts, and re-syncs GUI controls.
 
@@ -274,7 +279,7 @@ WoW Event (UNIT_AURA)
 C_Timer.NewTicker(0.1)
   └─► af_core: tick_visible_icons
         ├─ live aura slots: compute remaining from cached expiration → set_timer_text / bar:SetValue
-        └─ test preview slots: af_test_aura: update_test_preview_display
+        └─ test preview slots: af_test_aura: update_test_preview_state
 ```
 
 ---
