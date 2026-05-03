@@ -326,6 +326,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.aura_icon       = entry.icon
         obj.aura_duration   = entry.duration
         obj.aura_remaining  = entry.remaining
+        obj.aura_count      = entry.count
         obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
                               and (now + live_remaining)
                               or entry.expiration
@@ -499,6 +500,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         self.icons[i].is_spell_cooldown = false
         self.icons[i].grey_cooldown = false
         self.icons[i].aura_index = nil
+        self.icons[i].aura_count = nil
         set_icon_greyed(self.icons[i].texture, false)
         if self.icons[i].cooldown then
             self.icons[i].cooldown:Hide()
