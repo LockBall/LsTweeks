@@ -24,6 +24,7 @@ local _scratch_old_map      = {}
 local _scratch_old_cat      = {}
 local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
+local _scratch_viewer_children = {}
 
 -- Session-scoped spell classification memory (reset on every login/reload, never persisted).
 -- Prevents mid-session category jumps when aura fields go secret in combat.
@@ -151,6 +152,19 @@ end
 -- visually with alpha, but we still read their child frames.
 local VIEWER_FRAME_NAMES = M.CDM_VIEWER_FRAMES
 
+local function store_viewer_children(...)
+    local children = _scratch_viewer_children
+    wipe(children)
+    for i = 1, select("#", ...) do
+        children[i] = select(i, ...)
+    end
+    return children
+end
+
+local function copy_viewer_children(viewer)
+    return store_viewer_children(viewer:GetChildren())
+end
+
 -- Cache populated by hooks on Blizzard Cooldown widgets.
 -- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }.
 -- Used as a fallback for cooldown display; active aura display prefers the
@@ -161,7 +175,8 @@ function M.clear_cooldown_viewer_child_cache(category)
     local frame_name = VIEWER_FRAME_NAMES and VIEWER_FRAME_NAMES[category]
     local viewer = frame_name and _G[frame_name]
     if not viewer then return end
-    for _, child in ipairs({viewer:GetChildren()}) do
+    local children = copy_viewer_children(viewer)
+    for _, child in ipairs(children) do
         child._lstweeks_cooldown_id = nil
         child._lstweeks_spell_id = nil
         child._lstweeks_cd_name = nil
@@ -329,7 +344,8 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
         install_cooldown_viewer_item_hooks()
         local now   = GetTime()
         local cache = M._cd_hook_cache
-        for child_index, child in ipairs({viewer:GetChildren()}) do
+        local children = copy_viewer_children(viewer)
+        for child_index, child in ipairs(children) do
             local cdm_order = child_index
             local left = child.GetLeft and child:GetLeft()
             local top = child.GetTop and child:GetTop()
@@ -423,7 +439,8 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             end
         end
     else
-        for _, child in ipairs({viewer:GetChildren()}) do
+        local children = copy_viewer_children(viewer)
+        for _, child in ipairs(children) do
             local iid = child.auraInstanceID
             if iid then
                 local entry = M._aura_map[iid]
