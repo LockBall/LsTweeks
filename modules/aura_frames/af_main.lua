@@ -1,6 +1,6 @@
 -- Bootstrap and frame construction for the aura frames module
 -- loads last so all other af_* files have already populated M.
--- Creates the four category frames (static / short / long / debuff) with their icon pools
+-- Creates preset and custom aura frames with their icon pools,
 -- wires UNIT_AURA events with the 0.1s deferred bucket, starts the ticker, and registers the settings tab.
 
 local addon_name, addon = ...
@@ -618,31 +618,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         if not M.db.timer_number_font_size then
             M.db.timer_number_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size()) or 10
         end
-
-        -- Development migration: discard obsolete custom frame data and
-        -- normalize custom frames to the filtered-frame model.
-        if M.db.custom_frames then
-            for _, entry in ipairs(M.db.custom_frames) do
-                entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
-                entry.aura_modifier = entry.aura_modifier or "NONE"
-                entry.filter = nil
-                entry.whitelist = nil
-                entry.whitelist_icons = nil
-            end
-        end
-        for _, key in ipairs({
-            "show_important", "move_important", "timer_important", "bg_important",
-            "scale_important", "spacing_important", "width_important", "bar_mode_important",
-            "color_important", "bar_bg_color_important", "max_icons_important",
-            "growth_important", "bg_color_important", "sort_important",
-            "test_aura_important", "timer_number_font_important",
-            "timer_number_font_size_important", "timer_number_font_bold_important",
-            "timer_color_important", "bar_text_color_important", "important_aura_cache",
-            "spell_name_cache",
-        }) do
-            M.db[key] = nil
-        end
-        if M.db.positions then M.db.positions.important = nil end
 
         -- Migrate legacy global font settings to per-category settings.
         -- Static frame has no timer text, so it does not need per-category timer font settings.

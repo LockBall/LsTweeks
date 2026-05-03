@@ -31,14 +31,14 @@ local STRINGS = {
     help_text = 
         "Disabling portrait combat text hides the Blizzard damage and healing numbers on the player portrait."
         .. "\n\nThis does not affect floating combat text or other addons that display combat information."
-        .. "\n\nTestable while fighting training dummies in rested areas, zzz",
+        .. "\n\nTestable while fighting training dummies in rested areas.",
 }
 
 -- Cached reference for performance (avoids repeated frame hierarchy traversal)
 local hitIndicatorFrame = nil
 local hookApplied = false
 local hidePortraitText = false
--- Post-Midnight: Supports both legacy and new UnitFrame paths
+-- Supports both legacy and current UnitFrame paths.
 local function get_hit_indicator()
     if hitIndicatorFrame then return hitIndicatorFrame end
     
