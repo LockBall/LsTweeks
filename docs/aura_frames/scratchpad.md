@@ -38,9 +38,9 @@ Current cleanup TODO:
    Rename `Refresh CDM` to a clearer sync/rebuild label.
    Result: button label is `Sync to CDM`.
 
-11. [todo] CDM auto-sync expectations
+11. [done] CDM auto-sync expectations
    Keep auto-refresh hooks best-effort; do not imply they fully replace manual sync unless testing proves it.
-   Current behavior: moving icons between groups updates quickly; changing order within a group still needs `Sync to CDM`.
+   Result: `Sync to CDM` tooltip explains that group changes usually update automatically, while same-group reorder may need manual sync.
 
 12. [todo] Test aura rendering refactor
    Refactor test aura previews toward "fake data, real rendering" so they follow the same render/ticker/layout rules as real aura and CDM entries.

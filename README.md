@@ -61,6 +61,4 @@ C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL|IMPORTANT")
 Source: 
 https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
 
-That page lists IMPORTANT as an AuraFilters value added in 12.0.1, described as spells that pass:
-C_Spell.IsSpellImportant()
-
+That page lists IMPORTANT, and several others, as an AuraFilters value added in 12.0.1, described as spells that pass: `C_Spell.IsSpellImportant()`

@@ -144,7 +144,7 @@ function M.BuildSettings(parent)
             tracked_buffs = true,
             tracked_bars = true,
         }
-        local CD_GROUP_LABEL_H = 24
+        local CD_GROUP_LABEL_H = 48
         local CD_GROUP_PAD = 5
 
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
@@ -659,6 +659,28 @@ function M.BuildSettings(parent)
             end
         end)
 
+        local sync_cdm_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
+        sync_cdm_btn:SetSize(120, 20)
+        sync_cdm_btn:Hide()
+        sync_cdm_btn:SetText("Sync to CDM")
+        sync_cdm_btn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText("Sync to CDM", 1, 1, 1)
+            GameTooltip:AddLine("Rebuilds addon cooldown frames from the live WoW Cooldown Manager viewers.", nil, nil, nil, true)
+            GameTooltip:AddLine("Use after reordering icons inside a CDM group; group changes usually update automatically.", nil, nil, nil, true)
+            GameTooltip:Show()
+        end)
+        sync_cdm_btn:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+        sync_cdm_btn:SetScript("OnClick", function()
+            if M.queue_wow_cooldown_settings_refreshes then
+                M.queue_wow_cooldown_settings_refreshes()
+            elseif M.refresh_wow_cooldown_frames then
+                M.refresh_wow_cooldown_frames(0.1)
+            end
+        end)
+
         local cooldown_group_top_y
         local cooldown_group_bottom_y
 
@@ -668,6 +690,7 @@ function M.BuildSettings(parent)
                 y = y - (CD_GROUP_LABEL_H + CD_GROUP_PAD)
                 cooldown_group_top_y = y + CD_GROUP_LABEL_H + CD_GROUP_PAD
                 cooldown_group_title_btn:Show()
+                sync_cdm_btn:Show()
                 y = y - CD_GROUP_PAD
             end
             local learned_key, expanded_key, learned_builder
@@ -737,6 +760,8 @@ function M.BuildSettings(parent)
             cooldown_group_box:Show()
             cooldown_group_title_btn:ClearAllPoints()
             cooldown_group_title_btn:SetPoint("TOP", cooldown_group_box, "TOP", 0, -3)
+            sync_cdm_btn:ClearAllPoints()
+            sync_cdm_btn:SetPoint("TOP", cooldown_group_title_btn, "BOTTOM", 0, -2)
         end
 
         -- Build initial custom rows + + Custom button
@@ -907,21 +932,9 @@ function M.BuildSettings(parent)
             end
         end)
 
-        local refresh_cooldown_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-        refresh_cooldown_btn:SetSize(128, 20)
-        refresh_cooldown_btn:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -12)
-        refresh_cooldown_btn:SetText("Sync to CDM")
-        refresh_cooldown_btn:SetScript("OnClick", function()
-            if M.queue_wow_cooldown_settings_refreshes then
-                M.queue_wow_cooldown_settings_refreshes()
-            elseif M.refresh_wow_cooldown_frames then
-                M.refresh_wow_cooldown_frames(0.1)
-            end
-        end)
-
         -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
-        resetPanel:SetPoint("TOPLEFT", refresh_cooldown_btn, "BOTTOMLEFT", 0, -16)
+        resetPanel:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -16)
     end
 
     -- Custom panel builders (settings grid + whitelist/capture child) live in
