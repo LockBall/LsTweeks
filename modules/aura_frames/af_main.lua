@@ -126,9 +126,14 @@ function M.apply_number_font_to_all()
     end
 end
 
-function M.refresh_wow_cooldown_frames(delay)
+function M.refresh_wow_cooldown_frames(delay, prepare_viewers)
     local function refresh()
         if not M.frames then return end
+        if prepare_viewers and M.prepare_blizz_cdm_viewer then
+            for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+                M.prepare_blizz_cdm_viewer(category)
+            end
+        end
         if M.clear_cooldown_viewer_child_cache then
             for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
                 M.clear_cooldown_viewer_child_cache(category)
@@ -153,15 +158,15 @@ end
 
 function M.queue_wow_cooldown_startup_refreshes()
     for _, delay in ipairs(WOW_COOLDOWN_STARTUP_REFRESH_DELAYS) do
-        M.refresh_wow_cooldown_frames(delay)
+        M.refresh_wow_cooldown_frames(delay, true)
     end
 end
 
 function M.queue_wow_cooldown_settings_refreshes()
-    M.refresh_wow_cooldown_frames(0)
-    M.refresh_wow_cooldown_frames(0.2)
-    M.refresh_wow_cooldown_frames(0.6)
-    M.refresh_wow_cooldown_frames(1.2)
+    M.refresh_wow_cooldown_frames(0, true)
+    M.refresh_wow_cooldown_frames(0.2, true)
+    M.refresh_wow_cooldown_frames(0.6, true)
+    M.refresh_wow_cooldown_frames(1.2, true)
 end
 
 -- AURA CONTAINER GENERATOR
@@ -687,6 +692,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Sync the Blizzard frame visibility based on user preferences
         M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
         M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+        if M.queue_wow_cooldown_startup_refreshes then
+            M.queue_wow_cooldown_startup_refreshes()
+        end
 
         -- Integrate the settings tab into the main addon configuration menu
         if addon.register_category and M.BuildSettings then
