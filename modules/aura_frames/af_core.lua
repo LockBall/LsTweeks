@@ -112,13 +112,14 @@ function M.tick_visible_icons(now)
                             obj.time_text:SetText("")
                             obj.time_text._last_text = ""
                         end
+                        obj.grey_cooldown = false
                     elseif live_remaining ~= nil and issecretvalue(live_remaining) then
                         if show_timer_text and not show_cooldown_overlay then
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
                     end
                     if show_cooldown_overlay and obj.is_spell_cooldown then
-                        set_icon_greyed(obj.texture, obj.grey_cooldown or (remaining ~= nil and remaining > 1.5))
+                        set_icon_greyed(obj.texture, obj.grey_cooldown)
                     elseif obj.texture then
                         set_icon_greyed(obj.texture, false)
                     end

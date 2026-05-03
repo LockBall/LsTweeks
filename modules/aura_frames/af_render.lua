@@ -340,8 +340,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         if cooldown_remaining ~= nil and issecretvalue(cooldown_remaining) then
             cooldown_remaining = nil
         end
-        local cooldown_is_active = is_spell_cooldown
-            and (obj.grey_cooldown or (cooldown_remaining and cooldown_remaining > 1.5) or (entry.expiration and entry.expiration > now))
+        local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
         set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
         if obj.cooldown then

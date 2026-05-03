@@ -14,6 +14,7 @@ local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local C_Spell       = C_Spell
 local format        = format
+local GCD_GREY_THRESHOLD = 2.0
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
@@ -151,6 +152,28 @@ local function get_spell_cooldown_duration_object(spell_id)
     local ok, duration_object = pcall(C_Spell.GetSpellCooldownDuration, spell_id)
     if ok then return duration_object end
     return nil
+end
+
+local function is_spell_on_real_cooldown(spell_id)
+    if not (spell_id and C_Spell and C_Spell.GetSpellCooldown) then return false end
+    if issecretvalue(spell_id) then return false end
+
+    local ok, cooldown = pcall(C_Spell.GetSpellCooldown, spell_id)
+    if not (ok and cooldown) then return false end
+
+    local is_on_gcd = cooldown.isOnGCD
+    if is_on_gcd ~= nil then
+        if issecretvalue(is_on_gcd) then return false end
+        if is_on_gcd then return false end
+    end
+
+    local start_time = cooldown.startTime
+    local duration = cooldown.duration
+    if not (start_time and duration) then return false end
+    if issecretvalue(start_time) or issecretvalue(duration) then return false end
+    if duration <= GCD_GREY_THRESHOLD then return false end
+
+    return (start_time + duration) > GetTime()
 end
 
 -- Blizzard global frame names for each WoW Cooldown Manager category.
@@ -407,11 +430,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 local duration = cached and cached.duration or 0
                 local remaining = (expiration and expiration > now) and (expiration - now) or 0
                 local duration_object = (cached and cached.duration_object) or get_spell_cooldown_duration_object(spell_id)
-                local is_gcd = duration and duration > 0 and duration <= 1.5
-                local grey_cooldown = (not is_gcd) and (
-                    (remaining and remaining > 1.5)
-                    or (duration and duration > 1.5)
-                )
+                local grey_cooldown = is_spell_on_real_cooldown(spell_id)
                 local key = "cd_" .. tostring(cooldown_id)
                 target_map[key] = {
                     instance_id       = key,
