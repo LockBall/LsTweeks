@@ -352,9 +352,6 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
     if not frame_name then return end
     local viewer = _G[frame_name]
     if not viewer then return end
-    if M.update_blizz_cdm_visibility then
-        M.update_blizz_cdm_visibility(category)
-    end
 
     local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]
 

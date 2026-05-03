@@ -157,7 +157,20 @@ function M.toggle_blizz_debuffs(hide)
     set_blizz_frame_state(DebuffFrame, hide)
 end
 
+function M.ensure_blizz_cdm_loaded()
+    if M._blizz_cdm_load_attempted then return end
+    M._blizz_cdm_load_attempted = true
+    if C_AddOns and C_AddOns.LoadAddOn then
+        pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
+    elseif LoadAddOn then
+        pcall(LoadAddOn, "Blizzard_CooldownViewer")
+    end
+end
+
 function M.update_blizz_cdm_visibility(category)
+    if M.ensure_blizz_cdm_loaded then
+        M.ensure_blizz_cdm_loaded()
+    end
     local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
     local frame = frame_name and _G[frame_name]
     if not frame then return end
@@ -165,10 +178,29 @@ function M.update_blizz_cdm_visibility(category)
     -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
     -- aura/cooldown state we read; alpha keeps them active but invisible.
     local hide = M.db and M.db["hide_blizz_cdm_" .. category]
+    if not hide and (not InCombatLockdown or not InCombatLockdown()) and frame.Show then
+        pcall(frame.Show, frame)
+    end
     frame:SetAlpha(hide and 0 or 1)
     frame:EnableMouse(not hide)
-    if not hide then
-        frame:Show()
+end
+
+function M.prepare_blizz_cdm_viewer(category)
+    if InCombatLockdown and InCombatLockdown() then return end
+    if M.ensure_blizz_cdm_loaded then
+        M.ensure_blizz_cdm_loaded()
+    end
+    local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
+    local frame = frame_name and _G[frame_name]
+    if not frame then return end
+
+    -- Utility can start hidden on reload. Show it once outside combat so
+    -- Blizzard builds its child list, then apply alpha-based hiding.
+    if frame.Show then
+        pcall(frame.Show, frame)
+    end
+    if M.update_blizz_cdm_visibility then
+        M.update_blizz_cdm_visibility(category)
     end
 end
 
