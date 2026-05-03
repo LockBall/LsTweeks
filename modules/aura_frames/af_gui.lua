@@ -108,7 +108,7 @@ function M.BuildSettings(parent)
 
     local frames_data = {
         make_cat("Static"),
-        make_cat("Debuff", { is_debuff = true }),
+        make_cat("DeBuff", { is_debuff = true }),
         make_cat("Short"),
         make_cat("Long"),
         make_cat("Essential"),
@@ -143,6 +143,9 @@ function M.BuildSettings(parent)
             tracked_buffs = true,
             tracked_bars = true,
         }
+        local GROUP_TITLE_H = 22
+        local GROUP_PAD = 5
+        local GROUP_GAP = 8
         local CD_GROUP_LABEL_H = 48
         local CD_GROUP_PAD = 5
 
@@ -245,6 +248,10 @@ function M.BuildSettings(parent)
         local add_btn_ref = nil  -- set after initial build
 
         local node_fs_map = {}
+        local filters_group_box
+        local filters_group_title
+        local filters_group_top_y
+        local update_filters_group_box
 
         local function hide_custom_tree_row(row)
             if not row then return end
@@ -296,11 +303,8 @@ function M.BuildSettings(parent)
                 hide_custom_tree_row(row)
             end
 
-            local preset_child_rows = 0
-            local cooldown_group_extra_h = CD_GROUP_LABEL_H + (CD_GROUP_PAD * 2)
-            local preset_rows_height = (#frames_data + preset_child_rows) * (ROW_H + ROW_GAP)
-                + cooldown_group_extra_h
-            local y = -PAD - preset_rows_height
+            local add_y = M._filters_add_y or (-PAD - ROW_H)
+            local y = add_y - (ROW_H + ROW_GAP)
 
             -- ---- Custom frame rows ----
             if M.db and M.db.custom_frames then
@@ -494,7 +498,6 @@ function M.BuildSettings(parent)
             local max_reached = M.db and M.db.custom_frames
                 and #M.db.custom_frames >= (M.MAX_CUSTOM_FRAMES or 4)
 
-            local add_y = math.min(y - 4, -TREE_H + PAD + ROW_H)
             if add_btn_ref then
                 add_btn_ref:ClearAllPoints()
                 add_btn_ref:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, add_y)
@@ -523,6 +526,10 @@ function M.BuildSettings(parent)
                 end)
                 add_btn_ref = add_btn
             end
+
+            if update_filters_group_box then
+                update_filters_group_box(y)
+            end
         end  -- rebuild_tree
 
         M.on_custom_frame_renamed = function(id, new_name)
@@ -534,6 +541,37 @@ function M.BuildSettings(parent)
         -- PRESET ROWS (static rows, built once above the custom section)
         -- ----------------------------------------------------------------
         local y = -PAD
+
+        local function create_group_box(title)
+            local box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
+            box:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                edgeSize = 1,
+                insets = { left = 0, right = 0, top = 0, bottom = 0 },
+            })
+            box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
+            box:Hide()
+
+            local title_bg = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
+            title_bg:SetSize(120, 22)
+            title_bg:SetBackdrop({
+                bgFile   = "Interface\\Buttons\\WHITE8x8",
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                tile = true, tileSize = 8, edgeSize = 1,
+                insets = { left = 1, right = 1, top = 1, bottom = 1 },
+            })
+            title_bg:SetBackdropColor(0.16, 0.16, 0.16, 0.9)
+            title_bg:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.8)
+            title_bg:Hide()
+
+            local title_fs = title_bg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            title_fs:SetPoint("CENTER", title_bg, "CENTER", 0, 0)
+            title_fs:SetText(title)
+
+            return box, title_bg
+        end
+
+        local buffs_group_box, buffs_group_title = create_group_box("Buffs")
         local cooldown_group_box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
         cooldown_group_box:SetBackdrop({
             edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -542,6 +580,7 @@ function M.BuildSettings(parent)
         })
         cooldown_group_box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
         cooldown_group_box:Hide()
+        filters_group_box, filters_group_title = create_group_box("Filters")
 
         local cooldown_group_title_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
         cooldown_group_title_btn:SetSize(120, 22)
@@ -613,10 +652,28 @@ function M.BuildSettings(parent)
 
         local cooldown_group_top_y
         local cooldown_group_bottom_y
+        local buffs_group_top_y
+        local buffs_group_bottom_y
 
+        local function place_group_box(box, title_frame, top_y, bottom_y)
+            if top_y and bottom_y then
+                box:ClearAllPoints()
+                box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD - 2, top_y)
+                box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD + 2, bottom_y + 2)
+                box:Show()
+                title_frame:ClearAllPoints()
+                title_frame:SetPoint("TOP", box, "TOP", 0, -3)
+                title_frame:Show()
+            end
+        end
+
+        buffs_group_top_y = y
+        y = y - (GROUP_TITLE_H + GROUP_PAD)
         for _, data in ipairs(frames_data) do
             local cat = data.show_key:sub(6)
             if CD_GROUP_KEYS[cat] and not cooldown_group_top_y then
+                buffs_group_bottom_y = y
+                y = y - GROUP_GAP
                 y = y - (CD_GROUP_LABEL_H + CD_GROUP_PAD)
                 cooldown_group_top_y = y + CD_GROUP_LABEL_H + CD_GROUP_PAD
                 cooldown_group_title_btn:Show()
@@ -679,6 +736,8 @@ function M.BuildSettings(parent)
             end
         end
 
+        place_group_box(buffs_group_box, buffs_group_title, buffs_group_top_y, buffs_group_bottom_y)
+
         if cooldown_group_top_y and cooldown_group_bottom_y then
             cooldown_group_box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD - 2, cooldown_group_top_y)
             cooldown_group_box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD + 2, cooldown_group_bottom_y + 2)
@@ -687,6 +746,14 @@ function M.BuildSettings(parent)
             cooldown_group_title_btn:SetPoint("TOP", cooldown_group_box, "TOP", 0, -3)
             sync_cdm_btn:ClearAllPoints()
             sync_cdm_btn:SetPoint("TOP", cooldown_group_title_btn, "BOTTOM", 0, -2)
+        end
+
+        y = y - GROUP_GAP
+        filters_group_top_y = y
+        y = y - (GROUP_TITLE_H + GROUP_PAD)
+        M._filters_add_y = y
+        update_filters_group_box = function(bottom_y)
+            place_group_box(filters_group_box, filters_group_title, filters_group_top_y, bottom_y)
         end
 
         -- Build initial custom rows + + Custom button
