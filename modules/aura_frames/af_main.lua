@@ -483,7 +483,9 @@ function M.create_custom_frame(entry)
     if not entry or not entry.id then return end
     local id       = entry.id
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
-    local filter   = (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
+    entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
+    entry.aura_modifier = entry.aura_modifier or "NONE"
+    local filter   = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,
     -- not the prefixed pattern used by preset frames ("timer_static", etc.).
@@ -495,10 +497,10 @@ function M.create_custom_frame(entry)
         "scale",
         "spacing",
         entry.name or id,
-        filter == "HARMFUL"
+        filter:find("HARMFUL", 1, true) ~= nil
     )
 
-    -- Tag the frame so af_core knows to route it through whitelist filtering.
+    -- Tag the frame so af_core knows to route it through the custom filtered scan.
     frame.is_custom    = true
     frame.custom_entry = entry
 
@@ -580,15 +582,6 @@ function M.destroy_custom_frame(id)
             end
         end
     end
-    if M._custom_capture_runtime and M._custom_capture_runtime[id] then
-        local runtime = M._custom_capture_runtime[id]
-        if runtime.stop_capture then runtime.stop_capture() end
-        if runtime.regen_frame then
-            runtime.regen_frame:UnregisterAllEvents()
-            runtime.regen_frame:SetScript("OnEvent", nil)
-        end
-        M._custom_capture_runtime[id] = nil
-    end
 end
 
 -- ============================================================================
@@ -614,6 +607,31 @@ loader:SetScript("OnEvent", function(self, event, name)
         if not M.db.timer_number_font_size then
             M.db.timer_number_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size()) or 10
         end
+
+        -- Development migration: discard obsolete custom frame data and
+        -- normalize custom frames to the filtered-frame model.
+        if M.db.custom_frames then
+            for _, entry in ipairs(M.db.custom_frames) do
+                entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
+                entry.aura_modifier = entry.aura_modifier or "NONE"
+                entry.filter = nil
+                entry.whitelist = nil
+                entry.whitelist_icons = nil
+            end
+        end
+        for _, key in ipairs({
+            "show_important", "move_important", "timer_important", "bg_important",
+            "scale_important", "spacing_important", "width_important", "bar_mode_important",
+            "color_important", "bar_bg_color_important", "max_icons_important",
+            "growth_important", "bg_color_important", "sort_important",
+            "test_aura_important", "timer_number_font_important",
+            "timer_number_font_size_important", "timer_number_font_bold_important",
+            "timer_color_important", "bar_text_color_important", "important_aura_cache",
+            "spell_name_cache",
+        }) do
+            M.db[key] = nil
+        end
+        if M.db.positions then M.db.positions.important = nil end
 
         -- Migrate legacy global font settings to per-category settings.
         -- Static frame has no timer text, so it does not need per-category timer font settings.
@@ -653,14 +671,13 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.create_aura_frame("show_static",  "move_static",  "timer_static", "bg_static",    "scale_static", "spacing_static",   "Static",   false)
         M.create_aura_frame("show_short",   "move_short",   "timer_short",  "bg_short",     "scale_short",  "spacing_short",    "Short",    false)
         M.create_aura_frame("show_long",    "move_long",    "timer_long",   "bg_long",      "scale_long",   "spacing_long",     "Long",     false)
-        M.create_aura_frame("show_important", "move_important", "timer_important", "bg_important", "scale_important", "spacing_important", "Important", false)
         M.create_aura_frame("show_essential", "move_essential", "timer_essential", "bg_essential", "scale_essential", "spacing_essential", "Essential", false)
         M.create_aura_frame("show_utility", "move_utility", "timer_utility", "bg_utility", "scale_utility", "spacing_utility", "Utility", false)
         M.create_aura_frame("show_tracked_buffs", "move_tracked_buffs", "timer_tracked_buffs", "bg_tracked_buffs", "scale_tracked_buffs", "spacing_tracked_buffs", "Tracked Buffs", false)
         M.create_aura_frame("show_tracked_bars", "move_tracked_bars", "timer_tracked_bars", "bg_tracked_bars", "scale_tracked_bars", "spacing_tracked_bars", "Tracked Bars", false)
         M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
 
-        -- Create saved custom whitelist frames.
+        -- Create saved custom filtered frames.
         if M.db.custom_frames then
             for _, entry in ipairs(M.db.custom_frames) do
                 M.create_custom_frame(entry)
@@ -731,6 +748,7 @@ function M.on_reset_complete()
                         if entry.id == id then frame.custom_entry = entry; break end
                     end
                 end
+                p.filter = M.get_custom_aura_filter and M.get_custom_aura_filter(frame.custom_entry) or p.filter
             end
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.filter)
         end

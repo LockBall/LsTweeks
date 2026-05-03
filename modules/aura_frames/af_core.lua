@@ -230,7 +230,7 @@ end
 
 -- ============================================================================
 -- AURA UPDATE (main per-frame refresh)
--- Works for both preset category frames and custom whitelist frames.
+-- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
 function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, filter, info)
@@ -346,20 +346,16 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- game frame. We use a wall-clock stamp to skip redundant scans: if M._aura_map
     -- was already populated within the last 0.1s, reuse it.
     local now_scan = GetTime()
-    if not M._last_unified_scan_time or (now_scan - M._last_unified_scan_time) > 0.1 then
-        local custom_helpful_limit, custom_harmful_limit = 0, 0
-        if M.get_custom_scan_limits then
-            custom_helpful_limit, custom_harmful_limit = M.get_custom_scan_limits(db)
-        end
-        M.unified_scan(info, short_threshold, custom_helpful_limit, custom_harmful_limit)
+    if (not is_custom) and (not M._last_unified_scan_time or (now_scan - M._last_unified_scan_time) > 0.1) then
+        M.unified_scan(info, short_threshold, 0, 0)
         M._last_unified_scan_time = now_scan
     end
 
     -- Filter the shared map into this frame's per-frame map.
     wipe(self._aura_map)
     if is_custom then
-        if M.filter_custom_aura_map then
-            M.filter_custom_aura_map(self, custom_entry, M._aura_map)
+        if M.scan_custom_aura_map then
+            M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
         end
     else
         if WOW_COOLDOWN_CATEGORIES[category] and M.add_cooldown_viewer_category_entries then
@@ -367,8 +363,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         else
             -- Preset frame: match by category string.
             for iid, entry in pairs(M._aura_map) do
-                if entry.category == category
-                        or (category == "important" and entry.is_important) then
+                if entry.category == category then
                     self._aura_map[iid] = entry
                 end
             end

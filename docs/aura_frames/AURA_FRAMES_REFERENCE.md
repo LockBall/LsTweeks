@@ -8,17 +8,16 @@ Files load in this order and all extend `addon.aura_frames` as `M`:
 
 1. `af_defaults.lua` - category lists, defaults, custom-frame template, CDM mappings.
 2. `af_test_aura.lua` - fake preview entries for Test Aura toggles.
-3. `af_scan.lua` - player aura scanning, classification, important aura learning, CDM viewer reads.
+3. `af_scan.lua` - player aura scanning, classification, CDM viewer reads.
 4. `af_render.lua` - icon/bar rendering, timer text, UNIT_AURA payload merging.
 5. `af_icon_layout.lua` - icon/bar geometry and frame height anchoring.
-6. `af_custom_filter.lua` - custom whitelist matching and combat fallback.
+6. `af_custom_filter.lua` - direct filtered scans for custom frames.
 7. `af_core.lua` - ticker, Blizzard visibility controls, per-frame update pipeline.
-8. `af_spell_resolver.lua` - spell metadata lookup and persisted registry updates.
-9. `af_gui.lua` - Aura Frames settings UI and Frames tree.
-10. `af_gui_custom.lua` - custom frame settings and whitelist/capture panels.
-11. `af_debug_outlines.lua` - optional slot outline debug helper.
-12. `af_grid.lua` - move-mode grid overlay and snap helpers.
-13. `af_main.lua` - frame construction, event wiring, startup, reset handling.
+8. `af_gui.lua` - Aura Frames settings UI and Frames tree.
+9. `af_gui_custom.lua` - custom frame settings and filter panels.
+10. `af_debug_outlines.lua` - optional slot outline debug helper.
+11. `af_grid.lua` - move-mode grid overlay and snap helpers.
+12. `af_main.lua` - frame construction, event wiring, startup, reset handling.
 
 ## Categories
 
@@ -26,7 +25,7 @@ Preset categories are defined in `af_defaults.lua`:
 
 ```lua
 M.CATEGORIES = {
-    "static", "short", "long", "important",
+    "static", "short", "long",
     "essential", "utility", "tracked_buffs", "tracked_bars",
     "debuff",
 }
@@ -34,7 +33,7 @@ M.CATEGORIES = {
 
 `static` has no timer controls. `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live Blizzard Cooldown Manager viewer frames through `M.CDM_VIEWER_FRAMES`.
 
-Custom whitelist frames are stored in `M.db.custom_frames`, capped by `M.MAX_CUSTOM_FRAMES = 4`, and use per-entry settings instead of flat DB keys.
+Custom filtered frames are stored in `M.db.custom_frames`, capped by `M.MAX_CUSTOM_FRAMES = 4`, and use per-entry settings instead of flat DB keys.
 
 ## Startup
 
@@ -78,8 +77,8 @@ af_main OnEvent
   -> M.merge_aura_info()
   -> C_Timer.After(0.1)
   -> af_core:M.update_auras()
-     -> af_scan:M.unified_scan() when shared scan cache is stale
-     -> category/custom/CDM filtering
+     -> af_scan:M.unified_scan() when shared preset scan cache is stale
+     -> category/CDM filtering or af_custom_filter:M.scan_custom_aura_map()
      -> af_test_aura:M.append_test_aura() when preview is enabled
      -> af_icon_layout:M.setup_layout() when layout cache changed
      -> af_render:M.render_aura_map()
@@ -92,7 +91,7 @@ The shared ticker calls `M.tick_visible_icons()` every 0.1s to update visible ti
 
 `M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint)` populates `M._aura_map`.
 
-Entries are keyed by aura instance ID when live aura data provides one. Test previews use `"__test_preview__"`. Remembered custom-frame combat fallbacks can use synthetic keys such as `"__remembered_<spellID>"`.
+Entries are keyed by aura instance ID when live aura data provides one. Test previews use `"__test_preview__"`.
 
 Common entry fields:
 
@@ -109,7 +108,6 @@ Common entry fields:
 - `filter`
 - `is_helpful`
 - `category`
-- `is_important`
 - `order_key`
 - `added_at`
 
@@ -128,7 +126,7 @@ Helpful player auras are classified into `static`, `short`, or `long`.
 - `short`: timed aura with remaining duration at or below `short_threshold`.
 - `long`: timed aura above `short_threshold`, or a learned long aura whose fields are secret.
 
-The `important` frame is not a separate base classification. `af_scan.lua` marks a helpful aura with `entry.is_important = true` when it appears in the `"HELPFUL|IMPORTANT"` scan. The Important frame displays entries with `entry.is_important`.
+`IMPORTANT` is available as a custom-frame filter modifier. A custom frame set to `HELPFUL | IMPORTANT` scans with `C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL|IMPORTANT")`.
 
 Harmful player auras are classified as `debuff`.
 
@@ -169,16 +167,9 @@ Custom frames are created from `M.CUSTOM_FRAME_TEMPLATE` and persisted under `M.
 
 Custom frames store settings directly in the entry table (`show`, `move`, `timer`, `width`, etc.) and store position in `entry.position`.
 
-`M.filter_custom_aura_map(frame, custom_entry, shared_map)` filters the shared scan by whitelist and filter type. Matching uses:
+Custom frames scan directly with `M.scan_custom_aura_map(frame, entry, target_map, max_limit, short_threshold)`, which calls `C_UnitAuras.GetAuraDataByIndex("player", i, M.get_custom_aura_filter(entry))`.
 
-- readable spell IDs
-- readable names
-- persisted `M.db.spell_name_cache`
-- per-frame `auraInstanceID -> spellID` memory
-- direct whitelisted spell lookup for newly applied combat auras
-- short-lived last-seen replay while in combat when fields are secret
-
-The custom settings and whitelist panels are built lazily by `af_gui_custom.lua`.
+Each custom frame stores `aura_base_filter` (`HELPFUL` or `HARMFUL`) and `aura_modifier` (`NONE`, `IMPORTANT`, `PLAYER`, `RAID`, `MAW`, etc.). The visible tree keeps an expandable child node named `Filters`; the parent custom node opens the same presentation settings grid as the other aura frames. The main custom settings grid also includes a visible `Frame Name` edit box in row 2, column 4.
 
 ## Rendering
 
@@ -225,7 +216,7 @@ Layout is recalculated when relevant cached values change:
 
 The Frames tab uses a left tree and a right lazy-built content panel. Preset rows are built once. Custom tree rows are pooled and reused by row index during `rebuild_tree()` so add/delete/rename/expand/collapse does not orphan old row frames.
 
-The tree includes Static, Debuff, Short, Long, Important, and a grouped WoW Cooldown section for Essential, Utility, Tracked Buffs, and Tracked Bars. Custom entries appear below the preset section, each with a settings node and a `Custom` whitelist child node.
+The tree includes Static, Debuff, Short, Long, and a grouped WoW Cooldown section for Essential, Utility, Tracked Buffs, and Tracked Bars. Custom entries appear below the preset section, each with a main settings node and a `Filters` child node.
 
 ## Taint and Combat Rules
 
@@ -246,8 +237,6 @@ The tree includes Static, Debuff, Short, Long, Important, and a grouped WoW Cool
 - `C_UnitAuras.GetAuraApplicationDisplayCount`
 - `C_UnitAuras.GetUnitAuraInstanceIDs`
 - `C_UnitAuras.DoesAuraHaveExpirationTime`
-- `C_UnitAuras.GetPlayerAuraBySpellID`
-- `C_UnitAuras.GetUnitAuraBySpellID`
 - `GameTooltip:SetUnitAuraByAuraInstanceID`
 - `C_Spell.GetSpellCooldownDuration`
 - `C_Spell.GetSpellCooldown`

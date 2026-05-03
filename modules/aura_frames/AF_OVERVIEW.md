@@ -23,11 +23,10 @@ af_test_aura.lua       — fake preview aura system
 af_scan.lua            — aura data acquisition
 af_render.lua          — visual output per frame
 af_icon_layout.lua     — geometry and positioning of icons within each category frame
-af_custom_filter.lua   — custom-frame whitelist matching and combat lookup fallback
+af_custom_filter.lua   — custom-frame direct AuraFilters scans
 af_core.lua            — ticker, blizz toggles, main update loop
-af_spell_resolver.lua  — spell metadata resolution and aura registry
 af_gui.lua             — settings tab builder
-af_gui_custom.lua      — custom-frame settings and aura capture UI
+af_gui_custom.lua      — custom-frame settings and filter UI
 af_debug_outlines.lua  — developer slot outlines
 af_grid.lua            — layout grid helpers for the settings UI
 af_main.lua            — frame construction and addon bootstrap  (loads last)
@@ -139,16 +138,13 @@ Defines:
 ---
 
 ### af_custom_filter.lua
-**Role:** Custom whitelist matching for user-created aura frames. Keeps the custom-frame specifics
-out of the core update loop.
+**Role:** Direct filtered scanning for user-created aura frames. Keeps the custom-frame specifics
+out of the shared preset classification loop.
 
 Defines:
-- `M.get_custom_scan_limits(db)` — tells `af_scan` when custom frames need the broader 255-slot
-  helpful/harmful scan, limited to visible/moving custom whitelist frames or active capture.
-- `M.filter_custom_aura_map(frame, custom_entry, shared_map)` — filters the shared scan results into
-  one custom frame by whitelist and aura filter. It uses readable spell IDs/names when available,
-  the persisted aura registry when combat hides fields, per-frame `auraInstanceID -> spellID` memory
-  for already-proven auras, and direct whitelisted spell-ID lookup for newly applied combat auras.
+- `M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, short_threshold)` — scans
+  `C_UnitAuras.GetAuraDataByIndex("player", i, M.get_custom_aura_filter(custom_entry))` and writes
+  normalized render entries into the custom frame map.
 
 ---
 
@@ -182,19 +178,6 @@ Defines:
   7. Calls `M.render_aura_map` → gets `display_count`.
   8. Computes new frame height from display count and calls `M.set_height_for_growth`.
   9. Sets backdrop color for move-mode vs. normal display.
-
----
-
-### af_spell_resolver.lua
-**Role:** Resolves spell IDs to names/icons and maintains the persisted aura registry used by
-custom whitelist frames.
-
-Defines:
-- `M.CacheAuraInfo(spell_id, name, icon, filter)` — stores known metadata for a spell ID.
-- `M.TryGetSpellInfo(spell_id)` — synchronous spell metadata lookup.
-- `M.ResolveSpellID(spell_id, callback)` — requests spell data if needed and invokes the callback
-  once name/icon are available.
-- Startup whitelist normalization and metadata backfill for saved custom frames.
 
 ---
 
@@ -293,6 +276,6 @@ C_Timer.NewTicker(0.1)
 - **Pool is fixed at load time.** Icon frames are created once in `create_aura_frame`. Adding icons
   requires a reload. `max_icons_<cat>` controls the pool size.
 - **Unified scan cache.** `M.unified_scan` populates `M._aura_map` at most once per 0.1s update
-  window. Preset frames filter by category, while custom frames filter by whitelist.
+  window for preset frames. Custom frames scan directly from their selected AuraFilters string.
 - **`_layout_cache` guards redundant re-layouts.** `update_auras` compares the five layout-relevant
   DB keys against the cache and only calls `setup_layout` when something changed.
