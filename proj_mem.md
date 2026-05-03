@@ -1,7 +1,13 @@
-# LsTweeks — Claude Code Context
+# LsTweeks Project Memory
 
-## Claude Permissions
-- Bash `grep` commands are pre-approved for this project — no need to prompt for permission.
+## Purpose
+This file is shared project memory for coding agents working on LsTweeks. Keep it current when architecture, defaults, APIs, workflow rules, or hard-won debugging notes change.
+
+## Agent Workflow
+- Treat this file as the project-level source of truth before making non-trivial edits.
+- Update it when the current project state changes in a way future agents need to know.
+- Prefer concise, durable notes over session logs or speculative plans.
+- Do not store secrets, personal data, machine-local paths, or temporary scratch notes here.
 
 ## What This Is
 **L's Tweeks** — a modular WoW UI addon (patch 12.0 / Interface 120000) by LockBall.  
