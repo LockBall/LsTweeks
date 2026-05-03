@@ -117,8 +117,9 @@ Defines:
 ---
 
 ### af_icon_layout.lua
-**Role:** All geometry: slot sizes, anchor positions, frame height. Never called during combat
-(InCombatLockdown guard). No aura data or rendering logic here.
+**Role:** All geometry: slot sizes, anchor positions, frame height. Layout application is skipped
+during combat by the layout guard and the `update_auras` frame-geometry guard. No aura data or
+rendering logic lives here.
 
 Defines:
 - `M.is_timer_text_enabled(db, category, timer_key)` — returns whether the timer text should be
@@ -271,8 +272,9 @@ C_Timer.NewTicker(0.1)
 
 - **No API calls inside OnEvent.** WoW taints the execution context during event dispatch. All
   C_UnitAuras calls are deferred to the C_Timer.After(0.1) callback.
-- **No layout calls in combat.** `setup_layout` (and `set_height_for_growth`) are guarded by
-  `InCombatLockdown()`. The ticker handles mid-combat timer/bar updates without touching geometry.
+- **No frame geometry writes in combat.** `setup_layout` is guarded by `InCombatLockdown()`, and
+  `update_auras` skips frame scale, anchoring, sizing, and height changes while in combat. The
+  ticker handles mid-combat timer/bar updates without touching geometry.
 - **Pool is fixed at load time.** Icon frames are created once in `create_aura_frame`. Adding icons
   requires a reload. `max_icons_<cat>` controls the pool size.
 - **Unified scan cache.** Aura/lifecycle events mark the shared preset scan cache dirty.
