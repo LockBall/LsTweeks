@@ -39,7 +39,7 @@ local PREVIEW_META = {
     show_debuff = { name = "Test DeBuff",       sort_id = 9 },
 }
 
-function M.get_test_preview_state(show_key, short_threshold, now)
+local function get_test_preview_state(show_key, short_threshold, now)
     now = now or GetTime()
 
     if show_key == "show_static" then
@@ -63,9 +63,9 @@ function M.get_test_preview_state(show_key, short_threshold, now)
     return duration, remaining, count
 end
 
-function M.build_test_aura_entry(show_key, filter, short_threshold)
+local function build_test_aura_entry(show_key, filter, short_threshold)
     local now = GetTime()
-    local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
+    local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
     local meta = PREVIEW_META[show_key] or PREVIEW_META.show_debuff
 
     return {
@@ -84,11 +84,11 @@ function M.build_test_aura_entry(show_key, filter, short_threshold)
 end
 
 function M.append_test_aura(aura_map, show_key, filter, short_threshold)
-    aura_map["__test_preview__"] = M.build_test_aura_entry(show_key, filter, short_threshold)
+    aura_map["__test_preview__"] = build_test_aura_entry(show_key, filter, short_threshold)
 end
 
 function M.update_test_preview_state(obj, show_key, short_threshold, now)
-    local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
+    local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining

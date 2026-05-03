@@ -10,7 +10,7 @@ local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
 local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)
 local GRID_OFFSET_Y = -0.5  -- up (positive, no + sign) or down (negative)
 
-function M.build_grid_lines()
+local function build_grid_lines()
     local overlay = M.grid_overlay
     if not overlay then return end
 
@@ -78,7 +78,7 @@ function M.create_grid_overlay()
     overlay:Hide()
     M.grid_overlay = overlay
     C_Timer.After(0, function()
-        M.build_grid_lines()
+        build_grid_lines()
         if M.db and M.db.show_grid then overlay:Show() end
     end)
 end

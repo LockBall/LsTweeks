@@ -334,7 +334,7 @@ M.MAX_CUSTOM_FRAMES = 4
 -- CUSTOM FRAME HELPERS
 
 -- Returns the next available auto-name ("Custom 1" .. "Custom N").
-function M.next_custom_name()
+local function next_custom_name()
     local used = {}
     if M.db and M.db.custom_frames then
         for _, entry in ipairs(M.db.custom_frames) do
@@ -349,7 +349,7 @@ function M.next_custom_name()
 end
 
 -- Returns the next available stable id ("custom_1" .. "custom_N").
-function M.next_custom_id()
+local function next_custom_id()
     local used = {}
     if M.db and M.db.custom_frames then
         for _, entry in ipairs(M.db.custom_frames) do
@@ -375,8 +375,8 @@ function M.new_custom_entry(id, name)
             entry[k] = v
         end
     end
-    entry.id   = id   or M.next_custom_id()
-    entry.name = name or M.next_custom_name()
+    entry.id   = id   or next_custom_id()
+    entry.name = name or next_custom_name()
     return entry
 end
 
