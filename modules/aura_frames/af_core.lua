@@ -42,6 +42,32 @@ local function set_icon_greyed(texture, greyed)
     end
 end
 
+local function set_count_text(obj, count)
+    if issecretvalue(count) then
+        obj._lstweeks_count_text = nil
+        obj.count_text:SetText(count)
+        if not obj.count_text:IsShown() then
+            obj.count_text:Show()
+        end
+        return
+    end
+    if count and count > 1 then
+        local cached = obj._lstweeks_count_text
+        if issecretvalue(cached) or cached ~= count then
+            obj.count_text:SetText(count)
+            obj._lstweeks_count_text = count
+        end
+        if not obj.count_text:IsShown() then
+            obj.count_text:Show()
+        end
+    else
+        obj._lstweeks_count_text = nil
+        if obj.count_text:IsShown() then
+            obj.count_text:Hide()
+        end
+    end
+end
+
 -- Shared ticker update path for all visible aura icon objects.
 -- Runs at 0.1s from af_main.lua and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
@@ -124,12 +150,7 @@ function M.tick_visible_icons(now)
                     elseif obj.texture then
                         set_icon_greyed(obj.texture, false)
                     end
-                    if obj.aura_count and obj.aura_count > 1 then
-                        obj.count_text:SetText(obj.aura_count)
-                        obj.count_text:Show()
-                    else
-                        obj.count_text:Hide()
-                    end
+                    set_count_text(obj, obj.aura_count)
                 end
             end
         end

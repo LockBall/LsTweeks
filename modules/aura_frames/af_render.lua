@@ -153,6 +153,38 @@ local function set_icon_greyed(texture, greyed)
     end
 end
 
+local function set_count_text(obj, text, point, relative_to, relative_point, x, y)
+    if issecretvalue(text) then
+        obj._lstweeks_count_text = nil
+        obj.count_text:SetText(text)
+        if point then
+            obj.count_text:SetPoint(point, relative_to, relative_point, x, y)
+        end
+        if not obj.count_text:IsShown() then
+            obj.count_text:Show()
+        end
+        return
+    end
+    if text ~= nil then
+        local cached = obj._lstweeks_count_text
+        if issecretvalue(cached) or cached ~= text then
+            obj.count_text:SetText(text)
+            obj._lstweeks_count_text = text
+        end
+        if point then
+            obj.count_text:SetPoint(point, relative_to, relative_point, x, y)
+        end
+        if not obj.count_text:IsShown() then
+            obj.count_text:Show()
+        end
+    else
+        obj._lstweeks_count_text = nil
+        if obj.count_text:IsShown() then
+            obj.count_text:Hide()
+        end
+    end
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -388,13 +420,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
             obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
             obj.name_text:Show()
-            if stack_text ~= nil then
-                obj.count_text:SetText(stack_text)
-                obj.count_text:SetPoint("LEFT", obj.bar, "LEFT", 4, 0)
-                obj.count_text:Show()
-            else
-                obj.count_text:Hide()
-            end
+            set_count_text(obj, stack_text, "LEFT", obj.bar, "LEFT", 4, 0)
         else
             obj.bar:Hide()
             obj.name_text:Hide()
@@ -404,12 +430,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 apply_cooldown_overlay(obj, cooldown_duration, entry.expiration, entry.duration)
             end
             -- In icon mode: stack count at bottom-right of icon
-            if stack_text ~= nil then
-                obj.count_text:SetText(stack_text)
-                obj.count_text:Show()
-            else
-                obj.count_text:Hide()
-            end
+            set_count_text(obj, stack_text)
         end
 
         -- Static frame buffs are effectively permanent; never display a timer string.
@@ -510,6 +531,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         self.icons[i].grey_cooldown = false
         self.icons[i].aura_index = nil
         self.icons[i].aura_count = nil
+        self.icons[i]._lstweeks_count_text = nil
         set_icon_greyed(self.icons[i].texture, false)
         if self.icons[i].cooldown then
             self.icons[i].cooldown:Hide()
