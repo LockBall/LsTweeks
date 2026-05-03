@@ -36,7 +36,7 @@ modules/
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
     af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
-    af_scan.lua          — aura scanning: scan_helpful_shared(), full_scan()
+    af_scan.lua          — aura scanning: unified_scan(), CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
     af_custom_filter.lua — direct custom-frame scans via C_UnitAuras.GetAuraDataByIndex()
@@ -91,10 +91,9 @@ Ls_Tweeks_DB = {
     show_grid = bool,
     show_bar_section_outlines = bool,  -- debug outline toggle (now under aura_frames, not root)
     show_spell_id = bool,              -- show spell ID in icon tooltips
-    known_static_spell_ids = table,    -- learned permanent-aura spell IDs
-    known_long_spell_ids = table,      -- learned long-aura spell IDs
+    -- learned static/long spell IDs are session-scoped in M._known_static / M._known_long, not persisted
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
-    positions = { static={x,y}, short={x,y}, long={x,y}, debuff={x,y} },
+    positions = { static={x,y}, short={x,y}, long={x,y}, essential={x,y}, utility={x,y}, tracked_buffs={x,y}, tracked_bars={x,y}, debuff={x,y} },
     custom_frames = {                  -- array of custom filtered frame entry tables
       -- each entry: { id, name, aura_base_filter="HELPFUL|HARMFUL", aura_modifier="NONE|...",
       --               position={x,y},

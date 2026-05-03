@@ -3,8 +3,8 @@
 ## Purpose
 
 The aura_frames module replaces and extends the default WoW buff/debuff display. It tracks
-player buffs and debuffs across four independently configurable frame categories, renders them
-as icons or progress bars, and exposes a full settings GUI inside the addon panel.
+player buffs, debuffs, WoW Cooldown Manager-backed groups, and custom filtered frames, renders
+them as icons or progress bars, and exposes a full settings GUI inside the addon panel.
 
 All files share a single namespace table: `addon.aura_frames` (aliased as `M` in every file).
 Data is persisted in `Ls_Tweeks_DB.aura_frames`. DB keys follow the pattern `<setting>_<category>`
