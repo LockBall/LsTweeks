@@ -341,14 +341,11 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if not self._aura_map then self._aura_map = {} end
     self._sorted_ids_cache = nil
 
-    -- Run the unified scan once per deferred-callback batch.
-    -- Each frame fires its own C_Timer.After(0.1), but they all land within the same
-    -- game frame. We use a wall-clock stamp to skip redundant scans: if M._aura_map
-    -- was already populated within the last 0.1s, reuse it.
-    local now_scan = GetTime()
-    if (not is_custom) and (not M._last_unified_scan_time or (now_scan - M._last_unified_scan_time) > 0.1) then
+    -- Run the unified scan once per dirty event batch, then let the other
+    -- preset frames in the same deferred batch reuse M._aura_map.
+    if (not is_custom) and M._aura_scan_dirty then
         M.unified_scan(info, short_threshold, 0, 0)
-        M._last_unified_scan_time = now_scan
+        M._aura_scan_dirty = false
     end
 
     -- Filter the shared map into this frame's per-frame map.

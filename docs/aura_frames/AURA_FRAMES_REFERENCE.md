@@ -77,7 +77,7 @@ af_main OnEvent
   -> M.merge_aura_info()
   -> C_Timer.After(0.1)
   -> af_core:M.update_auras()
-     -> af_scan:M.unified_scan() when shared preset scan cache is stale
+     -> af_scan:M.unified_scan() when shared preset scan cache is dirty
      -> category/CDM filtering or af_custom_filter:M.scan_custom_aura_map()
      -> af_test_aura:M.append_test_aura() when preview is enabled
      -> af_icon_layout:M.setup_layout() when layout cache changed

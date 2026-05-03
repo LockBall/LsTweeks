@@ -172,7 +172,7 @@ Defines:
   2. Sets scale and position from DB (always enforces DB state).
   3. Checks `_layout_cache`; calls `M.setup_layout` if any layout param changed.
   4. Decides frame visibility and move-mode chrome (title bars, resizer).
-  5. Calls `M.unified_scan` when the shared scan cache is stale, then filters `M._aura_map` into
+  5. Calls `M.unified_scan` when the shared scan cache is dirty, then filters `M._aura_map` into
      the frame's `_aura_map`.
   6. Injects or removes the test preview entry.
   7. Calls `M.render_aura_map` → gets `display_count`.
@@ -275,7 +275,8 @@ C_Timer.NewTicker(0.1)
   `InCombatLockdown()`. The ticker handles mid-combat timer/bar updates without touching geometry.
 - **Pool is fixed at load time.** Icon frames are created once in `create_aura_frame`. Adding icons
   requires a reload. `max_icons_<cat>` controls the pool size.
-- **Unified scan cache.** `M.unified_scan` populates `M._aura_map` at most once per 0.1s update
-  window for preset frames. Custom frames scan directly from their selected AuraFilters string.
+- **Unified scan cache.** Aura/lifecycle events mark the shared preset scan cache dirty.
+  The first preset frame in the deferred batch repopulates `M._aura_map`; the rest reuse it.
+  Custom frames scan directly from their selected AuraFilters string.
 - **`_layout_cache` guards redundant re-layouts.** `update_auras` compares the five layout-relevant
   DB keys against the cache and only calls `setup_layout` when something changed.
