@@ -264,9 +264,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or 40
     local sort_mode     = cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft"
     local preview_enabled = cfg_db["test_aura_" .. category] or cfg_db["test_aura"]
+    local in_combat = InCombatLockdown and InCombatLockdown()
 
     local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
-    self:SetScale(scale)
+    if not in_combat then
+        self:SetScale(scale)
+    end
 
     -- Position: custom frames store their position inside the entry.
     local pos
@@ -279,18 +282,20 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local _height = self:GetHeight() or 50
     if _width  < 1 then _width  = 200 end
     if _height < 1 then _height = 50  end
-    self:ClearAllPoints()
-    if pos then
-        self:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
-    else
-        self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (filter == "HARMFUL") and -25 or 75)
+    if not in_combat then
+        self:ClearAllPoints()
+        if pos then
+            self:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
+        else
+            self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (filter == "HARMFUL") and -25 or 75)
+        end
+        self:SetSize(_width, _height)
     end
-    self:SetSize(_width, _height)
 
     -- For custom frames, expose cfg_db on the frame so setup_layout can read it.
     if is_custom then self._cfg_db = cfg_db end
 
-    if not self._layout_cache
+    local needs_layout = not self._layout_cache
         or self._layout_cache.frame_width     ~= frame_width
         or self._layout_cache.bar_mode        ~= bar_mode
         or self._layout_cache.show_timer_text ~= show_timer_text
@@ -298,7 +303,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         or self._layout_cache.cooldown_icon_overlay ~= cooldown_icon_overlay
         or self._layout_cache.spacing         ~= spacing
         or self._layout_cache.growth          ~= growth
-    then
+    if needs_layout and not in_combat then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
 
@@ -331,7 +336,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             local bot_pad  = layout_show_timer_text and 14 or 12
             min_height = 32 + timer_h + bot_pad
         end
-        M.set_height_for_growth(self, min_height, growth)
+        if not in_combat then
+            M.set_height_for_growth(self, min_height, growth)
+        end
         self:Show()
         return
     end
@@ -368,7 +375,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
-        self:SetAlpha((InCombatLockdown and InCombatLockdown()) and 1 or (M.db.wow_cooldown_ooc_alpha or 0.35))
+        self:SetAlpha(in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or 0.35))
     else
         self:SetAlpha(1)
     end
@@ -406,7 +413,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     if show_val or preview_enabled then
         self:Show()
-        M.set_height_for_growth(self, new_height, growth)
+        if not in_combat then
+            M.set_height_for_growth(self, new_height, growth)
+        end
     elseif not is_moving then
         self:Hide()
     end
