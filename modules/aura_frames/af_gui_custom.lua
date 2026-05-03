@@ -1,33 +1,42 @@
--- Settings panels for custom whitelist aura frames.
--- Provides M.build_custom_settings_panel(p, entry) and M.build_custom_child_panel(p, entry),
--- called lazily by the Frames tab tree in af_gui.lua when a custom node is selected.
+-- Settings panels for custom filtered aura frames.
+-- Provides M.build_custom_settings_panel(p, entry) for presentation controls and
+-- M.build_custom_child_panel(p, entry) for the HELPFUL/HARMFUL + modifier filters.
 
 local addon_name, addon = ...
-
-local issecretvalue = issecretvalue
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+local function update_custom_frame(entry)
+    if not (entry and entry.id and M.frames) then return end
+    local show_key = "show_" .. entry.id
+    local frame = M.frames[show_key]
+    if not frame then return end
+    local filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter or "HELPFUL"
+    frame.update_params.filter = filter
+    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", filter)
+end
 
--- ============================================================================
--- CUSTOM SETTINGS PANEL
--- Same 4-column grid layout as the preset build_category_tab, but reads/writes
--- from the custom entry table instead of the flat M.db namespace.
+local function update_custom_frame_title(entry)
+    if not (entry and entry.id and M.frames) then return end
+    local frame = M.frames["show_" .. entry.id]
+    if not frame then return end
+    if frame.title_bar and frame.title_bar.label_text then
+        frame.title_bar.label_text:SetText(entry.name or entry.id)
+    end
+    if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
+        frame.bottom_title_bar.label_text:SetText(entry.name or entry.id)
+    end
+end
 
 function M.build_custom_settings_panel(p, entry)
-    local id       = entry.id
+    local id = entry.id
     local show_key = "show_" .. id
-    local filter   = (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
 
     local function update()
-        local frame = M.frames[show_key]
-        if frame then
-            M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", filter)
-        end
+        update_custom_frame(entry)
     end
 
-    -- Grid (identical constants to build_category_tab in af_gui.lua)
     local col_gap    = 150
     local col_width  = 190
     local col_offset = -20
@@ -41,10 +50,9 @@ function M.build_custom_settings_panel(p, entry)
         col_align   = { "center", "center", "center", "center" },
         row_start   = 10,
         row_gap     = row_gap,
-        row_heights = { 130, 60, 60, 110, 110 },
+        row_heights = { 130, 60, 90, 120, 110 },
         reset_btn_width = 110,
         offsets     = { default = 0, dropdown = 8, picker = 4 },
-        content_rows = 5,
     }
 
     local function place_at(control, row, column, slot, opts)
@@ -80,9 +88,8 @@ function M.build_custom_settings_panel(p, entry)
         line:SetWidth(grid[4] + grid.col_width - 12)
     end
 
-    -- Checkbox bound to the entry table.
     local function bound_cb(label, key, row, column, on_change)
-        local container, cb, _ = addon.CreateCheckbox(p, label, entry[key],
+        local container, cb = addon.CreateCheckbox(p, label, entry[key],
             function(is_checked)
                 entry[key] = is_checked
                 if on_change then on_change(is_checked) else update() end
@@ -93,15 +100,14 @@ function M.build_custom_settings_panel(p, entry)
         return container, cb
     end
 
-    -- Color picker bound to the entry table.
     local function bound_picker(key, has_alpha, label, row, column)
         local picker = addon.CreateColorPicker(p, entry, key, has_alpha, label, M.CUSTOM_FRAME_TEMPLATE, update)
         place_at(picker, row, column, "picker")
         return picker
     end
 
-    -- ---- Row 1: Move Mode, X/Y position, Width ----
     local pos = entry.position or { x = 0, y = 50 }
+    entry.position = pos
 
     local function update_frame_position()
         local f = M.frames[show_key]
@@ -115,7 +121,8 @@ function M.build_custom_settings_panel(p, entry)
         if is_checked then
             local en_cb = M.controls["custom_" .. id .. "_show"]
             if en_cb and en_cb.SetChecked and not en_cb:GetChecked() then
-                en_cb:SetChecked(true); entry["show"] = true
+                en_cb:SetChecked(true)
+                entry.show = true
             end
         end
         update()
@@ -132,8 +139,12 @@ function M.build_custom_settings_panel(p, entry)
     local width_slider = addon.CreateSliderWithBox(addon_name..id.."Width", p, "Width", 180, 800, 1, entry, "width", M.CUSTOM_FRAME_TEMPLATE)
     width_slider.slider:HookScript("OnValueChanged", function(_, value)
         local f = M.frames[show_key]
-        if f then f:SetWidth(math.floor(value + 0.5)); update() end
+        if f then
+            f:SetWidth(math.floor(value + 0.5))
+            update()
+        end
     end)
+    M.controls["custom_" .. id .. "_width"] = width_slider
     place_at(width_slider, 1, 4)
 
     local snap_container = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
@@ -153,8 +164,9 @@ function M.build_custom_settings_panel(p, entry)
     move_reset:SetText("Move Reset")
     move_reset:SetScript("OnClick", function()
         local tmpl = M.CUSTOM_FRAME_TEMPLATE
-        pos.x = tmpl.position.x; pos.y = tmpl.position.y
-        entry.move  = tmpl.move
+        pos.x = tmpl.position.x
+        pos.y = tmpl.position.y
+        entry.move = tmpl.move
         entry.width = tmpl.width
         move_cb:SetChecked(false)
         local f = M.frames[show_key]
@@ -166,21 +178,17 @@ function M.build_custom_settings_panel(p, entry)
         end
         if x_slider and x_slider.slider then x_slider.slider:SetValue(pos.x) end
         if y_slider and y_slider.slider then y_slider.slider:SetValue(pos.y) end
+        if width_slider and width_slider.slider then width_slider.slider:SetValue(entry.width) end
     end)
 
     add_row_separator(1)
 
-    -- ---- Row 2: Enable Frame, Test Aura, Frame BG, BG Color ----
     local enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
         if not is_checked then
             entry.test_aura = false
             local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
             if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
-            local ta_child = M.controls["custom_" .. id .. "_test_aura_child"]
-            if ta_child and ta_child.SetChecked then ta_child:SetChecked(false) end
         end
-        local show_child = M.controls["custom_" .. id .. "_show_child"]
-        if show_child and show_child.SetChecked then show_child:SetChecked(is_checked) end
         update()
     end)
 
@@ -196,15 +204,41 @@ function M.build_custom_settings_panel(p, entry)
 
     bound_cb("Frame BG", "bg", 2, 2)
     bound_picker("bg_color", true, "Frame BG Color", 2, 3)
+
+    local name_container = CreateFrame("Frame", nil, p)
+    name_container:SetSize(130, 24)
+    local name_label = name_container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    name_label:SetPoint("BOTTOM", name_container, "TOP", 0, 2)
+    name_label:SetText("Frame Name")
+    local name_box = CreateFrame("EditBox", nil, name_container, "InputBoxTemplate")
+    name_box:SetSize(130, 22)
+    name_box:SetPoint("TOP", name_container, "TOP", 0, 0)
+    name_box:SetAutoFocus(false)
+    name_box:SetMaxLetters(32)
+    name_box:SetText(entry.name or id)
+    local function commit_name()
+        local new_name = (name_box:GetText() or ""):match("^%s*(.-)%s*$")
+        if not new_name or new_name == "" then
+            name_box:SetText(entry.name or id)
+            name_box:ClearFocus()
+            return
+        end
+        if new_name ~= entry.name then
+            entry.name = new_name
+            update_custom_frame_title(entry)
+            if M.on_custom_frame_renamed then M.on_custom_frame_renamed(id, new_name) end
+        end
+        name_box:ClearFocus()
+    end
+    name_box:SetScript("OnEnterPressed", commit_name)
+    name_box:SetScript("OnEditFocusLost", commit_name)
+    place_at(name_container, 2, 4, nil, { width = 130 })
     add_row_separator(2)
 
-    -- ---- Row 3: Bar Mode, Bar Color, Bar BG Color, Bar Text Color, Growth Direction ----
     local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1)
-
     local bar_color_picker = addon.CreateColorPicker(p, entry, "color", true, "Bar Color", M.CUSTOM_FRAME_TEMPLATE, update)
     bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
     M.controls["custom_" .. id .. "_bar_color"] = bar_color_picker
-
     bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
     bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
 
@@ -213,14 +247,13 @@ function M.build_custom_settings_panel(p, entry)
         dir_options[#dir_options + 1] = { value = dir, text = dir }
     end
     local growth_dd = addon.CreateDropdown(addon_name..id.."Growth", p, "Growth Direction", dir_options, {
-        width     = 106,
+        width = 106,
         get_value = function() return entry.growth or "DOWN" end,
         on_select = function(value) entry.growth = value; update() end,
     })
     place_at(growth_dd, 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
     add_row_separator(3)
 
-    -- ---- Row 4: Timer Text, Bold, Font, Font Size ----
     local timer_text_container = bound_cb("Timer Text", "timer", 4, 1)
     local timer_bold_container = bound_cb("Timer Bold", "timer_number_font_bold", 4, 1, function()
         if M.apply_number_font_to_all then M.apply_number_font_to_all() end
@@ -236,7 +269,6 @@ function M.build_custom_settings_panel(p, entry)
             font_path = def.path, font_size = def.size, font_flags = def.flags,
         }
     end
-
     local timer_font_dd = M.CreateListDropdown(addon_name..id.."TimerFont", p, "Timer Font", font_options,
         function() return entry.timer_number_font or "source_code_pro" end,
         function(value)
@@ -261,7 +293,6 @@ function M.build_custom_settings_panel(p, entry)
     timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
     add_row_separator(4)
 
-    -- ---- Row 5: Scale, Spacing, Max Icons ----
     local scale_slider = addon.CreateSliderWithBox(addon_name..id.."Scale", p, "Scale",
         0.5, 2.5, 0.01, entry, "scale", M.CUSTOM_FRAME_TEMPLATE, update)
     place_at(scale_slider, 5, 1)
@@ -273,604 +304,63 @@ function M.build_custom_settings_panel(p, entry)
     local max_icons_slider = addon.CreateSliderWithBox(addon_name..id.."MaxIcons", p, "Max Icons",
         5, 40, 1, entry, "max_icons", M.CUSTOM_FRAME_TEMPLATE,
         function()
-            print("|cFFFFFF00LsTweaks:|r Pool size for " .. entry.name .. " changed. Please /reload to apply.")
+            print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
         end)
     place_at(max_icons_slider, 5, 4)
-
-    -- Hook title bars so dragging syncs the X/Y sliders.
-    local frame = M.frames[show_key]
-    if frame then
-        local function sync_xy()
-            local f = M.frames[show_key]
-            if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
-            local ucx, ucy = UIParent:GetCenter()
-            local left = f:GetLeft(); local top = f:GetTop()
-            if left and top then
-                pos.x = math.floor(left - ucx + 0.5)
-                pos.y = math.floor(top  - ucy + 0.5)
-                x_slider.slider:SetValue(pos.x)
-                y_slider.slider:SetValue(pos.y)
-            end
-        end
-        for _, tb in ipairs({ frame.title_bar, frame.bottom_title_bar }) do
-            if tb then
-                local old = tb:GetScript("OnDragStop")
-                tb:SetScript("OnDragStop", function(...)
-                    if old then old(...) end
-                    sync_xy()
-                end)
-            end
-        end
-    end
 end
 
--- ============================================================================
--- CUSTOM CHILD PANEL
--- Buff/debuff filter toggle, scrollable whitelist, manual spell ID entry,
--- and Capture Mode (live aura list with auto-timeout).
-
 function M.build_custom_child_panel(p, entry)
-    local id       = entry.id
-    local show_key = "show_" .. id
-    M._custom_capture_runtime = M._custom_capture_runtime or {}
-    local capture_runtime = M._custom_capture_runtime[id] or {}
-    M._custom_capture_runtime[id] = capture_runtime
+    local id = entry and entry.id
+    if not id then return end
 
-    -- ----------------------------------------------------------------
-    -- 2-COLUMN GRID
-    -- GAP is the single spacing driver: left margin, inter-column gap, and bottom gap all equal GAP.
-    -- col 1 starts at GAP; col 2 starts at GAP + COL_W + GAP. Both columns equal width.
-    -- Frame widths derived so right edges sit GAP inside their column boundary.
-    -- Bottoms anchored to tree_frame bottom (BOTTOMLEFT y=0) — no height math needed.
-    -- ----------------------------------------------------------------
-    local GAP       = 10                                          -- single spacing driver
-    local content_w = M.frames_content_w or 581
-    local COL_W     = math.floor((content_w - GAP * 4) / 2)     -- equal width for both frames
-    local COL       = { GAP, GAP + COL_W + GAP * 2 }            -- col start x positions
-    local WL_W      = COL_W                                      -- whitelist = col width
-    local CAP_W     = COL_W                                      -- captured auras = same
-    local ICON_SIZE = 16                                         -- shared icon size for both lists
-    local ROW  = { 10, -20, -50, -75, -100, -130 }
-    local ROW_H = 22
-
-    local function col_x(c) return COL[c] end
-    local function row_y(r) return ROW[r] end
-
-    -- ----------------------------------------------------------------
-    -- COL 1, ROW 1: header + aura type
-    -- ----------------------------------------------------------------
     local header = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    header:SetPoint("TOP", p, "TOPLEFT", GAP + COL_W / 2, row_y(1))
-    header:SetText(entry.name .. " — Whitelist")
+    header:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -18)
+    header:SetText((entry.name or id) .. " Filters")
 
-    local filter_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    filter_lbl:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(2))
-    filter_lbl:SetText("Aura Type:")
+    local base_dd
+    local modifier_dd
 
-    local buff_btn   = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    local debuff_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    buff_btn:SetSize(70, 22)
-    debuff_btn:SetSize(70, 22)
-    buff_btn:SetText("Buffs")
-    debuff_btn:SetText("Debuffs")
-    buff_btn:SetPoint("LEFT",  filter_lbl, "RIGHT", 8, 0)
-    debuff_btn:SetPoint("LEFT", buff_btn,  "RIGHT", 6, 0)
-
-    local function refresh_filter_btns()
-        local is_buff = (entry.filter == "HELPFUL")
-        buff_btn:SetAlpha(is_buff and 1 or 0.45)
-        debuff_btn:SetAlpha(is_buff and 0.45 or 1)
-    end
-    refresh_filter_btns()
-
-    local function switch_filter(new_filter)
-        if entry.filter == new_filter then return end
-        StaticPopupDialogs["LSTWEEKS_FILTER_SWITCH"] = {
-            text     = "Changing aura type will clear the whitelist for \"" .. entry.name .. "\". Continue?",
-            button1  = "Yes",
-            button2  = "Cancel",
-            OnAccept = function()
-                entry.filter    = new_filter
-                entry.whitelist = {}
-                refresh_filter_btns()
-                local frame = M.frames[show_key]
-                if frame then
-                    frame.update_params.filter = new_filter
-                    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", new_filter)
-                end
-                if p._rebuild_whitelist then p._rebuild_whitelist() end
-            end,
-            timeout = 0, whileDead = true, hideOnEscape = true,
-        }
-        StaticPopup_Show("LSTWEEKS_FILTER_SWITCH")
+    local function set_base(value)
+        entry.aura_base_filter = (value == "HARMFUL") and "HARMFUL" or "HELPFUL"
+        if base_dd and base_dd.SetValue then base_dd:SetValue(entry.aura_base_filter) end
     end
 
-    buff_btn:SetScript("OnClick",   function() switch_filter("HELPFUL") end)
-    debuff_btn:SetScript("OnClick", function() switch_filter("HARMFUL") end)
-
-    -- ----------------------------------------------------------------
-    -- COL 1, ROW 2: capture mode checkbox + status
-    -- ----------------------------------------------------------------
-    local CAP_INTERVAL = 1.0
-    local CAP_MAX      = 22
-    local cap_active   = false
-    local cap_timer    = nil
-    local cap_auras    = {}
-
-    local cap_checkbox_container, cap_checkbox
-
-    -- FontString directly on p in OVERLAY so no Frame stacking issues
-    local cap_status = p:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    cap_status:SetWidth(150)
-    cap_status:SetJustifyH("LEFT")
-    cap_status:SetText("")
-    cap_status:SetTextColor(1, 0.8, 0, 1)
-
-    local function stop_capture()
-        cap_active = false
-        capture_runtime.capture_active = nil
-        if cap_timer then cap_timer:Cancel(); cap_timer = nil end
-        cap_status:SetText("")
-        if cap_checkbox and cap_checkbox.SetChecked then cap_checkbox:SetChecked(false) end
+    local function set_modifier(value)
+        entry.aura_modifier = value or "NONE"
+        local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+        if def and def.force_base then set_base(def.force_base) end
+        if modifier_dd and modifier_dd.SetValue then modifier_dd:SetValue(entry.aura_modifier) end
     end
-    capture_runtime.stop_capture = stop_capture
 
-    -- ----------------------------------------------------------------
-    -- COL 1, ROW 2: add by spell ID
-    -- ----------------------------------------------------------------
-    local add_lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    add_lbl:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(3))
-    add_lbl:SetText("Add by Spell ID:")
+    entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
+    entry.aura_modifier = entry.aura_modifier or "NONE"
+    set_modifier(entry.aura_modifier)
 
-    local id_box = CreateFrame("EditBox", nil, p, "InputBoxTemplate")
-    id_box:SetSize(80, 22)
-    id_box:SetPoint("LEFT", add_lbl, "RIGHT", 6, 0)
-    id_box:SetNumeric(true)
-    id_box:SetMaxLetters(8)
-    id_box:SetAutoFocus(false)
-
-    local add_id_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    add_id_btn:SetSize(46, 22)
-    add_id_btn:SetPoint("LEFT", id_box, "RIGHT", 4, 0)
-    add_id_btn:SetText("Add")
-
-    -- checkbox wired after do_capture_scan is defined; container placed here for layout
-    cap_checkbox_container, cap_checkbox = addon.CreateCheckbox(p, "Capture Mode", false, function() end)
-    cap_checkbox_container:SetPoint("TOPLEFT", p, "TOPLEFT", col_x(1), row_y(4))
-
-    local cap_hint = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    cap_hint:SetPoint("LEFT", cap_checkbox_container, "RIGHT", 6, 0)
-    cap_hint:SetText(string.format("(%d max)", CAP_MAX))
-
-    cap_status:SetPoint("LEFT", cap_hint, "RIGHT", 8, 0)
-
-    local test_aura_container, test_aura_cb = addon.CreateCheckbox(p, "Test Aura", entry.test_aura == true,
-        function(is_checked)
-            entry.test_aura = is_checked
-            if is_checked then
-                entry.show = true
-                local en_cb = M.controls["custom_" .. id .. "_show"]
-                if en_cb and en_cb.SetChecked then en_cb:SetChecked(true) end
+    base_dd = addon.CreateDropdown(addon_name..id.."AuraBase", p, "Base", M.CUSTOM_AURA_BASE_FILTERS, {
+        width = 118,
+        get_value = function() return entry.aura_base_filter or "HELPFUL" end,
+        on_select = function(value)
+            set_base(value)
+            local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+            if def and def.force_base and def.force_base ~= entry.aura_base_filter then
+                set_base(def.force_base)
             end
-            local frame = M.frames[show_key]
-            if frame then
-                M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing",
-                    (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-            end
-        end
-    )
-    local child_enable_container, child_enable_cb = addon.CreateCheckbox(p, "Enable Frame", entry.show == true,
-        function(is_checked)
-            entry.show = is_checked
-            local settings_cb = M.controls["custom_" .. id .. "_show"]
-            if settings_cb and settings_cb.SetChecked then settings_cb:SetChecked(is_checked) end
-            if not is_checked then
-                entry.test_aura = false
-                local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
-                if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
-                local ta_child = M.controls["custom_" .. id .. "_test_aura_child"]
-                if ta_child and ta_child.SetChecked then ta_child:SetChecked(false) end
-            end
-            local frame = M.frames[show_key]
-            if frame then
-                M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing",
-                    (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-            end
-        end
-    )
-    child_enable_container:SetPoint("TOPLEFT", cap_checkbox_container, "BOTTOMLEFT", 0, -4)
-    M.controls["custom_" .. id .. "_show_child"] = child_enable_cb
-
-    test_aura_container:SetPoint("LEFT", child_enable_container, "RIGHT", 12, 0)
-    M.controls["custom_" .. id .. "_test_aura_child"] = test_aura_cb
-
-    -- ----------------------------------------------------------------
-    -- COL 1, ROW 3: whitelist frame
-    -- ----------------------------------------------------------------
-    local wl_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    wl_frame:SetPoint("TOPLEFT",    p,                  "TOPLEFT",    col_x(1), row_y(6))
-    wl_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
-    wl_frame:SetWidth(WL_W)
-    wl_frame:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        tile = true, tileSize = 8, edgeSize = 1,
-        insets = { left = 0, right = 0, top = 0, bottom = 0 },
+            update_custom_frame(entry)
+        end,
     })
-    wl_frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
-    wl_frame:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
+    base_dd:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -32)
 
-    local wl_title = wl_frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    wl_title:SetPoint("TOP", wl_frame, "TOP", 0, -5)
-    wl_title:SetText("Whitelist")
+    local pipe = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    pipe:SetPoint("LEFT", base_dd, "RIGHT", 10, 0)
+    pipe:SetText("|")
 
-    local wl_content = CreateFrame("Frame", nil, wl_frame)
-    wl_content:SetPoint("TOPLEFT",     wl_frame, "TOPLEFT",     4, -20)
-    wl_content:SetPoint("BOTTOMRIGHT", wl_frame, "BOTTOMRIGHT", -4,  4)
-    wl_content:SetClipsChildren(true)
-
-    local wl_rows = {}
-
-    local function rebuild_whitelist()
-        for _, row in ipairs(wl_rows) do row:Hide() end
-        local row_y   = 0
-        local row_idx = 0
-        for spell_id, spell_name in pairs(entry.whitelist or {}) do
-            row_idx = row_idx + 1
-            local row = wl_rows[row_idx]
-            if not row then
-                row = CreateFrame("Frame", nil, wl_content)
-                row:SetHeight(ROW_H)
-                row.del = CreateFrame("Button", nil, row, "UIPanelCloseButton")
-                row.del:SetSize(16, 16)
-                row.del:SetPoint("RIGHT", row, "RIGHT", -2, 0)
-                row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.id_lbl:ClearAllPoints()
-                row.id_lbl:SetPoint("RIGHT", row.del, "LEFT", -10, 0)
-                row.id_lbl:SetJustifyH("RIGHT")
-                row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(ICON_SIZE, ICON_SIZE)
-                row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
-                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.lbl:SetPoint("LEFT",  row.icon,   "RIGHT",  4,  0)
-                row.lbl:SetPoint("RIGHT", row.id_lbl, "LEFT",  -4,  0)
-                row.lbl:SetJustifyH("LEFT")
-                row.lbl:SetWordWrap(false)
-                wl_rows[row_idx] = row
-            end
-            local icon = entry.whitelist_icons and entry.whitelist_icons[spell_id]
-            row.icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-            row:SetWidth(WL_W - 8)
-            row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", wl_content, "TOPLEFT", 0, -row_y)
-            row.lbl:SetText(spell_name)
-            row.id_lbl:SetText("[" .. tostring(spell_id) .. "]")
-            local sid = spell_id
-            row.del:SetScript("OnClick", function()
-                entry.whitelist[sid] = nil
-                rebuild_whitelist()
-                -- Immediately refresh the custom frame so removed entries
-                -- disappear from the visible aura frame without reload.
-                local f = M.frames[show_key]
-                if f then
-                    M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
-                        (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-                end
-            end)
-            row:Show()
-            row_y = row_y + ROW_H
-        end
-        wl_content:SetHeight(math.max(1, row_y))
-        if row_idx == 0 then
-            if not wl_content._empty_lbl then
-                wl_content._empty_lbl = wl_content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-                wl_content._empty_lbl:SetPoint("CENTER", wl_content, "CENTER", 0, -20)
-                wl_content._empty_lbl:SetText("Whitelist is empty.\nUse Capture or Add ID.")
-            end
-            wl_content._empty_lbl:Show()
-        else
-            if wl_content._empty_lbl then wl_content._empty_lbl:Hide() end
-        end
-    end
-
-    p._rebuild_whitelist = rebuild_whitelist
-
-    add_id_btn:SetScript("OnClick", function()
-        local raw = id_box:GetNumber()
-        if raw and raw > 0 then
-            local sid = raw
-            if not entry.whitelist then entry.whitelist = {} end
-            if not entry.whitelist[sid] then
-                local display_name = "Spell " .. tostring(sid)
-                local found_icon   = nil
-                if M._aura_map then
-                    for _, ae in pairs(M._aura_map) do
-                        if ae.spell_id == sid and ae.name and not issecretvalue(ae.name) then
-                            display_name = tostring(ae.name)
-                            if ae.icon and not issecretvalue(ae.icon) then found_icon = ae.icon end
-                            break
-                        end
-                    end
-                end
-                entry.whitelist[sid] = display_name
-                if found_icon then
-                    entry.whitelist_icons = entry.whitelist_icons or {}
-                    entry.whitelist_icons[sid] = found_icon
-                end
-                if M.CacheAuraInfo then M.CacheAuraInfo(sid, display_name, found_icon, entry.filter) end
-                rebuild_whitelist()
-                M.ResolveSpellID(sid, function(name, icon)
-                    if name then entry.whitelist[sid] = name end
-                    if icon then
-                        entry.whitelist_icons = entry.whitelist_icons or {}
-                        entry.whitelist_icons[sid] = icon
-                    end
-                    if M.CacheAuraInfo then M.CacheAuraInfo(sid, name, icon, entry.filter) end
-                    rebuild_whitelist()
-                    local f = M.frames[show_key]
-                    if f then
-                        M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
-                            (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-                    end
-                end)
-            end
-            id_box:SetText("")
-        end
-    end)
-    id_box:SetScript("OnEnterPressed", function() add_id_btn:Click() end)
-
-    -- ----------------------------------------------------------------
-    -- COL 2, ROW 1: captured auras frame (full height)
-    -- ----------------------------------------------------------------
-    local cap_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
-    cap_frame:SetPoint("TOPLEFT",   p,                   "TOPLEFT",   col_x(2), row_y(1) + 68)  -- +40 raises top above the row grid to gain extra height
-    cap_frame:SetPoint("BOTTOMLEFT", M.frames_tree_frame, "BOTTOMLEFT", 0,        0)
-    cap_frame:SetWidth(CAP_W)
-    cap_frame:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        tile = true, tileSize = 8, edgeSize = 1,
-        insets = { left = 0, right = 0, top = 0, bottom = 0 },
+    modifier_dd = addon.CreateDropdown(addon_name..id.."AuraModifier", p, "Modifier", M.CUSTOM_AURA_MODIFIERS, {
+        width = 185,
+        get_value = function() return entry.aura_modifier or "NONE" end,
+        on_select = function(value)
+            set_modifier(value)
+            update_custom_frame(entry)
+        end,
     })
-    cap_frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
-    cap_frame:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
-
-    local cap_header = cap_frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    cap_header:SetPoint("TOP", cap_frame, "TOP", 0, -5)
-    cap_header:SetText("Captured Auras")
-
-    local rebuild_cap_list
-
-    local cap_clear_btn = CreateFrame("Button", nil, cap_frame, "UIPanelButtonTemplate")
-    cap_clear_btn:SetSize(44, 16)
-    cap_clear_btn:SetPoint("TOPRIGHT", cap_frame, "TOPRIGHT", -2, -2)
-    cap_clear_btn:SetText("Clear")
-    cap_clear_btn:SetScript("OnClick", function()
-        cap_auras = {}
-        stop_capture()
-        rebuild_cap_list()
-    end)
-
-    local cap_content = CreateFrame("Frame", nil, cap_frame)
-    cap_content:SetPoint("TOPLEFT",     cap_frame, "TOPLEFT",     4, -20)
-    cap_content:SetPoint("BOTTOMRIGHT", cap_frame, "BOTTOMRIGHT", -4,  4)
-    cap_content:SetClipsChildren(true)
-
-    local cap_rows = {}
-
-    rebuild_cap_list = function()
-        for _, row in ipairs(cap_rows) do row:Hide() end
-        local ry = 0
-        for idx, item in ipairs(cap_auras) do
-            local row = cap_rows[idx]
-            if not row then
-                row = CreateFrame("Button", nil, cap_content)
-                row:SetHeight(ROW_H)
-                row:SetScript("OnEnter", function(s) s.lbl:SetTextColor(1, 1, 0.6) end)
-                row:SetScript("OnLeave", function(s) s.lbl:SetTextColor(1, 1, 1) end)
-                row.icon = row:CreateTexture(nil, "ARTWORK")
-                row.icon:SetSize(ICON_SIZE, ICON_SIZE)
-                row.icon:SetPoint("LEFT", row, "LEFT", 2, 0)
-                row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                row.lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.lbl:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
-                row.lbl:SetWidth(CAP_W - ICON_SIZE - 55)
-                row.lbl:SetJustifyH("LEFT")
-                row.lbl:SetWordWrap(false)
-                row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                row.id_lbl:SetPoint("RIGHT", row, "RIGHT", -4, 0)
-                row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
-                cap_rows[idx] = row
-            end
-            row:SetWidth(CAP_W - 8)
-            row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", cap_content, "TOPLEFT", 0, -ry)
-            local sid, sname, sicon = item.spell_id, item.name, item.icon
-            if sicon then
-                row.icon:SetTexture(sicon)
-                row.icon:Show()
-            else
-                row.icon:SetTexture(nil)
-                row.icon:Hide()
-            end
-            if sid then
-                row.lbl:SetTextColor(1, 1, 1)
-                row.id_lbl:SetText(tostring(sid))
-                row.id_lbl:SetTextColor(0.5, 0.5, 0.5)
-                row:SetScript("OnClick", function()
-                    if not entry.whitelist then entry.whitelist = {} end
-                    entry.whitelist[sid] = sname
-                    if sicon then
-                        entry.whitelist_icons = entry.whitelist_icons or {}
-                        entry.whitelist_icons[sid] = sicon
-                    end
-                    if M.CacheAuraInfo then M.CacheAuraInfo(sid, sname, sicon, entry.filter) end
-                    rebuild_whitelist()
-                    -- Refresh the visible custom frame immediately
-                    local f = M.frames[show_key]
-                    if f then
-                        M.update_auras(f, show_key, "move", "timer", "bg", "scale", "spacing",
-                            (entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL")
-                    end
-                end)
-            else
-                -- sid not yet known (still secret); dim the row, click does nothing useful yet.
-                row.lbl:SetTextColor(0.6, 0.6, 0.6)
-                row.id_lbl:SetText("?")
-                row.id_lbl:SetTextColor(0.4, 0.4, 0.4)
-                row:SetScript("OnClick", nil)
-            end
-            row.lbl:SetText(sname)
-            row:Show()
-            ry = ry + ROW_H
-        end
-        cap_content:SetHeight(math.max(1, ry))
-        if #cap_auras == 0 then
-            if not cap_content._empty_lbl then
-                cap_content._empty_lbl = cap_content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-                cap_content._empty_lbl:SetPoint("CENTER", cap_content, "CENTER", 0, -20)
-                cap_content._empty_lbl:SetText("Enable Capture Mode\nto see active auras.")
-            end
-            cap_content._empty_lbl:Show()
-        else
-            if cap_content._empty_lbl then cap_content._empty_lbl:Hide() end
-        end
-    end
-
-    -- Two dedup tables: inst_id is a plain number (safe key), sid available once not secret.
-    local cap_by_inst = {}  -- ae.instance_id -> item
-    local cap_by_sid  = {}  -- spell_id       -> item
-
-    local function do_capture_scan()
-        local want_helpful = (entry.filter == "HELPFUL")
-        -- M._aura_map is already kept current by the main aura update pipeline.
-        local changed = false
-        for _, ae in pairs(M._aura_map or {}) do
-            if ae.is_helpful == want_helpful then
-                local inst_id = ae.instance_id
-                local sid     = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
-                local existing = cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
-                if existing then
-                    if sid and not existing.spell_id then
-                        existing.spell_id = sid
-                        cap_by_sid[sid]   = existing
-                        changed = true
-                    end
-                    if not existing.name then existing.name = ae.name; changed = true end
-                    if not existing.icon then existing.icon = ae.icon; changed = true end
-                    cap_by_inst[inst_id] = existing
-                elseif #cap_auras < CAP_MAX then
-                    local item = { spell_id = sid, name = ae.name, icon = ae.icon }
-                    cap_by_inst[inst_id] = item
-                    if sid then cap_by_sid[sid] = item end
-                    table.insert(cap_auras, item)
-                    changed = true
-                end
-            end
-        end
-        if changed then rebuild_cap_list() end
-    end
-
-    -- Post-combat: iids may be new but instance_ids and spell_ids persist.
-    -- Iterate M._aura_map (already refreshed by update_auras) and promote any
-    -- captured items that still have no spell_id, matching by instance_id or sid.
-    local function backfill_spell_ids()
-        local changed = false
-        for _, ae in pairs(M._aura_map or {}) do
-            if ae.is_helpful == (entry.filter == "HELPFUL") then
-                local inst_id = ae.instance_id
-                local sid     = ae.spell_id and not issecretvalue(ae.spell_id) and ae.spell_id or nil
-                local item    = cap_by_inst[inst_id] or (sid and cap_by_sid[sid])
-                if item and sid then
-                    if not item.spell_id then
-                        item.spell_id     = sid
-                        cap_by_sid[sid]   = item
-                        if M.CacheAuraInfo then
-                            M.CacheAuraInfo(sid, item.name, item.icon, entry.filter)
-                        end
-                        changed = true
-                    end
-                    -- Freshen name/icon now that secretvalue restriction is lifted.
-                    item.name = ae.name
-                    item.icon = ae.icon
-                    if M.CacheAuraInfo then
-                        local cname = (item.name and not issecretvalue(item.name)) and item.name or nil
-                        local cicon = (item.icon and not issecretvalue(item.icon)) and item.icon or nil
-                        M.CacheAuraInfo(sid, cname, cicon, entry.filter)
-                    end
-                    changed = true
-                end
-            end
-        end
-        if changed then rebuild_cap_list() end
-    end
-
-    -- Wire checkbox callback now that do_capture_scan is in scope
-    local function start_capture()
-        if cap_active then return end
-        cap_active    = true
-        capture_runtime.capture_active = true
-        cap_auras     = {}
-        cap_by_inst   = {}
-        cap_by_sid    = {}
-        M._last_unified_scan_time = nil
-        if M.unified_scan then
-            local helpful_hint = (entry.filter == "HARMFUL") and 0 or 255
-            local harmful_hint = (entry.filter == "HARMFUL") and 255 or 0
-            M.unified_scan(nil, M.db and M.db.short_threshold or 60, helpful_hint, harmful_hint)
-        end
-        do_capture_scan()
-        cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
-        cap_timer = C_Timer.NewTicker(CAP_INTERVAL, function()
-            cap_status:SetText(string.format("%d/%d", #cap_auras, CAP_MAX))
-            do_capture_scan()
-            if #cap_auras >= CAP_MAX then stop_capture() end
-        end)
-    end
-    cap_checkbox:SetScript("OnClick", function(self)
-        if self:GetChecked() then start_capture() else stop_capture() end
-    end)
-
-    -- Stop capture only when the main LsTweeks window closes, not on tab/node switches.
-    if addon.main_frame and not capture_runtime.stop_hide_hooked then
-        capture_runtime.stop_hide_hooked = true
-        addon.main_frame:HookScript("OnHide", function()
-            if capture_runtime.stop_capture then
-                capture_runtime.stop_capture()
-            end
-        end)
-    end
-
-    -- Backfill spell IDs for iid-only entries after combat ends.
-    -- Defer past the 0.1s scan bucket so M._aura_map has readable post-combat values,
-    -- then force a fresh unified_scan before resolving captured entries.
-    local regen_frame = capture_runtime.regen_frame
-    if not regen_frame then
-        regen_frame = CreateFrame("Frame")
-        capture_runtime.regen_frame = regen_frame
-    end
-    regen_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    regen_frame:SetScript("OnEvent", function()
-        if #cap_auras == 0 then return end
-        C_Timer.After(0.15, function()
-            local helpful_hint = (entry.filter == "HARMFUL") and 0 or 255
-            local harmful_hint = (entry.filter == "HARMFUL") and 255 or 0
-            M._last_unified_scan_time = nil
-            M.unified_scan(nil, M.db and M.db.short_threshold or 60, helpful_hint, harmful_hint)
-            backfill_spell_ids()
-        end)
-    end)
-    if addon.main_frame and not capture_runtime.regen_hide_hooked then
-        capture_runtime.regen_hide_hooked = true
-        addon.main_frame:HookScript("OnHide", function()
-            regen_frame:UnregisterAllEvents()
-            regen_frame:SetScript("OnEvent", nil)
-            capture_runtime.capture_active = nil
-        end)
-    end
-
-    rebuild_whitelist()
-    rebuild_cap_list()
+    modifier_dd:SetPoint("LEFT", pipe, "RIGHT", 10, 0)
 end

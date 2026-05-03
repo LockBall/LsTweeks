@@ -39,9 +39,10 @@ modules/
     af_scan.lua          — aura scanning: scan_helpful_shared(), full_scan()
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
+    af_custom_filter.lua — direct custom-frame scans via C_UnitAuras.GetAuraDataByIndex()
     af_core.lua          — tick_visible_icons(), update_auras(), toggle_blizz_buffs/debuffs()
     af_gui.lua           — settings tab builder; M.BuildSettings(), sync_general_controls_from_db()
-    af_gui_custom.lua    — custom whitelist frame panels; M.build_custom_settings_panel(), M.build_custom_child_panel()
+    af_gui_custom.lua    — custom filtered frame panels; M.build_custom_settings_panel(), M.build_custom_child_panel()
     af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
@@ -94,8 +95,9 @@ Ls_Tweeks_DB = {
     known_long_spell_ids = table,      -- learned long-aura spell IDs
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
     positions = { static={x,y}, short={x,y}, long={x,y}, debuff={x,y} },
-    custom_frames = {                  -- array of custom whitelist frame entry tables
-      -- each entry: { id, name, filter, whitelist={[spell_id]=name}, position={x,y},
+    custom_frames = {                  -- array of custom filtered frame entry tables
+      -- each entry: { id, name, aura_base_filter="HELPFUL|HARMFUL", aura_modifier="NONE|...",
+      --               position={x,y},
       --               show, move, bg, bg_color, bar_mode, color, bar_bg_color,
       --               growth, timer, scale, spacing, max_icons, width, ... }
     },
@@ -104,9 +106,11 @@ Ls_Tweeks_DB = {
 ```
 
 ## Aura Frame Categories
-Four categories: `static`, `short`, `long`, `debuff`.  
-DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).  
+Four core categories: `static`, `short`, `long`, `debuff`.
+DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
+
+Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))`.
 
 ## af_gui.lua Layout System
 `BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).

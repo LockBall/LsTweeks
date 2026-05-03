@@ -6,7 +6,6 @@
 local addon_name, addon = ...
 
 local GetTime       = GetTime
-local issecretvalue = issecretvalue
 
 -- Ensure the unified module table is used
 addon.aura_frames = addon.aura_frames or {}
@@ -111,7 +110,6 @@ function M.BuildSettings(parent)
         make_cat("Debuff", { is_debuff = true }),
         make_cat("Short"),
         make_cat("Long"),
-        make_cat("Important"),
         make_cat("Essential"),
         make_cat("Utility"),
         make_cat("Tracked Buffs", { key = "tracked_buffs" }),
@@ -282,128 +280,10 @@ function M.BuildSettings(parent)
             row.child_btn = CreateFrame("Button", nil, tree_frame)
             row.child_fs = row.child_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             row.child_fs:SetPoint("LEFT", row.child_btn, "LEFT", 4, 0)
-            row.child_fs:SetText("Custom")
+            row.child_fs:SetText("Filters")
 
             custom_row_pool[index] = row
             return row
-        end
-
-        local function build_learned_aura_panel(panel, opts)
-            opts = opts or {}
-            local cache_key = opts.cache_key
-            local header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            header:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
-            header:SetText(opts.title or "Learned Auras")
-
-            local count_lbl = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            count_lbl:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -8)
-
-            local list_frame = CreateFrame("Frame", nil, panel, "BackdropTemplate")
-            list_frame:SetPoint("TOPLEFT", count_lbl, "BOTTOMLEFT", 0, -24)
-            list_frame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -16, 16)
-            list_frame:SetBackdrop({
-                bgFile   = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8x8",
-                tile = true, tileSize = 8, edgeSize = 1,
-                insets = { left = 0, right = 0, top = 0, bottom = 0 },
-            })
-            list_frame:SetBackdropColor(0.06, 0.06, 0.06, 0.9)
-            list_frame:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
-
-            local rows = {}
-
-            local function rebuild_learned()
-                for _, row in ipairs(rows) do row:Hide() end
-
-                local learned = {}
-                for sid, info in pairs((M.db and cache_key and M.db[cache_key]) or {}) do
-                    if type(info) == "table" then
-                        learned[#learned + 1] = {
-                            spell_id = sid,
-                            name = info.name or ("Spell " .. tostring(sid)),
-                            icon = info.icon,
-                            source = info.source,
-                        }
-                    end
-                end
-                table.sort(learned, function(a, b)
-                    local an, bn = tostring(a.name), tostring(b.name)
-                    if an == bn then return tostring(a.spell_id) < tostring(b.spell_id) end
-                    return an < bn
-                end)
-
-                count_lbl:SetText(tostring(#learned) .. " learned")
-
-                local row_y = 14
-                for i, item in ipairs(learned) do
-                    local row = rows[i]
-                    if not row then
-                        row = CreateFrame("Frame", nil, list_frame)
-                        row:SetHeight(22)
-                        row.icon = row:CreateTexture(nil, "ARTWORK")
-                        row.icon:SetSize(18, 18)
-                        row.icon:SetPoint("LEFT", row, "LEFT", 6, 0)
-                        row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                        row.id_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        row.id_lbl:SetPoint("RIGHT", row, "RIGHT", -8, 0)
-                        row.id_lbl:SetJustifyH("RIGHT")
-                        row.id_lbl:SetTextColor(0.55, 0.55, 0.55)
-                        row.name_lbl = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        row.name_lbl:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
-                        row.name_lbl:SetPoint("RIGHT", row.id_lbl, "LEFT", -8, 0)
-                        row.name_lbl:SetJustifyH("LEFT")
-                        row.name_lbl:SetWordWrap(false)
-                        rows[i] = row
-                    end
-                    row:ClearAllPoints()
-                    row:SetPoint("TOPLEFT", list_frame, "TOPLEFT", 0, -row_y)
-                    row:SetPoint("RIGHT", list_frame, "RIGHT", 0, 0)
-                    row.icon:SetTexture(item.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-                    row.name_lbl:SetText(item.name)
-                    row.id_lbl:SetText("[" .. tostring(item.spell_id) .. "]")
-                    if item.source then
-                        row.id_lbl:SetText("[" .. tostring(item.spell_id) .. "] " .. tostring(item.source))
-                    end
-                    row:Show()
-                    row_y = row_y + 22
-                end
-
-                if #learned == 0 then
-                    if not list_frame._empty_lbl then
-                        list_frame._empty_lbl = list_frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-                        list_frame._empty_lbl:SetPoint("CENTER", list_frame, "CENTER", 0, 0)
-                        list_frame._empty_lbl:SetText(opts.empty_text or "No auras learned yet.")
-                    end
-                    list_frame._empty_lbl:Show()
-                elseif list_frame._empty_lbl then
-                    list_frame._empty_lbl:Hide()
-                end
-            end
-
-            local refresh_btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-            refresh_btn:SetSize(70, 22)
-            refresh_btn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -12)
-            refresh_btn:SetText("Refresh")
-            refresh_btn:SetScript("OnClick", rebuild_learned)
-
-            local clear_btn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-            clear_btn:SetSize(70, 22)
-            clear_btn:SetPoint("RIGHT", refresh_btn, "LEFT", -6, 0)
-            clear_btn:SetText("Clear")
-            clear_btn:SetScript("OnClick", function()
-                if M.db and cache_key then M.db[cache_key] = {} end
-                rebuild_learned()
-            end)
-
-            rebuild_learned()
-        end
-
-        local function build_important_learned_panel(panel)
-            build_learned_aura_panel(panel, {
-                cache_key = "important_aura_cache",
-                title = "Learned Important Auras",
-                empty_text = "No Important auras learned yet.",
-            })
         end
 
         -- ----------------------------------------------------------------
@@ -416,7 +296,6 @@ function M.BuildSettings(parent)
             end
 
             local preset_child_rows = 0
-            if M._important_expanded ~= false then preset_child_rows = preset_child_rows + 1 end
             local cooldown_group_extra_h = CD_GROUP_LABEL_H + (CD_GROUP_PAD * 2)
             local preset_rows_height = (#frames_data + preset_child_rows) * (ROW_H + ROW_GAP)
                 + cooldown_group_extra_h
@@ -427,7 +306,7 @@ function M.BuildSettings(parent)
                 for index, entry in ipairs(M.db.custom_frames) do
                     local id        = entry.id
                     local cat_key   = id           -- node key for settings panel
-                    local child_key = id .. "_custom"  -- node key for child (whitelist) panel
+                    local child_key = id .. "_filters"  -- node key for child filter panel
                     local row       = acquire_custom_tree_row(index)
                     if row.entry_id ~= id then
                         row.entry_id = id
@@ -474,6 +353,11 @@ function M.BuildSettings(parent)
                     rename_box:Hide()
 
                     local function commit_rename()
+                        if rename_box._suppress_commit then
+                            rename_box._suppress_commit = nil
+                            return
+                        end
+                        if not rename_box:IsShown() then return end
                         local new_name = rename_box:GetText():match("^%s*(.-)%s*$")
                         rename_box:Hide()
                         cat_btn:Show()
@@ -494,12 +378,16 @@ function M.BuildSettings(parent)
                             invalidate_node(cat_key)
                             show_node(cat_key, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
                         end
+                        rename_box:ClearFocus()
                     end
 
                     rename_box:SetScript("OnEnterPressed", commit_rename)
+                    rename_box:SetScript("OnEditFocusLost", commit_rename)
                     rename_box:SetScript("OnEscapePressed", function()
+                        rename_box._suppress_commit = true
                         rename_box:Hide()
                         cat_btn:Show()
+                        rename_box:ClearFocus()
                     end)
 
                     -- Single-click: select; double-click: open rename
@@ -527,7 +415,7 @@ function M.BuildSettings(parent)
                     del_btn:SetScript("OnLeave", function() del_btn:SetAlpha(0) end)
                     del_btn:Show()
 
-                    local del_entry = entry  -- capture for closure
+                    local del_entry = entry
                     del_btn:SetScript("OnClick", function()
                         StaticPopupDialogs["LSTWEEKS_DEL_CUSTOM"] = {
                             text         = 'Delete custom frame "' .. del_entry.name .. '"?',
@@ -537,7 +425,7 @@ function M.BuildSettings(parent)
                                 -- If it was selected, clear current panel
                                 if current_panel then current_panel:Hide(); current_panel = nil end
                                 invalidate_node(del_entry.id)
-                                invalidate_node(del_entry.id .. "_custom")
+                                invalidate_node(del_entry.id .. "_filters")
                                 M.destroy_custom_frame(del_entry.id)
                                 rebuild_tree()
                                 -- Select first preset as fallback
@@ -557,7 +445,7 @@ function M.BuildSettings(parent)
 
                     y = y - (ROW_H + ROW_GAP)
 
-                    -- Child: Custom (whitelist panel)
+                    -- Child: Filters
                     local child_x = PAD + ARROW_W + INDENT_CHILD
                     local child_w = TREE_W - child_x - PAD
                     local child_btn = row.child_btn
@@ -635,6 +523,11 @@ function M.BuildSettings(parent)
                 add_btn_ref = add_btn
             end
         end  -- rebuild_tree
+
+        M.on_custom_frame_renamed = function(id, new_name)
+            local fs = id and node_fs_map[id]
+            if fs then fs:SetText(new_name) end
+        end
 
         -- ----------------------------------------------------------------
         -- PRESET ROWS (static rows, built once above the custom section)
@@ -730,11 +623,6 @@ function M.BuildSettings(parent)
                 y = y - CD_GROUP_PAD
             end
             local learned_key, expanded_key, learned_builder
-            if cat == "important" then
-                learned_key = "important_learned"
-                expanded_key = "_important_expanded"
-                learned_builder = build_important_learned_panel
-            end
             local has_learned_child = learned_key ~= nil
             if has_learned_child and M[expanded_key] == nil then M[expanded_key] = true end
 
@@ -820,16 +708,6 @@ function M.BuildSettings(parent)
             end
         end
 
-        -- Check learned child nodes
-        if not restored then
-            if last == "important_learned" then
-                local fs = node_fs_map.important_learned
-                if fs then set_selected(fs) end
-                show_node(last, build_important_learned_panel)
-                restored = true
-            end
-        end
-
         -- Check custom nodes
         if not restored and M.db and M.db.custom_frames then
             for _, entry in ipairs(M.db.custom_frames) do
@@ -839,10 +717,11 @@ function M.BuildSettings(parent)
                     show_node(entry.id, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
                     restored = true
                     break
-                elseif last == entry.id .. "_custom" then
-                    local fs = node_fs_map[entry.id .. "_custom"]
+                elseif last == entry.id .. "_filters" then
+                    local node_key = entry.id .. "_filters"
+                    local fs = node_fs_map[node_key]
                     if fs then set_selected(fs) end
-                    show_node(last, function(pnl) M.build_custom_child_panel(pnl, entry) end)
+                    show_node(node_key, function(pnl) M.build_custom_child_panel(pnl, entry) end)
                     restored = true
                     break
                 end
@@ -918,8 +797,11 @@ function M.BuildSettings(parent)
         -- Short Buff Threshold slider
         local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
             for k, v in pairs(M.frames) do
-                local cat = k:sub(6)
-                M.update_auras(v, k, "move_"..cat, "timer_"..cat, "bg_"..cat, "scale_"..cat, "spacing_"..cat, k == "show_debuff" and "HARMFUL" or "HELPFUL")
+                local params = v.update_params
+                if params then
+                    M.update_auras(v, params.show_key, params.move_key, params.timer_key, params.bg_key,
+                        params.scale_key, params.spacing_key, params.filter)
+                end
             end
         end)
         threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
@@ -937,43 +819,12 @@ function M.BuildSettings(parent)
         outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
         M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
-        local debug_container, debug_btn, _ = addon.CreateCheckbox(p, "Custom Aura Debug", M.db.debug_custom_aura == true,
-            function(is_checked)
-                M.db.debug_custom_aura = is_checked
-                if is_checked and M.clear_custom_debug_log then
-                    M.clear_custom_debug_log()
-                end
-            end
-        )
-        debug_container:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -12)
-        M.controls.debug_custom_aura_checkbox = debug_btn
-
-        local clear_debug_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-        clear_debug_btn:SetSize(96, 20)
-        clear_debug_btn:SetPoint("LEFT", debug_container, "RIGHT", 12, 0)
-        clear_debug_btn:SetText("Clear Debug")
-        clear_debug_btn:SetScript("OnClick", function()
-            if M.clear_custom_debug_log then
-                M.clear_custom_debug_log()
-            end
-        end)
-
-        local print_debug_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-        print_debug_btn:SetSize(96, 20)
-        print_debug_btn:SetPoint("LEFT", clear_debug_btn, "RIGHT", 8, 0)
-        print_debug_btn:SetText("Print Debug")
-        print_debug_btn:SetScript("OnClick", function()
-            if M.print_custom_debug_log then
-                M.print_custom_debug_log()
-            end
-        end)
-
         -- reset panel
         local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
-        resetPanel:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -16)
+        resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
     end
 
-    -- Custom panel builders (settings grid + whitelist/capture child) live in
+    -- Custom panel builders (settings grid + filter child) live in
     -- af_gui_custom.lua and are called as M.build_custom_settings_panel / M.build_custom_child_panel.
 
     -- ============================================================================
@@ -1472,11 +1323,6 @@ function M.sync_general_controls_from_db()
     local outlines_cb = M.controls["show_bar_section_outlines_checkbox"]
     if outlines_cb and outlines_cb.SetChecked then
         outlines_cb:SetChecked(M.db.show_bar_section_outlines == true)
-    end
-
-    local custom_debug_cb = M.controls["debug_custom_aura_checkbox"]
-    if custom_debug_cb and custom_debug_cb.SetChecked then
-        custom_debug_cb:SetChecked(M.db.debug_custom_aura == true)
     end
 
 end

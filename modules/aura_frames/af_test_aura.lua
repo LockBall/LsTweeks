@@ -31,7 +31,6 @@ local PREVIEW_META = {
     show_static = { name = "Test Static Buff", sort_id = 1 },
     show_short  = { name = "Test Short Buff",  sort_id = 2 },
     show_long   = { name = "Test Long Buff",   sort_id = 3 },
-    show_important = { name = "Test Important Buff", sort_id = 4 },
     show_essential = { name = "Test Essential Buff", sort_id = 5 },
     show_utility = { name = "Test Utility Buff", sort_id = 6 },
     show_tracked_buffs = { name = "Test Tracked Buff", sort_id = 7 },
@@ -66,7 +65,9 @@ end
 local function build_test_aura_entry(show_key, filter, short_threshold)
     local now = GetTime()
     local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
-    local meta = PREVIEW_META[show_key] or PREVIEW_META.show_debuff
+    local meta = PREVIEW_META[show_key]
+        or ((filter and filter:find("HARMFUL", 1, true)) and PREVIEW_META.show_debuff)
+        or { name = "Test Custom Buff", sort_id = 10 }
 
     return {
         name            = meta.name,

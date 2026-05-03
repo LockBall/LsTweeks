@@ -57,11 +57,11 @@ Source:
 https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
 
 
-2) Important comes from a different API surface.
+2) AuraFilters come from a different API surface.
 
 Aura filters
 `IMPORTANT` is an aura filter used with `C_UnitAuras`, for example:
-`Important frame = C_UnitAuras aura : "HELPFUL|IMPORTANT"`
+`Custom frame = C_UnitAuras aura : "HELPFUL|IMPORTANT"`
 
 C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL|IMPORTANT")  
 

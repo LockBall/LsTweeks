@@ -251,7 +251,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         sort_rule = SORT_RULE_NAME
     end
 
-    local wow_filter = (filter == "HELPFUL") and "HELPFUL" or "HARMFUL"
+    local wow_filter = (filter and filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
     local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
     local sorted_ids
     if self._sorted_ids_cache and self._sorted_ids_cache_key == cache_key then

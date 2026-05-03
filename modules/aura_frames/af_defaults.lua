@@ -13,14 +13,14 @@ M.controls = M.controls or {}
 M.db = M.db or {}
 
 -- Core aura buckets:
---   static, short, long, important, debuff
+--   static, short, long, debuff
 -- Blizzard cooldown-manager buckets read from live CDM viewer frames:
 --   essential, utility, tracked_buffs, tracked_bars
 -- Static has no timer controls, so it is excluded from TIMER_CATEGORIES.
 -- CDM_CATEGORIES preserves category order for sync/refresh loops, while
 -- WOW_COOLDOWN_CATEGORIES is a membership lookup for runtime checks.
-M.CATEGORIES       = { "static", "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
-M.TIMER_CATEGORIES = { "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
+M.CATEGORIES       = { "static", "short", "long", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
+M.TIMER_CATEGORIES = { "short", "long", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
 M.CDM_CATEGORIES   = { "essential", "utility", "tracked_buffs", "tracked_bars" }
 M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {}
 for _, category in ipairs(M.CDM_CATEGORIES) do
@@ -31,6 +31,27 @@ M.CDM_VIEWER_FRAMES = M.CDM_VIEWER_FRAMES or {
     utility       = "UtilityCooldownViewer",
     tracked_buffs = "BuffIconCooldownViewer",
     tracked_bars  = "BuffBarCooldownViewer",
+}
+
+M.CUSTOM_AURA_BASE_FILTERS = {
+    { value = "HELPFUL", text = "HELPFUL" },
+    { value = "HARMFUL", text = "HARMFUL" },
+}
+
+M.CUSTOM_AURA_MODIFIERS = {
+    { value = "NONE", text = "NONE" },
+    { value = "IMPORTANT", text = "IMPORTANT" },
+    { value = "PLAYER", text = "PLAYER" },
+    { value = "RAID", text = "RAID" },
+    { value = "RAID_IN_COMBAT", text = "RAID_IN_COMBAT" },
+    { value = "INCLUDE_NAME_PLATE_ONLY", text = "INCLUDE_NAME_PLATE_ONLY" },
+    { value = "MAW", text = "MAW" },
+    { value = "CANCELABLE", text = "CANCELABLE", force_base = "HELPFUL" },
+    { value = "NOT_CANCELABLE", text = "NOT_CANCELABLE", force_base = "HELPFUL" },
+    { value = "BIG_DEFENSIVE", text = "BIG_DEFENSIVE", force_base = "HELPFUL" },
+    { value = "EXTERNAL_DEFENSIVE", text = "EXTERNAL_DEFENSIVE", force_base = "HELPFUL" },
+    { value = "CROWD_CONTROL", text = "CROWD_CONTROL", force_base = "HARMFUL" },
+    { value = "RAID_PLAYER_DISPELLABLE", text = "RAID_PLAYER_DISPELLABLE", force_base = "HARMFUL" },
 }
 
 -- Shared default background color and opacity.
@@ -58,10 +79,8 @@ M.defaults = {
     show_grid      = false,
     show_bar_section_outlines = false,
     show_spell_id = false,
-    debug_custom_aura = false,
     fade_wow_cooldown_ooc = true,
     wow_cooldown_ooc_alpha = 0.35,
-    spell_name_cache = {},  -- persisted aura registry: spell_id -> {name, iconID, filter}
     short_threshold = 60,
     timer_number_font = "source_code_pro",
     timer_number_font_size = 10,
@@ -129,28 +148,6 @@ M.defaults = {
     timer_number_font_bold_long = false,
     timer_color_long = { r = 1, g = 1, b = 1 },
     bar_text_color_long = { r = 1, g = 1, b = 1 },
-
-    -- IMPORTANT
-    show_important      = true,
-    move_important      = true,
-    timer_important     = true,
-    bg_important        = false,
-    scale_important     = 1.0,
-    spacing_important   = 1.5,
-    width_important     = 200,
-    bar_mode_important  = true,
-    color_important     = { r = 1, g = 0.75, b = 0.15 },
-    bar_bg_color_important = default_bg_color(),
-    max_icons_important = 20,
-    growth_important = "DOWN",
-    bg_color_important = default_bg_color(),
-    sort_important = "timeleft",
-    test_aura_important = true,
-    timer_number_font_important = "source_code_pro",
-    timer_number_font_size_important = 10,
-    timer_number_font_bold_important = false,
-    timer_color_important = { r = 1, g = 1, b = 1 },
-    bar_text_color_important = { r = 1, g = 1, b = 1 },
 
     -- ESSENTIAL
     cooldown_mode_essential = false,
@@ -268,9 +265,8 @@ M.defaults = {
     timer_color_debuff = { r = 1, g = 1, b = 1 },
     bar_text_color_debuff = { r = 1, g = 1, b = 1 },
 
-    -- Custom whitelist frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
+    -- Custom filtered frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
     custom_frames = {},
-    important_aura_cache = {},
 
     -- POSITIONS
     -- pos.x = left edge offset from screen center; pos.y = top edge offset from screen center
@@ -278,26 +274,25 @@ M.defaults = {
         static = { point = "TOPLEFT", x = -100, y = 175 },
         short  = { point = "TOPLEFT", x = -100, y = 125 },
         long   = { point = "TOPLEFT", x = -100, y =  75 },
-        important = { point = "TOPLEFT", x = -100, y = 25 },
-        essential = { point = "TOPLEFT", x = -100, y = -25 },
-        utility = { point = "TOPLEFT", x = -100, y = -75 },
-        tracked_buffs = { point = "TOPLEFT", x = -100, y = -125 },
-        tracked_bars = { point = "TOPLEFT", x = -100, y = -175 },
-        debuff = { point = "TOPLEFT", x = -100, y = -225 },
+        essential = { point = "TOPLEFT", x = -100, y = 25 },
+        utility = { point = "TOPLEFT", x = -100, y = -25 },
+        tracked_buffs = { point = "TOPLEFT", x = -100, y = -75 },
+        tracked_bars = { point = "TOPLEFT", x = -100, y = -125 },
+        debuff = { point = "TOPLEFT", x = -100, y = -175 },
     }
 }
 
 -- ============================================================================
 -- CUSTOM FRAME TEMPLATE
--- Default values for a newly created custom whitelist frame.
+-- Default values for a newly created custom filtered frame.
 -- Each entry in M.db.custom_frames is a copy of this template with a unique id/name.
 M.CUSTOM_FRAME_TEMPLATE = {
     -- Identity (always overwritten on create, never defaulted)
     -- id   = "custom_N"   set by spawn logic
     -- name = "Custom N"   set by spawn logic
 
-    filter   = "HELPFUL",  -- "HELPFUL" or "HARMFUL"; toggling wipes whitelist
-    whitelist = {},         -- [spell_id (number)] = display_name (string)
+    aura_base_filter = "HELPFUL",
+    aura_modifier    = "NONE",
 
     -- Display
     show     = true,
@@ -378,6 +373,30 @@ function M.new_custom_entry(id, name)
     entry.id   = id   or next_custom_id()
     entry.name = name or next_custom_name()
     return entry
+end
+
+function M.get_custom_aura_filter(entry)
+    if not entry then return "HELPFUL" end
+    local base = entry.aura_base_filter
+    if base ~= "HARMFUL" then base = "HELPFUL" end
+    local modifier = entry.aura_modifier
+    if not modifier or modifier == "" or modifier == "NONE" then
+        return base
+    end
+    local def = M.get_custom_modifier_def and M.get_custom_modifier_def(modifier)
+    if def and def.force_base then
+        base = def.force_base
+        entry.aura_base_filter = base
+    end
+    return base .. "|" .. modifier
+end
+
+function M.get_custom_modifier_def(value)
+    value = value or "NONE"
+    for _, def in ipairs(M.CUSTOM_AURA_MODIFIERS or {}) do
+        if def.value == value then return def end
+    end
+    return (M.CUSTOM_AURA_MODIFIERS and M.CUSTOM_AURA_MODIFIERS[1]) or { value = "NONE", text = "NONE" }
 end
 
 -- ============================================================================

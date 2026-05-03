@@ -46,7 +46,6 @@ modules\aura_frames\af_render.lua
 modules\aura_frames\af_icon_layout.lua
 modules\aura_frames\af_custom_filter.lua
 modules\aura_frames\af_core.lua
-modules\aura_frames\af_spell_resolver.lua
 modules\aura_frames\af_gui.lua
 modules\aura_frames\af_gui_custom.lua
 modules\aura_frames\af_debug_outlines.lua
