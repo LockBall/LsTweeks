@@ -153,34 +153,6 @@ local function get_spell_cooldown_duration_object(spell_id)
     return nil
 end
 
-local function values_match(a, b)
-    return a ~= nil and b ~= nil
-        and not issecretvalue(a)
-        and not issecretvalue(b)
-        and a == b
-end
-
-local function find_active_helpful_aura_by_spell(spell_id, name, icon)
-    if not (spell_id and M._aura_map) then return nil end
-    if issecretvalue(spell_id) then return nil end
-    local cached = M.db and M.db.spell_name_cache and M.db.spell_name_cache[spell_id]
-    name = name or (cached and cached.name)
-    icon = icon or (cached and cached.icon)
-
-    for iid, entry in pairs(M._aura_map) do
-        if type(iid) == "number"
-                and entry
-                and entry.is_helpful then
-            if values_match(entry.spell_id, spell_id)
-                    or values_match(entry.name, name)
-                    or values_match(entry.icon, icon) then
-                return iid, entry
-            end
-        end
-    end
-    return nil
-end
-
 -- Blizzard global frame names for each WoW Cooldown Manager category.
 -- Children of these frames carry an auraInstanceID field when their aura is active.
 local VIEWER_FRAME_NAMES = {
@@ -429,15 +401,6 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 name = name or cached.name
                 icon = icon or cached.icon
                 spell_id = spell_id or cached.spell_id
-            end
-
-            if not iid and spell_id then
-                local active_iid, active_entry = find_active_helpful_aura_by_spell(spell_id, name, icon)
-                if active_iid and active_entry then
-                    active_entry.cdm_order = cdm_order
-                    target_map[active_iid] = active_entry
-                    iid = active_iid
-                end
             end
 
             if (not iid) and cooldown_id and icon then
