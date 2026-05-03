@@ -311,9 +311,15 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
         local show_cooldown_overlay = M.uses_cooldown_icon_overlay and M.uses_cooldown_icon_overlay(self.category, bar_mode, M.db)
-        local need_live_duration = (not is_static_frame) and (not is_spell_cooldown) and (show_timer_text or bar_mode)
+        local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
+            and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
+        local need_live_duration = (not is_static_frame)
+            and (not is_spell_cooldown)
+            and (show_timer_text or bar_mode)
+            and type(entry.instance_id) == "number"
+            and ((not has_cached_timing) or entry.live_remaining ~= nil)
         local live_duration = nil
-        if need_live_duration and type(entry.instance_id) == "number" then
+        if need_live_duration then
             local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
             if ok then live_duration = result end
         end
