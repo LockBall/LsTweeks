@@ -44,13 +44,16 @@ M.NUMBER_FONT_BOLD_PATHS = {
     source_code_pro = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
 }
 
-local function get_number_font_def(key, category)
+local function get_number_font_def(key, category, cfg_db)
     local selected_key = key
-    if not selected_key and M.db then
-        if category and M.db["timer_number_font_"..category] then
-            selected_key = M.db["timer_number_font_"..category]
+    local db = cfg_db or M.db
+    if not selected_key and db then
+        if cfg_db and db.timer_number_font then
+            selected_key = db.timer_number_font
+        elseif category and db["timer_number_font_"..category] then
+            selected_key = db["timer_number_font_"..category]
         else
-            selected_key = M.db.timer_number_font
+            selected_key = db.timer_number_font
         end
     end
     selected_key = selected_key or "source_code_pro"
@@ -68,8 +71,8 @@ end
 
 function M.apply_number_font_to_text(font_string, category, cfg_db)
     if not font_string or not font_string.SetFont then return end
-    local def = get_number_font_def(nil, category)
-    local size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category))
+    local def = get_number_font_def(nil, category, cfg_db)
+    local size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category, cfg_db))
         or def.size
         or 10
     local flags = def.flags or ""
@@ -86,7 +89,9 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
         local db = cfg_db or M.db
         if db then
             local bold_key = category and ("timer_number_font_bold_"..category)
-            if bold_key and db[bold_key] ~= nil then
+            if cfg_db and db.timer_number_font_bold ~= nil then
+                use_bold = db.timer_number_font_bold
+            elseif bold_key and db[bold_key] ~= nil then
                 use_bold = db[bold_key]
             else
                 use_bold = db.timer_number_font_bold or false
@@ -342,7 +347,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
 
         obj.time_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
-        M.apply_number_font_to_text(obj.time_text, category)
+        M.apply_number_font_to_text(obj.time_text, category, cfg_db)
         obj.time_text:SetWordWrap(false)
         if obj.time_text.SetMaxLines then
             obj.time_text:SetMaxLines(1)

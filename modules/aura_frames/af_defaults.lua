@@ -382,10 +382,15 @@ end
 
 -- ============================================================================
 -- SINGLE SOURCE OF TRUTH FOR TIMER FONT-SIZE LOOKUP
--- Category-specific value -> global value -> default global value.
-function M.get_timer_number_font_size(category)
-    local db = M.db or {}
+-- Frame-specific value -> category-specific value -> global value -> default global value.
+function M.get_timer_number_font_size(category, cfg_db)
+    local db = cfg_db or M.db or {}
     local defaults = M.defaults or {}
+
+    if cfg_db then
+        local custom_size = tonumber(db.timer_number_font_size)
+        if custom_size then return custom_size end
+    end
 
     if category then
         local category_size = tonumber(db["timer_number_font_size_"..category])

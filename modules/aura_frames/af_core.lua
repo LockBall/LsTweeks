@@ -297,7 +297,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if is_moving and not show_val and not preview_enabled then
-        local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category)) or 10
+        local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category, self._cfg_db)) or 10
         local bar_layout = M.get_bar_layout_params(timer_font_size)
         local min_height
         if bar_mode then
