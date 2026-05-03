@@ -12,7 +12,7 @@ All 26 files have the 2-sentence header comment and `local addon_name, addon = .
 ## 2. Compute Efficiency — MIXED (several issues)
 
 ### Caching & Hoisting — FAIL (minor)
-- `modules/aura_frames/af_core.lua` ~line 58 — `C_UnitAuras.GetAuraDuration()` called inside the icon tick loop. Must stay live (bars freeze without it per CLAUDE.md), but the global itself should be a cached local: `local GetAuraDuration = C_UnitAuras.GetAuraDuration`
+- `modules/aura_frames/af_core.lua` ~line 58 — `C_UnitAuras.GetAuraDuration()` called inside the icon tick loop. Must stay live (bars freeze without it per proj_mem.md), but the global itself should be a cached local: `local GetAuraDuration = C_UnitAuras.GetAuraDuration`
 - `modules/aura_frames/af_render.lua` ~line 249 — same pattern
 
 ### Loop Complexity — FAIL (one real concern)
