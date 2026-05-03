@@ -1,5 +1,7 @@
--- Single source of truth for all aura frames constants and default DB values.
--- Defines M.CATEGORIES, M.TIMER_CATEGORIES, per-category defaults (show, color, scale, growth, bar mode, font, etc.), and M.get_timer_number_font_size(). Nothing else in the module should hardcode default values.
+-- Aura frame constants and default DB values.
+-- Defines category lists, CDM frame mappings, per-category defaults, and
+-- M.get_timer_number_font_size(). Runtime files should read these values
+-- instead of repeating category names or default settings.
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -10,16 +12,28 @@ M.frames = M.frames or {}
 M.controls = M.controls or {}
 M.db = M.db or {}
 
--- Single source of truth for category iteration.
 -- Core aura buckets:
 --   static, short, long, important, debuff
--- Blizzard cooldown-manager buckets mirrored as addon frames:
+-- Blizzard cooldown-manager buckets read from live CDM viewer frames:
 --   essential, utility, tracked_buffs, tracked_bars
 -- Static has no timer controls, so it is excluded from TIMER_CATEGORIES.
+-- CDM_CATEGORIES preserves category order for sync/refresh loops, while
+-- WOW_COOLDOWN_CATEGORIES is a membership lookup for runtime checks.
 M.CATEGORIES       = { "static", "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
 M.TIMER_CATEGORIES = { "short", "long", "important", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
+M.CDM_CATEGORIES   = { "essential", "utility", "tracked_buffs", "tracked_bars" }
+M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {}
+for _, category in ipairs(M.CDM_CATEGORIES) do
+    M.WOW_COOLDOWN_CATEGORIES[category] = true
+end
+M.CDM_VIEWER_FRAMES = M.CDM_VIEWER_FRAMES or {
+    essential     = "EssentialCooldownViewer",
+    utility       = "UtilityCooldownViewer",
+    tracked_buffs = "BuffIconCooldownViewer",
+    tracked_bars  = "BuffBarCooldownViewer",
+}
 
--- Single source of truth for default background color and opacity.
+-- Shared default background color and opacity.
 M.BAR_BG_ALPHA_DEFAULT = 0.50
 M.BAR_BG_GRAY_DEFAULT = 0.50
 

@@ -14,12 +14,6 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
-M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {
-    essential = true,
-    utility = true,
-    tracked_buffs = true,
-    tracked_bars = true,
-}
 local WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES
 
 function M.uses_cooldown_icon_overlay(category, bar_mode, db)
@@ -153,18 +147,13 @@ function M.toggle_blizz_debuffs(hide)
     set_blizz_frame_state(DebuffFrame, hide)
 end
 
-local BLIZZ_CDM_VIEWER_FRAMES = {
-    essential = "EssentialCooldownViewer",
-    utility = "UtilityCooldownViewer",
-    tracked_buffs = "BuffIconCooldownViewer",
-    tracked_bars = "BuffBarCooldownViewer",
-}
-
 function M.update_blizz_cdm_visibility(category)
-    local frame_name = BLIZZ_CDM_VIEWER_FRAMES[category]
+    local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
     local frame = frame_name and _G[frame_name]
     if not frame then return end
 
+    -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
+    -- aura/cooldown state we read; alpha keeps them active but invisible.
     local hide = M.db and M.db["hide_blizz_cdm_" .. category]
     frame:SetAlpha(hide and 0 or 1)
     frame:EnableMouse(not hide)
