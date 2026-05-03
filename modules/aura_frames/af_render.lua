@@ -136,8 +136,11 @@ end
 
 local function set_icon_greyed(texture, greyed)
     if not texture then return end
+    greyed = greyed and true or false
+    if texture._lstweeks_greyed == greyed then return end
+    texture._lstweeks_greyed = greyed
     if texture.SetDesaturated then
-        texture:SetDesaturated(greyed and true or false)
+        texture:SetDesaturated(greyed)
     elseif texture.SetDesaturation then
         texture:SetDesaturation(greyed and 1 or 0)
     end
