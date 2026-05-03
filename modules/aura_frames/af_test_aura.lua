@@ -1,5 +1,5 @@
--- Fake aura preview system used for layout and UI testing outside of combat.
--- Injects synthetic aura data into the scan results so frames render with placeholder icons without needing real buffs active.
+-- Fake aura preview data for layout and UI testing outside of combat.
+-- Preview entries are rendered by the normal aura-frame renderer/ticker path.
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -76,6 +76,7 @@ function M.build_test_aura_entry(show_key, filter, short_threshold)
         remaining       = remaining,
         count           = count,
         filter          = filter,
+        instance_id     = "__test_preview__",
         added_at        = now,
         preview_sort_id = meta.sort_id,
         is_test_preview = true,
@@ -86,49 +87,12 @@ function M.append_test_aura(aura_map, show_key, filter, short_threshold)
     aura_map["__test_preview__"] = M.build_test_aura_entry(show_key, filter, short_threshold)
 end
 
-function M.update_test_preview_display(obj, show_key, short_threshold, show_timer_text, bar_mode, now)
+function M.update_test_preview_state(obj, show_key, short_threshold, now)
     local duration, remaining, count = M.get_test_preview_state(show_key, short_threshold, now)
-    local category = show_key:sub(6)
-    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay and M.uses_cooldown_icon_overlay(category, bar_mode, M.db)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining
     obj.aura_expiration = now + remaining
     obj.aura_scan_time = now
-
-    -- Unify test aura display for all categories (short, long, debuff)
-    if bar_mode and obj.bar and obj.bar:IsShown() then
-        obj.bar:SetMinMaxValues(0, duration)
-        obj.bar:SetValue(remaining)
-        -- In bar mode: stack count shown inline with name if >1
-        if count and count > 1 then
-            obj.count_text:SetText(count)
-            obj.count_text:SetPoint("LEFT", obj.bar, "LEFT", 4, 0)
-            obj.count_text:Show()
-        else
-            obj.count_text:Hide()
-        end
-        if show_timer_text and duration > 0 then
-            obj.time_text:Show()
-            M.set_timer_text(obj.time_text, category, remaining)
-        else
-            obj.time_text:Hide()
-        end
-    else
-        -- Icon mode: stack count at bottom-right if >1
-        if count and count > 1 then
-            obj.count_text:SetText(count)
-            obj.count_text:ClearAllPoints()
-            obj.count_text:SetPoint("BOTTOMRIGHT", obj, "BOTTOMRIGHT", 0, 1)
-            obj.count_text:Show()
-        else
-            obj.count_text:Hide()
-        end
-        if show_timer_text and duration > 0 and not cooldown_icon_overlay then
-            obj.time_text:Show()
-            M.set_timer_text(obj.time_text, category, remaining)
-        else
-            obj.time_text:Hide()
-        end
-    end
+    obj.aura_count = count
 end

@@ -53,14 +53,15 @@ function M.tick_visible_icons(now)
             local bar_mode = frame._bar_mode
             for i = 1, #frame.icons do
                 local obj = frame.icons[i]
+                if obj:IsShown() and obj.is_test_preview and M.update_test_preview_state then
+                    M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
+                end
                 if obj:IsShown() and is_static_frame then
                     if obj.time_text._last_text ~= "" then
                         obj.time_text:SetText("")
                         obj.time_text._last_text = ""
                     end
-                elseif obj:IsShown() and obj.is_test_preview then
-                    M.update_test_preview_display(obj, "show_" .. frame.category, short_threshold, show_timer_text, bar_mode, now)
-                elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown) then
+                elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown or obj.is_test_preview) then
                     local show_cooldown_overlay = M.uses_cooldown_icon_overlay(frame.category, bar_mode, db)
                     if show_timer_text then
                         if show_cooldown_overlay then
@@ -99,6 +100,9 @@ function M.tick_visible_icons(now)
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
                         end
                         if obj.bar and obj.bar:IsShown() then
+                            if obj.aura_duration and obj.aura_duration > 0 then
+                                obj.bar:SetMinMaxValues(0, obj.aura_duration)
+                            end
                             obj.bar:SetValue(remaining)
                         end
                     elseif remaining == 0 then
@@ -116,6 +120,12 @@ function M.tick_visible_icons(now)
                         set_icon_greyed(obj.texture, obj.grey_cooldown)
                     elseif obj.texture then
                         set_icon_greyed(obj.texture, false)
+                    end
+                    if obj.aura_count and obj.aura_count > 1 then
+                        obj.count_text:SetText(obj.aura_count)
+                        obj.count_text:Show()
+                    else
+                        obj.count_text:Hide()
                     end
                 end
             end

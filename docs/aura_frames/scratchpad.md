@@ -42,9 +42,9 @@ Current cleanup TODO:
    Keep auto-refresh hooks best-effort; do not imply they fully replace manual sync unless testing proves it.
    Result: `Sync to CDM` tooltip explains that group changes usually update automatically, while same-group reorder may need manual sync.
 
-12. [todo] Test aura rendering refactor
+12. [done] Test aura rendering refactor
    Refactor test aura previews toward "fake data, real rendering" so they follow the same render/ticker/layout rules as real aura and CDM entries.
-   Avoid separate visual behavior in `af_test_aura.lua` except for generating placeholder icon/duration/count data.
+   Result: `af_test_aura.lua` now only builds and updates synthetic preview state. Timer text, bars, stack text, and cooldown-mode timer hiding flow through the normal render/ticker path.
 
 ----
 
