@@ -154,3 +154,8 @@ Marble background, ornate dialog-frame borders, 4 corner rivet textures. Apply v
 - `ColorPickerFrame` — system color picker
 - `InCombatLockdown()` — combat guard
 - `LibDataBroker`, `LibDBIcon` — minimap button
+
+## error lesson
+error on reload, a window is immediately displayed with a message and 2 buttons, disable, ignore
+LsTweeks has been blocked from an action only available tot he Blizzard UI. You can disable this addon and relaod the UI.
+was result of CLEU issue

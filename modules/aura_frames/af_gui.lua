@@ -240,12 +240,53 @@ function M.BuildSettings(parent)
             return btn, fs
         end
 
-        -- Tracks all custom tree row objects so we can rebuild them.
-        local custom_row_frames = {}
+        -- Reused row controls for custom frame tree entries.
+        local custom_row_pool = {}
         -- Tracks the current y cursor so + Custom button can be repositioned.
         local add_btn_ref = nil  -- set after initial build
 
         local node_fs_map = {}
+
+        local function hide_custom_tree_row(row)
+            if not row then return end
+            row.arrow:Hide()
+            row.cat_btn:Hide()
+            row.rename_box:Hide()
+            row.del_btn:Hide()
+            row.child_btn:Hide()
+        end
+
+        local function acquire_custom_tree_row(index)
+            local row = custom_row_pool[index]
+            if row then return row end
+
+            row = {}
+
+            row.arrow = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
+            row.arrow:SetSize(ARROW_W, ARROW_W)
+            row.arrow:SetNormalFontObject("GameFontNormalLarge")
+            row.arrow_fs = row.arrow:GetFontString()
+
+            row.cat_btn = CreateFrame("Button", nil, tree_frame)
+            row.cat_fs = row.cat_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.cat_fs:SetPoint("LEFT", row.cat_btn, "LEFT", 4, 0)
+            row.cat_fs:SetFont(row.cat_fs:GetFont(), select(2, row.cat_fs:GetFont()) or 11, "OUTLINE")
+
+            row.rename_box = CreateFrame("EditBox", nil, tree_frame, "InputBoxTemplate")
+            row.rename_box:SetAutoFocus(true)
+            row.rename_box:SetMaxLetters(32)
+
+            row.del_btn = CreateFrame("Button", nil, tree_frame, "UIPanelCloseButton")
+            row.del_btn:SetSize(16, 16)
+
+            row.child_btn = CreateFrame("Button", nil, tree_frame)
+            row.child_fs = row.child_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.child_fs:SetPoint("LEFT", row.child_btn, "LEFT", 4, 0)
+            row.child_fs:SetText("Custom")
+
+            custom_row_pool[index] = row
+            return row
+        end
 
         local function build_learned_aura_panel(panel, opts)
             opts = opts or {}
@@ -370,12 +411,9 @@ function M.BuildSettings(parent)
         -- Called once at build time and again after add/delete/rename.
         -- ----------------------------------------------------------------
         local function rebuild_tree()
-            -- Remove previous custom rows
-            for _, f in ipairs(custom_row_frames) do
-                f:Hide()
-                f:SetParent(nil)
+            for _, row in ipairs(custom_row_pool) do
+                hide_custom_tree_row(row)
             end
-            custom_row_frames = {}
 
             local preset_child_rows = 0
             if M._important_expanded ~= false then preset_child_rows = preset_child_rows + 1 end
@@ -386,51 +424,54 @@ function M.BuildSettings(parent)
 
             -- ---- Custom frame rows ----
             if M.db and M.db.custom_frames then
-                for _, entry in ipairs(M.db.custom_frames) do
+                for index, entry in ipairs(M.db.custom_frames) do
                     local id        = entry.id
                     local cat_key   = id           -- node key for settings panel
                     local child_key = id .. "_custom"  -- node key for child (whitelist) panel
+                    local row       = acquire_custom_tree_row(index)
+                    if row.entry_id ~= id then
+                        row.entry_id = id
+                        row.last_click_time = 0
+                    end
 
                     -- Track expand state per custom entry (ephemeral)
                     M._custom_expanded = M._custom_expanded or {}
                     if M._custom_expanded[id] == nil then M._custom_expanded[id] = true end
 
                     -- Expand/collapse arrow
-                    local arrow = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
-                    arrow:SetSize(ARROW_W, ARROW_W)
+                    local arrow = row.arrow
+                    local arrow_fs = row.arrow_fs
+                    arrow:ClearAllPoints()
                     arrow:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y)
-                    arrow:SetNormalFontObject("GameFontNormalLarge")
-                    local arrow_fs = arrow:GetFontString()
                     arrow_fs:SetText(M._custom_expanded[id] and "-" or "+")
-                    table.insert(custom_row_frames, arrow)
+                    arrow:Show()
 
                     -- Name button (with rename EditBox on click if already selected)
                     local cat_x = PAD + ARROW_W + 2
                     local cat_w = TREE_W - cat_x - PAD - 20  -- leave room for × button
-                    local cat_btn = CreateFrame("Button", nil, tree_frame)
+                    local cat_btn = row.cat_btn
+                    local cat_fs = row.cat_fs
+                    cat_btn:ClearAllPoints()
                     cat_btn:SetSize(cat_w, ROW_H)
                     cat_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", cat_x, y)
-                    local cat_fs = cat_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                    cat_fs:SetPoint("LEFT", cat_btn, "LEFT", 4, 0)
                     cat_fs:SetText(entry.name)
-                    cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
                     cat_btn:SetScript("OnEnter", function()
                         if cat_fs ~= selected_fs then cat_fs:SetTextColor(unpack(HOVER_COLOR)) end
+                        row.del_btn:SetAlpha(1)
                     end)
                     cat_btn:SetScript("OnLeave", function()
                         if cat_fs ~= selected_fs then cat_fs:SetTextColor(unpack(NORM_COLOR)) end
+                        row.del_btn:SetAlpha(0)
                     end)
+                    cat_btn:Show()
                     node_fs_map[cat_key] = cat_fs
-                    table.insert(custom_row_frames, cat_btn)
 
                     -- Inline rename EditBox (hidden by default; shown on double-click or rename trigger)
-                    local rename_box = CreateFrame("EditBox", nil, tree_frame, "InputBoxTemplate")
+                    local rename_box = row.rename_box
+                    rename_box:ClearAllPoints()
                     rename_box:SetSize(cat_w - 4, ROW_H - 2)
                     rename_box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", cat_x + 4, y - 1)
-                    rename_box:SetAutoFocus(true)
-                    rename_box:SetMaxLetters(32)
                     rename_box:Hide()
-                    table.insert(custom_row_frames, rename_box)
 
                     local function commit_rename()
                         local new_name = rename_box:GetText():match("^%s*(.-)%s*$")
@@ -462,10 +503,9 @@ function M.BuildSettings(parent)
                     end)
 
                     -- Single-click: select; double-click: open rename
-                    local last_click_time = 0
                     cat_btn:SetScript("OnClick", function()
                         local now = GetTime()
-                        if (now - last_click_time) < 0.4 then
+                        if (now - (row.last_click_time or 0)) < 0.4 then
                             -- Double-click: open inline rename
                             rename_box:SetText(entry.name)
                             rename_box:Show()
@@ -475,19 +515,17 @@ function M.BuildSettings(parent)
                             set_selected(cat_fs)
                             show_node(cat_key, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
                         end
-                        last_click_time = now
+                        row.last_click_time = now
                     end)
 
                     -- × delete button (appears on hover of the row)
-                    local del_btn = CreateFrame("Button", nil, tree_frame, "UIPanelCloseButton")
-                    del_btn:SetSize(16, 16)
+                    local del_btn = row.del_btn
+                    del_btn:ClearAllPoints()
                     del_btn:SetPoint("TOPRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD, y - 3)
                     del_btn:SetAlpha(0)
                     del_btn:SetScript("OnEnter", function() del_btn:SetAlpha(1) end)
                     del_btn:SetScript("OnLeave", function() del_btn:SetAlpha(0) end)
-                    cat_btn:HookScript("OnEnter", function() del_btn:SetAlpha(1) end)
-                    cat_btn:HookScript("OnLeave", function() del_btn:SetAlpha(0) end)
-                    table.insert(custom_row_frames, del_btn)
+                    del_btn:Show()
 
                     local del_entry = entry  -- capture for closure
                     del_btn:SetScript("OnClick", function()
@@ -522,12 +560,11 @@ function M.BuildSettings(parent)
                     -- Child: Custom (whitelist panel)
                     local child_x = PAD + ARROW_W + INDENT_CHILD
                     local child_w = TREE_W - child_x - PAD
-                    local child_btn = CreateFrame("Button", nil, tree_frame)
+                    local child_btn = row.child_btn
+                    local child_fs = row.child_fs
+                    child_btn:ClearAllPoints()
                     child_btn:SetSize(child_w, ROW_H)
                     child_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", child_x, y)
-                    local child_fs = child_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                    child_fs:SetPoint("LEFT", child_btn, "LEFT", 4, 0)
-                    child_fs:SetText("Custom")
                     child_btn:SetScript("OnEnter", function()
                         if child_fs ~= selected_fs then child_fs:SetTextColor(unpack(HOVER_COLOR)) end
                     end)
@@ -536,7 +573,6 @@ function M.BuildSettings(parent)
                     end)
                     child_btn:SetShown(M._custom_expanded[id])
                     node_fs_map[child_key] = child_fs
-                    table.insert(custom_row_frames, child_btn)
 
                     local child_entry = entry
                     child_btn:SetScript("OnClick", function()

@@ -1,135 +1,260 @@
-# Aura Frames Reference (Consolidated)
+# Aura Frames Reference
 
-This is the single source-of-truth document for aura frame behavior in this addon.
+This document describes the current `modules/aura_frames` module. It should match the code loaded by `LsTweeks.toc`.
 
-Scope:
-- modules/aura_frames/af_scan.lua
-- modules/aura_frames/af_core.lua
-- modules/aura_frames/af_render.lua
-- modules/aura_frames/af_main.lua
+## Load Order
 
-## 1. Architecture and Flow
+Files load in this order and all extend `addon.aura_frames` as `M`:
 
-1. AF_main.lua registers per-frame aura events:
-   - UNIT_AURA (player)
-   - PLAYER_ENTERING_WORLD
-   - PLAYER_REGEN_DISABLED
-   - PLAYER_REGEN_ENABLED
-2. UNIT_AURA payloads are merged via merge_aura_info() while scans are pending.
-3. Scans are deferred with C_Timer.After(0.1) to avoid event-dispatch taint windows.
-4. update_auras() populates each frame's _aura_map.
-5. render_aura_map() renders icons/bars from cached entries.
-6. A shared C_Timer.NewTicker(0.1) updates timer text/bar values for visible icons.
+1. `af_defaults.lua` - category lists, defaults, custom-frame template, CDM mappings.
+2. `af_test_aura.lua` - fake preview entries for Test Aura toggles.
+3. `af_scan.lua` - player aura scanning, classification, important aura learning, CDM viewer reads.
+4. `af_render.lua` - icon/bar rendering, timer text, UNIT_AURA payload merging.
+5. `af_icon_layout.lua` - icon/bar geometry and frame height anchoring.
+6. `af_custom_filter.lua` - custom whitelist matching and combat fallback.
+7. `af_core.lua` - ticker, Blizzard visibility controls, per-frame update pipeline.
+8. `af_spell_resolver.lua` - spell metadata lookup and persisted registry updates.
+9. `af_gui.lua` - Aura Frames settings UI and Frames tree.
+10. `af_gui_custom.lua` - custom frame settings and whitelist/capture panels.
+11. `af_debug_outlines.lua` - optional slot outline debug helper.
+12. `af_grid.lua` - move-mode grid overlay and snap helpers.
+13. `af_main.lua` - frame construction, event wiring, startup, reset handling.
 
-## 2. Data Model
+## Categories
 
-make_entry() stores per-aura records keyed by auraInstanceID:
-- instance_id
-- name, icon
-- duration, expiration, remaining
-- spell_id, dispel_name, count
-- filter, added_at
+Preset categories are defined in `af_defaults.lua`:
 
-Runtime maps:
-- frame._aura_map: per-frame cache used for rendering
-- frame._custom_iid_to_sid: custom-frame session memory for proven auraInstanceID -> spellID matches
-- M._aura_map: shared unified scan cache keyed by auraInstanceID
-- M.db.spell_name_cache: persisted aura registry keyed by spellID
+```lua
+M.CATEGORIES = {
+    "static", "short", "long", "important",
+    "essential", "utility", "tracked_buffs", "tracked_bars",
+    "debuff",
+}
+```
 
-## 3. Classification Behavior
+`static` has no timer controls. `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live Blizzard Cooldown Manager viewer frames through `M.CDM_VIEWER_FRAMES`.
 
-### Unified Scan
+Custom whitelist frames are stored in `M.db.custom_frames`, capped by `M.MAX_CUSTOM_FRAMES = 4`, and use per-entry settings instead of flat DB keys.
 
-M.unified_scan() scans helpful and harmful player auras into M._aura_map.
+## Startup
 
-Helpful auras are assigned exactly one category:
-- show_static
-- show_short
-- show_long
+`af_main.lua` handles `ADDON_LOADED`:
 
-Classification uses best readable timing first:
-- live_remaining from C_UnitAuras.GetAuraDuration("player", iid)
-- rem from compute_remaining(duration, expiration)
+- links `M.db` to `Ls_Tweeks_DB.aura_frames`
+- applies `M.defaults`
+- resets session learning tables (`M._known_static`, `M._known_long`)
+- migrates timer font keys, bar background defaults, and old position anchors
+- creates all preset aura frames
+- creates saved custom frames
+- starts the shared `C_Timer.NewTicker(0.1)` timer ticker
+- applies Blizzard buff/debuff visibility preferences
+- schedules CDM startup refreshes
+- registers the `Buffs & Debuffs` settings category
+- creates the move-mode grid overlay
 
-Stability helpers:
-- M._known_static
-- M._known_long
+Each aura frame owns a fixed icon pool created at startup. Changing `max_icons_<category>` requires `/reload`.
 
-Fallback logic uses:
-- C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
-- old category memory (by iid/spell)
-- replacement preference when one aura is removed and one is added
+## Event Flow
 
-Harmful auras are scanned in the same unified pass:
-- Reads by index via GetDebuffDataByIndex
-- Uses guarded readable checks for timing/fields
-- Recovers old entry data when current fields are secret
-- Uses category = "debuff"
+Each frame registers:
 
-## 4. Taint and Secret-Value Strategy
+- `UNIT_AURA` for `player`
+- `PLAYER_ENTERING_WORLD`
+- `PLAYER_REGEN_DISABLED`
+- `PLAYER_REGEN_ENABLED`
+- `PLAYER_SPECIALIZATION_CHANGED`
 
-Core rules:
-1. Do not process aura fields directly in UNIT_AURA event context.
-2. Defer scans (0.1s) and merge payloads first.
-3. Guard all comparisons/arithmetic with issecretvalue() where needed.
-4. Preserve old cached entry data when current fields are unreadable.
+CDM-backed frames also register:
 
-Where this is enforced:
-- af_main.lua
-  - merge_aura_info() unions payload deltas
-  - OnEvent queues one deferred scan and deduplicates rapid events
-- af_scan.lua
-  - compute_remaining() returns nil for unreadable timing
-  - unified_scan() branches by readability
-  - safe_duration/safe_expiration/safe_remaining fallback chains preserve continuity
+- `SPELL_UPDATE_COOLDOWN`
+- `SPELL_UPDATE_CHARGES`
 
-Guardrails:
-- Keep HELPFUL classification in unified_scan()
-- Avoid reintroducing independent per-frame HELPFUL scans
-- Any new math/comparison on aura fields must check readability first
+The frame `OnEvent` handler does not scan immediately. It merges `UNIT_AURA` payloads with `M.merge_aura_info()`, sets a `_scan_pending` guard, and defers work with `C_Timer.After(0.1)`.
 
-## 5. Display, Timers, and Stacks
+Deferred callback flow:
 
-render_aura_map():
-- Reads live stack count via GetAuraApplicationDisplayCount()
-- Reads live duration via GetAuraDuration()
-- Static frame explicitly suppresses timer text
-- Uses format_time() for readable output
+```text
+af_main OnEvent
+  -> M.merge_aura_info()
+  -> C_Timer.After(0.1)
+  -> af_core:M.update_auras()
+     -> af_scan:M.unified_scan() when shared scan cache is stale
+     -> category/custom/CDM filtering
+     -> af_test_aura:M.append_test_aura() when preview is enabled
+     -> af_icon_layout:M.setup_layout() when layout cache changed
+     -> af_render:M.render_aura_map()
+     -> af_icon_layout:M.set_height_for_growth()
+```
 
-Ticker (AF_main.lua):
-- Runs every 0.1s
-- Updates shown icon timers/bars
-- Uses cached expiration/remaining fallback when live remaining is secret
-- Preserves minute/hour formatting for long durations when available via safe fallback
+The shared ticker calls `M.tick_visible_icons()` every 0.1s to update visible timer text, bars, stack text, test previews, and cooldown icon grey state without forcing a full rescan.
 
-## 6. API Reference (Used Here)
+## Aura Data
 
-Active APIs:
-1. C_UnitAuras.GetBuffDataByIndex("player", i)
-2. C_UnitAuras.GetDebuffDataByIndex("player", i)
-3. C_UnitAuras.GetAuraDuration("player", auraInstanceID)
-4. C_UnitAuras.GetAuraApplicationDisplayCount("player", auraInstanceID)
-5. C_UnitAuras.GetUnitAuraInstanceIDs("player", filter, nil, sortRule, sortDirection)
-6. C_UnitAuras.DoesAuraHaveExpirationTime("player", auraInstanceID)
-7. GameTooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)
+`M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint)` populates `M._aura_map`.
 
-Usage notes:
-- GetAuraDuration is used both for classification and render-time countdown updates.
-- GetUnitAuraInstanceIDs provides game-side sorting; local map filters the final list.
-- DoesAuraHaveExpirationTime is treated as tri-state (true/false/unknown-secret) when needed.
+Entries are keyed by aura instance ID when live aura data provides one. Test previews use `"__test_preview__"`. Remembered custom-frame combat fallbacks can use synthetic keys such as `"__remembered_<spellID>"`.
 
-## 7. Sorting and Ordering
+Common entry fields:
 
-Primary ordering:
-- Enum.UnitAuraSortRule.Default
-- Enum.UnitAuraSortRule.ExpirationOnly (timeleft mode)
-- Enum.UnitAuraSortRule.NameOnly (name mode)
+- `instance_id`
+- `spell_id`
+- `name`
+- `icon`
+- `duration`
+- `expiration`
+- `remaining`
+- `count`
+- `live_remaining`
+- `live_count`
+- `filter`
+- `is_helpful`
+- `category`
+- `is_important`
+- `order_key`
+- `added_at`
 
-Short-frame stabilization:
-- A persistent _short_order_map keeps buff positions stable during stack changes.
-- Removed keys are cleaned up so re-applied buffs are treated as new entries.
+CDM cooldown-mode entries may also include:
 
-## 8. Compatibility Notes
+- `is_spell_cooldown`
+- `duration_object`
+- `grey_cooldown`
+- `cdm_order`
 
-- For this addon target/build, TOC Interface should remain 120000.
-- The module is written against modern C_UnitAuras APIs and avoids legacy UnitAura usage.
+## Classification
+
+Helpful player auras are classified into `static`, `short`, or `long`.
+
+- `static`: permanent aura, or learned permanent aura.
+- `short`: timed aura with remaining duration at or below `short_threshold`.
+- `long`: timed aura above `short_threshold`, or a learned long aura whose fields are secret.
+
+The `important` frame is not a separate base classification. `af_scan.lua` marks a helpful aura with `entry.is_important = true` when it appears in the `"HELPFUL|IMPORTANT"` scan. The Important frame displays entries with `entry.is_important`.
+
+Harmful player auras are classified as `debuff`.
+
+Classification is stabilized by:
+
+- `M._known_static`
+- `M._known_long`
+- old entry carry-forward
+- old category by spell ID
+- one-removed/one-added replacement hints
+- `C_UnitAuras.DoesAuraHaveExpirationTime()` when direct timing fields are secret
+
+## CDM-Backed Frames
+
+CDM categories are:
+
+- `essential`
+- `utility`
+- `tracked_buffs`
+- `tracked_bars`
+
+`M.add_cooldown_viewer_category_entries(target_map, category)` reads live Blizzard viewer children. Active aura display prefers child `auraInstanceID`. Cooldown-mode fallback uses hooked cooldown timing data and real spell cooldown state.
+
+`essential` and `utility` expose `cooldown_mode_<category>`. In icon mode with cooldown mode enabled, timer text is hidden and a native `Cooldown` overlay is used. Grey state comes from real spell cooldown data, not from the Blizzard child’s visual state.
+
+Blizzard CDM viewers are not hidden with `Hide()` because hidden viewers stop producing useful child state. `M.update_blizz_cdm_visibility(category)` uses alpha and mouse enabling instead.
+
+Manual `Sync to CDM` in the Frames tree calls the queued CDM refresh path. Startup/settings refreshes prepare the Blizzard viewers outside combat.
+
+## Custom Frames
+
+Custom frames are created from `M.CUSTOM_FRAME_TEMPLATE` and persisted under `M.db.custom_frames`.
+
+`M.create_custom_frame(entry)` reuses `M.create_aura_frame()` but tags the frame with:
+
+- `frame.is_custom = true`
+- `frame.custom_entry = entry`
+
+Custom frames store settings directly in the entry table (`show`, `move`, `timer`, `width`, etc.) and store position in `entry.position`.
+
+`M.filter_custom_aura_map(frame, custom_entry, shared_map)` filters the shared scan by whitelist and filter type. Matching uses:
+
+- readable spell IDs
+- readable names
+- persisted `M.db.spell_name_cache`
+- per-frame `auraInstanceID -> spellID` memory
+- direct whitelisted spell lookup for newly applied combat auras
+- short-lived last-seen replay while in combat when fields are secret
+
+The custom settings and whitelist panels are built lazily by `af_gui_custom.lua`.
+
+## Rendering
+
+`M.render_aura_map()` receives a per-frame aura map and writes visual state into the pre-created icon pool.
+
+It handles:
+
+- game-native sort order through `C_UnitAuras.GetUnitAuraInstanceIDs()`
+- fallback sort by instance/preview ID
+- stable short-frame ordering with `_short_order_map`
+- CDM ordering with `cdm_order`
+- icon texture
+- stack/count text
+- bar mode name/timer/count placement
+- static timer suppression
+- live duration fallback via `C_UnitAuras.GetAuraDuration()`
+- native cooldown overlays for spell-cooldown entries
+- unused icon hiding and state cleanup
+
+`M.set_timer_text()` is the shared timer formatter for render-time and ticker updates.
+
+## Layout
+
+`M.setup_layout()` owns slot geometry and writes `_layout_cache` on the frame. It reads preset DB keys from `M.db` and custom settings from `frame._cfg_db`.
+
+Layout is recalculated when relevant cached values change:
+
+- frame width
+- bar mode
+- timer text visibility
+- cooldown overlay mode
+- spacing
+- growth
+
+`M.set_height_for_growth()` resizes frames while preserving the appropriate edge for `UP` and `DOWN` growth.
+
+## Settings UI
+
+`M.BuildSettings(parent)` builds three tabs:
+
+- `General`
+- `Frames`
+- `Spell ID`
+
+The Frames tab uses a left tree and a right lazy-built content panel. Preset rows are built once. Custom tree rows are pooled and reused by row index during `rebuild_tree()` so add/delete/rename/expand/collapse does not orphan old row frames.
+
+The tree includes Static, Debuff, Short, Long, Important, and a grouped WoW Cooldown section for Essential, Utility, Tracked Buffs, and Tracked Bars. Custom entries appear below the preset section, each with a settings node and a `Custom` whitelist child node.
+
+## Taint and Combat Rules
+
+- Do not call `C_UnitAuras` scanning APIs directly in `OnEvent`.
+- Defer aura scans by 0.1s and merge pending UNIT_AURA payloads first.
+- Guard secret values with `issecretvalue()` before comparisons or arithmetic.
+- Preserve old cached data when current aura fields are secret.
+- Do not call protected Blizzard layout/update methods from addon context.
+- Do not run layout/geometry changes in combat.
+- Do not hide Blizzard CDM viewer frames with `Hide()` when their child state is needed.
+
+## WoW APIs Used
+
+- `C_UnitAuras.GetBuffDataByIndex`
+- `C_UnitAuras.GetDebuffDataByIndex`
+- `C_UnitAuras.GetAuraDataByIndex`
+- `C_UnitAuras.GetAuraDuration`
+- `C_UnitAuras.GetAuraApplicationDisplayCount`
+- `C_UnitAuras.GetUnitAuraInstanceIDs`
+- `C_UnitAuras.DoesAuraHaveExpirationTime`
+- `C_UnitAuras.GetPlayerAuraBySpellID`
+- `C_UnitAuras.GetUnitAuraBySpellID`
+- `GameTooltip:SetUnitAuraByAuraInstanceID`
+- `C_Spell.GetSpellCooldownDuration`
+- `C_Spell.GetSpellCooldown`
+- `C_Spell.GetSpellInfo`
+- `C_Spell.RequestLoadSpellData`
+- `C_AddOns.LoadAddOn`
+
+## Compatibility
+
+The addon target in `LsTweeks.toc` is `Interface: 120000`. The aura frame module is written for modern `C_UnitAuras` APIs and avoids legacy `UnitAura` scans.
