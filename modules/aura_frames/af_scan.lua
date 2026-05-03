@@ -280,7 +280,6 @@ local function hook_cd_item_frame(child)
             if ok_e and result_e and not issecretvalue(result_e) then
                 expiration = result_e
             end
-            if remaining and remaining <= 1.5 then return end  -- GCD
             cache_timing(expiration, remaining, dur_obj)
         end)
     end
@@ -408,7 +407,11 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 local duration = cached and cached.duration or 0
                 local remaining = (expiration and expiration > now) and (expiration - now) or 0
                 local duration_object = (cached and cached.duration_object) or get_spell_cooldown_duration_object(spell_id)
-                local cooldown_active = child.Cooldown and child.Cooldown:IsShown()
+                local is_gcd = duration and duration > 0 and duration <= 1.5
+                local grey_cooldown = (not is_gcd) and (
+                    (remaining and remaining > 1.5)
+                    or (duration and duration > 1.5)
+                )
                 local key = "cd_" .. tostring(cooldown_id)
                 target_map[key] = {
                     instance_id       = key,
@@ -418,7 +421,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                     icon              = icon,
                     duration          = duration,
                     duration_object   = duration_object,
-                    cooldown_active   = cooldown_active,
+                    grey_cooldown     = grey_cooldown,
                     remaining         = remaining,
                     expiration        = expiration,
                     count             = 0,

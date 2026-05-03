@@ -163,6 +163,8 @@ M.defaults = {
     bar_text_color_essential = { r = 1, g = 1, b = 1 },
 
     -- UTILITY
+    cooldown_mode_utility = true,
+    hide_blizz_cdm_utility = false,
     show_utility      = true,
     move_utility      = true,
     timer_utility     = true,
@@ -170,7 +172,7 @@ M.defaults = {
     scale_utility     = 1.0,
     spacing_utility   = 1.5,
     width_utility     = 200,
-    bar_mode_utility  = true,
+    bar_mode_utility  = false,
     color_utility     = { r = 0.65, g = 0.55, b = 1 },
     bar_bg_color_utility = default_bg_color(),
     max_icons_utility = 20,
@@ -185,6 +187,7 @@ M.defaults = {
     bar_text_color_utility = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BUFFS
+    hide_blizz_cdm_tracked_buffs = false,
     show_tracked_buffs      = true,
     move_tracked_buffs      = true,
     timer_tracked_buffs     = true,
@@ -207,6 +210,7 @@ M.defaults = {
     bar_text_color_tracked_buffs = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BARS
+    hide_blizz_cdm_tracked_bars = false,
     show_tracked_bars      = true,
     move_tracked_bars      = true,
     timer_tracked_bars     = true,
