@@ -1184,17 +1184,31 @@ function M.BuildSettings(parent)
         -- Frame BG color picker
         create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
 
-        -- Cooldown Mode toggle (essential only): show cooldown remaining instead of aura duration
-        if cat == "essential" then
-            local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_essential", 2, 4, update)
-            local hide_blizz_cdm_container = create_bound_checkbox("Hide WoW Essential", "hide_blizz_cdm_essential", 2, 4, function()
+        local hide_blizz_cdm_label = ({
+            essential = "Hide WoW Essential",
+            utility = "Hide WoW Utility",
+            tracked_buffs = "Hide WoW Tracked Buffs",
+            tracked_bars = "Hide WoW Tracked Bars",
+        })[cat]
+
+        -- Cooldown Mode toggle (cooldown-style CDM categories): show cooldown remaining instead of aura duration.
+        if cat == "essential" or cat == "utility" then
+            local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_" .. cat, 2, 4, update)
+            local hide_blizz_cdm_container = create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
                 if M.update_blizz_cdm_visibility then
-                    M.update_blizz_cdm_visibility("essential")
+                    M.update_blizz_cdm_visibility(cat)
                 end
                 update()
             end)
             hide_blizz_cdm_container:ClearAllPoints()
             hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
+        elseif hide_blizz_cdm_label then
+            create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
+                if M.update_blizz_cdm_visibility then
+                    M.update_blizz_cdm_visibility(cat)
+                end
+                update()
+            end)
         end
 
         add_row_separator(2)

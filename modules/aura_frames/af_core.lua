@@ -118,7 +118,7 @@ function M.tick_visible_icons(now)
                         end
                     end
                     if show_cooldown_overlay and obj.is_spell_cooldown then
-                        set_icon_greyed(obj.texture, obj.cooldown_active or (remaining ~= nil and remaining > 0))
+                        set_icon_greyed(obj.texture, obj.grey_cooldown or (remaining ~= nil and remaining > 1.5))
                     elseif obj.texture then
                         set_icon_greyed(obj.texture, false)
                     end
@@ -154,6 +154,9 @@ end
 
 local BLIZZ_CDM_VIEWER_FRAMES = {
     essential = "EssentialCooldownViewer",
+    utility = "UtilityCooldownViewer",
+    tracked_buffs = "BuffIconCooldownViewer",
+    tracked_bars = "BuffBarCooldownViewer",
 }
 
 function M.update_blizz_cdm_visibility(category)
@@ -164,6 +167,9 @@ function M.update_blizz_cdm_visibility(category)
     local hide = M.db and M.db["hide_blizz_cdm_" .. category]
     frame:SetAlpha(hide and 0 or 1)
     frame:EnableMouse(not hide)
+    if not hide then
+        frame:Show()
+    end
 end
 
 -- ============================================================================

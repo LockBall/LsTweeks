@@ -334,14 +334,14 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj.aura_category   = timer_category
         obj.is_test_preview = entry.is_test_preview or false
         obj.is_spell_cooldown = is_spell_cooldown
-        obj.cooldown_active = entry.cooldown_active == true
+        obj.grey_cooldown = entry.grey_cooldown == true
 
         local cooldown_remaining = live_remaining
         if cooldown_remaining ~= nil and issecretvalue(cooldown_remaining) then
             cooldown_remaining = nil
         end
         local cooldown_is_active = is_spell_cooldown
-            and (obj.cooldown_active or (cooldown_remaining and cooldown_remaining > 0) or (entry.expiration and entry.expiration > now))
+            and (obj.grey_cooldown or (cooldown_remaining and cooldown_remaining > 1.5) or (entry.expiration and entry.expiration > now))
         obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
         set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
         if obj.cooldown then
@@ -498,7 +498,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
     for i = display_count + 1, #self.icons do
         self.icons[i].is_spell_cooldown = false
-        self.icons[i].cooldown_active = false
+        self.icons[i].grey_cooldown = false
         self.icons[i].aura_index = nil
         set_icon_greyed(self.icons[i].texture, false)
         if self.icons[i].cooldown then
