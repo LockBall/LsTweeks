@@ -1,4 +1,4 @@
-## LBB Addon – Embedded Library Sources
+## LsTweeks Addon - Embedded Library Sources
 
 Created on: 26 Jan 2026  
 Last updated: 26 Jan 2026 
@@ -27,7 +27,7 @@ Notes: Core LDB library for creating data objects (e.g., minimap button launcher
 Source, pri: https://www.wowace.com/projects/libdatabroker-1-1  
 Source, alt: https://www.curseforge.com/wow/addons/libdatabroker-1-1  
 Depends on: CallbackHandler  
-Required by: LibDBIcon, LBB (for minimap button)  
+Required by: LibDBIcon, LsTweeks (for minimap button)
 
 ---  
 Library: LibDBIcon-1.0  
@@ -36,4 +36,4 @@ Notes: Handles minimap button creation, dragging, position saving, and visibilit
 Source, pri: https://www.wowace.com/projects/libdbicon-1-0  
 Source, alt: https://www.curseforge.com/wow/addons/libdbicon-1-0  
 Depends on: LibDataBroker, LibStub  
-Required by: LBB (for minimap button) 
+Required by: LsTweeks (for minimap button)

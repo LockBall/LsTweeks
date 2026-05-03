@@ -1,7 +1,8 @@
 -- Settings UI for the Aura Frames module, registered as a sidebar category in the main window.
--- BuildSettings() creates two tabs:
+-- BuildSettings() creates three tabs:
 -- 1) General (global toggles and thresholds)
--- 2) Frames (a tree sidebar listing each category with a per-category settings grid to the right).
+-- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
+-- 3) Spell ID (tooltip spell ID toggle).
 
 local addon_name, addon = ...
 

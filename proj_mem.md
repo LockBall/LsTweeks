@@ -62,7 +62,7 @@ Every lua file must open with a brief comment (up to a few sentences) explaining
 - **Hot paths:** cache WoW globals at file top — `local floor = math.floor`, `local GetTime = GetTime`, etc.
 - **Theme constants:** spacing, fonts, widths live in `addon.UI_THEME` (set in `core/init.lua`) — don't hardcode.
 - **Deferred batching:** UNIT_AURA events are bucketed at 0.1s; timer ticker runs at 0.1s.
-- **InCombatLockdown:** defer layout changes; never call protected WoW API during combat.
+- **InCombatLockdown:** defer layout/geometry changes; `update_auras()` skips frame scale, anchoring, sizing, layout setup, and height changes during combat. Never call protected WoW API during combat.
 - **Reset contract:** every module must implement `M.on_reset_complete()` to resync controls from DB after reset. Apply defaults via `addon.apply_defaults(defaults, db)`, not manual `or` guards.
 - **Taint safety:** never call Blizzard frame methods (UpdateAuras, UpdateLayout) from addon context — even deferred. Restore events + Show() only and let Blizzard's handlers fire naturally.
 
@@ -105,7 +105,8 @@ Ls_Tweeks_DB = {
 ```
 
 ## Aura Frame Categories
-Four core categories: `static`, `short`, `long`, `debuff`.
+Preset categories: `static`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`, `debuff`.
+`essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
 
@@ -114,7 +115,7 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 ## af_gui.lua Layout System
 `BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
 
-**Frames tab** has a left tree sidebar (140px wide) listing Static/Debuff/Short/Long plus custom entries with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
+**Frames tab** has a left tree sidebar (140px wide) listing Static/Debuff/Short/Long, a grouped WoW Cooldown section (Essential/Utility/Tracked Buffs/Tracked Bars), and custom entries with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
 - `col_width=190` — centering zone within each column
 - All 4 columns center-aligned by default (`col_align = {"center","center","center","center"}`)
