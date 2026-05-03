@@ -347,7 +347,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
 
         obj.time_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
-        M.apply_number_font_to_text(obj.time_text, category, cfg_db)
+        M.apply_number_font_to_text(obj.time_text, category)
         obj.time_text:SetWordWrap(false)
         if obj.time_text.SetMaxLines then
             obj.time_text:SetMaxLines(1)
@@ -503,6 +503,17 @@ function M.create_custom_frame(entry)
     -- Tag the frame so af_core knows to route it through the custom filtered scan.
     frame.is_custom    = true
     frame.custom_entry = entry
+    frame._cfg_db      = entry
+
+    -- The pool is built before the frame is tagged as custom, so apply the
+    -- entry-scoped timer font settings once the custom config is available.
+    if M.apply_number_font_to_text and frame.icons then
+        for _, obj in ipairs(frame.icons) do
+            if obj and obj.time_text then
+                M.apply_number_font_to_text(obj.time_text, id, entry)
+            end
+        end
+    end
 
     -- Override update_params to use flat entry keys and correct filter.
     frame.update_params.show_key    = show_key
