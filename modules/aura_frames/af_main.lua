@@ -452,6 +452,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         if event == "UNIT_AURA" then
             self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
         end
+        if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
+            M._aura_scan_dirty = true
+        end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.
         -- Multiple rapid UNIT_AURA events (common in combat) collapse to one scan.
@@ -608,6 +611,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Session-scoped spell learning tables: reset every login, never written to DB.
         M._known_static = {}
         M._known_long   = {}
+        M._aura_scan_dirty = true
 
         -- Populate missing settings using the defaults defined in af_defaults.lua
         if M.defaults then addon.apply_defaults(M.defaults, M.db) end
