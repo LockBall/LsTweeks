@@ -11,6 +11,13 @@ A World of Warcraft addon that provides various customizations.
 3. Launch the game and enable **L’s Tweeks** in the AddOns menu.
 
 
+## Use Notes
+WoW CoolDown Manager (CDM) must stay enabled for those frames to work.
+Sync to CDM may be needed after same-group reorder.
+
+## Bheavior Notes
+No icon greyout in combat is a known limitation.
+
 ## Embedded Libraries
 All embedded libraries are stored in `Libs/` and documented in `Libs/SOURCES.md`.  
 libs are unmodified
@@ -62,3 +69,5 @@ Source:
 https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
 
 That page lists IMPORTANT, and several others, as an AuraFilters value added in 12.0.1, described as spells that pass: `C_Spell.IsSpellImportant()`
+
+CDM frames are hidden with alpha, not Hide(), because Hide() breaks the data availability.
