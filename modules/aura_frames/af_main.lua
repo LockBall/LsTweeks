@@ -19,6 +19,8 @@ local WOW_COOLDOWN_SHOW_KEYS = {
     "show_tracked_bars",
 }
 
+local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
+
 local WOW_COOLDOWN_STARTUP_REFRESH_DELAYS = { 0.2, 0.6, 1.2, 2.5, 5.0 }
 
 M.NUMBER_FONT_OPTIONS = {
@@ -128,7 +130,9 @@ function M.refresh_wow_cooldown_frames(delay)
     local function refresh()
         if not M.frames then return end
         if M.clear_cooldown_viewer_child_cache then
-            M.clear_cooldown_viewer_child_cache("essential")
+            for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+                M.clear_cooldown_viewer_child_cache(category)
+            end
         end
         for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
             local frame = M.frames[show_key]

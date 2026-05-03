@@ -910,7 +910,7 @@ function M.BuildSettings(parent)
         local refresh_cooldown_btn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
         refresh_cooldown_btn:SetSize(128, 20)
         refresh_cooldown_btn:SetPoint("TOPLEFT", debug_container, "BOTTOMLEFT", 0, -12)
-        refresh_cooldown_btn:SetText("Refresh CDM")
+        refresh_cooldown_btn:SetText("Sync to CDM")
         refresh_cooldown_btn:SetScript("OnClick", function()
             if M.queue_wow_cooldown_settings_refreshes then
                 M.queue_wow_cooldown_settings_refreshes()

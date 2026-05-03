@@ -177,17 +177,14 @@ local function is_spell_on_real_cooldown(spell_id)
 end
 
 -- Blizzard global frame names for each WoW Cooldown Manager category.
--- Children of these frames carry an auraInstanceID field when their aura is active.
-local VIEWER_FRAME_NAMES = {
-    essential     = "EssentialCooldownViewer",
-    utility       = "UtilityCooldownViewer",
-    tracked_buffs = "BuffIconCooldownViewer",
-    tracked_bars  = "BuffBarCooldownViewer",
-}
+-- These viewers stay enabled as the live source; addon settings may hide them
+-- visually with alpha, but we still read their child frames.
+local VIEWER_FRAME_NAMES = M.CDM_VIEWER_FRAMES
 
--- Cache populated by hooks on Blizzard's Cooldown widgets.
--- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }
--- Captures timing at the moment Blizzard sets it — before it becomes secret to addon code.
+-- Cache populated by hooks on Blizzard Cooldown widgets.
+-- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }.
+-- Used as a fallback for cooldown display; active aura display prefers the
+-- Blizzard child auraInstanceID, and grey state comes from real spell cooldown data.
 M._cd_hook_cache = M._cd_hook_cache or {}
 
 function M.clear_cooldown_viewer_child_cache(category)
@@ -199,7 +196,6 @@ function M.clear_cooldown_viewer_child_cache(category)
         child._lstweeks_spell_id = nil
         child._lstweeks_cd_name = nil
         child._lstweeks_cd_icon = nil
-        child._lstweeks_cd_order = nil
     end
 end
 
@@ -219,10 +215,9 @@ local function queue_cooldown_viewer_refresh()
 end
 
 -- Lazily attaches hooks to a CooldownViewer child frame on first encounter.
--- SetCooldown arguments (start, duration) are readable in the hook even during combat
--- because they are passed explicitly by Blizzard code — only C API return values are secret.
--- SetCooldownFromDurationObject uses the Duration object path instead.
--- child._lstweeks_cooldown_id is stable even when spell fields go secret.
+-- The hooks preserve Blizzard's cooldown timing object/values when the viewer
+-- writes them. This supplements the live child auraInstanceID path; it is not
+-- the primary source for active aura state.
 local function hook_cd_item_frame(child)
     local cd = child.Cooldown
     if not cd then return end
@@ -281,7 +276,9 @@ local function hook_cd_item_frame(child)
         queue_cooldown_viewer_refresh()
     end
 
-    -- Standard cooldown path: arguments are not secret, read directly.
+    -- Standard cooldown path: arguments are passed by Blizzard code, so read
+    -- them directly when they are not secret. Ignore GCD-sized values here;
+    -- GCD animation can still arrive through the DurationObject path.
     pcall(hooksecurefunc, cd, "SetCooldown", function(_, start, duration)
         if not (start and duration) then return end
         if issecretvalue(start) or issecretvalue(duration) then return end
@@ -289,8 +286,9 @@ local function hook_cd_item_frame(child)
         cache_timing(start + duration, duration, nil)
     end)
 
-    -- Duration-object path (12.x combat cooldowns): preserve the object and only
-    -- use numeric methods when readable. The renderer can pass the object onward.
+    -- DurationObject path (modern combat cooldowns): preserve the object and
+    -- only use numeric methods when readable. The renderer can pass the object
+    -- onward without unpacking secret values.
     if cd.SetCooldownFromDurationObject then
         pcall(hooksecurefunc, cd, "SetCooldownFromDurationObject", function(_, dur_obj)
             if not dur_obj then return end
@@ -342,9 +340,13 @@ local function install_cooldown_viewer_item_hooks()
 end
 
 -- Populates target_map by walking the Blizzard CooldownViewer frame for this category.
--- Aura mode:     reads child.auraInstanceID → maps directly to M._aura_map entries.
--- Cooldown mode: hooks Blizzard's Cooldown widgets to capture timing on write, then reads
---                from that cache — never queries secret values at scan time.
+-- Aura mode:
+--   Reads child.auraInstanceID and maps directly to M._aura_map entries.
+-- Cooldown mode:
+--   1. Active phase: prefer child.auraInstanceID from the live Blizzard CDM viewer.
+--   2. Cooldown phase: use the hooked DurationObject/cache, with spell cooldown
+--      duration as fallback for the overlay.
+--   3. Grey state: use C_Spell.GetSpellCooldown(spellID), explicitly ignoring GCD.
 function M.add_cooldown_viewer_category_entries(target_map, category)
     local frame_name = VIEWER_FRAME_NAMES[category]
     if not frame_name then return end
