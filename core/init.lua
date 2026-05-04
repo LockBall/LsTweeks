@@ -13,6 +13,13 @@ addon.UI_THEME = {
     font_body     = "GameFontNormal",
 }
 
+function addon.get_version()
+    if not addon.version and C_AddOns and C_AddOns.GetAddOnMetadata then
+        addon.version = C_AddOns.GetAddOnMetadata(addon_name, "Version")
+    end
+    return addon.version or "unknown"
+end
+
 -- DATABASE INITIALIZATION
 local function init_db()
     -- Ensure the global DB exists with the Tweeks spelling
@@ -34,7 +41,7 @@ local function on_event(self, event, name)
     if name ~= addon_name then return end
 
     -- Store version from TOC
-    addon.version = C_AddOns.GetAddOnMetadata(addon_name, "Version")
+    addon.get_version()
 
     -- Setup Global DB
     init_db()

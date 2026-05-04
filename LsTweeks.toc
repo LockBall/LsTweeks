@@ -6,7 +6,7 @@
 ## Category: User Interface
 ## Category-enUS: User Interface
 ## Interface: 120000
-## Version: 0.4.0
+## Version: 0.9.0
 
 ## IconTexture: Interface\AddOns\LsTweeks\media\icon_256.tga
 ## SavedVariables: Ls_Tweeks_DB
@@ -45,9 +45,9 @@ modules\aura_frames\af_render.lua
 modules\aura_frames\af_icon_layout.lua
 modules\aura_frames\af_custom_filter.lua
 modules\aura_frames\af_core.lua
+modules\aura_frames\af_gui.lua
 modules\aura_frames\af_gui_frame_builders.lua
 modules\aura_frames\af_gui_tree.lua
-modules\aura_frames\af_gui.lua
 modules\aura_frames\af_debug_outlines.lua
 modules\aura_frames\af_grid.lua
 modules\aura_frames\af_main.lua
