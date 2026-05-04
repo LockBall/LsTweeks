@@ -40,8 +40,9 @@ modules/
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
     af_custom_filter.lua — direct custom-frame scans via C_UnitAuras.GetAuraDataByIndex()
     af_core.lua          — tick_visible_icons(), update_auras(), toggle_blizz_buffs/debuffs()
-    af_gui.lua           — settings tab builder; M.BuildSettings(), sync_general_controls_from_db()
-    af_gui_custom.lua    — custom filtered frame panels; M.build_custom_settings_panel(), M.build_custom_child_panel()
+    af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
+    af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
+    af_gui_frame_builders.lua — all Aura Frames content panels; General, Spell ID, preset Buff/CDM, and custom Filters builders
     af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
@@ -111,10 +112,14 @@ Positions are stored under `aura_frames.positions.<category>`.
 
 Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))`.
 
-## af_gui.lua Layout System
+## Aura Frames GUI Layout System
+`af_gui.lua` owns the settings shell: `BuildSettings` creates three tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
+
 `BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
 
-**Frames tab** has a left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui.lua`.
+`af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
+
+`af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
 Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
