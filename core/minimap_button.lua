@@ -12,8 +12,6 @@ local CONFIG = {
     icon = "Interface\\AddOns\\LsTweeks\\media\\icon_256",
     title = "L's Tweeks",
     tooltip_left_click = "Left-click: Open main window",
-    tooltip_right_click = "Right-click: (reserved)",
-    msg_right_click = "|cff00ff00LsTweeks:|r Right-click menu not implemented yet.",
 }
 
 -- Private Helper: Toggle main frame visibility
@@ -33,7 +31,7 @@ end
 -- ============================================================================
 -- LDB DATA OBJECT
 -- LibDataBroker: Provides a data source for minimap buttons via LibDBIcon.
--- OnClick handles left/right button interactions with the minimap icon.
+-- OnClick handles opening the settings window from the minimap icon.
 -- OnTooltipShow provides contextual help when hovering over the button.
 addon.data_object = LDB:NewDataObject(CONFIG.name, {
     type = "launcher",
@@ -42,15 +40,12 @@ addon.data_object = LDB:NewDataObject(CONFIG.name, {
     OnClick = function(_, button)
         if button == "LeftButton" then
             toggle_main_frame()
-        elseif button == "RightButton" then
-            print(CONFIG.msg_right_click)
         end
     end,
 
     OnTooltipShow = function(tooltip)
         tooltip:AddLine(CONFIG.title)
         tooltip:AddLine(CONFIG.tooltip_left_click, 1, 1, 1)
-        tooltip:AddLine(CONFIG.tooltip_right_click, 1, 1, 1)
     end,
 })
 
