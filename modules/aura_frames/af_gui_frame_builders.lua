@@ -1,0 +1,901 @@
+-- Content panel builders for Aura Frames settings.
+-- Builds the General tab, Spell ID tab, and preset Buff/CDM frame settings panels.
+
+local addon_name, addon = ...
+
+addon.aura_frames = addon.aura_frames or {}
+local M = addon.aura_frames
+
+local function get_timer_font_options()
+    local options = {}
+    local defs = M.get_number_font_options and M.get_number_font_options() or {}
+    for _, def in ipairs(defs) do
+        options[#options + 1] = {
+            value = def.key,
+            text = def.label,
+            font_path = def.path,
+            font_size = def.size,
+            font_flags = def.flags,
+        }
+    end
+    return options
+end
+function M.build_aura_id_tab(p)
+    local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
+    lbl:SetText("Show spell ID in icon tooltips.")
+
+    local spell_id_container, spell_id_btn, _ = addon.CreateCheckbox(p, "Show Spell ID in Tooltip", M.db.show_spell_id == true,
+        function(is_checked)
+            M.db.show_spell_id = is_checked
+        end
+    )
+    spell_id_container:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -10)
+    M.controls.show_spell_id_checkbox = spell_id_btn
+end
+
+function M.build_general_tab(p)
+    -- Manual layout for General tab
+
+    -- Blizzard Buff & Debuff Enable Frames Section
+    local enable_panel = CreateFrame("Frame", nil, p, "BackdropTemplate")
+    enable_panel:SetSize(150, 45)
+    enable_panel:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
+    enable_panel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    enable_panel:SetBackdropColor(0.08, 0.08, 0.08, 0.85)
+    enable_panel:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+
+    local panel_title = enable_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    panel_title:SetText("Enable Blizz Frame")
+    panel_title:SetPoint("TOP", enable_panel, "TOP", 0, -5)
+
+    -- Blizzard Buff Frame Checkbox (checked = enabled)
+    local enable_blizz_buffs_container, enable_blizz_buffs_cb, _ = addon.CreateCheckbox(enable_panel, "Buff", M.db.enable_blizz_buffs,
+        function(is_checked)
+            M.db.enable_blizz_buffs = is_checked
+            M.toggle_blizz_buffs(not is_checked)
+        end
+    )
+    enable_blizz_buffs_container:SetPoint("CENTER", enable_panel, "CENTER", -40, -5)
+    M.controls["enable_blizz_buffs"] = enable_blizz_buffs_cb
+
+    -- Blizzard Debuff Frame Checkbox (checked = enabled)
+    local enable_blizz_debuffs_container, enable_blizz_debuffs_cb, _ = addon.CreateCheckbox(
+        enable_panel,
+        "Debuff",
+        M.db.enable_blizz_debuffs,
+        function(is_checked)
+            M.db.enable_blizz_debuffs = is_checked
+            M.toggle_blizz_debuffs(not is_checked)
+        end
+    )
+    enable_blizz_debuffs_container:SetPoint("CENTER", enable_panel, "CENTER", 35, -5)
+    M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_cb
+
+    -- Short Buff Threshold slider
+    local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
+        for k, v in pairs(M.frames) do
+            local params = v.update_params
+            if params then
+                M.update_auras(v, params.show_key, params.move_key, params.timer_key, params.bg_key,
+                    params.scale_key, params.spacing_key, params.filter)
+            end
+        end
+    end)
+    threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
+
+
+    -- Show Bar Section Outlines Checkbox
+    local outlines_container, outlines_btn, _ = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,
+        function(is_checked)
+            M.db.show_bar_section_outlines = is_checked
+            if addon.aura_frames and addon.aura_frames.refresh_section_outlines then
+                addon.aura_frames.refresh_section_outlines()
+            end
+        end
+    )
+    outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
+    M.controls.show_bar_section_outlines_checkbox = outlines_btn
+
+    -- reset panel
+    local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults)
+    resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
+end
+
+-- ============================================================================
+function M.build_preset_frame_panel(p, data)
+    local cat = data.show_key:sub(6)
+    local filter = data.is_debuff and "HARMFUL" or "HELPFUL"
+    local test_key = "test_aura_"..cat
+
+    local function update() -- refreshes current category frame preview
+        M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, filter)
+    end
+
+    -- Grid Layout Configuration (row/column placement for controls)
+    -- col_gap  = distance between column start positions (moves columns apart/together)
+    -- col_width = centering zone within each column (controls how wide the center target is)
+    local col_gap    = 150  -- adjust to spread or compress columns
+    local col_width  = 190  -- adjust independently from gap if needed
+    local col_offset = -20  -- shift entire grid left (negative = left)
+    local row_gap    = 20   -- fixed space between rows; separators sit at half this
+    local grid = {
+        [1] = col_offset,
+        [2] = col_gap + col_offset,
+        [3] = col_gap * 2 + col_offset,
+        [4] = col_gap * 3 + col_offset,
+        col_width = col_width,
+        col_align = { "center", "center", "center", "center" },
+        row_start = 10, -- y position of start of first row 
+        row_gap = row_gap,
+        -- row #       1    2   3   4   5
+        row_heights = {130, 60, 90, 120, 110},
+        reset_btn_width = 110,
+        offsets = {
+            default = 0,
+            dropdown = 8,
+            picker = 4,
+        },
+        content_rows = 5,
+    }
+
+    
+    -- Anchors a control into the content grid. row/column index into grid.row_heights and grid[column].
+    -- slot offsets the Y by grid.offsets[slot] (e.g. "dropdown", "picker"). opts: align, valign, y_offset, width.
+    local function place_at(control, row, column, slot, opts)
+        if not control then return end
+        opts = opts or {}
+        local align = opts.align or grid.col_align[column] or "left"
+        local x = grid[column]
+        local y = grid.row_start
+        for i = 1, (row - 1) do
+            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
+        end
+        -- valign="bottom": descend one more row height to land at the row's bottom edge
+        if opts.valign == "bottom" then
+            y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
+        end
+        local y_offset = grid.offsets[slot or "default"] or 0
+        if opts.y_offset then y_offset = y_offset + opts.y_offset end
+        local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
+        if align == "center" then
+            x = x + math.floor((grid.col_width - width) / 2)
+        elseif align == "right" then
+            x = x + grid.col_width - width
+        end
+        control:SetPoint("TOPLEFT", p, "TOPLEFT", x, y + y_offset)
+    end
+
+    local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
+        local container, checkbox, _ = addon.CreateCheckbox(p, label, M.db[db_key],
+            function(is_checked)
+                M.db[db_key] = is_checked
+                if is_checked and extra_on_check then
+                    extra_on_check()
+                end
+                if not is_checked and extra_on_uncheck then
+                    extra_on_uncheck()
+                end
+                if on_change then
+                    on_change(is_checked)
+                elseif label == "Test Aura" then
+                    if is_checked then
+                        update()
+                    end
+                else
+                    update()
+                end
+            end
+        )
+        place_at(container, row, column)
+        M.controls[control_key or db_key] = checkbox
+        return container, checkbox
+    end
+
+    local function create_bound_color_picker(db_key, has_alpha, label, row, column)
+        local picker = addon.CreateColorPicker(p, M.db, db_key, has_alpha, label, M.defaults, update)
+        place_at(picker, row, column, "picker")
+        return picker
+    end
+
+    local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, on_change)
+        local slider = addon.CreateSliderWithBox(addon_name..cat..name_suffix, p, label, min_v, max_v, step, M.db, db_key, M.defaults, on_change or update)
+        return slider
+    end
+
+    -- Draw a 2px horizontal separator in the gap below the given row.
+    local function add_row_separator(row)
+        local line = p:CreateTexture(nil, "BACKGROUND")
+        line:SetColorTexture(1, 1, 1, 0.08)
+        line:SetHeight(2)
+        -- Accumulate row heights to find the bottom edge of this row, then nudge up by half
+        -- the row gap so the line sits centered in the space between rows.
+        local y = grid.row_start
+        for i = 1, row do y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights]) end
+        line:SetPoint("TOPLEFT", p, "TOPLEFT", 0, y + math.floor(grid.row_gap / 2))
+        -- Width: right edge of col 4 minus 12px to avoid touching the outer frame border.
+        line:SetWidth(grid[4] + grid.col_width - 12)
+    end
+
+    -- Width slider — defined early so it can be placed in Row 1.
+    local width_slider = addon.CreateSliderWithBox(
+        addon_name..cat.."WidthSlider",
+        p,
+        "Width",
+        180, 800, 1,
+        M.db, "width_"..cat, M.defaults
+    )
+    width_slider.slider:HookScript("OnValueChanged", function(_, value)
+        local f = M.frames[data.show_key]
+        if not f then return end
+        f:SetWidth(math.floor(value + 0.5))
+        update()
+    end)
+    M.controls["width_slider_"..cat] = width_slider
+
+    -- X/Y Position sliders — defined early so Row 1 and move_reset can reference them.
+    local function update_frame_position()
+        local pos = M.db.positions[cat]
+        local f = M.frames[data.show_key]
+        if f and pos then
+            if M.apply_frame_position then
+                M.apply_frame_position(f, pos)
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+            end
+        end
+    end
+
+    local x_slider = addon.CreateSliderWithBox(
+        addon_name..cat.."XPosSlider",
+        p,
+        "X Position",
+        -1000, 1000, 1,
+        M.db.positions[cat], "x", M.defaults.positions[cat]
+    )
+    x_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    M.controls["x_pos_slider_"..cat] = x_slider
+
+    local y_slider = addon.CreateSliderWithBox(
+        addon_name..cat.."YPosSlider",
+        p,
+        "Y Position",
+        -1000, 1000, 1,
+        M.db.positions[cat], "y", M.defaults.positions[cat]
+    )
+    y_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    M.controls["y_pos_slider_"..cat] = y_slider
+
+    -- Row 1
+
+    local function uncheck_test_aura()
+        if M.db[test_key] then
+            M.db[test_key] = false
+            local test_cb = M.controls[test_key]
+            if test_cb and test_cb.SetChecked then test_cb:SetChecked(false) end
+        end
+    end
+    local function check_enable_frame()
+        if not M.db[data.show_key] then
+            M.db[data.show_key] = true
+            local enable_cb = M.controls[data.show_key]
+            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
+        end
+    end
+
+    -- move mode
+    local move_mode_container, move_cb = create_bound_checkbox("Move Mode", data.move_key, 1, 1, function(is_checked)
+        if is_checked then
+            -- Also check Enable Frame if not already checked
+            local enable_cb = M.controls and M.controls[data.show_key]
+            if enable_cb and enable_cb.SetChecked and not enable_cb:GetChecked() then
+                enable_cb:SetChecked(true)
+                M.db[data.show_key] = true
+            end
+        end
+        update()
+    end)
+
+    local function uncheck_frame_dependents()
+        uncheck_test_aura()
+        if M.db[data.move_key] then
+            M.db[data.move_key] = false
+            if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
+        end
+    end
+
+    place_at(x_slider, 1, 2)
+    place_at(y_slider, 1, 3)
+    place_at(width_slider, 1, 4)
+
+    -- Snap to Grid / Show Grid: global toggles stacked below Move Mode
+    local snap_container, snap_btn, _ = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
+        function(is_checked)
+            M.db.snap_to_grid = is_checked
+        end
+    )
+    snap_container:SetPoint("TOPLEFT", move_mode_container, "BOTTOMLEFT", 0, -4)
+    M.controls.snap_to_grid_checkbox = snap_btn
+
+    local show_grid_container, show_grid_btn, _ = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
+        function(is_checked)
+            M.db.show_grid = is_checked
+            if M.set_grid_visible then M.set_grid_visible(is_checked) end
+        end
+    )
+    show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
+    M.controls.show_grid_checkbox = show_grid_btn
+
+    -- move Reset: stacked below Show Grid in col 1
+    local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    move_reset:SetSize(grid.reset_btn_width, 22)
+    move_reset:SetPoint("TOPLEFT", show_grid_container, "BOTTOMLEFT", 0, -6)
+    move_reset:SetText("Move Reset")
+    move_reset:SetScript("OnClick", function()
+        local dPos = M.defaults.positions[cat]
+        local dMove = M.defaults[data.move_key]
+        local dWidth = M.defaults["width_"..cat] or 200
+        M.db.positions[cat].point = dPos.point
+        M.db.positions[cat].x = dPos.x
+        M.db.positions[cat].y = dPos.y
+        M.db[data.move_key] = dMove
+        M.db["width_"..cat] = dWidth
+        move_cb:SetChecked(dMove)
+        local f = M.frames[data.show_key]
+        if f then
+            if M.apply_frame_position then
+                M.apply_frame_position(f, M.db.positions[cat])
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", dPos.x, dPos.y)
+            end
+            f:SetWidth(dWidth)
+            update()
+        end
+        local xs = M.controls["x_pos_slider_"..cat]
+        local ys = M.controls["y_pos_slider_"..cat]
+        if xs and xs.slider then xs.slider:SetValue(dPos.x) end
+        if ys and ys.slider then ys.slider:SetValue(dPos.y) end
+    end)
+
+    add_row_separator(1)
+
+    -- Row 2
+    local enable_frame_container = create_bound_checkbox("Enable Frame", data.show_key, 2, 1, nil, nil, uncheck_frame_dependents)
+
+    -- Test Aura: stacked below Enable Frame in the same cell
+    local test_aura_container = create_bound_checkbox("Test Aura", test_key, 2, 1, update, nil, nil, check_enable_frame)
+    test_aura_container:ClearAllPoints()
+    test_aura_container:SetPoint("TOPLEFT", enable_frame_container, "BOTTOMLEFT", 0, 0)
+
+    -- Frame background
+    create_bound_checkbox("Frame BG", data.bg_key, 2, 2)
+
+    -- Frame BG color picker
+    create_bound_color_picker("bg_color_"..cat, true, "Frame BG Color", 2, 3)
+
+    local hide_blizz_cdm_label = ({
+        essential = "Hide WoW Essential",
+        utility = "Hide WoW Utility",
+        tracked_buffs = "Hide WoW Tracked Buffs",
+        tracked_bars = "Hide WoW Tracked Bars",
+    })[cat]
+
+    -- Cooldown Mode toggle (cooldown-style CDM categories): show cooldown remaining instead of aura duration.
+    if cat == "essential" or cat == "utility" then
+        local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_" .. cat, 2, 4, update)
+        local hide_blizz_cdm_container = create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
+            if M.update_blizz_cdm_visibility then
+                M.update_blizz_cdm_visibility(cat)
+            end
+            update()
+        end)
+        hide_blizz_cdm_container:ClearAllPoints()
+        hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
+    elseif hide_blizz_cdm_label then
+        create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
+            if M.update_blizz_cdm_visibility then
+                M.update_blizz_cdm_visibility(cat)
+            end
+            update()
+        end)
+    end
+
+    add_row_separator(2)
+
+    -- Row 3: Bar Mode, color pickers
+    local bar_mode_key = "bar_mode_"..cat
+    local bar_mode_container = create_bound_checkbox("Bar Mode", bar_mode_key, 3, 1)
+
+    local bar_color_picker = addon.CreateColorPicker(p, M.db, "color_"..cat, true, "Bar Color", M.defaults, update)
+    bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+    M.controls["bar_color_picker_"..cat] = bar_color_picker
+
+    create_bound_color_picker("bar_text_color_"..cat, false, "Bar Text Color", 3, 2)
+    create_bound_color_picker("bar_bg_color_"..cat, true, "Bar BG Color", 3, 3)
+    add_row_separator(3)
+
+    -- Row 4: Timer Text, Font & Font Size
+    if cat ~= "static" then
+        local timer_text_container = create_bound_checkbox("Timer Text", data.timer_key, 4, 1)
+
+        local timer_bold_container = create_bound_checkbox("Bold", "timer_number_font_bold_"..cat, 4, 1, function()
+            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            update()
+        end)
+        timer_bold_container:ClearAllPoints()
+        timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
+
+        local timer_font = M.CreateListDropdown(addon_name..cat.."TimerFont", p, "Font", get_timer_font_options(),
+            function()
+                return M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro"
+            end,
+            function(value)
+                M.db["timer_number_font_"..cat] = value
+                if M.apply_number_font_to_all then
+                    M.apply_number_font_to_all()
+                end
+                update()
+            end,
+            120 -- reduced width
+        )
+
+        place_at(timer_font, 4, 2, nil, {width=120, y_offset=-15})
+        M.controls["timer_number_font_dropdown_"..cat] = timer_font
+
+        local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
+            M.defaults,
+            function()
+                if M.apply_number_font_to_all then
+                    M.apply_number_font_to_all()
+                end
+                update()
+            end
+        )
+        place_at(font_size_slider, 4, 3)
+        M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
+
+        local timer_color_picker = addon.CreateColorPicker(p, M.db, "timer_color_"..cat, false, "Color", M.defaults, function()
+            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            update()
+        end)
+        timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
+        M.controls["timer_color_picker_"..cat] = timer_color_picker
+    end
+
+    add_row_separator(4)
+
+    -- Row 5: Scale, Spacing, Max Icons
+    local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, data.scale_key, update)
+    place_at(scale_slider, 5, 1)
+
+    local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, data.spacing_key)
+    place_at(spacing_slider, 5, 2)
+
+    local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 40, 1, "max_icons_"..cat, function()
+        print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
+    end)
+    place_at(max_icons_slider, 5, 4)
+
+    -- Growth Direction dropdown in row 3, col 4, vertically centered
+    place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", "growth_"..cat, update), 3, 4, "dropdown", { y_offset = -15 })
+
+    -- Sync X/Y sliders to the frame's current position (called after a drag).
+    -- Defined here so it closes over x_slider/y_slider/cat.
+    local function sync_xy_sliders_to_frame()
+        local f = M.frames[data.show_key]
+        if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
+        local x, y
+        if M.read_frame_position then
+            x, y = M.read_frame_position(f)
+        else
+            local ucx, ucy = UIParent:GetCenter()
+            local left = f:GetLeft()
+            local top  = f:GetTop()
+            if left and top then
+                x = math.floor(left - ucx + 0.5)
+                y = math.floor(top  - ucy + 0.5)
+            end
+        end
+        if x and y then
+            M.db.positions[cat].x = x
+            M.db.positions[cat].y = y
+            M.db.positions[cat].point = "TOPLEFT"
+            x_slider.slider:SetValue(x)
+            y_slider.slider:SetValue(y)
+        end
+    end
+
+    -- Hook both title bars so dragging from either handle syncs the sliders.
+    local f = M.frames[data.show_key]
+    if f then
+        for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
+            if tb then
+                local old_drag_stop = tb:GetScript("OnDragStop")
+                tb:SetScript("OnDragStop", function(...)
+                    if old_drag_stop then old_drag_stop(...) end
+                    sync_xy_sliders_to_frame()
+                end)
+            end
+        end
+    end
+end
+
+
+
+-- Custom filtered frame panel builders.
+-- These back the Filters group in the Frames tree.
+
+local function update_custom_frame(entry)
+    if not (entry and entry.id and M.frames) then return end
+    local show_key = "show_" .. entry.id
+    local frame = M.frames[show_key]
+    if not frame then return end
+    local filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter or "HELPFUL"
+    frame.update_params.filter = filter
+    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", filter)
+end
+
+local function update_custom_frame_title(entry)
+    if not (entry and entry.id and M.frames) then return end
+    local frame = M.frames["show_" .. entry.id]
+    if not frame then return end
+    if frame.title_bar and frame.title_bar.label_text then
+        frame.title_bar.label_text:SetText(entry.name or entry.id)
+    end
+    if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
+        frame.bottom_title_bar.label_text:SetText(entry.name or entry.id)
+    end
+end
+
+function M.build_custom_settings_panel(p, entry)
+    local id = entry.id
+    local show_key = "show_" .. id
+
+    local function update()
+        update_custom_frame(entry)
+    end
+
+    local col_gap    = 150
+    local col_width  = 190
+    local col_offset = -20
+    local row_gap    = 20
+    local grid = {
+        [1] = col_offset,
+        [2] = col_gap + col_offset,
+        [3] = col_gap * 2 + col_offset,
+        [4] = col_gap * 3 + col_offset,
+        col_width   = col_width,
+        col_align   = { "center", "center", "center", "center" },
+        row_start   = 10,
+        row_gap     = row_gap,
+        row_heights = { 130, 60, 90, 120, 110 },
+        reset_btn_width = 110,
+        offsets     = { default = 0, dropdown = 8, picker = 4 },
+    }
+
+    local function place_at(control, row, column, slot, opts)
+        if not control then return end
+        opts = opts or {}
+        local align = opts.align or grid.col_align[column] or "left"
+        local x = grid[column]
+        local y = grid.row_start
+        for i = 1, (row - 1) do
+            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
+        end
+        if opts.valign == "bottom" then
+            y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
+        end
+        local y_offset = grid.offsets[slot or "default"] or 0
+        if opts.y_offset then y_offset = y_offset + opts.y_offset end
+        local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
+        if align == "center" then
+            x = x + math.floor((grid.col_width - width) / 2)
+        elseif align == "right" then
+            x = x + grid.col_width - width
+        end
+        control:SetPoint("TOPLEFT", p, "TOPLEFT", x, y + y_offset)
+    end
+
+    local function add_row_separator(row)
+        local line = p:CreateTexture(nil, "BACKGROUND")
+        line:SetColorTexture(1, 1, 1, 0.08)
+        line:SetHeight(2)
+        local y = grid.row_start
+        for i = 1, row do y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights]) end
+        line:SetPoint("TOPLEFT", p, "TOPLEFT", 0, y + math.floor(grid.row_gap / 2))
+        line:SetWidth(grid[4] + grid.col_width - 12)
+    end
+
+    local function bound_cb(label, key, row, column, on_change)
+        local container, cb = addon.CreateCheckbox(p, label, entry[key],
+            function(is_checked)
+                entry[key] = is_checked
+                if on_change then on_change(is_checked) else update() end
+            end
+        )
+        place_at(container, row, column)
+        M.controls["custom_" .. id .. "_" .. key] = cb
+        return container, cb
+    end
+
+    local function bound_picker(key, has_alpha, label, row, column)
+        local picker = addon.CreateColorPicker(p, entry, key, has_alpha, label, M.CUSTOM_FRAME_TEMPLATE, update)
+        place_at(picker, row, column, "picker")
+        return picker
+    end
+
+    local pos = entry.position or { x = 0, y = 50 }
+    entry.position = pos
+
+    local function update_frame_position()
+        local f = M.frames[show_key]
+        if f and pos then
+            if M.apply_frame_position then
+                M.apply_frame_position(f, pos)
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+            end
+        end
+    end
+
+    local move_container, move_cb = bound_cb("Move Mode", "move", 1, 1, function(is_checked)
+        if is_checked then
+            local en_cb = M.controls["custom_" .. id .. "_show"]
+            if en_cb and en_cb.SetChecked and not en_cb:GetChecked() then
+                en_cb:SetChecked(true)
+                entry.show = true
+            end
+        end
+        update()
+    end)
+
+    local x_slider = addon.CreateSliderWithBox(addon_name..id.."XPos", p, "X Position", -1000, 1000, 1, pos, "x", { x = 0 })
+    x_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    place_at(x_slider, 1, 2)
+
+    local y_slider = addon.CreateSliderWithBox(addon_name..id.."YPos", p, "Y Position", -1000, 1000, 1, pos, "y", { y = 50 })
+    y_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    place_at(y_slider, 1, 3)
+
+    local width_slider = addon.CreateSliderWithBox(addon_name..id.."Width", p, "Width", 180, 800, 1, entry, "width", M.CUSTOM_FRAME_TEMPLATE)
+    width_slider.slider:HookScript("OnValueChanged", function(_, value)
+        local f = M.frames[show_key]
+        if f then
+            f:SetWidth(math.floor(value + 0.5))
+            update()
+        end
+    end)
+    M.controls["custom_" .. id .. "_width"] = width_slider
+    place_at(width_slider, 1, 4)
+
+    local snap_container = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
+        function(is_checked) M.db.snap_to_grid = is_checked end)
+    snap_container:SetPoint("TOPLEFT", move_container, "BOTTOMLEFT", 0, -4)
+
+    local show_grid_container = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
+        function(is_checked)
+            M.db.show_grid = is_checked
+            if M.set_grid_visible then M.set_grid_visible(is_checked) end
+        end)
+    show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
+
+    local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    move_reset:SetSize(grid.reset_btn_width, 22)
+    move_reset:SetPoint("TOPLEFT", show_grid_container, "BOTTOMLEFT", 0, -6)
+    move_reset:SetText("Move Reset")
+    move_reset:SetScript("OnClick", function()
+        local tmpl = M.CUSTOM_FRAME_TEMPLATE
+        pos.x = tmpl.position.x
+        pos.y = tmpl.position.y
+        entry.move = tmpl.move
+        entry.width = tmpl.width
+        move_cb:SetChecked(false)
+        local f = M.frames[show_key]
+        if f then
+            if M.apply_frame_position then
+                M.apply_frame_position(f, pos)
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+            end
+            f:SetWidth(entry.width)
+            update()
+        end
+        if x_slider and x_slider.slider then x_slider.slider:SetValue(pos.x) end
+        if y_slider and y_slider.slider then y_slider.slider:SetValue(pos.y) end
+        if width_slider and width_slider.slider then width_slider.slider:SetValue(entry.width) end
+    end)
+
+    add_row_separator(1)
+
+    local enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
+        if not is_checked then
+            entry.test_aura = false
+            local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
+            if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
+            entry.move = false
+            if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
+        end
+        update()
+    end)
+
+    local test_aura_container = bound_cb("Test Aura", "test_aura", 2, 1, function(is_checked)
+        if is_checked then
+            entry.show = true
+            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
+        end
+        update()
+    end)
+    test_aura_container:ClearAllPoints()
+    test_aura_container:SetPoint("TOPLEFT", enable_container, "BOTTOMLEFT", 0, 0)
+
+    bound_cb("Frame BG", "bg", 2, 2)
+    bound_picker("bg_color", true, "Frame BG Color", 2, 3)
+
+    local name_container = CreateFrame("Frame", nil, p)
+    name_container:SetSize(130, 24)
+    local name_label = name_container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    name_label:SetPoint("BOTTOM", name_container, "TOP", 0, 2)
+    name_label:SetText("Frame Name")
+    local name_box = CreateFrame("EditBox", nil, name_container, "InputBoxTemplate")
+    name_box:SetSize(130, 22)
+    name_box:SetPoint("TOP", name_container, "TOP", 0, 0)
+    name_box:SetAutoFocus(false)
+    name_box:SetMaxLetters(32)
+    name_box:SetText(entry.name or id)
+    local function commit_name()
+        local new_name = (name_box:GetText() or ""):match("^%s*(.-)%s*$")
+        if not new_name or new_name == "" then
+            name_box:SetText(entry.name or id)
+            name_box:ClearFocus()
+            return
+        end
+        if new_name ~= entry.name then
+            entry.name = new_name
+            update_custom_frame_title(entry)
+            if M.on_custom_frame_renamed then M.on_custom_frame_renamed(id, new_name) end
+        end
+        name_box:ClearFocus()
+    end
+    name_box:SetScript("OnEnterPressed", commit_name)
+    name_box:SetScript("OnEditFocusLost", commit_name)
+    place_at(name_container, 2, 4, nil, { width = 130 })
+    add_row_separator(2)
+
+    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1)
+    local bar_color_picker = addon.CreateColorPicker(p, entry, "color", true, "Bar Color", M.CUSTOM_FRAME_TEMPLATE, update)
+    bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
+    M.controls["custom_" .. id .. "_bar_color"] = bar_color_picker
+    bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
+    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
+
+    local dir_options = {}
+    for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do
+        dir_options[#dir_options + 1] = { value = dir, text = dir }
+    end
+    local growth_dd = addon.CreateDropdown(addon_name..id.."Growth", p, "Growth Direction", dir_options, {
+        width = 106,
+        get_value = function() return entry.growth or "DOWN" end,
+        on_select = function(value) entry.growth = value; update() end,
+    })
+    place_at(growth_dd, 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
+    add_row_separator(3)
+
+    local timer_text_container = bound_cb("Timer Text", "timer", 4, 1)
+    local timer_bold_container = bound_cb("Timer Bold", "timer_number_font_bold", 4, 1, function()
+        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        update()
+    end)
+    timer_bold_container:ClearAllPoints()
+    timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
+
+    local font_options = {}
+    for _, def in ipairs(M.get_number_font_options and M.get_number_font_options() or {}) do
+        font_options[#font_options + 1] = {
+            value = def.key, text = def.label,
+            font_path = def.path, font_size = def.size, font_flags = def.flags,
+        }
+    end
+    local timer_font_dd = M.CreateListDropdown(addon_name..id.."TimerFont", p, "Timer Font", font_options,
+        function() return entry.timer_number_font or "source_code_pro" end,
+        function(value)
+            entry.timer_number_font = value
+            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            update()
+        end, 120)
+    place_at(timer_font_dd, 4, 2, nil, { width = 120, y_offset = -15 })
+
+    local font_size_slider = addon.CreateSliderWithBox(addon_name..id.."TimerFontSize", p, "Timer Font Size",
+        8, 14, 0.5, entry, "timer_number_font_size", M.CUSTOM_FRAME_TEMPLATE,
+        function()
+            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            update()
+        end)
+    place_at(font_size_slider, 4, 3)
+
+    local timer_color_picker = addon.CreateColorPicker(p, entry, "timer_color", false, "Timer Color", M.CUSTOM_FRAME_TEMPLATE, function()
+        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        update()
+    end)
+    timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
+    add_row_separator(4)
+
+    local scale_slider = addon.CreateSliderWithBox(addon_name..id.."Scale", p, "Scale",
+        0.5, 2.5, 0.01, entry, "scale", M.CUSTOM_FRAME_TEMPLATE, update)
+    place_at(scale_slider, 5, 1)
+
+    local spacing_slider = addon.CreateSliderWithBox(addon_name..id.."Spacing", p, "Spacing",
+        0, 20, 0.1, entry, "spacing", M.CUSTOM_FRAME_TEMPLATE, update)
+    place_at(spacing_slider, 5, 2)
+
+    local max_icons_slider = addon.CreateSliderWithBox(addon_name..id.."MaxIcons", p, "Max Icons",
+        5, 40, 1, entry, "max_icons", M.CUSTOM_FRAME_TEMPLATE,
+        function()
+            print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
+        end)
+    place_at(max_icons_slider, 5, 4)
+end
+
+function M.build_custom_child_panel(p, entry)
+    local id = entry and entry.id
+    if not id then return end
+
+    local header = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    header:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -18)
+    header:SetText((entry.name or id) .. " Filters")
+
+    local base_dd
+    local modifier_dd
+
+    local function set_base(value)
+        entry.aura_base_filter = (value == "HARMFUL") and "HARMFUL" or "HELPFUL"
+        if base_dd and base_dd.SetValue then base_dd:SetValue(entry.aura_base_filter) end
+    end
+
+    local function set_modifier(value)
+        entry.aura_modifier = value or "NONE"
+        local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+        if def and def.force_base then set_base(def.force_base) end
+        if modifier_dd and modifier_dd.SetValue then modifier_dd:SetValue(entry.aura_modifier) end
+    end
+
+    entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
+    entry.aura_modifier = entry.aura_modifier or "NONE"
+    set_modifier(entry.aura_modifier)
+
+    base_dd = addon.CreateDropdown(addon_name..id.."AuraBase", p, "Base", M.CUSTOM_AURA_BASE_FILTERS, {
+        width = 118,
+        get_value = function() return entry.aura_base_filter or "HELPFUL" end,
+        on_select = function(value)
+            set_base(value)
+            local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+            if def and def.force_base and def.force_base ~= entry.aura_base_filter then
+                set_base(def.force_base)
+            end
+            update_custom_frame(entry)
+        end,
+    })
+    base_dd:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -32)
+
+    local pipe = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    pipe:SetPoint("LEFT", base_dd, "RIGHT", 10, 0)
+    pipe:SetText("|")
+
+    modifier_dd = addon.CreateDropdown(addon_name..id.."AuraModifier", p, "Modifier", M.CUSTOM_AURA_MODIFIERS, {
+        width = 185,
+        get_value = function() return entry.aura_modifier or "NONE" end,
+        on_select = function(value)
+            set_modifier(value)
+            update_custom_frame(entry)
+        end,
+    })
+    modifier_dd:SetPoint("LEFT", pipe, "RIGHT", 10, 0)
+end
