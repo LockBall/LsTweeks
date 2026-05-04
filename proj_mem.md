@@ -57,6 +57,7 @@ Every lua file must open with a brief comment (up to a few sentences) explaining
 ## Architecture Rules
 - **Module pattern:** `local addon_name, addon = ...` at top of every file; modules share the `addon` namespace table.
 - **Self-registration:** modules call `addon.register_category(name, builder_fn)` to appear in the settings sidebar.
+- **Versioning:** `LsTweeks.toc` is the only version edit point. Runtime display must read through `addon.get_version()`, which caches `C_AddOns.GetAddOnMetadata(addon_name, "Version")`; do not hardcode version fallbacks in Lua/docs.
 - **DB access:** `Ls_Tweeks_DB.module_key = Ls_Tweeks_DB.module_key or {}` — always guard with `or {}`.
 - **Init pattern:** every module creates a loader frame, registers ADDON_LOADED, and unregisters after first fire.
 - **Hot paths:** cache WoW globals at file top — `local floor = math.floor`, `local GetTime = GetTime`, etc.
@@ -120,6 +121,8 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 `af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
 
 `af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
+
+TODO: Examine consolidating the preset/custom `place_at()` grid helpers in `af_gui_frame_builders.lua` into one shared helper. Highlander rule: there can be only one placement path unless the layouts genuinely diverge.
 
 Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`

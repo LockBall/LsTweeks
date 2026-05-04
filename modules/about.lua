@@ -41,7 +41,7 @@ local function build_about_page(parent)
 
     local version = parent:CreateFontString(nil, "OVERLAY", theme.font_subtitle)
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, cfg.version_offset_y)
-    version:SetText(STRINGS.version_label .. (addon.version or "0.1.0"))
+    version:SetText(STRINGS.version_label .. (addon.get_version and addon.get_version() or "unknown"))
 
     -- Create riveted panel for description
     local panelWidth = math.min(panel_style.panel_max_width, 741 - panel_style.panel_margin)
