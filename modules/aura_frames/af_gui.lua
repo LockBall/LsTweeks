@@ -133,8 +133,7 @@ function M.BuildSettings(parent)
         local TREE_GAP_RIGHT = 10
         local TREE_TOP_Y     = 10
         local PAD            = 10
-        local ROW_H          = 22
-        local ROW_GAP        = 2
+        local ROW_H          = 15
         local ARROW_W        = 18
         local INDENT_CHILD   = 12
         local CD_GROUP_KEYS  = {
@@ -143,11 +142,16 @@ function M.BuildSettings(parent)
             tracked_buffs = true,
             tracked_bars = true,
         }
+        local GROUP_BOX_INSET = PAD - 2
+        local GROUP_INNER_PAD = 6
+        local GROUP_ELEMENT_GAP = 1
         local GROUP_TITLE_H = 22
-        local GROUP_PAD = 5
-        local GROUP_GAP = 8
-        local CD_GROUP_LABEL_H = 48
-        local CD_GROUP_PAD = 5
+        local GROUP_TEXT_TITLE_H = 12
+        local GROUP_TITLE_W = TREE_W - ((GROUP_BOX_INSET + GROUP_INNER_PAD) * 2)
+        local GROUP_GAP = 10
+        local SYNC_CDM_H = 20
+        local CD_GROUP_LABEL_H = GROUP_INNER_PAD + GROUP_TITLE_H + GROUP_ELEMENT_GAP + SYNC_CDM_H + GROUP_ELEMENT_GAP
+        local CD_GROUP_PAD = 0
 
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
         tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
@@ -211,6 +215,19 @@ function M.BuildSettings(parent)
         sel_highlight:SetColorTexture(0.75, 0.75, 0.75, 0.18)
         sel_highlight:Hide()
 
+        local group_boxes = {}
+        local function set_active_group_title(group_key)
+            for key, frame in pairs(group_boxes) do
+                if frame and frame.SetBackdropBorderColor then
+                    if key == group_key then
+                        frame:SetBackdropBorderColor(1, 0.82, 0, 0.75)
+                    else
+                        frame:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
+                    end
+                end
+            end
+        end
+
         local function set_selected(fs)
             if selected_fs then selected_fs:SetTextColor(unpack(NORM_COLOR)) end
             selected_fs = fs
@@ -220,8 +237,10 @@ function M.BuildSettings(parent)
                 sel_highlight:SetPoint("TOPLEFT",     fs:GetParent(), "TOPLEFT",     0, 0)
                 sel_highlight:SetPoint("BOTTOMRIGHT", fs:GetParent(), "BOTTOMRIGHT", 0, 0)
                 sel_highlight:Show()
+                set_active_group_title(fs._group_key)
             else
                 sel_highlight:Hide()
+                set_active_group_title(nil)
             end
         end
 
@@ -304,7 +323,7 @@ function M.BuildSettings(parent)
             end
 
             local add_y = M._filters_add_y or (-PAD - ROW_H)
-            local y = add_y - (ROW_H + ROW_GAP)
+            local y = add_y - (ROW_H + GROUP_ELEMENT_GAP)
 
             -- ---- Custom frame rows ----
             if M.db and M.db.custom_frames then
@@ -348,6 +367,7 @@ function M.BuildSettings(parent)
                         row.del_btn:SetAlpha(0)
                     end)
                     cat_btn:Show()
+                    cat_fs._group_key = "filters"
                     node_fs_map[cat_key] = cat_fs
 
                     -- Inline rename EditBox (hidden by default; shown on double-click or rename trigger)
@@ -448,7 +468,7 @@ function M.BuildSettings(parent)
                         StaticPopup_Show("LSTWEEKS_DEL_CUSTOM")
                     end)
 
-                    y = y - (ROW_H + ROW_GAP)
+                    y = y - (ROW_H + GROUP_ELEMENT_GAP)
 
                     -- Child: Filters
                     local child_x = PAD + ARROW_W + INDENT_CHILD
@@ -465,6 +485,7 @@ function M.BuildSettings(parent)
                         if child_fs ~= selected_fs then child_fs:SetTextColor(unpack(NORM_COLOR)) end
                     end)
                     child_btn:SetShown(M._custom_expanded[id])
+                    child_fs._group_key = "filters"
                     node_fs_map[child_key] = child_fs
 
                     local child_entry = entry
@@ -474,7 +495,7 @@ function M.BuildSettings(parent)
                     end)
 
                     if M._custom_expanded[id] then
-                        y = y - (ROW_H + ROW_GAP)
+                        y = y - (ROW_H + GROUP_ELEMENT_GAP)
                     end
 
                     -- Wire expand/collapse
@@ -483,7 +504,7 @@ function M.BuildSettings(parent)
                         arrow_fs:SetText(M._custom_expanded[id] and "-" or "+")
                         child_btn:SetShown(M._custom_expanded[id])
                         if not M._custom_expanded[id] then
-                            y = y + (ROW_H + ROW_GAP)
+                            y = y + (ROW_H + GROUP_ELEMENT_GAP)
                         end
                         -- Reposition + Custom button
                         if add_btn_ref then
@@ -542,7 +563,7 @@ function M.BuildSettings(parent)
         -- ----------------------------------------------------------------
         local y = -PAD
 
-        local function create_group_box(title)
+        local function create_group_box(title, group_key)
             local box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
             box:SetBackdrop({
                 edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -551,27 +572,18 @@ function M.BuildSettings(parent)
             })
             box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
             box:Hide()
+            if group_key then group_boxes[group_key] = box end
 
-            local title_bg = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
-            title_bg:SetSize(120, 22)
-            title_bg:SetBackdrop({
-                bgFile   = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8x8",
-                tile = true, tileSize = 8, edgeSize = 1,
-                insets = { left = 1, right = 1, top = 1, bottom = 1 },
-            })
-            title_bg:SetBackdropColor(0.16, 0.16, 0.16, 0.9)
-            title_bg:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.8)
-            title_bg:Hide()
-
-            local title_fs = title_bg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            title_fs:SetPoint("CENTER", title_bg, "CENTER", 0, 0)
+            local title_fs = tree_frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            title_fs:SetSize(GROUP_TITLE_W, GROUP_TEXT_TITLE_H)
+            title_fs:SetJustifyH("CENTER")
             title_fs:SetText(title)
+            title_fs:Hide()
 
-            return box, title_bg
+            return box, title_fs
         end
 
-        local buffs_group_box, buffs_group_title = create_group_box("Buffs")
+        local buffs_group_box, buffs_group_title = create_group_box("Buffs", "buffs")
         local cooldown_group_box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
         cooldown_group_box:SetBackdrop({
             edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -580,12 +592,15 @@ function M.BuildSettings(parent)
         })
         cooldown_group_box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
         cooldown_group_box:Hide()
-        filters_group_box, filters_group_title = create_group_box("Filters")
+        group_boxes.cooldown = cooldown_group_box
+        filters_group_box, filters_group_title = create_group_box("Filters", "filters")
 
         local cooldown_group_title_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
-        cooldown_group_title_btn:SetSize(120, 22)
+        cooldown_group_title_btn:SetSize(GROUP_TITLE_W, GROUP_TITLE_H)
         cooldown_group_title_btn:Hide()
         cooldown_group_title_btn:SetText("WoW Cooldown")
+        cooldown_group_title_btn:SetNormalFontObject("GameFontNormalSmall")
+        cooldown_group_title_btn:SetHighlightFontObject("GameFontHighlightSmall")
         cooldown_group_title_btn:SetScript("OnClick", function()
             local function queue_cdm_refreshes()
                 if M.queue_wow_cooldown_settings_refreshes then
@@ -629,9 +644,11 @@ function M.BuildSettings(parent)
         end)
 
         local sync_cdm_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
-        sync_cdm_btn:SetSize(120, 20)
+        sync_cdm_btn:SetSize(GROUP_TITLE_W, SYNC_CDM_H)
         sync_cdm_btn:Hide()
         sync_cdm_btn:SetText("Sync to CDM")
+        sync_cdm_btn:SetNormalFontObject("GameFontNormalSmall")
+        sync_cdm_btn:SetHighlightFontObject("GameFontHighlightSmall")
         sync_cdm_btn:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText("Sync to CDM", 1, 1, 1)
@@ -658,27 +675,26 @@ function M.BuildSettings(parent)
         local function place_group_box(box, title_frame, top_y, bottom_y)
             if top_y and bottom_y then
                 box:ClearAllPoints()
-                box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD - 2, top_y)
-                box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD + 2, bottom_y + 2)
+                box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", GROUP_BOX_INSET, top_y)
+                box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - GROUP_BOX_INSET, bottom_y - GROUP_INNER_PAD)
                 box:Show()
                 title_frame:ClearAllPoints()
-                title_frame:SetPoint("TOP", box, "TOP", 0, -3)
+                title_frame:SetPoint("TOP", box, "TOP", 0, -GROUP_INNER_PAD)
                 title_frame:Show()
             end
         end
 
         buffs_group_top_y = y
-        y = y - (GROUP_TITLE_H + GROUP_PAD)
+        y = y - (GROUP_INNER_PAD + GROUP_TEXT_TITLE_H + GROUP_ELEMENT_GAP)
         for _, data in ipairs(frames_data) do
             local cat = data.show_key:sub(6)
             if CD_GROUP_KEYS[cat] and not cooldown_group_top_y then
                 buffs_group_bottom_y = y
-                y = y - GROUP_GAP
+                y = y - (GROUP_GAP + GROUP_INNER_PAD)
                 y = y - (CD_GROUP_LABEL_H + CD_GROUP_PAD)
                 cooldown_group_top_y = y + CD_GROUP_LABEL_H + CD_GROUP_PAD
                 cooldown_group_title_btn:Show()
                 sync_cdm_btn:Show()
-                y = y - CD_GROUP_PAD
             end
             local learned_key, expanded_key, learned_builder
             local has_learned_child = learned_key ~= nil
@@ -698,13 +714,14 @@ function M.BuildSettings(parent)
             local cat_w = TREE_W - cat_x - PAD
             local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
             cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
+            cat_fs._group_key = CD_GROUP_KEYS[cat] and "cooldown" or "buffs"
             node_fs_map[cat] = cat_fs
             cat_btn:SetScript("OnClick", function()
                 set_selected(cat_fs)
                 show_node(cat, function(pnl) build_category_tab(pnl, data) end)
             end)
 
-            y = y - (ROW_H + ROW_GAP)
+            y = y - (ROW_H + GROUP_ELEMENT_GAP)
             if CD_GROUP_KEYS[cat] then cooldown_group_bottom_y = y end
 
             if has_learned_child then
@@ -718,7 +735,7 @@ function M.BuildSettings(parent)
                     show_node(child_key, learned_builder)
                 end)
                 if M[expanded_key] then
-                    y = y - (ROW_H + ROW_GAP)
+                    y = y - (ROW_H + GROUP_ELEMENT_GAP)
                 end
 
                 arrow:SetScript("OnClick", function()
@@ -739,18 +756,18 @@ function M.BuildSettings(parent)
         place_group_box(buffs_group_box, buffs_group_title, buffs_group_top_y, buffs_group_bottom_y)
 
         if cooldown_group_top_y and cooldown_group_bottom_y then
-            cooldown_group_box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD - 2, cooldown_group_top_y)
-            cooldown_group_box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - PAD + 2, cooldown_group_bottom_y + 2)
+            cooldown_group_box:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", GROUP_BOX_INSET, cooldown_group_top_y)
+            cooldown_group_box:SetPoint("BOTTOMRIGHT", tree_frame, "TOPLEFT", TREE_W - GROUP_BOX_INSET, cooldown_group_bottom_y - GROUP_INNER_PAD)
             cooldown_group_box:Show()
             cooldown_group_title_btn:ClearAllPoints()
-            cooldown_group_title_btn:SetPoint("TOP", cooldown_group_box, "TOP", 0, -3)
+            cooldown_group_title_btn:SetPoint("TOP", cooldown_group_box, "TOP", 0, -GROUP_INNER_PAD)
             sync_cdm_btn:ClearAllPoints()
-            sync_cdm_btn:SetPoint("TOP", cooldown_group_title_btn, "BOTTOM", 0, -2)
+            sync_cdm_btn:SetPoint("TOP", cooldown_group_title_btn, "BOTTOM", 0, -GROUP_ELEMENT_GAP)
         end
 
-        y = y - GROUP_GAP
+        y = y - (GROUP_GAP + GROUP_INNER_PAD)
         filters_group_top_y = y
-        y = y - (GROUP_TITLE_H + GROUP_PAD)
+        y = y - (GROUP_INNER_PAD + GROUP_TEXT_TITLE_H + GROUP_ELEMENT_GAP)
         M._filters_add_y = y
         update_filters_group_box = function(bottom_y)
             place_group_box(filters_group_box, filters_group_title, filters_group_top_y, bottom_y)
