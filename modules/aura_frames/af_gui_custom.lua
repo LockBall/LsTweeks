@@ -112,8 +112,12 @@ function M.build_custom_settings_panel(p, entry)
     local function update_frame_position()
         local f = M.frames[show_key]
         if f and pos then
-            f:ClearAllPoints()
-            f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+            if M.apply_frame_position then
+                M.apply_frame_position(f, pos)
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+            end
         end
     end
 
@@ -171,8 +175,12 @@ function M.build_custom_settings_panel(p, entry)
         move_cb:SetChecked(false)
         local f = M.frames[show_key]
         if f then
-            f:ClearAllPoints()
-            f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+            if M.apply_frame_position then
+                M.apply_frame_position(f, pos)
+            else
+                f:ClearAllPoints()
+                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+            end
             f:SetWidth(entry.width)
             update()
         end

@@ -82,7 +82,7 @@ Ls_Tweeks_DB = {
   last_open_module = string,           -- last sidebar tab name (survives reset intentionally)
   combat_text = bool,                  -- hide portrait combat text
   aura_frames = {
-    last_tab_index = number,           -- last selected category tab (1=General, 2=Static, ...)
+    last_tab_index = number,           -- last selected aura tab (1=General, 2=Frames, 3=Spell ID)
     last_frames_node = string,         -- last selected frame node in category tabs
     short_threshold = number,
     enable_blizz_buffs = bool,
@@ -115,14 +115,18 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 ## af_gui.lua Layout System
 `BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
 
-**Frames tab** has a left tree sidebar (140px wide) listing Static/Debuff/Short/Long, a grouped WoW Cooldown section (Essential/Utility/Tracked Buffs/Tracked Bars), and custom entries with expand/collapse. Selecting a node lazy-builds a content panel to the right. Each content panel uses `place_at(control, row, column, slot, opts)` with a 4-column grid:
+**Frames tab** has a left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui.lua`.
+
+Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
 - `col_width=190` — centering zone within each column
 - All 4 columns center-aligned by default (`col_align = {"center","center","center","center"}`)
 - `opts.align` overrides per-call ("left", "center", "right")
-- 5 rows: `row_heights = {130, 60, 60, 110, 110}`, `row_start=10`, `row_gap=20`
+- 5 rows: `row_heights = {130, 60, 90, 120, 110}`, `row_start=10`, `row_gap=20`
 - `slot` maps to `grid.offsets`: `dropdown=8`, `picker=4`, `default=0`
 - `opts.valign="bottom"` descends one extra row height
+
+Aura frame saved positions are stored in unscaled UIParent-center coordinates. Runtime placement uses `M.apply_frame_position(frame, pos, scale)` and drag/slider sync uses `M.read_frame_position(frame)` so scaled frames do not jump when moved.
 
 ## UI Shared Controls — Quick Reference
 | Function | Key args | Notes |

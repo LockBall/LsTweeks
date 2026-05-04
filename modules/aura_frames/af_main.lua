@@ -23,6 +23,30 @@ local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 
 local WOW_COOLDOWN_STARTUP_REFRESH_DELAYS = { 0.2, 0.6, 1.2, 2.5, 5.0 }
 
+function M.apply_frame_position(frame, pos, scale)
+    if not (frame and pos) then return end
+    scale = scale or (frame.GetScale and frame:GetScale()) or 1
+    if scale == 0 then scale = 1 end
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
+end
+
+function M.read_frame_position(frame)
+    if not frame then return nil, nil end
+    local left = frame:GetLeft()
+    local top  = frame:GetTop()
+    if not (left and top) then return nil, nil end
+
+    local parent_scale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    local frame_scale  = frame.GetEffectiveScale and frame:GetEffectiveScale() or frame:GetScale() or 1
+    if parent_scale == 0 then parent_scale = 1 end
+    local scale = frame_scale / parent_scale
+    local ucx, ucy = UIParent:GetCenter()
+    local x = (left * scale) - ucx
+    local y = (top  * scale) - ucy
+    return math.floor(x + 0.5), math.floor(y + 0.5)
+end
+
 M.NUMBER_FONT_OPTIONS = {
     {
         key = "source_code_pro",
@@ -200,8 +224,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     local pos = M.db.positions and M.db.positions[category]
     if pos then
-        frame:ClearAllPoints()
-        frame:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+        M.apply_frame_position(frame, pos, M.db[scale_key] or 1)
     else
         frame:SetPoint("TOPLEFT", UIParent, "CENTER", -100, is_debuff and -25 or 75)
     end
@@ -234,19 +257,19 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         tb:SetScript("OnDragStart", function() parent:StartMoving() end)
         tb:SetScript("OnDragStop", function()
             parent:StopMovingOrSizing()
-            local ucx, ucy = UIParent:GetCenter()
             local positions = M.db.positions
             if not positions then return end
             local pos = positions[parent.category]
             if not pos then return end
+            local x, y = M.read_frame_position(parent)
+            if not (x and y) then return end
             pos.point = "TOPLEFT"
-            pos.x = math.floor(parent:GetLeft() - ucx + 0.5)
-            pos.y = math.floor(parent:GetTop()  - ucy + 0.5)
+            pos.x = x
+            pos.y = y
             if M.db and M.db.snap_to_grid and M.snap_to_grid then
                 pos.x = M.snap_to_grid(pos.x, false)
                 pos.y = M.snap_to_grid(pos.y, true)
-                parent:ClearAllPoints()
-                parent:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+                M.apply_frame_position(parent, pos)
             end
         end)
         return tb
@@ -507,6 +530,9 @@ function M.create_custom_frame(entry)
     frame.is_custom    = true
     frame.custom_entry = entry
     frame._cfg_db      = entry
+    if entry.position and M.apply_frame_position then
+        M.apply_frame_position(frame, entry.position, entry.scale or 1)
+    end
 
     -- The pool is built before the frame is tagged as custom, so apply the
     -- entry-scoped timer font settings once the custom config is available.
@@ -543,16 +569,18 @@ function M.create_custom_frame(entry)
     -- Override OnDragStop for title bars: write position to entry.position.
     local function on_drag_stop()
         frame:StopMovingOrSizing()
-        local ucx, ucy = UIParent:GetCenter()
         if not entry.position then entry.position = {} end
+        local x, y = M.read_frame_position and M.read_frame_position(frame)
+        if not (x and y) then return end
         entry.position.point = "TOPLEFT"
-        entry.position.x = math.floor(frame:GetLeft() - ucx + 0.5)
-        entry.position.y = math.floor(frame:GetTop()  - ucy + 0.5)
+        entry.position.x = x
+        entry.position.y = y
         if M.db and M.db.snap_to_grid and M.snap_to_grid then
             entry.position.x = M.snap_to_grid(entry.position.x, false)
             entry.position.y = M.snap_to_grid(entry.position.y, true)
-            frame:ClearAllPoints()
-            frame:SetPoint("TOPLEFT", UIParent, "CENTER", entry.position.x, entry.position.y)
+            if M.apply_frame_position then
+                M.apply_frame_position(frame, entry.position)
+            end
         end
     end
     if frame.title_bar then
@@ -677,19 +705,21 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Migrate any stored positions to TOPLEFT-anchor format.
         -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
         C_Timer.After(0, function()
-            local ucx, ucy = UIParent:GetCenter()
             for show_key, frame in pairs(M.frames) do
                 local cat = show_key:sub(6)
                 local pos = M.db.positions and M.db.positions[cat]
                 if pos and pos.point ~= "TOPLEFT" then
-                    local left = frame:GetLeft()
-                    local top  = frame:GetTop()
-                    if left and top then
-                        pos.x = math.floor(left - ucx + 0.5)
-                        pos.y = math.floor(top  - ucy + 0.5)
+                    local x, y = M.read_frame_position and M.read_frame_position(frame)
+                    if x and y then
+                        pos.x = x
+                        pos.y = y
                         pos.point = "TOPLEFT"
-                        frame:ClearAllPoints()
-                        frame:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+                        if M.apply_frame_position then
+                            M.apply_frame_position(frame, pos)
+                        else
+                            frame:ClearAllPoints()
+                            frame:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
+                        end
                     end
                 end
             end

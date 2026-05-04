@@ -151,13 +151,11 @@ function M.BuildSettings(parent)
         local GROUP_GAP = 10
         local SYNC_CDM_H = 20
         local CD_GROUP_LABEL_H = GROUP_INNER_PAD + GROUP_TITLE_H + GROUP_ELEMENT_GAP + SYNC_CDM_H + GROUP_ELEMENT_GAP
-        local CD_GROUP_PAD = 0
 
         local tree_frame = CreateFrame("Frame", nil, p, "BackdropTemplate")
         tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
         tree_frame:SetSize(TREE_W, TREE_H)
         M.frames_tree_frame  = tree_frame                             -- shared bottom anchor for child panels
-        M.frames_content_w   = 741 - (TREE_GAP_LEFT + TREE_W + TREE_GAP_RIGHT)  -- node panel width
         tree_frame:SetBackdrop({
             bgFile   = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -691,8 +689,8 @@ function M.BuildSettings(parent)
             if CD_GROUP_KEYS[cat] and not cooldown_group_top_y then
                 buffs_group_bottom_y = y
                 y = y - (GROUP_GAP + GROUP_INNER_PAD)
-                y = y - (CD_GROUP_LABEL_H + CD_GROUP_PAD)
-                cooldown_group_top_y = y + CD_GROUP_LABEL_H + CD_GROUP_PAD
+                y = y - CD_GROUP_LABEL_H
+                cooldown_group_top_y = y + CD_GROUP_LABEL_H
                 cooldown_group_title_btn:Show()
                 sync_cdm_btn:Show()
             end
@@ -1048,8 +1046,12 @@ function M.BuildSettings(parent)
             local pos = M.db.positions[cat]
             local f = M.frames[data.show_key]
             if f and pos then
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+                if M.apply_frame_position then
+                    M.apply_frame_position(f, pos)
+                else
+                    f:ClearAllPoints()
+                    f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+                end
             end
         end
 
@@ -1142,8 +1144,12 @@ function M.BuildSettings(parent)
             move_cb:SetChecked(dMove)
             local f = M.frames[data.show_key]
             if f then
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", dPos.x, dPos.y)
+                if M.apply_frame_position then
+                    M.apply_frame_position(f, M.db.positions[cat])
+                else
+                    f:ClearAllPoints()
+                    f:SetPoint("TOPLEFT", UIParent, "CENTER", dPos.x, dPos.y)
+                end
                 f:SetWidth(dWidth)
                 update()
             end
@@ -1280,12 +1286,19 @@ function M.BuildSettings(parent)
         local function sync_xy_sliders_to_frame()
             local f = M.frames[data.show_key]
             if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
-            local ucx, ucy = UIParent:GetCenter()
-            local left = f:GetLeft()
-            local top  = f:GetTop()
-            if left and top then
-                local x = math.floor(left - ucx + 0.5)
-                local y = math.floor(top  - ucy + 0.5)
+            local x, y
+            if M.read_frame_position then
+                x, y = M.read_frame_position(f)
+            else
+                local ucx, ucy = UIParent:GetCenter()
+                local left = f:GetLeft()
+                local top  = f:GetTop()
+                if left and top then
+                    x = math.floor(left - ucx + 0.5)
+                    y = math.floor(top  - ucy + 0.5)
+                end
+            end
+            if x and y then
                 M.db.positions[cat].x = x
                 M.db.positions[cat].y = y
                 M.db.positions[cat].point = "TOPLEFT"
