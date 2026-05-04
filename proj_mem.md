@@ -27,7 +27,6 @@ functions/
   module_reset.lua    — addon.CreateGlobalReset() — ARM-code safety reset
   panel_riveted.lua   — addon.CreateRivetedPanel() / ApplyRivetedPanelStyle() / AddRivetCorners()
   slider_with_box.lua — addon.CreateSliderWithBox()
-  step_button_group.lua — addon.CreateStepButtonGroup()
 modules/
   about.lua        — intro/version page
   settings/
@@ -138,7 +137,6 @@ Aura frame saved positions are stored in unscaled UIParent-center coordinates. R
 | `CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)` | integrated reset | container is 95×45 |
 | `CreateRivetedPanel(parent, w, h, anchorTo, point, x, y, levelOffset)` | returns panel, fontstring | |
 | `CreateGlobalReset(parent, db, defaults)` | ARM-code safety reset; blocked in combat | |
-| `CreateStepButtonGroup(parent, height, on_inc, on_dec)` | returns group frame | vertical stack layout |
 
 ## Debug Outlines (af_debug_outlines.lua)
 `M.db.show_bar_section_outlines` toggles 1px borders on aura icon slots.  

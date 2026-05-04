@@ -25,7 +25,6 @@ core\minimap_button.lua
 # --- Shared Functions ---
 functions\utils.lua
 functions\checkbox.lua
-functions\step_button_group.lua
 functions\slider_with_box.lua
 functions\module_reset.lua
 functions\color_picker.lua
