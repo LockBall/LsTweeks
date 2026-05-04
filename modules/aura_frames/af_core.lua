@@ -283,10 +283,15 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if _width  < 1 then _width  = 200 end
     if _height < 1 then _height = 50  end
     if not in_combat then
-        self:ClearAllPoints()
         if pos then
-            self:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
+            if M.apply_frame_position then
+                M.apply_frame_position(self, pos, scale)
+            else
+                self:ClearAllPoints()
+                self:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
+            end
         else
+            self:ClearAllPoints()
             self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (filter == "HARMFUL") and -25 or 75)
         end
         self:SetSize(_width, _height)
