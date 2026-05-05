@@ -19,14 +19,16 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 
 ## Manual Installation
 ### Download 
-1. Download the repository as a zip file by clicking the button, then clicking the inline code button <img src="./media/svg/code_button.svg" style="width:7em; height:auto; vertical-align:middle; display:inline-block;" alt="Code button"> then click
-
- <img src="./media/svg/download_zip.svg" style="width:10em; height:auto; vertical-align:middle; display:inline-block;" alt="Download ZIP">
+1. Download the repository as a zip file.
+    
+    1. Click <img src="./media/svg/code_button.svg" style="width:7em; height:auto; vertical-align:middle; display:inline-block;" alt="Code button"> 
+    
+    1. Click  <img src="./media/svg/download_zip.svg" style="width:10em; height:auto; vertical-align:middle; display:inline-block;" alt="Download ZIP">
 
 &nbsp;
 
 
-1. Extract the zip file which should generate a folder that is the AddOn.
+1. Extract the zip file which should generate a folder that, with its contents, is the L's Tweeks AddOn.
 
 1. Ensure the addon is in a single folder named `LsTweeks`.
     1. This is necessary as some zip file extractors will rename the folder or add extra folders.
