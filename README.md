@@ -1,7 +1,7 @@
 ## L's Tweeks
 A modular World of Warcraft UI addon for interface adjustments and configurable aura frames.
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Features
@@ -14,10 +14,13 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Toggle for portrait combat text.
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Manual Installation
+Choose a method, either Download or Clone, to install the AddOn.
+
+
 ### Download 
 1. Download the repository as a zip file.
     
@@ -35,12 +38,13 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
    `World of Warcraft/_retail_/Interface/AddOns/`
 
 1. Launch the game and enable **L's Tweeks** in the AddOns menu.
+<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
 
 ### Clone
 1. Clone the repository into the AddOns folder directly or to a location of your choice and copy or move into the WoW AddOn directory:  
    `World of Warcraft/_retail_/Interface/AddOns/`
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Use Notes
@@ -48,7 +52,7 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 - Open the **Buffs & Debuffs** panel for aura frame settings.
 - Open the **Settings** panel for minimap, open-on-reload, and interface transparency settings.
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Aura Frames Reference
@@ -59,6 +63,7 @@ Aura frames replace and extend the default buff / debuff display. The module inc
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
 - `Debuffs`: harmful player auras.
+<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
 
 ### WoW Cooldown Manager Frames
 CDM-backed frames read live Blizzard Cooldown Manager viewer state:
@@ -72,14 +77,15 @@ CDM-backed frames read live Blizzard Cooldown Manager viewer state:
 
 Cooldown Viewer categories come from WoW API `Enum.CooldownViewerCategory`.  
 Source: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
+<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
 
 ### Custom Filtered Frames
 
 Displays the result of selectable combination of filters. e.g.
 `HELPFULL | IMPORTAMT`
 The displayed ouput result of these combinations isn't fully known yet.
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 
----
 &nbsp;
 
 ## Embedded Libraries
@@ -90,7 +96,7 @@ Libraries are unmodified.
 - LibDataBroker
 - LibStub
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## License
@@ -99,7 +105,7 @@ Libraries are unmodified.
 - See the `LICENSE` file for full details.
 - Copyright (c) 2026 **LockBall**
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Credits
@@ -114,7 +120,7 @@ Libraries are unmodified.
 
 - Portions of this addon were developed with assistance by generative tools.
 
----
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
 
 ## Nerd Notes
@@ -127,6 +133,7 @@ Libraries are unmodified.
 - Changing an aura frame pool size requires `/reload` because icon pools are created at load time.
 
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
+<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
 
 ### Custom Filtered Frames
 - Custom frames scan player auras directly with API call `C_UnitAuras.GetAuraDataByIndex()` and a selected AuraFilters string.
@@ -137,3 +144,4 @@ Libraries are unmodified.
 - Source: https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
 
 - The `IMPORTANT` AuraFilter and several other AuraFilters values were added in 12.0.1. `IMPORTANT` is described as spells that pass `C_Spell.IsSpellImportant()`.
+<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
