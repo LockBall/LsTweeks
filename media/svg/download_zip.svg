@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 130 28"
+  preserveAspectRatio="xMidYMid meet"
+  role="img">
+
+  <!-- Background -->
+  <rect x="0" y="0" width="130" height="27" rx="4" fill="#1f1f1f"/>
+
+  <g transform="translate(2,0)"> <!-- center group: shifts zipper & text → -->
+    <!-- Text -->
+    <text
+      x="75"
+      y="19"
+      text-anchor="middle"
+      fill="#ffffff"
+      font-family="DejaVu Sans,Verdana,Geneva,sans-serif"
+      font-size="13"
+    >Download ZIP</text>
+
+    <!-- Zipper icon -->
+    <g transform="translate(8,0)">
+
+      <!-- zipper dots -->
+      <rect x="5.5"  y="5"   width="2" height="2" rx="0.5" fill="#ffffff"/>
+      <rect x="8.5"  y="7"   width="2" height="2" rx="0.5" fill="#ffffff"/>
+      <rect x="5.5"  y="9"   width="2" height="2" rx="0.5" fill="#ffffff"/>
+      <rect x="8.5"  y="11"   width="2" height="2" rx="0.5" fill="#ffffff"/>
+      <rect x="5.5"  y="13"  width="2" height="2" rx="0.5" fill="#ffffff"/>
+      <rect x="8.5"  y="15"  width="2" height="2" rx="0.5" fill="#ffffff"/>
+
+      <!-- zipper outline -->
+      <path d="
+        M -0.25, 3
+        H 10.5
+        M 0.5, 3
+        V 21
+        H4
+       "
+        fill="none" stroke="#ffffff" stroke-width="1.5"/>
+      <!-- Path A:  left-bottom, left, top
+        - M _, _    left end of top edge: - y, (top-left corner)
+        - H _       top edge, right end: + x,  (to chamfer)
+        - M _, _    left edge: x , - y, top end
+        - V _       left bottom edge: y
+        - H _       left bottom segment → x=_
+      -->
+
+      <path d="
+        M 10, 2.8
+        L 15.5, 9
+        V 21
+        H 12
+       "
+       fill="none" stroke="#ffffff" stroke-width="1.5"/>
+      <!-- Path B: chamfer / top-right / right-bottom
+        - M _, _    left chamfer end: x, -y
+        - L _, _    right chamfer end: x, -y, affects right edge
+        - V _       right bottom corner: -y
+        - H _       right bottom ← to x=_
+      -->
+
+      <!-- zipper pull -->
+      <rect x="6.0" y="18.5" width="4" height="6" rx="0.6" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+
+    </g> <!-- zipper icon -->
+
+  </g>
+
+</svg>
