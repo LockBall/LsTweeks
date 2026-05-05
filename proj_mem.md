@@ -110,6 +110,7 @@ Preset categories: `static`, `short`, `long`, `essential`, `utility`, `tracked_b
 `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
+First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.
 
 Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))`.
 
