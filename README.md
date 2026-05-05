@@ -19,35 +19,14 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 
 ## Manual Installation
 ### Download 
-1. Download the repository as a zip file by clicking the
+1. Download the repository as a zip file by clicking the button, then clicking the inline code button <img src="./media/svg/code_button.svg" style="width:7em; height:auto; vertical-align:middle; display:inline-block;" alt="Code button"> then click
 
-[![Button](https://img.shields.io/badge/<>_Code_▼-2ea853?style=flat&logoColor=white)](#)
+ <img src="./media/svg/download_zip.svg" style="width:10em; height:auto; vertical-align:middle; display:inline-block;" alt="Download ZIP">
 
-[![code_button](media/svg/code_button.svg)](#)
-
-button, then clicking 
-<button style="
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  padding: 0.5em 1em;
-  background-color: #1f1f1f;
-  color: white;
-  border: none;
-  border-radius: 0.5em;
-  font-size: 0.9em;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-">
-  <img src="readme_images/zipper.png" style="height: 2.0em; width: 2.0em;" alt="">
-  Download ZIP
-</button>
+&nbsp;
 
 
-
-
-1. Extract the zip file. This should give you a folder.
+1. Extract the zip file which should generate a folder that is the AddOn.
 
 1. Ensure the addon is in a single folder named `LsTweeks`.
     1. This is necessary as some zip file extractors will rename the folder or add extra folders.

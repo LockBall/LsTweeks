@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 96 28"
+  preserveAspectRatio="xMidYMid meet"
+  role="img">
+
+  <rect id="bg" x="0" y="0" width="96" height="28" rx="4" fill="#2ea853"/>
+
+  <text
+    id="label"
+    x="48"
+    y="19"
+    text-anchor="middle"
+    fill="#ffffff"
+    font-family="DejaVu Sans,Verdana,Geneva,sans-serif"
+    font-size="14"
+  >&lt;&gt; Code ▼</text>
+
+</svg>
