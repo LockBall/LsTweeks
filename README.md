@@ -25,8 +25,6 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
     
     1. Click  <img src="./media/svg/download_zip.svg" style="width:10em; height:auto; vertical-align:middle; display:inline-block;" alt="Download ZIP">
 
-&nbsp;
-
 
 1. Extract the zip file which should generate a folder that, with its contents, is the L's Tweeks AddOn.
 
