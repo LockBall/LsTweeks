@@ -20,25 +20,12 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 ## Manual Installation
 ### Download 
 1. Download the repository as a zip file by clicking the
-<button style="
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  padding: 0.5em 1em;
-  background-color: #2ea853;
-  color: white;
-  border: none;
-  border-radius: 0.5em;
-  font-size: 1em;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-">
-  <span style="font-size: 1.2em;">&#60;&#62;</span>
-  Code
-  <span style="font-size: 0.9em;">▼</span>
-</button>
-button, then clicking
+
+[![Button](https://img.shields.io/badge/<>_Code_▼-2ea853?style=flat&logoColor=white)](#)
+
+[![code_button](media/svg/code_button.svg)](#)
+
+button, then clicking 
 <button style="
   display: inline-flex;
   align-items: center;
@@ -48,7 +35,7 @@ button, then clicking
   color: white;
   border: none;
   border-radius: 0.5em;
-  font-size: 1em;
+  font-size: 0.9em;
   font-weight: 500;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -56,6 +43,9 @@ button, then clicking
   <img src="readme_images/zipper.png" style="height: 2.0em; width: 2.0em;" alt="">
   Download ZIP
 </button>
+
+
+
 
 1. Extract the zip file. This should give you a folder.
 
@@ -83,7 +73,7 @@ button, then clicking
 &nbsp;
 
 ## Aura Frames Reference
-Aura frames replace and extend the default buff/debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and up to four custom filtered frames.
+Aura frames replace and extend the default buff / debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
 ### Preset Frames
 - `Static`: permanent player buffs.
@@ -105,6 +95,10 @@ Cooldown Viewer categories come from WoW API `Enum.CooldownViewerCategory`.
 Source: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
 
 ### Custom Filtered Frames
+
+Displays the result of selectable combination of filters. e.g.
+`HELPFULL | IMPORTAMT`
+The displayed ouput result of these combinations isn't fully known yet.
 
 ---
 &nbsp;
@@ -146,7 +140,7 @@ Libraries are unmodified.
 
 ## Nerd Notes
 
-### Behavior Notes
+### Behavior
 - Aura scans are deferred and batched at 0.1s to avoid reading protected/secret aura fields inside event dispatch.
 
 - Frame geometry updates are skipped during combat; timers and bars continue updating, and layout catches up after combat.
