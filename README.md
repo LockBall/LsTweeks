@@ -31,14 +31,14 @@ Choose a method, either Download or Clone, to install the AddOn.
 
 1. Extract the zip file which should generate a folder that, with its contents, is the L's Tweeks AddOn.
 
-1. Ensure the addon is in a single folder named `LsTweeks`.
+1. Ensure the addon is in a single folder named `LsTweeks`
     1. This is necessary as some zip file extractors will rename the folder or add extra folders.
 
 1. Place the addon folder into the WoW AddOn directory:  
    `World of Warcraft/_retail_/Interface/AddOns/`
 
 1. Launch the game and enable **L's Tweeks** in the AddOns menu.
-<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
+<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
 
 ### Clone
 1. Clone the repository into the AddOns folder directly or to a location of your choice and copy or move into the WoW AddOn directory:  
@@ -63,7 +63,7 @@ Aura frames replace and extend the default buff / debuff display. The module inc
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
 - `Debuffs`: harmful player auras.
-<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
+<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
 
 ### WoW Cooldown Manager Frames
 CDM-backed frames read live Blizzard Cooldown Manager viewer state:
@@ -77,7 +77,7 @@ CDM-backed frames read live Blizzard Cooldown Manager viewer state:
 
 Cooldown Viewer categories come from WoW API `Enum.CooldownViewerCategory`.  
 Source: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
-<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
+<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
 
 ### Custom Filtered Frames
 
@@ -133,7 +133,7 @@ Libraries are unmodified.
 - Changing an aura frame pool size requires `/reload` because icon pools are created at load time.
 
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
-<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
+<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
 
 ### Custom Filtered Frames
 - Custom frames scan player auras directly with API call `C_UnitAuras.GetAuraDataByIndex()` and a selected AuraFilters string.
@@ -144,4 +144,4 @@ Libraries are unmodified.
 - Source: https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
 
 - The `IMPORTANT` AuraFilter and several other AuraFilters values were added in 12.0.1. `IMPORTANT` is described as spells that pass `C_Spell.IsSpellImportant()`.
-<hr style="border:0; border-top:3px dashed currentColor; opacity:0.12; margin:0.75rem 0;" />
+<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
