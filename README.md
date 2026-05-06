@@ -38,7 +38,9 @@ Choose a method, either Download or Clone, to install the AddOn.
    `World of Warcraft/_retail_/Interface/AddOns/`
 
 1. Launch the game and enable **L's Tweeks** in the AddOns menu.
-<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+<p align="center">
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+</p>
 
 ### Clone
 1. Clone the repository into the AddOns folder directly or to a location of your choice and copy or move into the WoW AddOn directory:  
