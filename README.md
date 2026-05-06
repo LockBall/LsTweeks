@@ -38,9 +38,7 @@ Choose a method, either Download or Clone, to install the AddOn.
    `World of Warcraft/_retail_/Interface/AddOns/`
 
 1. Launch the game and enable **L's Tweeks** in the AddOns menu.
-<p align="center">
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-</p>
+<img src="./media/svg/divider_dashed.svg" width="100%">
 
 ### Clone
 1. Clone the repository into the AddOns folder directly or to a location of your choice and copy or move into the WoW AddOn directory:  
@@ -65,7 +63,7 @@ Aura frames replace and extend the default buff / debuff display. The module inc
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
 - `Debuffs`: harmful player auras.
-<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+<img src="./media/svg/divider_dashed.svg" width="100%">
 
 ### WoW Cooldown Manager Frames
 CDM-backed frames read live Blizzard Cooldown Manager viewer state:
@@ -79,7 +77,7 @@ CDM-backed frames read live Blizzard Cooldown Manager viewer state:
 
 Cooldown Viewer categories come from WoW API `Enum.CooldownViewerCategory`.  
 Source: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
-<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+<img src="./media/svg/divider_dashed.svg" width="100%">
 
 ### Custom Filtered Frames
 
@@ -135,7 +133,7 @@ Libraries are unmodified.
 - Changing an aura frame pool size requires `/reload` because icon pools are created at load time.
 
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
-<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+<img src="./media/svg/divider_dashed.svg" width="100%">
 
 ### Custom Filtered Frames
 - Custom frames scan player auras directly with API call `C_UnitAuras.GetAuraDataByIndex()` and a selected AuraFilters string.
@@ -146,4 +144,4 @@ Libraries are unmodified.
 - Source: https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
 
 - The `IMPORTANT` AuraFilter and several other AuraFilters values were added in 12.0.1. `IMPORTANT` is described as spells that pass `C_Spell.IsSpellImportant()`.
-<p align="center">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</p>
+<img src="./media/svg/divider_dashed.svg" width="100%">
