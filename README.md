@@ -145,3 +145,5 @@ Libraries are unmodified.
 
 - The `IMPORTANT` AuraFilter and several other AuraFilters values were added in 12.0.1. `IMPORTANT` is described as spells that pass `C_Spell.IsSpellImportant()`.
 <img src="./media/svg/divider_dashed.svg" width="100%">
+
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
