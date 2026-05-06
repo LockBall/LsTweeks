@@ -23,24 +23,6 @@ end
 -- ============================================================================
 -- TIMER TICKER
 
-local function set_icon_greyed(texture, greyed)
-    if not texture then return end
-    greyed = greyed and true or false
-    if texture._lstweeks_greyed == greyed then return end
-    texture._lstweeks_greyed = greyed
-    if texture.SetDesaturated then
-        texture:SetDesaturated(greyed)
-    elseif texture.SetDesaturation then
-        texture:SetDesaturation(greyed and 1 or 0)
-    end
-    if texture.SetVertexColor then
-        if greyed then
-            texture:SetVertexColor(0.75, 0.75, 0.75, 1)
-        else
-            texture:SetVertexColor(1, 1, 1, 1)
-        end
-    end
-end
 
 local function set_count_text(obj, count)
     if issecretvalue(count) then
@@ -144,11 +126,6 @@ function M.tick_visible_icons(now)
                         if show_timer_text and not show_cooldown_overlay then
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
-                    end
-                    if show_cooldown_overlay and obj.is_spell_cooldown then
-                        set_icon_greyed(obj.texture, obj.grey_cooldown)
-                    elseif obj.texture then
-                        set_icon_greyed(obj.texture, false)
                     end
                     set_count_text(obj, obj.aura_count)
                 end
