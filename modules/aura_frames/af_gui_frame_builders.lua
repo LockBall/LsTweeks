@@ -169,11 +169,10 @@ function M.build_preset_frame_panel(p, data)
     M.controls["width_slider_"..cat] = width_slider
 
     -- X/Y Position sliders — defined early so Row 1 and move_reset can reference them.
-    local function update_frame_position()
-        local pos = M.db.positions[cat]
+    local function update_frame_position(axis, value)
         local f = M.frames[data.show_key]
-        if f and pos then
-            M.apply_frame_position(f, pos)
+        if f and value ~= nil then
+            M.set_saved_frame_position_axis(f, axis, value, data.scale_key)
         end
     end
 
@@ -184,7 +183,9 @@ function M.build_preset_frame_panel(p, data)
         -1000, 1000, 1,
         M.db.positions[cat], "x", M.defaults.positions[cat]
     )
-    x_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    x_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("x", value)
+    end)
     M.controls["x_pos_slider_"..cat] = x_slider
 
     local y_slider = addon.CreateSliderWithBox(
@@ -194,7 +195,9 @@ function M.build_preset_frame_panel(p, data)
         -1000, 1000, 1,
         M.db.positions[cat], "y", M.defaults.positions[cat]
     )
-    y_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    y_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("y", value)
+    end)
     M.controls["y_pos_slider_"..cat] = y_slider
 
     -- Row 1
@@ -266,7 +269,7 @@ function M.build_preset_frame_panel(p, data)
         move_cb:SetChecked(dMove)
         local f = M.frames[data.show_key]
         if f then
-            M.apply_frame_position(f, M.db.positions[cat])
+            M.apply_saved_frame_position(f, data.scale_key)
             f:SetWidth(dWidth)
             update()
         end
@@ -404,10 +407,9 @@ function M.build_preset_frame_panel(p, data)
         local f = M.frames[data.show_key]
         if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
         local pos = M.db.positions and M.db.positions[cat]
-        local x, y = pos and M.sync_frame_position_to_db and M.sync_frame_position_to_db(f, pos)
-        if x and y then
-            x_slider.slider:SetValue(x)
-            y_slider.slider:SetValue(y)
+        if pos and pos.x and pos.y then
+            x_slider.slider:SetValue(pos.x)
+            y_slider.slider:SetValue(pos.y)
         end
     end
 
@@ -487,10 +489,10 @@ function M.build_custom_settings_panel(p, entry)
     local pos = entry.position or { x = 0, y = 50 }
     entry.position = pos
 
-    local function update_frame_position()
+    local function update_frame_position(axis, value)
         local f = M.frames[show_key]
-        if f and pos then
-            M.apply_frame_position(f, pos)
+        if f and value ~= nil then
+            M.set_saved_frame_position_axis(f, axis, value, "scale")
         end
     end
 
@@ -506,11 +508,15 @@ function M.build_custom_settings_panel(p, entry)
     end)
 
     local x_slider = addon.CreateSliderWithBox(addon_name..id.."XPos", p, "X Position", -1000, 1000, 1, pos, "x", { x = 0 })
-    x_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    x_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("x", value)
+    end)
     place_at(x_slider, 1, 2)
 
     local y_slider = addon.CreateSliderWithBox(addon_name..id.."YPos", p, "Y Position", -1000, 1000, 1, pos, "y", { y = 50 })
-    y_slider.slider:HookScript("OnValueChanged", update_frame_position)
+    y_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("y", value)
+    end)
     place_at(y_slider, 1, 3)
 
     local width_slider = addon.CreateSliderWithBox(addon_name..id.."Width", p, "Width", 180, 800, 1, entry, "width", M.CUSTOM_FRAME_TEMPLATE)
@@ -548,7 +554,7 @@ function M.build_custom_settings_panel(p, entry)
         move_cb:SetChecked(false)
         local f = M.frames[show_key]
         if f then
-            M.apply_frame_position(f, pos)
+            M.apply_saved_frame_position(f, "scale")
             f:SetWidth(entry.width)
             update()
         end

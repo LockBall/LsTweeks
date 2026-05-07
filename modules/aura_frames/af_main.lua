@@ -195,12 +195,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     if initial_width < MIN_FRAME_WIDTH then initial_width = MIN_FRAME_WIDTH end
     frame:SetSize(initial_width, 50)
 
-    local pos = M.db.positions and M.db.positions[category]
-    if pos then
-        M.apply_frame_position(frame, pos, M.db[scale_key] or 1)
-    else
-        frame:SetPoint("TOPLEFT", UIParent, "CENTER", -100, is_debuff and -25 or 75)
-    end
+    M.apply_saved_frame_position(frame, scale_key, is_debuff and -25 or 75)
     
     -- TITLE BAR LOGIC
     local TITLEBAR_ANCHORS = {
@@ -224,16 +219,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         tb:SetScript("OnDragStart", function() parent:StartMoving() end)
         tb:SetScript("OnDragStop", function()
             parent:StopMovingOrSizing()
-            local positions = M.db.positions
-            if not positions then return end
-            local pos = positions[parent.category]
-            if not pos then return end
-            local x, y = M.sync_frame_position_to_db(parent, pos)
-            if not (x and y) then return end
-            if M.db and M.db.snap_to_grid and M.snap_frame_position then
-                pos.x, pos.y = M.snap_frame_position(pos, parent)
-                M.apply_frame_position(parent, pos)
-            end
+            M.sync_frame_position_from_drag(parent, scale_key)
         end)
         return tb
     end
@@ -493,9 +479,7 @@ function M.create_custom_frame(entry)
     frame.is_custom    = true
     frame.custom_entry = entry
     frame._cfg_db      = entry
-    if entry.position then
-        M.apply_frame_position(frame, entry.position, entry.scale or 1)
-    end
+    M.apply_saved_frame_position(frame, "scale")
 
     -- The pool is built before the frame is tagged as custom, so apply the
     -- entry-scoped timer font settings once the custom config is available.
@@ -533,13 +517,7 @@ function M.create_custom_frame(entry)
     -- Override OnDragStop for title bars: write position to entry.position.
     local function on_drag_stop()
         frame:StopMovingOrSizing()
-        if not entry.position then entry.position = {} end
-        local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, entry.position)
-        if not (x and y) then return end
-        if M.db and M.db.snap_to_grid and M.snap_frame_position then
-            entry.position.x, entry.position.y = M.snap_frame_position(entry.position, frame)
-            M.apply_frame_position(frame, entry.position)
-        end
+        M.sync_frame_position_from_drag(frame, "scale")
     end
     if frame.title_bar then
         frame.title_bar:SetScript("OnDragStop", on_drag_stop)
@@ -663,13 +641,12 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Migrate any stored positions to TOPLEFT-anchor format.
         -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
         C_Timer.After(0, function()
-            for show_key, frame in pairs(M.frames) do
-                local cat = show_key:sub(6)
-                local pos = M.db.positions and M.db.positions[cat]
+            for _, frame in pairs(M.frames) do
+                local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
                 if pos and pos.point ~= "TOPLEFT" then
                     local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, pos)
                     if x and y then
-                        M.apply_frame_position(frame, pos)
+                        M.apply_saved_frame_position(frame)
                     end
                 end
             end
