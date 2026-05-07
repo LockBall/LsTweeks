@@ -70,8 +70,8 @@ M.defaults = {
     -- Global Toggles
     enable_blizz_buffs = true,
     enable_blizz_debuffs = true,
-    snap_to_grid   = false,
-    show_grid      = false,
+    snap_to_grid   = true,
+    show_grid      = true,
     show_bar_section_outlines = false,
     show_spell_id = false,
     fade_wow_cooldown_ooc = true,
@@ -266,14 +266,14 @@ M.defaults = {
     -- POSITIONS
     -- pos.x = left edge offset from screen center; pos.y = top edge offset from screen center
     positions = {
-        static = { point = "TOPLEFT", x = -100, y = 175 },
-        short  = { point = "TOPLEFT", x = -100, y = 125 },
-        long   = { point = "TOPLEFT", x = -100, y =  75 },
+        static = { point = "TOPLEFT", x = 485, y = 373.5 },
+        debuff = { point = "TOPLEFT", x = 485, y = 246.5 },
+        short  = { point = "TOPLEFT", x = 485, y = 128.5 },
+        long   = { point = "TOPLEFT", x = 485, y =  29 },
         essential = { point = "TOPLEFT", x = -100, y = 25 },
         utility = { point = "TOPLEFT", x = -100, y = -25 },
         tracked_buffs = { point = "TOPLEFT", x = -100, y = -75 },
         tracked_bars = { point = "TOPLEFT", x = -100, y = -125 },
-        debuff = { point = "TOPLEFT", x = -100, y = -175 },
     }
 }
 

@@ -187,6 +187,25 @@ function M.sync_general_controls_from_db()
         grid_cb:SetChecked(M.db.show_grid == true)
     end
 
+    for _, cat in ipairs(M.CATEGORIES or {}) do
+        local keys = {
+            "show_" .. cat,
+            "move_" .. cat,
+            "timer_" .. cat,
+            "bg_" .. cat,
+            "bar_mode_" .. cat,
+            "test_aura_" .. cat,
+            "cooldown_mode_" .. cat,
+            "hide_blizz_cdm_" .. cat,
+        }
+        for _, key in ipairs(keys) do
+            local cb = M.controls[key]
+            if cb and cb.SetChecked and M.db[key] ~= nil then
+                cb:SetChecked(M.db[key] == true)
+            end
+        end
+    end
+
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then

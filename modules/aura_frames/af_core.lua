@@ -221,24 +221,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         self:SetScale(scale)
     end
 
-    -- Position: custom frames store their position inside the entry.
-    local pos
-    if is_custom then
-        pos = custom_entry.position
-    else
-        pos = db.positions and db.positions[category]
-    end
     local _width  = frame_width
     local _height = self:GetHeight() or 50
     if _width  < 1 then _width  = 200 end
     if _height < 1 then _height = 50  end
     if not in_combat then
-        if pos then
-            M.apply_frame_position(self, pos, scale)
-        else
-            self:ClearAllPoints()
-            self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (aura_filter == "HARMFUL") and -25 or 75)
-        end
+        M.apply_saved_frame_position(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75)
         self:SetSize(_width, _height)
     end
 

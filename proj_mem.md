@@ -8,6 +8,7 @@ This file is shared project memory for coding agents working on LsTweeks. Keep i
 - Update it when the current project state changes in a way future agents need to know.
 - Prefer concise, durable notes over session logs or speculative plans.
 - Do not store secrets, personal data, machine-local paths, or temporary scratch notes here.
+- Lua 5.1 tools are installed at `C:\Program Files (x86)\Lua\5.1\`; this path is not always on PATH. Use `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>` for syntax checks.
 
 ## What This Is
 **L's Tweeks** — a modular WoW UI addon (patch 12.0 / Interface 120000) by LockBall.  
@@ -135,6 +136,8 @@ Preset and custom content panels each use `place_at(control, row, column, slot, 
 - `opts.valign="bottom"` descends one extra row height
 
 Aura frame saved positions are stored in unscaled UIParent-center coordinates. Runtime placement uses `M.apply_frame_position(frame, pos, scale)` and drag/slider sync uses `M.read_frame_position(frame)` / `M.sync_frame_position_to_db(frame, pos)` so scaled frames do not jump when moved.
+
+Position ownership is centralized in `af_functions.lua`: use `M.get_frame_position_table(frame)`, `M.get_frame_position_scale(frame, scale_key)`, `M.apply_saved_frame_position(frame, scale_key, fallback_y)`, and `M.sync_frame_position_from_drag(frame, scale_key)` for saved aura-frame placement. Other files should not branch separately on preset vs custom position storage except when directly editing the DB table values for controls/reset.
 
 ## UI Shared Controls — Quick Reference
 | Function | Key args | Notes |

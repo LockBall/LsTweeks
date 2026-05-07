@@ -19,6 +19,61 @@ function M.apply_frame_position(frame, pos, scale)
     frame:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
 end
 
+function M.get_frame_config_db(frame)
+    if frame and frame.is_custom and frame.custom_entry then
+        return frame.custom_entry
+    end
+    return M.db
+end
+
+function M.get_frame_position_table(frame)
+    if not frame then return nil end
+    if frame.is_custom and frame.custom_entry then
+        frame.custom_entry.position = frame.custom_entry.position or {}
+        return frame.custom_entry.position
+    end
+    local category = frame.category
+    return M.db and M.db.positions and category and M.db.positions[category] or nil
+end
+
+function M.get_frame_position_scale(frame, scale_key)
+    local cfg_db = M.get_frame_config_db and M.get_frame_config_db(frame) or M.db
+    local category = frame and frame.category
+    local scale = 1
+    if cfg_db then
+        if scale_key and cfg_db[scale_key] ~= nil then
+            scale = cfg_db[scale_key]
+        elseif category and cfg_db["scale_" .. category] ~= nil then
+            scale = cfg_db["scale_" .. category]
+        elseif cfg_db.scale ~= nil then
+            scale = cfg_db.scale
+        end
+    end
+    if not scale or scale == 0 then scale = 1 end
+    return scale
+end
+
+function M.apply_saved_frame_position(frame, scale_key, fallback_y)
+    if not frame then return end
+    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    if pos then
+        M.apply_frame_position(frame, pos, M.get_frame_position_scale(frame, scale_key))
+    else
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", UIParent, "CENTER", -100, fallback_y or 75)
+    end
+end
+
+function M.set_saved_frame_position_axis(frame, axis, value, scale_key)
+    if not (frame and axis and value ~= nil) then return end
+    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    if not pos then return end
+    if axis ~= "x" and axis ~= "y" then return end
+    pos.point = "TOPLEFT"
+    pos[axis] = value
+    M.apply_saved_frame_position(frame, scale_key)
+end
+
 function M.read_frame_position(frame)
     if not frame then return nil, nil end
     local left = frame:GetLeft()
@@ -43,6 +98,19 @@ function M.sync_frame_position_to_db(frame, pos_table)
     pos_table.x = x
     pos_table.y = y
     return x, y
+end
+
+function M.sync_frame_position_from_drag(frame, scale_key)
+    if not frame then return nil, nil end
+    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    if not pos then return nil, nil end
+    local x, y = M.sync_frame_position_to_db(frame, pos)
+    if not (x and y) then return nil, nil end
+    if M.db and M.db.snap_to_grid and M.snap_frame_position then
+        pos.x, pos.y = M.snap_frame_position(pos, frame)
+        M.apply_saved_frame_position(frame, scale_key)
+    end
+    return pos.x, pos.y
 end
 
 function M.get_setting(cfg_db, category, key, fallback)
