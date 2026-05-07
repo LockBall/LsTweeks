@@ -35,7 +35,7 @@ modules/
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
     af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
-    af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting/font-size fallback lookup, custom-frame entry/filter helpers, backdrop helpers
+    af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting/font-size fallback lookup, custom-frame entry/filter helpers, backdrop helpers, settings grid maker
     af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
@@ -46,7 +46,7 @@ modules/
     af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
-    af_grid.lua          — snap_to_grid(), snap_frame_position(), build_grid_lines(), create_grid_overlay(), set_grid_visible()
+    af_screen_grid.lua   — snap_to_grid(), snap_frame_position(), build_grid_lines(), create_grid_overlay(), set_grid_visible()
 libs/            — LibStub, LibDataBroker-1.1, LibDBIcon-1.0, CallbackHandler-1.0
 media/fonts/     — monospace TTFs: SourceCodePro (selectable), Inconsolata, JetBrainsMono, RobotoMono, 0xProto (on disk, not yet selectable)
 ```
@@ -123,7 +123,7 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 
 `af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
-TODO: Examine consolidating the preset/custom `place_at()` grid helpers in `af_gui_frame_builders.lua` into one shared helper. Highlander rule: there can be only one placement path unless the layouts genuinely diverge.
+Preset/custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua`. Highlander rule: there can be only one placement path unless the layouts genuinely diverge.
 
 Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
@@ -152,7 +152,7 @@ Aura frame saved positions are stored in unscaled UIParent-center coordinates. R
 Toggle via `M.refresh_section_outlines()`. Outline textures are tagged `._is_outline = true` for safe removal.  
 Do NOT use `SetParent(nil)` to remove textures — use `Hide()` + `SetTexture(nil)` on tagged textures only.
 
-## Grid Snap (af_grid.lua)
+## Screen Grid Snap (af_screen_grid.lua)
 20px grid, screen-center origin — matches LsTweeks coordinate system exactly.  
 `M.snap_to_grid(v, is_y)` — snaps a coordinate. `M.snap_frame_position(pos, frame)` preserves flush screen-edge positions before applying grid rounding, so clamped edge placement wins over grid snap. `M.set_grid_visible(show)` — toggles overlay.
 DB keys: `aura_frames.snap_to_grid`, `aura_frames.show_grid`.
