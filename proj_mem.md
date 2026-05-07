@@ -43,7 +43,7 @@ modules/
     af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
     af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
     af_gui_frame_builders.lua — all Aura Frames content panels; General, Spell ID, preset Buff/CDM, and custom Filters builders
-    af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
+    af_main.lua          — runtime state tables, init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
     af_screen_grid.lua   — snap_to_grid(), snap_frame_position(), build_grid_lines(), create_grid_overlay(), set_grid_visible()
@@ -123,7 +123,7 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 
 `af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
-Preset/custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua`. Highlander rule: there can be only one placement path unless the layouts genuinely diverge.
+Preset/custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua`. Highlander rule: there can be only one placement path unless the layouts genuinely diverge. Preset/custom binding closures stay local because preset controls write to `M.db` with extra frame/test-aura behavior, while custom controls write to the custom `entry`.
 
 Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`

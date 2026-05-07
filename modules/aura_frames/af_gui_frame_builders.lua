@@ -107,6 +107,7 @@ function M.build_preset_frame_panel(p, data)
     local test_key = "test_aura_"..cat
 
     local function update() -- refreshes current category frame preview
+        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() end
         M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 
@@ -198,13 +199,6 @@ function M.build_preset_frame_panel(p, data)
 
     -- Row 1
 
-    local function uncheck_test_aura()
-        if M.db[test_key] then
-            M.db[test_key] = false
-            local test_cb = M.controls[test_key]
-            if test_cb and test_cb.SetChecked then test_cb:SetChecked(false) end
-        end
-    end
     local function check_enable_frame()
         if not M.db[data.show_key] then
             M.db[data.show_key] = true
@@ -227,7 +221,6 @@ function M.build_preset_frame_panel(p, data)
     end)
 
     local function uncheck_frame_dependents()
-        uncheck_test_aura()
         if M.db[data.move_key] then
             M.db[data.move_key] = false
             if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
@@ -465,6 +458,7 @@ function M.build_custom_settings_panel(p, entry)
     local show_key = "show_" .. id
 
     local function update()
+        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() end
         update_custom_frame(entry)
     end
 
@@ -567,9 +561,6 @@ function M.build_custom_settings_panel(p, entry)
 
     local enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
         if not is_checked then
-            entry.test_aura = false
-            local ta_cb = M.controls["custom_" .. id .. "_test_aura"]
-            if ta_cb and ta_cb.SetChecked then ta_cb:SetChecked(false) end
             entry.move = false
             if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
         end

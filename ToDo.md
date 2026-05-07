@@ -51,7 +51,7 @@ local c = cfg_db and cfg_db.timer_color
 
 ### Settings Panel Builder Duplication (Medium Priority)
 
-- [ ]  15. [af_gui_frame_builders.lua](af_gui_frame_builders.lua) preset/custom panels now share `M.create_settings_grid(parent, opts)` for `place_at` and `add_row_separator`. Remaining follow-up: evaluate whether `create_bound_checkbox`, `create_bound_slider`, and color-picker binding can share one helper without obscuring preset DB-vs-custom entry differences.
+- [x]  15. [af_gui_frame_builders.lua](af_gui_frame_builders.lua) preset/custom panels now share `M.create_settings_grid(parent, opts)` for `place_at` and `add_row_separator`. Preset/custom binding closures intentionally remain local because preset controls write to `M.db` with extra frame/test-aura behavior, while custom controls write to the custom `entry`.
 
 ---
 

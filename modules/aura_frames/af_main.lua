@@ -6,6 +6,10 @@
 local addon_name, addon = ...
 local M = addon.aura_frames
 
+-- Runtime state tables. The saved DB is attached during ADDON_LOADED.
+M.frames = M.frames or {}
+M.controls = M.controls or {}
+
 -- CACHED GLOBALS AND CONSTANTS
 local MAX_POOL_SIZE = 20 -- Default pool size
 local MIN_FRAME_WIDTH = 180
@@ -435,10 +439,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
         end
         if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
-            M._aura_scan_dirty = true
-            if M.clear_custom_aura_scan_cache then
-                M.clear_custom_aura_scan_cache()
-            end
+            M.mark_aura_scan_dirty()
         end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.
