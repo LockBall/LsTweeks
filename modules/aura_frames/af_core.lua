@@ -213,7 +213,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local short_threshold = db.short_threshold or 60
     local growth        = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN"
     local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or 40
-    local sort_mode     = cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft"
+    local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
     local preview_enabled = cfg_db["test_aura_" .. category] or cfg_db["test_aura"]
     local in_combat = InCombatLockdown and InCombatLockdown()
 
