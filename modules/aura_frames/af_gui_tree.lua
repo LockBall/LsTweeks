@@ -38,14 +38,7 @@ function M.build_frames_tab(p, frames_data)
     tree_frame:SetPoint("TOPLEFT", p, "TOPLEFT", TREE_GAP_LEFT, TREE_TOP_Y)
     tree_frame:SetSize(TREE_W, TREE_H)
     M.frames_tree_frame  = tree_frame                             -- shared bottom anchor for child panels
-    tree_frame:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        tile = true, tileSize = 8, edgeSize = 1,
-        insets = { left = 0, right = 0, top = 0, bottom = 0 },
-    })
-    tree_frame:SetBackdropColor(0.08, 0.08, 0.08, 0.9)
-    tree_frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+    M.apply_thin_border_backdrop(tree_frame, { r = 0.08, g = 0.08, b = 0.08, a = 0.9 }, { r = 0.4, g = 0.4, b = 0.4, a = 0.8 })
     addon.alpha_affected_frames = addon.alpha_affected_frames or {}
     table.insert(addon.alpha_affected_frames, { frame = tree_frame, r = 0.08, g = 0.08, b = 0.08 })
     if addon.apply_interface_alpha then addon.apply_interface_alpha() end
@@ -445,12 +438,7 @@ function M.build_frames_tab(p, frames_data)
 
     local function create_group_box(title, group_key)
         local box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
-        box:SetBackdrop({
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-            insets = { left = 0, right = 0, top = 0, bottom = 0 },
-        })
-        box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
+        M.apply_thin_border_backdrop(box, nil, { r = 0.5, g = 0.5, b = 0.5, a = 0.45 })
         box:Hide()
         if group_key then group_boxes[group_key] = box end
 
@@ -465,12 +453,7 @@ function M.build_frames_tab(p, frames_data)
 
     local buffs_group_box, buffs_group_title = create_group_box("Buffs", "buffs")
     local cooldown_group_box = CreateFrame("Frame", nil, tree_frame, "BackdropTemplate")
-    cooldown_group_box:SetBackdrop({
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-        insets = { left = 0, right = 0, top = 0, bottom = 0 },
-    })
-    cooldown_group_box:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.45)
+    M.apply_thin_border_backdrop(cooldown_group_box, nil, { r = 0.5, g = 0.5, b = 0.5, a = 0.45 })
     cooldown_group_box:Hide()
     group_boxes.cooldown = cooldown_group_box
     filters_group_box, filters_group_title = create_group_box("Filters", "filters")

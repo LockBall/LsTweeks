@@ -35,7 +35,7 @@ local c = cfg_db and cfg_db.timer_color
     or (M.db and M.db.timer_color)
 ```
 
-- [ ]  11. **Backdrop setup** — near-identical `BackdropTemplate` + color setup blocks appear in [af_main.lua](af_main.lua), [af_gui_frame_builders.lua](af_gui_frame_builders.lua), and [af_gui_tree.lua](af_gui_tree.lua). Could be a shared `apply_standard_backdrop(frame)` helper.
+- [x]  11. **Backdrop setup** — added shared backdrop helpers in [af_functions.lua](af_functions.lua) for tooltip-border panels, title bars, and thin tree/sidebar borders; [af_main.lua](af_main.lua), [af_gui_frame_builders.lua](af_gui_frame_builders.lua), and [af_gui_tree.lua](af_gui_tree.lua) use them.
 
 ---
 
