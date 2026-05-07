@@ -1,7 +1,7 @@
 -- Aura frame constants and default DB values.
--- Defines category lists, CDM frame mappings, per-category defaults, and
--- M.get_timer_number_font_size(). Runtime files should read these values
--- instead of repeating category names or default settings.
+-- Defines category lists, CDM frame mappings, and per-category defaults.
+-- Runtime files should read these values instead of repeating category names
+-- or default settings.
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -323,26 +323,3 @@ M.CUSTOM_FRAME_TEMPLATE = {
 
 -- Max number of custom frames the user can create.
 M.MAX_CUSTOM_FRAMES = 4
-
--- ============================================================================
--- SINGLE SOURCE OF TRUTH FOR TIMER FONT-SIZE LOOKUP
--- Frame-specific value -> category-specific value -> global value -> default global value.
-function M.get_timer_number_font_size(category, cfg_db)
-    local db = cfg_db or M.db or {}
-    local defaults = M.defaults or {}
-
-    if cfg_db then
-        local custom_size = tonumber(db.timer_number_font_size)
-        if custom_size then return custom_size end
-    end
-
-    if category then
-        local category_size = tonumber(db["timer_number_font_size_"..category])
-        if category_size then return category_size end
-    end
-
-    local global_size = tonumber(db.timer_number_font_size)
-    if global_size then return global_size end
-
-    return tonumber(defaults.timer_number_font_size) or 10
-end
