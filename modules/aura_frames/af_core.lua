@@ -146,8 +146,7 @@ function M.update_blizz_cdm_visibility(category)
     if M.ensure_blizz_cdm_loaded then
         M.ensure_blizz_cdm_loaded()
     end
-    local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
-    local frame = frame_name and _G[frame_name]
+    local frame = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
     if not frame then return end
 
     -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
@@ -165,8 +164,7 @@ function M.prepare_blizz_cdm_viewer(category)
     if M.ensure_blizz_cdm_loaded then
         M.ensure_blizz_cdm_loaded()
     end
-    local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
-    local frame = frame_name and _G[frame_name]
+    local frame = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
     if not frame then return end
 
     -- Utility can start hidden on reload. Show it once outside combat so
@@ -201,10 +199,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local bar_mode      = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
     local frame_width   = cfg_db["width_" .. category] or cfg_db["width"] or 200
     local spacing       = cfg_db[spacing_key] or cfg_db["spacing"] or 6
-    local color         = cfg_db["color_" .. category] or cfg_db["color"] or { r = 1, g = 1, b = 1 }
-    local barBgC        = cfg_db["bar_bg_color_" .. category] or cfg_db["bar_bg_color"] or { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha }
-    local barTextC      = cfg_db["bar_text_color_" .. category] or cfg_db["bar_text_color"] or { r = 1, g = 1, b = 1 }
-    local bgC           = cfg_db["bg_color_" .. category] or cfg_db["bg_color"] or { r = 0, g = 0, b = 0, a = 0.5 }
+    local color         = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
+    local barBgC        = M.get_setting(cfg_db, category, "bar_bg_color", { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha })
+    local barTextC      = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
+    local bgC           = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay

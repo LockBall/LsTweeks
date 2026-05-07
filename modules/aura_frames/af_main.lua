@@ -23,30 +23,6 @@ local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 
 local WOW_COOLDOWN_STARTUP_REFRESH_DELAYS = { 0.2, 0.6, 1.2, 2.5, 5.0 }
 
-function M.apply_frame_position(frame, pos, scale)
-    if not (frame and pos) then return end
-    scale = scale or (frame.GetScale and frame:GetScale()) or 1
-    if scale == 0 then scale = 1 end
-    frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
-end
-
-function M.read_frame_position(frame)
-    if not frame then return nil, nil end
-    local left = frame:GetLeft()
-    local top  = frame:GetTop()
-    if not (left and top) then return nil, nil end
-
-    local parent_scale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
-    local frame_scale  = frame.GetEffectiveScale and frame:GetEffectiveScale() or frame:GetScale() or 1
-    if parent_scale == 0 then parent_scale = 1 end
-    local scale = frame_scale / parent_scale
-    local ucx, ucy = UIParent:GetCenter()
-    local x = (left * scale) - ucx
-    local y = (top  * scale) - ucy
-    return math.floor(x + 0.5), math.floor(y + 0.5)
-end
-
 M.NUMBER_FONT_OPTIONS = {
     {
         key = "source_code_pro",
@@ -131,9 +107,7 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
 
     if cfg_db or M.db then
         -- Custom frames store timer_color directly; preset frames use timer_color_<cat>.
-        local c = cfg_db and cfg_db.timer_color
-            or (category and M.db and M.db["timer_color_"..category])
-            or (M.db and M.db.timer_color)
+        local c = M.get_setting and M.get_setting(cfg_db, category, "timer_color")
         if c then
             font_string:SetTextColor(c.r or 1, c.g or 1, c.b or 1, 1)
         end
@@ -261,11 +235,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             if not positions then return end
             local pos = positions[parent.category]
             if not pos then return end
-            local x, y = M.read_frame_position(parent)
+            local x, y = M.sync_frame_position_to_db(parent, pos)
             if not (x and y) then return end
-            pos.point = "TOPLEFT"
-            pos.x = x
-            pos.y = y
             if M.db and M.db.snap_to_grid and M.snap_to_grid then
                 pos.x = M.snap_to_grid(pos.x, false)
                 pos.y = M.snap_to_grid(pos.y, true)
@@ -574,11 +545,8 @@ function M.create_custom_frame(entry)
     local function on_drag_stop()
         frame:StopMovingOrSizing()
         if not entry.position then entry.position = {} end
-        local x, y = M.read_frame_position and M.read_frame_position(frame)
+        local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, entry.position)
         if not (x and y) then return end
-        entry.position.point = "TOPLEFT"
-        entry.position.x = x
-        entry.position.y = y
         if M.db and M.db.snap_to_grid and M.snap_to_grid then
             entry.position.x = M.snap_to_grid(entry.position.x, false)
             entry.position.y = M.snap_to_grid(entry.position.y, true)
@@ -713,11 +681,8 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local cat = show_key:sub(6)
                 local pos = M.db.positions and M.db.positions[cat]
                 if pos and pos.point ~= "TOPLEFT" then
-                    local x, y = M.read_frame_position and M.read_frame_position(frame)
+                    local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, pos)
                     if x and y then
-                        pos.x = x
-                        pos.y = y
-                        pos.point = "TOPLEFT"
                         if M.apply_frame_position then
                             M.apply_frame_position(frame, pos)
                         else

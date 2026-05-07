@@ -35,6 +35,7 @@ modules/
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
     af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
+    af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting fallback lookup, custom-frame entry/filter helpers
     af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
@@ -133,7 +134,7 @@ Preset and custom content panels each use `place_at(control, row, column, slot, 
 - `slot` maps to `grid.offsets`: `dropdown=8`, `picker=4`, `default=0`
 - `opts.valign="bottom"` descends one extra row height
 
-Aura frame saved positions are stored in unscaled UIParent-center coordinates. Runtime placement uses `M.apply_frame_position(frame, pos, scale)` and drag/slider sync uses `M.read_frame_position(frame)` so scaled frames do not jump when moved.
+Aura frame saved positions are stored in unscaled UIParent-center coordinates. Runtime placement uses `M.apply_frame_position(frame, pos, scale)` and drag/slider sync uses `M.read_frame_position(frame)` / `M.sync_frame_position_to_db(frame, pos)` so scaled frames do not jump when moved.
 
 ## UI Shared Controls — Quick Reference
 | Function | Key args | Notes |

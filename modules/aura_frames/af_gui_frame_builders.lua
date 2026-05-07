@@ -491,22 +491,9 @@ function M.build_preset_frame_panel(p, data)
     local function sync_xy_sliders_to_frame()
         local f = M.frames[data.show_key]
         if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
-        local x, y
-        if M.read_frame_position then
-            x, y = M.read_frame_position(f)
-        else
-            local ucx, ucy = UIParent:GetCenter()
-            local left = f:GetLeft()
-            local top  = f:GetTop()
-            if left and top then
-                x = math.floor(left - ucx + 0.5)
-                y = math.floor(top  - ucy + 0.5)
-            end
-        end
+        local pos = M.db.positions and M.db.positions[cat]
+        local x, y = pos and M.sync_frame_position_to_db and M.sync_frame_position_to_db(f, pos)
         if x and y then
-            M.db.positions[cat].x = x
-            M.db.positions[cat].y = y
-            M.db.positions[cat].point = "TOPLEFT"
             x_slider.slider:SetValue(x)
             y_slider.slider:SetValue(y)
         end
