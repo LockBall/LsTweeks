@@ -35,7 +35,7 @@ modules/
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
     af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
-    af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting fallback lookup, custom-frame entry/filter helpers
+    af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting/font-size fallback lookup, custom-frame entry/filter helpers
     af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()

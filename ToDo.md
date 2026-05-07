@@ -43,7 +43,7 @@ local c = cfg_db and cfg_db.timer_color
 
 - [x]  12. **Move custom-frame runtime helpers out of defaults** — [af_defaults.lua](af_defaults.lua) now keeps custom-frame defaults/constants only; `next_custom_name()`, `next_custom_id()`, `M.new_custom_entry()`, `M.get_custom_aura_filter()`, and `M.get_custom_modifier_def()` live in [af_functions.lua](af_functions.lua).
 
-- [ ]  13. **Move timer font-size lookup out of defaults** — `M.get_timer_number_font_size(category, cfg_db)` is a runtime settings fallback helper, not a default value. Move it into [af_functions.lua](af_functions.lua), near `M.get_setting()`, and update the [af_defaults.lua](af_defaults.lua) header accordingly.
+- [x]  13. **Move timer font-size lookup out of defaults** — `M.get_timer_number_font_size(category, cfg_db)` now lives in [af_functions.lua](af_functions.lua), near `M.get_setting()`, and the [af_defaults.lua](af_defaults.lua) header now describes defaults/constants only.
 
 - [ ]  14. **Remove redundant position fallback blocks** — now that [af_functions.lua](af_functions.lua) loads before core/main/GUI, repeated fallback branches around `M.apply_frame_position` in [af_core.lua](af_core.lua), [af_main.lua](af_main.lua), and [af_gui_frame_builders.lua](af_gui_frame_builders.lua) can be simplified to the shared helper.
 

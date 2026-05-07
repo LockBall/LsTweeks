@@ -55,6 +55,27 @@ function M.get_setting(cfg_db, category, key, fallback)
     return fallback
 end
 
+-- Frame-specific value -> category-specific value -> global value -> default global value.
+function M.get_timer_number_font_size(category, cfg_db)
+    local db = cfg_db or M.db or {}
+    local defaults = M.defaults or {}
+
+    if cfg_db then
+        local custom_size = tonumber(db.timer_number_font_size)
+        if custom_size then return custom_size end
+    end
+
+    if category then
+        local category_size = tonumber(db["timer_number_font_size_"..category])
+        if category_size then return category_size end
+    end
+
+    local global_size = tonumber(db.timer_number_font_size)
+    if global_size then return global_size end
+
+    return tonumber(defaults.timer_number_font_size) or 10
+end
+
 -- Returns the next available auto-name ("Custom 1" .. "Custom N").
 local function next_custom_name()
     local used = {}
