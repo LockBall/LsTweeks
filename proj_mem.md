@@ -35,10 +35,9 @@ modules/
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
     af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
-    af_scan.lua          — aura scanning: unified_scan(), CDM viewer reads, session classification memory
+    af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
-    af_custom_filter.lua — direct custom-frame scans via C_UnitAuras.GetAuraDataByIndex()
     af_core.lua          — tick_visible_icons(), update_auras(), toggle_blizz_buffs/debuffs()
     af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
     af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
@@ -112,7 +111,7 @@ DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.
 
-Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))`.
+Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan only when enabled/previewed with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))` from `af_scan.lua`, tag entries with `custom_order`, and render in selected-filter scan order instead of the preset time/name sort path. Runtime call-chain variables use `aura_filter` for the selected AuraFilters string.
 
 ## Aura Frames GUI Layout System
 `af_gui.lua` owns the settings shell: `BuildSettings` creates three tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.

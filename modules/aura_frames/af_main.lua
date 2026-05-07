@@ -173,7 +173,7 @@ function M.refresh_wow_cooldown_frames(delay, prepare_viewers)
             local p = frame and frame.update_params
             if p then
                 frame._sorted_ids_cache = nil
-                M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.filter)
+                M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
             end
         end
     end
@@ -306,7 +306,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         if ws and ws.slider then ws.slider:SetValue(clamped_width) end
         local params = frame.update_params
         if params then
-            M.update_auras(frame, params.show_key, params.move_key, params.timer_key, params.bg_key, params.scale_key, params.spacing_key, params.filter)
+            M.update_auras(frame, params.show_key, params.move_key, params.timer_key, params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
         end
     end)
 
@@ -447,7 +447,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         scale_key = scale_key,
         spacing_key = spacing_key,
         category = category,
-        filter = is_debuff and "HARMFUL" or "HELPFUL"
+        aura_filter = is_debuff and "HARMFUL" or "HELPFUL"
     }
     
     frame:SetScript("OnEvent", function(self, event, unit, info)
@@ -491,7 +491,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
                 local event_info = f._pending_aura_info
                 f._pending_aura_info = nil
                 M.update_auras(f, params.show_key, params.move_key, params.timer_key,
-                    params.bg_key, params.scale_key, params.spacing_key, params.filter, event_info)
+                    params.bg_key, params.scale_key, params.spacing_key, params.aura_filter, event_info)
             end)
         end
     end)
@@ -511,7 +511,7 @@ function M.create_custom_frame(entry)
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
-    local filter   = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter
+    local aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,
     -- not the prefixed pattern used by preset frames ("timer_static", etc.).
@@ -523,7 +523,7 @@ function M.create_custom_frame(entry)
         "scale",
         "spacing",
         entry.name or id,
-        filter:find("HARMFUL", 1, true) ~= nil
+        aura_filter:find("HARMFUL", 1, true) ~= nil
     )
 
     -- Tag the frame so af_core knows to route it through the custom filtered scan.
@@ -544,14 +544,14 @@ function M.create_custom_frame(entry)
         end
     end
 
-    -- Override update_params to use flat entry keys and correct filter.
+    -- Override update_params to use flat entry keys and the selected AuraFilters string.
     frame.update_params.show_key    = show_key
     frame.update_params.move_key    = "move"
     frame.update_params.timer_key   = "timer"
     frame.update_params.bg_key      = "bg"
     frame.update_params.scale_key   = "scale"
     frame.update_params.spacing_key = "spacing"
-    frame.update_params.filter      = filter
+    frame.update_params.aura_filter = aura_filter
 
     -- Override resizer OnMouseUp: write width to entry.width instead of flat DB key.
     if frame.resizer then
@@ -562,7 +562,8 @@ function M.create_custom_frame(entry)
             entry.width = w
             local ws = M.controls and M.controls["custom_" .. id .. "_width"]
             if ws and ws.slider then ws.slider:SetValue(w) end
-            M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", filter)
+            local current_filter = frame.update_params and frame.update_params.aura_filter or aura_filter
+            M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", current_filter)
         end)
     end
 
@@ -768,9 +769,9 @@ function M.on_reset_complete()
                         if entry.id == id then frame.custom_entry = entry; break end
                     end
                 end
-                p.filter = M.get_custom_aura_filter and M.get_custom_aura_filter(frame.custom_entry) or p.filter
+                p.aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(frame.custom_entry) or p.aura_filter
             end
-            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.filter)
+            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end
 

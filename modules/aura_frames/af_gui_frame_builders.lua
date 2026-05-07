@@ -83,7 +83,7 @@ function M.build_general_tab(p)
             local params = v.update_params
             if params then
                 M.update_auras(v, params.show_key, params.move_key, params.timer_key, params.bg_key,
-                    params.scale_key, params.spacing_key, params.filter)
+                    params.scale_key, params.spacing_key, params.aura_filter)
             end
         end
     end)
@@ -110,11 +110,11 @@ end
 -- ============================================================================
 function M.build_preset_frame_panel(p, data)
     local cat = data.show_key:sub(6)
-    local filter = data.is_debuff and "HARMFUL" or "HELPFUL"
+    local aura_filter = data.is_debuff and "HARMFUL" or "HELPFUL"
     local test_key = "test_aura_"..cat
 
     local function update() -- refreshes current category frame preview
-        M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, filter)
+        M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 
     -- Grid Layout Configuration (row/column placement for controls)
@@ -537,9 +537,9 @@ local function update_custom_frame(entry)
     local show_key = "show_" .. entry.id
     local frame = M.frames[show_key]
     if not frame then return end
-    local filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter or "HELPFUL"
-    frame.update_params.filter = filter
-    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", filter)
+    local aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter or "HELPFUL"
+    frame.update_params.aura_filter = aura_filter
+    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 end
 
 local function update_custom_frame_title(entry)
