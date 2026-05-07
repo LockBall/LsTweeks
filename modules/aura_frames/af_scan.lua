@@ -53,7 +53,6 @@ local function compute_remaining(duration, expiration)
     if expiration > 0 then return math_max(0, expiration - GetTime()) end
     return duration
 end
-M.compute_remaining = compute_remaining
 
 -- Build an entry table.
 local function make_entry(iid, name, icon, duration, expiration, spell_id, dispel_name, rem, count, is_helpful, category, added_at)
