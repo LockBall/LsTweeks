@@ -1,6 +1,6 @@
 -- Runtime loop for the aura frames module: drives the per-tick timer countdown and the per-frame aura update pipeline.
 -- tick_visible_icons() runs every 0.1s to update timer text and bar values without re-scanning.
--- update_auras() orchestrates the unified scan -> per-frame filter -> layout -> render -> resize sequence on each deferred UNIT_AURA event.
+-- update_auras() orchestrates the unified scan -> per-frame aura filter -> layout -> render -> resize sequence on each deferred UNIT_AURA event.
 local addon_name, addon = ...
 
 local math_max       = math.max
@@ -24,31 +24,6 @@ end
 -- TIMER TICKER
 
 
-local function set_count_text(obj, count)
-    if issecretvalue(count) then
-        obj._lstweeks_count_text = nil
-        obj.count_text:SetText(count)
-        if not obj.count_text:IsShown() then
-            obj.count_text:Show()
-        end
-        return
-    end
-    if count and count > 1 then
-        local cached = obj._lstweeks_count_text
-        if issecretvalue(cached) or cached ~= count then
-            obj.count_text:SetText(count)
-            obj._lstweeks_count_text = count
-        end
-        if not obj.count_text:IsShown() then
-            obj.count_text:Show()
-        end
-    else
-        obj._lstweeks_count_text = nil
-        if obj.count_text:IsShown() then
-            obj.count_text:Hide()
-        end
-    end
-end
 
 -- Shared ticker update path for all visible aura icon objects.
 -- Runs at 0.1s from af_main.lua and keeps timer/bar text fresh between scans.
@@ -127,7 +102,6 @@ function M.tick_visible_icons(now)
                             M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
                         end
                     end
-                    set_count_text(obj, obj.aura_count)
                 end
             end
         end
@@ -210,7 +184,7 @@ end
 -- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
-function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, filter, info)
+function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter, info)
     if not self or not self.icons then return end
 
     local db       = M.db
@@ -269,7 +243,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             end
         else
             self:ClearAllPoints()
-            self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (filter == "HARMFUL") and -25 or 75)
+            self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (aura_filter == "HARMFUL") and -25 or 75)
         end
         self:SetSize(_width, _height)
     end
@@ -363,13 +337,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if preview_enabled then
-        M.append_test_aura(self._aura_map, show_key, filter, short_threshold)
+        M.append_test_aura(self._aura_map, show_key, aura_filter, short_threshold)
     else
         self._aura_map["__test_preview__"] = nil
     end
 
     local display_count = M.render_aura_map(
-        self, self._aura_map, bar_mode, color, barBgC, max_limit, filter, sort_mode, show_timer_text, barTextC
+        self, self._aura_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
 
     local lc = self._layout_cache

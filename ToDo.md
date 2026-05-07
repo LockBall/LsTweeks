@@ -4,9 +4,9 @@
 
 - [x]  1.  **`set_icon_greyed()`** — removed from af_core.lua entirely; render owns it, ticker calls eliminated.
 
-- [ ]  2. **`set_count_text()`** — two variants exist. [af_core.lua](af_core.lua) has a simplified version; [af_render.lua](af_render.lua) has an extended version with point anchoring params. These should be merged into one function with optional params.
+- [x]  2. **`set_count_text()`** — removed from af_core.lua entirely; render owns it, ticker call eliminated.
 
-- [ ]  3. **`compute_remaining()`** — defined independently in both [af_custom_filter.lua](af_custom_filter.lua) and [af_scan.lua](af_scan.lua). Should live in one place.
+- [x]  3. **`compute_remaining()`** — consolidated in [af_scan.lua](af_scan.lua); custom filtered scans now live there too.
 
 ---
 
@@ -52,4 +52,3 @@ Candidate for `M.get_color_setting(cfg_db, category, key)`.
 - portrait dim out of combat
 - dungeon ready sound levels
 - saves
-

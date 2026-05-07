@@ -43,7 +43,6 @@ modules\aura_frames\af_test_aura.lua
 modules\aura_frames\af_scan.lua
 modules\aura_frames\af_render.lua
 modules\aura_frames\af_icon_layout.lua
-modules\aura_frames\af_custom_filter.lua
 modules\aura_frames\af_core.lua
 modules\aura_frames\af_gui.lua
 modules\aura_frames\af_gui_frame_builders.lua

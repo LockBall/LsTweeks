@@ -308,7 +308,6 @@ M.CUSTOM_FRAME_TEMPLATE = {
     bg_color     = { r = 0,   g = 0,   b = 0,   a = 0.5 },
     max_icons    = 20,
     growth       = "DOWN",
-    sort         = "timeleft",
     test_aura    = false,
 
     -- Timer font (matches TIMER_CATEGORIES convention)

@@ -236,54 +236,66 @@ end
 -- ============================================================================
 -- AURA MAP RENDERER
 
--- Render the aura_map into the icon pool.
--- Uses C_UnitAuras.GetUnitAuraInstanceIDs for sort order (ElkBuffBars technique):
--- the game provides a pre-sorted list of IDs; we display only those in our map.
-function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, filter, sort_mode, show_timer_text, bar_text_color)
+-- Render the aura_map into the icon pool. Preset frames use C_UnitAuras.GetUnitAuraInstanceIDs
+-- for game-provided sort order; custom frames keep the selected-filter scan order.
+function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, aura_filter, sort_mode, show_timer_text, bar_text_color)
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
-    -- Resolve sort parameters for GetUnitAuraInstanceIDs
-    local sort_rule = SORT_RULE_DEFAULT
-    local sort_dir  = SORT_DIR_NORMAL
-    if sort_mode == "timeleft" then
-        sort_rule = SORT_RULE_EXPIRATION
-        -- Normal = ascending expiration time = soonest to expire first (most urgent)
-    elseif sort_mode == "name" then
-        sort_rule = SORT_RULE_NAME
-    end
-
-    local wow_filter = (filter and filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
-    local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
-    local sorted_ids
-    if self._sorted_ids_cache and self._sorted_ids_cache_key == cache_key then
-        sorted_ids = self._sorted_ids_cache
-    else
-        sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
-        self._sorted_ids_cache = sorted_ids
-        self._sorted_ids_cache_key = cache_key
-    end
-
-    -- Build display list in game-sorted order, filtered to entries in this frame's map
     local list = _scratch_list
     wipe(list)
-    if sorted_ids then
-        local seen = _scratch_seen
-        wipe(seen)
-        for _, iid in ipairs(sorted_ids) do
-            local entry = aura_map[iid]
-            if entry then
-                list[#list + 1] = entry
-                seen[iid] = true
-            end
-        end
-        for key, entry in pairs(aura_map) do
-            if not seen[key] then
-                list[#list + 1] = entry
-            end
-        end
-    else
-        -- Fallback: iterate map directly (sorted_ids nil = API unavailable)
+
+    if self.is_custom then
         for _, entry in pairs(aura_map) do list[#list + 1] = entry end
-        table_sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
+        table_sort(list, function(a, b)
+            local aa = a.custom_order or 9999
+            local bb = b.custom_order or 9999
+            if aa == bb then
+                return get_entry_sort_id(a) < get_entry_sort_id(b)
+            end
+            return aa < bb
+        end)
+    else
+        -- Resolve sort parameters for GetUnitAuraInstanceIDs.
+        local sort_rule = SORT_RULE_DEFAULT
+        local sort_dir  = SORT_DIR_NORMAL
+        if sort_mode == "timeleft" then
+            sort_rule = SORT_RULE_EXPIRATION
+            -- Normal = ascending expiration time = soonest to expire first (most urgent).
+        elseif sort_mode == "name" then
+            sort_rule = SORT_RULE_NAME
+        end
+
+        local wow_filter = (aura_filter and aura_filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
+        local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
+        local sorted_ids
+        if self._sorted_ids_cache and self._sorted_ids_cache_key == cache_key then
+            sorted_ids = self._sorted_ids_cache
+        else
+            sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
+            self._sorted_ids_cache = sorted_ids
+            self._sorted_ids_cache_key = cache_key
+        end
+
+        -- Build display list in game-sorted order, filtered to entries in this frame's map.
+        if sorted_ids then
+            local seen = _scratch_seen
+            wipe(seen)
+            for _, iid in ipairs(sorted_ids) do
+                local entry = aura_map[iid]
+                if entry then
+                    list[#list + 1] = entry
+                    seen[iid] = true
+                end
+            end
+            for key, entry in pairs(aura_map) do
+                if not seen[key] then
+                    list[#list + 1] = entry
+                end
+            end
+        else
+            -- Fallback: iterate map directly (sorted_ids nil = API unavailable).
+            for _, entry in pairs(aura_map) do list[#list + 1] = entry end
+            table_sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
+        end
     end
 
     -- Short frame ordering: stable per-aura order key so stack updates don't
