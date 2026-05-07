@@ -237,9 +237,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
             if not pos then return end
             local x, y = M.sync_frame_position_to_db(parent, pos)
             if not (x and y) then return end
-            if M.db and M.db.snap_to_grid and M.snap_to_grid then
-                pos.x = M.snap_to_grid(pos.x, false)
-                pos.y = M.snap_to_grid(pos.y, true)
+            if M.db and M.db.snap_to_grid and M.snap_frame_position then
+                pos.x, pos.y = M.snap_frame_position(pos, parent)
                 M.apply_frame_position(parent, pos)
             end
         end)
@@ -504,7 +503,7 @@ function M.create_custom_frame(entry)
     frame.is_custom    = true
     frame.custom_entry = entry
     frame._cfg_db      = entry
-    if entry.position and M.apply_frame_position then
+    if entry.position then
         M.apply_frame_position(frame, entry.position, entry.scale or 1)
     end
 
@@ -547,12 +546,9 @@ function M.create_custom_frame(entry)
         if not entry.position then entry.position = {} end
         local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, entry.position)
         if not (x and y) then return end
-        if M.db and M.db.snap_to_grid and M.snap_to_grid then
-            entry.position.x = M.snap_to_grid(entry.position.x, false)
-            entry.position.y = M.snap_to_grid(entry.position.y, true)
-            if M.apply_frame_position then
-                M.apply_frame_position(frame, entry.position)
-            end
+        if M.db and M.db.snap_to_grid and M.snap_frame_position then
+            entry.position.x, entry.position.y = M.snap_frame_position(entry.position, frame)
+            M.apply_frame_position(frame, entry.position)
         end
     end
     if frame.title_bar then
@@ -683,12 +679,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 if pos and pos.point ~= "TOPLEFT" then
                     local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, pos)
                     if x and y then
-                        if M.apply_frame_position then
-                            M.apply_frame_position(frame, pos)
-                        else
-                            frame:ClearAllPoints()
-                            frame:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
-                        end
+                        M.apply_frame_position(frame, pos)
                     end
                 end
             end

@@ -243,12 +243,7 @@ function M.build_preset_frame_panel(p, data)
         local pos = M.db.positions[cat]
         local f = M.frames[data.show_key]
         if f and pos then
-            if M.apply_frame_position then
-                M.apply_frame_position(f, pos)
-            else
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
-            end
+            M.apply_frame_position(f, pos)
         end
     end
 
@@ -349,12 +344,7 @@ function M.build_preset_frame_panel(p, data)
         move_cb:SetChecked(dMove)
         local f = M.frames[data.show_key]
         if f then
-            if M.apply_frame_position then
-                M.apply_frame_position(f, M.db.positions[cat])
-            else
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", dPos.x, dPos.y)
-            end
+            M.apply_frame_position(f, M.db.positions[cat])
             f:SetWidth(dWidth)
             update()
         end
@@ -624,12 +614,7 @@ function M.build_custom_settings_panel(p, entry)
     local function update_frame_position()
         local f = M.frames[show_key]
         if f and pos then
-            if M.apply_frame_position then
-                M.apply_frame_position(f, pos)
-            else
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x or 0, pos.y or 0)
-            end
+            M.apply_frame_position(f, pos)
         end
     end
 
@@ -687,12 +672,7 @@ function M.build_custom_settings_panel(p, entry)
         move_cb:SetChecked(false)
         local f = M.frames[show_key]
         if f then
-            if M.apply_frame_position then
-                M.apply_frame_position(f, pos)
-            else
-                f:ClearAllPoints()
-                f:SetPoint("TOPLEFT", UIParent, "CENTER", pos.x, pos.y)
-            end
+            M.apply_frame_position(f, pos)
             f:SetWidth(entry.width)
             update()
         end
