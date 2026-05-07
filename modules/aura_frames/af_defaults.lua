@@ -7,11 +7,6 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- Ensure sub-tables exist without overwriting them
-M.frames = M.frames or {}
-M.controls = M.controls or {}
-M.db = M.db or {}
-
 -- Core aura buckets:
 --   static, short, long, debuff
 -- Blizzard cooldown-manager buckets read from live CDM viewer frames:

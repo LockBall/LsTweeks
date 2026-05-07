@@ -212,8 +212,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local growth        = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN"
     local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or 40
     local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
-    local preview_enabled = cfg_db["test_aura_" .. category] or cfg_db["test_aura"]
     local in_combat = InCombatLockdown and InCombatLockdown()
+    local show_val  = cfg_db[show_key] ~= nil and cfg_db[show_key] or cfg_db["show"]
+    local preview_enabled = show_val and (cfg_db["test_aura_" .. category] or cfg_db["test_aura"])
 
     local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
     if not in_combat then
@@ -256,7 +257,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
 
-    local show_val  = cfg_db[show_key] ~= nil and cfg_db[show_key] or cfg_db["show"]
     local is_moving = cfg_db[move_key] ~= nil and cfg_db[move_key] or cfg_db["move"]
 
     if not show_val and not is_moving and not preview_enabled then
