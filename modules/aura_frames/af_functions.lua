@@ -146,3 +146,42 @@ function M.get_custom_modifier_def(value)
     end
     return (M.CUSTOM_AURA_MODIFIERS and M.CUSTOM_AURA_MODIFIERS[1]) or { value = "NONE", text = "NONE" }
 end
+
+function M.apply_tooltip_panel_backdrop(frame, r, g, b, a, br, bg, bb, ba)
+    if not frame then return end
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    if r then frame:SetBackdropColor(r, g, b, a or 1) end
+    if br then frame:SetBackdropBorderColor(br, bg, bb, ba or 1) end
+end
+
+function M.apply_title_bar_backdrop(frame)
+    if not frame then return end
+    frame:SetBackdrop({
+        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        tile = true, tileSize = 12, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+    frame:SetBackdropColor(0.2, 0.2, 0.2, 1)
+end
+
+function M.apply_thin_border_backdrop(frame, bg_color, border_color)
+    if not frame then return end
+    frame:SetBackdrop({
+        bgFile   = bg_color and "Interface\\Buttons\\WHITE8x8" or nil,
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        tile = true, tileSize = 8, edgeSize = 1,
+        insets = { left = 0, right = 0, top = 0, bottom = 0 },
+    })
+    if bg_color then
+        frame:SetBackdropColor(bg_color.r or 0, bg_color.g or 0, bg_color.b or 0, bg_color.a or 1)
+    end
+    if border_color then
+        frame:SetBackdropBorderColor(border_color.r or 1, border_color.g or 1, border_color.b or 1, border_color.a or 1)
+    end
+end

@@ -179,12 +179,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
     
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
+    M.apply_tooltip_panel_backdrop(frame)
 
     frame:SetMovable(true) 
     frame:SetResizable(true) 
@@ -215,13 +210,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         tb:SetPoint(cfg.from.."LEFT",  parent, cfg.to.."LEFT",  0, cfg.offset)
         tb:SetPoint(cfg.from.."RIGHT", parent, cfg.to.."RIGHT", 0, cfg.offset)
         tb:SetHeight(20)
-        tb:SetBackdrop({
-            bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-            tile = true, tileSize = 12, edgeSize = 12,
-            insets = { left = 2, right = 2, top = 2, bottom = 2 }
-        })
-        tb:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        M.apply_title_bar_backdrop(tb)
         local text = tb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         text:SetPoint("CENTER")
         text:SetText(label)

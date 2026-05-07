@@ -41,14 +41,7 @@ function M.build_general_tab(p)
     local enable_panel = CreateFrame("Frame", nil, p, "BackdropTemplate")
     enable_panel:SetSize(150, 45)
     enable_panel:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
-    enable_panel:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    enable_panel:SetBackdropColor(0.08, 0.08, 0.08, 0.85)
-    enable_panel:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    M.apply_tooltip_panel_backdrop(enable_panel, 0.08, 0.08, 0.08, 0.85, 0.3, 0.3, 0.3, 1)
 
     local panel_title = enable_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     panel_title:SetText("Enable Blizz Frame")
