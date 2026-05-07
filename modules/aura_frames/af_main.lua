@@ -477,6 +477,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         end
         if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
             M._aura_scan_dirty = true
+            if M.clear_custom_aura_scan_cache then
+                M.clear_custom_aura_scan_cache()
+            end
         end
 
         -- Deduplication: if a scan is already queued for this frame, don't queue another.

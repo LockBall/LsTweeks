@@ -25,6 +25,7 @@ local _scratch_old_cat      = {}
 local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
 local _scratch_viewer_children = {}
+local _custom_aura_scan_cache = {}
 
 -- Session-scoped spell classification memory (reset on every login/reload, never persisted).
 -- Prevents mid-session category jumps when aura fields go secret in combat.
@@ -161,10 +162,10 @@ local function classify_custom_for_timer(is_helpful, remaining, duration, short_
     return "long"
 end
 
-local function add_custom_aura_entry(target_map, aura, aura_filter, short_threshold, custom_order)
-    if not (target_map and aura) then return false end
+local function build_custom_aura_entry(aura, aura_filter, short_threshold, custom_order)
+    if not aura then return nil end
     local iid = aura.auraInstanceID
-    if not iid then return false end
+    if not iid then return nil end
 
     local duration = aura.duration
     local expiration = aura.expirationTime
@@ -182,7 +183,7 @@ local function add_custom_aura_entry(target_map, aura, aura_filter, short_thresh
     local safe_duration, safe_expiration, safe_remaining =
         resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, nil)
 
-    target_map[iid] = {
+    return {
         instance_id = iid,
         spell_id = get_aura_spell_id(aura),
         name = aura.name,
@@ -200,7 +201,10 @@ local function add_custom_aura_entry(target_map, aura, aura_filter, short_thresh
         custom_order = custom_order,
         added_at = GetTime(),
     }
-    return true
+end
+
+function M.clear_custom_aura_scan_cache()
+    wipe(_custom_aura_scan_cache)
 end
 
 function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, short_threshold)
@@ -209,15 +213,30 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
     max_limit = max_limit or custom_entry.max_icons or 40
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or 60
 
-    local i = 1
-    local count = 0
-    while count < max_limit do
-        local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, aura_filter)
-        if not ok or not aura then break end
-        i = i + 1
-        if add_custom_aura_entry(target_map, aura, aura_filter, short_threshold, count + 1) then
-            count = count + 1
+    local cache_key = aura_filter .. "\001" .. tostring(short_threshold)
+    local cached = _custom_aura_scan_cache[cache_key]
+    if not cached then
+        cached = { entries = {}, next_index = 1, complete = false }
+        _custom_aura_scan_cache[cache_key] = cached
+    end
+
+    local entries = cached.entries
+    while (not cached.complete) and #entries < max_limit do
+        local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", cached.next_index, aura_filter)
+        cached.next_index = cached.next_index + 1
+        if not ok or not aura then
+            cached.complete = true
+            break
         end
+        local entry = build_custom_aura_entry(aura, aura_filter, short_threshold, #entries + 1)
+        if entry then
+            entries[#entries + 1] = entry
+        end
+    end
+
+    for i = 1, math.min(max_limit, #entries) do
+        local entry = entries[i]
+        target_map[entry.instance_id] = entry
     end
 end
 
