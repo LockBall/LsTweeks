@@ -54,6 +54,50 @@ local function compute_remaining(duration, expiration)
     return duration
 end
 
+local function read_live_aura_timing(iid, need_live)
+    if not (need_live and C_UnitAuras.GetAuraDuration) then return nil, nil end
+    local ok, live_duration = pcall(C_UnitAuras.GetAuraDuration, "player", iid)
+    if not (ok and live_duration) then return nil, nil end
+
+    local live_expiration
+    if live_duration.GetExpirationTime then
+        local e = live_duration:GetExpirationTime()
+        if e ~= nil and not issecretvalue(e) then live_expiration = e end
+    end
+
+    local live_remaining
+    local r = live_duration:GetRemainingDuration()
+    if r ~= nil and not issecretvalue(r) then live_remaining = r end
+    return live_remaining, live_expiration
+end
+
+local function get_aura_stack_counts(aura, iid)
+    local applications = aura and aura.applications
+    local stacks = (not issecretvalue(applications) and applications and applications > 1) and applications or 0
+    local live_count = (stacks == 0 and C_UnitAuras.GetAuraApplicationDisplayCount)
+        and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid)
+        or nil
+    return stacks, live_count
+end
+
+local function resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, old_entry)
+    local safe_duration = (not issecretvalue(duration)) and duration
+        or (old_entry and old_entry.duration) or 0
+    local safe_expiration = (not issecretvalue(expiration)) and expiration
+        or live_expiration
+        or (live_remaining and live_remaining > 0 and (GetTime() + live_remaining))
+        or (old_entry and old_entry.expiration) or 0
+    local safe_remaining = remaining
+    if live_remaining and live_remaining > 0 then
+        safe_remaining = live_remaining
+    elseif (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
+        safe_remaining = math_max(0, safe_expiration - GetTime())
+    elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
+        safe_remaining = old_entry.remaining
+    end
+    return safe_duration, safe_expiration, safe_remaining
+end
+
 -- Build an entry table.
 local function make_entry(iid, name, icon, duration, expiration, spell_id, dispel_name, rem, count, is_helpful, category, added_at)
     return {
@@ -125,41 +169,27 @@ local function add_custom_aura_entry(target_map, aura, aura_filter, short_thresh
     local duration = aura.duration
     local expiration = aura.expirationTime
     local remaining = compute_remaining(duration, expiration)
-    local live_remaining
-    local live_expiration
 
     local need_live = (remaining == nil) or issecretvalue(remaining) or issecretvalue(expiration)
-    if need_live and C_UnitAuras.GetAuraDuration then
-        local ok, live_duration = pcall(C_UnitAuras.GetAuraDuration, "player", iid)
-        if ok and live_duration then
-            local r = live_duration:GetRemainingDuration()
-            if r ~= nil and not issecretvalue(r) then
-                live_remaining = r
-                remaining = r
-            end
-            if live_duration.GetExpirationTime then
-                local e = live_duration:GetExpirationTime()
-                if e ~= nil and not issecretvalue(e) then live_expiration = e end
-            end
-        end
+    local live_remaining, live_expiration = read_live_aura_timing(iid, need_live)
+    if live_remaining then
+        remaining = live_remaining
     end
 
-    local applications = aura.applications
-    local stacks = (applications and not issecretvalue(applications) and applications > 1) and applications or 0
-    local live_count = (stacks == 0 and C_UnitAuras.GetAuraApplicationDisplayCount)
-        and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid)
-        or nil
+    local stacks, live_count = get_aura_stack_counts(aura, iid)
     local is_helpful = aura_filter:find("HELPFUL", 1, true) ~= nil
     local category = classify_custom_for_timer(is_helpful, remaining, duration, short_threshold)
+    local safe_duration, safe_expiration, safe_remaining =
+        resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, nil)
 
     target_map[iid] = {
         instance_id = iid,
         spell_id = get_aura_spell_id(aura),
         name = aura.name,
         icon = aura.icon,
-        duration = (duration ~= nil and not issecretvalue(duration)) and duration or 0,
-        expiration = (expiration ~= nil and not issecretvalue(expiration)) and expiration or (live_expiration or 0),
-        remaining = remaining or 0,
+        duration = safe_duration,
+        expiration = safe_expiration,
+        remaining = safe_remaining or 0,
         count = stacks,
         live_remaining = live_remaining,
         live_count = live_count,
@@ -646,21 +676,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
         -- GetAuraDuration is readable even when scan fields are secret (combat).
         local need_live = (rem == nil) or issecretvalue(rem) or issecretvalue(expiration)
-        local live_duration = nil
-        if need_live then
-            local ok_live, result = pcall(C_UnitAuras.GetAuraDuration, "player", iid)
-            if ok_live then live_duration = result end
-        end
-        local live_expiration = nil
-        local live_remaining  = nil
-        if live_duration then
-            if live_duration.GetExpirationTime then
-                local e = live_duration:GetExpirationTime()
-                if e ~= nil and not issecretvalue(e) then live_expiration = e end
-            end
-            local r = live_duration:GetRemainingDuration()
-            if r ~= nil and not issecretvalue(r) then live_remaining = r end
-        end
+        local live_remaining, live_expiration = read_live_aura_timing(iid, need_live)
 
         local classify_rem = live_remaining or rem
 
@@ -719,24 +735,9 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
             local dispel = aura.dispelName
             if issecretvalue(dispel) then dispel = nil end
 
-            local applications = aura.applications
-            local stacks = (not issecretvalue(applications) and applications and applications > 1) and applications or 0
-            local live_count = (stacks == 0) and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid) or nil
-
-            local safe_duration = (not issecretvalue(duration)) and duration
-                or (old_entry and old_entry.duration) or 0
-            local safe_expiration = (not issecretvalue(expiration)) and expiration
-                or live_expiration
-                or (live_remaining and live_remaining > 0 and (GetTime() + live_remaining))
-                or (old_entry and old_entry.expiration) or 0
-            local safe_remaining = rem
-            if live_remaining and live_remaining > 0 then
-                safe_remaining = live_remaining
-            elseif (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
-                safe_remaining = math_max(0, safe_expiration - GetTime())
-            elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
-                safe_remaining = old_entry.remaining
-            end
+            local stacks, live_count = get_aura_stack_counts(aura, iid)
+            local safe_duration, safe_expiration, safe_remaining =
+                resolve_safe_timing(duration, expiration, rem, live_remaining, live_expiration, old_entry)
 
             local entry = cur_map[iid]
             if entry then
@@ -788,8 +789,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         local icon          = aura.icon
         local dispel        = aura.dispelName
         if issecretvalue(dispel) then dispel = nil end
-        local applications  = aura.applications
-        local stacks = (not issecretvalue(applications) and applications and applications > 1) and applications or 0
 
         local rem = compute_remaining(duration, expiration)
         local belongs = false
@@ -836,17 +835,9 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
         if belongs then
             local safe_spell_id = get_safe_spell_id(aura.spellId, old_entry)
-            local safe_duration = (not issecretvalue(duration)) and duration
-                or (old_entry and old_entry.duration) or 0
-            local safe_expiration = (not issecretvalue(expiration)) and expiration
-                or (old_entry and old_entry.expiration) or 0
-            local safe_remaining = rem
-            if (not safe_remaining or safe_remaining <= 0) and safe_expiration and safe_expiration > 0 then
-                safe_remaining = math_max(0, safe_expiration - GetTime())
-            elseif (not safe_remaining or safe_remaining <= 0) and old_entry and old_entry.remaining then
-                safe_remaining = old_entry.remaining
-            end
-            local live_count = (stacks == 0) and C_UnitAuras.GetAuraApplicationDisplayCount("player", iid) or nil
+            local stacks, live_count = get_aura_stack_counts(aura, iid)
+            local safe_duration, safe_expiration, safe_remaining =
+                resolve_safe_timing(duration, expiration, rem, nil, nil, old_entry)
 
             local entry = cur_map[iid]
             if entry then
