@@ -46,7 +46,7 @@ modules/
     af_main.lua          — init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
-    af_grid.lua          — snap_to_grid(), build_grid_lines(), create_grid_overlay(), set_grid_visible()
+    af_grid.lua          — snap_to_grid(), snap_frame_position(), build_grid_lines(), create_grid_overlay(), set_grid_visible()
 libs/            — LibStub, LibDataBroker-1.1, LibDBIcon-1.0, CallbackHandler-1.0
 media/fonts/     — monospace TTFs: SourceCodePro (selectable), Inconsolata, JetBrainsMono, RobotoMono, 0xProto (on disk, not yet selectable)
 ```
@@ -154,7 +154,7 @@ Do NOT use `SetParent(nil)` to remove textures — use `Hide()` + `SetTexture(ni
 
 ## Grid Snap (af_grid.lua)
 20px grid, screen-center origin — matches LsTweeks coordinate system exactly.  
-`M.snap_to_grid(v, is_y)` — snaps a coordinate. `M.set_grid_visible(show)` — toggles overlay. 
+`M.snap_to_grid(v, is_y)` — snaps a coordinate. `M.snap_frame_position(pos, frame)` preserves flush screen-edge positions before applying grid rounding, so clamped edge placement wins over grid snap. `M.set_grid_visible(show)` — toggles overlay.
 DB keys: `aura_frames.snap_to_grid`, `aura_frames.show_grid`.
 
 ## Riveted Panel Style

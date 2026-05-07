@@ -233,12 +233,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if _height < 1 then _height = 50  end
     if not in_combat then
         if pos then
-            if M.apply_frame_position then
-                M.apply_frame_position(self, pos, scale)
-            else
-                self:ClearAllPoints()
-                self:SetPoint("TOPLEFT", UIParent, "CENTER", (pos.x or 0) / scale, (pos.y or 0) / scale)
-            end
+            M.apply_frame_position(self, pos, scale)
         else
             self:ClearAllPoints()
             self:SetPoint("TOPLEFT", UIParent, "CENTER", -100, (aura_filter == "HARMFUL") and -25 or 75)

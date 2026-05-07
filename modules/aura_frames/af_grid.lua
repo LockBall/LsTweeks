@@ -9,6 +9,7 @@ local M = addon.aura_frames
 local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
 local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)
 local GRID_OFFSET_Y = -0.5  -- up (positive, no + sign) or down (negative)
+local EDGE_SNAP_TOLERANCE = 2
 
 local function build_grid_lines()
     local overlay = M.grid_overlay
@@ -92,4 +93,39 @@ end
 function M.snap_to_grid(v, is_y)
     local offset = is_y and GRID_OFFSET_Y or GRID_OFFSET_X
     return math.floor((v - offset) / GRID_SIZE + 0.5) * GRID_SIZE + offset
+end
+
+local function get_frame_parent_scale_ratio(frame)
+    local parent_scale = UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    local frame_scale  = frame and frame.GetEffectiveScale and frame:GetEffectiveScale() or frame and frame:GetScale() or 1
+    if parent_scale == 0 then parent_scale = 1 end
+    return frame_scale / parent_scale
+end
+
+local function snap_edge_or_grid(v, min_edge, max_edge, is_y)
+    if math.abs(v - min_edge) <= EDGE_SNAP_TOLERANCE then return min_edge end
+    if math.abs(v - max_edge) <= EDGE_SNAP_TOLERANCE then return max_edge end
+    return M.snap_to_grid(v, is_y)
+end
+
+function M.snap_frame_position(pos, frame)
+    if not pos then return nil, nil end
+    if not frame then
+        return M.snap_to_grid(pos.x or 0, false), M.snap_to_grid(pos.y or 0, true)
+    end
+
+    local scale = get_frame_parent_scale_ratio(frame)
+    local ucx, ucy = UIParent:GetCenter()
+    local parent_width = UIParent:GetWidth()
+    local frame_width  = (frame.GetWidth and frame:GetWidth() or 0) * scale
+    local frame_height = (frame.GetHeight and frame:GetHeight() or 0) * scale
+
+    local left_edge   = -ucx
+    local right_edge  = parent_width - frame_width - ucx
+    local bottom_edge = frame_height - ucy
+    local top_edge    = ucy
+
+    local x = snap_edge_or_grid(pos.x or 0, left_edge, right_edge, false)
+    local y = snap_edge_or_grid(pos.y or 0, bottom_edge, top_edge, true)
+    return x, y
 end
