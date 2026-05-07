@@ -213,11 +213,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or 40
     local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
     local in_combat = InCombatLockdown and InCombatLockdown()
+    local is_user_positioning = self._is_user_positioning == true
     local show_val  = cfg_db[show_key] ~= nil and cfg_db[show_key] or cfg_db["show"]
     local preview_enabled = show_val and (cfg_db["test_aura_" .. category] or cfg_db["test_aura"])
 
     local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
-    if not in_combat then
+    if not in_combat and not is_user_positioning then
         self:SetScale(scale)
     end
 
@@ -225,7 +226,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local _height = self:GetHeight() or 50
     if _width  < 1 then _width  = 200 end
     if _height < 1 then _height = 50  end
-    if not in_combat then
+    if not in_combat and not is_user_positioning then
         M.apply_saved_frame_position(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75)
         self:SetSize(_width, _height)
     end
@@ -241,7 +242,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         or self._layout_cache.cooldown_icon_overlay ~= cooldown_icon_overlay
         or self._layout_cache.spacing         ~= spacing
         or self._layout_cache.growth          ~= growth
-    if needs_layout and not in_combat then
+    if needs_layout and not in_combat and not is_user_positioning then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
 
@@ -273,7 +274,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             local bot_pad  = layout_show_timer_text and 14 or 12
             min_height = 32 + timer_h + bot_pad
         end
-        if not in_combat then
+        if not in_combat and not is_user_positioning then
             M.set_height_for_growth(self, min_height, growth)
         end
         self:Show()
@@ -350,7 +351,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     if show_val or preview_enabled then
         self:Show()
-        if not in_combat then
+        if not in_combat and not is_user_positioning then
             M.set_height_for_growth(self, new_height, growth)
         end
     elseif not is_moving then
