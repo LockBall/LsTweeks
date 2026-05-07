@@ -287,7 +287,7 @@ M.CUSTOM_FRAME_TEMPLATE = {
     -- name = "Custom N"   set by spawn logic
 
     aura_base_filter = "HELPFUL",
-    aura_modifier    = "NONE",
+    aura_modifier    = "IMPORTANT",
 
     -- Display
     show     = true,
@@ -303,7 +303,7 @@ M.CUSTOM_FRAME_TEMPLATE = {
     bg_color     = { r = 0,   g = 0,   b = 0,   a = 0.5 },
     max_icons    = 20,
     growth       = "DOWN",
-    test_aura    = false,
+    test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
     timer_number_font      = "source_code_pro",
