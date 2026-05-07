@@ -110,59 +110,9 @@ function M.build_preset_frame_panel(p, data)
         M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 
-    -- Grid Layout Configuration (row/column placement for controls)
-    -- col_gap  = distance between column start positions (moves columns apart/together)
-    -- col_width = centering zone within each column (controls how wide the center target is)
-    local col_gap    = 150  -- adjust to spread or compress columns
-    local col_width  = 190  -- adjust independently from gap if needed
-    local col_offset = -20  -- shift entire grid left (negative = left)
-    local row_gap    = 20   -- fixed space between rows; separators sit at half this
-    local grid = {
-        [1] = col_offset,
-        [2] = col_gap + col_offset,
-        [3] = col_gap * 2 + col_offset,
-        [4] = col_gap * 3 + col_offset,
-        col_width = col_width,
-        col_align = { "center", "center", "center", "center" },
-        row_start = 10, -- y position of start of first row 
-        row_gap = row_gap,
-        -- row #       1    2   3   4   5
-        row_heights = {130, 60, 90, 120, 110},
-        reset_btn_width = 110,
-        offsets = {
-            default = 0,
-            dropdown = 8,
-            picker = 4,
-        },
-        content_rows = 5,
-    }
-
-    
-    -- Anchors a control into the content grid. row/column index into grid.row_heights and grid[column].
-    -- slot offsets the Y by grid.offsets[slot] (e.g. "dropdown", "picker"). opts: align, valign, y_offset, width.
-    local function place_at(control, row, column, slot, opts)
-        if not control then return end
-        opts = opts or {}
-        local align = opts.align or grid.col_align[column] or "left"
-        local x = grid[column]
-        local y = grid.row_start
-        for i = 1, (row - 1) do
-            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
-        end
-        -- valign="bottom": descend one more row height to land at the row's bottom edge
-        if opts.valign == "bottom" then
-            y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
-        end
-        local y_offset = grid.offsets[slot or "default"] or 0
-        if opts.y_offset then y_offset = y_offset + opts.y_offset end
-        local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
-        if align == "center" then
-            x = x + math.floor((grid.col_width - width) / 2)
-        elseif align == "right" then
-            x = x + grid.col_width - width
-        end
-        control:SetPoint("TOPLEFT", p, "TOPLEFT", x, y + y_offset)
-    end
+    local grid = M.create_settings_grid(p)
+    local place_at = grid.place_at
+    local add_row_separator = grid.add_row_separator
 
     local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
         local container, checkbox, _ = addon.CreateCheckbox(p, label, M.db[db_key],
@@ -199,20 +149,6 @@ function M.build_preset_frame_panel(p, data)
     local function create_bound_slider(name_suffix, label, min_v, max_v, step, db_key, on_change)
         local slider = addon.CreateSliderWithBox(addon_name..cat..name_suffix, p, label, min_v, max_v, step, M.db, db_key, M.defaults, on_change or update)
         return slider
-    end
-
-    -- Draw a 2px horizontal separator in the gap below the given row.
-    local function add_row_separator(row)
-        local line = p:CreateTexture(nil, "BACKGROUND")
-        line:SetColorTexture(1, 1, 1, 0.08)
-        line:SetHeight(2)
-        -- Accumulate row heights to find the bottom edge of this row, then nudge up by half
-        -- the row gap so the line sits centered in the space between rows.
-        local y = grid.row_start
-        for i = 1, row do y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights]) end
-        line:SetPoint("TOPLEFT", p, "TOPLEFT", 0, y + math.floor(grid.row_gap / 2))
-        -- Width: right edge of col 4 minus 12px to avoid touching the outer frame border.
-        line:SetWidth(grid[4] + grid.col_width - 12)
     end
 
     -- Width slider — defined early so it can be placed in Row 1.
@@ -532,56 +468,9 @@ function M.build_custom_settings_panel(p, entry)
         update_custom_frame(entry)
     end
 
-    local col_gap    = 150
-    local col_width  = 190
-    local col_offset = -20
-    local row_gap    = 20
-    local grid = {
-        [1] = col_offset,
-        [2] = col_gap + col_offset,
-        [3] = col_gap * 2 + col_offset,
-        [4] = col_gap * 3 + col_offset,
-        col_width   = col_width,
-        col_align   = { "center", "center", "center", "center" },
-        row_start   = 10,
-        row_gap     = row_gap,
-        row_heights = { 130, 60, 90, 120, 110 },
-        reset_btn_width = 110,
-        offsets     = { default = 0, dropdown = 8, picker = 4 },
-    }
-
-    local function place_at(control, row, column, slot, opts)
-        if not control then return end
-        opts = opts or {}
-        local align = opts.align or grid.col_align[column] or "left"
-        local x = grid[column]
-        local y = grid.row_start
-        for i = 1, (row - 1) do
-            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
-        end
-        if opts.valign == "bottom" then
-            y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
-        end
-        local y_offset = grid.offsets[slot or "default"] or 0
-        if opts.y_offset then y_offset = y_offset + opts.y_offset end
-        local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
-        if align == "center" then
-            x = x + math.floor((grid.col_width - width) / 2)
-        elseif align == "right" then
-            x = x + grid.col_width - width
-        end
-        control:SetPoint("TOPLEFT", p, "TOPLEFT", x, y + y_offset)
-    end
-
-    local function add_row_separator(row)
-        local line = p:CreateTexture(nil, "BACKGROUND")
-        line:SetColorTexture(1, 1, 1, 0.08)
-        line:SetHeight(2)
-        local y = grid.row_start
-        for i = 1, row do y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights]) end
-        line:SetPoint("TOPLEFT", p, "TOPLEFT", 0, y + math.floor(grid.row_gap / 2))
-        line:SetWidth(grid[4] + grid.col_width - 12)
-    end
+    local grid = M.create_settings_grid(p)
+    local place_at = grid.place_at
+    local add_row_separator = grid.add_row_separator
 
     local function bound_cb(label, key, row, column, on_change)
         local container, cb = addon.CreateCheckbox(p, label, entry[key],
