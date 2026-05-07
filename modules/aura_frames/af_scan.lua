@@ -279,11 +279,6 @@ local function is_spell_on_real_cooldown(spell_id)
     return (start_time + duration) > GetTime()
 end
 
--- Blizzard global frame names for each WoW Cooldown Manager category.
--- These viewers stay enabled as the live source; addon settings may hide them
--- visually with alpha, but we still read their child frames.
-local VIEWER_FRAME_NAMES = M.CDM_VIEWER_FRAMES
-
 local function store_viewer_children(...)
     local children = _scratch_viewer_children
     wipe(children)
@@ -304,8 +299,7 @@ end
 M._cd_hook_cache = M._cd_hook_cache or {}
 
 function M.clear_cooldown_viewer_child_cache(category)
-    local frame_name = VIEWER_FRAME_NAMES and VIEWER_FRAME_NAMES[category]
-    local viewer = frame_name and _G[frame_name]
+    local viewer = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
     if not viewer then return end
     local children = copy_viewer_children(viewer)
     for _, child in ipairs(children) do
@@ -465,9 +459,7 @@ end
 --      duration as fallback for the overlay.
 --   3. Grey state: use C_Spell.GetSpellCooldown(spellID), explicitly ignoring GCD.
 function M.add_cooldown_viewer_category_entries(target_map, category)
-    local frame_name = VIEWER_FRAME_NAMES[category]
-    if not frame_name then return end
-    local viewer = _G[frame_name]
+    local viewer = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
     if not viewer then return end
 
     local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]

@@ -24,36 +24,34 @@
 
 ### Inline Sequences Worth Extracting (Medium Priority)
 
-- [ ]  8. **CDM viewer frame lookup** — this 3-line guard appears 4+ times across [af_core.lua](af_core.lua) and [af_scan.lua](af_scan.lua):
-```lua
-local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
-local frame = frame_name and _G[frame_name]
-if not frame then return end
-```
-Candidate for `M.get_cdm_viewer_frame(category)`.
+- [x]  8. **CDM viewer frame lookup** — added [af_functions.lua](af_functions.lua) and centralized CDM viewer resolution in `M.get_cdm_viewer_frame(category)`.
 
-- [ ]  9. **Frame position sync** — appears 3 times across [af_gui_frame_builders.lua](af_gui_frame_builders.lua) and [af_main.lua](af_main.lua):
-```lua
-local x, y = M.read_frame_position(frame)
-if x and y then pos.point = "TOPLEFT"; pos.x = x; pos.y = y end
-```
-Candidate for `M.sync_frame_position_to_db(frame, pos_table)`.
+- [x]  9. **Frame position sync** — moved frame position helpers into [af_functions.lua](af_functions.lua) and added `M.sync_frame_position_to_db(frame, pos_table)` for shared TOPLEFT position writes.
 
-- [ ]  10. **Color setting lookup with fallback chain** — appears 5+ times in [af_render.lua](af_render.lua):
+- [x]  10. **Color setting lookup with fallback chain** — added generic `M.get_setting(cfg_db, category, key, fallback)` in [af_functions.lua](af_functions.lua) and applied it to shared runtime color lookups:
 ```lua
 local c = cfg_db and cfg_db.timer_color
     or (category and M.db and M.db["timer_color_"..category])
     or (M.db and M.db.timer_color)
 ```
-Candidate for `M.get_color_setting(cfg_db, category, key)`.
 
 - [ ]  11. **Backdrop setup** — near-identical `BackdropTemplate` + color setup blocks appear in [af_main.lua](af_main.lua), [af_gui_frame_builders.lua](af_gui_frame_builders.lua), and [af_gui_tree.lua](af_gui_tree.lua). Could be a shared `apply_standard_backdrop(frame)` helper.
 
 ---
 
+### Defaults File Purity (Medium Priority)
+
+- [x]  12. **Move custom-frame runtime helpers out of defaults** — [af_defaults.lua](af_defaults.lua) now keeps custom-frame defaults/constants only; `next_custom_name()`, `next_custom_id()`, `M.new_custom_entry()`, `M.get_custom_aura_filter()`, and `M.get_custom_modifier_def()` live in [af_functions.lua](af_functions.lua).
+
+- [ ]  13. **Move timer font-size lookup out of defaults** — `M.get_timer_number_font_size(category, cfg_db)` is a runtime settings fallback helper, not a default value. Move it into [af_functions.lua](af_functions.lua), near `M.get_setting()`, and update the [af_defaults.lua](af_defaults.lua) header accordingly.
+
+- [ ]  14. **Remove redundant position fallback blocks** — now that [af_functions.lua](af_functions.lua) loads before core/main/GUI, repeated fallback branches around `M.apply_frame_position` in [af_core.lua](af_core.lua), [af_main.lua](af_main.lua), and [af_gui_frame_builders.lua](af_gui_frame_builders.lua) can be simplified to the shared helper.
+
+---
+
 ### Settings Panel Builder Duplication (Medium Priority)
 
-- [ ]  12. [af_gui_frame_builders.lua](af_gui_frame_builders.lua) defines nearly identical grid layout infrastructure (`place_at`, `add_row_separator`, `create_bound_checkbox`, `create_bound_slider`) twice — once inside `M.build_preset_frame_panel` and again inside `M.build_custom_settings_panel`. These nested closures share the same signatures; the layouts are now close enough that the earlier `proj_mem.md` `place_at()` note should be handled here, not as a separate duplicate. A shared `build_settings_grid(parent, config)` factory could eliminate the duplication if it stays readable.
+- [ ]  15. [af_gui_frame_builders.lua](af_gui_frame_builders.lua) defines nearly identical grid layout infrastructure (`place_at`, `add_row_separator`, `create_bound_checkbox`, `create_bound_slider`) twice — once inside `M.build_preset_frame_panel` and again inside `M.build_custom_settings_panel`. These nested closures share the same signatures; the layouts are now close enough that the earlier `proj_mem.md` `place_at()` note should be handled here, not as a separate duplicate. A shared `build_settings_grid(parent, config)` factory could eliminate the duplication if it stays readable.
 
 ---
 
