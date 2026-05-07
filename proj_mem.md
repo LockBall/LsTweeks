@@ -113,7 +113,11 @@ DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.
 
+CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Use the named profiles (`"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
+
 Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan only when enabled/previewed with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))` from `af_scan.lua`, tag entries with `custom_order`, and render in selected-filter scan order instead of the preset time/name sort path. Runtime call-chain variables use `aura_filter` for the selected AuraFilters string. Custom scans are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; `af_main.lua` clears that cache on aura-affecting events.
+
+When aura-frame reset replaces `M.db.custom_frames`, `af_main.lua` removes orphan custom runtime frames and stale custom controls, then asks `af_gui_tree.lua` to rebuild the Frames tree/content if it exists. Do not leave custom WoW frames alive without a matching saved custom entry.
 
 ## Aura Frames GUI Layout System
 `af_gui.lua` owns the settings shell: `BuildSettings` creates three tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
@@ -138,6 +142,10 @@ Preset and custom content panels each use `place_at(control, row, column, slot, 
 Aura frame saved positions are stored in unscaled UIParent-center coordinates. Runtime placement uses `M.apply_frame_position(frame, pos, scale)` and drag/slider sync uses `M.read_frame_position(frame)` / `M.sync_frame_position_to_db(frame, pos)` so scaled frames do not jump when moved.
 
 Position ownership is centralized in `af_functions.lua`: use `M.get_frame_position_table(frame)`, `M.get_frame_position_scale(frame, scale_key)`, `M.apply_saved_frame_position(frame, scale_key, fallback_y)`, and `M.sync_frame_position_from_drag(frame, scale_key)` for saved aura-frame placement. Other files should not branch separately on preset vs custom position storage except when directly editing the DB table values for controls/reset.
+
+Move Reset is also centralized in `af_functions.lua`: settings panels should create it with `M.create_move_reset_button()` and perform the action through `M.reset_frame_move_placement()`. Move Reset only resets saved position and width; it must not toggle the frame's Move Mode setting.
+
+Drag/resize interaction state is centralized with `M.start_frame_drag()` / `M.stop_frame_drag()` and the frame flag `._is_user_positioning`. Runtime refreshes, especially CDM refreshes, must not reapply saved anchors, scale, size, layout, or height while this flag is set, or the frame can jump back to an older saved position under the cursor.
 
 ## UI Shared Controls — Quick Reference
 | Function | Key args | Notes |

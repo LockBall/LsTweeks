@@ -74,6 +74,62 @@ function M.set_saved_frame_position_axis(frame, axis, value, scale_key)
     M.apply_saved_frame_position(frame, scale_key)
 end
 
+function M.reset_frame_move_placement(frame, opts)
+    if not frame then return end
+    opts = opts or {}
+
+    local default_pos = opts.default_position
+    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    if pos and default_pos then
+        pos.point = default_pos.point or "TOPLEFT"
+        pos.x = default_pos.x or 0
+        pos.y = default_pos.y or 0
+    end
+
+    local default_width = opts.default_width
+    if default_width then
+        if opts.width_table and opts.width_key then
+            opts.width_table[opts.width_key] = default_width
+        end
+        if frame.SetWidth then
+            frame:SetWidth(default_width)
+        end
+    end
+
+    M.apply_saved_frame_position(frame, opts.scale_key)
+
+    local x_slider = opts.x_slider
+    local y_slider = opts.y_slider
+    local width_slider = opts.width_slider
+    if x_slider and x_slider.slider and pos and pos.x ~= nil then
+        x_slider.slider:SetValue(pos.x)
+    end
+    if y_slider and y_slider.slider and pos and pos.y ~= nil then
+        y_slider.slider:SetValue(pos.y)
+    end
+    if width_slider and width_slider.slider and default_width then
+        width_slider.slider:SetValue(default_width)
+    end
+
+    if opts.update then
+        opts.update()
+    end
+end
+
+function M.create_move_reset_button(parent, anchor_to, opts)
+    opts = opts or {}
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(opts.width or 110, 22)
+    button:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", 0, -6)
+    button:SetText("Move Reset")
+    button:SetScript("OnClick", function()
+        if opts.on_click then
+            opts.on_click()
+        end
+    end)
+    return button
+end
+
 function M.read_frame_position(frame)
     if not frame then return nil, nil end
     local left = frame:GetLeft()
@@ -111,6 +167,20 @@ function M.sync_frame_position_from_drag(frame, scale_key)
         M.apply_saved_frame_position(frame, scale_key)
     end
     return pos.x, pos.y
+end
+
+function M.start_frame_drag(frame)
+    if not frame then return end
+    frame._is_user_positioning = true
+    frame:StartMoving()
+end
+
+function M.stop_frame_drag(frame, scale_key)
+    if not frame then return nil, nil end
+    frame:StopMovingOrSizing()
+    local x, y = M.sync_frame_position_from_drag(frame, scale_key)
+    frame._is_user_positioning = nil
+    return x, y
 end
 
 function M.get_setting(cfg_db, category, key, fallback)

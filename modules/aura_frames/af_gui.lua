@@ -158,34 +158,22 @@ function M.BuildSettings(parent)
     PanelTemplates_UpdateTabs(parent)
 end
 
--- Sync only GUI control states from DB (used after reset flows).
+-- Sync GUI control states from DB (used after reset flows).
 function M.sync_general_controls_from_db()
     if not M.controls or not M.db then return end
 
-    local buffs = M.controls["enable_blizz_buffs"]
-    if buffs and buffs.SetChecked then
-        buffs:SetChecked(M.db.enable_blizz_buffs)
+    local function set_checked(control_key, value)
+        local control = M.controls[control_key]
+        if control and control.SetChecked then
+            control:SetChecked(value == true)
+        end
     end
 
-    local debuffs = M.controls["enable_blizz_debuffs"]
-    if debuffs and debuffs.SetChecked then
-        debuffs:SetChecked(M.db.enable_blizz_debuffs)
-    end
-
-    local snap_cb = M.controls["snap_to_grid_checkbox"]
-    if snap_cb and snap_cb.SetChecked then
-        snap_cb:SetChecked(M.db.snap_to_grid == true)
-    end
-
-    local spell_id_cb = M.controls["show_spell_id_checkbox"]
-    if spell_id_cb and spell_id_cb.SetChecked then
-        spell_id_cb:SetChecked(M.db.show_spell_id == true)
-    end
-
-    local grid_cb = M.controls["show_grid_checkbox"]
-    if grid_cb and grid_cb.SetChecked then
-        grid_cb:SetChecked(M.db.show_grid == true)
-    end
+    set_checked("enable_blizz_buffs", M.db.enable_blizz_buffs)
+    set_checked("enable_blizz_debuffs", M.db.enable_blizz_debuffs)
+    set_checked("snap_to_grid_checkbox", M.db.snap_to_grid)
+    set_checked("show_spell_id_checkbox", M.db.show_spell_id)
+    set_checked("show_grid_checkbox", M.db.show_grid)
 
     for _, cat in ipairs(M.CATEGORIES or {}) do
         local keys = {
@@ -199,9 +187,8 @@ function M.sync_general_controls_from_db()
             "hide_blizz_cdm_" .. cat,
         }
         for _, key in ipairs(keys) do
-            local cb = M.controls[key]
-            if cb and cb.SetChecked and M.db[key] ~= nil then
-                cb:SetChecked(M.db[key] == true)
+            if M.db[key] ~= nil then
+                set_checked(key, M.db[key])
             end
         end
     end
@@ -219,15 +206,9 @@ function M.sync_general_controls_from_db()
     end
 
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
-        local cat_bold_cb = M.controls["timer_number_font_bold_"..cat]
-        if cat_bold_cb and cat_bold_cb.SetChecked then
-            cat_bold_cb:SetChecked(M.db["timer_number_font_bold_"..cat] or false)
-        end
+        set_checked("timer_number_font_bold_"..cat, M.db["timer_number_font_bold_"..cat])
     end
 
-    local outlines_cb = M.controls["show_bar_section_outlines_checkbox"]
-    if outlines_cb and outlines_cb.SetChecked then
-        outlines_cb:SetChecked(M.db.show_bar_section_outlines == true)
-    end
+    set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
 
 end

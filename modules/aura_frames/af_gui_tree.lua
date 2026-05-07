@@ -458,6 +458,16 @@ function M.build_frames_tab(p, frames_data)
     group_boxes.cooldown = cooldown_group_box
     filters_group_box, filters_group_title = create_group_box("Filters", "filters")
 
+    local function queue_cdm_refreshes()
+        if M.queue_wow_cooldown_refresh then
+            M.queue_wow_cooldown_refresh("settings")
+        elseif M.queue_wow_cooldown_settings_refreshes then
+            M.queue_wow_cooldown_settings_refreshes()
+        elseif M.refresh_wow_cooldown_frames then
+            M.refresh_wow_cooldown_frames(0.1)
+        end
+    end
+
     local cooldown_group_title_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
     cooldown_group_title_btn:SetSize(GROUP_TITLE_W, GROUP_TITLE_H)
     cooldown_group_title_btn:Hide()
@@ -465,14 +475,6 @@ function M.build_frames_tab(p, frames_data)
     cooldown_group_title_btn:SetNormalFontObject("GameFontNormalSmall")
     cooldown_group_title_btn:SetHighlightFontObject("GameFontHighlightSmall")
     cooldown_group_title_btn:SetScript("OnClick", function()
-        local function queue_cdm_refreshes()
-            if M.queue_wow_cooldown_settings_refreshes then
-                M.queue_wow_cooldown_settings_refreshes()
-            elseif M.refresh_wow_cooldown_frames then
-                M.refresh_wow_cooldown_frames(0.1)
-            end
-        end
-
         local function hook_cdm_settings_panel(panel)
             if not panel or panel._lstweeks_refresh_hooked then return end
             panel._lstweeks_refresh_hooked = true
@@ -482,7 +484,9 @@ function M.build_frames_tab(p, frames_data)
             end
         end
 
-        if C_AddOns and C_AddOns.LoadAddOn then
+        if M.ensure_blizz_cdm_loaded then
+            M.ensure_blizz_cdm_loaded()
+        elseif C_AddOns and C_AddOns.LoadAddOn then
             pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
         elseif LoadAddOn then
             pcall(LoadAddOn, "Blizzard_CooldownViewer")
@@ -523,11 +527,7 @@ function M.build_frames_tab(p, frames_data)
         GameTooltip:Hide()
     end)
     sync_cdm_btn:SetScript("OnClick", function()
-        if M.queue_wow_cooldown_settings_refreshes then
-            M.queue_wow_cooldown_settings_refreshes()
-        elseif M.refresh_wow_cooldown_frames then
-            M.refresh_wow_cooldown_frames(0.1)
-        end
+        queue_cdm_refreshes()
     end)
 
     local cooldown_group_top_y
@@ -682,5 +682,57 @@ function M.build_frames_tab(p, frames_data)
         local cat  = data.show_key:sub(6)
         set_selected(node_fs_map[cat])
         show_node(cat, function(pnl) M.build_preset_frame_panel(pnl, data) end)
+    end
+
+    M.refresh_frames_tree = function()
+        local valid_node_keys = {}
+        for _, data in ipairs(frames_data) do
+            valid_node_keys[data.show_key:sub(6)] = true
+        end
+        if M.db and M.db.custom_frames then
+            for _, entry in ipairs(M.db.custom_frames) do
+                if entry.id then
+                    valid_node_keys[entry.id] = true
+                    valid_node_keys[entry.id .. "_filters"] = true
+                end
+            end
+        end
+        for key, panel in pairs(node_panels) do
+            if not valid_node_keys[key] then
+                panel:Hide()
+                if current_panel == panel then current_panel = nil end
+                node_panels[key] = nil
+            end
+        end
+        rebuild_tree()
+        local last_key = (M.db and M.db.last_frames_node) or "static"
+        for _, data in ipairs(frames_data) do
+            local cat = data.show_key:sub(6)
+            if last_key == cat then
+                set_selected(node_fs_map[cat])
+                show_node(cat, function(pnl) M.build_preset_frame_panel(pnl, data) end)
+                return
+            end
+        end
+        if M.db and M.db.custom_frames then
+            for _, entry in ipairs(M.db.custom_frames) do
+                if last_key == entry.id then
+                    set_selected(node_fs_map[entry.id])
+                    show_node(entry.id, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
+                    return
+                elseif last_key == entry.id .. "_filters" then
+                    local node_key = entry.id .. "_filters"
+                    set_selected(node_fs_map[node_key])
+                    show_node(node_key, function(pnl) M.build_custom_child_panel(pnl, entry) end)
+                    return
+                end
+            end
+        end
+        if #frames_data > 0 then
+            local data = frames_data[1]
+            local cat = data.show_key:sub(6)
+            set_selected(node_fs_map[cat])
+            show_node(cat, function(pnl) M.build_preset_frame_panel(pnl, data) end)
+        end
     end
 end

@@ -25,7 +25,29 @@ local WOW_COOLDOWN_SHOW_KEYS = {
 
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 
-local WOW_COOLDOWN_STARTUP_REFRESH_DELAYS = { 0.2, 0.6, 1.2, 2.5, 5.0 }
+local WOW_COOLDOWN_REFRESH_PROFILES = {
+    immediate = {
+        delays = { 0 },
+        prepare_viewers = false,
+        clear_child_cache = true,
+    },
+    hook = {
+        delays = { 0 },
+        prepare_viewers = false,
+        clear_child_cache = false,
+        defer_zero = true,
+    },
+    startup = {
+        delays = { 0.2, 0.6, 1.2, 2.5, 5.0 },
+        prepare_viewers = true,
+        clear_child_cache = true,
+    },
+    settings = {
+        delays = { 0, 0.2, 0.6, 1.2 },
+        prepare_viewers = true,
+        clear_child_cache = true,
+    },
+}
 
 M.NUMBER_FONT_OPTIONS = {
     {
@@ -133,47 +155,74 @@ function M.apply_number_font_to_all()
     end
 end
 
-function M.refresh_wow_cooldown_frames(delay, prepare_viewers)
-    local function refresh()
-        if not M.frames then return end
-        if prepare_viewers and M.prepare_blizz_cdm_viewer then
-            for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-                M.prepare_blizz_cdm_viewer(category)
-            end
-        end
-        if M.clear_cooldown_viewer_child_cache then
-            for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-                M.clear_cooldown_viewer_child_cache(category)
-            end
-        end
-        for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
-            local frame = M.frames[show_key]
-            local p = frame and frame.update_params
-            if p then
-                frame._sorted_ids_cache = nil
-                M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
-            end
+local function run_wow_cooldown_refresh(opts)
+    if not M.frames then return end
+    if opts.prepare_viewers and M.prepare_blizz_cdm_viewer then
+        for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+            M.prepare_blizz_cdm_viewer(category)
         end
     end
+    if opts.clear_child_cache and M.clear_cooldown_viewer_child_cache then
+        for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+            M.clear_cooldown_viewer_child_cache(category)
+        end
+    end
+    for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
+        local frame = M.frames[show_key]
+        local p = frame and frame.update_params
+        if p then
+            frame._sorted_ids_cache = nil
+            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+        end
+    end
+end
 
-    if delay and delay > 0 and C_Timer and C_Timer.After then
+local function schedule_wow_cooldown_refresh(delay, opts)
+    delay = delay or 0
+    M._cdm_refresh_pending = M._cdm_refresh_pending or {}
+    local key = tostring(delay)
+        .. "|" .. tostring(opts.prepare_viewers == true)
+        .. "|" .. tostring(opts.clear_child_cache == true)
+        .. "|" .. tostring(opts.defer_zero == true)
+    if M._cdm_refresh_pending[key] then return end
+
+    local function refresh()
+        M._cdm_refresh_pending[key] = nil
+        run_wow_cooldown_refresh(opts)
+    end
+
+    M._cdm_refresh_pending[key] = true
+    if (delay > 0 or opts.defer_zero) and C_Timer and C_Timer.After then
         C_Timer.After(delay, refresh)
     else
         refresh()
     end
 end
 
-function M.queue_wow_cooldown_startup_refreshes()
-    for _, delay in ipairs(WOW_COOLDOWN_STARTUP_REFRESH_DELAYS) do
-        M.refresh_wow_cooldown_frames(delay, true)
+function M.queue_wow_cooldown_refresh(profile)
+    local opts = type(profile) == "table" and profile
+        or WOW_COOLDOWN_REFRESH_PROFILES[profile or "immediate"]
+        or WOW_COOLDOWN_REFRESH_PROFILES.immediate
+    local delays = opts.delays or { opts.delay or 0 }
+    for _, delay in ipairs(delays) do
+        schedule_wow_cooldown_refresh(delay, opts)
     end
 end
 
+function M.refresh_wow_cooldown_frames(delay, prepare_viewers)
+    M.queue_wow_cooldown_refresh({
+        delays = { delay or 0 },
+        prepare_viewers = prepare_viewers == true,
+        clear_child_cache = true,
+    })
+end
+
+function M.queue_wow_cooldown_startup_refreshes()
+    M.queue_wow_cooldown_refresh("startup")
+end
+
 function M.queue_wow_cooldown_settings_refreshes()
-    M.refresh_wow_cooldown_frames(0, true)
-    M.refresh_wow_cooldown_frames(0.2, true)
-    M.refresh_wow_cooldown_frames(0.6, true)
-    M.refresh_wow_cooldown_frames(1.2, true)
+    M.queue_wow_cooldown_refresh("settings")
 end
 
 -- AURA CONTAINER GENERATOR
@@ -216,10 +265,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         tb.label_text = text
         tb:EnableMouse(true)
         tb:RegisterForDrag("LeftButton")
-        tb:SetScript("OnDragStart", function() parent:StartMoving() end)
+        tb:SetScript("OnDragStart", function() M.start_frame_drag(parent) end)
         tb:SetScript("OnDragStop", function()
-            parent:StopMovingOrSizing()
-            M.sync_frame_position_from_drag(parent, scale_key)
+            M.stop_frame_drag(parent, scale_key)
         end)
         return tb
     end
@@ -242,9 +290,13 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         end
     end)
 
-    frame.resizer:SetScript("OnMouseDown", function() frame:StartSizing("RIGHT") end)
-    frame.resizer:SetScript("OnMouseUp", function() 
-        frame:StopMovingOrSizing() 
+    frame.resizer:SetScript("OnMouseDown", function()
+        frame._is_user_positioning = true
+        frame:StartSizing("RIGHT")
+    end)
+    frame.resizer:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing()
+        frame._is_user_positioning = nil
         local clamped_width = frame:GetWidth()
         if clamped_width < MIN_FRAME_WIDTH then
             clamped_width = MIN_FRAME_WIDTH
@@ -504,6 +556,7 @@ function M.create_custom_frame(entry)
     if frame.resizer then
         frame.resizer:SetScript("OnMouseUp", function()
             frame:StopMovingOrSizing()
+            frame._is_user_positioning = nil
             local w = frame:GetWidth()
             if w < MIN_FRAME_WIDTH then w = MIN_FRAME_WIDTH; frame:SetWidth(w) end
             entry.width = w
@@ -516,8 +569,7 @@ function M.create_custom_frame(entry)
 
     -- Override OnDragStop for title bars: write position to entry.position.
     local function on_drag_stop()
-        frame:StopMovingOrSizing()
-        M.sync_frame_position_from_drag(frame, "scale")
+        M.stop_frame_drag(frame, "scale")
     end
     if frame.title_bar then
         frame.title_bar:SetScript("OnDragStop", on_drag_stop)
@@ -557,6 +609,14 @@ function M.destroy_custom_frame(id)
             if entry.id == id then
                 table.remove(M.db.custom_frames, i)
                 break
+            end
+        end
+    end
+    if M.controls then
+        local prefix = "custom_" .. id .. "_"
+        for key in pairs(M.controls) do
+            if type(key) == "string" and key:sub(1, #prefix) == prefix then
+                M.controls[key] = nil
             end
         end
     end
@@ -683,7 +743,24 @@ function M.on_reset_complete()
     M.apply_number_font_to_all()
     if M.set_grid_visible then M.set_grid_visible(M.db.show_grid == true) end
 
+    local valid_custom_ids = {}
+    for _, entry in ipairs(M.db.custom_frames or {}) do
+        if entry.id then valid_custom_ids[entry.id] = true end
+    end
+    local orphan_custom_ids = {}
     for show_key, frame in pairs(M.frames) do
+        if frame.is_custom then
+            local id = frame.custom_entry and frame.custom_entry.id or show_key:match("^show_(.+)$")
+            if id and not valid_custom_ids[id] then
+                orphan_custom_ids[#orphan_custom_ids + 1] = id
+            end
+        end
+    end
+    for _, id in ipairs(orphan_custom_ids) do
+        M.destroy_custom_frame(id)
+    end
+
+    for _, frame in pairs(M.frames) do
         local p = frame.update_params
         if p then
             frame._layout_cache = nil
@@ -703,5 +780,8 @@ function M.on_reset_complete()
 
     if M.sync_general_controls_from_db then
         M.sync_general_controls_from_db()
+    end
+    if M.refresh_frames_tree then
+        M.refresh_frames_tree()
     end
 end

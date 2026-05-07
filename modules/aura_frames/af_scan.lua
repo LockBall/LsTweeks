@@ -311,17 +311,10 @@ function M.clear_cooldown_viewer_child_cache(category)
 end
 
 local function queue_cooldown_viewer_refresh()
-    if M._cd_hook_refresh_pending then return end
-    M._cd_hook_refresh_pending = true
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0, function()
-            M._cd_hook_refresh_pending = false
-            if M.refresh_wow_cooldown_frames then
-                M.refresh_wow_cooldown_frames()
-            end
-        end)
-    else
-        M._cd_hook_refresh_pending = false
+    if M.queue_wow_cooldown_refresh then
+        M.queue_wow_cooldown_refresh("hook")
+    elseif M.refresh_wow_cooldown_frames then
+        M.refresh_wow_cooldown_frames()
     end
 end
 

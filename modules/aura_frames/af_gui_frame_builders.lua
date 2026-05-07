@@ -127,10 +127,6 @@ function M.build_preset_frame_panel(p, data)
                 end
                 if on_change then
                     on_change(is_checked)
-                elseif label == "Test Aura" then
-                    if is_checked then
-                        update()
-                    end
                 else
                     update()
                 end
@@ -252,32 +248,25 @@ function M.build_preset_frame_panel(p, data)
     show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
     M.controls.show_grid_checkbox = show_grid_btn
 
-    -- move Reset: stacked below Show Grid in col 1
-    local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    move_reset:SetSize(grid.reset_btn_width, 22)
-    move_reset:SetPoint("TOPLEFT", show_grid_container, "BOTTOMLEFT", 0, -6)
-    move_reset:SetText("Move Reset")
-    move_reset:SetScript("OnClick", function()
-        local dPos = M.defaults.positions[cat]
-        local dMove = M.defaults[data.move_key]
-        local dWidth = M.defaults["width_"..cat] or 200
-        M.db.positions[cat].point = dPos.point
-        M.db.positions[cat].x = dPos.x
-        M.db.positions[cat].y = dPos.y
-        M.db[data.move_key] = dMove
-        M.db["width_"..cat] = dWidth
-        move_cb:SetChecked(dMove)
-        local f = M.frames[data.show_key]
-        if f then
-            M.apply_saved_frame_position(f, data.scale_key)
-            f:SetWidth(dWidth)
-            update()
-        end
-        local xs = M.controls["x_pos_slider_"..cat]
-        local ys = M.controls["y_pos_slider_"..cat]
-        if xs and xs.slider then xs.slider:SetValue(dPos.x) end
-        if ys and ys.slider then ys.slider:SetValue(dPos.y) end
-    end)
+    -- move Reset: resets placement/width only, leaving Move Mode unchanged.
+    M.create_move_reset_button(p, show_grid_container, {
+        width = grid.reset_btn_width,
+        on_click = function()
+            local f = M.frames[data.show_key]
+            if not f then return end
+            M.reset_frame_move_placement(f, {
+                default_position = M.defaults.positions[cat],
+                default_width = M.defaults["width_"..cat] or 200,
+                width_table = M.db,
+                width_key = "width_"..cat,
+                scale_key = data.scale_key,
+                x_slider = x_slider,
+                y_slider = y_slider,
+                width_slider = width_slider,
+                update = update,
+            })
+        end,
+    })
 
     add_row_separator(1)
 
@@ -541,27 +530,24 @@ function M.build_custom_settings_panel(p, entry)
         end)
     show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
 
-    local move_reset = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    move_reset:SetSize(grid.reset_btn_width, 22)
-    move_reset:SetPoint("TOPLEFT", show_grid_container, "BOTTOMLEFT", 0, -6)
-    move_reset:SetText("Move Reset")
-    move_reset:SetScript("OnClick", function()
-        local tmpl = M.CUSTOM_FRAME_TEMPLATE
-        pos.x = tmpl.position.x
-        pos.y = tmpl.position.y
-        entry.move = tmpl.move
-        entry.width = tmpl.width
-        move_cb:SetChecked(false)
-        local f = M.frames[show_key]
-        if f then
-            M.apply_saved_frame_position(f, "scale")
-            f:SetWidth(entry.width)
-            update()
-        end
-        if x_slider and x_slider.slider then x_slider.slider:SetValue(pos.x) end
-        if y_slider and y_slider.slider then y_slider.slider:SetValue(pos.y) end
-        if width_slider and width_slider.slider then width_slider.slider:SetValue(entry.width) end
-    end)
+    M.create_move_reset_button(p, show_grid_container, {
+        width = grid.reset_btn_width,
+        on_click = function()
+            local f = M.frames[show_key]
+            if not f then return end
+            M.reset_frame_move_placement(f, {
+                default_position = M.CUSTOM_FRAME_TEMPLATE.position,
+                default_width = M.CUSTOM_FRAME_TEMPLATE.width,
+                width_table = entry,
+                width_key = "width",
+                scale_key = "scale",
+                x_slider = x_slider,
+                y_slider = y_slider,
+                width_slider = width_slider,
+                update = update,
+            })
+        end,
+    })
 
     add_row_separator(1)
 
