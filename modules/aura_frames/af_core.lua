@@ -1,5 +1,5 @@
 -- Runtime loop for the aura frames module: drives the per-tick timer countdown and the per-frame aura update pipeline.
--- tick_visible_icons() runs every 0.1s to update timer text and bar values without re-scanning.
+-- tick_visible_icons() updates timer text and bar values without re-scanning.
 -- update_auras() orchestrates the unified scan -> per-frame aura filter -> layout -> render -> resize sequence on each deferred UNIT_AURA event.
 local addon_name, addon = ...
 
@@ -26,7 +26,7 @@ end
 
 
 -- Shared ticker update path for all visible aura icon objects.
--- Runs at 0.1s from af_main.lua and keeps timer/bar text fresh between scans.
+-- Runs from af_main.lua and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
     now = now or GetTime()
     local db = M.db

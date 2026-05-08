@@ -1,6 +1,8 @@
 -- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb).
--- Changes from either the slider or the box are synced to each other and written to the DB; has a built-in 0.1s debounce so the callback is not called on every drag tick.
+-- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
 local addon_name, addon = ...
+
+local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback)
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -97,7 +99,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     local debounce_timer = nil
     local function debounced_callback()
         if debounce_timer then debounce_timer:Cancel() end
-        debounce_timer = C_Timer.NewTimer(0.1, function()
+        debounce_timer = C_Timer.NewTimer(UPDATE_INTERVALS.tenth_sec, function()
             debounce_timer = nil
             run_callback()
         end)

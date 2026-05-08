@@ -8,6 +8,8 @@ local GetTime = GetTime
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 function M.build_frames_tab(p, frames_data)
+    local UPDATE_INTERVALS = M.UPDATE_INTERVALS
+
     -- Left tree list sidebar
     local TREE_W         = 140
     local TREE_H         = 480
@@ -464,7 +466,7 @@ function M.build_frames_tab(p, frames_data)
         elseif M.queue_wow_cooldown_settings_refreshes then
             M.queue_wow_cooldown_settings_refreshes()
         elseif M.refresh_wow_cooldown_frames then
-            M.refresh_wow_cooldown_frames(0.1)
+            M.refresh_wow_cooldown_frames(UPDATE_INTERVALS.tenth_sec)
         end
     end
 
@@ -503,7 +505,8 @@ function M.build_frames_tab(p, frames_data)
 
         if Settings and Settings.OpenToCategory then
             pcall(Settings.OpenToCategory, "Cooldown Viewer")
-            C_Timer.After(0.2, function()
+            -- Give Blizzard's settings panel one short frame-population window before hooking it.
+            C_Timer.After(UPDATE_INTERVALS.fifth_sec, function()
                 hook_cdm_settings_panel(_G["CooldownViewerSettings"])
                 queue_cdm_refreshes()
             end)
