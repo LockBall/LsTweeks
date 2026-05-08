@@ -313,8 +313,12 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     -- ICON POOL MANAGEMENT    Pre-create set number of icons/bars to avoid combat lockdown errors
     frame.icons = {}
-    local pool_size = M.db["max_icons_"..category] or MAX_POOL_SIZE
-    local bar_bg_default = M.db["bar_bg_color_"..category] or M.db["color_"..category] or { r = 1, g = 1, b = 1, a = bar_bg_alpha }
+    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or MAX_POOL_SIZE
+    local bar_bg_default = cfg_db["bar_bg_color_"..category]
+        or cfg_db["bar_bg_color"]
+        or cfg_db["color_"..category]
+        or cfg_db["color"]
+        or { r = 1, g = 1, b = 1, a = bar_bg_alpha }
 
     for i = 1, pool_size do
         local obj = CreateFrame("Frame", nil, frame, "BackdropTemplate")
@@ -568,6 +572,8 @@ function M.create_custom_frame(entry)
     if frame.bottom_title_bar then
         frame.bottom_title_bar:SetScript("OnDragStop", on_drag_stop)
     end
+
+    M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 
     return frame
 end
