@@ -26,18 +26,6 @@ local CFG = {
     min_remaining   = 0.1,  -- floor for remaining time so bar never shows fully empty
 }
 
--- Per-category preview label and sort order.
-local PREVIEW_META = {
-    show_static = { name = "Test Static Buff", sort_id = 1 },
-    show_short  = { name = "Test Short Buff",  sort_id = 2 },
-    show_long   = { name = "Test Long Buff",   sort_id = 3 },
-    show_essential = { name = "Test Essential Buff", sort_id = 5 },
-    show_utility = { name = "Test Utility Buff", sort_id = 6 },
-    show_tracked_buffs = { name = "Test Tracked Buff", sort_id = 7 },
-    show_tracked_bars = { name = "Test Tracked Bar", sort_id = 8 },
-    show_debuff = { name = "Test DeBuff",       sort_id = 9 },
-}
-
 local function get_test_preview_state(show_key, short_threshold, now)
     now = now or GetTime()
 
@@ -45,7 +33,7 @@ local function get_test_preview_state(show_key, short_threshold, now)
         return 0, 0, 0
     end
 
-    local threshold = short_threshold or 60
+    local threshold = short_threshold or M.DEFAULT_SHORT_THRESHOLD
     local short_duration = CFG.short_duration
     local duration = (show_key == "show_long")
         and (threshold + math_max(CFG.long_extra_min, math_floor(threshold * CFG.long_extra_frac)))
@@ -65,12 +53,13 @@ end
 local function build_test_aura_entry(show_key, filter, short_threshold)
     local now = GetTime()
     local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
-    local meta = PREVIEW_META[show_key]
-        or ((filter and filter:find("HARMFUL", 1, true)) and PREVIEW_META.show_debuff)
-        or { name = "Test Custom Buff", sort_id = 10 }
+    local frame_def = M.get_frame_def_from_show_key(show_key)
+        or ((filter and filter:find("HARMFUL", 1, true)) and M.get_frame_def("debuff"))
+    local preview_name = (frame_def and frame_def.test_label) or "Test Custom Buff"
+    local preview_sort_id = (frame_def and frame_def.test_sort_id) or 10
 
     return {
-        name            = meta.name,
+        name            = preview_name,
         icon            = CFG.icon,
         duration        = duration,
         expiration      = duration > 0 and (now + remaining) or 0,
@@ -79,7 +68,7 @@ local function build_test_aura_entry(show_key, filter, short_threshold)
         filter          = filter,
         instance_id     = "__test_preview__",
         added_at        = now,
-        preview_sort_id = meta.sort_id,
+        preview_sort_id = preview_sort_id,
         is_test_preview = true,
     }
 end

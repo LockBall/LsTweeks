@@ -210,8 +210,8 @@ end
 function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, short_threshold)
     if not (frame and custom_entry and target_map and C_UnitAuras.GetAuraDataByIndex) then return end
     local aura_filter = M.get_custom_aura_filter(custom_entry)
-    max_limit = max_limit or custom_entry.max_icons or 40
-    short_threshold = short_threshold or (M.db and M.db.short_threshold) or 60
+    max_limit = max_limit or custom_entry.max_icons or M.MAX_ICONS_LIMIT
+    short_threshold = short_threshold or (M.db and M.db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
     local cache_key = aura_filter .. "\001" .. tostring(short_threshold)
     local cached = _custom_aura_scan_cache[cache_key]
@@ -641,12 +641,12 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     local max_helpful = math_max(
         max_helpful_hint or 0,
-            math_max(db.max_icons_static or 40,
-                math_max(db.max_icons_short or 40,
-                    math_max(db.max_icons_long or 40,
-                    math_max(db.max_icons_essential or 40,
-                        math_max(db.max_icons_utility or 40,
-                            math_max(db.max_icons_tracked_buffs or 40, db.max_icons_tracked_bars or 40))))))
+            math_max(db.max_icons_static or M.MAX_ICONS_LIMIT,
+                math_max(db.max_icons_short or M.MAX_ICONS_LIMIT,
+                    math_max(db.max_icons_long or M.MAX_ICONS_LIMIT,
+                    math_max(db.max_icons_essential or M.MAX_ICONS_LIMIT,
+                        math_max(db.max_icons_utility or M.MAX_ICONS_LIMIT,
+                            math_max(db.max_icons_tracked_buffs or M.MAX_ICONS_LIMIT, db.max_icons_tracked_bars or M.MAX_ICONS_LIMIT))))))
     )
 
     -- Track old category by spell for cross-session refresh hinting.
@@ -771,7 +771,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     -- PASS 2: HARMFUL (debuffs)
     -- -------------------------------------------------------------------------
-    local max_debuff = math_max(max_debuff_hint or 0, db.max_icons_debuff or 40)
+    local max_debuff = math_max(max_debuff_hint or 0, db.max_icons_debuff or M.MAX_ICONS_LIMIT)
 
     i, count = 1, 0
     while count < max_debuff do

@@ -35,7 +35,7 @@ modules/
     st_main.lua     — minimap toggle, open-on-reload, interface transparency slider; on_reset_complete
   combat_text.lua  — hide portrait combat text; on_reset_complete
   aura_frames/
-    af_defaults.lua      — all default config values, single source of truth; M.CATEGORIES, M.TIMER_CATEGORIES
+    af_defaults.lua      — all default config values and built-in Aura Frame metadata; M.FRAME_DEFS derives category lists
     af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting/font-size fallback lookup, custom-frame entry/filter helpers, backdrop helpers, settings grid maker
     af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
@@ -110,6 +110,8 @@ Ls_Tweeks_DB = {
 ## Aura Frame Categories
 Preset categories: `static`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`, `debuff`.
 `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
+Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, GUI labels, CDM viewer names, preset key names, and test-aura labels from that table instead of adding separate hardcoded category lists.
+Shared Aura Frames behavioral defaults live in `af_defaults.lua` as named constants, including frame width limits, default/max icons, short-threshold fallback, default timer font key, and CDM out-of-combat alpha. Runtime fallbacks and GUI limits should reference those constants rather than repeating numeric/string literals.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.

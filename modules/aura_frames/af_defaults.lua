@@ -7,28 +7,150 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- Core aura buckets:
---   static, short, long, debuff
--- Blizzard cooldown-manager buckets read from live CDM viewer frames:
---   essential, utility, tracked_buffs, tracked_bars
--- Static has no timer controls, so it is excluded from TIMER_CATEGORIES.
--- CDM_CATEGORIES preserves category order for sync/refresh loops, while
--- WOW_COOLDOWN_CATEGORIES is a membership lookup for runtime checks.
-M.CATEGORIES       = { "static", "short", "long", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
-M.TIMER_CATEGORIES = { "short", "long", "essential", "utility", "tracked_buffs", "tracked_bars", "debuff" }
-M.CDM_CATEGORIES   = { "essential", "utility", "tracked_buffs", "tracked_bars" }
-M.WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES or {}
-for _, category in ipairs(M.CDM_CATEGORIES) do
-    M.WOW_COOLDOWN_CATEGORIES[category] = true
-end
-M.CDM_VIEWER_FRAMES = M.CDM_VIEWER_FRAMES or {
-    essential     = "EssentialCooldownViewer",
-    utility       = "UtilityCooldownViewer",
-    tracked_buffs = "BuffIconCooldownViewer",
-    tracked_bars  = "BuffBarCooldownViewer",
+-- Single source for built-in Aura Frame categories. Derived tables below keep
+-- older call sites stable while preventing separate category lists from drifting.
+M.FRAME_DEFS = {
+    {
+        key = "static",
+        label = "Static",
+        timer = false,
+        cdm = false,
+        is_debuff = false,
+        tree_order = 1,
+        test_label = "Test Static Buff",
+        test_sort_id = 1,
+    },
+    {
+        key = "short",
+        label = "Short",
+        timer = true,
+        cdm = false,
+        is_debuff = false,
+        tree_order = 3,
+        test_label = "Test Short Buff",
+        test_sort_id = 2,
+    },
+    {
+        key = "long",
+        label = "Long",
+        timer = true,
+        cdm = false,
+        is_debuff = false,
+        tree_order = 4,
+        test_label = "Test Long Buff",
+        test_sort_id = 3,
+    },
+    {
+        key = "essential",
+        label = "Essential",
+        timer = true,
+        cdm = true,
+        is_debuff = false,
+        cdm_viewer = "EssentialCooldownViewer",
+        tree_order = 5,
+        test_label = "Test Essential Buff",
+        test_sort_id = 5,
+    },
+    {
+        key = "utility",
+        label = "Utility",
+        timer = true,
+        cdm = true,
+        is_debuff = false,
+        cdm_viewer = "UtilityCooldownViewer",
+        tree_order = 6,
+        test_label = "Test Utility Buff",
+        test_sort_id = 6,
+    },
+    {
+        key = "tracked_buffs",
+        label = "Tracked Buffs",
+        timer = true,
+        cdm = true,
+        is_debuff = false,
+        cdm_viewer = "BuffIconCooldownViewer",
+        tree_order = 7,
+        test_label = "Test Tracked Buff",
+        test_sort_id = 7,
+    },
+    {
+        key = "tracked_bars",
+        label = "Tracked Bars",
+        timer = true,
+        cdm = true,
+        is_debuff = false,
+        cdm_viewer = "BuffBarCooldownViewer",
+        tree_order = 8,
+        test_label = "Test Tracked Bar",
+        test_sort_id = 8,
+    },
+    {
+        key = "debuff",
+        label = "DeBuff",
+        frame_label = "Debuffs",
+        timer = true,
+        cdm = false,
+        is_debuff = true,
+        tree_order = 2,
+        test_label = "Test DeBuff",
+        test_sort_id = 9,
+    },
 }
 
+M.FRAME_DEFS_BY_KEY = {}
+M.CATEGORIES = {}
+M.TIMER_CATEGORIES = {}
+M.CDM_CATEGORIES = {}
+M.WOW_COOLDOWN_CATEGORIES = {}
+M.CDM_VIEWER_FRAMES = {}
+
+for _, frame_def in ipairs(M.FRAME_DEFS) do
+    M.FRAME_DEFS_BY_KEY[frame_def.key] = frame_def
+    M.CATEGORIES[#M.CATEGORIES + 1] = frame_def.key
+    if frame_def.timer then
+        M.TIMER_CATEGORIES[#M.TIMER_CATEGORIES + 1] = frame_def.key
+    end
+    if frame_def.cdm then
+        M.CDM_CATEGORIES[#M.CDM_CATEGORIES + 1] = frame_def.key
+        M.WOW_COOLDOWN_CATEGORIES[frame_def.key] = true
+    end
+    if frame_def.cdm_viewer then
+        M.CDM_VIEWER_FRAMES[frame_def.key] = frame_def.cdm_viewer
+    end
+end
+
+function M.get_frame_def(category)
+    return M.FRAME_DEFS_BY_KEY[category]
+end
+
+function M.get_preset_keys(category)
+    return {
+        show_key = "show_" .. category,
+        move_key = "move_" .. category,
+        timer_key = "timer_" .. category,
+        bg_key = "bg_" .. category,
+        scale_key = "scale_" .. category,
+        spacing_key = "spacing_" .. category,
+    }
+end
+
+function M.get_frame_def_from_show_key(show_key)
+    if type(show_key) ~= "string" then return nil end
+    local category = show_key:gsub("^show_", "")
+    return M.get_frame_def(category)
+end
+
 M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
+
+M.DEFAULT_FRAME_WIDTH = 200
+M.MIN_FRAME_WIDTH = 180
+M.MAX_FRAME_WIDTH = 800
+M.MIN_FRAME_HEIGHT = 44
+M.DEFAULT_MAX_ICONS = 20
+M.MAX_ICONS_LIMIT = 40
+M.DEFAULT_SHORT_THRESHOLD = 60
+M.DEFAULT_TIMER_NUMBER_FONT_KEY = "source_code_pro"
+M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
 
 M.CUSTOM_AURA_BASE_FILTERS = {
     { value = "HELPFUL", text = "HELPFUL" },
@@ -77,9 +199,9 @@ M.defaults = {
     show_bar_section_outlines = false,
     show_spell_id = false,
     fade_wow_cooldown_ooc = true,
-    wow_cooldown_ooc_alpha = 0.35,
-    short_threshold = 60,
-    timer_number_font = "source_code_pro",
+    wow_cooldown_ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
+    short_threshold = M.DEFAULT_SHORT_THRESHOLD,
+    timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size = 10,
     timer_number_font_bold = false,
 
@@ -90,11 +212,11 @@ M.defaults = {
     bg_static       = false,
     scale_static    = 1.0,
     spacing_static  = 2.0,
-    width_static    = 200,
+    width_static    = M.DEFAULT_FRAME_WIDTH,
     bar_mode_static = false,
     color_static    = { r = 0, g = 0.5, b = 1 },
     bar_bg_color_static = default_bg_color(),
-    max_icons_static = 20,
+    max_icons_static = M.DEFAULT_MAX_ICONS,
     growth_static = "RIGHT",
     bg_color_static = default_bg_color(),
     sort_static  = "name",
@@ -109,16 +231,16 @@ M.defaults = {
     bg_short        = false,
     scale_short     = 1.0,
     spacing_short   = 1.5,
-    width_short     = 200,
+    width_short     = M.DEFAULT_FRAME_WIDTH,
     bar_mode_short  = true,
     color_short     = { r = 0, g = 0.5, b = 1 },
     bar_bg_color_short = default_bg_color(),
-    max_icons_short = 20,
+    max_icons_short = M.DEFAULT_MAX_ICONS,
     growth_short = "DOWN",
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
     test_aura_short = true,
-    timer_number_font_short = "source_code_pro",
+    timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_short = 10,
     timer_number_font_bold_short = false,
     timer_color_short = { r = 1, g = 1, b = 1 },
@@ -131,16 +253,16 @@ M.defaults = {
     bg_long         = false,
     scale_long      = 1.0,
     spacing_long    = 2.0,
-    width_long      = 200,
+    width_long      = M.DEFAULT_FRAME_WIDTH,
     bar_mode_long   = false,
     color_long      = { r = 0, g = 0.5, b = 1 },
     bar_bg_color_long = default_bg_color(),
-    max_icons_long  = 20,
+    max_icons_long  = M.DEFAULT_MAX_ICONS,
     growth_long = "RIGHT",
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
     test_aura_long = true,
-    timer_number_font_long = "source_code_pro",
+    timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_long = 10,
     timer_number_font_bold_long = false,
     timer_color_long = { r = 1, g = 1, b = 1 },
@@ -155,16 +277,16 @@ M.defaults = {
     bg_essential        = false,
     scale_essential     = 1.0,
     spacing_essential   = 1.5,
-    width_essential     = 200,
+    width_essential     = M.DEFAULT_FRAME_WIDTH,
     bar_mode_essential  = false,
     color_essential     = { r = 1, g = 0.45, b = 0.25 },
     bar_bg_color_essential = default_bg_color(),
-    max_icons_essential = 20,
+    max_icons_essential = M.DEFAULT_MAX_ICONS,
     growth_essential = "RIGHT",
     bg_color_essential = default_bg_color(),
     sort_essential = "timeleft",
     test_aura_essential = false,
-    timer_number_font_essential = "source_code_pro",
+    timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_essential = 10,
     timer_number_font_bold_essential = false,
     timer_color_essential = { r = 1, g = 1, b = 1 },
@@ -179,16 +301,16 @@ M.defaults = {
     bg_utility        = false,
     scale_utility     = 1.0,
     spacing_utility   = 1.5,
-    width_utility     = 200,
+    width_utility     = M.DEFAULT_FRAME_WIDTH,
     bar_mode_utility  = false,
     color_utility     = { r = 0.65, g = 0.55, b = 1 },
     bar_bg_color_utility = default_bg_color(),
-    max_icons_utility = 20,
+    max_icons_utility = M.DEFAULT_MAX_ICONS,
     growth_utility = "RIGHT",
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
     test_aura_utility = false,
-    timer_number_font_utility = "source_code_pro",
+    timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_utility = 10,
     timer_number_font_bold_utility = false,
     timer_color_utility = { r = 1, g = 1, b = 1 },
@@ -202,16 +324,16 @@ M.defaults = {
     bg_tracked_buffs        = false,
     scale_tracked_buffs     = 1.0,
     spacing_tracked_buffs   = 1.5,
-    width_tracked_buffs     = 200,
+    width_tracked_buffs     = M.DEFAULT_FRAME_WIDTH,
     bar_mode_tracked_buffs  = false,
     color_tracked_buffs     = { r = 0.2, g = 0.85, b = 0.55 },
     bar_bg_color_tracked_buffs = default_bg_color(),
-    max_icons_tracked_buffs = 20,
+    max_icons_tracked_buffs = M.DEFAULT_MAX_ICONS,
     growth_tracked_buffs = "RIGHT",
     bg_color_tracked_buffs = default_bg_color(),
     sort_tracked_buffs = "timeleft",
     test_aura_tracked_buffs = false,
-    timer_number_font_tracked_buffs = "source_code_pro",
+    timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_tracked_buffs = 10,
     timer_number_font_bold_tracked_buffs = false,
     timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
@@ -225,16 +347,16 @@ M.defaults = {
     bg_tracked_bars        = false,
     scale_tracked_bars     = 1.0,
     spacing_tracked_bars   = 1.5,
-    width_tracked_bars     = 200,
+    width_tracked_bars     = M.DEFAULT_FRAME_WIDTH,
     bar_mode_tracked_bars  = true,
     color_tracked_bars     = { r = 0.2, g = 0.65, b = 1 },
     bar_bg_color_tracked_bars = default_bg_color(),
-    max_icons_tracked_bars = 20,
+    max_icons_tracked_bars = M.DEFAULT_MAX_ICONS,
     growth_tracked_bars = "DOWN",
     bg_color_tracked_bars = default_bg_color(),
     sort_tracked_bars = "timeleft",
     test_aura_tracked_bars = false,
-    timer_number_font_tracked_bars = "source_code_pro",
+    timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_tracked_bars = 10,
     timer_number_font_bold_tracked_bars = false,
     timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
@@ -247,16 +369,16 @@ M.defaults = {
     bg_debuff       = false,
     scale_debuff    = 1.0,
     spacing_debuff  = 1.0,
-    width_debuff    = 200,
+    width_debuff    = M.DEFAULT_FRAME_WIDTH,
     bar_mode_debuff = true,
     color_debuff    = { r = 1, g = 0.2, b = 0.2 },
     bar_bg_color_debuff = default_bg_color(),
-    max_icons_debuff = 20,
+    max_icons_debuff = M.DEFAULT_MAX_ICONS,
     growth_debuff = "UP",
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
     test_aura_debuff = true,
-    timer_number_font_debuff = "source_code_pro",
+    timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_debuff = 10,
     timer_number_font_bold_debuff = false,
     timer_color_debuff = { r = 1, g = 1, b = 1 },
@@ -298,17 +420,17 @@ M.CUSTOM_FRAME_TEMPLATE = {
     bg       = false,
     scale    = 1.0,
     spacing  = 1.5,
-    width    = 200,
+    width    = M.DEFAULT_FRAME_WIDTH,
     bar_mode = true,
     color    = { r = 0.8, g = 0.6, b = 1.0 },
     bar_bg_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
     bg_color     = { r = 0,   g = 0,   b = 0,   a = 0.5 },
-    max_icons    = 20,
+    max_icons    = M.DEFAULT_MAX_ICONS,
     growth       = "DOWN",
     test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
-    timer_number_font      = "source_code_pro",
+    timer_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size = 10,
     timer_number_font_bold = false,
     timer_color     = { r = 1, g = 1, b = 1 },
