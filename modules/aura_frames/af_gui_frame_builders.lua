@@ -472,154 +472,6 @@ function M.build_general_tab(p)
     resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
 end
 
--- ============================================================================
-function M.build_preset_frame_panel(p, data)
-    local frame_config = make_preset_frame_settings_config(data)
-    local cat = frame_config.id
-    local aura_filter = data.is_debuff and "HARMFUL" or "HELPFUL"
-
-    local function update() -- refreshes current category frame preview
-        M.mark_aura_scan_dirty()
-        M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
-    end
-
-    local grid = M.create_settings_grid(p)
-    local place_at = grid.place_at
-    local add_row_separator = grid.add_row_separator
-
-    local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
-        return create_bound_checkbox_control(p, label, M.db, db_key, grid, row, column, control_key or db_key, on_change, update, extra_on_check, extra_on_uncheck)
-    end
-
-    local function create_bound_color_picker(logical_key, has_alpha, label, row, column, control_key)
-        return create_frame_color_picker(p, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
-    end
-
-    local function create_bound_slider(name_suffix, label, min_v, max_v, step, logical_key, on_change)
-        return create_frame_slider(p, frame_config, name_suffix, label, min_v, max_v, step, logical_key, on_change or update)
-    end
-
-    local function check_enable_frame()
-        if not M.db[data.show_key] then
-            M.db[data.show_key] = true
-            local enable_cb = M.controls[data.show_key]
-            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
-        end
-    end
-
-    -- Row 1
-    local position_controls = create_frame_position_controls(p, frame_config, grid, update, {
-        frame_show_key = data.show_key,
-        scale_key = data.scale_key,
-        show_control_key = data.show_key,
-        move_control_key = data.move_key,
-        x_control_key = "x_pos_slider_" .. cat,
-        y_control_key = "y_pos_slider_" .. cat,
-        width_control_key = "width_slider_" .. cat,
-        x_name_suffix = "XPosSlider",
-        y_name_suffix = "YPosSlider",
-        width_name_suffix = "WidthSlider",
-        sync_on_drag_stop = true,
-    })
-
-    local function uncheck_frame_dependents()
-        if M.db[data.move_key] then
-            M.db[data.move_key] = false
-            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
-                position_controls.move_checkbox:SetChecked(false)
-            end
-        end
-    end
-
-    add_row_separator(1)
-
-    -- Row 2
-    local enable_frame_container = create_bound_checkbox("Enable Frame", data.show_key, 2, 1, nil, nil, uncheck_frame_dependents)
-
-    -- Test Aura: stacked below Enable Frame in the same cell
-    local test_aura_container = create_bound_checkbox("Test Aura", frame_setting_key(frame_config, "test_aura"), 2, 1, update, nil, nil, check_enable_frame)
-    test_aura_container:ClearAllPoints()
-    test_aura_container:SetPoint("TOPLEFT", enable_frame_container, "BOTTOMLEFT", 0, 0)
-
-    -- Frame background
-    create_bound_checkbox("Frame BG", data.bg_key, 2, 2)
-
-    -- Frame BG color picker
-    create_bound_color_picker("bg_color", true, "Frame BG Color", 2, 3)
-
-    local hide_blizz_cdm_label = ({
-        essential = "Hide WoW Essential",
-        utility = "Hide WoW Utility",
-        tracked_buffs = "Hide WoW Tracked Buffs",
-        tracked_bars = "Hide WoW Tracked Bars",
-    })[cat]
-
-    -- Cooldown Mode toggle (cooldown-style CDM categories): show cooldown remaining instead of aura duration.
-    if cat == "essential" or cat == "utility" then
-        local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_" .. cat, 2, 4, update)
-        local hide_blizz_cdm_container = create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
-            M.update_blizz_cdm_visibility(cat)
-            update()
-        end)
-        hide_blizz_cdm_container:ClearAllPoints()
-        hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
-    elseif hide_blizz_cdm_label then
-        create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
-            M.update_blizz_cdm_visibility(cat)
-            update()
-        end)
-    end
-
-    add_row_separator(2)
-
-    -- Row 3: Bar Mode, color pickers
-    local bar_mode_container = create_bound_checkbox("Bar Mode", frame_setting_key(frame_config, "bar_mode"), 3, 1)
-
-    local bar_color_picker = addon.CreateColorPicker(p, frame_config.value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
-    bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
-    M.controls["bar_color_picker_"..cat] = bar_color_picker
-
-    create_bound_color_picker("bar_text_color", false, "Bar Text Color", 3, 2)
-    create_bound_color_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
-    add_row_separator(3)
-
-    -- Row 4: Timer Text, Font & Font Size
-    if cat ~= "static" then
-        create_frame_timer_controls(p, frame_config, grid, update, {
-            control_prefix = cat,
-            dropdown_name = addon_name .. cat .. "TimerFont",
-            font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
-            timer_text_label = "Timer Text",
-            bold_label = "Bold",
-            font_label = "Font",
-            font_size_label = "Font Size",
-            color_label = "Color",
-            font_dropdown_width = 120,
-            font_y_offset = -15,
-        })
-    end
-
-    add_row_separator(4)
-
-    -- Row 5: Scale, Spacing, Max Icons
-    local scale_slider = create_bound_slider("Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
-    place_at(scale_slider, 5, 1)
-
-    local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, "spacing")
-    place_at(spacing_slider, 5, 2)
-
-    local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons", function()
-        print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
-    end)
-    place_at(max_icons_slider, 5, 4)
-
-    -- Growth Direction dropdown in row 3, col 4, vertically centered
-    place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", frame_setting_key(frame_config, "growth"), update), 3, 4, "dropdown", { y_offset = -15 })
-
-end
-
-
-
 -- Custom filtered frame panel builders.
 -- These back the Filters group in the Frames tree.
 
@@ -645,66 +497,9 @@ local function update_custom_frame_title(entry)
     end
 end
 
-function M.build_custom_settings_panel(p, entry)
-    local frame_config = make_custom_frame_settings_config(entry)
-    local id = frame_config.id
-    local show_key = frame_config.frame_show_key
-
-    local function update()
-        M.mark_aura_scan_dirty()
-        update_custom_frame(entry)
-    end
-
-    local grid = M.create_settings_grid(p)
-    local place_at = grid.place_at
-    local add_row_separator = grid.add_row_separator
-
-    local function bound_cb(label, key, row, column, on_change)
-        return create_bound_checkbox_control(p, label, entry, key, grid, row, column, "custom_" .. id .. "_" .. key, on_change, update)
-    end
-
-    local function bound_picker(logical_key, has_alpha, label, row, column, control_key)
-        return create_frame_color_picker(p, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
-    end
-
-    local position_controls = create_frame_position_controls(p, frame_config, grid, update, {
-        frame_show_key = show_key,
-        scale_key = frame_config.scale_key,
-        show_control_key = "custom_" .. id .. "_" .. frame_setting_key(frame_config, "show"),
-        move_control_key = "custom_" .. id .. "_" .. frame_setting_key(frame_config, "move"),
-        width_control_key = "custom_" .. id .. "_width",
-        x_name_suffix = "XPos",
-        y_name_suffix = "YPos",
-        width_name_suffix = "Width",
-        sync_on_drag_stop = true,
-    })
-
-    add_row_separator(1)
-
-    local enable_container, enable_cb = bound_cb("Enable Frame", frame_setting_key(frame_config, "show"), 2, 1, function(is_checked)
-        if not is_checked then
-            frame_config.value_table[frame_setting_key(frame_config, "move")] = false
-            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
-                position_controls.move_checkbox:SetChecked(false)
-            end
-        end
-        update()
-    end)
-
-    local test_aura_container = bound_cb("Test Aura", frame_setting_key(frame_config, "test_aura"), 2, 1, function(is_checked)
-        if is_checked then
-            frame_config.value_table[frame_setting_key(frame_config, "show")] = true
-            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
-        end
-        update()
-    end)
-    test_aura_container:ClearAllPoints()
-    test_aura_container:SetPoint("TOPLEFT", enable_container, "BOTTOMLEFT", 0, 0)
-
-    bound_cb("Frame BG", frame_setting_key(frame_config, "bg"), 2, 2)
-    bound_picker("bg_color", true, "Frame BG Color", 2, 3)
-
-    local name_container = CreateFrame("Frame", nil, p)
+local function create_frame_name_control(parent, entry)
+    local id = entry.id
+    local name_container = CreateFrame("Frame", nil, parent)
     name_container:SetSize(130, 24)
     local name_label = name_container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     name_label:SetPoint("BOTTOM", name_container, "TOP", 0, 2)
@@ -731,53 +526,271 @@ function M.build_custom_settings_panel(p, entry)
     end
     name_box:SetScript("OnEnterPressed", commit_name)
     name_box:SetScript("OnEditFocusLost", commit_name)
-    place_at(name_container, 2, 4, nil, { width = 130 })
+    return name_container
+end
+
+local function create_growth_dropdown(parent, frame_config, update)
+    local id = frame_config.id
+    local options = {}
+    for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do
+        options[#options + 1] = { value = dir, text = dir }
+    end
+    return addon.CreateDropdown(addon_name .. id .. "Growth", parent, "Growth Direction", options, {
+        width = 106,
+        get_value = function()
+            return frame_config.value_table[frame_setting_key(frame_config, "growth")] or "DOWN"
+        end,
+        on_select = function(value)
+            frame_config.value_table[frame_setting_key(frame_config, "growth")] = value
+            update()
+        end,
+    })
+end
+
+local function build_frame_settings_panel(parent, frame_config, opts)
+    opts = opts or {}
+    local id = frame_config.id
+    local update = opts.update
+    local grid = M.create_settings_grid(parent)
+    local place_at = grid.place_at
+    local add_row_separator = grid.add_row_separator
+    local value_table = frame_config.value_table
+
+    local function control_key(logical_key)
+        if opts.control_key_prefix then
+            return opts.control_key_prefix .. frame_setting_key(frame_config, logical_key)
+        end
+        return frame_setting_key(frame_config, logical_key)
+    end
+
+    local function bound_cb(label, logical_key, row, column, on_change, custom_control_key, after_checked, after_unchecked)
+        local key = frame_setting_key(frame_config, logical_key)
+        return create_bound_checkbox_control(
+            parent,
+            label,
+            value_table,
+            key,
+            grid,
+            row,
+            column,
+            custom_control_key or control_key(logical_key),
+            on_change,
+            update,
+            after_checked,
+            after_unchecked
+        )
+    end
+
+    local function bound_raw_cb(label, value_key, row, column, on_change, custom_control_key)
+        return create_bound_checkbox_control(
+            parent,
+            label,
+            value_table,
+            value_key,
+            grid,
+            row,
+            column,
+            custom_control_key or value_key,
+            on_change,
+            update
+        )
+    end
+
+    local function bound_picker(logical_key, has_alpha, label, row, column, custom_control_key)
+        return create_frame_color_picker(parent, frame_config, grid, logical_key, has_alpha, label, row, column, update, custom_control_key)
+    end
+
+    local position_controls = create_frame_position_controls(parent, frame_config, grid, update, {
+        frame_show_key = opts.frame_show_key or frame_config.frame_show_key,
+        scale_key = opts.scale_key or frame_config.scale_key,
+        show_control_key = control_key("show"),
+        move_control_key = control_key("move"),
+        x_control_key = opts.x_control_key,
+        y_control_key = opts.y_control_key,
+        width_control_key = opts.width_control_key,
+        x_name_suffix = opts.x_name_suffix or "XPos",
+        y_name_suffix = opts.y_name_suffix or "YPos",
+        width_name_suffix = opts.width_name_suffix or "Width",
+        sync_on_drag_stop = true,
+    })
+
+    add_row_separator(1)
+
+    local enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
+        if not is_checked then
+            value_table[frame_setting_key(frame_config, "move")] = false
+            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
+                position_controls.move_checkbox:SetChecked(false)
+            end
+        end
+        if opts.on_enable_changed then opts.on_enable_changed(is_checked, position_controls, enable_cb) end
+        update()
+    end)
+
+    local test_aura_container = bound_cb("Test Aura", "test_aura", 2, 1, function(is_checked)
+        if is_checked then
+            value_table[frame_setting_key(frame_config, "show")] = true
+            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
+        end
+        if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
+        update()
+    end)
+    test_aura_container:ClearAllPoints()
+    test_aura_container:SetPoint("TOPLEFT", enable_container, "BOTTOMLEFT", 0, 0)
+
+    bound_cb("Frame BG", "bg", 2, 2)
+    bound_picker("bg_color", true, "Frame BG Color", 2, 3)
+
+    if opts.build_source_controls then
+        opts.build_source_controls({
+            parent = parent,
+            grid = grid,
+            update = update,
+            bound_raw_cb = bound_raw_cb,
+            frame_config = frame_config,
+            position_controls = position_controls,
+            enable_checkbox = enable_cb,
+        })
+    end
+
     add_row_separator(2)
 
-    local bar_mode_container = bound_cb("Bar Mode", frame_setting_key(frame_config, "bar_mode"), 3, 1)
-    local bar_color_picker = addon.CreateColorPicker(p, frame_config.value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
+    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1)
+    local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
     bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
-    M.controls["custom_" .. id .. "_bar_color"] = bar_color_picker
+    if opts.bar_color_control_key then
+        M.controls[opts.bar_color_control_key] = bar_color_picker
+    end
     bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
     bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
 
-    local dir_options = {}
-    for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do
-        dir_options[#dir_options + 1] = { value = dir, text = dir }
-    end
-    local growth_dd = addon.CreateDropdown(addon_name..id.."Growth", p, "Growth Direction", dir_options, {
-        width = 106,
-        get_value = function() return frame_config.value_table[frame_setting_key(frame_config, "growth")] or "DOWN" end,
-        on_select = function(value) frame_config.value_table[frame_setting_key(frame_config, "growth")] = value; update() end,
+    place_at(create_growth_dropdown(parent, frame_config, update), 3, 4, "dropdown", {
+        y_offset = opts.growth_y_offset or -15,
     })
-    place_at(growth_dd, 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
     add_row_separator(3)
 
-    create_frame_timer_controls(p, frame_config, grid, update, {
-        control_prefix = "custom_" .. id,
-        dropdown_name = addon_name .. id .. "TimerFont",
-        font_size_name = addon_name .. id .. "TimerFontSize",
-        timer_text_label = "Timer Text",
-        bold_label = "Timer Bold",
-        font_label = "Timer Font",
-        font_size_label = "Timer Font Size",
-        color_label = "Timer Color",
-        font_dropdown_width = 120,
-        font_y_offset = -15,
-    })
+    if opts.show_timer_controls ~= false then
+        create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
+    end
     add_row_separator(4)
 
-    local scale_slider = create_frame_slider(p, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
+    local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
     place_at(scale_slider, 5, 1)
 
-    local spacing_slider = create_frame_slider(p, frame_config, "Spacing", "Spacing", 0, 20, 0.1, "spacing", update)
+    local spacing_slider = create_frame_slider(parent, frame_config, "Spacing", "Spacing", 0, 20, 0.1, "spacing", update)
     place_at(spacing_slider, 5, 2)
 
-    local max_icons_slider = create_frame_slider(p, frame_config, "MaxIcons", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons",
-        function()
-            print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
-        end)
+    local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons", opts.on_max_icons_changed)
     place_at(max_icons_slider, 5, 4)
+end
+
+-- ============================================================================
+function M.build_preset_frame_panel(p, data)
+    local frame_config = make_preset_frame_settings_config(data)
+    local cat = frame_config.id
+    local aura_filter = data.is_debuff and "HARMFUL" or "HELPFUL"
+
+    local function update() -- refreshes current category frame preview
+        M.mark_aura_scan_dirty()
+        M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
+    end
+
+    local hide_blizz_cdm_label = ({
+        essential = "Hide WoW Essential",
+        utility = "Hide WoW Utility",
+        tracked_buffs = "Hide WoW Tracked Buffs",
+        tracked_bars = "Hide WoW Tracked Bars",
+    })[cat]
+
+    build_frame_settings_panel(p, frame_config, {
+        update = update,
+        frame_show_key = data.show_key,
+        scale_key = data.scale_key,
+        x_control_key = "x_pos_slider_" .. cat,
+        y_control_key = "y_pos_slider_" .. cat,
+        width_control_key = "width_slider_" .. cat,
+        x_name_suffix = "XPosSlider",
+        y_name_suffix = "YPosSlider",
+        width_name_suffix = "WidthSlider",
+        bar_color_control_key = "bar_color_picker_" .. cat,
+        show_timer_controls = cat ~= "static",
+        timer_labels = {
+            control_prefix = cat,
+            dropdown_name = addon_name .. cat .. "TimerFont",
+            font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
+            timer_text_label = "Timer Text",
+            bold_label = "Bold",
+            font_label = "Font",
+            font_size_label = "Font Size",
+            color_label = "Color",
+            font_dropdown_width = 120,
+            font_y_offset = -15,
+        },
+        max_icons_name_suffix = "PoolSlider",
+        on_max_icons_changed = function()
+            print("|cFFFFFF00LsTweaks:|r Pool size for " .. cat .. " changed. Please /reload to apply.")
+        end,
+        build_source_controls = function(ctx)
+            if cat == "essential" or cat == "utility" then
+                local cooldown_mode_container = ctx.bound_raw_cb("Cooldown Mode", "cooldown_mode_" .. cat, 2, 4, update)
+                local hide_blizz_cdm_container = ctx.bound_raw_cb(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
+                    M.update_blizz_cdm_visibility(cat)
+                    update()
+                end)
+                hide_blizz_cdm_container:ClearAllPoints()
+                hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
+            elseif hide_blizz_cdm_label then
+                ctx.bound_raw_cb(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
+                    M.update_blizz_cdm_visibility(cat)
+                    update()
+                end)
+            end
+        end
+    })
+end
+
+
+
+-- Custom filtered frame panel builders.
+-- These back the Filters group in the Frames tree.
+
+function M.build_custom_settings_panel(p, entry)
+    local frame_config = make_custom_frame_settings_config(entry)
+    local id = frame_config.id
+
+    local function update()
+        M.mark_aura_scan_dirty()
+        update_custom_frame(entry)
+    end
+
+    build_frame_settings_panel(p, frame_config, {
+        update = update,
+        control_key_prefix = "custom_" .. id .. "_",
+        frame_show_key = frame_config.frame_show_key,
+        scale_key = frame_config.scale_key,
+        width_control_key = "custom_" .. id .. "_width",
+        bar_color_control_key = "custom_" .. id .. "_bar_color",
+        growth_y_offset = -33,
+        timer_labels = {
+            control_prefix = "custom_" .. id,
+            dropdown_name = addon_name .. id .. "TimerFont",
+            font_size_name = addon_name .. id .. "TimerFontSize",
+            timer_text_label = "Timer Text",
+            bold_label = "Timer Bold",
+            font_label = "Timer Font",
+            font_size_label = "Timer Font Size",
+            color_label = "Timer Color",
+            font_dropdown_width = 120,
+            font_y_offset = -15,
+        },
+        max_icons_name_suffix = "MaxIcons",
+        on_max_icons_changed = function()
+            print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
+        end,
+        build_source_controls = function(ctx)
+            ctx.grid.place_at(create_frame_name_control(ctx.parent, entry), 2, 4, nil, { width = 130 })
+        end,
+    })
 end
 
 function M.build_custom_child_panel(p, entry)
