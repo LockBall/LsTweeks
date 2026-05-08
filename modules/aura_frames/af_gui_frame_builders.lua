@@ -8,7 +8,7 @@ local M = addon.aura_frames
 
 local function get_timer_font_options()
     local options = {}
-    local defs = M.get_number_font_options and M.get_number_font_options() or {}
+    local defs = M.get_number_font_options()
     for _, def in ipairs(defs) do
         options[#options + 1] = {
             value = def.key,
@@ -107,7 +107,7 @@ function M.build_preset_frame_panel(p, data)
     local test_key = "test_aura_"..cat
 
     local function update() -- refreshes current category frame preview
-        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() end
+        M.mark_aura_scan_dirty()
         M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 
@@ -242,7 +242,7 @@ function M.build_preset_frame_panel(p, data)
     local show_grid_container, show_grid_btn, _ = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
         function(is_checked)
             M.db.show_grid = is_checked
-            if M.set_grid_visible then M.set_grid_visible(is_checked) end
+            M.set_grid_visible(is_checked)
         end
     )
     show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
@@ -295,18 +295,14 @@ function M.build_preset_frame_panel(p, data)
     if cat == "essential" or cat == "utility" then
         local cooldown_mode_container = create_bound_checkbox("Cooldown Mode", "cooldown_mode_" .. cat, 2, 4, update)
         local hide_blizz_cdm_container = create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
-            if M.update_blizz_cdm_visibility then
-                M.update_blizz_cdm_visibility(cat)
-            end
+            M.update_blizz_cdm_visibility(cat)
             update()
         end)
         hide_blizz_cdm_container:ClearAllPoints()
         hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
     elseif hide_blizz_cdm_label then
         create_bound_checkbox(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 4, function()
-            if M.update_blizz_cdm_visibility then
-                M.update_blizz_cdm_visibility(cat)
-            end
+            M.update_blizz_cdm_visibility(cat)
             update()
         end)
     end
@@ -330,7 +326,7 @@ function M.build_preset_frame_panel(p, data)
         local timer_text_container = create_bound_checkbox("Timer Text", data.timer_key, 4, 1)
 
         local timer_bold_container = create_bound_checkbox("Bold", "timer_number_font_bold_"..cat, 4, 1, function()
-            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            M.apply_number_font_to_all()
             update()
         end)
         timer_bold_container:ClearAllPoints()
@@ -342,9 +338,7 @@ function M.build_preset_frame_panel(p, data)
             end,
             function(value)
                 M.db["timer_number_font_"..cat] = value
-                if M.apply_number_font_to_all then
-                    M.apply_number_font_to_all()
-                end
+                M.apply_number_font_to_all()
                 update()
             end,
             120 -- reduced width
@@ -356,9 +350,7 @@ function M.build_preset_frame_panel(p, data)
         local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, M.db, "timer_number_font_size_"..cat,
             M.defaults,
             function()
-                if M.apply_number_font_to_all then
-                    M.apply_number_font_to_all()
-                end
+                M.apply_number_font_to_all()
                 update()
             end
         )
@@ -366,7 +358,7 @@ function M.build_preset_frame_panel(p, data)
         M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
 
         local timer_color_picker = addon.CreateColorPicker(p, M.db, "timer_color_"..cat, false, "Color", M.defaults, function()
-            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            M.apply_number_font_to_all()
             update()
         end)
         timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
@@ -427,7 +419,7 @@ local function update_custom_frame(entry)
     local show_key = "show_" .. entry.id
     local frame = M.frames[show_key]
     if not frame then return end
-    local aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter or "HELPFUL"
+    local aura_filter = M.get_custom_aura_filter(entry)
     frame.update_params.aura_filter = aura_filter
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 end
@@ -449,7 +441,7 @@ function M.build_custom_settings_panel(p, entry)
     local show_key = "show_" .. id
 
     local function update()
-        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() end
+        M.mark_aura_scan_dirty()
         update_custom_frame(entry)
     end
 
@@ -526,7 +518,7 @@ function M.build_custom_settings_panel(p, entry)
     local show_grid_container = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
         function(is_checked)
             M.db.show_grid = is_checked
-            if M.set_grid_visible then M.set_grid_visible(is_checked) end
+            M.set_grid_visible(is_checked)
         end)
     show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
 
@@ -623,14 +615,14 @@ function M.build_custom_settings_panel(p, entry)
 
     local timer_text_container = bound_cb("Timer Text", "timer", 4, 1)
     local timer_bold_container = bound_cb("Timer Bold", "timer_number_font_bold", 4, 1, function()
-        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        M.apply_number_font_to_all()
         update()
     end)
     timer_bold_container:ClearAllPoints()
     timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
 
     local font_options = {}
-    for _, def in ipairs(M.get_number_font_options and M.get_number_font_options() or {}) do
+    for _, def in ipairs(M.get_number_font_options()) do
         font_options[#font_options + 1] = {
             value = def.key, text = def.label,
             font_path = def.path, font_size = def.size, font_flags = def.flags,
@@ -640,7 +632,7 @@ function M.build_custom_settings_panel(p, entry)
         function() return entry.timer_number_font or "source_code_pro" end,
         function(value)
             entry.timer_number_font = value
-            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            M.apply_number_font_to_all()
             update()
         end, 120)
     place_at(timer_font_dd, 4, 2, nil, { width = 120, y_offset = -15 })
@@ -648,13 +640,13 @@ function M.build_custom_settings_panel(p, entry)
     local font_size_slider = addon.CreateSliderWithBox(addon_name..id.."TimerFontSize", p, "Timer Font Size",
         8, 14, 0.5, entry, "timer_number_font_size", M.CUSTOM_FRAME_TEMPLATE,
         function()
-            if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+            M.apply_number_font_to_all()
             update()
         end)
     place_at(font_size_slider, 4, 3)
 
     local timer_color_picker = addon.CreateColorPicker(p, entry, "timer_color", false, "Timer Color", M.CUSTOM_FRAME_TEMPLATE, function()
-        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        M.apply_number_font_to_all()
         update()
     end)
     timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
@@ -694,7 +686,7 @@ function M.build_custom_child_panel(p, entry)
 
     local function set_modifier(value)
         entry.aura_modifier = value or "NONE"
-        local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+        local def = M.get_custom_modifier_def(entry.aura_modifier)
         if def and def.force_base then set_base(def.force_base) end
         if modifier_dd and modifier_dd.SetValue then modifier_dd:SetValue(entry.aura_modifier) end
     end
@@ -708,7 +700,7 @@ function M.build_custom_child_panel(p, entry)
         get_value = function() return entry.aura_base_filter or "HELPFUL" end,
         on_select = function(value)
             set_base(value)
-            local def = M.get_custom_modifier_def and M.get_custom_modifier_def(entry.aura_modifier)
+            local def = M.get_custom_modifier_def(entry.aura_modifier)
             if def and def.force_base and def.force_base ~= entry.aura_base_filter then
                 set_base(def.force_base)
             end

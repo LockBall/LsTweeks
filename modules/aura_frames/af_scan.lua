@@ -209,7 +209,7 @@ end
 
 function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, short_threshold)
     if not (frame and custom_entry and target_map and C_UnitAuras.GetAuraDataByIndex) then return end
-    local aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(custom_entry) or "HELPFUL"
+    local aura_filter = M.get_custom_aura_filter(custom_entry)
     max_limit = max_limit or custom_entry.max_icons or 40
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or 60
 
@@ -299,7 +299,7 @@ end
 M._cd_hook_cache = M._cd_hook_cache or {}
 
 function M.clear_cooldown_viewer_child_cache(category)
-    local viewer = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
+    local viewer = M.get_cdm_viewer_frame(category)
     if not viewer then return end
     local children = copy_viewer_children(viewer)
     for _, child in ipairs(children) do
@@ -448,7 +448,7 @@ end
 --      duration as fallback for the overlay.
 --   3. Grey state: use C_Spell.GetSpellCooldown(spellID), explicitly ignoring GCD.
 function M.add_cooldown_viewer_category_entries(target_map, category)
-    local viewer = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
+    local viewer = M.get_cdm_viewer_frame(category)
     if not viewer then return end
 
     local cooldown_mode = M.db and M.db["cooldown_mode_" .. category]

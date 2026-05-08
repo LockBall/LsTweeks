@@ -143,10 +143,8 @@ function M.ensure_blizz_cdm_loaded()
 end
 
 function M.update_blizz_cdm_visibility(category)
-    if M.ensure_blizz_cdm_loaded then
-        M.ensure_blizz_cdm_loaded()
-    end
-    local frame = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
+    M.ensure_blizz_cdm_loaded()
+    local frame = M.get_cdm_viewer_frame(category)
     if not frame then return end
 
     -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
@@ -161,10 +159,8 @@ end
 
 function M.prepare_blizz_cdm_viewer(category)
     if InCombatLockdown and InCombatLockdown() then return end
-    if M.ensure_blizz_cdm_loaded then
-        M.ensure_blizz_cdm_loaded()
-    end
-    local frame = M.get_cdm_viewer_frame and M.get_cdm_viewer_frame(category)
+    M.ensure_blizz_cdm_loaded()
+    local frame = M.get_cdm_viewer_frame(category)
     if not frame then return end
 
     -- Utility can start hidden on reload. Show it once outside combat so
@@ -172,9 +168,7 @@ function M.prepare_blizz_cdm_viewer(category)
     if frame.Show then
         pcall(frame.Show, frame)
     end
-    if M.update_blizz_cdm_visibility then
-        M.update_blizz_cdm_visibility(category)
-    end
+    M.update_blizz_cdm_visibility(category)
 end
 
 -- ============================================================================
@@ -264,7 +258,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if is_moving and not show_val and not preview_enabled then
-        local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category, self._cfg_db)) or 10
+        local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
         local bar_layout = M.get_bar_layout_params(timer_font_size)
         local min_height
         if bar_mode then
@@ -296,11 +290,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- Filter the shared map into this frame's per-frame map.
     wipe(self._aura_map)
     if is_custom then
-        if M.scan_custom_aura_map then
-            M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
-        end
+        M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
     else
-        if WOW_COOLDOWN_CATEGORIES[category] and M.add_cooldown_viewer_category_entries then
+        if WOW_COOLDOWN_CATEGORIES[category] then
             M.add_cooldown_viewer_category_entries(self._aura_map, category)
         else
             -- Preset frame: match by category string.

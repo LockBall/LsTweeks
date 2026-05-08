@@ -354,7 +354,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
-        local show_cooldown_overlay = M.uses_cooldown_icon_overlay and M.uses_cooldown_icon_overlay(self.category, bar_mode, M.db)
+        local show_cooldown_overlay = M.uses_cooldown_icon_overlay(self.category, bar_mode, M.db)
         local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
             and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
         local need_live_duration = (not is_static_frame)
