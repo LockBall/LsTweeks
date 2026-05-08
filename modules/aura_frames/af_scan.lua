@@ -311,11 +311,7 @@ function M.clear_cooldown_viewer_child_cache(category)
 end
 
 local function queue_cooldown_viewer_refresh()
-    if M.queue_wow_cooldown_refresh then
-        M.queue_wow_cooldown_refresh("hook")
-    elseif M.refresh_wow_cooldown_frames then
-        M.refresh_wow_cooldown_frames()
-    end
+    M.queue_wow_cooldown_refresh("hook")
 end
 
 -- Lazily attaches hooks to a CooldownViewer child frame on first encounter.

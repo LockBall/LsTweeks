@@ -461,13 +461,7 @@ function M.build_frames_tab(p, frames_data)
     filters_group_box, filters_group_title = create_group_box("Filters", "filters")
 
     local function queue_cdm_refreshes()
-        if M.queue_wow_cooldown_refresh then
-            M.queue_wow_cooldown_refresh("settings")
-        elseif M.queue_wow_cooldown_settings_refreshes then
-            M.queue_wow_cooldown_settings_refreshes()
-        elseif M.refresh_wow_cooldown_frames then
-            M.refresh_wow_cooldown_frames(UPDATE_INTERVALS.tenth_sec)
-        end
+        M.queue_wow_cooldown_refresh("settings")
     end
 
     local cooldown_group_title_btn = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")

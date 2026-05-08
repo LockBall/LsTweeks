@@ -222,22 +222,6 @@ function M.queue_wow_cooldown_refresh(profile)
     end
 end
 
-function M.refresh_wow_cooldown_frames(delay, prepare_viewers)
-    M.queue_wow_cooldown_refresh({
-        delays = { delay or 0 },
-        prepare_viewers = prepare_viewers == true,
-        clear_child_cache = true,
-    })
-end
-
-function M.queue_wow_cooldown_startup_refreshes()
-    M.queue_wow_cooldown_refresh("startup")
-end
-
-function M.queue_wow_cooldown_settings_refreshes()
-    M.queue_wow_cooldown_refresh("settings")
-end
-
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
@@ -730,9 +714,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Sync the Blizzard frame visibility based on user preferences
         M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
         M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
-        if M.queue_wow_cooldown_startup_refreshes then
-            M.queue_wow_cooldown_startup_refreshes()
-        end
+        M.queue_wow_cooldown_refresh("startup")
 
         -- Integrate the settings tab into the main addon configuration menu
         if addon.register_category and M.BuildSettings then
