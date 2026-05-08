@@ -11,7 +11,7 @@ This file is shared project memory for coding agents working on LsTweeks. Keep i
 - Lua 5.1 tools are installed at `C:\Program Files (x86)\Lua\5.1\`; this path is not always on PATH. Use `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>` for syntax checks.
 
 ## What This AddOn Is
-**L's Tweeks** — a modular World of Warcraft (WoW) UI addon for patch 12.0 + by LockBall.  
+**L's Tweeks** — a modular World of Warcraft (WoW) UI addon for WoW 12.0.5+ by LockBall.  
 Slash command: `/lst` (registered as `SLASH_LSTWEEKS1`). SavedVariables: `Ls_Tweeks_DB`. Note the intentional "Tweeks" spelling throughout.
 
 ## Design Principles
@@ -28,7 +28,7 @@ Slash command: `/lst` (registered as `SLASH_LSTWEEKS1`). SavedVariables: `Ls_Twe
 ## File Map
 ```
 core/
-  init.lua           — addon entry, theme constants (addon.UI_THEME), DB init, slash cmd
+  init.lua           — addon entry, font theme tokens (addon.UI_THEME), timing buckets, DB init, slash cmd
   main_frame.lua     — sidebar + tabbed settings window; addon.register_category()
   minimap_button.lua — LibDataBroker minimap button
 functions/
@@ -48,10 +48,10 @@ modules/
   aura_frames/
     af_defaults.lua      — all default config values and built-in Aura Frame metadata; M.FRAME_DEFS derives category lists
     af_functions.lua     — small shared Aura Frames helpers: CDM viewer lookup, frame position sync, setting/font-size fallback lookup, custom-frame entry/filter helpers, backdrop helpers, settings grid maker
-    af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads, session classification memory
+    af_scan.lua          — aura scanning: unified_scan(), custom AuraFilters scans, CDM viewer reads/cooldown hooks, session classification memory
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
-    af_core.lua          — tick_visible_icons(), update_auras(), toggle_blizz_buffs/debuffs()
+    af_core.lua          — tick_visible_icons(), update_auras(), Blizzard buff/debuff/CDM visibility prep
     af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
     af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
     af_gui_frame_builders.lua — all Aura Frames content panels; General, Spell ID, preset Buff/CDM, and custom Filters builders
@@ -69,15 +69,16 @@ Every lua file must open with a brief comment (up to a few sentences) explaining
 ## Architecture Rules
 - **Module pattern:** `local addon_name, addon = ...` at top of every file; modules share the `addon` namespace table.
 - **Self-registration:** modules call `addon.register_category(name, builder_fn)` to appear in the settings sidebar.
-- **Versioning:** `LsTweeks.toc` is the only version edit point. Runtime display must read through `addon.get_version()`, which caches `C_AddOns.GetAddOnMetadata(addon_name, "Version")`; do not hardcode version fallbacks in Lua/docs.
+- **Versioning:** `LsTweeks.toc` is the only addon version edit point. Runtime display must read through `addon.get_version()`, which caches `C_AddOns.GetAddOnMetadata(addon_name, "Version")`; do not hardcode version fallbacks in Lua/docs.
+- **TOC Interface:** `LsTweeks.toc` declares `## Interface: 120005`, verified in-game on WoW 12.0.5 with `/dump (select(4, GetBuildInfo()))`. Re-verify with that command before bumping for future patches.
 - **Timing buckets:** shared timing values live in `addon.UPDATE_INTERVALS` (`core/init.lua`) with generic names such as `tenth_sec`. Repeated runtime behavior should reference those buckets directly, with a nearby comment explaining why that interval fits the work.
 - **DB access:** `Ls_Tweeks_DB.module_key = Ls_Tweeks_DB.module_key or {}` — always guard with `or {}`.
-- **Init pattern:** every module creates a loader frame, registers ADDON_LOADED, and unregisters after first fire.
+- **Init pattern:** modules that register settings or runtime behavior create a loader frame, register ADDON_LOADED, and unregister once their startup work is complete. Some modules also wait for PLAYER_ENTERING_WORLD when they need Blizzard frames to exist.
 - **Hot paths:** cache WoW globals at file top — `local floor = math.floor`, `local GetTime = GetTime`, etc.
-- **Theme constants:** spacing, fonts, widths live in `addon.UI_THEME` (set in `core/init.lua`) — don't hardcode.
+- **Theme/style constants:** shared font tokens live in `addon.UI_THEME` (`core/init.lua`); riveted panel spacing/sizing/art constants live in `addon.RIVETED_PANEL_STYLE` (`functions/panel_riveted.lua`). Module-specific layout constants may stay local when they are not shared.
 - **Deferred batching:** UNIT_AURA events are bucketed with `addon.UPDATE_INTERVALS.tenth_sec`; timer text/bar updates also tick at `tenth_sec` because they are cheap visual updates.
-- **InCombatLockdown:** defer layout/geometry changes; `update_auras()` skips frame scale, anchoring, sizing, layout setup, and height changes during combat. Never call protected WoW API during combat.
-- **Reset contract:** every module must implement `M.on_reset_complete()` to resync controls from DB after reset. Apply defaults via `addon.apply_defaults(defaults, db)`, not manual `or` guards.
+- **InCombatLockdown:** defer layout/geometry changes; `update_auras()` skips frame scale, anchoring, sizing, layout setup, and height changes during combat or while `._is_user_positioning` is true. Never call protected WoW API during combat.
+- **Reset contract:** every stateful settings/runtime module must implement `M.on_reset_complete()` to resync controls from DB after reset. Apply defaults via `addon.apply_defaults(defaults, db)`, not manual `or` guards.
 - **Taint safety:** never call Blizzard frame methods (UpdateAuras, UpdateLayout) from addon context — even deferred. Restore events + Show() only and let Blizzard's handlers fire naturally.
 
 ## Layout Rules (critical — violations cause invisible controls)
@@ -105,14 +106,23 @@ Ls_Tweeks_DB = {
     show_grid = bool,
     show_bar_section_outlines = bool,  -- debug outline toggle (now under aura_frames, not root)
     show_spell_id = bool,              -- show spell ID in icon tooltips
+    fade_wow_cooldown_ooc = bool,      -- CDM-backed addon frames fade out of combat
+    wow_cooldown_ooc_alpha = number,   -- CDM-backed frame alpha while out of combat
+    timer_number_font = string,         -- global fallback; currently "source_code_pro" or "game_default"
+    timer_number_font_size = number,
+    timer_number_font_bold = bool,
     -- learned static/long spell IDs are session-scoped in M._known_static / M._known_long, not persisted
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
-    positions = { static={x,y}, short={x,y}, long={x,y}, essential={x,y}, utility={x,y}, tracked_buffs={x,y}, tracked_bars={x,y}, debuff={x,y} },
+    -- common per-category settings include show/move/timer/bg/scale/spacing/width/bar_mode/color/bar_bg_color/bg_color/max_icons/growth/sort/test_aura/timer_number_font/timer_number_font_size/timer_number_font_bold/timer_color/bar_text_color
+    -- CDM-only per-category settings include cooldown_mode_<cat> and hide_blizz_cdm_<cat>
+    positions = { static={point,x,y}, short={point,x,y}, long={point,x,y}, essential={point,x,y}, utility={point,x,y}, tracked_buffs={point,x,y}, tracked_bars={point,x,y}, debuff={point,x,y} },
     custom_frames = {                  -- array of custom filtered frame entry tables
       -- each entry: { id, name, aura_base_filter="HELPFUL|HARMFUL", aura_modifier="NONE|...",
-      --               position={x,y},
+      --               position={point,x,y},
       --               show, move, bg, bg_color, bar_mode, color, bar_bg_color,
-      --               growth, timer, scale, spacing, max_icons, width, ... }
+      --               growth, timer, scale, spacing, max_icons, width,
+      --               test_aura, timer_number_font, timer_number_font_size,
+      --               timer_number_font_bold, timer_color, bar_text_color }
     },
   }
 }
@@ -123,13 +133,15 @@ Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, 
 The `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
 Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, GUI labels, CDM viewer names, preset key names, and test-aura labels from that table instead of adding separate hardcoded category lists.
 Shared Aura Frames behavioral defaults live in `af_defaults.lua` as named constants, including frame width limits, default/max icons, short-threshold fallback, default timer font key, and CDM out-of-combat alpha. Runtime fallbacks and GUI limits should reference those constants rather than repeating numeric/string literals.
+Timer font choices are currently defined in `af_main.lua`: Source Code Pro plus Game Default. Other font files exist on disk but are not exposed unless `M.NUMBER_FONT_OPTIONS` and `M.NUMBER_FONT_BOLD_PATHS` are updated.
 Aura frame processing is enabled-rooted. `show/enabled` is the first activity gate for preset and custom frames; disabled frames must not do move-shell work, test-aura work, aura/custom/CDM scans, render, layout, or CDM viewer prep. Use `M.get_frame_activity_state()` for runtime activity decisions and `M.cdm_category_needs_viewer()` for CDM prep decisions.
 Preset and custom frame settings should be treated as the same presentation model over different backing stores. Use normalized frame settings configs and shared builders in `af_gui_frame_builders.lua` for common presentation controls, including position/move/reset and timer controls. Preserve the current visible GUI and hide unsupported controls rather than adding/removing controls during refactors.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.
 
-CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Its local profile table uses `addon.UPDATE_INTERVALS` buckets for the retry delays. Use the named profiles (`"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
+CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Its local profile table uses `addon.UPDATE_INTERVALS` buckets for the retry delays. Use the named profiles (`"immediate"`, `"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
+CDM-backed frames have two CDM-specific controls: `cooldown_mode_<cat>` switches a CDM frame from aura-display mode into spell-cooldown mode, and `hide_blizz_cdm_<cat>` alpha-hides the matching Blizzard viewer without calling `Hide()`. Addon CDM frames can also fade out of combat using `fade_wow_cooldown_ooc` and `wow_cooldown_ooc_alpha`.
 
 Within `modules/aura_frames`, refresh/debounce scheduling must not hardcode raw timing numbers. `C_Timer.After`, `C_Timer.NewTicker`, and `C_Timer.NewTimer` calls should use `M.UPDATE_INTERVALS` directly, or receive a delay from the centralized CDM scheduler. Numeric values are still fine for non-timing data such as slider steps, alpha/color values, layout math, and test-aura duration settings.
 
@@ -142,7 +154,7 @@ When aura-frame reset replaces `M.db.custom_frames`, `af_main.lua` removes orpha
 
 `BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
 
-`af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
+`af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title that opens Blizzard Cooldown Viewer settings + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
 
 `af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
@@ -174,7 +186,7 @@ Drag/resize interaction state is centralized with `M.start_frame_drag()` / `M.st
 | `M.CreateListDropdown(name, parent, label, opts, get_val, on_sel, width)` | returns dropdown | af_gui wrapper with font support |
 | `CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)` | integrated reset | container is 95×45 |
 | `CreateRivetedPanel(parent, w, h, anchorTo, point, x, y, levelOffset)` | returns panel, fontstring | |
-| `CreateGlobalReset(parent, db, defaults)` | ARM-code safety reset; blocked in combat | |
+| `CreateGlobalReset(parent, db, defaults)` | ARM-code safety reset for the passed DB table; blocked in combat | not positioned by the factory |
 
 ## Debug Outlines (af_debug_outlines.lua)
 `M.db.show_bar_section_outlines` toggles 1px borders on aura icon slots.  
@@ -182,7 +194,7 @@ Toggle via `M.refresh_section_outlines()`. Outline textures are tagged `._is_out
 Do NOT use `SetParent(nil)` to remove textures — use `Hide()` + `SetTexture(nil)` on tagged textures only.
 
 ## Screen Grid Snap (af_screen_grid.lua)
-20px grid, screen-center origin — matches LsTweeks coordinate system exactly.  
+20px grid with small X/Y offsets (`GRID_OFFSET_X=-1.5`, `GRID_OFFSET_Y=-0.5`) to align with Blizzard Edit Mode grid spacing while still using LsTweeks' UIParent-center coordinate system.  
 `M.snap_to_grid(v, is_y)` — snaps a coordinate. `M.snap_frame_position(pos, frame)` preserves flush screen-edge positions before applying grid rounding, so clamped edge placement wins over grid snap. `M.set_grid_visible(show)` — toggles overlay.
 DB keys: `aura_frames.snap_to_grid`, `aura_frames.show_grid`.
 
@@ -195,11 +207,12 @@ Marble background, ornate dialog-frame borders, 4 corner rivet textures. Apply v
 - `C_UnitAuras.GetUnitAuraInstanceIDs` — sort-ordered ID list for render
 - `C_UnitAuras.DoesAuraHaveExpirationTime` — secret-safe boolean expiry check
 - `C_UnitAuras.GetAuraApplicationDisplayCount` — stack count fallback
+- `GameTooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)` — stable tooltip lookup
+- `CooldownViewerItemDataMixin` + `hooksecurefunc` — CDM cooldown identity/timing cache
+- `Settings.OpenToCategory("Cooldown Viewer")` — opens Blizzard's CDM settings panel from the tree title button
 - `ColorPickerFrame` — system color picker
 - `InCombatLockdown()` — combat guard
 - `LibDataBroker`, `LibDBIcon` — minimap button
 
-## error lesson
-error on reload, a window is immediately displayed with a message and 2 buttons, disable, ignore
-LsTweeks has been blocked from an action only available tot he Blizzard UI. You can disable this addon and relaod the UI.
-This error was the result of CLEU issue
+## Taint Lesson
+If reload shows Blizzard's blocked-action dialog ("LsTweeks has been blocked from an action only available to the Blizzard UI" with Disable/Ignore buttons), treat it as a taint regression first. A previous instance came from a CLEU-related path calling protected Blizzard behavior from addon context; the fix was to avoid direct Blizzard frame method calls and let Blizzard handlers run naturally.
