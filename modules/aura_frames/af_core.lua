@@ -30,7 +30,7 @@ end
 function M.tick_visible_icons(now)
     now = now or GetTime()
     local db = M.db
-    local short_threshold = (db and db.short_threshold) or 60
+    local short_threshold = (db and db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
     for _, frame in pairs(M.frames) do
         if frame:IsVisible() then
@@ -191,7 +191,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local bar_mode_key  = self._bar_mode_key or ("bar_mode_" .. category)
     self._bar_mode_key  = bar_mode_key
     local bar_mode      = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
-    local frame_width   = cfg_db["width_" .. category] or cfg_db["width"] or 200
+    local frame_width   = cfg_db["width_" .. category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing       = cfg_db[spacing_key] or cfg_db["spacing"] or 6
     local color         = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
     local barBgC        = M.get_setting(cfg_db, category, "bar_bg_color", { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha })
@@ -202,9 +202,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
     self._bar_mode        = bar_mode
-    local short_threshold = db.short_threshold or 60
+    local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD
     local growth        = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN"
-    local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or 40
+    local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or M.MAX_ICONS_LIMIT
     local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
     local in_combat = InCombatLockdown and InCombatLockdown()
     local is_user_positioning = self._is_user_positioning == true
@@ -218,7 +218,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     local _width  = frame_width
     local _height = self:GetHeight() or 50
-    if _width  < 1 then _width  = 200 end
+    if _width  < 1 then _width  = M.DEFAULT_FRAME_WIDTH end
     if _height < 1 then _height = 50  end
     if not in_combat and not is_user_positioning then
         M.apply_saved_frame_position(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75)
@@ -305,7 +305,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
-        self:SetAlpha(in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or 0.35))
+        self:SetAlpha(in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA))
     else
         self:SetAlpha(1)
     end

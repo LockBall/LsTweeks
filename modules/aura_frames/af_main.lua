@@ -11,18 +11,7 @@ M.frames = M.frames or {}
 M.controls = M.controls or {}
 
 -- CACHED GLOBALS AND CONSTANTS
-local MAX_POOL_SIZE = 20 -- Default pool size
-local MIN_FRAME_WIDTH = 180
-local MIN_FRAME_HEIGHT = 44
 local format = string.format
-
-local WOW_COOLDOWN_SHOW_KEYS = {
-    "show_essential",
-    "show_utility",
-    "show_tracked_buffs",
-    "show_tracked_bars",
-}
-
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 local NEXT_FRAME_INTERVAL = UPDATE_INTERVALS.next_frame
@@ -64,7 +53,7 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
 
 M.NUMBER_FONT_OPTIONS = {
     {
-        key = "source_code_pro",
+        key = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
         label = "Source Code Pro",
         path = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Regular.ttf",
         size = 9,
@@ -80,7 +69,7 @@ M.NUMBER_FONT_OPTIONS = {
 }
 
 M.NUMBER_FONT_BOLD_PATHS = {
-    source_code_pro = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
+    [M.DEFAULT_TIMER_NUMBER_FONT_KEY] = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
 }
 
 local function get_number_font_def(key, category, cfg_db)
@@ -95,7 +84,7 @@ local function get_number_font_def(key, category, cfg_db)
             selected_key = db.timer_number_font
         end
     end
-    selected_key = selected_key or "source_code_pro"
+    selected_key = selected_key or M.DEFAULT_TIMER_NUMBER_FONT_KEY
     for _, def in ipairs(M.NUMBER_FONT_OPTIONS) do
         if def.key == selected_key then
             return def
@@ -178,7 +167,8 @@ local function run_wow_cooldown_refresh(refresh_config)
             M.clear_cooldown_viewer_child_cache(category)
         end
     end
-    for _, show_key in ipairs(WOW_COOLDOWN_SHOW_KEYS) do
+    for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+        local show_key = M.get_preset_keys(category).show_key
         local frame = M.frames[show_key]
         local p = frame and frame.update_params
         if p then
@@ -237,11 +227,11 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:SetResizable(true) 
     frame:SetClampedToScreen(true)
     if frame.SetResizeBounds then
-        frame:SetResizeBounds(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
+        frame:SetResizeBounds(M.MIN_FRAME_WIDTH, M.MIN_FRAME_HEIGHT)
     end
     local cfg_db = frame._cfg_db or M.db
-    local initial_width = cfg_db["width_"..category] or cfg_db["width"] or 200
-    if initial_width < MIN_FRAME_WIDTH then initial_width = MIN_FRAME_WIDTH end
+    local initial_width = cfg_db["width_"..category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH
+    if initial_width < M.MIN_FRAME_WIDTH then initial_width = M.MIN_FRAME_WIDTH end
     frame:SetSize(initial_width, 50)
 
     M.apply_saved_frame_position(frame, scale_key, is_debuff and -25 or 75)
@@ -283,9 +273,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     frame:SetScript("OnSizeChanged", function(s, w)
         if s._clamping_size then return end
-        if w and w < MIN_FRAME_WIDTH then
+        if w and w < M.MIN_FRAME_WIDTH then
             s._clamping_size = true
-            s:SetWidth(MIN_FRAME_WIDTH)
+            s:SetWidth(M.MIN_FRAME_WIDTH)
             s._clamping_size = nil
         end
     end)
@@ -298,8 +288,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         frame:StopMovingOrSizing()
         frame._is_user_positioning = nil
         local clamped_width = frame:GetWidth()
-        if clamped_width < MIN_FRAME_WIDTH then
-            clamped_width = MIN_FRAME_WIDTH
+        if clamped_width < M.MIN_FRAME_WIDTH then
+            clamped_width = M.MIN_FRAME_WIDTH
             frame:SetWidth(clamped_width)
         end
         M.db["width_"..category] = clamped_width
@@ -313,7 +303,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     -- ICON POOL MANAGEMENT    Pre-create set number of icons/bars to avoid combat lockdown errors
     frame.icons = {}
-    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or MAX_POOL_SIZE
+    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or M.DEFAULT_MAX_ICONS
     local bar_bg_default = cfg_db["bar_bg_color_"..category]
         or cfg_db["bar_bg_color"]
         or cfg_db["color_"..category]
@@ -553,7 +543,7 @@ function M.create_custom_frame(entry)
             frame:StopMovingOrSizing()
             frame._is_user_positioning = nil
             local w = frame:GetWidth()
-            if w < MIN_FRAME_WIDTH then w = MIN_FRAME_WIDTH; frame:SetWidth(w) end
+            if w < M.MIN_FRAME_WIDTH then w = M.MIN_FRAME_WIDTH; frame:SetWidth(w) end
             entry.width = w
             local ws = M.controls and M.controls["custom_" .. id .. "_width"]
             if ws and ws.slider then ws.slider:SetValue(w) end
@@ -638,7 +628,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         if M.defaults then addon.apply_defaults(M.defaults, M.db) end
 
         if not M.db.timer_number_font then
-            M.db.timer_number_font = "source_code_pro"
+            M.db.timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY
         end
         if not M.db.timer_number_font_size then
             M.db.timer_number_font_size = M.get_timer_number_font_size() or 10
@@ -650,7 +640,7 @@ loader:SetScript("OnEvent", function(self, event, name)
             local font_key = "timer_number_font_"..cat
             local size_key = "timer_number_font_size_"..cat
             if not M.db[font_key] then
-                M.db[font_key] = M.db.timer_number_font or "source_code_pro"
+                M.db[font_key] = M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
             end
             if not M.db[size_key] then
                 M.db[size_key] = M.get_timer_number_font_size() or 10
@@ -678,15 +668,20 @@ loader:SetScript("OnEvent", function(self, event, name)
             end
         end
         
-        -- Create the visual containers for each specific category
-        M.create_aura_frame("show_static",  "move_static",  "timer_static", "bg_static",    "scale_static", "spacing_static",   "Static",   false)
-        M.create_aura_frame("show_short",   "move_short",   "timer_short",  "bg_short",     "scale_short",  "spacing_short",    "Short",    false)
-        M.create_aura_frame("show_long",    "move_long",    "timer_long",   "bg_long",      "scale_long",   "spacing_long",     "Long",     false)
-        M.create_aura_frame("show_essential", "move_essential", "timer_essential", "bg_essential", "scale_essential", "spacing_essential", "Essential", false)
-        M.create_aura_frame("show_utility", "move_utility", "timer_utility", "bg_utility", "scale_utility", "spacing_utility", "Utility", false)
-        M.create_aura_frame("show_tracked_buffs", "move_tracked_buffs", "timer_tracked_buffs", "bg_tracked_buffs", "scale_tracked_buffs", "spacing_tracked_buffs", "Tracked Buffs", false)
-        M.create_aura_frame("show_tracked_bars", "move_tracked_bars", "timer_tracked_bars", "bg_tracked_bars", "scale_tracked_bars", "spacing_tracked_bars", "Tracked Bars", false)
-        M.create_aura_frame("show_debuff",  "move_debuff",  "timer_debuff", "bg_debuff",    "scale_debuff", "spacing_debuff",   "Debuffs",  true)
+        -- Create the visual containers for each built-in category.
+        for _, frame_def in ipairs(M.FRAME_DEFS) do
+            local keys = M.get_preset_keys(frame_def.key)
+            M.create_aura_frame(
+                keys.show_key,
+                keys.move_key,
+                keys.timer_key,
+                keys.bg_key,
+                keys.scale_key,
+                keys.spacing_key,
+                frame_def.frame_label or frame_def.label,
+                frame_def.is_debuff
+            )
+        end
 
         -- Create saved custom filtered frames.
         if M.db.custom_frames then

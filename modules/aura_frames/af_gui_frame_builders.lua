@@ -20,6 +20,31 @@ local function get_timer_font_options()
     end
     return options
 end
+
+local function create_bound_checkbox_control(parent, label, value_table, value_key, grid, row, column, control_key, on_change, default_update, after_checked, after_unchecked)
+    local container, checkbox, _ = addon.CreateCheckbox(parent, label, value_table[value_key],
+        function(is_checked)
+            value_table[value_key] = is_checked
+            if is_checked and after_checked then
+                after_checked()
+            end
+            if not is_checked and after_unchecked then
+                after_unchecked()
+            end
+            if on_change then
+                on_change(is_checked)
+            elseif default_update then
+                default_update()
+            end
+        end
+    )
+    grid.place_at(container, row, column)
+    if control_key then
+        M.controls[control_key] = checkbox
+    end
+    return container, checkbox
+end
+
 function M.build_aura_id_tab(p)
     local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
@@ -116,25 +141,7 @@ function M.build_preset_frame_panel(p, data)
     local add_row_separator = grid.add_row_separator
 
     local function create_bound_checkbox(label, db_key, row, column, on_change, control_key, extra_on_uncheck, extra_on_check)
-        local container, checkbox, _ = addon.CreateCheckbox(p, label, M.db[db_key],
-            function(is_checked)
-                M.db[db_key] = is_checked
-                if is_checked and extra_on_check then
-                    extra_on_check()
-                end
-                if not is_checked and extra_on_uncheck then
-                    extra_on_uncheck()
-                end
-                if on_change then
-                    on_change(is_checked)
-                else
-                    update()
-                end
-            end
-        )
-        place_at(container, row, column)
-        M.controls[control_key or db_key] = checkbox
-        return container, checkbox
+        return create_bound_checkbox_control(p, label, M.db, db_key, grid, row, column, control_key or db_key, on_change, update, extra_on_check, extra_on_uncheck)
     end
 
     local function create_bound_color_picker(db_key, has_alpha, label, row, column)
@@ -153,7 +160,7 @@ function M.build_preset_frame_panel(p, data)
         addon_name..cat.."WidthSlider",
         p,
         "Width",
-        180, 800, 1,
+        M.MIN_FRAME_WIDTH, M.MAX_FRAME_WIDTH, 1,
         M.db, "width_"..cat, M.defaults
     )
     width_slider.slider:HookScript("OnValueChanged", function(_, value)
@@ -256,7 +263,7 @@ function M.build_preset_frame_panel(p, data)
             if not f then return end
             M.reset_frame_move_placement(f, {
                 default_position = M.defaults.positions[cat],
-                default_width = M.defaults["width_"..cat] or 200,
+                default_width = M.defaults["width_"..cat] or M.DEFAULT_FRAME_WIDTH,
                 width_table = M.db,
                 width_key = "width_"..cat,
                 scale_key = data.scale_key,
@@ -334,7 +341,7 @@ function M.build_preset_frame_panel(p, data)
 
         local timer_font = M.CreateListDropdown(addon_name..cat.."TimerFont", p, "Font", get_timer_font_options(),
             function()
-                return M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro"
+                return M.db["timer_number_font_"..cat] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
             end,
             function(value)
                 M.db["timer_number_font_"..cat] = value
@@ -374,7 +381,7 @@ function M.build_preset_frame_panel(p, data)
     local spacing_slider = create_bound_slider("Spacing", "Spacing", 0, 20, 0.1, data.spacing_key)
     place_at(spacing_slider, 5, 2)
 
-    local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, 40, 1, "max_icons_"..cat, function()
+    local max_icons_slider = create_bound_slider("PoolSlider", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons_"..cat, function()
         print("|cFFFFFF00LsTweaks:|r Pool size for "..cat.." changed. Please /reload to apply.")
     end)
     place_at(max_icons_slider, 5, 4)
@@ -450,15 +457,7 @@ function M.build_custom_settings_panel(p, entry)
     local add_row_separator = grid.add_row_separator
 
     local function bound_cb(label, key, row, column, on_change)
-        local container, cb = addon.CreateCheckbox(p, label, entry[key],
-            function(is_checked)
-                entry[key] = is_checked
-                if on_change then on_change(is_checked) else update() end
-            end
-        )
-        place_at(container, row, column)
-        M.controls["custom_" .. id .. "_" .. key] = cb
-        return container, cb
+        return create_bound_checkbox_control(p, label, entry, key, grid, row, column, "custom_" .. id .. "_" .. key, on_change, update)
     end
 
     local function bound_picker(key, has_alpha, label, row, column)
@@ -500,7 +499,7 @@ function M.build_custom_settings_panel(p, entry)
     end)
     place_at(y_slider, 1, 3)
 
-    local width_slider = addon.CreateSliderWithBox(addon_name..id.."Width", p, "Width", 180, 800, 1, entry, "width", M.CUSTOM_FRAME_TEMPLATE)
+    local width_slider = addon.CreateSliderWithBox(addon_name..id.."Width", p, "Width", M.MIN_FRAME_WIDTH, M.MAX_FRAME_WIDTH, 1, entry, "width", M.CUSTOM_FRAME_TEMPLATE)
     width_slider.slider:HookScript("OnValueChanged", function(_, value)
         local f = M.frames[show_key]
         if f then
@@ -621,15 +620,8 @@ function M.build_custom_settings_panel(p, entry)
     timer_bold_container:ClearAllPoints()
     timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
 
-    local font_options = {}
-    for _, def in ipairs(M.get_number_font_options()) do
-        font_options[#font_options + 1] = {
-            value = def.key, text = def.label,
-            font_path = def.path, font_size = def.size, font_flags = def.flags,
-        }
-    end
-    local timer_font_dd = M.CreateListDropdown(addon_name..id.."TimerFont", p, "Timer Font", font_options,
-        function() return entry.timer_number_font or "source_code_pro" end,
+    local timer_font_dd = M.CreateListDropdown(addon_name..id.."TimerFont", p, "Timer Font", get_timer_font_options(),
+        function() return entry.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY end,
         function(value)
             entry.timer_number_font = value
             M.apply_number_font_to_all()
@@ -661,7 +653,7 @@ function M.build_custom_settings_panel(p, entry)
     place_at(spacing_slider, 5, 2)
 
     local max_icons_slider = addon.CreateSliderWithBox(addon_name..id.."MaxIcons", p, "Max Icons",
-        5, 40, 1, entry, "max_icons", M.CUSTOM_FRAME_TEMPLATE,
+        5, M.MAX_ICONS_LIMIT, 1, entry, "max_icons", M.CUSTOM_FRAME_TEMPLATE,
         function()
             print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
         end)

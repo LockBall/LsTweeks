@@ -127,7 +127,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     -- Use frame-specific cfg_db for custom frames; fall back to global M.db for presets.
     local db = (self._cfg_db) or M.db
     local category = show_key:sub(6)
-    local frame_width = db["width_"..category] or db["width"] or 200
+    local frame_width = db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing = db[spacing_key] or db["spacing"] or 6
     local growth = db["growth_"..category] or db["growth"] or "DOWN"
 

@@ -75,33 +75,34 @@ function M.BuildSettings(parent)
 
     local tabs, panels = {}, {}
 
-    -- Category definitions. Keys follow pattern <prefix>_<cat>.
-    -- `opts.key` lets display labels diverge from DB keys (for example "Tracked Buffs" -> tracked_buffs).
-    -- prefixes: show, move, timer, bg, scale, spacing
-    local function make_cat(name, opts)
-        local k = (opts and opts.key) or name:lower()
+    -- Category controls are derived from FRAME_DEFS so GUI labels, DB keys,
+    -- runtime frame creation, and CDM metadata stay in one place.
+    local function make_cat(frame_def)
+        local keys = M.get_preset_keys(frame_def.key)
         return {
-            name        = name,
-            show_key    = "show_"    .. k,
-            move_key    = "move_"    .. k,
-            timer_key   = "timer_"   .. k,
-            bg_key      = "bg_"      .. k,
-            scale_key   = "scale_"   .. k,
-            spacing_key = "spacing_" .. k,
-            is_debuff   = opts and opts.is_debuff,
+            name        = frame_def.label,
+            show_key    = keys.show_key,
+            move_key    = keys.move_key,
+            timer_key   = keys.timer_key,
+            bg_key      = keys.bg_key,
+            scale_key   = keys.scale_key,
+            spacing_key = keys.spacing_key,
+            is_debuff   = frame_def.is_debuff,
         }
     end
 
-    local frames_data = {
-        make_cat("Static"),
-        make_cat("DeBuff", { is_debuff = true }),
-        make_cat("Short"),
-        make_cat("Long"),
-        make_cat("Essential"),
-        make_cat("Utility"),
-        make_cat("Tracked Buffs", { key = "tracked_buffs" }),
-        make_cat("Tracked Bars", { key = "tracked_bars" }),
-    }
+    local frame_defs_for_tree = {}
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
+        frame_defs_for_tree[#frame_defs_for_tree + 1] = frame_def
+    end
+    table.sort(frame_defs_for_tree, function(a, b)
+        return (a.tree_order or 0) < (b.tree_order or 0)
+    end)
+
+    local frames_data = {}
+    for _, frame_def in ipairs(frame_defs_for_tree) do
+        frames_data[#frames_data + 1] = make_cat(frame_def)
+    end
 
     local tab_data = {
         { name = "General", is_general  = true },
@@ -196,7 +197,7 @@ function M.sync_general_controls_from_db()
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then
-            font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or "source_code_pro")
+            font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY)
         end
 
         local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
