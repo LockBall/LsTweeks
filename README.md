@@ -133,6 +133,9 @@ Libraries are unmodified.
 - Changing an aura frame pool size requires `/reload` because icon pools are created at load time.
 
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
+
+- Current client Interface number can be checked in chat with: `/dump (select(4, GetBuildInfo()))`
+
 <img src="./media/svg/divider_dashed.svg" width="100%">
 
 ### Custom Filtered Frames
