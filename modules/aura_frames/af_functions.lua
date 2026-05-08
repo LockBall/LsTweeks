@@ -7,7 +7,7 @@ addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 function M.get_cdm_viewer_frame(category)
-    local frame_name = M.CDM_VIEWER_FRAMES and M.CDM_VIEWER_FRAMES[category]
+    local frame_name = M.CDM_VIEWER_FRAMES[category]
     return frame_name and _G[frame_name] or nil
 end
 
@@ -37,7 +37,7 @@ function M.get_frame_position_table(frame)
 end
 
 function M.get_frame_position_scale(frame, scale_key)
-    local cfg_db = M.get_frame_config_db and M.get_frame_config_db(frame) or M.db
+    local cfg_db = M.get_frame_config_db(frame) or M.db
     local category = frame and frame.category
     local scale = 1
     if cfg_db then
@@ -55,7 +55,7 @@ end
 
 function M.apply_saved_frame_position(frame, scale_key, fallback_y)
     if not frame then return end
-    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    local pos = M.get_frame_position_table(frame)
     if pos then
         M.apply_frame_position(frame, pos, M.get_frame_position_scale(frame, scale_key))
     else
@@ -66,7 +66,7 @@ end
 
 function M.set_saved_frame_position_axis(frame, axis, value, scale_key)
     if not (frame and axis and value ~= nil) then return end
-    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    local pos = M.get_frame_position_table(frame)
     if not pos then return end
     if axis ~= "x" and axis ~= "y" then return end
     pos.point = "TOPLEFT"
@@ -79,7 +79,7 @@ function M.reset_frame_move_placement(frame, opts)
     opts = opts or {}
 
     local default_pos = opts.default_position
-    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    local pos = M.get_frame_position_table(frame)
     if pos and default_pos then
         pos.point = default_pos.point or "TOPLEFT"
         pos.x = default_pos.x or 0
@@ -158,11 +158,11 @@ end
 
 function M.sync_frame_position_from_drag(frame, scale_key)
     if not frame then return nil, nil end
-    local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+    local pos = M.get_frame_position_table(frame)
     if not pos then return nil, nil end
     local x, y = M.sync_frame_position_to_db(frame, pos)
     if not (x and y) then return nil, nil end
-    if M.db and M.db.snap_to_grid and M.snap_frame_position then
+    if M.db and M.db.snap_to_grid then
         pos.x, pos.y = M.snap_frame_position(pos, frame)
         M.apply_saved_frame_position(frame, scale_key)
     end
@@ -195,9 +195,7 @@ end
 
 function M.mark_aura_scan_dirty()
     M._aura_scan_dirty = true
-    if M.clear_custom_aura_scan_cache then
-        M.clear_custom_aura_scan_cache()
-    end
+    M.clear_custom_aura_scan_cache()
 end
 
 -- Frame-specific value -> category-specific value -> global value -> default global value.
@@ -276,7 +274,7 @@ function M.get_custom_aura_filter(entry)
     if not modifier or modifier == "" or modifier == "NONE" then
         return base
     end
-    local def = M.get_custom_modifier_def and M.get_custom_modifier_def(modifier)
+    local def = M.get_custom_modifier_def(modifier)
     if def and def.force_base then
         base = def.force_base
         entry.aura_base_filter = base
@@ -286,10 +284,10 @@ end
 
 function M.get_custom_modifier_def(value)
     value = value or "NONE"
-    for _, def in ipairs(M.CUSTOM_AURA_MODIFIERS or {}) do
+    for _, def in ipairs(M.CUSTOM_AURA_MODIFIERS) do
         if def.value == value then return def end
     end
-    return (M.CUSTOM_AURA_MODIFIERS and M.CUSTOM_AURA_MODIFIERS[1]) or { value = "NONE", text = "NONE" }
+    return M.CUSTOM_AURA_MODIFIERS[1]
 end
 
 function M.apply_tooltip_panel_backdrop(frame, r, g, b, a, br, bg, bb, ba)

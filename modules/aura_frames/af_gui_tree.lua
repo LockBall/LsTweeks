@@ -480,13 +480,7 @@ function M.build_frames_tab(p, frames_data)
             end
         end
 
-        if M.ensure_blizz_cdm_loaded then
-            M.ensure_blizz_cdm_loaded()
-        elseif C_AddOns and C_AddOns.LoadAddOn then
-            pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
-        elseif LoadAddOn then
-            pcall(LoadAddOn, "Blizzard_CooldownViewer")
-        end
+        M.ensure_blizz_cdm_loaded()
 
         local panel = _G["CooldownViewerSettings"]
         hook_cdm_settings_panel(panel)

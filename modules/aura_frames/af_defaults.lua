@@ -184,7 +184,7 @@ M.defaults = {
     color_utility     = { r = 0.65, g = 0.55, b = 1 },
     bar_bg_color_utility = default_bg_color(),
     max_icons_utility = 20,
-    growth_utility = "DOWN",
+    growth_utility = "RIGHT",
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
     test_aura_utility = false,

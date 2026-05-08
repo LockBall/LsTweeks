@@ -132,9 +132,9 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local growth = db["growth_"..category] or db["growth"] or "DOWN"
 
     local show_timer_text = M.is_timer_text_enabled(db, category, db["timer"] ~= nil and "timer" or nil)
-    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay and M.uses_cooldown_icon_overlay(category, bar_mode, db)
+    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
-    local timer_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category, self._cfg_db)) or 10
+    local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
     local bar_layout = M.get_bar_layout_params(timer_font_size)
     local timer_text_align = (category == "long") and "CENTER" or "RIGHT"
     local timer_anchor_point = (timer_text_align == "CENTER") and "CENTER" or "RIGHT"

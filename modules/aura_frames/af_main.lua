@@ -111,9 +111,7 @@ end
 function M.apply_number_font_to_text(font_string, category, cfg_db)
     if not font_string or not font_string.SetFont then return end
     local def = get_number_font_def(nil, category, cfg_db)
-    local size = (M.get_timer_number_font_size and M.get_timer_number_font_size(category, cfg_db))
-        or def.size
-        or 10
+    local size = M.get_timer_number_font_size(category, cfg_db) or def.size or 10
     local flags = def.flags or ""
 
     -- Always pass an integer size to SetFont. WoW/FreeType rounds fractional
@@ -146,7 +144,7 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
 
     if cfg_db or M.db then
         -- Custom frames store timer_color directly; preset frames use timer_color_<cat>.
-        local c = M.get_setting and M.get_setting(cfg_db, category, "timer_color")
+        local c = M.get_setting(cfg_db, category, "timer_color")
         if c then
             font_string:SetTextColor(c.r or 1, c.g or 1, c.b or 1, 1)
         end
@@ -515,7 +513,7 @@ function M.create_custom_frame(entry)
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
-    local aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(entry) or entry.aura_base_filter
+    local aura_filter = M.get_custom_aura_filter(entry)
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,
     -- not the prefixed pattern used by preset frames ("timer_static", etc.).
@@ -637,7 +635,7 @@ loader:SetScript("OnEvent", function(self, event, name)
             M.db.timer_number_font = "source_code_pro"
         end
         if not M.db.timer_number_font_size then
-            M.db.timer_number_font_size = (M.get_timer_number_font_size and M.get_timer_number_font_size()) or 10
+            M.db.timer_number_font_size = M.get_timer_number_font_size() or 10
         end
 
         -- Migrate legacy global font settings to per-category settings.
@@ -649,7 +647,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 M.db[font_key] = M.db.timer_number_font or "source_code_pro"
             end
             if not M.db[size_key] then
-                M.db[size_key] = (M.get_timer_number_font_size and M.get_timer_number_font_size()) or 10
+                M.db[size_key] = M.get_timer_number_font_size() or 10
             end
             local bold_key = "timer_number_font_bold_"..cat
             if M.db[bold_key] == nil then
@@ -695,9 +693,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
         C_Timer.After(NEXT_FRAME_INTERVAL, function()
             for _, frame in pairs(M.frames) do
-                local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
+                local pos = M.get_frame_position_table(frame)
                 if pos and pos.point ~= "TOPLEFT" then
-                    local x, y = M.sync_frame_position_to_db and M.sync_frame_position_to_db(frame, pos)
+                    local x, y = M.sync_frame_position_to_db(frame, pos)
                     if x and y then
                         M.apply_saved_frame_position(frame)
                     end
@@ -732,7 +730,7 @@ function M.on_reset_complete()
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     M.apply_number_font_to_all()
-    if M.set_grid_visible then M.set_grid_visible(M.db.show_grid == true) end
+    M.set_grid_visible(M.db.show_grid == true)
 
     local valid_custom_ids = {}
     for _, entry in ipairs(M.db.custom_frames or {}) do
@@ -763,15 +761,13 @@ function M.on_reset_complete()
                         if entry.id == id then frame.custom_entry = entry; break end
                     end
                 end
-                p.aura_filter = M.get_custom_aura_filter and M.get_custom_aura_filter(frame.custom_entry) or p.aura_filter
+                p.aura_filter = M.get_custom_aura_filter(frame.custom_entry)
             end
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end
 
-    if M.sync_general_controls_from_db then
-        M.sync_general_controls_from_db()
-    end
+    M.sync_general_controls_from_db()
     if M.refresh_frames_tree then
         M.refresh_frames_tree()
     end
