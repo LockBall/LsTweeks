@@ -168,14 +168,14 @@ function M.apply_number_font_to_all()
     end
 end
 
-local function run_wow_cooldown_refresh(opts)
+local function run_wow_cooldown_refresh(refresh_config)
     if not M.frames then return end
-    if opts.prepare_viewers and M.prepare_blizz_cdm_viewer then
+    if refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer then
         for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
             M.prepare_blizz_cdm_viewer(category)
         end
     end
-    if opts.clear_child_cache and M.clear_cooldown_viewer_child_cache then
+    if refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache then
         for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
             M.clear_cooldown_viewer_child_cache(category)
         end
@@ -190,22 +190,22 @@ local function run_wow_cooldown_refresh(opts)
     end
 end
 
-local function schedule_wow_cooldown_refresh(delay, opts)
+local function schedule_wow_cooldown_refresh(delay, refresh_config)
     delay = delay or 0
     M._cdm_refresh_pending = M._cdm_refresh_pending or {}
     local key = tostring(delay)
-        .. "|" .. tostring(opts.prepare_viewers == true)
-        .. "|" .. tostring(opts.clear_child_cache == true)
-        .. "|" .. tostring(opts.defer_zero == true)
+        .. "|" .. tostring(refresh_config.prepare_viewers == true)
+        .. "|" .. tostring(refresh_config.clear_child_cache == true)
+        .. "|" .. tostring(refresh_config.defer_zero == true)
     if M._cdm_refresh_pending[key] then return end
 
     local function refresh()
         M._cdm_refresh_pending[key] = nil
-        run_wow_cooldown_refresh(opts)
+        run_wow_cooldown_refresh(refresh_config)
     end
 
     M._cdm_refresh_pending[key] = true
-    if (delay > 0 or opts.defer_zero) and C_Timer and C_Timer.After then
+    if (delay > 0 or refresh_config.defer_zero) and C_Timer and C_Timer.After then
         C_Timer.After(delay, refresh)
     else
         refresh()
@@ -213,12 +213,12 @@ local function schedule_wow_cooldown_refresh(delay, opts)
 end
 
 function M.queue_wow_cooldown_refresh(profile)
-    local opts = type(profile) == "table" and profile
+    local refresh_config = type(profile) == "table" and profile
         or WOW_COOLDOWN_REFRESH_PROFILES[profile or "immediate"]
         or WOW_COOLDOWN_REFRESH_PROFILES.immediate
-    local delays = opts.delays or { opts.delay or 0 }
+    local delays = refresh_config.delays or { refresh_config.delay or 0 }
     for _, delay in ipairs(delays) do
-        schedule_wow_cooldown_refresh(delay, opts)
+        schedule_wow_cooldown_refresh(delay, refresh_config)
     end
 end
 
@@ -239,11 +239,15 @@ function M.queue_wow_cooldown_settings_refreshes()
 end
 
 -- AURA CONTAINER GENERATOR
-function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff)
+function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
+    frame_opts = frame_opts or {}
     local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
+    frame.is_custom = frame_opts.is_custom == true
+    frame.custom_entry = frame_opts.custom_entry
+    frame._cfg_db = frame_opts.cfg_db
     
     M.apply_tooltip_panel_backdrop(frame)
 
@@ -253,7 +257,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     if frame.SetResizeBounds then
         frame:SetResizeBounds(MIN_FRAME_WIDTH, MIN_FRAME_HEIGHT)
     end
-    local initial_width = M.db["width_"..category] or 200
+    local cfg_db = frame._cfg_db or M.db
+    local initial_width = cfg_db["width_"..category] or cfg_db["width"] or 200
     if initial_width < MIN_FRAME_WIDTH then initial_width = MIN_FRAME_WIDTH end
     frame:SetSize(initial_width, 50)
 
@@ -461,7 +466,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         scale_key = scale_key,
         spacing_key = spacing_key,
         category = category,
-        aura_filter = is_debuff and "HARMFUL" or "HELPFUL"
+        aura_filter = frame_opts.aura_filter or (is_debuff and "HARMFUL" or "HELPFUL")
     }
     
     frame:SetScript("OnEvent", function(self, event, unit, info)
@@ -482,8 +487,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         -- ElkBuffBars uses a short RegisterBucketEvent("UNIT_AURA") delay for exactly this reason:
         -- C_UnitAuras calls made directly in OnEvent return "secret values" in combat
         -- because the execution context is still tainted by the event dispatch.
-        -- Deferring to the next frame runs the scan after the event context exits,
-        -- after the tainted context exits — all fields return clean, readable values.
+        -- Deferring through the aura bucket runs the scan after the tainted
+        -- event context exits, so aura fields return clean, readable values.
         --
         -- Merge UNIT_AURA payloads while waiting for the deferred scan.
         if event == "UNIT_AURA" then
@@ -538,24 +543,14 @@ function M.create_custom_frame(entry)
         "scale",
         "spacing",
         entry.name or id,
-        aura_filter:find("HARMFUL", 1, true) ~= nil
+        aura_filter:find("HARMFUL", 1, true) ~= nil,
+        {
+            is_custom = true,
+            custom_entry = entry,
+            cfg_db = entry,
+            aura_filter = aura_filter,
+        }
     )
-
-    -- Tag the frame so af_core knows to route it through the custom filtered scan.
-    frame.is_custom    = true
-    frame.custom_entry = entry
-    frame._cfg_db      = entry
-    M.apply_saved_frame_position(frame, "scale")
-
-    -- The pool is built before the frame is tagged as custom, so apply the
-    -- entry-scoped timer font settings once the custom config is available.
-    if M.apply_number_font_to_text and frame.icons then
-        for _, obj in ipairs(frame.icons) do
-            if obj and obj.time_text then
-                M.apply_number_font_to_text(obj.time_text, id, entry)
-            end
-        end
-    end
 
     -- Override update_params to use flat entry keys and the selected AuraFilters string.
     frame.update_params.show_key    = show_key
