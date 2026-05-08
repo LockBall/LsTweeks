@@ -10,9 +10,20 @@ This file is shared project memory for coding agents working on LsTweeks. Keep i
 - Do not store secrets, personal data, machine-local paths, or temporary scratch notes here.
 - Lua 5.1 tools are installed at `C:\Program Files (x86)\Lua\5.1\`; this path is not always on PATH. Use `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>` for syntax checks.
 
-## What This Is
-**L's Tweeks** — a modular WoW UI addon (patch 12.0 / Interface 120000) by LockBall.  
+## What This AddOn Is
+**L's Tweeks** — a modular World of Warcraft (WoW) UI addon for patch 12.0 + by LockBall.  
 Slash command: `/lst` (registered as `SLASH_LSTWEEKS1`). SavedVariables: `Ls_Tweeks_DB`. Note the intentional "Tweeks" spelling throughout.
+
+## Design Principles
+- **Single source of truth:** Store each decision, default, category definition, timing interval, and layout constant in one owning place. Other files should derive from that owner instead of copying parallel lists, fallback values, or magic numbers.
+
+- **Single-path deterministic behavior:** Prefer one clear runtime path for each behavior. Avoid alternate code paths that can disagree by timing, combat state, GUI state, or frame type; when branching is required, centralize the branch and make every caller use it.
+
+- **Readability:** Keep code easy to audit under addon-debug conditions. Use plain names, small helpers, local ownership, and comments only where they explain non-obvious WoW API, taint, combat-lockdown, timing, or layout constraints.
+
+- **Modularity:** Each file should own a coherent responsibility and expose a small surface through the shared `addon` table or the Aura Frames `M` table. Shared helpers belong where they reduce real duplication without hiding source-specific behavior.
+
+- **Efficiency:** Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache WoW globals on hot paths, batch repeated events through named update intervals, skip disabled/inactive frames early, and avoid unnecessary frame churn.
 
 ## File Map
 ```
@@ -108,8 +119,8 @@ Ls_Tweeks_DB = {
 ```
 
 ## Aura Frame Categories
-Preset categories: `static`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`, `debuff`.
-`essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
+Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
+The `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
 Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, GUI labels, CDM viewer names, preset key names, and test-aura labels from that table instead of adding separate hardcoded category lists.
 Shared Aura Frames behavioral defaults live in `af_defaults.lua` as named constants, including frame width limits, default/max icons, short-threshold fallback, default timer font key, and CDM out-of-combat alpha. Runtime fallbacks and GUI limits should reference those constants rather than repeating numeric/string literals.
 Aura frame processing is enabled-rooted. `show/enabled` is the first activity gate for preset and custom frames; disabled frames must not do move-shell work, test-aura work, aura/custom/CDM scans, render, layout, or CDM viewer prep. Use `M.get_frame_activity_state()` for runtime activity decisions and `M.cdm_category_needs_viewer()` for CDM prep decisions.
@@ -191,4 +202,4 @@ Marble background, ornate dialog-frame borders, 4 corner rivet textures. Apply v
 ## error lesson
 error on reload, a window is immediately displayed with a message and 2 buttons, disable, ignore
 LsTweeks has been blocked from an action only available tot he Blizzard UI. You can disable this addon and relaod the UI.
-was result of CLEU issue
+This error was the result of CLEU issue
