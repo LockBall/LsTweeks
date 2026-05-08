@@ -45,6 +45,15 @@ function M.build_frames_tab(p, frames_data)
     table.insert(addon.alpha_affected_frames, { frame = tree_frame, r = 0.08, g = 0.08, b = 0.08 })
     if addon.apply_interface_alpha then addon.apply_interface_alpha() end
 
+    local show_grid_container, show_grid_btn, _ = addon.CreateCheckbox(tree_frame, "Show Grid", M.db.show_grid == true,
+        function(is_checked)
+            M.db.show_grid = is_checked
+            M.set_grid_visible(is_checked)
+        end
+    )
+    show_grid_container:SetPoint("BOTTOMLEFT", tree_frame, "BOTTOMLEFT", PAD, PAD)
+    M.controls.show_grid_checkbox = show_grid_btn
+
     -- Right content area
     local content = CreateFrame("Frame", nil, p)
     content:SetPoint("TOPLEFT",     p, "TOPLEFT",     TREE_GAP_LEFT + TREE_W + TREE_GAP_RIGHT, 0)

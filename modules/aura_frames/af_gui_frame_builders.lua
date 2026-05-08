@@ -45,6 +45,17 @@ local function create_bound_checkbox_control(parent, label, value_table, value_k
     return container, checkbox
 end
 
+local function create_snap_to_grid_checkbox(parent, anchor_to)
+    local container, checkbox, _ = addon.CreateCheckbox(parent, "Snap to Grid", M.db.snap_to_grid == true,
+        function(is_checked)
+            M.db.snap_to_grid = is_checked
+        end
+    )
+    container:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", 0, -4)
+    M.controls.snap_to_grid_checkbox = checkbox
+    return container, checkbox
+end
+
 function M.build_aura_id_tab(p)
     local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
@@ -237,26 +248,12 @@ function M.build_preset_frame_panel(p, data)
     place_at(y_slider, 1, 3)
     place_at(width_slider, 1, 4)
 
-    -- Snap to Grid / Show Grid: global toggles stacked below Move Mode
-    local snap_container, snap_btn, _ = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
-        function(is_checked)
-            M.db.snap_to_grid = is_checked
-        end
-    )
-    snap_container:SetPoint("TOPLEFT", move_mode_container, "BOTTOMLEFT", 0, -4)
-    M.controls.snap_to_grid_checkbox = snap_btn
-
-    local show_grid_container, show_grid_btn, _ = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
-        function(is_checked)
-            M.db.show_grid = is_checked
-            M.set_grid_visible(is_checked)
-        end
-    )
-    show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
-    M.controls.show_grid_checkbox = show_grid_btn
+    -- Snap to Grid: global toggle stacked below Move Mode.
+    -- Show Grid lives once at the bottom of the frames tree.
+    local snap_container = create_snap_to_grid_checkbox(p, move_mode_container)
 
     -- move Reset: resets placement/width only, leaving Move Mode unchanged.
-    M.create_move_reset_button(p, show_grid_container, {
+    M.create_move_reset_button(p, snap_container, {
         width = grid.reset_btn_width,
         on_click = function()
             local f = M.frames[data.show_key]
@@ -510,18 +507,9 @@ function M.build_custom_settings_panel(p, entry)
     M.controls["custom_" .. id .. "_width"] = width_slider
     place_at(width_slider, 1, 4)
 
-    local snap_container = addon.CreateCheckbox(p, "Snap to Grid", M.db.snap_to_grid == true,
-        function(is_checked) M.db.snap_to_grid = is_checked end)
-    snap_container:SetPoint("TOPLEFT", move_container, "BOTTOMLEFT", 0, -4)
+    local snap_container = create_snap_to_grid_checkbox(p, move_container)
 
-    local show_grid_container = addon.CreateCheckbox(p, "Show Grid", M.db.show_grid == true,
-        function(is_checked)
-            M.db.show_grid = is_checked
-            M.set_grid_visible(is_checked)
-        end)
-    show_grid_container:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -4)
-
-    M.create_move_reset_button(p, show_grid_container, {
+    M.create_move_reset_button(p, snap_container, {
         width = grid.reset_btn_width,
         on_click = function()
             local f = M.frames[show_key]
