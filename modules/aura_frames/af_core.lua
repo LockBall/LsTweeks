@@ -24,7 +24,6 @@ end
 -- TIMER TICKER
 
 
-
 -- Shared ticker update path for all visible aura icon objects.
 -- Runs from af_main.lua and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)

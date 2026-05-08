@@ -8,6 +8,7 @@ This file is shared project memory for coding agents working on LsTweeks. Keep i
 - Update it when the current project state changes in a way future agents need to know.
 - Prefer concise, durable notes over session logs or speculative plans.
 - Do not store secrets, personal data, machine-local paths, or temporary scratch notes here.
+- after significant changes, provide a concise git commit message
 - Lua 5.1 tools are installed at `C:\Program Files (x86)\Lua\5.1\`; this path is not always on PATH. Use `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>` for syntax checks.
 
 ## What This AddOn Is
@@ -158,7 +159,7 @@ When aura-frame reset replaces `M.db.custom_frames`, `af_main.lua` removes orpha
 
 `af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
-Preset/custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua`. Highlander rule: there can be only one placement path unless the layouts genuinely diverge. Preset/custom binding closures stay local because preset controls write to `M.db` with extra frame/test-aura behavior, while custom controls write to the custom `entry`.
+Preset, CDM-backed preset, and custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua` and the local superset builder `build_frame_settings_panel(parent, frame_config, opts)` in `af_gui_frame_builders.lua`. CDM frames are preset categories (`essential`, `utility`, `tracked_buffs`, `tracked_bars`) with extra controls layered into the shared builder through `opts.build_source_controls`. `frame_config.keys` normalizes preset suffixed DB keys and custom flat entry keys into logical names (`show`, `move`, `timer`, `bg`, `scale`, etc.). Keep shared presentation controls in this builder; use small `opts` hooks only for real source-specific capabilities such as CDM controls, custom frame naming, static timer hiding, and source-specific update/reload callbacks.
 
 Preset and custom content panels each use `place_at(control, row, column, slot, opts)` with a 4-column grid:
 - `col_gap=150`, `col_offset=-20` → `grid[1]=-20`, `grid[2]=130`, `grid[3]=280`, `grid[4]=430`
