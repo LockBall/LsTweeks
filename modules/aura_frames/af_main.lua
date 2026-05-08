@@ -159,12 +159,16 @@ local function run_wow_cooldown_refresh(refresh_config)
     if not M.frames then return end
     if refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer then
         for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-            M.prepare_blizz_cdm_viewer(category)
+            if M.cdm_category_needs_viewer(category) then
+                M.prepare_blizz_cdm_viewer(category)
+            end
         end
     end
     if refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache then
         for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-            M.clear_cooldown_viewer_child_cache(category)
+            if M.cdm_category_needs_viewer(category) then
+                M.clear_cooldown_viewer_child_cache(category)
+            end
         end
     end
     for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
