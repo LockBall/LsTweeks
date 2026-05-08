@@ -186,6 +186,17 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     -- For custom frames, keys are stored inside the entry table, not in the flat DB.
     local cfg_db = is_custom and custom_entry or db
+    if not cfg_db then return end
+    local activity = M.get_frame_activity_state(self, show_key, move_key)
+    local is_moving = activity.moving == true
+    local preview_enabled = activity.test_aura == true
+    if not activity.enabled then
+        self:Hide()
+        if self.title_bar then self.title_bar:Hide() end
+        if self.bottom_title_bar then self.bottom_title_bar:Hide() end
+        if self.resizer then self.resizer:Hide() end
+        return
+    end
 
     local bar_bg_alpha  = M.BAR_BG_ALPHA_DEFAULT
     local bar_mode_key  = self._bar_mode_key or ("bar_mode_" .. category)
@@ -208,8 +219,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
     local in_combat = InCombatLockdown and InCombatLockdown()
     local is_user_positioning = self._is_user_positioning == true
-    local show_val  = cfg_db[show_key] ~= nil and cfg_db[show_key] or cfg_db["show"]
-    local preview_enabled = show_val and (cfg_db["test_aura_" .. category] or cfg_db["test_aura"])
 
     local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
     if not in_combat and not is_user_positioning then
@@ -240,13 +249,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
 
-    local is_moving = cfg_db[move_key] ~= nil and cfg_db[move_key] or cfg_db["move"]
-
-    if not show_val and not is_moving and not preview_enabled then
-        self:Hide()
-        return
-    end
-
     if is_moving then
         self.title_bar:Show()
         self.bottom_title_bar:Show()
@@ -257,42 +259,27 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         self.resizer:Hide()
     end
 
-    if is_moving and not show_val and not preview_enabled then
-        local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
-        local bar_layout = M.get_bar_layout_params(timer_font_size)
-        local min_height
-        if bar_mode then
-            min_height = (bar_layout.row_height or 18) + spacing + 12
-        else
-            local timer_h  = layout_show_timer_text and 12 or 0
-            local bot_pad  = layout_show_timer_text and 14 or 12
-            min_height = 32 + timer_h + bot_pad
-        end
-        if not in_combat and not is_user_positioning then
-            M.set_height_for_growth(self, min_height, growth)
-        end
-        self:Show()
-        return
+    self:Show()
+    if activity.needs_cdm_viewer and M.prepare_blizz_cdm_viewer then
+        M.prepare_blizz_cdm_viewer(category)
     end
-
-    if show_val or preview_enabled then self:Show() end
 
     if not self._aura_map then self._aura_map = {} end
     self._sorted_ids_cache = nil
 
     -- Run the unified scan once per dirty event batch, then let the other
     -- preset frames in the same deferred batch reuse M._aura_map.
-    if (not is_custom) and M._aura_scan_dirty then
+    if activity.needs_shared_scan and M._aura_scan_dirty then
         M.unified_scan(info, short_threshold, 0, 0)
         M._aura_scan_dirty = false
     end
 
     -- Filter the shared map into this frame's per-frame map.
     wipe(self._aura_map)
-    if is_custom then
+    if activity.needs_custom_scan then
         M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
     else
-        if WOW_COOLDOWN_CATEGORIES[category] then
+        if activity.needs_cdm_scan then
             M.add_cooldown_viewer_category_entries(self._aura_map, category)
         else
             -- Preset frame: match by category string.
@@ -341,16 +328,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    if show_val or preview_enabled then
-        self:Show()
-        if not in_combat and not is_user_positioning then
-            M.set_height_for_growth(self, new_height, growth)
-        end
-    elseif not is_moving then
-        self:Hide()
+    self:Show()
+    if not in_combat and not is_user_positioning then
+        M.set_height_for_growth(self, new_height, growth)
     end
 
-    if (show_val or preview_enabled) and not self:IsVisible() then self:Show() end
+    if not self:IsVisible() then self:Show() end
 
     local is_bg_enabled = cfg_db[bg_key] ~= nil and cfg_db[bg_key] or cfg_db["bg"]
     if is_moving then

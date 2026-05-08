@@ -112,6 +112,7 @@ Preset categories: `static`, `short`, `long`, `essential`, `utility`, `tracked_b
 `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by live WoW Cooldown Manager viewers.
 Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, GUI labels, CDM viewer names, preset key names, and test-aura labels from that table instead of adding separate hardcoded category lists.
 Shared Aura Frames behavioral defaults live in `af_defaults.lua` as named constants, including frame width limits, default/max icons, short-threshold fallback, default timer font key, and CDM out-of-combat alpha. Runtime fallbacks and GUI limits should reference those constants rather than repeating numeric/string literals.
+Aura frame processing is enabled-rooted. `show/enabled` is the first activity gate for preset and custom frames; disabled frames must not do move-shell work, test-aura work, aura/custom/CDM scans, render, layout, or CDM viewer prep. Use `M.get_frame_activity_state()` for runtime activity decisions and `M.cdm_category_needs_viewer()` for CDM prep decisions.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.

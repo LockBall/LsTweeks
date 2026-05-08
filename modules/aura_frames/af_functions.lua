@@ -193,6 +193,59 @@ function M.get_setting(cfg_db, category, key, fallback)
     return fallback
 end
 
+local function read_frame_bool(cfg_db, category, key)
+    if not key then return false end
+    if cfg_db and cfg_db[key] ~= nil then
+        return cfg_db[key] == true
+    end
+    if category and cfg_db and cfg_db[key .. "_" .. category] ~= nil then
+        return cfg_db[key .. "_" .. category] == true
+    end
+    if category and M.db and M.db[key .. "_" .. category] ~= nil then
+        return M.db[key .. "_" .. category] == true
+    end
+    if M.db and M.db[key] ~= nil then
+        return M.db[key] == true
+    end
+    return false
+end
+
+function M.get_frame_activity_state(frame, show_key, move_key)
+    local category = frame and frame.category
+    local cfg_db = M.get_frame_config_db(frame)
+    local is_custom = frame and frame.is_custom == true
+    local is_cdm = category and M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] == true
+    local enabled_key = is_custom and "show" or show_key
+    local moving_key = is_custom and "move" or move_key
+    local test_key = is_custom and "test_aura" or (category and ("test_aura_" .. category))
+    local enabled = read_frame_bool(cfg_db, category, enabled_key)
+
+    return {
+        enabled = enabled,
+        moving = enabled and read_frame_bool(cfg_db, category, moving_key),
+        test_aura = enabled and read_frame_bool(cfg_db, category, test_key),
+        is_custom = is_custom,
+        is_cdm = is_cdm,
+        needs_shared_scan = enabled and not is_custom,
+        needs_custom_scan = enabled and is_custom,
+        needs_cdm_viewer = enabled and is_cdm,
+        needs_cdm_scan = enabled and is_cdm,
+        should_show_frame = enabled,
+    }
+end
+
+function M.cdm_category_needs_viewer(category)
+    if not (category and M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category]) then
+        return false
+    end
+    local keys = M.get_preset_keys(category)
+    local frame = M.frames and M.frames[keys.show_key]
+    if not frame then
+        return M.db and M.db[keys.show_key] == true
+    end
+    return M.get_frame_activity_state(frame, keys.show_key, keys.move_key).needs_cdm_viewer == true
+end
+
 function M.mark_aura_scan_dirty()
     M._aura_scan_dirty = true
     M.clear_custom_aura_scan_cache()
