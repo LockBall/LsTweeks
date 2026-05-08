@@ -189,7 +189,7 @@ end
 -- AURA INFO MERGING
 
 -- Merge UNIT_AURA payloads while a deferred scan is pending.
--- Blizzard can fire multiple UNIT_AURA events inside the 0.1s bucket window;
+-- Blizzard can fire multiple UNIT_AURA events inside the shared aura bucket window;
 -- we need to union their added/updated/removed IDs so no aura changes are lost.
 function M.merge_aura_info(dst, src)
     if not src then return dst end

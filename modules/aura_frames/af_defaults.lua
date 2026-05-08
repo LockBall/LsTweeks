@@ -28,6 +28,8 @@ M.CDM_VIEWER_FRAMES = M.CDM_VIEWER_FRAMES or {
     tracked_bars  = "BuffBarCooldownViewer",
 }
 
+M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
+
 M.CUSTOM_AURA_BASE_FILTERS = {
     { value = "HELPFUL", text = "HELPFUL" },
     { value = "HARMFUL", text = "HARMFUL" },

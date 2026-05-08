@@ -13,6 +13,19 @@ addon.UI_THEME = {
     font_body     = "GameFontNormal",
 }
 
+-- Shared timing buckets. Runtime code should choose a named bucket/profile
+-- instead of scattering raw debounce or refresh intervals.
+addon.UPDATE_INTERVALS = {
+    next_frame = 0,
+    tenth_sec = 0.1,
+    fifth_sec = 0.2,
+    half_sec = 0.5,
+    six_tenths_sec = 0.6,
+    one_point_two_sec = 1.2,
+    two_point_five_sec = 2.5,
+    five_sec = 5.0,
+}
+
 function addon.get_version()
     if not addon.version and C_AddOns and C_AddOns.GetAddOnMetadata then
         addon.version = C_AddOns.GetAddOnMetadata(addon_name, "Version")

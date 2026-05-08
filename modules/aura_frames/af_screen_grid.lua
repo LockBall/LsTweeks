@@ -5,6 +5,7 @@ local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
+local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 
 local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
 local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)
@@ -78,7 +79,7 @@ function M.create_grid_overlay()
     overlay:SetFrameLevel(0)
     overlay:Hide()
     M.grid_overlay = overlay
-    C_Timer.After(0, function()
+    C_Timer.After(UPDATE_INTERVALS.next_frame, function()
         build_grid_lines()
         if M.db and M.db.show_grid then overlay:Show() end
     end)

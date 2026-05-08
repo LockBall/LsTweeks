@@ -1,7 +1,7 @@
 -- Bootstrap and frame construction for the aura frames module
 -- loads last so all other af_* files have already populated M.
 -- Creates preset and custom aura frames with their icon pools,
--- wires UNIT_AURA events with the 0.1s deferred bucket, starts the ticker, and registers the settings tab.
+-- buckets UNIT_AURA events, starts the timer ticker, and registers the settings tab.
 
 local addon_name, addon = ...
 local M = addon.aura_frames
@@ -24,26 +24,39 @@ local WOW_COOLDOWN_SHOW_KEYS = {
 }
 
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
+local UPDATE_INTERVALS = M.UPDATE_INTERVALS
+local NEXT_FRAME_INTERVAL = UPDATE_INTERVALS.next_frame
 
 local WOW_COOLDOWN_REFRESH_PROFILES = {
     immediate = {
-        delays = { 0 },
+        delays = { UPDATE_INTERVALS.next_frame },
         prepare_viewers = false,
         clear_child_cache = true,
     },
     hook = {
-        delays = { 0 },
+        delays = { UPDATE_INTERVALS.next_frame },
         prepare_viewers = false,
         clear_child_cache = false,
         defer_zero = true,
     },
     startup = {
-        delays = { 0.2, 0.6, 1.2, 2.5, 5.0 },
+        delays = {
+            UPDATE_INTERVALS.fifth_sec,
+            UPDATE_INTERVALS.six_tenths_sec,
+            UPDATE_INTERVALS.one_point_two_sec,
+            UPDATE_INTERVALS.two_point_five_sec,
+            UPDATE_INTERVALS.five_sec,
+        },
         prepare_viewers = true,
         clear_child_cache = true,
     },
     settings = {
-        delays = { 0, 0.2, 0.6, 1.2 },
+        delays = {
+            UPDATE_INTERVALS.next_frame,
+            UPDATE_INTERVALS.fifth_sec,
+            UPDATE_INTERVALS.six_tenths_sec,
+            UPDATE_INTERVALS.one_point_two_sec,
+        },
         prepare_viewers = true,
         clear_child_cache = true,
     },
@@ -466,10 +479,10 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         if not relevant then return end
 
         -- KEY: do NOT scan inside the event handler.
-        -- ElkBuffBars uses RegisterBucketEvent("UNIT_AURA", 0.1) for exactly this reason:
+        -- ElkBuffBars uses a short RegisterBucketEvent("UNIT_AURA") delay for exactly this reason:
         -- C_UnitAuras calls made directly in OnEvent return "secret values" in combat
         -- because the execution context is still tainted by the event dispatch.
-        -- Deferring via C_Timer.After(0) runs the scan in the next frame update cycle,
+        -- Deferring to the next frame runs the scan after the event context exits,
         -- after the tainted context exits — all fields return clean, readable values.
         --
         -- Merge UNIT_AURA payloads while waiting for the deferred scan.
@@ -485,9 +498,10 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         if not self._scan_pending then
             self._scan_pending = true
             local f = self
-            -- 0.1s matches ElkBuffBars' RegisterBucketEvent("UNIT_AURA", 0.1) delay.
+            -- A tenth second matches ElkBuffBars' short UNIT_AURA bucket and
+            -- coalesces noisy event bursts without making aura changes feel late.
             -- This ensures the scan runs outside the event-dispatch taint window.
-            C_Timer.After(0.1, function()
+            C_Timer.After(UPDATE_INTERVALS.tenth_sec, function()
                 f._scan_pending = false
                 local event_info = f._pending_aura_info
                 f._pending_aura_info = nil
@@ -700,7 +714,7 @@ loader:SetScript("OnEvent", function(self, event, name)
 
         -- Migrate any stored positions to TOPLEFT-anchor format.
         -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
-        C_Timer.After(0, function()
+        C_Timer.After(NEXT_FRAME_INTERVAL, function()
             for _, frame in pairs(M.frames) do
                 local pos = M.get_frame_position_table and M.get_frame_position_table(frame)
                 if pos and pos.point ~= "TOPLEFT" then
@@ -712,9 +726,9 @@ loader:SetScript("OnEvent", function(self, event, name)
             end
         end)
 
-        -- Single shared ticker for all frames at 0.1s (ElkBuffBars rate).
+        -- Timer text and bar fill need smooth tenths; heavier aura scans stay event-bucketed.
         -- Logic is delegated so af_main stays focused on construction/bootstrap.
-        C_Timer.NewTicker(0.1, function()
+        C_Timer.NewTicker(UPDATE_INTERVALS.tenth_sec, function()
             M.tick_visible_icons()
         end)
 

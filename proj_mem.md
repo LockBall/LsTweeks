@@ -59,11 +59,12 @@ Every lua file must open with a brief comment (up to a few sentences) explaining
 - **Module pattern:** `local addon_name, addon = ...` at top of every file; modules share the `addon` namespace table.
 - **Self-registration:** modules call `addon.register_category(name, builder_fn)` to appear in the settings sidebar.
 - **Versioning:** `LsTweeks.toc` is the only version edit point. Runtime display must read through `addon.get_version()`, which caches `C_AddOns.GetAddOnMetadata(addon_name, "Version")`; do not hardcode version fallbacks in Lua/docs.
+- **Timing buckets:** shared timing values live in `addon.UPDATE_INTERVALS` (`core/init.lua`) with generic names such as `tenth_sec`. Repeated runtime behavior should reference those buckets directly, with a nearby comment explaining why that interval fits the work.
 - **DB access:** `Ls_Tweeks_DB.module_key = Ls_Tweeks_DB.module_key or {}` — always guard with `or {}`.
 - **Init pattern:** every module creates a loader frame, registers ADDON_LOADED, and unregisters after first fire.
 - **Hot paths:** cache WoW globals at file top — `local floor = math.floor`, `local GetTime = GetTime`, etc.
 - **Theme constants:** spacing, fonts, widths live in `addon.UI_THEME` (set in `core/init.lua`) — don't hardcode.
-- **Deferred batching:** UNIT_AURA events are bucketed at 0.1s; timer ticker runs at 0.1s.
+- **Deferred batching:** UNIT_AURA events are bucketed with `addon.UPDATE_INTERVALS.tenth_sec`; timer text/bar updates also tick at `tenth_sec` because they are cheap visual updates.
 - **InCombatLockdown:** defer layout/geometry changes; `update_auras()` skips frame scale, anchoring, sizing, layout setup, and height changes during combat. Never call protected WoW API during combat.
 - **Reset contract:** every module must implement `M.on_reset_complete()` to resync controls from DB after reset. Apply defaults via `addon.apply_defaults(defaults, db)`, not manual `or` guards.
 - **Taint safety:** never call Blizzard frame methods (UpdateAuras, UpdateLayout) from addon context — even deferred. Restore events + Show() only and let Blizzard's handlers fire naturally.
@@ -73,7 +74,7 @@ Every lua file must open with a brief comment (up to a few sentences) explaining
 - **One SetPoint per anchor direction per frame** — two TOPLEFT calls on the same frame = conflicting constraint, undefined result.
 - **Never call `frame:GetWidth()` at build time** — returns 0 until the frame is rendered; use hardcoded constants for layout math.
 - **External placement is always one `SetPoint` call** — factory functions must NOT call SetPoint themselves if the caller will place them.
-- **`CreateSliderWithBox` has a built-in 0.1s debounce** — do not add an external debounce in the callback.
+- **`CreateSliderWithBox` has a built-in debounce** via `addon.UPDATE_INTERVALS.tenth_sec` — do not add an external debounce in the callback.
 
 ## Saved Variables — Known Keys
 ```
@@ -113,7 +114,9 @@ DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static
 Positions are stored under `aura_frames.positions.<category>`.
 First-install/default visible frames are only the four player-aura presets: `static`, `short`, `long`, and `debuff`. CDM-backed defaults keep `show_*`, `move_*`, and `test_aura_*` false so they do not appear as live frames, empty movable frames, or previews until enabled by the user.
 
-CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Use the named profiles (`"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
+CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Its local profile table uses `addon.UPDATE_INTERVALS` buckets for the retry delays. Use the named profiles (`"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
+
+Within `modules/aura_frames`, refresh/debounce scheduling must not hardcode raw timing numbers. `C_Timer.After`, `C_Timer.NewTicker`, and `C_Timer.NewTimer` calls should use `M.UPDATE_INTERVALS` directly, or receive a delay from the centralized CDM scheduler. Numeric values are still fine for non-timing data such as slider steps, alpha/color values, layout math, and test-aura duration settings.
 
 Custom aura frames are filter-driven, not whitelist-driven. Each custom frame has the same main settings grid as preset categories, plus a `Filters` child node with two dropdowns rendered as `HELPFUL | MODIFIER` or `HARMFUL | MODIFIER`. Modifier `"NONE"` omits the suffix. Some modifiers force the base (`CANCELABLE`, `NOT_CANCELABLE`, `BIG_DEFENSIVE`, `EXTERNAL_DEFENSIVE` -> `HELPFUL`; `CROWD_CONTROL`, `RAID_PLAYER_DISPELLABLE` -> `HARMFUL`). Custom frames scan only when enabled/previewed with `C_UnitAuras.GetAuraDataByIndex("player", index, M.get_custom_aura_filter(entry))` from `af_scan.lua`, tag entries with `custom_order`, and render in selected-filter scan order instead of the preset time/name sort path. Runtime call-chain variables use `aura_filter` for the selected AuraFilters string. Custom scans are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; `af_main.lua` clears that cache on aura-affecting events.
 
@@ -151,7 +154,7 @@ Drag/resize interaction state is centralized with `M.start_frame_drag()` / `M.st
 | Function | Key args | Notes |
 |---|---|---|
 | `CreateCheckbox(parent, label, checked, cb)` | returns container, checkbox, label | container width is dynamic |
-| `CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb)` | returns container (130×95) | has built-in 0.1s debounce; `container.slider` exposed |
+| `CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb)` | returns container (130×95) | has built-in `addon.UPDATE_INTERVALS.tenth_sec` debounce; `container.slider` exposed |
 | `CreateDropdown(name, parent, label, options, cfg)` | cfg: width, row_height, get_value, on_select | custom popup |
 | `M.CreateListDropdown(name, parent, label, opts, get_val, on_sel, width)` | returns dropdown | af_gui wrapper with font support |
 | `CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)` | integrated reset | container is 95×45 |
