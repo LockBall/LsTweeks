@@ -240,6 +240,158 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     M.controls[labels.color_control_key or ("timer_color_picker_" .. control_prefix)] = timer_color_picker
 end
 
+local function create_frame_position_controls(parent, frame_config, grid, update, options)
+    local id = frame_config.id
+    local frame_show_key = options.frame_show_key or frame_config.frame_show_key
+    local show_key = frame_setting_key(frame_config, "show")
+    local move_key = frame_setting_key(frame_config, "move")
+    local width_key = frame_setting_key(frame_config, "width")
+    local scale_key = options.scale_key or frame_config.scale_key
+    local value_table = frame_config.value_table
+    local defaults_table = frame_config.defaults_table
+    local position_table = frame_config.position_table
+    local default_position = frame_config.default_position
+    local control_prefix = options.control_prefix or id
+
+    local function update_frame_position(axis, value)
+        local f = M.frames[frame_show_key]
+        if f and value ~= nil then
+            M.set_saved_frame_position_axis(f, axis, value, scale_key)
+        end
+    end
+
+    local move_container, move_cb = create_bound_checkbox_control(
+        parent,
+        "Move Mode",
+        value_table,
+        move_key,
+        grid,
+        1,
+        1,
+        options.move_control_key,
+        function(is_checked)
+            if is_checked then
+                local enable_cb = M.controls and M.controls[options.show_control_key]
+                if enable_cb and enable_cb.SetChecked and not enable_cb:GetChecked() then
+                    enable_cb:SetChecked(true)
+                    value_table[show_key] = true
+                end
+            end
+            update()
+        end,
+        update
+    )
+
+    local x_slider = addon.CreateSliderWithBox(
+        addon_name .. id .. (options.x_name_suffix or "XPos"),
+        parent,
+        "X Position",
+        -1000,
+        1000,
+        1,
+        position_table,
+        "x",
+        default_position
+    )
+    x_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("x", value)
+    end)
+    if options.x_control_key then M.controls[options.x_control_key] = x_slider end
+
+    local y_slider = addon.CreateSliderWithBox(
+        addon_name .. id .. (options.y_name_suffix or "YPos"),
+        parent,
+        "Y Position",
+        -1000,
+        1000,
+        1,
+        position_table,
+        "y",
+        default_position
+    )
+    y_slider.slider:HookScript("OnValueChanged", function(_, value)
+        update_frame_position("y", value)
+    end)
+    if options.y_control_key then M.controls[options.y_control_key] = y_slider end
+
+    local width_slider = create_frame_slider(
+        parent,
+        frame_config,
+        options.width_name_suffix or "Width",
+        "Width",
+        M.MIN_FRAME_WIDTH,
+        M.MAX_FRAME_WIDTH,
+        1,
+        "width"
+    )
+    width_slider.slider:HookScript("OnValueChanged", function(_, value)
+        local f = M.frames[frame_show_key]
+        if not f then return end
+        f:SetWidth(math.floor(value + 0.5))
+        update()
+    end)
+    if options.width_control_key then M.controls[options.width_control_key] = width_slider end
+
+    grid.place_at(x_slider, 1, 2)
+    grid.place_at(y_slider, 1, 3)
+    grid.place_at(width_slider, 1, 4)
+
+    local snap_container = create_snap_to_grid_checkbox(parent, move_container)
+
+    M.create_move_reset_button(parent, snap_container, {
+        width = grid.reset_btn_width,
+        on_click = function()
+            local f = M.frames[frame_show_key]
+            if not f then return end
+            M.reset_frame_move_placement(f, {
+                default_position = default_position,
+                default_width = defaults_table[width_key] or M.DEFAULT_FRAME_WIDTH,
+                width_table = value_table,
+                width_key = width_key,
+                scale_key = scale_key,
+                x_slider = x_slider,
+                y_slider = y_slider,
+                width_slider = width_slider,
+                update = update,
+            })
+        end,
+    })
+
+    local function sync_xy_sliders_to_frame()
+        local f = M.frames[frame_show_key]
+        if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
+        local pos = M.get_frame_position_table(f) or position_table
+        if pos and pos.x ~= nil and pos.y ~= nil then
+            x_slider.slider:SetValue(pos.x)
+            y_slider.slider:SetValue(pos.y)
+        end
+    end
+
+    if options.sync_on_drag_stop then
+        local f = M.frames[frame_show_key]
+        if f then
+            for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
+                if tb then
+                    local old_drag_stop = tb:GetScript("OnDragStop")
+                    tb:SetScript("OnDragStop", function(...)
+                        if old_drag_stop then old_drag_stop(...) end
+                        sync_xy_sliders_to_frame()
+                    end)
+                end
+            end
+        end
+    end
+
+    return {
+        move_container = move_container,
+        move_checkbox = move_cb,
+        x_slider = x_slider,
+        y_slider = y_slider,
+        width_slider = width_slider,
+        sync_xy_sliders_to_frame = sync_xy_sliders_to_frame,
+    }
+end
+
 function M.build_aura_id_tab(p)
     local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
@@ -347,50 +499,6 @@ function M.build_preset_frame_panel(p, data)
         return create_frame_slider(p, frame_config, name_suffix, label, min_v, max_v, step, logical_key, on_change or update)
     end
 
-    -- Width slider — defined early so it can be placed in Row 1.
-    local width_slider = create_bound_slider("WidthSlider", "Width", M.MIN_FRAME_WIDTH, M.MAX_FRAME_WIDTH, 1, "width")
-    width_slider.slider:HookScript("OnValueChanged", function(_, value)
-        local f = M.frames[data.show_key]
-        if not f then return end
-        f:SetWidth(math.floor(value + 0.5))
-        update()
-    end)
-    M.controls["width_slider_"..cat] = width_slider
-
-    -- X/Y Position sliders — defined early so Row 1 and move_reset can reference them.
-    local function update_frame_position(axis, value)
-        local f = M.frames[data.show_key]
-        if f and value ~= nil then
-            M.set_saved_frame_position_axis(f, axis, value, data.scale_key)
-        end
-    end
-
-    local x_slider = addon.CreateSliderWithBox(
-        addon_name..cat.."XPosSlider",
-        p,
-        "X Position",
-        -1000, 1000, 1,
-        frame_config.position_table, "x", frame_config.default_position
-    )
-    x_slider.slider:HookScript("OnValueChanged", function(_, value)
-        update_frame_position("x", value)
-    end)
-    M.controls["x_pos_slider_"..cat] = x_slider
-
-    local y_slider = addon.CreateSliderWithBox(
-        addon_name..cat.."YPosSlider",
-        p,
-        "Y Position",
-        -1000, 1000, 1,
-        frame_config.position_table, "y", frame_config.default_position
-    )
-    y_slider.slider:HookScript("OnValueChanged", function(_, value)
-        update_frame_position("y", value)
-    end)
-    M.controls["y_pos_slider_"..cat] = y_slider
-
-    -- Row 1
-
     local function check_enable_frame()
         if not M.db[data.show_key] then
             M.db[data.show_key] = true
@@ -399,53 +507,29 @@ function M.build_preset_frame_panel(p, data)
         end
     end
 
-    -- move mode
-    local move_mode_container, move_cb = create_bound_checkbox("Move Mode", data.move_key, 1, 1, function(is_checked)
-        if is_checked then
-            -- Also check Enable Frame if not already checked
-            local enable_cb = M.controls and M.controls[data.show_key]
-            if enable_cb and enable_cb.SetChecked and not enable_cb:GetChecked() then
-                enable_cb:SetChecked(true)
-                M.db[data.show_key] = true
-            end
-        end
-        update()
-    end)
+    -- Row 1
+    local position_controls = create_frame_position_controls(p, frame_config, grid, update, {
+        frame_show_key = data.show_key,
+        scale_key = data.scale_key,
+        show_control_key = data.show_key,
+        move_control_key = data.move_key,
+        x_control_key = "x_pos_slider_" .. cat,
+        y_control_key = "y_pos_slider_" .. cat,
+        width_control_key = "width_slider_" .. cat,
+        x_name_suffix = "XPosSlider",
+        y_name_suffix = "YPosSlider",
+        width_name_suffix = "WidthSlider",
+        sync_on_drag_stop = true,
+    })
 
     local function uncheck_frame_dependents()
         if M.db[data.move_key] then
             M.db[data.move_key] = false
-            if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
+            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
+                position_controls.move_checkbox:SetChecked(false)
+            end
         end
     end
-
-    place_at(x_slider, 1, 2)
-    place_at(y_slider, 1, 3)
-    place_at(width_slider, 1, 4)
-
-    -- Snap to Grid: global toggle stacked below Move Mode.
-    -- Show Grid lives once at the bottom of the frames tree.
-    local snap_container = create_snap_to_grid_checkbox(p, move_mode_container)
-
-    -- move Reset: resets placement/width only, leaving Move Mode unchanged.
-    M.create_move_reset_button(p, snap_container, {
-        width = grid.reset_btn_width,
-        on_click = function()
-            local f = M.frames[data.show_key]
-            if not f then return end
-            M.reset_frame_move_placement(f, {
-                default_position = frame_config.default_position,
-                default_width = frame_config.defaults_table[frame_setting_key(frame_config, "width")] or M.DEFAULT_FRAME_WIDTH,
-                width_table = frame_config.value_table,
-                width_key = frame_setting_key(frame_config, "width"),
-                scale_key = frame_config.scale_key,
-                x_slider = x_slider,
-                y_slider = y_slider,
-                width_slider = width_slider,
-                update = update,
-            })
-        end,
-    })
 
     add_row_separator(1)
 
@@ -532,31 +616,6 @@ function M.build_preset_frame_panel(p, data)
     -- Growth Direction dropdown in row 3, col 4, vertically centered
     place_at(M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction", frame_setting_key(frame_config, "growth"), update), 3, 4, "dropdown", { y_offset = -15 })
 
-    -- Sync X/Y sliders to the frame's current position (called after a drag).
-    -- Defined here so it closes over x_slider/y_slider/cat.
-    local function sync_xy_sliders_to_frame()
-        local f = M.frames[data.show_key]
-        if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
-        local pos = M.db.positions and M.db.positions[cat]
-        if pos and pos.x and pos.y then
-            x_slider.slider:SetValue(pos.x)
-            y_slider.slider:SetValue(pos.y)
-        end
-    end
-
-    -- Hook both title bars so dragging from either handle syncs the sliders.
-    local f = M.frames[data.show_key]
-    if f then
-        for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
-            if tb then
-                local old_drag_stop = tb:GetScript("OnDragStop")
-                tb:SetScript("OnDragStop", function(...)
-                    if old_drag_stop then old_drag_stop(...) end
-                    sync_xy_sliders_to_frame()
-                end)
-            end
-        end
-    end
 end
 
 
@@ -608,68 +667,16 @@ function M.build_custom_settings_panel(p, entry)
         return create_frame_color_picker(p, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
     end
 
-    local pos = frame_config.position_table
-
-    local function update_frame_position(axis, value)
-        local f = M.frames[show_key]
-        if f and value ~= nil then
-            M.set_saved_frame_position_axis(f, axis, value, "scale")
-        end
-    end
-
-    local move_container, move_cb = bound_cb("Move Mode", frame_setting_key(frame_config, "move"), 1, 1, function(is_checked)
-        if is_checked then
-            local en_cb = M.controls["custom_" .. id .. "_" .. frame_setting_key(frame_config, "show")]
-            if en_cb and en_cb.SetChecked and not en_cb:GetChecked() then
-                en_cb:SetChecked(true)
-                frame_config.value_table[frame_setting_key(frame_config, "show")] = true
-            end
-        end
-        update()
-    end)
-
-    local x_slider = addon.CreateSliderWithBox(addon_name..id.."XPos", p, "X Position", -1000, 1000, 1, pos, "x", { x = 0 })
-    x_slider.slider:HookScript("OnValueChanged", function(_, value)
-        update_frame_position("x", value)
-    end)
-    place_at(x_slider, 1, 2)
-
-    local y_slider = addon.CreateSliderWithBox(addon_name..id.."YPos", p, "Y Position", -1000, 1000, 1, pos, "y", { y = 50 })
-    y_slider.slider:HookScript("OnValueChanged", function(_, value)
-        update_frame_position("y", value)
-    end)
-    place_at(y_slider, 1, 3)
-
-    local width_slider = create_frame_slider(p, frame_config, "Width", "Width", M.MIN_FRAME_WIDTH, M.MAX_FRAME_WIDTH, 1, "width")
-    width_slider.slider:HookScript("OnValueChanged", function(_, value)
-        local f = M.frames[show_key]
-        if f then
-            f:SetWidth(math.floor(value + 0.5))
-            update()
-        end
-    end)
-    M.controls["custom_" .. id .. "_width"] = width_slider
-    place_at(width_slider, 1, 4)
-
-    local snap_container = create_snap_to_grid_checkbox(p, move_container)
-
-    M.create_move_reset_button(p, snap_container, {
-        width = grid.reset_btn_width,
-        on_click = function()
-            local f = M.frames[show_key]
-            if not f then return end
-            M.reset_frame_move_placement(f, {
-                default_position = frame_config.default_position,
-                default_width = frame_config.defaults_table[frame_setting_key(frame_config, "width")],
-                width_table = frame_config.value_table,
-                width_key = frame_setting_key(frame_config, "width"),
-                scale_key = frame_config.scale_key,
-                x_slider = x_slider,
-                y_slider = y_slider,
-                width_slider = width_slider,
-                update = update,
-            })
-        end,
+    local position_controls = create_frame_position_controls(p, frame_config, grid, update, {
+        frame_show_key = show_key,
+        scale_key = frame_config.scale_key,
+        show_control_key = "custom_" .. id .. "_" .. frame_setting_key(frame_config, "show"),
+        move_control_key = "custom_" .. id .. "_" .. frame_setting_key(frame_config, "move"),
+        width_control_key = "custom_" .. id .. "_width",
+        x_name_suffix = "XPos",
+        y_name_suffix = "YPos",
+        width_name_suffix = "Width",
+        sync_on_drag_stop = true,
     })
 
     add_row_separator(1)
@@ -677,7 +684,9 @@ function M.build_custom_settings_panel(p, entry)
     local enable_container, enable_cb = bound_cb("Enable Frame", frame_setting_key(frame_config, "show"), 2, 1, function(is_checked)
         if not is_checked then
             frame_config.value_table[frame_setting_key(frame_config, "move")] = false
-            if move_cb and move_cb.SetChecked then move_cb:SetChecked(false) end
+            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
+                position_controls.move_checkbox:SetChecked(false)
+            end
         end
         update()
     end)
