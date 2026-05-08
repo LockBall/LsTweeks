@@ -155,6 +155,91 @@ local function create_frame_slider(parent, frame_config, name_suffix, label, min
     )
 end
 
+local function create_frame_timer_controls(parent, frame_config, grid, update, labels)
+    local id = frame_config.id
+    local control_prefix = labels.control_prefix or id
+    local dropdown_name = labels.dropdown_name or (addon_name .. id .. "TimerFont")
+    local font_size_name = labels.font_size_name or (addon_name .. id .. "TimerFontSize")
+    local timer_text_key = frame_setting_key(frame_config, "timer")
+    local timer_font_key = frame_setting_key(frame_config, "timer_number_font")
+    local timer_font_size_key = frame_setting_key(frame_config, "timer_number_font_size")
+    local timer_bold_key = frame_setting_key(frame_config, "timer_number_font_bold")
+    local timer_color_key = frame_setting_key(frame_config, "timer_color")
+
+    local function refresh_fonts()
+        M.apply_number_font_to_all()
+        update()
+    end
+
+    local timer_text_container = create_bound_checkbox_control(
+        parent,
+        labels.timer_text_label or "Timer Text",
+        frame_config.value_table,
+        timer_text_key,
+        grid,
+        4,
+        1,
+        labels.timer_text_control_key,
+        nil,
+        update
+    )
+
+    local timer_bold_container = create_bound_checkbox_control(
+        parent,
+        labels.bold_label or "Bold",
+        frame_config.value_table,
+        timer_bold_key,
+        grid,
+        4,
+        1,
+        labels.bold_control_key,
+        refresh_fonts,
+        update
+    )
+    timer_bold_container:ClearAllPoints()
+    timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
+
+    local timer_font = M.CreateListDropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
+        function()
+            return frame_config.value_table[timer_font_key] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+        end,
+        function(value)
+            frame_config.value_table[timer_font_key] = value
+            refresh_fonts()
+        end,
+        labels.font_dropdown_width or 120
+    )
+    grid.place_at(timer_font, 4, 2, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
+    M.controls[labels.font_control_key or ("timer_number_font_dropdown_" .. control_prefix)] = timer_font
+
+    local font_size_slider = addon.CreateSliderWithBox(
+        font_size_name,
+        parent,
+        labels.font_size_label or "Font Size",
+        8,
+        14,
+        0.5,
+        frame_config.value_table,
+        timer_font_size_key,
+        frame_config.defaults_table,
+        refresh_fonts
+    )
+    grid.place_at(font_size_slider, 4, 3)
+    M.controls[labels.font_size_control_key or ("timer_number_font_size_slider_" .. control_prefix)] = font_size_slider
+
+    local timer_color_picker = addon.CreateColorPicker(
+        parent,
+        frame_config.value_table,
+        timer_color_key,
+        false,
+        labels.color_label or "Color",
+        frame_config.defaults_table,
+        refresh_fonts
+    )
+    timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
+    M.controls[labels.color_control_key or ("timer_color_picker_" .. control_prefix)] = timer_color_picker
+end
+
 function M.build_aura_id_tab(p)
     local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
@@ -416,46 +501,18 @@ function M.build_preset_frame_panel(p, data)
 
     -- Row 4: Timer Text, Font & Font Size
     if cat ~= "static" then
-        local timer_text_container = create_bound_checkbox("Timer Text", data.timer_key, 4, 1)
-
-        local timer_bold_container = create_bound_checkbox("Bold", frame_setting_key(frame_config, "timer_number_font_bold"), 4, 1, function()
-            M.apply_number_font_to_all()
-            update()
-        end)
-        timer_bold_container:ClearAllPoints()
-        timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
-
-        local timer_font = M.CreateListDropdown(addon_name..cat.."TimerFont", p, "Font", get_timer_font_options(),
-            function()
-                return frame_config.value_table[frame_setting_key(frame_config, "timer_number_font")] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
-            end,
-            function(value)
-                frame_config.value_table[frame_setting_key(frame_config, "timer_number_font")] = value
-                M.apply_number_font_to_all()
-                update()
-            end,
-            120 -- reduced width
-        )
-
-        place_at(timer_font, 4, 2, nil, {width=120, y_offset=-15})
-        M.controls["timer_number_font_dropdown_"..cat] = timer_font
-
-        local font_size_slider = addon.CreateSliderWithBox(addon_name..cat.."TimerFontSizeSlider", p, "Font Size", 8, 14, 0.5, frame_config.value_table, frame_setting_key(frame_config, "timer_number_font_size"),
-            frame_config.defaults_table,
-            function()
-                M.apply_number_font_to_all()
-                update()
-            end
-        )
-        place_at(font_size_slider, 4, 3)
-        M.controls["timer_number_font_size_slider_"..cat] = font_size_slider
-
-        local timer_color_picker = addon.CreateColorPicker(p, frame_config.value_table, frame_setting_key(frame_config, "timer_color"), false, "Color", frame_config.defaults_table, function()
-            M.apply_number_font_to_all()
-            update()
-        end)
-        timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
-        M.controls["timer_color_picker_"..cat] = timer_color_picker
+        create_frame_timer_controls(p, frame_config, grid, update, {
+            control_prefix = cat,
+            dropdown_name = addon_name .. cat .. "TimerFont",
+            font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
+            timer_text_label = "Timer Text",
+            bold_label = "Bold",
+            font_label = "Font",
+            font_size_label = "Font Size",
+            color_label = "Color",
+            font_dropdown_width = 120,
+            font_y_offset = -15,
+        })
     end
 
     add_row_separator(4)
@@ -687,36 +744,18 @@ function M.build_custom_settings_panel(p, entry)
     place_at(growth_dd, 3, 4, "dropdown", { y_offset = -math.floor((grid.row_heights[3] - 24) / 2) })
     add_row_separator(3)
 
-    local timer_text_container = bound_cb("Timer Text", frame_setting_key(frame_config, "timer"), 4, 1)
-    local timer_bold_container = bound_cb("Timer Bold", frame_setting_key(frame_config, "timer_number_font_bold"), 4, 1, function()
-        M.apply_number_font_to_all()
-        update()
-    end)
-    timer_bold_container:ClearAllPoints()
-    timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
-
-    local timer_font_dd = M.CreateListDropdown(addon_name..id.."TimerFont", p, "Timer Font", get_timer_font_options(),
-        function() return frame_config.value_table[frame_setting_key(frame_config, "timer_number_font")] or M.DEFAULT_TIMER_NUMBER_FONT_KEY end,
-        function(value)
-            frame_config.value_table[frame_setting_key(frame_config, "timer_number_font")] = value
-            M.apply_number_font_to_all()
-            update()
-        end, 120)
-    place_at(timer_font_dd, 4, 2, nil, { width = 120, y_offset = -15 })
-
-    local font_size_slider = addon.CreateSliderWithBox(addon_name..id.."TimerFontSize", p, "Timer Font Size",
-        8, 14, 0.5, frame_config.value_table, frame_setting_key(frame_config, "timer_number_font_size"), frame_config.defaults_table,
-        function()
-            M.apply_number_font_to_all()
-            update()
-        end)
-    place_at(font_size_slider, 4, 3)
-
-    local timer_color_picker = addon.CreateColorPicker(p, frame_config.value_table, frame_setting_key(frame_config, "timer_color"), false, "Timer Color", frame_config.defaults_table, function()
-        M.apply_number_font_to_all()
-        update()
-    end)
-    timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
+    create_frame_timer_controls(p, frame_config, grid, update, {
+        control_prefix = "custom_" .. id,
+        dropdown_name = addon_name .. id .. "TimerFont",
+        font_size_name = addon_name .. id .. "TimerFontSize",
+        timer_text_label = "Timer Text",
+        bold_label = "Timer Bold",
+        font_label = "Timer Font",
+        font_size_label = "Timer Font Size",
+        color_label = "Timer Color",
+        font_dropdown_width = 120,
+        font_y_offset = -15,
+    })
     add_row_separator(4)
 
     local scale_slider = create_frame_slider(p, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
