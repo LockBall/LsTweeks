@@ -1,7 +1,8 @@
--- Renders the current aura_map into visible icon frames for each category (static / short / long / debuff).
--- render_aura_map() assigns textures, counts, and timer text to pooled icon frames
--- set_timer_text() formats the countdown
--- merge_aura_info() combines pending UNIT_AURA payloads before the deferred scan.
+-- Renders aura maps into pooled icon/bar frames.
+-- render_aura_map() orchestrates list ordering, metadata assignment, visual setup,
+-- timer/bar updates, and unused-icon cleanup through focused helpers.
+-- set_timer_text() formats countdown strings; merge_aura_info() combines pending
+-- UNIT_AURA payloads before the deferred scan.
 
 local addon_name, addon = ...
 
@@ -205,21 +206,18 @@ local function resolve_stack_text(entry, live_count)
     return live_count
 end
 
-local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category)
+local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category, tooltip_enabled)
     obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
-    obj.filter_type     = entry.filter
     obj.aura_name       = entry.name
-    obj.aura_icon       = entry.icon
     obj.aura_duration   = entry.duration
     obj.aura_remaining  = entry.remaining
-    obj.aura_count      = entry.count
     obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
                           and (now + live_remaining)
                           or entry.expiration
     obj.aura_scan_time  = now
     obj.aura_spell_id   = entry.spell_id
     obj.aura_category   = timer_category
-    obj.tooltip_enabled = obj:GetParent() and obj:GetParent()._show_tooltip ~= false
+    obj.tooltip_enabled = tooltip_enabled
     obj.is_test_preview = entry.is_test_preview or false
     obj.is_spell_cooldown = is_spell_cooldown
     obj.grey_cooldown = entry.grey_cooldown == true
@@ -519,7 +517,6 @@ local function hide_unused_icons(icons, first_unused_index)
         obj.is_spell_cooldown = false
         obj.grey_cooldown = false
         obj.aura_index = nil
-        obj.aura_count = nil
         obj.tooltip_enabled = false
         obj._lstweeks_count_text = nil
         set_icon_greyed(obj.texture, false)
@@ -581,8 +578,11 @@ end
 -- ============================================================================
 -- AURA MAP RENDERER
 
--- Render the aura_map into the icon pool. Preset frames use C_UnitAuras.GetUnitAuraInstanceIDs
--- for game-provided sort order; custom frames keep the selected-filter scan order.
+-- Main render orchestrator for one aura frame.
+-- Order is intentional: build/sort the display list, resolve per-entry live timing,
+-- assign tooltip/ticker metadata, configure icon/bar visuals,
+-- update timer text/bar progress, then hide unused pooled icons.
+-- Keep source-specific decisions inside the helpers so this function remains a readable control flow.
 function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, aura_filter, sort_mode, show_timer_text, bar_text_color)
     local list = build_render_list(self, aura_map, aura_filter, sort_mode)
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
@@ -590,6 +590,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local is_static_frame = (self.category == "static")
     local show_cooldown_overlay = self._show_cooldown_overlay == true
     local show_render_timer_text = show_timer_text and not show_cooldown_overlay
+    local tooltip_enabled = self._show_tooltip ~= false
 
     for i = 1, display_count do
         local obj   = self.icons[i]
@@ -600,7 +601,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local live_duration, live_remaining, cooldown_duration =
             resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
 
-        assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category)
+        assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category, tooltip_enabled)
 
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         local stack_text = resolve_stack_text(entry, live_count)
