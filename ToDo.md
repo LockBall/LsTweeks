@@ -8,16 +8,6 @@
 
 ## 2. Repeated / Duplicate Code
 
-### 2c. `af_gui_frame_builders.lua` — growth direction dropdown rebuilt inline for custom frames
-`build_preset_frame_panel` uses:
-```lua
-M.CreateDirectionDropdown(addon_name..cat.."Growth", p, "Growth Direction",
-    frame_setting_key(frame_config, "growth"), update)
-```
-`build_custom_settings_panel` manually duplicates the direction list and calls `addon.CreateDropdown` directly with its own `get_value`/`on_select`. `CreateDirectionDropdown` only hard-codes `M.db[db_key]`; the custom variant needs to read from `frame_config.value_table[key]` instead. The solution is either a `value_table` parameter on `CreateDirectionDropdown`, or a shared `make_growth_dropdown(name, parent, get_value, on_select)` local.
-
----
-
 ### 2d. Title-bar name update is written in two places
 **`af_gui_frame_builders.lua:577–587`** — `update_custom_frame_title(entry)`:
 ```lua
@@ -159,7 +149,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 2c | `af_gui_frame_builders.lua` | Repeated — growth dropdown rebuilt inline | Low |
 | 2d | `af_gui_tree.lua` / `af_gui_frame_builders.lua` | Repeated — title bar rename logic | Low |
 | 2e | `af_main.lua` | Repeated — 3 loops over same category list | Low |
 | 3a | `af_core.lua:294` | Inconsistent — local vs module table guard | Low |
