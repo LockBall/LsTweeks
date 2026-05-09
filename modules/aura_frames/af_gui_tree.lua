@@ -20,12 +20,7 @@ function M.build_frames_tab(p, frames_data)
     local ROW_H          = 15
     local ARROW_W        = 18
     local INDENT_CHILD   = 12
-    local CD_GROUP_KEYS  = {
-        essential = true,
-        utility = true,
-        tracked_buffs = true,
-        tracked_bars = true,
-    }
+    local cooldown_group_keys = M.WOW_COOLDOWN_CATEGORIES
     local GROUP_BOX_INSET = PAD - 2
     local GROUP_INNER_PAD = 6
     local GROUP_ELEMENT_GAP = 1
@@ -538,7 +533,7 @@ function M.build_frames_tab(p, frames_data)
     y = y - (GROUP_INNER_PAD + GROUP_TEXT_TITLE_H + GROUP_ELEMENT_GAP)
     for _, data in ipairs(frames_data) do
         local cat = data.show_key:sub(6)
-        if CD_GROUP_KEYS[cat] and not cooldown_group_top_y then
+        if cooldown_group_keys[cat] and not cooldown_group_top_y then
             buffs_group_bottom_y = y
             y = y - (GROUP_GAP + GROUP_INNER_PAD)
             y = y - CD_GROUP_LABEL_H
@@ -550,7 +545,7 @@ function M.build_frames_tab(p, frames_data)
         local cat_w = TREE_W - cat_x - PAD
         local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
         cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
-        cat_fs._group_key = CD_GROUP_KEYS[cat] and "cooldown" or "buffs"
+        cat_fs._group_key = cooldown_group_keys[cat] and "cooldown" or "buffs"
         node_fs_map[cat] = cat_fs
         cat_btn:SetScript("OnClick", function()
             set_selected(cat_fs)
@@ -558,7 +553,7 @@ function M.build_frames_tab(p, frames_data)
         end)
 
         y = y - (ROW_H + GROUP_ELEMENT_GAP)
-        if CD_GROUP_KEYS[cat] then cooldown_group_bottom_y = y end
+        if cooldown_group_keys[cat] then cooldown_group_bottom_y = y end
     end
 
     place_group_box(buffs_group_box, buffs_group_title, buffs_group_top_y, buffs_group_bottom_y)
