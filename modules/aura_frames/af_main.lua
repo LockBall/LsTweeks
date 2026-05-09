@@ -361,6 +361,114 @@ local function create_aura_icon_pool(frame, cfg_db, category)
     end
 end
 
+-- ============================================================================
+-- AURA FRAME SHELL
+
+-- The frame shell is the user-facing container around an aura icon pool. It owns
+-- the drag title bars, resize handle, saved width updates, and resize refresh so
+-- icon creation/rendering can stay separate from frame interaction behavior.
+local TITLEBAR_ANCHORS = {
+    top =    { from = "BOTTOM", to = "TOP", offset = -2 },
+    bottom = { from = "TOP",    to = "BOTTOM", offset = 2 },
+}
+
+local function create_title_bar(parent, label, scale_key, is_bottom)
+    local cfg = is_bottom and TITLEBAR_ANCHORS.bottom or TITLEBAR_ANCHORS.top
+    local tb = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    tb:SetPoint(cfg.from.."LEFT",  parent, cfg.to.."LEFT",  0, cfg.offset)
+    tb:SetPoint(cfg.from.."RIGHT", parent, cfg.to.."RIGHT", 0, cfg.offset)
+    tb:SetHeight(20)
+    M.apply_title_bar_backdrop(tb)
+
+    local text = tb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    text:SetPoint("CENTER")
+    text:SetText(label)
+    tb.label_text = text
+
+    tb:EnableMouse(true)
+    tb:RegisterForDrag("LeftButton")
+    tb:SetScript("OnDragStart", function()
+        M.start_frame_drag(parent)
+    end)
+    tb:SetScript("OnDragStop", function()
+        M.stop_frame_drag(parent, scale_key)
+    end)
+
+    return tb
+end
+
+local function create_aura_frame_title_bars(frame, display_name, scale_key)
+    frame.title_bar = create_title_bar(frame, display_name, scale_key, false)
+    frame.bottom_title_bar = create_title_bar(frame, display_name, scale_key, true)
+end
+
+local function save_aura_frame_width(frame, category, width)
+    if frame.is_custom and frame.custom_entry then
+        frame.custom_entry.width = width
+    elseif M.db then
+        M.db["width_"..category] = width
+    end
+end
+
+local function get_width_slider_control(frame, category)
+    if not M.controls then return nil end
+    if frame.is_custom and frame.custom_entry and frame.custom_entry.id then
+        return M.controls["custom_" .. frame.custom_entry.id .. "_width"]
+    end
+    return M.controls["width_slider_"..category]
+end
+
+local function refresh_aura_frame_after_resize(frame)
+    local params = frame.update_params
+    if not params then return end
+    M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
+        params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
+end
+
+local function clamp_aura_frame_width(frame)
+    local width = frame:GetWidth()
+    if width < M.MIN_FRAME_WIDTH then
+        width = M.MIN_FRAME_WIDTH
+        frame:SetWidth(width)
+    end
+    return width
+end
+
+local function create_aura_frame_resizer(frame, category)
+    frame.resizer = CreateFrame("Button", nil, frame)
+    frame.resizer:SetSize(16, 16)
+    frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+
+    frame:SetScript("OnSizeChanged", function(s, w)
+        if s._clamping_size then return end
+        if w and w < M.MIN_FRAME_WIDTH then
+            s._clamping_size = true
+            s:SetWidth(M.MIN_FRAME_WIDTH)
+            s._clamping_size = nil
+        end
+    end)
+
+    frame.resizer:SetScript("OnMouseDown", function()
+        frame._is_user_positioning = true
+        frame:StartSizing("RIGHT")
+    end)
+    frame.resizer:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing()
+        frame._is_user_positioning = nil
+
+        local clamped_width = clamp_aura_frame_width(frame)
+        save_aura_frame_width(frame, category, clamped_width)
+
+        local width_slider = get_width_slider_control(frame, category)
+        if width_slider and width_slider.slider then
+            width_slider.slider:SetValue(clamped_width)
+        end
+
+        refresh_aura_frame_after_resize(frame)
+    end)
+end
+
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
@@ -385,71 +493,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame:SetSize(initial_width, 50)
 
     M.apply_saved_frame_position(frame, scale_key, is_debuff and -25 or 75)
-    
-    -- TITLE BAR LOGIC
-    local TITLEBAR_ANCHORS = {
-        top =    { from = "BOTTOM", to = "TOP", offset = -2 },
-        bottom = { from = "TOP",    to = "BOTTOM", offset = 2 },
-    }
 
-    local function CreateTitleBar(parent, label, is_bottom)
-        local cfg = is_bottom and TITLEBAR_ANCHORS.bottom or TITLEBAR_ANCHORS.top
-        local tb = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-        tb:SetPoint(cfg.from.."LEFT",  parent, cfg.to.."LEFT",  0, cfg.offset)
-        tb:SetPoint(cfg.from.."RIGHT", parent, cfg.to.."RIGHT", 0, cfg.offset)
-        tb:SetHeight(20)
-        M.apply_title_bar_backdrop(tb)
-        local text = tb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        text:SetPoint("CENTER")
-        text:SetText(label)
-        tb.label_text = text
-        tb:EnableMouse(true)
-        tb:RegisterForDrag("LeftButton")
-        tb:SetScript("OnDragStart", function() M.start_frame_drag(parent) end)
-        tb:SetScript("OnDragStop", function()
-            M.stop_frame_drag(parent, scale_key)
-        end)
-        return tb
-    end
-    
-    frame.title_bar = CreateTitleBar(frame, display_name, false)
-    frame.bottom_title_bar = CreateTitleBar(frame, display_name, true)
-    
-    -- RESIZER
-    frame.resizer = CreateFrame("Button", nil, frame)
-    frame.resizer:SetSize(16, 16)
-    frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-
-    frame:SetScript("OnSizeChanged", function(s, w)
-        if s._clamping_size then return end
-        if w and w < M.MIN_FRAME_WIDTH then
-            s._clamping_size = true
-            s:SetWidth(M.MIN_FRAME_WIDTH)
-            s._clamping_size = nil
-        end
-    end)
-
-    frame.resizer:SetScript("OnMouseDown", function()
-        frame._is_user_positioning = true
-        frame:StartSizing("RIGHT")
-    end)
-    frame.resizer:SetScript("OnMouseUp", function()
-        frame:StopMovingOrSizing()
-        frame._is_user_positioning = nil
-        local clamped_width = frame:GetWidth()
-        if clamped_width < M.MIN_FRAME_WIDTH then
-            clamped_width = M.MIN_FRAME_WIDTH
-            frame:SetWidth(clamped_width)
-        end
-        M.db["width_"..category] = clamped_width
-        local ws = M.controls and M.controls["width_slider_"..category]
-        if ws and ws.slider then ws.slider:SetValue(clamped_width) end
-        local params = frame.update_params
-        if params then
-            M.update_auras(frame, params.show_key, params.move_key, params.timer_key, params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
-        end
-    end)
+    create_aura_frame_title_bars(frame, display_name, scale_key)
+    create_aura_frame_resizer(frame, category)
 
     -- Pre-create icons/bars so combat updates never need to create frames.
     create_aura_icon_pool(frame, cfg_db, category)
@@ -570,32 +616,6 @@ function M.create_custom_frame(entry)
     frame.update_params.scale_key   = "scale"
     frame.update_params.spacing_key = "spacing"
     frame.update_params.aura_filter = aura_filter
-
-    -- Override resizer OnMouseUp: write width to entry.width instead of flat DB key.
-    if frame.resizer then
-        frame.resizer:SetScript("OnMouseUp", function()
-            frame:StopMovingOrSizing()
-            frame._is_user_positioning = nil
-            local w = frame:GetWidth()
-            if w < M.MIN_FRAME_WIDTH then w = M.MIN_FRAME_WIDTH; frame:SetWidth(w) end
-            entry.width = w
-            local ws = M.controls and M.controls["custom_" .. id .. "_width"]
-            if ws and ws.slider then ws.slider:SetValue(w) end
-            local current_filter = frame.update_params and frame.update_params.aura_filter or aura_filter
-            M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", current_filter)
-        end)
-    end
-
-    -- Override OnDragStop for title bars: write position to entry.position.
-    local function on_drag_stop()
-        M.stop_frame_drag(frame, "scale")
-    end
-    if frame.title_bar then
-        frame.title_bar:SetScript("OnDragStop", on_drag_stop)
-    end
-    if frame.bottom_title_bar then
-        frame.bottom_title_bar:SetScript("OnDragStop", on_drag_stop)
-    end
 
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 
