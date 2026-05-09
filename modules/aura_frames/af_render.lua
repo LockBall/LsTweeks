@@ -346,6 +346,16 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
     local now = GetTime()
     local is_static_frame = (self.category == "static")
+    local show_cooldown_overlay = self._show_cooldown_overlay == true
+    local show_render_timer_text = show_timer_text and not show_cooldown_overlay
+
+    local function set_render_timer_text(obj, timer_category, seconds)
+        if show_render_timer_text then
+            M.set_timer_text(obj.time_text, timer_category, seconds)
+        else
+            obj.time_text:SetText("")
+        end
+    end
 
     for i = 1, display_count do
         local obj   = self.icons[i]
@@ -353,7 +363,6 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
-        local show_cooldown_overlay = M.uses_cooldown_icon_overlay(self.category, bar_mode, M.db)
         local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
             and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
         local need_live_duration = (not is_static_frame)
@@ -453,9 +462,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             end
         else
         -- Prefer live duration by auraInstanceID; fall back to cached values.
-        local rem = live_remaining
-        if rem ~= nil then
-            if issecretvalue(rem) then
+        local remaining = live_remaining
+        if remaining ~= nil then
+            if issecretvalue(remaining) then
                 local display_remaining = nil
                 if entry.expiration and entry.expiration > 0 then
                     display_remaining = math_max(0, entry.expiration - now)
@@ -464,33 +473,21 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 end
 
                 if display_remaining and display_remaining > 0 then
-                    if show_timer_text and not show_cooldown_overlay then
-                        M.set_timer_text(obj.time_text, timer_category, display_remaining)
-                    else
-                        obj.time_text:SetText("")
-                    end
+                    set_render_timer_text(obj, timer_category, display_remaining)
                 else
-                    if show_timer_text and not show_cooldown_overlay then
-                        M.set_timer_text(obj.time_text, timer_category, rem)
-                    else
-                        obj.time_text:SetText("")
-                    end
+                    set_render_timer_text(obj, timer_category, remaining)
                 end
                 if bar_mode and obj.bar and obj.bar.SetTimerDuration and TIMER_DIR_REMAINING then
                     obj.bar:SetTimerDuration(live_duration, nil, TIMER_DIR_REMAINING)
                 end
-            elseif rem > 0 then
-                if show_timer_text and not show_cooldown_overlay then
-                    M.set_timer_text(obj.time_text, timer_category, rem)
-                else
-                    obj.time_text:SetText("")
-                end
+            elseif remaining > 0 then
+                set_render_timer_text(obj, timer_category, remaining)
                 if bar_mode then
                     if obj.bar and obj.bar.SetTimerDuration and TIMER_DIR_REMAINING then
                         obj.bar:SetTimerDuration(live_duration, nil, TIMER_DIR_REMAINING)
                     else
-                        obj.bar:SetMinMaxValues(0, entry.duration > 0 and entry.duration or rem)
-                        obj.bar:SetValue(rem)
+                        obj.bar:SetMinMaxValues(0, entry.duration > 0 and entry.duration or remaining)
+                        obj.bar:SetValue(remaining)
                     end
                 end
             else
@@ -511,16 +508,12 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
                 end
             end
         elseif entry.duration > 0 then
-            rem = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
-            if rem > 0 then
-                if show_timer_text and not show_cooldown_overlay then
-                    M.set_timer_text(obj.time_text, timer_category, rem)
-                else
-                    obj.time_text:SetText("")
-                end
+            remaining = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
+            if remaining > 0 then
+                set_render_timer_text(obj, timer_category, remaining)
                 if bar_mode then
                     obj.bar:SetMinMaxValues(0, entry.duration)
-                    obj.bar:SetValue(rem)
+                    obj.bar:SetValue(remaining)
                 else
                     apply_cooldown_overlay(obj, nil, entry.expiration, entry.duration)
                 end
