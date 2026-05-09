@@ -8,21 +8,6 @@
 
 ## 2. Repeated / Duplicate Code
 
-### 2d. Title-bar name update is written in two places
-**`af_gui_frame_builders.lua:577–587`** — `update_custom_frame_title(entry)`:
-```lua
-frame.title_bar.label_text:SetText(entry.name or entry.id)
-frame.bottom_title_bar.label_text:SetText(entry.name or entry.id)
-```
-**`af_gui_tree.lua:277–284`** — inside `commit_rename`:
-```lua
-frame.title_bar.label_text:SetText(new_name)
-frame.bottom_title_bar.label_text:SetText(new_name)
-```
-Exact same logic, not sharing the function. `commit_rename` in the tree should call `update_custom_frame_title(entry)` (or `M.on_custom_frame_renamed` already exists for the tree-label side — the title-bar side just needs to be folded in).
-
----
-
 ### 2e. `af_main.lua:run_wow_cooldown_refresh` — three separate loops over `WOW_COOLDOWN_CATEGORIES`
 ```lua
 if prepare_viewers then
@@ -149,7 +134,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 2d | `af_gui_tree.lua` / `af_gui_frame_builders.lua` | Repeated — title bar rename logic | Low |
 | 2e | `af_main.lua` | Repeated — 3 loops over same category list | Low |
 | 3a | `af_core.lua:294` | Inconsistent — local vs module table guard | Low |
 | 3b | `af_core.lua` | Inconsistent — `self:Show()` × 3 | Low |

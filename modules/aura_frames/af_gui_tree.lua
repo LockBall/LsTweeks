@@ -273,16 +273,7 @@ function M.build_frames_tab(p, frames_data)
                     if new_name and new_name ~= "" then
                         entry.name = new_name
                         cat_fs:SetText(new_name)
-                        -- Update the WoW frame title bars
-                        local frame = M.frames["show_" .. id]
-                        if frame then
-                            if frame.title_bar and frame.title_bar.label_text then
-                                frame.title_bar.label_text:SetText(new_name)
-                            end
-                            if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
-                                frame.bottom_title_bar.label_text:SetText(new_name)
-                            end
-                        end
+                        if M.update_custom_frame_title then M.update_custom_frame_title(entry) end
                         -- Rebuild cached settings panel so its header reflects the new name
                         invalidate_node(cat_key)
                         show_node(cat_key, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
