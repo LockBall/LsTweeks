@@ -8,17 +8,6 @@
 
 ## 3. Inconsistencies
 
-### 3b. `af_core.lua:update_auras` — `self:Show()` called three times
-```lua
-self:Show()                              -- line 262 (after activity check)
-...
-self:Show()                              -- line 331 (after height calc)
-if not self:IsVisible() then self:Show() end  -- line 336 (guard)
-```
-Lines 331 and 336 are redundant with each other. Line 262 is the meaningful early-show; lines 331 and 336 can be collapsed to one (either the explicit call or the guard, not both).
-
----
-
 ### 3c. `af_functions.lua:read_frame_bool` — check 2 and check 3 hit the same table for preset frames
 ```lua
 if cfg_db and cfg_db[key] ~= nil then ...              -- check 1: flat key
@@ -110,7 +99,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 3b | `af_core.lua` | Inconsistent — `self:Show()` × 3 | Low |
 | 3c | `af_functions.lua` | Inconsistent — `read_frame_bool` check 3 unreachable | Low |
 | 3d | `af_gui_frame_builders.lua` | Inconsistent — drag sync missing for custom frames | Medium |
 | 3e | `af_gui_frame_builders.lua` | Inconsistent — `SetScript` vs `HookScript` | Low |

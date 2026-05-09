@@ -326,12 +326,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    self:Show()
     if not in_combat and not is_user_positioning then
         M.set_height_for_growth(self, new_height, growth)
     end
-
-    if not self:IsVisible() then self:Show() end
 
     local is_bg_enabled = cfg_db[bg_key] ~= nil and cfg_db[bg_key] or cfg_db["bg"]
     if is_moving then
