@@ -155,6 +155,7 @@ function M.sync_general_controls_from_db()
             "show_" .. cat,
             "move_" .. cat,
             "timer_" .. cat,
+            "tooltip_" .. cat,
             "bg_" .. cat,
             "bar_mode_" .. cat,
             "test_aura_" .. cat,

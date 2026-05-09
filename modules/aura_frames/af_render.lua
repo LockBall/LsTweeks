@@ -219,6 +219,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_
     obj.aura_scan_time  = now
     obj.aura_spell_id   = entry.spell_id
     obj.aura_category   = timer_category
+    obj.tooltip_enabled = obj:GetParent() and obj:GetParent()._show_tooltip ~= false
     obj.is_test_preview = entry.is_test_preview or false
     obj.is_spell_cooldown = is_spell_cooldown
     obj.grey_cooldown = entry.grey_cooldown == true
@@ -598,6 +599,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         self.icons[i].grey_cooldown = false
         self.icons[i].aura_index = nil
         self.icons[i].aura_count = nil
+        self.icons[i].tooltip_enabled = false
         self.icons[i]._lstweeks_count_text = nil
         set_icon_greyed(self.icons[i].texture, false)
         if self.icons[i].cooldown then
