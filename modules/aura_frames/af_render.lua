@@ -513,6 +513,23 @@ local function build_render_list(frame, aura_map, aura_filter, sort_mode)
     return list
 end
 
+local function hide_unused_icons(icons, first_unused_index)
+    for i = first_unused_index, #icons do
+        local obj = icons[i]
+        obj.is_spell_cooldown = false
+        obj.grey_cooldown = false
+        obj.aura_index = nil
+        obj.aura_count = nil
+        obj.tooltip_enabled = false
+        obj._lstweeks_count_text = nil
+        set_icon_greyed(obj.texture, false)
+        if obj.cooldown then
+            obj.cooldown:Hide()
+        end
+        obj:Hide()
+    end
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -618,19 +635,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         obj:Show()
     end
 
-    for i = display_count + 1, #self.icons do
-        self.icons[i].is_spell_cooldown = false
-        self.icons[i].grey_cooldown = false
-        self.icons[i].aura_index = nil
-        self.icons[i].aura_count = nil
-        self.icons[i].tooltip_enabled = false
-        self.icons[i]._lstweeks_count_text = nil
-        set_icon_greyed(self.icons[i].texture, false)
-        if self.icons[i].cooldown then
-            self.icons[i].cooldown:Hide()
-        end
-        self.icons[i]:Hide()
-    end
+    hide_unused_icons(self.icons, display_count + 1)
 
     return display_count
 end
