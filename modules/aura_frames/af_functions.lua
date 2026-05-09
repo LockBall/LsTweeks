@@ -193,21 +193,9 @@ function M.get_setting(cfg_db, category, key, fallback)
     return fallback
 end
 
-local function read_frame_bool(cfg_db, category, key)
-    if not key then return false end
-    if cfg_db and cfg_db[key] ~= nil then
-        return cfg_db[key] == true
-    end
-    if category and cfg_db and cfg_db[key .. "_" .. category] ~= nil then
-        return cfg_db[key .. "_" .. category] == true
-    end
-    if category and M.db and M.db[key .. "_" .. category] ~= nil then
-        return M.db[key .. "_" .. category] == true
-    end
-    if M.db and M.db[key] ~= nil then
-        return M.db[key] == true
-    end
-    return false
+local function read_frame_bool(cfg_db, key)
+    if not (cfg_db and key) then return false end
+    return cfg_db[key] == true
 end
 
 function M.get_frame_activity_state(frame, show_key, move_key)
@@ -218,12 +206,12 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     local enabled_key = is_custom and "show" or show_key
     local moving_key = is_custom and "move" or move_key
     local test_key = is_custom and "test_aura" or (category and ("test_aura_" .. category))
-    local enabled = read_frame_bool(cfg_db, category, enabled_key)
+    local enabled = read_frame_bool(cfg_db, enabled_key)
 
     return {
         enabled = enabled,
-        moving = enabled and read_frame_bool(cfg_db, category, moving_key),
-        test_aura = enabled and read_frame_bool(cfg_db, category, test_key),
+        moving = enabled and read_frame_bool(cfg_db, moving_key),
+        test_aura = enabled and read_frame_bool(cfg_db, test_key),
         is_custom = is_custom,
         is_cdm = is_cdm,
         needs_shared_scan = enabled and not is_custom,
