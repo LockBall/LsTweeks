@@ -1,8 +1,7 @@
 -- Settings UI for the Aura Frames module, registered as a sidebar category in the main window.
--- BuildSettings() creates three tabs:
+-- BuildSettings() creates two tabs:
 -- 1) General (global toggles and thresholds)
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
--- 3) Spell ID (tooltip spell ID toggle).
 
 local addon_name, addon = ...
 
@@ -86,7 +85,6 @@ function M.BuildSettings(parent)
     local tab_data = {
         { name = "General", is_general  = true },
         { name = "Frames",  is_frames   = true },
-        { name = "Spell ID", is_aura_id  = true },
     }
 
 
@@ -117,8 +115,6 @@ function M.BuildSettings(parent)
             M.build_general_tab(p)
         elseif data.is_frames then
             M.build_frames_tab(p, frames_data)
-        elseif data.is_aura_id then
-            M.build_aura_id_tab(p)
         end
 
         tabs[i], panels[i] = tab, p
@@ -152,7 +148,6 @@ function M.sync_general_controls_from_db()
     set_checked("enable_blizz_buffs", M.db.enable_blizz_buffs)
     set_checked("enable_blizz_debuffs", M.db.enable_blizz_debuffs)
     set_checked("snap_to_grid_checkbox", M.db.snap_to_grid)
-    set_checked("show_spell_id_checkbox", M.db.show_spell_id)
     set_checked("show_grid_checkbox", M.db.show_grid)
 
     for _, cat in ipairs(M.CATEGORIES or {}) do

@@ -55,7 +55,7 @@ modules/
     af_core.lua          — tick_visible_icons(), update_auras(), Blizzard buff/debuff/CDM visibility prep
     af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
     af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
-    af_gui_frame_builders.lua — all Aura Frames content panels; General, Spell ID, preset Buff/CDM, and custom Filters builders
+    af_gui_frame_builders.lua — all Aura Frames content panels; General, preset Buff/CDM, and custom Filters builders
     af_main.lua          — runtime state tables, init, frame creation, icon pool, drag/resize, on_reset_complete
     af_test_aura.lua     — fake aura preview system
     af_debug_outlines.lua — add_debug_outline(), refresh_section_outlines()
@@ -98,7 +98,7 @@ Ls_Tweeks_DB = {
   last_open_module = string,           -- last sidebar tab name (survives reset intentionally)
   combat_text = bool,                  -- hide portrait combat text
   aura_frames = {
-    last_tab_index = number,           -- last selected aura tab (1=General, 2=Frames, 3=Spell ID)
+    last_tab_index = number,           -- last selected aura tab (1=General, 2=Frames)
     last_frames_node = string,         -- last selected frame node in category tabs
     short_threshold = number,
     enable_blizz_buffs = bool,
@@ -106,7 +106,6 @@ Ls_Tweeks_DB = {
     snap_to_grid = bool,
     show_grid = bool,
     show_bar_section_outlines = bool,  -- debug outline toggle (now under aura_frames, not root)
-    show_spell_id = bool,              -- show spell ID in icon tooltips
     fade_wow_cooldown_ooc = bool,      -- CDM-backed addon frames fade out of combat
     wow_cooldown_ooc_alpha = number,   -- CDM-backed frame alpha while out of combat
     timer_number_font = string,         -- global fallback; currently "source_code_pro" or "game_default"
@@ -142,6 +141,7 @@ First-install/default visible frames are only the four player-aura presets: `sta
 
 CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Its local profile table uses `addon.UPDATE_INTERVALS` buckets for the retry delays. Use the named profiles (`"immediate"`, `"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
 CDM-backed frames have two CDM-specific controls: `cooldown_mode_<cat>` switches a CDM frame from aura-display mode into spell-cooldown mode, and `hide_blizz_cdm_<cat>` alpha-hides the matching Blizzard viewer without calling `Hide()`. Addon CDM frames can also fade out of combat using `fade_wow_cooldown_ooc` and `wow_cooldown_ooc_alpha`.
+Aura icon tooltips are resolved in `af_main.lua`: prefer `GameTooltip:SetUnitAuraByAuraInstanceID` when a live aura instance is available, fall back to `GameTooltip:SetSpellByID` for CDM spell-cooldown entries, then use the basic addon name/timer fallback only if Blizzard tooltip APIs fail.
 
 Within `modules/aura_frames`, refresh/debounce scheduling must not hardcode raw timing numbers. `C_Timer.After`, `C_Timer.NewTicker`, and `C_Timer.NewTimer` calls should use `M.UPDATE_INTERVALS` directly, or receive a delay from the centralized CDM scheduler. Numeric values are still fine for non-timing data such as slider steps, alpha/color values, layout math, and test-aura duration settings.
 
@@ -150,13 +150,13 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 When aura-frame reset replaces `M.db.custom_frames`, `af_main.lua` removes orphan custom runtime frames and stale custom controls, then asks `af_gui_tree.lua` to rebuild the Frames tree/content if it exists. Do not leave custom WoW frames alive without a matching saved custom entry.
 
 ## Aura Frames GUI Layout System
-`af_gui.lua` owns the settings shell: `BuildSettings` creates three tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
+`af_gui.lua` owns the settings shell: `BuildSettings` creates two tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
 
-`BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Spell ID** (tooltip spell ID toggle).
+`BuildSettings` has two tabs: **General** (manual anchoring) and **Frames** (tree + grid).
 
 `af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title that opens Blizzard Cooldown Viewer settings + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
 
-`af_gui_frame_builders.lua` owns all content panel builders: **General**, **Spell ID**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
+`af_gui_frame_builders.lua` owns all content panel builders: **General**, preset Buff/CDM frame panels, custom frame settings, and custom filter child panels.
 
 Preset, CDM-backed preset, and custom frame settings panels share `M.create_settings_grid(parent, opts)` from `af_functions.lua` and the local superset builder `build_frame_settings_panel(parent, frame_config, opts)` in `af_gui_frame_builders.lua`. CDM frames are preset categories (`essential`, `utility`, `tracked_buffs`, `tracked_bars`) with extra controls layered into the shared builder through `opts.build_source_controls`. `frame_config.keys` normalizes preset suffixed DB keys and custom flat entry keys into logical names (`show`, `move`, `timer`, `bg`, `scale`, etc.). Keep shared presentation controls in this builder; use small `opts` hooks only for real source-specific capabilities such as CDM controls, custom frame naming, static timer hiding, and source-specific update/reload callbacks.
 
