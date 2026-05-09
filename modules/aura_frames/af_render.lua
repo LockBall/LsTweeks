@@ -184,6 +184,27 @@ local function set_count_text(obj, text, point, relative_to, relative_point, x, 
     end
 end
 
+local function resolve_stack_text(entry, live_count)
+    if entry.count and not issecretvalue(entry.count) and entry.count > 1 then
+        return entry.count
+    end
+
+    if live_count ~= nil and not issecretvalue(live_count) then
+        if type(live_count) == "number" then
+            if live_count > 1 then return live_count end
+        elseif type(live_count) == "string" then
+            if live_count ~= "" and live_count ~= "1" then return live_count end
+        else
+            return live_count
+        end
+        return nil
+    end
+
+    -- Secret live_count is safe to display, but we cannot compare it.
+    -- Preserve combat behavior by showing it only when no safe fallback exists.
+    return live_count
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -409,26 +430,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             obj.cooldown:Hide()
         end
 
-        local stack_text = nil
-        if entry.count and not issecretvalue(entry.count) and entry.count > 1 then
-            stack_text = entry.count
-        elseif live_count ~= nil and not issecretvalue(live_count) then
-            if type(live_count) == "number" then
-                if live_count > 1 then
-                    stack_text = live_count
-                end
-            elseif type(live_count) == "string" then
-                if live_count ~= "" and live_count ~= "1" then
-                    stack_text = live_count
-                end
-            else
-                stack_text = live_count
-            end
-        else
-            -- Secret live_count is safe to display, but we cannot compare it.
-            -- Preserve combat behavior by showing it only when no safe fallback exists.
-            stack_text = live_count
-        end
+        local stack_text = resolve_stack_text(entry, live_count)
         if bar_mode then
             obj.bar:Show()
             obj.bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
