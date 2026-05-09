@@ -112,14 +112,14 @@ Ls_Tweeks_DB = {
     timer_number_font_size = number,
     timer_number_font_bold = bool,
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
-    -- common per-category settings include show/move/timer/bg/scale/spacing/width/bar_mode/color/bar_bg_color/bg_color/max_icons/growth/sort/test_aura/timer_number_font/timer_number_font_size/timer_number_font_bold/timer_color/bar_text_color
+    -- common per-category settings include show/move/timer/tooltip/bg/scale/spacing/width/bar_mode/color/bar_bg_color/bg_color/max_icons/growth/sort/test_aura/timer_number_font/timer_number_font_size/timer_number_font_bold/timer_color/bar_text_color
     -- CDM-only per-category settings include cooldown_mode_<cat> and hide_blizz_cdm_<cat>
     positions = { static={point,x,y}, short={point,x,y}, long={point,x,y}, essential={point,x,y}, utility={point,x,y}, tracked_buffs={point,x,y}, tracked_bars={point,x,y}, debuff={point,x,y} },
     custom_frames = {                  -- array of custom filtered frame entry tables
       -- each entry: { id, name, aura_base_filter="HELPFUL|HARMFUL", aura_modifier="NONE|...",
       --               position={point,x,y},
       --               show, move, bg, bg_color, bar_mode, color, bar_bg_color,
-      --               growth, timer, scale, spacing, max_icons, width,
+      --               growth, timer, tooltip, scale, spacing, max_icons, width,
       --               test_aura, timer_number_font, timer_number_font_size,
       --               timer_number_font_bold, timer_color, bar_text_color }
     },
@@ -141,7 +141,7 @@ First-install/default visible frames are only the four player-aura presets: `sta
 
 CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Its local profile table uses `addon.UPDATE_INTERVALS` buckets for the retry delays. Use the named profiles (`"immediate"`, `"startup"`, `"settings"`, `"hook"`) instead of adding local timer chains. Startup/settings refreshes prepare Blizzard viewers and clear child identity cache; hook refreshes defer one frame and do not clear child cache so live CooldownViewer hook data is preserved.
 CDM-backed frames have two CDM-specific controls: `cooldown_mode_<cat>` switches a CDM frame from aura-display mode into spell-cooldown mode, and `hide_blizz_cdm_<cat>` alpha-hides the matching Blizzard viewer without calling `Hide()`. Addon CDM frames can also fade out of combat using `fade_wow_cooldown_ooc` and `wow_cooldown_ooc_alpha`.
-Aura icon tooltips are resolved in `af_main.lua`: prefer `GameTooltip:SetUnitAuraByAuraInstanceID` when a live aura instance is available, fall back to `GameTooltip:SetSpellByID` for CDM spell-cooldown entries, then use the basic addon name/timer fallback only if Blizzard tooltip APIs fail.
+Aura icon tooltips are controlled per frame by `tooltip_<cat>` for presets and `tooltip` for custom frames. Tooltip display is resolved in `af_main.lua`: prefer `GameTooltip:SetUnitAuraByAuraInstanceID` when a live aura instance is available, fall back to `GameTooltip:SetSpellByID` for CDM spell-cooldown entries, then use the basic addon name/timer fallback only if Blizzard tooltip APIs fail.
 
 Within `modules/aura_frames`, refresh/debounce scheduling must not hardcode raw timing numbers. `C_Timer.After`, `C_Timer.NewTicker`, and `C_Timer.NewTimer` calls should use `M.UPDATE_INTERVALS` directly, or receive a delay from the centralized CDM scheduler. Numeric values are still fine for non-timing data such as slider steps, alpha/color values, layout math, and test-aura duration settings.
 

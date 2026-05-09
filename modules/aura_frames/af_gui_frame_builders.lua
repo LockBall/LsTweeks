@@ -71,6 +71,7 @@ local function make_preset_frame_settings_config(data)
             show = data.show_key,
             move = data.move_key,
             timer = data.timer_key,
+            tooltip = "tooltip_" .. cat,
             bg = data.bg_key,
             scale = data.scale_key,
             spacing = data.spacing_key,
@@ -94,6 +95,7 @@ end
 local function make_custom_frame_settings_config(entry)
     local id = entry.id
     entry.position = entry.position or { x = 0, y = 50 }
+    if entry.tooltip == nil then entry.tooltip = true end
     return {
         id = id,
         is_custom = true,
@@ -107,6 +109,7 @@ local function make_custom_frame_settings_config(entry)
             show = "show",
             move = "move",
             timer = "timer",
+            tooltip = "tooltip",
             bg = "bg",
             scale = "scale",
             spacing = "spacing",
@@ -654,14 +657,17 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
     bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
 
-    place_at(create_growth_dropdown(parent, frame_config, update), 3, 4, "dropdown", {
+    local growth_dropdown = create_growth_dropdown(parent, frame_config, update)
+    place_at(growth_dropdown, 3, 4, "dropdown", {
         y_offset = opts.growth_y_offset or -15,
     })
+
     add_row_separator(3)
 
     if opts.show_timer_controls ~= false then
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
     end
+    bound_cb("Tooltip", "tooltip", 4, 4)
     add_row_separator(4)
 
     local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)

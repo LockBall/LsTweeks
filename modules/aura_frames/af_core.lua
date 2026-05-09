@@ -209,6 +209,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
+    self._show_tooltip    = M.get_setting(cfg_db, category, "tooltip", true) ~= false
     self._show_cooldown_overlay = cooldown_icon_overlay
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD

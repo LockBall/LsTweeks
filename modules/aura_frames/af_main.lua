@@ -226,7 +226,14 @@ local function add_basic_aura_tooltip_lines(obj)
 end
 
 local function show_aura_icon_tooltip(obj)
-    if not obj.aura_name then return end
+    if not obj.aura_name then
+        GameTooltip:Hide()
+        return
+    end
+    if obj.tooltip_enabled == false then
+        GameTooltip:Hide()
+        return
+    end
 
     GameTooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
     GameTooltip:ClearLines()
