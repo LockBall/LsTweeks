@@ -1,5 +1,5 @@
 -- Content panel builders for Aura Frames settings.
--- Builds the General tab, Spell ID tab, and preset Buff/CDM frame settings panels.
+-- Builds the General tab and preset Buff/CDM frame settings panels.
 
 local addon_name, addon = ...
 
@@ -394,20 +394,6 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         width_slider = width_slider,
         sync_xy_sliders_to_frame = sync_xy_sliders_to_frame,
     }
-end
-
-function M.build_aura_id_tab(p)
-    local lbl = p:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    lbl:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
-    lbl:SetText("Show spell ID in icon tooltips.")
-
-    local spell_id_container, spell_id_btn, _ = addon.CreateCheckbox(p, "Show Spell ID in Tooltip", M.db.show_spell_id == true,
-        function(is_checked)
-            M.db.show_spell_id = is_checked
-        end
-    )
-    spell_id_container:SetPoint("TOPLEFT", lbl, "BOTTOMLEFT", 0, -10)
-    M.controls.show_spell_id_checkbox = spell_id_btn
 end
 
 function M.build_general_tab(p)

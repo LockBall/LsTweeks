@@ -12,6 +12,7 @@ M.controls = M.controls or {}
 
 -- CACHED GLOBALS AND CONSTANTS
 local format = string.format
+local issecretvalue = issecretvalue
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 local NEXT_FRAME_INTERVAL = UPDATE_INTERVALS.next_frame
@@ -191,6 +192,53 @@ function M.queue_wow_cooldown_refresh(profile)
     end
 end
 
+local function try_set_unit_aura_tooltip(obj)
+    if not obj.aura_index then return false end
+    if not GameTooltip.SetUnitAuraByAuraInstanceID then return false end
+
+    -- Modern API (12.0.5+): stable auraInstanceID lookup, no index fragility.
+    local ok = pcall(function()
+        GameTooltip:SetUnitAuraByAuraInstanceID("player", obj.aura_index)
+    end)
+    return ok and ((not GameTooltip.NumLines) or GameTooltip:NumLines() > 0)
+end
+
+local function try_set_spell_tooltip(obj)
+    local spell_id = obj.aura_spell_id
+    if not spell_id then return false end
+    if issecretvalue and issecretvalue(spell_id) then return false end
+    if not GameTooltip.SetSpellByID then return false end
+
+    local ok = pcall(GameTooltip.SetSpellByID, GameTooltip, spell_id)
+    if not ok then return false end
+    return (not GameTooltip.NumLines) or GameTooltip:NumLines() > 0
+end
+
+local function add_basic_aura_tooltip_lines(obj)
+    GameTooltip:AddLine(obj.aura_name, 1, 1, 1)
+    if obj.aura_duration and obj.aura_duration > 0 then
+        local remaining_str = obj.aura_remaining and format("%.1f", obj.aura_remaining) or "?"
+        local duration_str = format("%.1f", obj.aura_duration)
+        GameTooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
+    else
+        GameTooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
+    end
+end
+
+local function show_aura_icon_tooltip(obj)
+    if not obj.aura_name then return end
+
+    GameTooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    GameTooltip:ClearLines()
+
+    local updated = try_set_unit_aura_tooltip(obj) or try_set_spell_tooltip(obj)
+    if not updated then
+        add_basic_aura_tooltip_lines(obj)
+    end
+
+    GameTooltip:Show()
+end
+
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
@@ -358,42 +406,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         
         -- Tooltip
         obj:EnableMouse(true)
-        obj:SetScript("OnEnter", function(s)
-            if not s.aura_name then return end
-            
-            GameTooltip:SetOwner(s, "ANCHOR_BOTTOMRIGHT")
-            GameTooltip:ClearLines()
-            
-            local updated = false
-            if s.aura_index then
-                -- Modern API (12.0.5+): stable auraInstanceID lookup, no index fragility
-                local ok, result = pcall(function()
-                    return GameTooltip:SetUnitAuraByAuraInstanceID("player", s.aura_index)
-                end)
-                updated = ok and result
-            end
-
-            if not updated then
-                GameTooltip:AddLine(s.aura_name, 1, 1, 1)
-                if s.aura_duration and s.aura_duration > 0 then
-                    local remaining_str = s.aura_remaining and format("%.1f", s.aura_remaining) or "?"
-                    local duration_str = format("%.1f", s.aura_duration)
-                    GameTooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
-                else
-                    GameTooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
-                end
-            end
-
-            if M.db and M.db.show_spell_id and s.aura_spell_id then
-                GameTooltip:AddLine("Spell ID: " .. tostring(s.aura_spell_id), 0.6, 0.6, 0.6)
-                -- Force rerender: SetUnitAuraByAuraInstanceID calls Show() internally,
-                -- so the tooltip is already visible when we append; calling Show() again
-                -- flushes the new line into the layout.
-                GameTooltip:Show()
-            end
-
-            GameTooltip:Show()
-        end)
+        obj:SetScript("OnEnter", show_aura_icon_tooltip)
         obj:SetScript("OnLeave", function() 
             GameTooltip:Hide() 
         end)

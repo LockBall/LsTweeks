@@ -205,6 +205,25 @@ local function resolve_stack_text(entry, live_count)
     return live_count
 end
 
+local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category)
+    obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
+    obj.filter_type     = entry.filter
+    obj.aura_name       = entry.name
+    obj.aura_icon       = entry.icon
+    obj.aura_duration   = entry.duration
+    obj.aura_remaining  = entry.remaining
+    obj.aura_count      = entry.count
+    obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
+                          and (now + live_remaining)
+                          or entry.expiration
+    obj.aura_scan_time  = now
+    obj.aura_spell_id   = entry.spell_id
+    obj.aura_category   = timer_category
+    obj.is_test_preview = entry.is_test_preview or false
+    obj.is_spell_cooldown = is_spell_cooldown
+    obj.grey_cooldown = entry.grey_cooldown == true
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -402,22 +421,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         end
         local live_remaining = get_duration_object_remaining(live_duration) or entry.live_remaining
 
-        obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
-        obj.filter_type     = entry.filter
-        obj.aura_name       = entry.name
-        obj.aura_icon       = entry.icon
-        obj.aura_duration   = entry.duration
-        obj.aura_remaining  = entry.remaining
-        obj.aura_count      = entry.count
-        obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
-                              and (now + live_remaining)
-                              or entry.expiration
-        obj.aura_scan_time  = now
-        obj.aura_spell_id   = entry.spell_id
-        obj.aura_category   = timer_category
-        obj.is_test_preview = entry.is_test_preview or false
-        obj.is_spell_cooldown = is_spell_cooldown
-        obj.grey_cooldown = entry.grey_cooldown == true
+        assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category)
 
         local cooldown_remaining = live_remaining
         if cooldown_remaining ~= nil and issecretvalue(cooldown_remaining) then

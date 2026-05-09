@@ -9,7 +9,6 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 - Preset frames for static, short, long and de buffs as well as WoW CoolDown Manager (CDM) groups.
 - Custom filtered aura frames using AuraFilters such as `HELPFUL|IMPORTANT`.
 - Icon or bar presentation modes, growth direction, spacing, width, colors, timers, and test-aura previews.
-- Optional tooltip spell ID display.
 - Optional hiding of Blizzard buff/debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Toggle for portrait combat text.
