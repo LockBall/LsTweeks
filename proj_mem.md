@@ -8,6 +8,7 @@ This file is shared project memory for coding agents working on LsTweeks. Keep i
 - Update it when the current project state changes in a way future agents need to know.
 - Prefer concise, durable notes over session logs or speculative plans.
 - Do not store secrets, personal data, machine-local paths, or temporary scratch notes here.
+- Format ToDo task plans with numbered top-level sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`) so tasks stay easy to reference during one-at-a-time testing.
 - after significant changes, provide a concise git commit message
 - Lua 5.1 tools are installed at `C:\Program Files (x86)\Lua\5.1\`; this path is not always on PATH. Use `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>` for syntax checks.
 
@@ -23,6 +24,8 @@ Slash command: `/lst` (registered as `SLASH_LSTWEEKS1`). SavedVariables: `Ls_Twe
 - **Readability:** Keep code easy to audit under addon-debug conditions. Use plain names, small helpers, local ownership, and comments only where they explain non-obvious WoW API, taint, combat-lockdown, timing, or layout constraints.
 
 - **Modularity:** Each file should own a coherent responsibility and expose a small surface through the shared `addon` table or the Aura Frames `M` table. Shared helpers belong where they reduce real duplication without hiding source-specific behavior.
+
+- **Orchestrator + Focused Helpers:** Prefer one readable main control function that describes a workflow in order, with focused helpers for discrete duties such as list construction, metadata assignment, visual setup, timer updates, cleanup, or source-specific decisions. The orchestrator should read like the feature's decision flow; helpers should own implementation details without hiding important state flow. Avoid abstractions that add allocation or make hot paths harder to audit.
 
 - **Efficiency:** Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache WoW globals on hot paths, batch repeated events through named update intervals, skip disabled/inactive frames early, and avoid unnecessary frame churn.
 

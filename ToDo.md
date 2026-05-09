@@ -1,33 +1,36 @@
-## Remaining Work
+## Let's Do It !
 
-# Aura Frames Module — Scan Report
-*Generated: 2026-05-07 | Files: 13 | Total lines: ~5,850*
-*Updated: 2026-05-09 | Completed 4e render cleanup and per-frame tooltip toggle*
+Use one extraction at a time, with reload / in-game testing after each meaningful step.
 
----
+### 1. `af_main.lua` — modularize frame construction and lifecycle first
 
-## 4. Structural / Maintainability Issues
+Recommended sub-step order:
 
-All identified Aura Frames structural cleanup items from this scan are complete.
+- [ ] a) Extract or regroup tooltip helpers if needed; this is already mostly isolated and low risk.
+- [ ] b) Extract icon pool creation from `M.create_aura_frame()`.
+- [ ] c) Extract title bar creation and resizer setup from `M.create_aura_frame()`.
+- [ ] d) Extract event registration and event-handler binding from `M.create_aura_frame()`.
+- [ ] e) Extract startup bootstrap chunks from the `ADDON_LOADED` handler.
+- [ ] f) Extract reset recovery chunks from `M.on_reset_complete()`.
 
-### Completed
+Goal: make `M.create_aura_frame()`, startup, and reset read as orchestrators that call focused helpers.
 
-- 4e. `af_render.lua` render flow was split into focused helpers for render-list ordering, live timing resolution, metadata assignment, visual setup, timer/bar update, stack text resolution, and unused icon cleanup.
+### 2. `af_gui_frame_builders.lua` — clarify settings-panel builder flow
 
----
+- [ ] a) Review `build_frame_settings_panel()` for helper boundaries and source-specific hooks.
+- [ ] b) Keep preset/custom presentation controls shared through normalized frame configs.
+- [ ] c) Preserve the current visible GUI unless a specific cleanup requires a tested layout change.
 
-## 5. Summary Table
+### 3. `af_scan.lua` — defer until safer orchestration files are clean
 
-| # | File | Type | Status |
-|---|------|------|--------|
-| 4e | `af_render.lua` | Structural — render flow cleanup | Complete |
-
-No open medium-priority Aura Frames cleanup items remain from this scan.
+- [ ] a) Review only after `af_main.lua` and `af_gui_frame_builders.lua`.
+- [ ] b) Be conservative: scan logic handles combat-safe aura reads, secret values, CDM hooks, cache behavior, and classification.
+- [ ] c) Prefer small isolated extractions with direct in-game validation.
 
 
-### Nice To Have
+### Potential Future Features
 
-- [ ] Brief guided tour.
-- [ ] Portrait dim out of combat.
-- [ ] Dungeon ready sound levels.
-- [ ] Saves.
+- [ ] a) Brief guided tour on first install with an option to manually intiate.
+- [ ] b) Portrait dim out of combat.
+- [ ] c) Dungeon ready sound levels.
+- [ ] d) frame layout Saves.
