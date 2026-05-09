@@ -8,14 +8,6 @@
 
 ## 3. Inconsistencies
 
-### 3a. `af_core.lua:294` — mixed local-vs-module table check
-```lua
-if WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
-```
-`WOW_COOLDOWN_CATEGORIES` is the local assigned at file load time (`= M.WOW_COOLDOWN_CATEGORIES`). If `af_core.lua` loads before `af_defaults.lua` (which populates the table), the local would be `nil` and the guard short-circuits. The actual lookup then uses `M.WOW_COOLDOWN_CATEGORIES` directly. The local guard is a reliability workaround that obscures whether the module table is expected to be set yet; use only `M.WOW_COOLDOWN_CATEGORIES` for both guard and lookup.
-
----
-
 ### 3b. `af_core.lua:update_auras` — `self:Show()` called three times
 ```lua
 self:Show()                              -- line 262 (after activity check)
@@ -118,7 +110,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 3a | `af_core.lua:294` | Inconsistent — local vs module table guard | Low |
 | 3b | `af_core.lua` | Inconsistent — `self:Show()` × 3 | Low |
 | 3c | `af_functions.lua` | Inconsistent — `read_frame_bool` check 3 unreachable | Low |
 | 3d | `af_gui_frame_builders.lua` | Inconsistent — drag sync missing for custom frames | Medium |
