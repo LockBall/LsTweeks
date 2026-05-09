@@ -367,6 +367,152 @@ local function update_aura_timer_and_bar(
     end
 end
 
+local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
+    local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
+        and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
+    local need_live_duration = (not is_static_frame)
+        and (not is_spell_cooldown)
+        and (show_timer_text or bar_mode)
+        and type(entry.instance_id) == "number"
+        and ((not has_cached_timing) or entry.live_remaining ~= nil)
+    local live_duration = nil
+    if need_live_duration then
+        local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
+        if ok then live_duration = result end
+    end
+
+    local cooldown_duration = is_spell_cooldown and entry.duration_object or nil
+    if cooldown_duration then
+        live_duration = cooldown_duration
+    end
+
+    return live_duration, get_duration_object_remaining(live_duration) or entry.live_remaining, cooldown_duration
+end
+
+local function add_custom_entries_to_render_list(list, aura_map)
+    for _, entry in pairs(aura_map) do
+        list[#list + 1] = entry
+    end
+    table_sort(list, function(a, b)
+        local aa = a.custom_order or 9999
+        local bb = b.custom_order or 9999
+        if aa == bb then
+            return get_entry_sort_id(a) < get_entry_sort_id(b)
+        end
+        return aa < bb
+    end)
+end
+
+local function add_preset_entries_to_render_list(frame, list, aura_map, aura_filter, sort_mode)
+    -- Resolve sort parameters for GetUnitAuraInstanceIDs.
+    local sort_rule = SORT_RULE_DEFAULT
+    local sort_dir  = SORT_DIR_NORMAL
+    if sort_mode == "timeleft" then
+        sort_rule = SORT_RULE_EXPIRATION
+        -- Normal = ascending expiration time = soonest to expire first (most urgent).
+    elseif sort_mode == "name" then
+        sort_rule = SORT_RULE_NAME
+    end
+
+    local wow_filter = (aura_filter and aura_filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
+    local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
+    local sorted_ids
+    if frame._sorted_ids_cache and frame._sorted_ids_cache_key == cache_key then
+        sorted_ids = frame._sorted_ids_cache
+    else
+        sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
+        frame._sorted_ids_cache = sorted_ids
+        frame._sorted_ids_cache_key = cache_key
+    end
+
+    -- Build display list in game-sorted order, filtered to entries in this frame's map.
+    if sorted_ids then
+        local seen = _scratch_seen
+        wipe(seen)
+        for _, iid in ipairs(sorted_ids) do
+            local entry = aura_map[iid]
+            if entry then
+                list[#list + 1] = entry
+                seen[iid] = true
+            end
+        end
+        for key, entry in pairs(aura_map) do
+            if not seen[key] then
+                list[#list + 1] = entry
+            end
+        end
+    else
+        -- Fallback: iterate map directly (sorted_ids nil = API unavailable).
+        for _, entry in pairs(aura_map) do list[#list + 1] = entry end
+        table_sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
+    end
+end
+
+local function apply_short_frame_render_order(frame, list)
+    frame._short_order_map = frame._short_order_map or {}
+    frame._short_order_next = frame._short_order_next or 1
+
+    local seen_keys = _scratch_seen_keys
+    wipe(seen_keys)
+    for _, entry in ipairs(list) do
+        local key = entry.order_key or ("iid:" .. tostring(entry.instance_id))
+
+        if not frame._short_order_map[key] then
+            frame._short_order_map[key] = frame._short_order_next
+            frame._short_order_next = frame._short_order_next + 1
+        end
+
+        entry._short_order = frame._short_order_map[key]
+        seen_keys[key] = true
+    end
+
+    -- Cleanup removed keys so re-applied buffs are treated as new entries.
+    for key in pairs(frame._short_order_map) do
+        if not seen_keys[key] then
+            frame._short_order_map[key] = nil
+        end
+    end
+
+    table_sort(list, function(a, b)
+        local aa = a._short_order or 0
+        local bb = b._short_order or 0
+        if aa == bb then
+            return get_entry_sort_id(a) < get_entry_sort_id(b)
+        end
+        return aa < bb
+    end)
+end
+
+local function apply_cdm_frame_render_order(list)
+    table_sort(list, function(a, b)
+        local aa = a.cdm_order or 9999
+        local bb = b.cdm_order or 9999
+        if aa == bb then
+            return get_entry_sort_id(a) < get_entry_sort_id(b)
+        end
+        return aa < bb
+    end)
+end
+
+local function build_render_list(frame, aura_map, aura_filter, sort_mode)
+    local list = _scratch_list
+    wipe(list)
+
+    if frame.is_custom then
+        add_custom_entries_to_render_list(list, aura_map)
+    else
+        add_preset_entries_to_render_list(frame, list, aura_map, aura_filter, sort_mode)
+    end
+
+    if frame.category == "short" then
+        apply_short_frame_render_order(frame, list)
+    elseif M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[frame.category] then
+        apply_cdm_frame_render_order(list)
+    end
+
+    return list
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -421,110 +567,7 @@ end
 -- Render the aura_map into the icon pool. Preset frames use C_UnitAuras.GetUnitAuraInstanceIDs
 -- for game-provided sort order; custom frames keep the selected-filter scan order.
 function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, aura_filter, sort_mode, show_timer_text, bar_text_color)
-    local list = _scratch_list
-    wipe(list)
-
-    if self.is_custom then
-        for _, entry in pairs(aura_map) do list[#list + 1] = entry end
-        table_sort(list, function(a, b)
-            local aa = a.custom_order or 9999
-            local bb = b.custom_order or 9999
-            if aa == bb then
-                return get_entry_sort_id(a) < get_entry_sort_id(b)
-            end
-            return aa < bb
-        end)
-    else
-        -- Resolve sort parameters for GetUnitAuraInstanceIDs.
-        local sort_rule = SORT_RULE_DEFAULT
-        local sort_dir  = SORT_DIR_NORMAL
-        if sort_mode == "timeleft" then
-            sort_rule = SORT_RULE_EXPIRATION
-            -- Normal = ascending expiration time = soonest to expire first (most urgent).
-        elseif sort_mode == "name" then
-            sort_rule = SORT_RULE_NAME
-        end
-
-        local wow_filter = (aura_filter and aura_filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
-        local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
-        local sorted_ids
-        if self._sorted_ids_cache and self._sorted_ids_cache_key == cache_key then
-            sorted_ids = self._sorted_ids_cache
-        else
-            sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
-            self._sorted_ids_cache = sorted_ids
-            self._sorted_ids_cache_key = cache_key
-        end
-
-        -- Build display list in game-sorted order, filtered to entries in this frame's map.
-        if sorted_ids then
-            local seen = _scratch_seen
-            wipe(seen)
-            for _, iid in ipairs(sorted_ids) do
-                local entry = aura_map[iid]
-                if entry then
-                    list[#list + 1] = entry
-                    seen[iid] = true
-                end
-            end
-            for key, entry in pairs(aura_map) do
-                if not seen[key] then
-                    list[#list + 1] = entry
-                end
-            end
-        else
-            -- Fallback: iterate map directly (sorted_ids nil = API unavailable).
-            for _, entry in pairs(aura_map) do list[#list + 1] = entry end
-            table_sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
-        end
-    end
-
-    -- Short frame ordering: stable per-aura order key so stack updates don't
-    -- reposition existing buffs. New keys get appended at the end.
-    if self.category == "short" then
-        self._short_order_map = self._short_order_map or {}
-        self._short_order_next = self._short_order_next or 1
-
-        local seen_keys = _scratch_seen_keys
-        wipe(seen_keys)
-        for _, entry in ipairs(list) do
-            local key = entry.order_key or ("iid:" .. tostring(entry.instance_id))
-
-            if not self._short_order_map[key] then
-                self._short_order_map[key] = self._short_order_next
-                self._short_order_next = self._short_order_next + 1
-            end
-
-            entry._short_order = self._short_order_map[key]
-            seen_keys[key] = true
-        end
-
-        -- Cleanup removed keys so re-applied buffs are treated as new entries.
-        for key in pairs(self._short_order_map) do
-            if not seen_keys[key] then
-                self._short_order_map[key] = nil
-            end
-        end
-
-        table_sort(list, function(a, b)
-            local aa = a._short_order or 0
-            local bb = b._short_order or 0
-            if aa == bb then
-                return get_entry_sort_id(a) < get_entry_sort_id(b)
-            end
-            return aa < bb
-        end)
-    elseif M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[self.category] then
-        table_sort(list, function(a, b)
-            local aa = a.cdm_order or 9999
-            local bb = b.cdm_order or 9999
-            if aa == bb then
-                return get_entry_sort_id(a) < get_entry_sort_id(b)
-            end
-            return aa < bb
-        end)
-    end
-
+    local list = build_render_list(self, aura_map, aura_filter, sort_mode)
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
     local now = GetTime()
     local is_static_frame = (self.category == "static")
@@ -537,30 +580,11 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local timer_category = get_timer_category(self, entry)
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
-        local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
-            and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
-        local need_live_duration = (not is_static_frame)
-            and (not is_spell_cooldown)
-            and (show_timer_text or bar_mode)
-            and type(entry.instance_id) == "number"
-            and ((not has_cached_timing) or entry.live_remaining ~= nil)
-        local live_duration = nil
-        if need_live_duration then
-            local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
-            if ok then live_duration = result end
-        end
-        local cooldown_duration = is_spell_cooldown and entry.duration_object or nil
-        if cooldown_duration then
-            live_duration = cooldown_duration
-        end
-        local live_remaining = get_duration_object_remaining(live_duration) or entry.live_remaining
+        local live_duration, live_remaining, cooldown_duration =
+            resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
 
         assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category)
 
-        local cooldown_remaining = live_remaining
-        if cooldown_remaining ~= nil and issecretvalue(cooldown_remaining) then
-            cooldown_remaining = nil
-        end
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         local stack_text = resolve_stack_text(entry, live_count)
         configure_aura_visual(
