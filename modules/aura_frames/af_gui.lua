@@ -46,27 +46,6 @@ function M.CreateListDropdown(name, parent, labelText, options, get_value, on_se
     })
 end
 
--- growth direction dropdown
--- Replaces the deprecated UIDropDownMenu API with a custom popup list.
-function M.CreateDirectionDropdown(name, parent, labelText, db_key, callback)
-    local dir_values = { "RIGHT", "LEFT", "DOWN", "UP" }
-    local options = {}
-    for _, dir in ipairs(dir_values) do
-        options[#options + 1] = { value = dir, text = dir }
-    end
-
-    return addon.CreateDropdown(name, parent, labelText, options, {
-        width = 106,
-        get_value = function()
-            return M.db[db_key] or "DOWN"
-        end,
-        on_select = function(value)
-            M.db[db_key] = value
-            if callback then callback() end
-        end,
-    })
-end
-
 -- tabs settings controls
 function M.BuildSettings(parent)
     local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
