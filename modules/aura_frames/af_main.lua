@@ -469,6 +469,84 @@ local function create_aura_frame_resizer(frame, category)
     end)
 end
 
+-- ============================================================================
+-- AURA FRAME EVENTS
+
+local function create_aura_frame_update_params(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, category, aura_filter)
+    return {
+        show_key = show_key,
+        move_key = move_key,
+        timer_key = timer_key,
+        bg_key = bg_key,
+        scale_key = scale_key,
+        spacing_key = spacing_key,
+        category = category,
+        aura_filter = aura_filter,
+    }
+end
+
+local function register_aura_frame_events(frame, category)
+    frame:RegisterUnitEvent("UNIT_AURA", "player")
+    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+
+    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
+        frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+        frame:RegisterEvent("SPELL_UPDATE_CHARGES")
+    end
+end
+
+local function is_aura_frame_event_relevant(event, unit)
+    return (event == "UNIT_AURA" and unit == "player")
+        or event == "PLAYER_ENTERING_WORLD"
+        or event == "PLAYER_REGEN_DISABLED"
+        or event == "PLAYER_REGEN_ENABLED"
+        or event == "PLAYER_SPECIALIZATION_CHANGED"
+        or event == "SPELL_UPDATE_COOLDOWN"
+        or event == "SPELL_UPDATE_CHARGES"
+end
+
+local function queue_deferred_aura_scan(frame, params)
+    if frame._scan_pending then return end
+
+    frame._scan_pending = true
+    local f = frame
+    -- A tenth second matches ElkBuffBars' short UNIT_AURA bucket and coalesces
+    -- noisy event bursts while ensuring scans run outside event-dispatch taint.
+    C_Timer.After(UPDATE_INTERVALS.tenth_sec, function()
+        f._scan_pending = false
+        local event_info = f._pending_aura_info
+        f._pending_aura_info = nil
+        M.update_auras(f, params.show_key, params.move_key, params.timer_key,
+            params.bg_key, params.scale_key, params.spacing_key, params.aura_filter, event_info)
+    end)
+end
+
+local function handle_aura_frame_event(frame, event, unit, info)
+    local params = frame.update_params
+    if not params then return end
+    if not is_aura_frame_event_relevant(event, unit) then return end
+
+    -- Do not scan inside the event handler. C_UnitAuras calls made directly
+    -- during event dispatch can return secret values in combat, so every frame
+    -- update is deferred through the short aura bucket below.
+    if event == "UNIT_AURA" then
+        frame._pending_aura_info = M.merge_aura_info(frame._pending_aura_info, info)
+    end
+    if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
+        M.mark_aura_scan_dirty()
+    end
+
+    queue_deferred_aura_scan(frame, params)
+end
+
+local function bind_aura_frame_events(frame, category)
+    register_aura_frame_events(frame, category)
+    frame:SetScript("OnEvent", handle_aura_frame_event)
+end
+
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
@@ -503,74 +581,18 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     -- Map-based aura cache: auraInstanceID → entry table. Persists across events.
     frame._aura_map = {}
 
-    frame:RegisterUnitEvent("UNIT_AURA", "player")
-    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("PLAYER_REGEN_DISABLED")  -- Combat start
-    frame:RegisterEvent("PLAYER_REGEN_ENABLED")   -- Combat end
-    frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
-        frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-        frame:RegisterEvent("SPELL_UPDATE_CHARGES")
-    end
-    
     -- Store parameters on frame itself for robust access during callbacks
-    frame.update_params = {
-        show_key = show_key,
-        move_key = move_key,
-        timer_key = timer_key,
-        bg_key = bg_key,
-        scale_key = scale_key,
-        spacing_key = spacing_key,
-        category = category,
-        aura_filter = frame_opts.aura_filter or (is_debuff and "HARMFUL" or "HELPFUL")
-    }
-    
-    frame:SetScript("OnEvent", function(self, event, unit, info)
-        local params = self.update_params
-        if not params then return end
-
-        local relevant = (event == "UNIT_AURA" and unit == "player")
-            or event == "PLAYER_ENTERING_WORLD"
-            or event == "PLAYER_REGEN_DISABLED"
-            or event == "PLAYER_REGEN_ENABLED"
-            or event == "PLAYER_SPECIALIZATION_CHANGED"
-            or event == "SPELL_UPDATE_COOLDOWN"
-            or event == "SPELL_UPDATE_CHARGES"
-
-        if not relevant then return end
-
-        -- KEY: do NOT scan inside the event handler.
-        -- ElkBuffBars uses a short RegisterBucketEvent("UNIT_AURA") delay for exactly this reason:
-        -- C_UnitAuras calls made directly in OnEvent return "secret values" in combat
-        -- because the execution context is still tainted by the event dispatch.
-        -- Deferring through the aura bucket runs the scan after the tainted
-        -- event context exits, so aura fields return clean, readable values.
-        --
-        -- Merge UNIT_AURA payloads while waiting for the deferred scan.
-        if event == "UNIT_AURA" then
-            self._pending_aura_info = M.merge_aura_info(self._pending_aura_info, info)
-        end
-        if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
-            M.mark_aura_scan_dirty()
-        end
-
-        -- Deduplication: if a scan is already queued for this frame, don't queue another.
-        -- Multiple rapid UNIT_AURA events (common in combat) collapse to one scan.
-        if not self._scan_pending then
-            self._scan_pending = true
-            local f = self
-            -- A tenth second matches ElkBuffBars' short UNIT_AURA bucket and
-            -- coalesces noisy event bursts without making aura changes feel late.
-            -- This ensures the scan runs outside the event-dispatch taint window.
-            C_Timer.After(UPDATE_INTERVALS.tenth_sec, function()
-                f._scan_pending = false
-                local event_info = f._pending_aura_info
-                f._pending_aura_info = nil
-                M.update_auras(f, params.show_key, params.move_key, params.timer_key,
-                    params.bg_key, params.scale_key, params.spacing_key, params.aura_filter, event_info)
-            end)
-        end
-    end)
+    frame.update_params = create_aura_frame_update_params(
+        show_key,
+        move_key,
+        timer_key,
+        bg_key,
+        scale_key,
+        spacing_key,
+        category,
+        frame_opts.aura_filter or (is_debuff and "HARMFUL" or "HELPFUL")
+    )
+    bind_aura_frame_events(frame, category)
     
     M.frames[show_key] = frame
     return frame
