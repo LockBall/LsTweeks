@@ -192,6 +192,13 @@ function M.queue_wow_cooldown_refresh(profile)
     end
 end
 
+-- ============================================================================
+-- AURA ICON TOOLTIPS
+
+local function tooltip_has_lines()
+    return (not GameTooltip.NumLines) or GameTooltip:NumLines() > 0
+end
+
 local function try_set_unit_aura_tooltip(obj)
     if not obj.aura_index then return false end
     if not GameTooltip.SetUnitAuraByAuraInstanceID then return false end
@@ -200,7 +207,7 @@ local function try_set_unit_aura_tooltip(obj)
     local ok = pcall(function()
         GameTooltip:SetUnitAuraByAuraInstanceID("player", obj.aura_index)
     end)
-    return ok and ((not GameTooltip.NumLines) or GameTooltip:NumLines() > 0)
+    return ok and tooltip_has_lines()
 end
 
 local function try_set_spell_tooltip(obj)
@@ -211,7 +218,7 @@ local function try_set_spell_tooltip(obj)
 
     local ok = pcall(GameTooltip.SetSpellByID, GameTooltip, spell_id)
     if not ok then return false end
-    return (not GameTooltip.NumLines) or GameTooltip:NumLines() > 0
+    return tooltip_has_lines()
 end
 
 local function add_basic_aura_tooltip_lines(obj)
@@ -246,11 +253,118 @@ local function show_aura_icon_tooltip(obj)
     GameTooltip:Show()
 end
 
+-- ============================================================================
+-- AURA ICON POOL
+
+-- The icon pool is a fixed set of reusable icon/bar frame objects owned by one
+-- aura frame. It is created up front because WoW combat lockdown makes runtime
+-- frame creation unsafe; render code updates and shows/hides these pooled objects.
+local function get_icon_pool_bar_bg_default(cfg_db, category)
+    return cfg_db["bar_bg_color_"..category]
+        or cfg_db["bar_bg_color"]
+        or cfg_db["color_"..category]
+        or cfg_db["color"]
+        or { r = 1, g = 1, b = 1, a = M.BAR_BG_ALPHA_DEFAULT }
+end
+
+local function create_icon_cooldown(obj)
+    local cooldown = CreateFrame("Cooldown", nil, obj, "CooldownFrameTemplate")
+    cooldown:SetAllPoints(obj)
+    cooldown:SetDrawEdge(false)
+    cooldown:SetDrawSwipe(true)
+    cooldown:SetDrawBling(false)
+    cooldown:SetHideCountdownNumbers(false)
+    cooldown:Hide()
+    return cooldown
+end
+
+local function create_icon_bar(obj, bar_bg_default)
+    local bar = CreateFrame("StatusBar", nil, obj)
+    bar:EnableMouse(false)
+    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    bar:SetMinMaxValues(0, 1)
+    bar:Hide()
+
+    obj.bar_bg = bar:CreateTexture(nil, "BACKGROUND")
+    obj.bar_bg:SetAllPoints()
+    obj.bar_bg:SetColorTexture(
+        bar_bg_default.r,
+        bar_bg_default.g,
+        bar_bg_default.b,
+        bar_bg_default.a or M.BAR_BG_ALPHA_DEFAULT
+    )
+
+    return bar
+end
+
+local function create_icon_text_regions(obj, category)
+    -- Text overlay is created after the bar so labels render above bar fills.
+    obj.text_overlay = CreateFrame("Frame", nil, obj)
+    obj.text_overlay:EnableMouse(false)
+    obj.text_overlay:SetFrameLevel(obj.bar:GetFrameLevel() + 1)
+
+    obj.stack_slot = CreateFrame("Frame", nil, obj.text_overlay)
+    M.add_debug_outline(obj.stack_slot, 1, 0.4, 0, 0.9)
+
+    obj.name_slot = CreateFrame("Frame", nil, obj.text_overlay)
+    M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
+
+    obj.name_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
+    obj.name_text:SetJustifyH("LEFT")
+    obj.name_text:SetWordWrap(false)
+    if obj.name_text.SetMaxLines then
+        obj.name_text:SetMaxLines(1)
+    end
+
+    obj.timer_slot = CreateFrame("Frame", nil, obj.text_overlay)
+    M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
+
+    obj.time_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
+    M.apply_number_font_to_text(obj.time_text, category)
+    obj.time_text:SetWordWrap(false)
+    if obj.time_text.SetMaxLines then
+        obj.time_text:SetMaxLines(1)
+    end
+
+    obj.count_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    obj.count_text:Hide()
+end
+
+local function bind_icon_tooltip(obj)
+    obj:EnableMouse(true)
+    obj:SetScript("OnEnter", show_aura_icon_tooltip)
+    obj:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
+local function create_aura_icon(parent, category, bar_bg_default)
+    local obj = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    obj:Hide()
+
+    obj.texture = obj:CreateTexture(nil, "ARTWORK")
+    obj.cooldown = create_icon_cooldown(obj)
+    obj.bar = create_icon_bar(obj, bar_bg_default)
+    create_icon_text_regions(obj, category)
+    bind_icon_tooltip(obj)
+
+    return obj
+end
+
+local function create_aura_icon_pool(frame, cfg_db, category)
+    frame.icons = {}
+    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or M.DEFAULT_MAX_ICONS
+    local bar_bg_default = get_icon_pool_bar_bg_default(cfg_db, category)
+
+    for i = 1, pool_size do
+        frame.icons[i] = create_aura_icon(frame, category, bar_bg_default)
+    end
+end
+
 -- AURA CONTAINER GENERATOR
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
     frame_opts = frame_opts or {}
-    local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
     frame.category = category
     frame.is_custom = frame_opts.is_custom == true
@@ -337,89 +451,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         end
     end)
 
-    -- ICON POOL MANAGEMENT    Pre-create set number of icons/bars to avoid combat lockdown errors
-    frame.icons = {}
-    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or M.DEFAULT_MAX_ICONS
-    local bar_bg_default = cfg_db["bar_bg_color_"..category]
-        or cfg_db["bar_bg_color"]
-        or cfg_db["color_"..category]
-        or cfg_db["color"]
-        or { r = 1, g = 1, b = 1, a = bar_bg_alpha }
-
-    for i = 1, pool_size do
-        local obj = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-        obj:Hide()
-        
-        -- Icon Texture
-        obj.texture = obj:CreateTexture(nil, "ARTWORK")
-
-        -- Native cooldown overlay for spell-cooldown mode. Pre-created so combat
-        -- updates can feed Blizzard DurationObjects without creating frames.
-        obj.cooldown = CreateFrame("Cooldown", nil, obj, "CooldownFrameTemplate")
-        obj.cooldown:SetAllPoints(obj)
-        obj.cooldown:SetDrawEdge(false)
-        obj.cooldown:SetDrawSwipe(true)
-        obj.cooldown:SetDrawBling(false)
-        obj.cooldown:SetHideCountdownNumbers(false)
-        obj.cooldown:Hide()
-
-        -- Status Bar (for bar mode)
-        obj.bar = CreateFrame("StatusBar", nil, obj)
-        obj.bar:EnableMouse(false)
-        obj.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        obj.bar:SetMinMaxValues(0, 1)
-        obj.bar_bg = obj.bar:CreateTexture(nil, "BACKGROUND")
-        obj.bar_bg:SetAllPoints()
-        obj.bar_bg:SetColorTexture(bar_bg_default.r, bar_bg_default.g, bar_bg_default.b, bar_bg_default.a or bar_bg_alpha)
-        obj.bar:Hide()
-        
-        -- Text Overlay Frame - created AFTER bar so it renders on top
-        -- This is a separate frame layer that ensures text is always visible above the bar
-        obj.text_overlay = CreateFrame("Frame", nil, obj)
-        obj.text_overlay:EnableMouse(false)
-        obj.text_overlay:SetFrameLevel(obj.bar:GetFrameLevel() + 1)
-
-        -- Stack slot: left zone of bar (stack count display area)
-        obj.stack_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        M.add_debug_outline(obj.stack_slot, 1, 0.4, 0, 0.9)
-
-        -- Name slot: middle zone of bar
-        obj.name_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
-
-        -- Text - create as children of text_overlay so they render above the bar
-        obj.name_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
-        obj.name_text:SetJustifyH("LEFT")
-        obj.name_text:SetWordWrap(false)
-        if obj.name_text.SetMaxLines then
-            obj.name_text:SetMaxLines(1)
-        end
-
-        -- Timer slot: right zone of bar; timer text anchors here so glyph width
-        -- changes do not affect the timer's reference position.
-        obj.timer_slot = CreateFrame("Frame", nil, obj.text_overlay)
-        M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
-
-        obj.time_text  = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
-        M.apply_number_font_to_text(obj.time_text, category)
-        obj.time_text:SetWordWrap(false)
-        if obj.time_text.SetMaxLines then
-            obj.time_text:SetMaxLines(1)
-        end
-
-        -- Stack count (shown bottom-right of icon in icon mode; in stack_slot in bar mode)
-        obj.count_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-        obj.count_text:Hide()
-        
-        -- Tooltip
-        obj:EnableMouse(true)
-        obj:SetScript("OnEnter", show_aura_icon_tooltip)
-        obj:SetScript("OnLeave", function() 
-            GameTooltip:Hide() 
-        end)
-
-        frame.icons[i] = obj
-    end
+    -- Pre-create icons/bars so combat updates never need to create frames.
+    create_aura_icon_pool(frame, cfg_db, category)
 
     -- Map-based aura cache: auraInstanceID → entry table. Persists across events.
     frame._aura_map = {}

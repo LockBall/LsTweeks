@@ -6,8 +6,8 @@ Use one extraction at a time, with reload / in-game testing after each meaningfu
 
 Recommended sub-step order:
 
-- [ ] a) Extract or regroup tooltip helpers if needed; this is already mostly isolated and low risk.
-- [ ] b) Extract icon pool creation from `M.create_aura_frame()`.
+- [x] a) Extract or regroup tooltip helpers if needed; this is already mostly isolated and low risk.
+- [x] b) Extract icon pool creation from `M.create_aura_frame()`.
 - [ ] c) Extract title bar creation and resizer setup from `M.create_aura_frame()`.
 - [ ] d) Extract event registration and event-handler binding from `M.create_aura_frame()`.
 - [ ] e) Extract startup bootstrap chunks from the `ADDON_LOADED` handler.
