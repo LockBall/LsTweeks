@@ -224,6 +224,54 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_
     obj.grey_cooldown = entry.grey_cooldown == true
 end
 
+local function configure_aura_visual(
+    obj,
+    entry,
+    bar_mode,
+    color,
+    bar_bg_color,
+    bar_text_color,
+    stack_text,
+    show_cooldown_overlay,
+    cooldown_is_active,
+    live_duration,
+    cooldown_duration,
+    is_spell_cooldown
+)
+    obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
+    set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
+    if obj.cooldown then
+        obj.cooldown:Hide()
+    end
+
+    if bar_mode then
+        obj.bar:Show()
+        obj.bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+        if obj.bar_bg then
+            local bg = bar_bg_color or {
+                r = color.r,
+                g = color.g,
+                b = color.b,
+                a = M.BAR_BG_ALPHA_DEFAULT,
+            }
+            obj.bar_bg:SetColorTexture(bg.r, bg.g, bg.b, bg.a or 1)
+        end
+        obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
+        obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
+        obj.name_text:Show()
+        set_count_text(obj, stack_text, "LEFT", obj.bar, "LEFT", 4, 0)
+    else
+        obj.bar:Hide()
+        obj.name_text:Hide()
+        if show_cooldown_overlay and live_duration then
+            apply_cooldown_overlay(obj, live_duration, entry.expiration, entry.duration)
+        elseif is_spell_cooldown then
+            apply_cooldown_overlay(obj, cooldown_duration, entry.expiration, entry.duration)
+        end
+        set_count_text(obj, stack_text)
+    end
+end
+
 -- ============================================================================
 -- AURA INFO MERGING
 
@@ -278,7 +326,6 @@ end
 -- Render the aura_map into the icon pool. Preset frames use C_UnitAuras.GetUnitAuraInstanceIDs
 -- for game-provided sort order; custom frames keep the selected-filter scan order.
 function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, aura_filter, sort_mode, show_timer_text, bar_text_color)
-    local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
     local list = _scratch_list
     wipe(list)
 
@@ -428,36 +475,21 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             cooldown_remaining = nil
         end
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
-        obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
-        set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
-        if obj.cooldown then
-            obj.cooldown:Hide()
-        end
-
         local stack_text = resolve_stack_text(entry, live_count)
-        if bar_mode then
-            obj.bar:Show()
-            obj.bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
-            if obj.bar_bg then
-                local bg = bar_bg_color or { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha }
-                obj.bar_bg:SetColorTexture(bg.r, bg.g, bg.b, bg.a or 1)
-            end
-            -- In bar mode: append stack count to name if present
-            obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
-            obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
-            obj.name_text:Show()
-            set_count_text(obj, stack_text, "LEFT", obj.bar, "LEFT", 4, 0)
-        else
-            obj.bar:Hide()
-            obj.name_text:Hide()
-            if show_cooldown_overlay and live_duration then
-                apply_cooldown_overlay(obj, live_duration, entry.expiration, entry.duration)
-            elseif is_spell_cooldown then
-                apply_cooldown_overlay(obj, cooldown_duration, entry.expiration, entry.duration)
-            end
-            -- In icon mode: stack count at bottom-right of icon
-            set_count_text(obj, stack_text)
-        end
+        configure_aura_visual(
+            obj,
+            entry,
+            bar_mode,
+            color,
+            bar_bg_color,
+            bar_text_color,
+            stack_text,
+            show_cooldown_overlay,
+            cooldown_is_active,
+            live_duration,
+            cooldown_duration,
+            is_spell_cooldown
+        )
 
         -- Static frame buffs are effectively permanent; never display a timer string.
         if is_static_frame then
