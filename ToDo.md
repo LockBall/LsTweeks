@@ -6,22 +6,6 @@
 
 ---
 
-## 2. Repeated / Duplicate Code
-
-### 2e. `af_main.lua:run_wow_cooldown_refresh` — three separate loops over `WOW_COOLDOWN_CATEGORIES`
-```lua
-if prepare_viewers then
-    for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do ... end
-end
-if clear_child_cache then
-    for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do ... end
-end
-for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do ... end  -- always
-```
-All three loops walk the same list. A single loop with conditional bodies inside would be cleaner and avoid the triple traversal.
-
----
-
 ## 3. Inconsistencies
 
 ### 3a. `af_core.lua:294` — mixed local-vs-module table check
@@ -134,7 +118,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 2e | `af_main.lua` | Repeated — 3 loops over same category list | Low |
 | 3a | `af_core.lua:294` | Inconsistent — local vs module table guard | Low |
 | 3b | `af_core.lua` | Inconsistent — `self:Show()` × 3 | Low |
 | 3c | `af_functions.lua` | Inconsistent — `read_frame_bool` check 3 unreachable | Low |

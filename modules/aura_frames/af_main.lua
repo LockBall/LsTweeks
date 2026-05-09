@@ -157,21 +157,20 @@ end
 
 local function run_wow_cooldown_refresh(refresh_config)
     if not M.frames then return end
-    if refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer then
-        for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-            if M.cdm_category_needs_viewer(category) then
-                M.prepare_blizz_cdm_viewer(category)
-            end
-        end
-    end
-    if refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache then
-        for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-            if M.cdm_category_needs_viewer(category) then
-                M.clear_cooldown_viewer_child_cache(category)
-            end
-        end
-    end
+
+    local should_prepare_viewers = refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer
+    local should_clear_child_cache = refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache
+
     for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
+        local needs_viewer = M.cdm_category_needs_viewer(category)
+        if should_prepare_viewers and needs_viewer then
+            M.prepare_blizz_cdm_viewer(category)
+        end
+
+        if should_clear_child_cache and needs_viewer then
+            M.clear_cooldown_viewer_child_cache(category)
+        end
+
         local show_key = M.get_preset_keys(category).show_key
         local frame = M.frames[show_key]
         local p = frame and frame.update_params
