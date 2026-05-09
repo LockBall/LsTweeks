@@ -8,23 +8,6 @@
 
 ## 3. Inconsistencies
 
-### 3d. Drag-stop sync only wired for preset frames, not custom frames
-`build_preset_frame_panel` hooks `OnDragStop` on both title bars to call `sync_xy_sliders_to_frame()`, keeping the X/Y position sliders live after a drag. `build_custom_settings_panel` has no equivalent — after dragging a custom frame, its X/Y sliders show stale values until the panel is rebuilt.
-
----
-
-### 3e. `build_preset_frame_panel` uses `SetScript` to chain drag stop vs `HookScript`
-```lua
-local old_drag_stop = tb:GetScript("OnDragStop")
-tb:SetScript("OnDragStop", function(...)
-    if old_drag_stop then old_drag_stop(...) end
-    sync_xy_sliders_to_frame()
-end)
-```
-`HookScript` is the correct WoW API for this pattern. Using `SetScript` with manual old-script preservation is fragile; if ever called a second time (e.g., a settings rebuild), the old script gets double-wrapped. Use `tb:HookScript("OnDragStop", sync_xy_sliders_to_frame)` directly.
-
----
-
 ### 3f. `af_gui_frame_builders.lua:create_bound_checkbox` wrapper hardcodes `M.db`
 ```lua
 local function create_bound_checkbox(label, db_key, row, column, ...)
@@ -89,8 +72,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 3d | `af_gui_frame_builders.lua` | Inconsistent — drag sync missing for custom frames | Medium |
-| 3e | `af_gui_frame_builders.lua` | Inconsistent — `SetScript` vs `HookScript` | Low |
 | 3f | `af_gui_frame_builders.lua` | Inconsistent — `create_bound_checkbox` bypasses config | Low |
 | 4a | `af_scan.lua` | Structural — max_helpful hardcodes category names | Medium |
 | 4b | `af_gui_tree.lua` | Structural — `CD_GROUP_KEYS` duplicates `M.WOW_COOLDOWN_CATEGORIES` | Low |
@@ -98,7 +79,7 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 | 4d | `af_main.lua` | Structural — font priority logic duplicated and inconsistent | Low |
 | 4e | `af_render.lua` | Structural — 240-line render function, deep nesting | Medium |
 
-**Medium-priority items (worth fixing soon):** 3d, 4a, 4e  
+**Medium-priority items (worth fixing soon):** 4a, 4e  
 **Low-priority items (clean-up pass):** everything else  
 No correctness bugs were found; all issues are quality/maintainability.
 

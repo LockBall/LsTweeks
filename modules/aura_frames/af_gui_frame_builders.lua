@@ -372,11 +372,15 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         if f then
             for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
                 if tb then
-                    local old_drag_stop = tb:GetScript("OnDragStop")
-                    tb:SetScript("OnDragStop", function(...)
-                        if old_drag_stop then old_drag_stop(...) end
-                        sync_xy_sliders_to_frame()
-                    end)
+                    tb._lstweeks_sync_xy_sliders = sync_xy_sliders_to_frame
+                    if not tb._lstweeks_sync_xy_sliders_hooked then
+                        tb._lstweeks_sync_xy_sliders_hooked = true
+                        tb:HookScript("OnDragStop", function(self)
+                            if self._lstweeks_sync_xy_sliders then
+                                self._lstweeks_sync_xy_sliders()
+                            end
+                        end)
+                    end
                 end
             end
         end
