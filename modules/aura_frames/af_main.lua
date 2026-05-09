@@ -623,9 +623,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
         M.db = Ls_Tweeks_DB.aura_frames
 
-        -- Session-scoped spell learning tables: reset every login, never written to DB.
-        M._known_static = {}
-        M._known_long   = {}
         M._aura_scan_dirty = true
 
         -- Populate missing settings using the defaults defined in af_defaults.lua

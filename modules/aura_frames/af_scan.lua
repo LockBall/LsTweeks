@@ -1,7 +1,6 @@
 -- Unified aura scanning and classification for all aura frame categories.
 -- M.unified_scan() runs one pass over all player buffs and debuffs, classifying each into M._aura_map
 -- with an entry.category ("static"/"short"/"long"/"debuff") and entry.is_helpful flag.
--- Spell learning (M._known_static, M._known_long) is session-scoped only — never written to DB.
 -- Preset frames filter by entry.category; custom frames scan with a selected AuraFilters string.
 
 local addon_name, addon = ...
@@ -26,11 +25,6 @@ local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
 local _scratch_viewer_children = {}
 local _custom_aura_scan_cache = {}
-
--- Session-scoped spell classification memory (reset on every login/reload, never persisted).
--- Prevents mid-session category jumps when aura fields go secret in combat.
-M._known_static = M._known_static or {}  -- spell_id -> true (confirmed permanent)
-M._known_long   = M._known_long   or {}  -- spell_id -> true (confirmed long-duration)
 
 -- ============================================================================
 -- SHARED HELPERS
@@ -649,7 +643,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                             math_max(db.max_icons_tracked_buffs or M.MAX_ICONS_LIMIT, db.max_icons_tracked_bars or M.MAX_ICONS_LIMIT))))))
     )
 
-    -- Track old category by spell for cross-session refresh hinting.
+    -- Track old category by spell for scan-local secret-field fallback.
     -- Built lazily from old_map each scan — no persistent table needed.
     local old_cat_by_spell = _scratch_old_cat
     wipe(old_cat_by_spell)
@@ -680,25 +674,10 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
         local classify_rem = live_remaining or rem
 
-        -- Self-heal stale static-learning when we now see a readable duration > 0.
-        if safe_spell_id and M._known_static[safe_spell_id]
-                and classify_rem ~= nil and not issecretvalue(classify_rem)
-                and classify_rem > 0 then
-            M._known_static[safe_spell_id] = nil
-        end
+        local category = nil
 
-        local category     = nil
-        local static_confirmed = false
-
-        if safe_spell_id and M._known_static[safe_spell_id] then
-            category = "static"
-            static_confirmed = true
-        elseif safe_spell_id and M._known_long[safe_spell_id] and classify_rem == nil then
-            -- Brand-new long buff in combat: all time fields secret but we learned it OOC.
-            category = "long"
-        elseif classify_rem ~= nil then
+        if classify_rem ~= nil then
             category = classify_helpful(classify_rem, short_threshold)
-            if category == "static" then static_confirmed = true end
         else
             -- Secret fields: use DoesAuraHaveExpirationTime as final boolean.
             local expires = C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
@@ -711,7 +690,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
             if expires_known == false then
                 category = "static"
-                static_confirmed = true
             elseif expires_known == true then
                 local old_cat = (old_entry and old_entry.category)
                     or (safe_spell_id and old_cat_by_spell[safe_spell_id])
@@ -756,14 +734,6 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
             end
             seen_iids[iid] = true
 
-            -- Session-scoped learning.
-            if category == "static" and safe_spell_id and static_confirmed then
-                M._known_static[safe_spell_id] = true
-            end
-            if category == "long" and safe_spell_id and classify_rem ~= nil then
-                M._known_long[safe_spell_id] = true
-            end
-
             count = count + 1
         end
     end
@@ -805,16 +775,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 expires_known = expires
             end
 
-            local added_data  = added_lookup and added_lookup[iid]
-            local safe_spell_id = get_safe_spell_id(aura.spellId, old_entry)
-            local hinted_duration, hinted_expiration, hinted_spell_id
-            if type(added_data) == "table" then
-                hinted_duration = added_data.duration
-                if issecretvalue(hinted_duration) then hinted_duration = nil end
-                hinted_expiration = added_data.expirationTime
-                if issecretvalue(hinted_expiration) then hinted_expiration = nil end
-                hinted_spell_id = get_safe_spell_id(added_data.spellId, nil)
-            end
+            local added_data = added_lookup and added_lookup[iid]
             local is_new = (old_map[iid] == nil) and (added_data ~= nil)
 
             if is_new then
@@ -826,11 +787,8 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 belongs = true
             end
         else
-            -- Readable duration: debuffs with a dispel type also belong.
+            -- Readable debuffs always belong to the debuff frame.
             belongs = true
-            if not belongs and not issecretvalue(dispel) and dispel and dispel ~= "" then
-                belongs = true
-            end
         end
 
         if belongs then
