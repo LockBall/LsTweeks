@@ -8,17 +8,6 @@
 
 ## 4. Structural / Maintainability Issues
 
-### 4b. `af_gui_tree.lua` — `CD_GROUP_KEYS` duplicates `M.WOW_COOLDOWN_CATEGORIES`
-```lua
-local CD_GROUP_KEYS = {
-    essential = true, utility = true,
-    tracked_buffs = true, tracked_bars = true,
-}
-```
-`M.WOW_COOLDOWN_CATEGORIES` (a flat `{key = true}` table) already encodes exactly these four. `CD_GROUP_KEYS` can be replaced with `M.WOW_COOLDOWN_CATEGORIES` directly, eliminating a drift risk when CDM categories change.
-
----
-
 ### 4c. `af_gui_tree.lua` — `M._filters_add_y` and `M._custom_expanded` written to module table as layout side-effects
 `M._filters_add_y` and `M._custom_expanded` are ephemeral layout/UI state written to the module table from inside `build_frames_tab`. Since the settings frame is a singleton this works in practice, but it makes `M` a grab-bag for transient closure state. Both should be closed-over locals inside `build_frames_tab` (which they nearly are — `_filters_add_y` just needs to be a plain upvalue; `_custom_expanded` is accessed by `rebuild_tree` which is a closure that could carry it directly).
 
@@ -44,7 +33,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 4b | `af_gui_tree.lua` | Structural — `CD_GROUP_KEYS` duplicates `M.WOW_COOLDOWN_CATEGORIES` | Low |
 | 4c | `af_gui_tree.lua` | Structural — layout state leaked to module table | Low |
 | 4d | `af_main.lua` | Structural — font priority logic duplicated and inconsistent | Low |
 | 4e | `af_render.lua` | Structural — 240-line render function, deep nesting | Medium |
