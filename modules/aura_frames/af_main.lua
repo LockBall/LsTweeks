@@ -73,18 +73,7 @@ M.NUMBER_FONT_BOLD_PATHS = {
 }
 
 local function get_number_font_def(key, category, cfg_db)
-    local selected_key = key
-    local db = cfg_db or M.db
-    if not selected_key and db then
-        if cfg_db and db.timer_number_font then
-            selected_key = db.timer_number_font
-        elseif category and db["timer_number_font_"..category] then
-            selected_key = db["timer_number_font_"..category]
-        else
-            selected_key = db.timer_number_font
-        end
-    end
-    selected_key = selected_key or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    local selected_key = key or M.get_setting(cfg_db, category, "timer_number_font", M.DEFAULT_TIMER_NUMBER_FONT_KEY)
     for _, def in ipairs(M.NUMBER_FONT_OPTIONS) do
         if def.key == selected_key then
             return def
@@ -111,18 +100,7 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
     if size > 18 then size = 18 end
 
     if def.path then
-        local use_bold = false
-        local db = cfg_db or M.db
-        if db then
-            local bold_key = category and ("timer_number_font_bold_"..category)
-            if cfg_db and db.timer_number_font_bold ~= nil then
-                use_bold = db.timer_number_font_bold
-            elseif bold_key and db[bold_key] ~= nil then
-                use_bold = db[bold_key]
-            else
-                use_bold = db.timer_number_font_bold or false
-            end
-        end
+        local use_bold = M.get_setting(cfg_db, category, "timer_number_font_bold", false) == true
         local bold_path = use_bold and M.NUMBER_FONT_BOLD_PATHS[def.key]
         font_string:SetFont(bold_path or def.path, size, flags)
     elseif STANDARD_TEXT_FONT then

@@ -149,6 +149,8 @@ function M.build_frames_tab(p, frames_data)
     local filters_group_box
     local filters_group_title
     local filters_group_top_y
+    local filters_add_y
+    local custom_expanded = {}
     local update_filters_group_box
 
     local function hide_custom_tree_row(row)
@@ -201,7 +203,7 @@ function M.build_frames_tab(p, frames_data)
             hide_custom_tree_row(row)
         end
 
-        local add_y = M._filters_add_y or (-PAD - ROW_H)
+        local add_y = filters_add_y or (-PAD - ROW_H)
         local y = add_y - (ROW_H + GROUP_ELEMENT_GAP)
 
         -- ---- Custom frame rows ----
@@ -217,15 +219,14 @@ function M.build_frames_tab(p, frames_data)
                 end
 
                 -- Track expand state per custom entry (ephemeral)
-                M._custom_expanded = M._custom_expanded or {}
-                if M._custom_expanded[id] == nil then M._custom_expanded[id] = true end
+                if custom_expanded[id] == nil then custom_expanded[id] = true end
 
                 -- Expand/collapse arrow
                 local arrow = row.arrow
                 local arrow_fs = row.arrow_fs
                 arrow:ClearAllPoints()
                 arrow:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y)
-                arrow_fs:SetText(M._custom_expanded[id] and "-" or "+")
+                arrow_fs:SetText(custom_expanded[id] and "-" or "+")
                 arrow:Show()
 
                 -- Name button (with rename EditBox on click if already selected)
@@ -354,7 +355,7 @@ function M.build_frames_tab(p, frames_data)
                 child_btn:SetScript("OnLeave", function()
                     if child_fs ~= selected_fs then child_fs:SetTextColor(unpack(NORM_COLOR)) end
                 end)
-                child_btn:SetShown(M._custom_expanded[id])
+                child_btn:SetShown(custom_expanded[id])
                 child_fs._group_key = "filters"
                 node_fs_map[child_key] = child_fs
 
@@ -364,15 +365,15 @@ function M.build_frames_tab(p, frames_data)
                     show_node(child_key, function(pnl) M.build_custom_child_panel(pnl, child_entry) end)
                 end)
 
-                if M._custom_expanded[id] then
+                if custom_expanded[id] then
                     y = y - (ROW_H + GROUP_ELEMENT_GAP)
                 end
 
                 -- Wire expand/collapse
                 arrow:SetScript("OnClick", function()
-                    M._custom_expanded[id] = not M._custom_expanded[id]
-                    arrow_fs:SetText(M._custom_expanded[id] and "-" or "+")
-                    child_btn:SetShown(M._custom_expanded[id])
+                    custom_expanded[id] = not custom_expanded[id]
+                    arrow_fs:SetText(custom_expanded[id] and "-" or "+")
+                    child_btn:SetShown(custom_expanded[id])
                     if add_btn_ref then
                         -- Full rebuild is simplest here to avoid offset drift
                         rebuild_tree()
@@ -571,7 +572,7 @@ function M.build_frames_tab(p, frames_data)
     y = y - (GROUP_GAP + GROUP_INNER_PAD)
     filters_group_top_y = y
     y = y - (GROUP_INNER_PAD + GROUP_TEXT_TITLE_H + GROUP_ELEMENT_GAP)
-    M._filters_add_y = y
+    filters_add_y = y
     update_filters_group_box = function(bottom_y)
         place_group_box(filters_group_box, filters_group_title, filters_group_top_y, bottom_y)
     end
