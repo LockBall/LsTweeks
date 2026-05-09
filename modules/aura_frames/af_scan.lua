@@ -597,6 +597,16 @@ local function classify_helpful(classify_rem, short_threshold)
     return "long"
 end
 
+local function get_max_icons_for_frame_defs(db, hint, include_debuff)
+    local max_icons = hint or 0
+    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+        if (frame_def.is_debuff == true) == include_debuff then
+            max_icons = math_max(max_icons, db["max_icons_" .. frame_def.key] or M.MAX_ICONS_LIMIT)
+        end
+    end
+    return max_icons
+end
+
 -- ============================================================================
 -- UNIFIED SCAN
 -- Scans all player buffs and debuffs in one pass.
@@ -633,15 +643,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     -- PASS 1: HELPFUL (buffs)
     -- -------------------------------------------------------------------------
-    local max_helpful = math_max(
-        max_helpful_hint or 0,
-            math_max(db.max_icons_static or M.MAX_ICONS_LIMIT,
-                math_max(db.max_icons_short or M.MAX_ICONS_LIMIT,
-                    math_max(db.max_icons_long or M.MAX_ICONS_LIMIT,
-                    math_max(db.max_icons_essential or M.MAX_ICONS_LIMIT,
-                        math_max(db.max_icons_utility or M.MAX_ICONS_LIMIT,
-                            math_max(db.max_icons_tracked_buffs or M.MAX_ICONS_LIMIT, db.max_icons_tracked_bars or M.MAX_ICONS_LIMIT))))))
-    )
+    local max_helpful = get_max_icons_for_frame_defs(db, max_helpful_hint, false)
 
     -- Track old category by spell for scan-local secret-field fallback.
     -- Built lazily from old_map each scan — no persistent table needed.
@@ -741,7 +743,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     -- PASS 2: HARMFUL (debuffs)
     -- -------------------------------------------------------------------------
-    local max_debuff = math_max(max_debuff_hint or 0, db.max_icons_debuff or M.MAX_ICONS_LIMIT)
+    local max_debuff = get_max_icons_for_frame_defs(db, max_debuff_hint, true)
 
     i, count = 1, 0
     while count < max_debuff do

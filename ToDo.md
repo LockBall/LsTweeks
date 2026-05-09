@@ -6,35 +6,7 @@
 
 ---
 
-## 3. Inconsistencies
-
-### 3f. `af_gui_frame_builders.lua:create_bound_checkbox` wrapper hardcodes `M.db`
-```lua
-local function create_bound_checkbox(label, db_key, row, column, ...)
-    return create_bound_checkbox_control(p, label, M.db, db_key, ...)
-```
-For preset frames `frame_config.value_table` is `M.db`, so this is harmless — but it bypasses the config abstraction and makes the wrapper unsafe to reuse for any context where the value table differs.
-
----
-
 ## 4. Structural / Maintainability Issues
-
-### 4a. `af_scan.lua:unified_scan` — max_helpful hardcodes all helpful category names
-```lua
-local max_helpful = math_max(
-    max_helpful_hint or 0,
-    math_max(db.max_icons_static or M.MAX_ICONS_LIMIT,
-        math_max(db.max_icons_short or M.MAX_ICONS_LIMIT,
-            math_max(db.max_icons_long or M.MAX_ICONS_LIMIT,
-                math_max(db.max_icons_essential or M.MAX_ICONS_LIMIT,
-                    math_max(db.max_icons_utility or M.MAX_ICONS_LIMIT,
-                        math_max(db.max_icons_tracked_buffs or M.MAX_ICONS_LIMIT,
-                                 db.max_icons_tracked_bars  or M.MAX_ICONS_LIMIT)))))))
-)
-```
-Seven levels of nesting, all category names written out by hand. A new non-debuff category added to `FRAME_DEFS` would silently not be covered. Should iterate `M.FRAME_DEFS` (or `M.CATEGORIES`) and skip `is_debuff == true` entries.
-
----
 
 ### 4b. `af_gui_tree.lua` — `CD_GROUP_KEYS` duplicates `M.WOW_COOLDOWN_CATEGORIES`
 ```lua
@@ -72,14 +44,12 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 3f | `af_gui_frame_builders.lua` | Inconsistent — `create_bound_checkbox` bypasses config | Low |
-| 4a | `af_scan.lua` | Structural — max_helpful hardcodes category names | Medium |
 | 4b | `af_gui_tree.lua` | Structural — `CD_GROUP_KEYS` duplicates `M.WOW_COOLDOWN_CATEGORIES` | Low |
 | 4c | `af_gui_tree.lua` | Structural — layout state leaked to module table | Low |
 | 4d | `af_main.lua` | Structural — font priority logic duplicated and inconsistent | Low |
 | 4e | `af_render.lua` | Structural — 240-line render function, deep nesting | Medium |
 
-**Medium-priority items (worth fixing soon):** 4a, 4e  
+**Medium-priority items (worth fixing soon):** 4e  
 **Low-priority items (clean-up pass):** everything else  
 No correctness bugs were found; all issues are quality/maintainability.
 
