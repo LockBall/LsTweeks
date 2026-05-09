@@ -8,16 +8,6 @@
 
 ## 3. Inconsistencies
 
-### 3c. `af_functions.lua:read_frame_bool` — check 2 and check 3 hit the same table for preset frames
-```lua
-if cfg_db and cfg_db[key] ~= nil then ...              -- check 1: flat key
-if category and cfg_db and cfg_db[key.."_"..category] ~= nil -- check 2: prefixed key in cfg_db
-if category and M.db and M.db[key.."_"..category] ~= nil    -- check 3: prefixed key in M.db
-```
-For preset frames `cfg_db == M.db`, so checks 2 and 3 are identical lookups. Check 3 is unreachable when check 2 would succeed. The function works correctly but the redundant path adds reader confusion.
-
----
-
 ### 3d. Drag-stop sync only wired for preset frames, not custom frames
 `build_preset_frame_panel` hooks `OnDragStop` on both title bars to call `sync_xy_sliders_to_frame()`, keeping the X/Y position sliders live after a drag. `build_custom_settings_panel` has no equivalent — after dragging a custom frame, its X/Y sliders show stale values until the panel is rebuilt.
 
@@ -99,7 +89,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 3c | `af_functions.lua` | Inconsistent — `read_frame_bool` check 3 unreachable | Low |
 | 3d | `af_gui_frame_builders.lua` | Inconsistent — drag sync missing for custom frames | Medium |
 | 3e | `af_gui_frame_builders.lua` | Inconsistent — `SetScript` vs `HookScript` | Low |
 | 3f | `af_gui_frame_builders.lua` | Inconsistent — `create_bound_checkbox` bypasses config | Low |
