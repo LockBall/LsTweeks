@@ -8,29 +8,6 @@
 
 ## 2. Repeated / Duplicate Code
 
-### 2a. `af_render.lua` — `show_cooldown_overlay` recalculated inside every loop iteration
-```lua
-for i = 1, display_count do
-    ...
-    local show_cooldown_overlay = M.uses_cooldown_icon_overlay(self.category, bar_mode, M.db)
-```
-`self.category`, `bar_mode`, and `M.db` do not change across iterations. This call (which does a hash lookup on `M.db`) runs once per displayed aura. It should be hoisted above the loop alongside `bar_mode`.
-
----
-
-### 2b. `af_render.lua` — `show_timer_text and not show_cooldown_overlay` guard repeated 4+ times
-Within the ~80-line non-static timer block (lines 455–536), the pattern:
-```lua
-if show_timer_text and not show_cooldown_overlay then
-    M.set_timer_text(obj.time_text, timer_category, rem)
-else
-    obj.time_text:SetText("")
-end
-```
-appears in four structurally identical call sites (secret-rem path, positive-rem path, fallback-expiration path, and the `entry.duration > 0` branch). This is the dominant repeat in the render function and would compress significantly into a local `show_text` bool or a small inline helper.
-
----
-
 ### 2c. `af_gui_frame_builders.lua` — growth direction dropdown rebuilt inline for custom frames
 `build_preset_frame_panel` uses:
 ```lua
@@ -174,7 +151,7 @@ else db.timer_number_font                  -- same as first branch
 ---
 
 ### 4e. `af_render.lua` — `render_aura_map` is ~240 lines with deeply nested timer/bar logic
-The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif` branches where bar-mode and show-timer-text cross-cut. The block has grown organically and is difficult to follow. Splitting out a `set_obj_timer_and_bar(obj, entry, rem, live_rem, live_duration, cooldown_duration, ...)` helper would make the main loop readable.
+The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif` branches where bar-mode and show-timer-text cross-cut. The block has grown organically and is difficult to follow. Splitting out a `set_obj_timer_and_bar(obj, entry, remaining, live_remaining, live_duration, cooldown_duration, ...)` helper would make the main loop readable.
 
 ---
 
@@ -182,8 +159,6 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 
 | # | File | Type | Severity |
 |---|------|------|----------|
-| 2a | `af_render.lua` | Repeated — `show_cooldown_overlay` inside loop | Low |
-| 2b | `af_render.lua` | Repeated — timer text guard 4× in 80 lines | Medium |
 | 2c | `af_gui_frame_builders.lua` | Repeated — growth dropdown rebuilt inline | Low |
 | 2d | `af_gui_tree.lua` / `af_gui_frame_builders.lua` | Repeated — title bar rename logic | Low |
 | 2e | `af_main.lua` | Repeated — 3 loops over same category list | Low |
@@ -199,7 +174,7 @@ The non-static timer block (lines 449–536) contains 4–5 nested `if`/`elseif`
 | 4d | `af_main.lua` | Structural — font priority logic duplicated and inconsistent | Low |
 | 4e | `af_render.lua` | Structural — 240-line render function, deep nesting | Medium |
 
-**Medium-priority items (worth fixing soon):** 2b, 3d, 4a, 4e  
+**Medium-priority items (worth fixing soon):** 3d, 4a, 4e  
 **Low-priority items (clean-up pass):** everything else  
 No correctness bugs were found; all issues are quality/maintainability.
 

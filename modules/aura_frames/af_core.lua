@@ -36,6 +36,7 @@ function M.tick_visible_icons(now)
             local is_static_frame = (frame.category == "static")
             local show_timer_text = frame._show_timer_text
             local bar_mode = frame._bar_mode
+            local show_cooldown_overlay = frame._show_cooldown_overlay == true
             for i = 1, #frame.icons do
                 local obj = frame.icons[i]
                 if obj:IsShown() and obj.is_test_preview and M.update_test_preview_state then
@@ -47,7 +48,6 @@ function M.tick_visible_icons(now)
                         obj.time_text._last_text = ""
                     end
                 elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown or obj.is_test_preview) then
-                    local show_cooldown_overlay = M.uses_cooldown_icon_overlay(frame.category, bar_mode, db)
                     if show_timer_text then
                         if show_cooldown_overlay then
                             if obj.time_text:IsShown() then obj.time_text:Hide() end
@@ -211,6 +211,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
+    self._show_cooldown_overlay = cooldown_icon_overlay
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD
     local growth        = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN"
