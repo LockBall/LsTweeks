@@ -387,10 +387,6 @@ function M.build_frames_tab(p, frames_data)
                     M._custom_expanded[id] = not M._custom_expanded[id]
                     arrow_fs:SetText(M._custom_expanded[id] and "-" or "+")
                     child_btn:SetShown(M._custom_expanded[id])
-                    if not M._custom_expanded[id] then
-                        y = y + (ROW_H + GROUP_ELEMENT_GAP)
-                    end
-                    -- Reposition + Custom button
                     if add_btn_ref then
                         -- Full rebuild is simplest here to avoid offset drift
                         rebuild_tree()
@@ -559,21 +555,7 @@ function M.build_frames_tab(p, frames_data)
             cooldown_group_title_btn:Show()
             sync_cdm_btn:Show()
         end
-        local learned_key, expanded_key, learned_builder
-        local has_learned_child = learned_key ~= nil
-        if has_learned_child and M[expanded_key] == nil then M[expanded_key] = true end
-
-        local arrow, arrow_fs
-        if has_learned_child then
-            arrow = CreateFrame("Button", nil, tree_frame, "UIPanelButtonTemplate")
-            arrow:SetSize(ARROW_W, ARROW_W)
-            arrow:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, y)
-            arrow:SetNormalFontObject("GameFontNormalLarge")
-            arrow_fs = arrow:GetFontString()
-            arrow_fs:SetText(M[expanded_key] and "-" or "+")
-        end
-
-        local cat_x = has_learned_child and (PAD + ARROW_W + 2) or PAD
+        local cat_x = PAD
         local cat_w = TREE_W - cat_x - PAD
         local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
         cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
@@ -586,34 +568,6 @@ function M.build_frames_tab(p, frames_data)
 
         y = y - (ROW_H + GROUP_ELEMENT_GAP)
         if CD_GROUP_KEYS[cat] then cooldown_group_bottom_y = y end
-
-        if has_learned_child then
-            local child_key = learned_key
-            local child_btn, child_fs = make_tree_btn(tree_frame, "Learned", PAD + INDENT_CHILD, y, TREE_W - PAD - INDENT_CHILD - PAD)
-            node_fs_map[child_key] = child_fs
-            child_btn:SetShown(M[expanded_key])
-            child_btn:SetScript("OnClick", function()
-                set_selected(child_fs)
-                invalidate_node(child_key)
-                show_node(child_key, learned_builder)
-            end)
-            if M[expanded_key] then
-                y = y - (ROW_H + GROUP_ELEMENT_GAP)
-            end
-
-            arrow:SetScript("OnClick", function()
-                M[expanded_key] = not M[expanded_key]
-                arrow_fs:SetText(M[expanded_key] and "-" or "+")
-                child_btn:SetShown(M[expanded_key])
-
-                if not M[expanded_key] and M.db and M.db.last_frames_node == child_key then
-                    set_selected(cat_fs)
-                    show_node(cat, function(pnl) M.build_preset_frame_panel(pnl, data) end)
-                end
-
-                rebuild_tree()
-            end)
-        end
     end
 
     place_group_box(buffs_group_box, buffs_group_title, buffs_group_top_y, buffs_group_bottom_y)

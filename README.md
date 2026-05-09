@@ -128,6 +128,8 @@ Libraries are unmodified.
 ### Behavior
 - Aura scans are deferred and batched at 0.1s to avoid reading protected/secret aura fields inside event dispatch.
 
+- Preset buff classification is derived from live aura timing data and scan-local fallback state; no learned spell lists are stored.
+
 - Frame geometry updates are skipped during combat; timers and bars continue updating, and layout catches up after combat.
 
 - Changing an aura frame pool size requires `/reload` because icon pools are created at load time.

@@ -112,7 +112,6 @@ Ls_Tweeks_DB = {
     timer_number_font = string,         -- global fallback; currently "source_code_pro" or "game_default"
     timer_number_font_size = number,
     timer_number_font_bold = bool,
-    -- learned static/long spell IDs are session-scoped in M._known_static / M._known_long, not persisted
     -- per-category keys: <setting>_<cat> e.g. show_static, color_debuff, scale_short
     -- common per-category settings include show/move/timer/bg/scale/spacing/width/bar_mode/color/bar_bg_color/bg_color/max_icons/growth/sort/test_aura/timer_number_font/timer_number_font_size/timer_number_font_bold/timer_color/bar_text_color
     -- CDM-only per-category settings include cooldown_mode_<cat> and hide_blizz_cdm_<cat>
@@ -135,7 +134,7 @@ The `essential`, `utility`, `tracked_buffs`, and `tracked_bars` are backed by li
 Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, GUI labels, CDM viewer names, preset key names, and test-aura labels from that table instead of adding separate hardcoded category lists.
 Shared Aura Frames behavioral defaults live in `af_defaults.lua` as named constants, including frame width limits, default/max icons, short-threshold fallback, default timer font key, and CDM out-of-combat alpha. Runtime fallbacks and GUI limits should reference those constants rather than repeating numeric/string literals.
 Timer font choices are currently defined in `af_main.lua`: Source Code Pro plus Game Default. Other font files exist on disk but are not exposed unless `M.NUMBER_FONT_OPTIONS` and `M.NUMBER_FONT_BOLD_PATHS` are updated.
-Aura frame processing is enabled-rooted. `show/enabled` is the first activity gate for preset and custom frames; disabled frames must not do move-shell work, test-aura work, aura/custom/CDM scans, render, layout, or CDM viewer prep. Use `M.get_frame_activity_state()` for runtime activity decisions and `M.cdm_category_needs_viewer()` for CDM prep decisions.
+Aura frame processing is enabled-rooted. `show/enabled` is the first activity gate for preset and custom frames; disabled frames must not do move-shell work, test-aura work, aura/custom/CDM scans, render, layout, or CDM viewer prep. Use `M.get_frame_activity_state()` for runtime activity decisions and `M.cdm_category_needs_viewer()` for CDM prep decisions. Aura classification uses live timing data plus scan-local old-map fallback for secret fields; do not reintroduce learned static/long spell tables.
 Preset and custom frame settings should be treated as the same presentation model over different backing stores. Use normalized frame settings configs and shared builders in `af_gui_frame_builders.lua` for common presentation controls, including position/move/reset and timer controls. Preserve the current visible GUI and hide unsupported controls rather than adding/removing controls during refactors.
 DB keys follow the pattern `aura_frames.<setting>_<category>` (e.g. `show_static`, `color_debuff`).
 Positions are stored under `aura_frames.positions.<category>`.
