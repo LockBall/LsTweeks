@@ -485,7 +485,7 @@ local function update_custom_frame(entry)
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 end
 
-local function update_custom_frame_title(entry)
+function M.update_custom_frame_title(entry)
     if not (entry and entry.id and M.frames) then return end
     local frame = M.frames["show_" .. entry.id]
     if not frame then return end
@@ -519,7 +519,7 @@ local function create_frame_name_control(parent, entry)
         end
         if new_name ~= entry.name then
             entry.name = new_name
-            update_custom_frame_title(entry)
+            M.update_custom_frame_title(entry)
             if M.on_custom_frame_renamed then M.on_custom_frame_renamed(id, new_name) end
         end
         name_box:ClearFocus()
