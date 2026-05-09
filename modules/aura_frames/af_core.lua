@@ -14,8 +14,6 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
-local WOW_COOLDOWN_CATEGORIES = M.WOW_COOLDOWN_CATEGORIES
-
 function M.uses_cooldown_icon_overlay(category, bar_mode, db)
     return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
 end
@@ -291,7 +289,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    if WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
+    if M.WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
         self:SetAlpha(in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA))
     else
         self:SetAlpha(1)
