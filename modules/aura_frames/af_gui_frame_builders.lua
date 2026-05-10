@@ -56,6 +56,9 @@ local function create_snap_to_grid_checkbox(parent, anchor_to)
     return container, checkbox
 end
 
+-- Preset and custom panels use the same normalized presentation contract.
+-- These config builders map different backing stores to common logical keys
+-- so the shared panel builder does not branch on source type for common controls.
 local function make_preset_frame_settings_config(data)
     local cat = data.show_key:sub(6)
     return {
