@@ -6,7 +6,7 @@
 ## Category: User Interface
 ## Category-enUS: User Interface
 ## Interface: 120005
-## Version: 0.9.0
+## Version: 0.9.5
 
 ## IconTexture: Interface\AddOns\LsTweeks\media\icon_256.tga
 ## SavedVariables: Ls_Tweeks_DB
