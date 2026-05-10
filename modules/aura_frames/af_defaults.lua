@@ -437,7 +437,7 @@ M.CUSTOM_FRAME_TEMPLATE = {
     bar_mode = true,
     color    = { r = 0.8, g = 0.6, b = 1.0 },
     bar_bg_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
-    bg_color     = { r = 0,   g = 0,   b = 0,   a = 0.5 },
+    bg_color     = default_bg_color(),
     max_icons    = M.DEFAULT_MAX_ICONS,
     growth       = "DOWN",
     test_aura    = true,
