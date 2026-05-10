@@ -18,6 +18,91 @@ function M.uses_cooldown_icon_overlay(category, bar_mode, db)
     return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
 end
 
+local function set_shown_if_changed(frame, shown)
+    if not frame then return end
+    if shown then
+        if not frame:IsShown() then frame:Show() end
+    elseif frame:IsShown() then
+        frame:Hide()
+    end
+end
+
+local function set_scale_if_changed(frame, scale)
+    if not frame then return end
+    scale = scale or 1
+    if frame._lstweeks_applied_scale == scale then return end
+    frame._lstweeks_applied_scale = scale
+    frame:SetScale(scale)
+end
+
+local function set_alpha_if_changed(frame, alpha)
+    if not frame then return end
+    alpha = alpha or 1
+    if frame._lstweeks_applied_alpha == alpha then return end
+    frame._lstweeks_applied_alpha = alpha
+    frame:SetAlpha(alpha)
+end
+
+local function apply_position_if_changed(frame, scale_key, fallback_y, scale)
+    local pos = M.get_frame_position_table(frame)
+    local point = pos and pos.point or "TOPLEFT"
+    local x = pos and pos.x or -100
+    local y = pos and pos.y or fallback_y or 75
+    scale = scale or M.get_frame_position_scale(frame, scale_key)
+
+    if frame._lstweeks_pos_point == point
+        and frame._lstweeks_pos_x == x
+        and frame._lstweeks_pos_y == y
+        and frame._lstweeks_pos_scale == scale then
+        return
+    end
+
+    frame._lstweeks_pos_point = point
+    frame._lstweeks_pos_x = x
+    frame._lstweeks_pos_y = y
+    frame._lstweeks_pos_scale = scale
+    M.apply_saved_frame_position(frame, scale_key, fallback_y)
+end
+
+local function set_size_if_changed(frame, width, height)
+    if not frame then return end
+    if frame._lstweeks_width == width and frame._lstweeks_height == height then return end
+    frame._lstweeks_width = width
+    frame._lstweeks_height = height
+    frame:SetSize(width, height)
+end
+
+local function set_height_for_growth_if_changed(frame, height, growth)
+    if frame._lstweeks_growth_height == height and frame._lstweeks_growth == growth then return end
+    frame._lstweeks_growth_height = height
+    frame._lstweeks_growth = growth
+    M.set_height_for_growth(frame, height, growth)
+end
+
+local function set_backdrop_state_if_changed(frame, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
+    if frame._lstweeks_bg_r == bg_r
+        and frame._lstweeks_bg_g == bg_g
+        and frame._lstweeks_bg_b == bg_b
+        and frame._lstweeks_bg_a == bg_a
+        and frame._lstweeks_br_r == br_r
+        and frame._lstweeks_br_g == br_g
+        and frame._lstweeks_br_b == br_b
+        and frame._lstweeks_br_a == br_a then
+        return
+    end
+
+    frame._lstweeks_bg_r = bg_r
+    frame._lstweeks_bg_g = bg_g
+    frame._lstweeks_bg_b = bg_b
+    frame._lstweeks_bg_a = bg_a
+    frame._lstweeks_br_r = br_r
+    frame._lstweeks_br_g = br_g
+    frame._lstweeks_br_b = br_b
+    frame._lstweeks_br_a = br_a
+    frame:SetBackdropColor(bg_r, bg_g, bg_b, bg_a)
+    frame:SetBackdropBorderColor(br_r, br_g, br_b, br_a)
+end
+
 -- ============================================================================
 -- TIMER TICKER
 
@@ -193,10 +278,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
-        self:Hide()
-        if self.title_bar then self.title_bar:Hide() end
-        if self.bottom_title_bar then self.bottom_title_bar:Hide() end
-        if self.resizer then self.resizer:Hide() end
+        set_shown_if_changed(self, false)
+        set_shown_if_changed(self.title_bar, false)
+        set_shown_if_changed(self.bottom_title_bar, false)
+        set_shown_if_changed(self.resizer, false)
         return
     end
 
@@ -226,7 +311,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
     if not in_combat and not is_user_positioning then
-        self:SetScale(scale)
+        set_scale_if_changed(self, scale)
     end
 
     local _width  = frame_width
@@ -234,8 +319,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if _width  < 1 then _width  = M.DEFAULT_FRAME_WIDTH end
     if _height < 1 then _height = 50  end
     if not in_combat and not is_user_positioning then
-        M.apply_saved_frame_position(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75)
-        self:SetSize(_width, _height)
+        apply_position_if_changed(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75, scale)
+        set_size_if_changed(self, _width, _height)
     end
 
     -- For custom frames, expose cfg_db on the frame so setup_layout can read it.
@@ -254,16 +339,16 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if is_moving then
-        self.title_bar:Show()
-        self.bottom_title_bar:Show()
-        self.resizer:Show()
+        set_shown_if_changed(self.title_bar, true)
+        set_shown_if_changed(self.bottom_title_bar, true)
+        set_shown_if_changed(self.resizer, true)
     else
-        self.title_bar:Hide()
-        self.bottom_title_bar:Hide()
-        self.resizer:Hide()
+        set_shown_if_changed(self.title_bar, false)
+        set_shown_if_changed(self.bottom_title_bar, false)
+        set_shown_if_changed(self.resizer, false)
     end
 
-    self:Show()
+    set_shown_if_changed(self, true)
     if activity.needs_cdm_viewer and M.prepare_blizz_cdm_viewer then
         M.prepare_blizz_cdm_viewer(category)
     end
@@ -302,9 +387,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if M.WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
-        self:SetAlpha(in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA))
+        set_alpha_if_changed(self, in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA))
     else
-        self:SetAlpha(1)
+        set_alpha_if_changed(self, 1)
     end
 
     if preview_enabled then
@@ -339,25 +424,28 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if not in_combat and not is_user_positioning then
-        M.set_height_for_growth(self, new_height, growth)
+        set_height_for_growth_if_changed(self, new_height, growth)
     end
 
     local is_bg_enabled = cfg_db[bg_key] ~= nil and cfg_db[bg_key] or cfg_db["bg"]
+    local bg_r, bg_g, bg_b, bg_a
+    local br_r, br_g, br_b, br_a
     if is_moving then
         if is_bg_enabled and bgC then
-            self:SetBackdropColor(bgC.r, bgC.g, bgC.b, bgC.a or 1)
-            self:SetBackdropBorderColor(1, 1, 1, 1)
+            bg_r, bg_g, bg_b, bg_a = bgC.r, bgC.g, bgC.b, bgC.a or 1
+            br_r, br_g, br_b, br_a = 1, 1, 1, 1
         else
-            self:SetBackdropColor(0, 0, 0, 0.8)
-            self:SetBackdropBorderColor(1, 1, 1, 1)
+            bg_r, bg_g, bg_b, bg_a = 0, 0, 0, 0.8
+            br_r, br_g, br_b, br_a = 1, 1, 1, 1
         end
     else
         if is_bg_enabled and bgC then
-            self:SetBackdropColor(bgC.r, bgC.g, bgC.b, bgC.a or 1)
-            self:SetBackdropBorderColor(0, 0, 0, 0)
+            bg_r, bg_g, bg_b, bg_a = bgC.r, bgC.g, bgC.b, bgC.a or 1
+            br_r, br_g, br_b, br_a = 0, 0, 0, 0
         else
-            self:SetBackdropColor(0, 0, 0, 0)
-            self:SetBackdropBorderColor(0, 0, 0, 0)
+            bg_r, bg_g, bg_b, bg_a = 0, 0, 0, 0
+            br_r, br_g, br_b, br_a = 0, 0, 0, 0
         end
     end
+    set_backdrop_state_if_changed(self, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
 end
