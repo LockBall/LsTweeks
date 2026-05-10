@@ -374,6 +374,9 @@ end
 function M.mark_aura_scan_dirty()
     M._aura_scan_dirty = true
     M.clear_custom_aura_scan_cache()
+    if M.clear_sorted_aura_ids_cache then
+        M.clear_sorted_aura_ids_cache()
+    end
 end
 
 -- Frame-specific value -> category-specific value -> global value -> default global value.

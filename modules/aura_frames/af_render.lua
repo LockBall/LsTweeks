@@ -14,6 +14,7 @@ local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local format        = format
 local table_sort    = table.sort
+local wipe          = wipe
 local SORT_RULE_DEFAULT    = Enum.UnitAuraSortRule.Default
 local SORT_RULE_EXPIRATION = Enum.UnitAuraSortRule.ExpirationOnly
 local SORT_RULE_NAME       = Enum.UnitAuraSortRule.NameOnly
@@ -27,6 +28,11 @@ local M = addon.aura_frames
 local _scratch_list      = {}
 local _scratch_seen      = {}
 local _scratch_seen_keys = {}
+local _sorted_aura_ids_cache = {}
+
+function M.clear_sorted_aura_ids_cache()
+    wipe(_sorted_aura_ids_cache)
+end
 
 -- ============================================================================
 -- TIME FORMATTING
@@ -422,13 +428,12 @@ local function add_preset_entries_to_render_list(frame, list, aura_map, aura_fil
 
     local wow_filter = (aura_filter and aura_filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
     local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
-    local sorted_ids
-    if frame._sorted_ids_cache and frame._sorted_ids_cache_key == cache_key then
-        sorted_ids = frame._sorted_ids_cache
-    else
+    local sorted_ids = _sorted_aura_ids_cache[cache_key]
+    if sorted_ids == nil then
         sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
-        frame._sorted_ids_cache = sorted_ids
-        frame._sorted_ids_cache_key = cache_key
+        _sorted_aura_ids_cache[cache_key] = sorted_ids or false
+    elseif sorted_ids == false then
+        sorted_ids = nil
     end
 
     -- Build display list in game-sorted order, filtered to entries in this frame's map.

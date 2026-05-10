@@ -269,7 +269,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     if not self._aura_map then self._aura_map = {} end
-    self._sorted_ids_cache = nil
 
     -- Run the unified scan once per dirty event batch, then let the other
     -- preset frames in the same deferred batch reuse M._aura_map.
