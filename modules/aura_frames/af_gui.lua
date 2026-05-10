@@ -215,6 +215,34 @@ function M.build_profiles_tab(parent)
     end)
     load:SetPoint("TOPLEFT", save_new, "BOTTOMLEFT", 0, -8)
 
+    local rename = create_profile_button(parent, "Rename", 100, function()
+        if not selected_name or selected_name == "" then
+            set_status(false, "Select a profile to rename.")
+            return
+        end
+
+        local new_name = get_name()
+        if new_name == "" then
+            set_status(false, "Enter a new profile name.")
+            return
+        end
+
+        confirm_profile_action(
+            "LSTWEEKS_RENAME_AURA_PROFILE",
+            'Rename aura frame profile "' .. selected_name .. '" to "' .. new_name .. '"?',
+            "Rename",
+            function()
+                local ok, message = M.rename_aura_frame_profile(selected_name, new_name)
+                if ok then
+                    select_profile(new_name)
+                    rebuild_profile_list()
+                end
+                set_status(ok, message)
+            end
+        )
+    end)
+    rename:SetPoint("LEFT", load, "RIGHT", 8, 0)
+
     local delete = create_profile_button(parent, "Delete", 100, function()
         local name = get_name()
         if name == "" then name = selected_name end
@@ -237,7 +265,7 @@ function M.build_profiles_tab(parent)
             end
         )
     end)
-    delete:SetPoint("LEFT", load, "RIGHT", 8, 0)
+    delete:SetPoint("TOPLEFT", load, "BOTTOMLEFT", 0, -8)
 
     rebuild_profile_list()
 end
