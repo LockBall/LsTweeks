@@ -65,6 +65,15 @@ function M.set_timer_text(font_string, category, seconds)
         return
     end
 
+    local behavior = M.get_timer_behavior(category)
+    if behavior.enabled == false then
+        if font_string._last_text ~= "" then
+            font_string:SetText("")
+            font_string._last_text = ""
+        end
+        return
+    end
+
     font_string:Show()
 
     if issecretvalue(seconds) then
@@ -81,9 +90,8 @@ function M.set_timer_text(font_string, category, seconds)
         return
     end
 
-    local is_short = (category == "short" or category == "show_short")
     local text
-    if is_short then
+    if behavior.format == "decimal" then
         local rounded = floor((seconds * 10) + 0.5) / 10
         text = format("%.1f", rounded)
     else

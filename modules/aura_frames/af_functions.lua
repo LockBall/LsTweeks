@@ -6,6 +6,16 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+local TIMER_BEHAVIOR = {
+    static = { enabled = false, format = "none" },
+    short  = { enabled = true,  format = "decimal" },
+}
+
+local DEFAULT_TIMER_BEHAVIOR = {
+    enabled = true,
+    format = "time",
+}
+
 function M.get_cdm_viewer_frame(category)
     local frame_name = M.CDM_VIEWER_FRAMES[category]
     return frame_name and _G[frame_name] or nil
@@ -191,6 +201,38 @@ function M.get_setting(cfg_db, category, key, fallback)
     if cfg_db and cfg_db[key] ~= nil then return cfg_db[key] end
     if M.db and M.db[key] ~= nil then return M.db[key] end
     return fallback
+end
+
+function M.normalize_timer_category(category)
+    if type(category) == "string" and category:sub(1, 5) == "show_" then
+        return category:sub(6)
+    end
+    return category
+end
+
+function M.get_timer_behavior(category)
+    category = M.normalize_timer_category(category)
+    return TIMER_BEHAVIOR[category] or DEFAULT_TIMER_BEHAVIOR
+end
+
+function M.is_timer_text_enabled(db, category, timer_key)
+    category = M.normalize_timer_category(category)
+    local behavior = M.get_timer_behavior(category)
+    if behavior.enabled == false then
+        return false
+    end
+
+    local value
+    if timer_key then
+        value = db and db[timer_key]
+    elseif category then
+        value = db and db["timer_" .. category]
+    end
+
+    if value == nil then
+        return true
+    end
+    return value and true or false
 end
 
 local function read_frame_bool(cfg_db, key)
