@@ -449,10 +449,7 @@ end
 
 function M.get_custom_modifier_def(value)
     value = value or "NONE"
-    for _, def in ipairs(M.CUSTOM_AURA_MODIFIERS) do
-        if def.value == value then return def end
-    end
-    return M.CUSTOM_AURA_MODIFIERS[1]
+    return M.CUSTOM_AURA_MODIFIERS_BY_VALUE[value] or M.CUSTOM_AURA_MODIFIERS[1]
 end
 
 function M.apply_tooltip_panel_backdrop(frame, r, g, b, a, br, bg, bb, ba)
