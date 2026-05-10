@@ -25,7 +25,7 @@ Slash command: `/lst` (registered as `SLASH_LSTWEEKS1`). SavedVariables: `Ls_Twe
 
 - **Modularity:** Each file should own a coherent responsibility and expose a small surface through the shared `addon` table or the Aura Frames `M` table. Shared helpers belong where they reduce real duplication without hiding source-specific behavior.
 
-- **Orchestrator + Focused Helpers:** Prefer one readable main control function that describes a workflow in order, with focused helpers for discrete duties such as list construction, metadata assignment, visual setup, timer updates, cleanup, or source-specific decisions. The orchestrator should read like the feature's decision flow; helpers should own implementation details without hiding important state flow. Avoid abstractions that add allocation or make hot paths harder to audit.
+- **Orchestrator + Focused Helpers:** Prefer one readable main control function that describes a workflow in order, with focused helpers for discrete duties such as list construction, metadata assignment, visual setup, timer updates, cleanup, or source-specific decisions. The orchestrator should read like the feature's decision flow; helpers should own implementation details without hiding important state flow. Avoid abstractions that add allocation or make hot paths harder to audit. Helper functions should be of a meaningful size so that the code is not overly fractured.
 
 - **Efficiency:** Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache WoW globals on hot paths, batch repeated events through named update intervals, skip disabled/inactive frames early, and avoid unnecessary frame churn.
 
