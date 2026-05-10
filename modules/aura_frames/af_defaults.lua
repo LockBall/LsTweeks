@@ -173,6 +173,11 @@ M.CUSTOM_AURA_MODIFIERS = {
     { value = "RAID_PLAYER_DISPELLABLE", text = "RAID_PLAYER_DISPELLABLE", force_base = "HARMFUL" },
 }
 
+M.CUSTOM_AURA_MODIFIERS_BY_VALUE = {}
+for _, def in ipairs(M.CUSTOM_AURA_MODIFIERS) do
+    M.CUSTOM_AURA_MODIFIERS_BY_VALUE[def.value] = def
+end
+
 -- Shared default background color and opacity.
 M.BAR_BG_ALPHA_DEFAULT = 0.50
 M.BAR_BG_GRAY_DEFAULT = 0.50

@@ -69,18 +69,18 @@ M.NUMBER_FONT_OPTIONS = {
     },
 }
 
+M.NUMBER_FONT_OPTIONS_BY_KEY = {}
+for _, def in ipairs(M.NUMBER_FONT_OPTIONS) do
+    M.NUMBER_FONT_OPTIONS_BY_KEY[def.key] = def
+end
+
 M.NUMBER_FONT_BOLD_PATHS = {
     [M.DEFAULT_TIMER_NUMBER_FONT_KEY] = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
 }
 
 local function get_number_font_def(key, category, cfg_db)
     local selected_key = key or M.get_setting(cfg_db, category, "timer_number_font", M.DEFAULT_TIMER_NUMBER_FONT_KEY)
-    for _, def in ipairs(M.NUMBER_FONT_OPTIONS) do
-        if def.key == selected_key then
-            return def
-        end
-    end
-    return M.NUMBER_FONT_OPTIONS[1]
+    return M.NUMBER_FONT_OPTIONS_BY_KEY[selected_key] or M.NUMBER_FONT_OPTIONS[1]
 end
 
 function M.get_number_font_options()
