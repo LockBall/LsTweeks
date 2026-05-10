@@ -1,7 +1,8 @@
 -- Settings UI for the Aura Frames module, registered as a sidebar category in the main window.
--- BuildSettings() creates two tabs:
+-- BuildSettings() creates three tabs:
 -- 1) General (global toggles and thresholds)
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
+-- 3) Profiles (save/load complete Aura Frames setups across characters).
 
 local addon_name, addon = ...
 
@@ -45,6 +46,202 @@ function M.CreateListDropdown(name, parent, labelText, options, get_value, on_se
     })
 end
 
+local function create_profile_button(parent, text, width, on_click)
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(width or 100, 22)
+    button:SetText(text)
+    button:SetScript("OnClick", on_click)
+    return button
+end
+
+function M.build_profiles_tab(parent)
+    local selected_name = M.db and M.db.last_profile_name
+    local rows = {}
+
+    local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", parent, "TOPLEFT", 16, -12)
+    title:SetText("Aura Frame Profiles")
+
+    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    note:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    note:SetWidth(600)
+    note:SetJustifyH("LEFT")
+    note:SetText("Profiles save the complete Aura Frames setup for use on another character.")
+
+    local name_label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    name_label:SetPoint("TOPLEFT", note, "BOTTOMLEFT", 0, -28)
+    name_label:SetText("Profile Name")
+
+    local name_box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    name_box:SetSize(220, 22)
+    name_box:SetPoint("TOPLEFT", name_label, "BOTTOMLEFT", 0, -4)
+    name_box:SetAutoFocus(false)
+    name_box:SetMaxLetters(32)
+    name_box:SetText(selected_name or "")
+
+    local status = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    status:SetPoint("TOPLEFT", name_box, "BOTTOMLEFT", 0, -12)
+    status:SetWidth(450)
+    status:SetJustifyH("LEFT")
+    status:SetText("")
+
+    local list_title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    list_title:SetPoint("TOPLEFT", parent, "TOPLEFT", 310, -70)
+    list_title:SetText("Saved Profiles")
+
+    local list_box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    list_box:SetPoint("TOPLEFT", list_title, "BOTTOMLEFT", 0, -8)
+    list_box:SetSize(260, 260)
+    M.apply_thin_border_backdrop(list_box, { r = 0.06, g = 0.06, b = 0.06, a = 0.88 }, { r = 0.42, g = 0.42, b = 0.42, a = 0.85 })
+
+    local list_area = CreateFrame("Frame", nil, list_box)
+    list_area:SetPoint("TOPLEFT", list_box, "TOPLEFT", 8, -8)
+    list_area:SetPoint("BOTTOMRIGHT", list_box, "BOTTOMRIGHT", -8, 8)
+
+    local function set_status(ok, message)
+        status:SetText(message or "")
+        status:SetTextColor(ok and 0.2 or 1, ok and 1 or 0.25, ok and 0.2 or 0.25)
+    end
+
+    local function get_name()
+        return (name_box:GetText() or ""):match("^%s*(.-)%s*$")
+    end
+
+    local function select_profile(name)
+        selected_name = name
+        name_box:SetText(name or "")
+        if M.db then M.db.last_profile_name = name end
+        for _, row in ipairs(rows) do
+            if row._profile_name then
+                local selected = row._profile_name == selected_name
+                row.bg:SetShown(selected)
+                row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
+            end
+        end
+    end
+
+    local function clear_rows()
+        for _, row in ipairs(rows) do
+            row:Hide()
+        end
+        rows = {}
+    end
+
+    local function rebuild_profile_list()
+        clear_rows()
+        local profiles = M.get_aura_frame_profiles and M.get_aura_frame_profiles() or {}
+        if #profiles == 0 then
+            local empty = list_area:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            empty:SetPoint("TOPLEFT", list_area, "TOPLEFT", 4, -4)
+            empty:SetText("No saved profiles")
+            rows[#rows + 1] = empty
+            return
+        end
+
+        for index, profile in ipairs(profiles) do
+            local row = CreateFrame("Button", nil, list_area)
+            row:SetSize(238, 20)
+            row:SetPoint("TOPLEFT", list_area, "TOPLEFT", 0, -((index - 1) * 22))
+            row._profile_name = profile.name
+
+            row.bg = row:CreateTexture(nil, "BACKGROUND")
+            row.bg:SetAllPoints()
+            row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
+            row.bg:Hide()
+
+            local hover = row:CreateTexture(nil, "HIGHLIGHT")
+            hover:SetAllPoints()
+            hover:SetColorTexture(1, 1, 1, 0.08)
+
+            row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.text:SetPoint("LEFT", row, "LEFT", 6, 0)
+            row.text:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+            row.text:SetJustifyH("LEFT")
+            row.text:SetText(profile.name or ("Profile " .. index))
+            row:SetScript("OnClick", function()
+                select_profile(profile.name)
+                set_status(true, "Selected profile: " .. (profile.name or ""))
+            end)
+            rows[#rows + 1] = row
+        end
+        select_profile(selected_name)
+    end
+
+    local function confirm_profile_action(dialog_key, text, button_text, on_accept)
+        StaticPopupDialogs[dialog_key] = {
+            text = text,
+            button1 = button_text,
+            button2 = "Cancel",
+            OnAccept = on_accept,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+        StaticPopup_Show(dialog_key)
+    end
+
+    local save_new = create_profile_button(parent, "Save New", 100, function()
+        local ok, message = M.save_aura_frame_profile(get_name(), false)
+        if ok then select_profile(get_name()); rebuild_profile_list() end
+        set_status(ok, message)
+    end)
+    save_new:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 0, -18)
+
+    local overwrite = create_profile_button(parent, "Overwrite", 100, function()
+        local name = get_name()
+        if name == "" then
+            set_status(false, "Enter a profile name to overwrite.")
+            return
+        end
+        confirm_profile_action(
+            "LSTWEEKS_OVERWRITE_AURA_PROFILE",
+            'Overwrite aura frame profile "' .. name .. '"?',
+            "Overwrite",
+            function()
+                local ok, message = M.save_aura_frame_profile(name, true)
+                if ok then select_profile(name); rebuild_profile_list() end
+                set_status(ok, message)
+            end
+        )
+    end)
+    overwrite:SetPoint("LEFT", save_new, "RIGHT", 8, 0)
+
+    local load = create_profile_button(parent, "Load", 100, function()
+        local name = get_name()
+        if name == "" then name = selected_name end
+        local ok, message = M.load_aura_frame_profile(name)
+        set_status(ok, message)
+        rebuild_profile_list()
+    end)
+    load:SetPoint("TOPLEFT", save_new, "BOTTOMLEFT", 0, -8)
+
+    local delete = create_profile_button(parent, "Delete", 100, function()
+        local name = get_name()
+        if name == "" then name = selected_name end
+        if not name or name == "" then
+            set_status(false, "Select a profile to delete.")
+            return
+        end
+        confirm_profile_action(
+            "LSTWEEKS_DELETE_AURA_PROFILE",
+            'Delete aura frame profile "' .. name .. '"?',
+            "Delete",
+            function()
+                local ok, message = M.delete_aura_frame_profile(name)
+                if ok then
+                    selected_name = M.db and M.db.last_profile_name
+                    name_box:SetText(selected_name or "")
+                    rebuild_profile_list()
+                end
+                set_status(ok, message)
+            end
+        )
+    end)
+    delete:SetPoint("LEFT", load, "RIGHT", 8, 0)
+
+    rebuild_profile_list()
+end
+
 -- tabs settings controls
 function M.BuildSettings(parent)
     local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -85,6 +282,7 @@ function M.BuildSettings(parent)
     local tab_data = {
         { name = "General", is_general  = true },
         { name = "Frames",  is_frames   = true },
+        { name = "Profiles", is_profiles = true },
     }
 
 
@@ -115,6 +313,8 @@ function M.BuildSettings(parent)
             M.build_general_tab(p)
         elseif data.is_frames then
             M.build_frames_tab(p, frames_data)
+        elseif data.is_profiles then
+            M.build_profiles_tab(p)
         end
 
         tabs[i], panels[i] = tab, p

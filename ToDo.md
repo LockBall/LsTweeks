@@ -7,5 +7,4 @@ Use one extraction at a time, with reload / in-game testing after each meaningfu
 - [ ] a) Brief guided tour on first install with an option to manually intiate.
 - [ ] b) Portrait dim out of combat.
 - [ ] c) Dungeon ready sound levels.
-- [ ] d) frame layout Saves.
  
