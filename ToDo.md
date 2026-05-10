@@ -10,8 +10,8 @@ Recommended sub-step order:
 - [x] b) Extract icon pool creation from `M.create_aura_frame()`.
 - [x] c) Extract title bar creation and resizer setup from `M.create_aura_frame()`.
 - [x] d) Extract event registration and event-handler binding from `M.create_aura_frame()`.
-- [ ] e) Extract startup bootstrap chunks from the `ADDON_LOADED` handler.
-- [ ] f) Extract reset recovery chunks from `M.on_reset_complete()`.
+- [x] e) Extract startup bootstrap chunks from the `ADDON_LOADED` handler.
+- [x] f) Extract reset recovery chunks from `M.on_reset_complete()`.
 
 Goal: make `M.create_aura_frame()`, startup, and reset read as orchestrators that call focused helpers.
 
@@ -34,3 +34,4 @@ Goal: make `M.create_aura_frame()`, startup, and reset read as orchestrators tha
 - [ ] b) Portrait dim out of combat.
 - [ ] c) Dungeon ready sound levels.
 - [ ] d) frame layout Saves.
+ 

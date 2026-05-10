@@ -686,126 +686,146 @@ function M.destroy_custom_frame(id)
 end
 
 -- ============================================================================
--- INITIALIZATION ENGINE: Orchestrate startup of aura frames once addon data is loaded
+-- STARTUP ORCHESTRATION
+
+local function is_legacy_bar_bg(c)
+    return type(c) == "table"
+        and c.r == 0.6 and c.g == 0.6 and c.b == 0.6
+        and (c.a == 0.25 or c.a == nil)
+end
+
+local function migrate_timer_font_settings()
+    if not M.db.timer_number_font then
+        M.db.timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    end
+    if not M.db.timer_number_font_size then
+        M.db.timer_number_font_size = M.get_timer_number_font_size() or 10
+    end
+
+    -- Static frame has no timer text, so it does not need per-category timer font settings.
+    for _, cat in ipairs(M.TIMER_CATEGORIES) do
+        local font_key = "timer_number_font_"..cat
+        local size_key = "timer_number_font_size_"..cat
+        if not M.db[font_key] then
+            M.db[font_key] = M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+        end
+        if not M.db[size_key] then
+            M.db[size_key] = M.get_timer_number_font_size() or 10
+        end
+        local bold_key = "timer_number_font_bold_"..cat
+        if M.db[bold_key] == nil then
+            M.db[bold_key] = M.db.timer_number_font_bold or false
+        end
+    end
+end
+
+local function migrate_legacy_bar_bg_settings()
+    for _, cat in ipairs(M.CATEGORIES) do
+        local bg_key = "bar_bg_color_" .. cat
+        if is_legacy_bar_bg(M.db[bg_key]) then
+            local fill = M.db["color_" .. cat] or { r = 1, g = 1, b = 1 }
+            M.db[bg_key] = { r = fill.r, g = fill.g, b = fill.b, a = M.BAR_BG_ALPHA_DEFAULT }
+        end
+    end
+end
+
+local function prepare_aura_frame_db()
+    if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
+    M.db = Ls_Tweeks_DB.aura_frames
+    M._aura_scan_dirty = true
+
+    if M.defaults then addon.apply_defaults(M.defaults, M.db) end
+
+    migrate_timer_font_settings()
+    migrate_legacy_bar_bg_settings()
+end
+
+local function create_startup_aura_frames()
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
+        local keys = M.get_preset_keys(frame_def.key)
+        M.create_aura_frame(
+            keys.show_key,
+            keys.move_key,
+            keys.timer_key,
+            keys.bg_key,
+            keys.scale_key,
+            keys.spacing_key,
+            frame_def.frame_label or frame_def.label,
+            frame_def.is_debuff
+        )
+    end
+
+    if M.db.custom_frames then
+        for _, entry in ipairs(M.db.custom_frames) do
+            M.create_custom_frame(entry)
+        end
+    end
+end
+
+local function migrate_saved_frame_positions_next_frame()
+    -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
+    C_Timer.After(NEXT_FRAME_INTERVAL, function()
+        for _, frame in pairs(M.frames) do
+            local pos = M.get_frame_position_table(frame)
+            if pos and pos.point ~= "TOPLEFT" then
+                local x, y = M.sync_frame_position_to_db(frame, pos)
+                if x and y then
+                    M.apply_saved_frame_position(frame)
+                end
+            end
+        end
+    end)
+end
+
+local function start_visible_icon_ticker()
+    -- Timer text and bar fill need smooth tenths; heavier aura scans stay event-bucketed.
+    C_Timer.NewTicker(UPDATE_INTERVALS.tenth_sec, function()
+        M.tick_visible_icons()
+    end)
+end
+
+local function register_aura_frame_settings()
+    if addon.register_category and M.BuildSettings then
+        addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end)
+    end
+end
+
+local function start_aura_frame_runtime_services()
+    migrate_saved_frame_positions_next_frame()
+    start_visible_icon_ticker()
+
+    M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
+    M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+    M.queue_wow_cooldown_refresh("startup")
+
+    register_aura_frame_settings()
+    M.create_grid_overlay()
+end
+
+-- Startup conductor: keep addon-loaded work in order while each step
+-- owns one broad responsibility.
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
-        -- Ensure the sub-table exists and link the module to the core database
-        if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
-        M.db = Ls_Tweeks_DB.aura_frames
-
-        M._aura_scan_dirty = true
-
-        -- Populate missing settings using the defaults defined in af_defaults.lua
-        if M.defaults then addon.apply_defaults(M.defaults, M.db) end
-
-        if not M.db.timer_number_font then
-            M.db.timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY
-        end
-        if not M.db.timer_number_font_size then
-            M.db.timer_number_font_size = M.get_timer_number_font_size() or 10
-        end
-
-        -- Migrate legacy global font settings to per-category settings.
-        -- Static frame has no timer text, so it does not need per-category timer font settings.
-        for _, cat in ipairs(M.TIMER_CATEGORIES) do
-            local font_key = "timer_number_font_"..cat
-            local size_key = "timer_number_font_size_"..cat
-            if not M.db[font_key] then
-                M.db[font_key] = M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
-            end
-            if not M.db[size_key] then
-                M.db[size_key] = M.get_timer_number_font_size() or 10
-            end
-            local bold_key = "timer_number_font_bold_"..cat
-            if M.db[bold_key] == nil then
-                M.db[bold_key] = M.db.timer_number_font_bold or false
-            end
-        end
-
-        local bar_bg_alpha = M.BAR_BG_ALPHA_DEFAULT
-
-        -- Migrate legacy neutral bar background defaults to color-matched default alpha.
-        -- Only updates untouched old default values.
-        local function is_legacy_bar_bg(c)
-            return type(c) == "table"
-                and c.r == 0.6 and c.g == 0.6 and c.b == 0.6
-                and (c.a == 0.25 or c.a == nil)
-        end
-        for _, cat in ipairs(M.CATEGORIES) do
-            local bg_key = "bar_bg_color_" .. cat
-            if is_legacy_bar_bg(M.db[bg_key]) then
-                local fill = M.db["color_" .. cat] or { r = 1, g = 1, b = 1 }
-                M.db[bg_key] = { r = fill.r, g = fill.g, b = fill.b, a = bar_bg_alpha }
-            end
-        end
-        
-        -- Create the visual containers for each built-in category.
-        for _, frame_def in ipairs(M.FRAME_DEFS) do
-            local keys = M.get_preset_keys(frame_def.key)
-            M.create_aura_frame(
-                keys.show_key,
-                keys.move_key,
-                keys.timer_key,
-                keys.bg_key,
-                keys.scale_key,
-                keys.spacing_key,
-                frame_def.frame_label or frame_def.label,
-                frame_def.is_debuff
-            )
-        end
-
-        -- Create saved custom filtered frames.
-        if M.db.custom_frames then
-            for _, entry in ipairs(M.db.custom_frames) do
-                M.create_custom_frame(entry)
-            end
-        end
-
-        -- Migrate any stored positions to TOPLEFT-anchor format.
-        -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
-        C_Timer.After(NEXT_FRAME_INTERVAL, function()
-            for _, frame in pairs(M.frames) do
-                local pos = M.get_frame_position_table(frame)
-                if pos and pos.point ~= "TOPLEFT" then
-                    local x, y = M.sync_frame_position_to_db(frame, pos)
-                    if x and y then
-                        M.apply_saved_frame_position(frame)
-                    end
-                end
-            end
-        end)
-
-        -- Timer text and bar fill need smooth tenths; heavier aura scans stay event-bucketed.
-        -- Logic is delegated so af_main stays focused on construction/bootstrap.
-        C_Timer.NewTicker(UPDATE_INTERVALS.tenth_sec, function()
-            M.tick_visible_icons()
-        end)
-
-        -- Sync the Blizzard frame visibility based on user preferences
-        M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
-        M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
-        M.queue_wow_cooldown_refresh("startup")
-
-        -- Integrate the settings tab into the main addon configuration menu
-        if addon.register_category and M.BuildSettings then
-            addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end)
-        end
-
-        M.create_grid_overlay()
-
+        prepare_aura_frame_db()
+        create_startup_aura_frames()
+        start_aura_frame_runtime_services()
         self:UnregisterEvent("ADDON_LOADED")
     end
 end)
 
--- RESET AND REFRESH: Restores UI states following a settings reset or global change
-function M.on_reset_complete()
+-- ============================================================================
+-- RESET ORCHESTRATION
+
+local function apply_reset_runtime_state()
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     M.apply_number_font_to_all()
     M.set_grid_visible(M.db.show_grid == true)
+end
 
+local function remove_orphan_custom_frames_after_reset()
     local valid_custom_ids = {}
     for _, entry in ipairs(M.db.custom_frames or {}) do
         if entry.id then valid_custom_ids[entry.id] = true end
@@ -822,27 +842,53 @@ function M.on_reset_complete()
     for _, id in ipairs(orphan_custom_ids) do
         M.destroy_custom_frame(id)
     end
+end
 
-    for _, frame in pairs(M.frames) do
-        local p = frame.update_params
-        if p then
-            frame._layout_cache = nil
-            -- Re-link custom entry reference in case DB was replaced by reset.
-            if frame.is_custom and frame.custom_entry then
-                local id = frame.custom_entry.id
-                if M.db.custom_frames then
-                    for _, entry in ipairs(M.db.custom_frames) do
-                        if entry.id == id then frame.custom_entry = entry; break end
-                    end
-                end
-                p.aura_filter = M.get_custom_aura_filter(frame.custom_entry)
-            end
-            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+local function find_saved_custom_entry(id)
+    if not (id and M.db and M.db.custom_frames) then return nil end
+    for _, entry in ipairs(M.db.custom_frames) do
+        if entry.id == id then return entry end
+    end
+    return nil
+end
+
+local function refresh_frame_after_reset(frame)
+    local p = frame.update_params
+    if not p then return end
+
+    frame._layout_cache = nil
+
+    -- Re-link custom entry reference in case DB was replaced by reset.
+    if frame.is_custom and frame.custom_entry then
+        local entry = find_saved_custom_entry(frame.custom_entry.id)
+        if entry then
+            frame.custom_entry = entry
         end
+        p.aura_filter = M.get_custom_aura_filter(frame.custom_entry)
     end
 
+    M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+end
+
+local function refresh_aura_frames_after_reset()
+    for _, frame in pairs(M.frames) do
+        refresh_frame_after_reset(frame)
+    end
+end
+
+local function refresh_aura_frame_settings_after_reset()
     M.sync_general_controls_from_db()
     if M.refresh_frames_tree then
         M.refresh_frames_tree()
     end
+end
+
+-- RESET AND REFRESH: Restores UI states following a settings reset or global change
+function M.on_reset_complete()
+    -- Reset conductor: recover runtime state, reconcile frame ownership, then
+    -- refresh visible frames and settings controls from the replaced DB.
+    apply_reset_runtime_state()
+    remove_orphan_custom_frames_after_reset()
+    refresh_aura_frames_after_reset()
+    refresh_aura_frame_settings_after_reset()
 end
