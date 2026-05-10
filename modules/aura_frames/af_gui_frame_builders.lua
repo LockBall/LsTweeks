@@ -540,9 +540,10 @@ local function create_growth_dropdown(parent, frame_config, update)
     })
 end
 
+-- Shared frame settings conductor. Builds preset, CDM, and custom frame panels
+-- in visual grid order; source-specific controls are injected through opts.
 local function build_frame_settings_panel(parent, frame_config, opts)
     opts = opts or {}
-    local id = frame_config.id
     local update = opts.update
     local grid = M.create_settings_grid(parent)
     local place_at = grid.place_at

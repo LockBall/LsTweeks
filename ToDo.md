@@ -17,7 +17,7 @@ Goal: make `M.create_aura_frame()`, startup, and reset read as orchestrators tha
 
 ### 2. `af_gui_frame_builders.lua` — clarify settings-panel builder flow
 
-- [ ] a) Review `build_frame_settings_panel()` for helper boundaries and source-specific hooks.
+- [x] a) Review `build_frame_settings_panel()` for helper boundaries and source-specific hooks.
 - [ ] b) Keep preset/custom presentation controls shared through normalized frame configs.
 - [ ] c) Preserve the current visible GUI unless a specific cleanup requires a tested layout change.
 
