@@ -14,26 +14,33 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- ============================================================================
--- TIMER TEXT ENABLE CHECK
+local GROWTH_LAYOUT = {
+    UP = {
+        vertical = true,
+        grows_up = true,
+        bar_anchor = "BOTTOMLEFT",
+        icon_anchor = "BOTTOMLEFT",
+    },
+    DOWN = {
+        vertical = true,
+        bar_anchor = "TOPLEFT",
+        icon_anchor = "TOPLEFT",
+    },
+    LEFT = {
+        vertical = false,
+        bar_anchor = "TOPLEFT",
+        icon_anchor = "TOPRIGHT",
+        x_sign = -1,
+    },
+    RIGHT = {
+        vertical = false,
+        bar_anchor = "TOPLEFT",
+        icon_anchor = "TOPLEFT",
+        x_sign = 1,
+    },
+}
 
-function M.is_timer_text_enabled(db, category, timer_key)
-    if category == "static" then
-        return false
-    end
-
-    local value
-    if timer_key then
-        value = db and db[timer_key]
-    else
-        value = db and db["timer_"..category]
-    end
-
-    if value == nil then
-        return true
-    end
-    return value and true or false
-end
+local DEFAULT_GROWTH_LAYOUT = GROWTH_LAYOUT.DOWN
 
 -- ============================================================================
 -- BAR LAYOUT PARAMS
@@ -120,6 +127,34 @@ end
 -- ============================================================================
 -- LAYOUT ENGINE
 
+local function get_growth_layout(growth)
+    return GROWTH_LAYOUT[growth] or DEFAULT_GROWTH_LAYOUT
+end
+
+local function set_bar_icon_position(obj, frame, layout, index, step, inset)
+    if layout.grows_up then
+        obj:SetPoint(layout.bar_anchor, frame, layout.bar_anchor, inset, (index - 1) * step + inset)
+    else
+        obj:SetPoint(layout.bar_anchor, frame, layout.bar_anchor, inset, -((index - 1) * step + inset))
+    end
+end
+
+local function set_icon_position(obj, frame, layout, col_idx, row_idx, icon_footprint, row_height, up_offset)
+    if layout.grows_up then
+        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, 6, row_idx * row_height + up_offset)
+    elseif layout.vertical then
+        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, 6, -(row_idx * row_height + 6))
+    else
+        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor,
+            (layout.x_sign or 1) * (col_idx * icon_footprint + 6),
+            -(row_idx * row_height + 6))
+    end
+end
+
+local function get_timer_text_alignment(category, frame)
+    return category == "long" and "CENTER" or "RIGHT"
+end
+
 function M.setup_layout(self, show_key, spacing_key, bar_mode)
     if not self or not self.icons then return end
     if InCombatLockdown() then return end
@@ -130,20 +165,21 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local frame_width = db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing = db[spacing_key] or db["spacing"] or 6
     local growth = db["growth_"..category] or db["growth"] or "DOWN"
+    local growth_layout = get_growth_layout(growth)
 
     local show_timer_text = M.is_timer_text_enabled(db, category, db["timer"] ~= nil and "timer" or nil)
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
     local bar_layout = M.get_bar_layout_params(timer_font_size)
-    local timer_text_align = (category == "long") and "CENTER" or "RIGHT"
+    local timer_text_align = get_timer_text_alignment(category, self)
     local timer_anchor_point = (timer_text_align == "CENTER") and "CENTER" or "RIGHT"
     local bar_timer_slot_width = bar_layout.timer_slot_width
     local bar_timer_slot_right_pad = bar_layout.timer_slot_right_pad
 
     local icon_size = 32
     local icon_footprint = icon_size + spacing
-    local icons_per_row = (growth == "DOWN" or growth == "UP")
+    local icons_per_row = growth_layout.vertical
         and 1
         or math_max(1, floor((frame_width - 12 + spacing) / icon_footprint))
 
@@ -157,11 +193,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             local step  = bar_h + spacing
             obj:SetSize(frame_width - bar_layout.frame_inner_width_pad, bar_h)
 
-            if growth == "UP" then
-                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", bar_layout.frame_inset, (i - 1) * step + bar_layout.frame_inset)
-            else
-                obj:SetPoint("TOPLEFT", self, "TOPLEFT", bar_layout.frame_inset, -((i - 1) * step + bar_layout.frame_inset))
-            end
+            set_bar_icon_position(obj, self, growth_layout, i, step, bar_layout.frame_inset)
 
             obj.texture:SetSize(bar_layout.icon_size, bar_layout.icon_size)
             obj.texture:SetPoint("LEFT", obj, "LEFT", 0, 0)
@@ -223,17 +255,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             local row_h   = icon_size + spacing + timer_h
 
             local up_offset = 6 + (timer_h > 0 and (timer_h + 2) or 0)
-            if growth == "UP" then
-                obj:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 6, row_idx * row_h + up_offset)
-            elseif growth == "DOWN" then
-                obj:SetPoint("TOPLEFT", self, "TOPLEFT", 6, -(row_idx * row_h + 6))
-            elseif growth == "LEFT" then
-                obj:SetPoint("TOPRIGHT", self, "TOPRIGHT",
-                    -(col_idx * icon_footprint + 6), -(row_idx * row_h + 6))
-            else
-                obj:SetPoint("TOPLEFT", self, "TOPLEFT",
-                    col_idx * icon_footprint + 6, -(row_idx * row_h + 6))
-            end
+            set_icon_position(obj, self, growth_layout, col_idx, row_idx, icon_footprint, row_h, up_offset)
 
             obj.stack_slot:ClearAllPoints()
             obj.stack_slot:Hide()
@@ -274,6 +296,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
         frame_width     = frame_width,
         spacing         = spacing,
         growth          = growth,
+        growth_layout   = growth_layout,
         row_height      = bar_layout.row_height,
         icon_size       = 32,
     }
