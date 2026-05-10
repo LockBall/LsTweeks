@@ -167,6 +167,87 @@ local function set_icon_greyed(texture, greyed)
     end
 end
 
+local function set_shown_if_changed(frame, shown)
+    if not frame then return end
+    if shown then
+        if not frame:IsShown() then frame:Show() end
+    elseif frame:IsShown() then
+        frame:Hide()
+    end
+end
+
+local function set_texture_if_changed(texture, value)
+    if not texture then return end
+    if issecretvalue(value) then
+        texture._lstweeks_texture = nil
+        texture:SetTexture(value)
+        return
+    end
+    if texture._lstweeks_texture == value then return end
+    texture._lstweeks_texture = value
+    texture:SetTexture(value)
+end
+
+local function set_name_text_if_changed(font_string, value)
+    if not font_string then return end
+    if issecretvalue(value) then
+        font_string._lstweeks_name_text = nil
+        font_string:SetText(value)
+        return
+    end
+    if font_string._lstweeks_name_text == value then return end
+    font_string._lstweeks_name_text = value
+    font_string:SetText(value)
+end
+
+local function set_font_color_if_changed(font_string, r, g, b, a)
+    if not font_string then return end
+    a = a or 1
+    if font_string._lstweeks_color_r == r
+        and font_string._lstweeks_color_g == g
+        and font_string._lstweeks_color_b == b
+        and font_string._lstweeks_color_a == a then
+        return
+    end
+    font_string._lstweeks_color_r = r
+    font_string._lstweeks_color_g = g
+    font_string._lstweeks_color_b = b
+    font_string._lstweeks_color_a = a
+    font_string:SetTextColor(r, g, b, a)
+end
+
+local function set_status_bar_color_if_changed(bar, r, g, b, a)
+    if not bar then return end
+    a = a or 1
+    if bar._lstweeks_status_r == r
+        and bar._lstweeks_status_g == g
+        and bar._lstweeks_status_b == b
+        and bar._lstweeks_status_a == a then
+        return
+    end
+    bar._lstweeks_status_r = r
+    bar._lstweeks_status_g = g
+    bar._lstweeks_status_b = b
+    bar._lstweeks_status_a = a
+    bar:SetStatusBarColor(r, g, b, a)
+end
+
+local function set_texture_color_if_changed(texture, r, g, b, a)
+    if not texture then return end
+    a = a or 1
+    if texture._lstweeks_color_r == r
+        and texture._lstweeks_color_g == g
+        and texture._lstweeks_color_b == b
+        and texture._lstweeks_color_a == a then
+        return
+    end
+    texture._lstweeks_color_r = r
+    texture._lstweeks_color_g = g
+    texture._lstweeks_color_b = b
+    texture._lstweeks_color_a = a
+    texture:SetColorTexture(r, g, b, a)
+end
+
 local function set_count_text(obj, text, point, relative_to, relative_point, x, y)
     if issecretvalue(text) then
         obj._lstweeks_count_text = nil
@@ -251,15 +332,15 @@ local function configure_aura_visual(
     cooldown_duration,
     is_spell_cooldown
 )
-    obj.texture:SetTexture(entry.icon)  -- secret icon OK for SetTexture
+    set_texture_if_changed(obj.texture, entry.icon)  -- secret icon OK for SetTexture
     set_icon_greyed(obj.texture, show_cooldown_overlay and cooldown_is_active)
     if obj.cooldown then
-        obj.cooldown:Hide()
+        set_shown_if_changed(obj.cooldown, false)
     end
 
     if bar_mode then
-        obj.bar:Show()
-        obj.bar:SetStatusBarColor(color.r, color.g, color.b, color.a or 1)
+        set_shown_if_changed(obj.bar, true)
+        set_status_bar_color_if_changed(obj.bar, color.r, color.g, color.b, color.a or 1)
         if obj.bar_bg then
             local bg = bar_bg_color or {
                 r = color.r,
@@ -267,15 +348,15 @@ local function configure_aura_visual(
                 b = color.b,
                 a = M.BAR_BG_ALPHA_DEFAULT,
             }
-            obj.bar_bg:SetColorTexture(bg.r, bg.g, bg.b, bg.a or 1)
+            set_texture_color_if_changed(obj.bar_bg, bg.r, bg.g, bg.b, bg.a or 1)
         end
-        obj.name_text:SetText(entry.name)  -- name may be secret; SetText is safe
-        obj.name_text:SetTextColor(bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
-        obj.name_text:Show()
+        set_name_text_if_changed(obj.name_text, entry.name)  -- name may be secret; SetText is safe
+        set_font_color_if_changed(obj.name_text, bar_text_color.r or 1, bar_text_color.g or 1, bar_text_color.b or 1, 1)
+        set_shown_if_changed(obj.name_text, true)
         set_count_text(obj, stack_text, "LEFT", obj.bar, "LEFT", 4, 0)
     else
-        obj.bar:Hide()
-        obj.name_text:Hide()
+        set_shown_if_changed(obj.bar, false)
+        set_shown_if_changed(obj.name_text, false)
         if show_cooldown_overlay and live_duration then
             apply_cooldown_overlay(obj, live_duration, entry.expiration, entry.duration)
         elseif is_spell_cooldown then
@@ -286,7 +367,10 @@ local function configure_aura_visual(
 end
 
 local function clear_timer_and_fill_bar(obj, bar_mode)
-    obj.time_text:SetText("")
+    if obj.time_text._last_text ~= "" then
+        obj.time_text:SetText("")
+        obj.time_text._last_text = ""
+    end
     if bar_mode then
         obj.bar:SetMinMaxValues(0, 1)
         obj.bar:SetValue(1)
@@ -297,7 +381,10 @@ local function set_render_timer_text(show_render_timer_text, obj, timer_category
     if show_render_timer_text then
         M.set_timer_text(obj.time_text, timer_category, seconds)
     else
-        obj.time_text:SetText("")
+        if obj.time_text._last_text ~= "" then
+            obj.time_text:SetText("")
+            obj.time_text._last_text = ""
+        end
     end
 end
 
@@ -358,7 +445,10 @@ local function update_aura_timer_and_bar(
             clear_timer_and_fill_bar(obj, bar_mode)
         end
     elseif cooldown_duration then
-        obj.time_text:SetText("")
+        if obj.time_text._last_text ~= "" then
+            obj.time_text:SetText("")
+            obj.time_text._last_text = ""
+        end
         if bar_mode and not set_duration_object_bar(obj, cooldown_duration) then
             obj.bar:SetMinMaxValues(0, 1)
             obj.bar:SetValue(1)
@@ -646,7 +736,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             now
         )
 
-        obj:Show()
+        set_shown_if_changed(obj, true)
     end
 
     hide_unused_icons(self.icons, display_count + 1)
