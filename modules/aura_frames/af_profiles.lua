@@ -205,6 +205,22 @@ function M.delete_aura_frame_profile(name)
     return true, "Deleted profile: " .. name
 end
 
+function M.rename_aura_frame_profile(old_name, new_name)
+    local profile = M.find_aura_frame_profile(old_name)
+    if not profile then return false, "Profile not found." end
+
+    new_name = trim_profile_name(new_name)
+    if new_name == "" then return false, "Enter a new profile name." end
+    if new_name == profile.name then return true, "Profile name unchanged." end
+    if M.find_aura_frame_profile(new_name) then
+        return false, "A profile with that name already exists."
+    end
+
+    profile.name = new_name
+    if M.db then M.db.last_profile_name = new_name end
+    return true, "Renamed profile: " .. new_name
+end
+
 function M.apply_aura_frame_profile_data(profile_data)
     if not (M.db and profile_data) then return false, "Profile data is missing." end
     if InCombatLockdown and InCombatLockdown() then
