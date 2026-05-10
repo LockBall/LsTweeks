@@ -56,6 +56,7 @@ modules/
     af_render.lua        — render_aura_map(), set_timer_text(), merge_aura_info()
     af_icon_layout.lua   — setup_layout(), set_height_for_growth(), get_bar_layout_params(), is_timer_text_enabled()
     af_core.lua          — tick_visible_icons(), update_auras(), Blizzard buff/debuff/CDM visibility prep
+    af_profiles.lua      — Aura Frame Profiles export/apply/save/load helpers
     af_gui.lua           — Aura Frames settings shell; M.BuildSettings(), dropdown wrappers, sync_general_controls_from_db()
     af_gui_tree.lua      — Frames tab tree/sidebar; Buffs, WoW Cooldown, and Filters groups
     af_gui_frame_builders.lua — all Aura Frames content panels; General, preset Buff/CDM, and custom Filters builders
@@ -102,6 +103,7 @@ Ls_Tweeks_DB = {
   combat_text = bool,                  -- hide portrait combat text
   aura_frames = {
     last_tab_index = number,           -- last selected aura tab (1=General, 2=Frames)
+    last_profile_name = string,        -- last selected Aura Frame Profile name
     last_frames_node = string,         -- last selected frame node in category tabs
     short_threshold = number,
     enable_blizz_buffs = bool,
@@ -125,6 +127,11 @@ Ls_Tweeks_DB = {
       --               growth, timer, tooltip, scale, spacing, max_icons, width,
       --               test_aura, timer_number_font, timer_number_font_size,
       --               timer_number_font_bold, timer_color, bar_text_color }
+    },
+    profiles = {                       -- saved Aura Frame Profiles
+      -- each profile: { name=string, saved_at=string, data={ profile-owned aura frame settings } }
+      -- profile data includes preset/CDM/custom presentation, positions, test aura toggles, and custom frame definitions;
+      -- it excludes editor/session state such as selected tabs/nodes, grid visibility, and debug outlines
     },
   }
 }
@@ -152,10 +159,13 @@ Custom aura frames are filter-driven, not whitelist-driven. Each custom frame ha
 
 When aura-frame reset replaces `M.db.custom_frames`, `af_main.lua` removes orphan custom runtime frames and stale custom controls, then asks `af_gui_tree.lua` to rebuild the Frames tree/content if it exists. Do not leave custom WoW frames alive without a matching saved custom entry.
 
-## Aura Frames GUI Layout System
-`af_gui.lua` owns the settings shell: `BuildSettings` creates two tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
+Aura Frame Profiles are complete Aura Frames setup snapshots stored under `M.db.profiles`. Profile save/load is owned by `af_profiles.lua` and uses an explicit schema rather than copying all of `M.db`: it includes preset/CDM/custom frame presentation, positions, timer styling, colors, test-aura toggles, and custom frame definitions, and excludes editor/session state such as selected tabs/nodes, grid visibility, and debug outlines. Loading a profile is blocked in combat, replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs the reset refresh path.
+The Aura Frames General reset panel uses `CreateGlobalReset(..., opts)` with a checked-by-default **Keep Profiles** option that preserves `profiles` and `last_profile_name` through module reset.
 
-`BuildSettings` has two tabs: **General** (manual anchoring) and **Frames** (tree + grid).
+## Aura Frames GUI Layout System
+`af_gui.lua` owns the settings shell: `BuildSettings` creates the Aura Frames tabs, restores the selected tab, and dispatches to panel builders. It should stay focused on GUI orchestration and shared dropdown wrappers.
+
+`BuildSettings` has three tabs: **General** (manual anchoring), **Frames** (tree + grid), and **Profiles** (save/load complete Aura Frames setups).
 
 `af_gui_tree.lua` owns the **Frames** tab left tree sidebar (140px wide) with three outlined groups: **Buffs** (Static/DeBuff/Short/Long), **WoW Cooldown** (button title that opens Blizzard Cooldown Viewer settings + Sync to CDM + Essential/Utility/Tracked Buffs/Tracked Bars), and **Filters** (+ Custom button first, then custom entries with expandable Filters child nodes). Selecting a node lazy-builds a content panel to the right. The active tree node colors its group outline gold; inactive group outlines are gray. Group spacing is controlled by `GROUP_INNER_PAD`, `GROUP_ELEMENT_GAP`, and `GROUP_GAP` in `af_gui_tree.lua`.
 
@@ -189,7 +199,7 @@ Drag/resize interaction state is centralized with `M.start_frame_drag()` / `M.st
 | `M.CreateListDropdown(name, parent, label, opts, get_val, on_sel, width)` | returns dropdown | af_gui wrapper with font support |
 | `CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)` | integrated reset | container is 95×45 |
 | `CreateRivetedPanel(parent, w, h, anchorTo, point, x, y, levelOffset)` | returns panel, fontstring | |
-| `CreateGlobalReset(parent, db, defaults)` | ARM-code safety reset for the passed DB table; blocked in combat | not positioned by the factory |
+| `CreateGlobalReset(parent, db, defaults, opts)` | ARM-code safety reset for the passed DB table; blocked in combat | optional `opts.preserve_keys` + checkbox |
 
 ## Debug Outlines (af_debug_outlines.lua)
 `M.db.show_bar_section_outlines` toggles 1px borders on aura icon slots.  

@@ -10,6 +10,7 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 - Custom filtered aura frames using AuraFilters such as `HELPFUL|IMPORTANT`.
 - Icon or bar presentation modes, growth direction, spacing, width, colors, timers, and test-aura previews.
 - Per-frame tooltip visibility.
+- Aura Frame Profiles for saving and loading a complete aura-frame setup across characters.
 - Optional hiding of Blizzard buff/debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Toggle for portrait combat text.
@@ -50,6 +51,7 @@ Choose a method, either Download or Clone, to install the AddOn.
 ## Use Notes
 - To open the L's Tweeks addon without the minimap button input the Slash Command: `/lst` in the chat wender and press Enter.
 - Open the **Buffs & Debuffs** panel for aura frame settings.
+- Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups across characters.
 - Open the **Settings** panel for minimap, open-on-reload, and interface transparency settings.
 
 <hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
@@ -84,6 +86,13 @@ Source: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
 Displays the result of selectable combination of filters. e.g.
 `HELPFULL | IMPORTAMT`
 The displayed ouput result of these combinations isn't fully known yet.
+<hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
+
+&nbsp;
+
+### Aura Frame Profiles
+Profiles save the full Aura Frames setup, including preset frame settings, CDM-backed frame presentation, positions, colors, timer styling, and custom filtered frames. Loading a profile replaces the current Aura Frames setup and recreates missing custom frames. Profile loading is blocked during combat.
+The Aura Frames reset panel includes a checked **Keep Profiles** option so saved profiles can survive a module reset.
 <hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 
 &nbsp;

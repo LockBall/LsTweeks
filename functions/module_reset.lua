@@ -1,10 +1,11 @@
--- ARM-code safety reset button: addon.CreateGlobalReset(parent, db, defaults).
+-- ARM-code safety reset button: addon.CreateGlobalReset(parent, db, defaults, opts).
 -- The user must type "arm" into an input box before the reset button activates, preventing accidental wipes.
 -- Blocked entirely during combat via InCombatLockdown().
 
 local addon_name, addon = ...
 
-function addon.CreateGlobalReset(parent, db, defaults)
+function addon.CreateGlobalReset(parent, db, defaults, opts)
+    opts = opts or {}
 
     -------- CONFIGURATION VARIABLES --------
     local DIM_ALPHA     = 0.5   -- Faded transparency when the button is locked
@@ -39,6 +40,7 @@ function addon.CreateGlobalReset(parent, db, defaults)
     local INPUT_W           = 75    -- Width of the ARM code input box
     local INPUT_H           = 20    -- Height of the ARM code input box
     local LABEL_GAP         = 10    -- Gap between input top and label bottom
+    local OPTION_GAP        = 10    -- Gap between input bottom and optional preserve checkbox
     local BTN_GAP           = 44    -- Gap between input right edge and button left edge
     local BTN_SIZE          = 64    -- Width and height of the icon button
     local RIVET_INSET       = 14    -- Distance of each rivet from panel corners
@@ -91,6 +93,9 @@ function addon.CreateGlobalReset(parent, db, defaults)
     local content_w = math.max(control_row_width, label_w)
     local top_extent = math.max(BTN_SIZE / 2, INPUT_H / 2 + LABEL_GAP + label_h)
     local bottom_extent = math.max(BTN_SIZE / 2, INPUT_H / 2)
+    if opts.preserve_label then
+        bottom_extent = math.max(bottom_extent, INPUT_H / 2 + OPTION_GAP + 20)
+    end
     local content_h = top_extent + bottom_extent
     local group_w = content_w + GROUP_PAD_X * 2
     local group_h = content_h + GROUP_PAD_TOP + GROUP_PAD_BOTTOM
@@ -105,6 +110,13 @@ function addon.CreateGlobalReset(parent, db, defaults)
 
     eb:SetPoint("RIGHT", btn, "LEFT", -BTN_GAP, 0)
     label:SetPoint("BOTTOM", eb, "TOP", 0, LABEL_GAP)
+
+    local preserve_checkbox
+    local preserve_container
+    if opts.preserve_label then
+        preserve_container, preserve_checkbox = addon.CreateCheckbox(controlGroup, opts.preserve_label, opts.preserve_default == true)
+        preserve_container:SetPoint("TOP", eb, "BOTTOM", 0, -OPTION_GAP)
+    end
 
     -- STATIC BUTTON TEXTURE
     local bgTex = btn:CreateTexture(nil, "BACKGROUND")
@@ -206,9 +218,23 @@ function addon.CreateGlobalReset(parent, db, defaults)
 
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
-        -- Wipe and restore this module's DB from its defaults
+        local preserved = {}
+        if preserve_checkbox and preserve_checkbox.GetChecked and preserve_checkbox:GetChecked() and opts.preserve_keys then
+            for _, key in ipairs(opts.preserve_keys) do
+                if db[key] ~= nil then
+                    preserved[key] = {}
+                    addon.deep_copy_into({ value = db[key] }, preserved[key])
+                end
+            end
+        end
+
+        -- Wipe and restore this module's DB from its defaults.
         table.wipe(db)
         addon.deep_copy_into(defaults, db)
+
+        for key, wrapper in pairs(preserved) do
+            db[key] = wrapper.value
+        end
 
         -- Notify modules with a reset hook
         for _, module in pairs(addon) do
