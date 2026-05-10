@@ -154,7 +154,6 @@ local function run_wow_cooldown_refresh(refresh_config)
         local frame = M.frames[show_key]
         local p = frame and frame.update_params
         if p then
-            frame._sorted_ids_cache = nil
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end

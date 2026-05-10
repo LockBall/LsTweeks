@@ -12,7 +12,7 @@
   - Populate category-specific maps/lists while scanning instead of making each preset frame filter the full shared `M._aura_map`.
   - Expected shape: `O(enabled frames * total auras)` -> closer to `O(total auras + displayed category entries)`.
 
-- [ ] c) Centralize sorted aura ID caches per update batch.
+- [x] c) Centralize sorted aura ID caches per update batch.
   - Cache `C_UnitAuras.GetUnitAuraInstanceIDs()` results by `HELPFUL/HARMFUL + sort_rule + sort_dir` for the current update batch instead of per frame.
   - Expected shape: `O(frames * sorted aura id fetch)` -> `O(unique sort requests)`.
 

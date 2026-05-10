@@ -640,6 +640,9 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     M._aura_map = M._aura_map or {}
     local cur_map = M._aura_map
     local category_buckets = reset_aura_category_buckets()
+    if M.clear_sorted_aura_ids_cache then
+        M.clear_sorted_aura_ids_cache()
+    end
 
     -- Snapshot old map for stable added_at and secret-field fallback.
     -- We build a shallow copy of keys only (old entries are referenced, not cloned).
