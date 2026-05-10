@@ -16,7 +16,7 @@
   - Cache `C_UnitAuras.GetUnitAuraInstanceIDs()` results by `HELPFUL/HARMFUL + sort_rule + sort_dir` for the current update batch instead of per frame.
   - Expected shape: `O(frames * sorted aura id fetch)` -> `O(unique sort requests)`.
 
-- [ ] d) Avoid reapplying unchanged visual state during render.
+- [x] d) Avoid reapplying unchanged visual state during render.
   - Cache per-slot identity/style keys so stable icons skip redundant texture, color, text, cooldown, and visibility setters.
   - Mostly a constant-factor win, but relevant because WoW UI setters are not free.
 
