@@ -1,6 +1,7 @@
 -- ARM-code safety reset button: addon.CreateGlobalReset(parent, db, defaults, opts).
 -- The user must type "arm" into an input box before the reset button activates, preventing accidental wipes.
--- Blocked entirely during combat via InCombatLockdown().
+-- Blocked entirely during combat via InCombatLockdown(). Optional opts.before_reset
+-- lets callers refresh dynamic defaults immediately before the copy.
 
 local addon_name, addon = ...
 
@@ -219,7 +220,8 @@ function addon.CreateGlobalReset(parent, db, defaults, opts)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
         local preserved = {}
-        if preserve_checkbox and preserve_checkbox.GetChecked and preserve_checkbox:GetChecked() and opts.preserve_keys then
+        local preserve_checked = preserve_checkbox and preserve_checkbox.GetChecked and preserve_checkbox:GetChecked()
+        if preserve_checked and opts.preserve_keys then
             for _, key in ipairs(opts.preserve_keys) do
                 if db[key] ~= nil then
                     preserved[key] = {}
@@ -228,12 +230,21 @@ function addon.CreateGlobalReset(parent, db, defaults, opts)
             end
         end
 
+        if opts.before_reset then
+            opts.before_reset()
+        end
+
         -- Wipe and restore this module's DB from its defaults.
         table.wipe(db)
         addon.deep_copy_into(defaults, db)
 
         for key, wrapper in pairs(preserved) do
             db[key] = wrapper.value
+        end
+        if (not preserve_checked) and opts.preserve_keys then
+            for _, key in ipairs(opts.preserve_keys) do
+                db[key] = nil
+            end
         end
 
         -- Notify modules with a reset hook

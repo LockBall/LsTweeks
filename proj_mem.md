@@ -24,6 +24,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - **Readability:** Small helpers are fine when they clarify real work. Avoid abstractions that hide WoW API, taint, combat, timing, or hot-path state.
 - **Efficiency:** Aura scanning, rendering, layout, and GUI rebuilds are budgeted work. Cache hot globals, batch noisy events, skip disabled frames early, and avoid frame churn.
 - **Conservative refactors:** Match existing file ownership and visible GUI unless the request explicitly changes behavior.
+- Treat what I say as a hypothesis, not a fact, unless we have proof. If I am wrong, then correct me directly.
+
 
 ## File Map
 ```
@@ -118,6 +120,8 @@ Important `aura_frames` keys:
 
 ### Position, Drag, Resize
 - Aura frame positions are stored as unscaled UIParent-center coordinates.
+- CDM default positions are dynamic: new/missing or untouched legacy CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
+- New custom frame default positions are also based on the current main GUI right edge with a 32px gap; existing saved/profile custom positions are not overwritten.
 - Use `M.apply_frame_position()`, `M.read_frame_position()`, `M.sync_frame_position_to_db()`, `M.apply_saved_frame_position()`, and `M.sync_frame_position_from_drag()` rather than branching on preset vs custom manually.
 - Drag/resize state is centralized through `M.start_frame_drag()` / `M.stop_frame_drag()` and `frame._is_user_positioning`.
 - Runtime refreshes, especially CDM refreshes, must not reapply saved anchors, scale, size, layout, or height while the user is positioning.
@@ -126,7 +130,7 @@ Important `aura_frames` keys:
 ### Profiles And Reset
 - Aura Frame Profiles live under `M.db.profiles`; save/load is owned by `af_profiles.lua` with an explicit schema.
 - Loading a profile is blocked in combat, replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
-- General reset uses `CreateGlobalReset(..., opts)` with checked-by-default **Keep Profiles**, preserving `profiles` and `last_profile_name`.
+- General reset uses `CreateGlobalReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
 
 ## Aura Frames GUI

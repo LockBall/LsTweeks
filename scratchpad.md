@@ -1,6 +1,5 @@
 # Scratchpad
 
-CDM frames initial default position should check for the main gui location and appear outside the right border edge with a 32 pixel gap  
 
 ## LUT Candidates in aura_frames Module (2026-05-10)
 
