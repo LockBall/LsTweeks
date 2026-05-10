@@ -645,6 +645,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     end
 
     hide_unused_icons(self.icons, display_count + 1)
+    self._display_count = display_count
 
     return display_count
 end

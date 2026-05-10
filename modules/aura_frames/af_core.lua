@@ -35,7 +35,11 @@ function M.tick_visible_icons(now)
             local show_timer_text = frame._show_timer_text
             local bar_mode = frame._bar_mode
             local show_cooldown_overlay = frame._show_cooldown_overlay == true
-            for i = 1, #frame.icons do
+            local display_count = frame._display_count
+            if display_count == nil or display_count > #frame.icons then
+                display_count = #frame.icons
+            end
+            for i = 1, display_count do
                 local obj = frame.icons[i]
                 if obj:IsShown() and obj.is_test_preview and M.update_test_preview_state then
                     M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
@@ -188,6 +192,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local is_moving = activity.moving == true
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
+        self._display_count = 0
         self:Hide()
         if self.title_bar then self.title_bar:Hide() end
         if self.bottom_title_bar then self.bottom_title_bar:Hide() end
