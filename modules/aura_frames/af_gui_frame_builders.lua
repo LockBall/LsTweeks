@@ -61,6 +61,9 @@ end
 -- so the shared panel builder does not branch on source type for common controls.
 local function make_preset_frame_settings_config(data)
     local cat = data.show_key:sub(6)
+    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[cat] and M.refresh_cdm_default_positions then
+        M.refresh_cdm_default_positions()
+    end
     return {
         id = cat,
         is_custom = false,
@@ -97,7 +100,13 @@ end
 
 local function make_custom_frame_settings_config(entry)
     local id = entry.id
-    entry.position = entry.position or { x = 0, y = 50 }
+    local default_position = (M.get_default_custom_frame_position and M.get_default_custom_frame_position(id))
+        or M.CUSTOM_FRAME_TEMPLATE.position
+    entry.position = entry.position or {
+        point = default_position.point,
+        x = default_position.x,
+        y = default_position.y,
+    }
     if entry.tooltip == nil then entry.tooltip = true end
     return {
         id = id,
@@ -107,7 +116,7 @@ local function make_custom_frame_settings_config(entry)
         frame_show_key = "show_" .. id,
         scale_key = "scale",
         position_table = entry.position,
-        default_position = M.CUSTOM_FRAME_TEMPLATE.position,
+        default_position = default_position,
         keys = {
             show = "show",
             move = "move",
@@ -349,8 +358,14 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         on_click = function()
             local f = M.frames[frame_show_key]
             if not f then return end
+            local reset_default_position = default_position
+            if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[id] and M.refresh_cdm_default_positions then
+                M.refresh_cdm_default_positions()
+            elseif frame_config.is_custom and M.get_default_custom_frame_position then
+                reset_default_position = M.get_default_custom_frame_position(id)
+            end
             M.reset_frame_move_placement(f, {
-                default_position = default_position,
+                default_position = reset_default_position,
                 default_width = defaults_table[width_key] or M.DEFAULT_FRAME_WIDTH,
                 width_table = value_table,
                 width_key = width_key,
@@ -468,6 +483,11 @@ function M.build_general_tab(p)
         preserve_label = "Keep Profiles",
         preserve_default = true,
         preserve_keys = { "profiles", "last_profile_name" },
+        before_reset = function()
+            if M.refresh_cdm_default_positions then
+                M.refresh_cdm_default_positions()
+            end
+        end,
     })
     resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
 end

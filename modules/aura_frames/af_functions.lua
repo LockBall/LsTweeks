@@ -6,6 +6,24 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+local MAIN_FRAME_FALLBACK_HALF_WIDTH = 475
+local CDM_DEFAULT_POSITION_GAP = 32
+local CUSTOM_DEFAULT_POSITION_GAP = 32
+local CUSTOM_DEFAULT_POSITION_START_Y = 50
+local CUSTOM_DEFAULT_POSITION_STEP_Y = -50
+local CDM_DEFAULT_POSITION_Y_OFFSETS = {
+    essential = 25,
+    utility = -25,
+    tracked_buffs = -75,
+    tracked_bars = -125,
+}
+local LEGACY_CDM_DEFAULT_POSITIONS = {
+    essential = { point = "TOPLEFT", x = -100, y = 25 },
+    utility = { point = "TOPLEFT", x = -100, y = -25 },
+    tracked_buffs = { point = "TOPLEFT", x = -100, y = -75 },
+    tracked_bars = { point = "TOPLEFT", x = -100, y = -125 },
+}
+
 local TIMER_BEHAVIOR = {
     static = { enabled = false, format = "none" },
     short  = { enabled = true,  format = "decimal" },
@@ -19,6 +37,83 @@ local DEFAULT_TIMER_BEHAVIOR = {
 function M.get_cdm_viewer_frame(category)
     local frame_name = M.CDM_VIEWER_FRAMES[category]
     return frame_name and _G[frame_name] or nil
+end
+
+local function read_main_frame_reference()
+    local main_frame = addon.main_frame
+    local ui_center_x, ui_center_y = UIParent:GetCenter()
+    if main_frame and ui_center_x and ui_center_y then
+        local right = main_frame.GetRight and main_frame:GetRight()
+        local _, center_y = main_frame.GetCenter and main_frame:GetCenter()
+        if right and center_y then
+            return right - ui_center_x, center_y - ui_center_y
+        end
+    end
+    return MAIN_FRAME_FALLBACK_HALF_WIDTH, 0
+end
+
+function M.get_default_cdm_frame_position(category)
+    local y_offset = CDM_DEFAULT_POSITION_Y_OFFSETS[category]
+    if not y_offset then return nil end
+    local main_right_x, main_center_y = read_main_frame_reference()
+    return {
+        point = "TOPLEFT",
+        x = main_right_x + CDM_DEFAULT_POSITION_GAP,
+        y = main_center_y + y_offset,
+    }
+end
+
+local function get_custom_position_index(id)
+    if type(id) == "string" then
+        local n = tonumber(id:match("^custom_(%d+)$"))
+        if n then return n end
+    end
+    return 1
+end
+
+function M.get_default_custom_frame_position(id)
+    local main_right_x, main_center_y = read_main_frame_reference()
+    local index = get_custom_position_index(id)
+    return {
+        point = "TOPLEFT",
+        x = main_right_x + CUSTOM_DEFAULT_POSITION_GAP,
+        y = main_center_y + CUSTOM_DEFAULT_POSITION_START_Y + ((index - 1) * CUSTOM_DEFAULT_POSITION_STEP_Y),
+    }
+end
+
+function M.refresh_cdm_default_positions()
+    if not (M.defaults and M.defaults.positions) then return end
+    for category in pairs(CDM_DEFAULT_POSITION_Y_OFFSETS) do
+        local pos = M.get_default_cdm_frame_position(category)
+        if pos then
+            M.defaults.positions[category] = M.defaults.positions[category] or {}
+            M.defaults.positions[category].point = pos.point
+            M.defaults.positions[category].x = pos.x
+            M.defaults.positions[category].y = pos.y
+        end
+    end
+end
+
+local function is_legacy_cdm_default_position(category, pos)
+    local legacy = LEGACY_CDM_DEFAULT_POSITIONS[category]
+    return legacy and pos
+        and (pos.point == legacy.point or pos.point == nil)
+        and pos.x == legacy.x
+        and pos.y == legacy.y
+end
+
+function M.apply_cdm_default_positions_to_db()
+    if not (M.db and M.db.positions) then return end
+    M.refresh_cdm_default_positions()
+    for category in pairs(CDM_DEFAULT_POSITION_Y_OFFSETS) do
+        local default_pos = M.defaults and M.defaults.positions and M.defaults.positions[category]
+        if default_pos and (not M.db.positions[category] or is_legacy_cdm_default_position(category, M.db.positions[category])) then
+            M.db.positions[category] = M.db.positions[category] or {}
+            M.db.positions[category].point = default_pos.point
+            M.db.positions[category].x = default_pos.x
+            M.db.positions[category].y = default_pos.y
+        end
+    end
 end
 
 function M.apply_frame_position(frame, pos, scale)
@@ -332,6 +427,7 @@ function M.new_custom_entry(id, name)
     end
     entry.id   = id   or next_custom_id()
     entry.name = name or next_custom_name()
+    entry.position = M.get_default_custom_frame_position(entry.id) or entry.position
     return entry
 end
 

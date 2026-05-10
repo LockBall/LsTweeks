@@ -167,6 +167,13 @@ function M.build_profiles_tab(parent)
         select_profile(selected_name)
     end
 
+    M.refresh_profiles_tab = function()
+        selected_name = M.db and M.db.last_profile_name
+        name_box:SetText(selected_name or "")
+        set_status(true, "")
+        rebuild_profile_list()
+    end
+
     local function confirm_profile_action(dialog_key, text, button_text, on_accept)
         StaticPopupDialogs[dialog_key] = {
             text = text,

@@ -734,7 +734,9 @@ local function prepare_aura_frame_db()
     M.db = Ls_Tweeks_DB.aura_frames
     M._aura_scan_dirty = true
 
+    if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
+    if M.apply_cdm_default_positions_to_db then M.apply_cdm_default_positions_to_db() end
 
     migrate_timer_font_settings()
     migrate_legacy_bar_bg_settings()
@@ -878,6 +880,9 @@ end
 
 local function refresh_aura_frame_settings_after_reset()
     M.sync_general_controls_from_db()
+    if M.refresh_profiles_tab then
+        M.refresh_profiles_tab()
+    end
     if M.refresh_frames_tree then
         M.refresh_frames_tree()
     end
