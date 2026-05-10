@@ -8,7 +8,7 @@
   - Store `frame._display_count` from `render_aura_map()` and have `tick_visible_icons()` loop only `1..frame._display_count`.
   - Expected shape: `O(total pooled icons)` -> `O(displayed icons)` on the tenth-second ticker.
 
-- [ ] b) Build category buckets during unified scan.
+- [x] b) Build category buckets during unified scan.
   - Populate category-specific maps/lists while scanning instead of making each preset frame filter the full shared `M._aura_map`.
   - Expected shape: `O(enabled frames * total auras)` -> closer to `O(total auras + displayed category entries)`.
 

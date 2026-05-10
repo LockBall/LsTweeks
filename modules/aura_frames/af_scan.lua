@@ -1,7 +1,8 @@
 -- Unified aura scanning and classification for all aura frame categories.
 -- M.unified_scan() runs one pass over all player buffs and debuffs, classifying each into M._aura_map
 -- with an entry.category ("static"/"short"/"long"/"debuff") and entry.is_helpful flag.
--- Preset frames filter by entry.category; custom frames scan with a selected AuraFilters string.
+-- It also rebuilds per-category bucket maps so preset frames do not each filter the full master map.
+-- Custom frames scan with a selected AuraFilters string.
 
 local addon_name, addon = ...
 
@@ -25,9 +26,32 @@ local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
 local _scratch_viewer_children = {}
 local _custom_aura_scan_cache = {}
+local AURA_SCAN_BUCKET_CATEGORIES = { "static", "short", "long", "debuff" }
 
 -- ============================================================================
 -- SHARED HELPERS
+
+local function reset_aura_category_buckets()
+    M._aura_maps_by_category = M._aura_maps_by_category or {}
+    for _, category in ipairs(AURA_SCAN_BUCKET_CATEGORIES) do
+        local bucket = M._aura_maps_by_category[category]
+        if bucket then
+            wipe(bucket)
+        else
+            M._aura_maps_by_category[category] = {}
+        end
+    end
+    return M._aura_maps_by_category
+end
+
+local function add_to_category_bucket(buckets, entry)
+    local category = entry and entry.category
+    local bucket = category and buckets[category]
+    local iid = entry and entry.instance_id
+    if bucket and iid ~= nil then
+        bucket[iid] = entry
+    end
+end
 
 local function make_order_key(spell_id, name, icon, is_helpful)
     local f = is_helpful and "H" or "D"
@@ -615,6 +639,7 @@ end
 function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint)
     M._aura_map = M._aura_map or {}
     local cur_map = M._aura_map
+    local category_buckets = reset_aura_category_buckets()
 
     -- Snapshot old map for stable added_at and secret-field fallback.
     -- We build a shallow copy of keys only (old entries are referenced, not cloned).
@@ -735,6 +760,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 cur_map[iid] = entry
             end
             seen_iids[iid] = true
+            add_to_category_bucket(category_buckets, entry)
 
             count = count + 1
         end
@@ -815,6 +841,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 cur_map[iid] = entry
             end
             seen_iids[iid] = true
+            add_to_category_bucket(category_buckets, entry)
             count = count + 1
         end
     end

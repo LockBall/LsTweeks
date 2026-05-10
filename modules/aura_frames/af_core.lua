@@ -286,10 +286,17 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         if activity.needs_cdm_scan then
             M.add_cooldown_viewer_category_entries(self._aura_map, category)
         else
-            -- Preset frame: match by category string.
-            for iid, entry in pairs(M._aura_map) do
-                if entry.category == category then
+            -- Preset frame: use the scan-built bucket when available.
+            local category_bucket = M._aura_maps_by_category and M._aura_maps_by_category[category]
+            if category_bucket then
+                for iid, entry in pairs(category_bucket) do
                     self._aura_map[iid] = entry
+                end
+            else
+                for iid, entry in pairs(M._aura_map) do
+                    if entry.category == category then
+                        self._aura_map[iid] = entry
+                    end
                 end
             end
         end

@@ -115,6 +115,7 @@ Important `aura_frames` keys:
 
 ### Scanning, Rendering, Timers
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.
+- `M._aura_map` remains the master auraInstanceID map; `M.unified_scan()` rebuilds `M._aura_maps_by_category` as derived preset buckets each scan.
 - Custom frames are AuraFilters-driven, not whitelist-driven. They scan with `C_UnitAuras.GetAuraDataByIndex("player", i, M.get_custom_aura_filter(entry))`.
 - Custom scan results are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; aura-affecting events clear the cache.
 - Timer text enable/format behavior is centralized in `af_functions.lua` via `M.get_timer_behavior()` and `M.is_timer_text_enabled()`. Timer alignment remains layout behavior in `af_icon_layout.lua`.
