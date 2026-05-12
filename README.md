@@ -14,6 +14,7 @@ A modular World of Warcraft UI addon for interface adjustments and configurable 
 - Optional hiding of Blizzard buff/debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Toggle for portrait combat text.
+- Sound Levels module framework for muting known loud sounds and playing quieter addon replacement audio.
 
 <hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;
@@ -53,6 +54,7 @@ Choose a method, either Download or Clone, to install the AddOn.
 - Open the **Buffs & Debuffs** panel for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups across characters.
 - Open the **Settings** panel for minimap, open-on-reload, and interface transparency settings.
+- Open the **Sound Levels** panel to configure loud-sound presets after the target sound FileDataIDs and replacement audio files have been added.
 
 <hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;

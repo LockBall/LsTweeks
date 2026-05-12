@@ -233,6 +233,16 @@ function M.update_blizz_cdm_visibility(category)
     local frame = M.get_cdm_viewer_frame(category)
     if not frame then return end
 
+    if not frame._lstweeks_cdm_visibility_hooked then
+        frame._lstweeks_cdm_visibility_hooked = true
+        frame:HookScript("OnShow", function()
+            if M.db and M.db["hide_blizz_cdm_" .. category] then
+                frame:SetAlpha(0)
+                frame:EnableMouse(false)
+            end
+        end)
+    end
+
     -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
     -- aura/cooldown state we read; alpha keeps them active but invisible.
     local hide = M.db and M.db["hide_blizz_cdm_" .. category]
@@ -241,6 +251,13 @@ function M.update_blizz_cdm_visibility(category)
     end
     frame:SetAlpha(hide and 0 or 1)
     frame:EnableMouse(not hide)
+end
+
+function M.update_all_blizz_cdm_visibility()
+    if not M.CDM_CATEGORIES then return end
+    for _, category in ipairs(M.CDM_CATEGORIES) do
+        M.update_blizz_cdm_visibility(category)
+    end
 end
 
 function M.prepare_blizz_cdm_viewer(category)

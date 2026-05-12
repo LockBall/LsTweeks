@@ -279,10 +279,6 @@ end
 
 -- tabs settings controls
 function M.BuildSettings(parent)
-    local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetPoint("TOPLEFT", 10, -10)
-    title:SetText("Buffs & Debuffs Configuration")
-
     local tabs, panels = {}, {}
 
     -- Category controls are derived from FRAME_DEFS so GUI labels, DB keys,
@@ -336,11 +332,11 @@ function M.BuildSettings(parent)
             end
             if M.db then M.db.last_tab_index = self:GetID() end
         end)
-        tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and title or tabs[i-1], i == 1 and "BOTTOMLEFT" or "RIGHT", i == 1 and 0 or 5, i == 1 and -15 or 0)
+        tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and parent or tabs[i-1], i == 1 and "TOPLEFT" or "RIGHT", i == 1 and 10 or 5, i == 1 and -12 or 0)
         PanelTemplates_TabResize(tab, 0)
 
         local p = CreateFrame("Frame", nil, parent)
-        p:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -80)
+        p:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -78)
         p:SetSize(741, 50)  -- tab content panel: 925 frame - 12 B.l - 140 sidebar - 12 B.r - 20 margin
         p:Hide()
 

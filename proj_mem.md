@@ -44,6 +44,7 @@ functions/
 modules/
   about.lua
   combat_text.lua
+  sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
   settings/             settings defaults + minimap/open-on-reload/interface alpha panel
   aura_frames/
     af_defaults.lua        Aura Frame defaults, FRAME_DEFS, category lists, custom template
@@ -66,6 +67,7 @@ Every Lua file starts with a short responsibility header before `local addon_nam
 
 ## Core Architecture Rules
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
+- Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
@@ -85,7 +87,18 @@ Violations here can create invisible or unstable controls.
 
 ## Saved Variables Shape
 Top-level keys include:
-`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `combat_text`, and `aura_frames`.
+`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `combat_text`, `sound_levels`, and `aura_frames`.
+
+Important `sound_levels` keys:
+- `sound_levels.enabled`
+- `sound_levels.targets.<target>.preset` where current presets are `original`, `shush`, `shusher`, `shushest`
+- `sound_levels.targets.<target>.play_replacement`
+
+## Sound Levels Ownership
+- Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
+- WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
+- Replacement audio files live under `modules/sound_levels/sounds/`; current planned dungeon-ready paths are `dungeon_ready_shush.ogg`, `dungeon_ready_shusher.ogg`, and `dungeon_ready_shushest.ogg`.
+- Keep the UI preset-based unless we add generated audio variants for each slider step.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
@@ -112,6 +125,7 @@ Important `aura_frames` keys:
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
 - CDM refresh scheduling is centralized in `af_main.lua` via `M.queue_wow_cooldown_refresh(profile)`. Use profiles `"immediate"`, `"startup"`, `"settings"`, `"hook"` instead of local timer chains.
 - CDM viewer frames are alpha-hidden with mouse disabled; do not `Hide()` them or they stop producing useful child state.
+- CDM Blizzard-viewer hide settings must be applied for every CDM category on startup/reload, independent of whether the matching addon CDM frame is enabled.
 
 ### Scanning, Rendering, Timers
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.

@@ -8,8 +8,14 @@ local addon_name, addon = ...
 -- ============================================================================
 addon.categories = {}
 
-function addon.register_category(name, builder)
-    table.insert(addon.categories, { name = name, builder = builder })
+function addon.register_category(name, builder, opts)
+    opts = opts or {}
+    table.insert(addon.categories, {
+        name = name,
+        builder = builder,
+        order = opts.order or 100,
+        _registered_index = #addon.categories + 1,
+    })
 end
 
 -- MAIN FRAME UI CREATION
@@ -182,6 +188,13 @@ function addon.init_main_frame()
         -- Hide and clear existing category buttons
         for _, btn in ipairs(frame.buttons) do btn:Hide() end
         wipe(frame.buttons)
+
+        table.sort(addon.categories, function(a, b)
+            if a.order == b.order then
+                return (a._registered_index or 0) < (b._registered_index or 0)
+            end
+            return (a.order or 100) < (b.order or 100)
+        end)
 
         local y = -10
 

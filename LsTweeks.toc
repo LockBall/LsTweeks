@@ -36,6 +36,8 @@ modules\about.lua
 modules\settings\st_defaults.lua
 modules\settings\st_main.lua
 modules\combat_text.lua
+modules\sound_levels\sl_defaults.lua
+modules\sound_levels\sl_main.lua
 
 # --- Aura Frames Module ---
 modules\aura_frames\af_defaults.lua
