@@ -137,6 +137,10 @@ end
 local function run_wow_cooldown_refresh(refresh_config)
     if not M.frames then return end
 
+    if M.update_all_blizz_cdm_visibility then
+        M.update_all_blizz_cdm_visibility()
+    end
+
     local should_prepare_viewers = refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer
     local should_clear_child_cache = refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache
 
@@ -797,6 +801,9 @@ local function start_aura_frame_runtime_services()
 
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+    if M.update_all_blizz_cdm_visibility then
+        M.update_all_blizz_cdm_visibility()
+    end
     M.queue_wow_cooldown_refresh("startup")
 
     register_aura_frame_settings()
@@ -822,6 +829,9 @@ end)
 local function apply_reset_runtime_state()
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+    if M.update_all_blizz_cdm_visibility then
+        M.update_all_blizz_cdm_visibility()
+    end
     M.apply_number_font_to_all()
     M.set_grid_visible(M.db.show_grid == true)
 end
