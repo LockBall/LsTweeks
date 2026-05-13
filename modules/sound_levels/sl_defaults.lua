@@ -28,21 +28,22 @@ M.SOUND_TARGETS = {
         original_file_ids = {},
         events = {},
     },
-    dungeon_ready = {
-        label = "Dungeon Ready",
+    ready_check = {
+        label = "Ready Check",
         order = 10,
-        description = "Controls the loud dungeon ready / queue-pop alert once the original sound FileDataID is known.",
+        description = "",
         default_preset = "original",
         preview_soundkit = "READY_CHECK",
         replacement_paths = {
-            shush = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\dungeon_ready_shush.ogg",
-            shusher = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\dungeon_ready_shusher.ogg",
-            shushest = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\dungeon_ready_shushest.ogg",
+            shush = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shush.ogg",
+            shusher = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shusher.ogg",
+            shushest = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shushest.ogg",
         },
         original_file_ids = {
             567478,
         },
         events = {
+            "READY_CHECK",
             "LFG_PROPOSAL_SHOW",
         },
     },
@@ -55,7 +56,7 @@ M.defaults = {
                 preset = "original",
                 play_on_adjust = true,
             },
-            dungeon_ready = {
+            ready_check = {
                 preset = "original",
                 play_on_adjust = false,
             },
