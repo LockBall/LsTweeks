@@ -151,6 +151,32 @@ Libraries are unmodified.
 
 <img src="./media/svg/divider_dashed.svg" width="100%">
 
+### Sound File References
+- Modern WoW game assets are stored in CASC archives under the local WoW `Data` folder, not as normal loose files you can browse to in Explorer.
+
+- For this install, the local archive data is under:  
+`G:\Games\Blizzard\World of Warcraft\_retail_\Data\`
+
+- Sound Levels targets original Blizzard sounds by FileDataID, for example Ready Check currently uses FileDataID `567478` and event `LFG_PROPOSAL_SHOW`.
+
+- To confirm a FileDataID in game, use:  
+`/run PlaySoundFile(567478, "Master")`
+
+- To extract the original sound from the local install for editing, use CascView and search/open by FileDataID. CascView download page: https://www.zezula.net/en/casc/main.html
+
+- Open either the WoW folder or its Data folder in CascView, for example:  
+`G:\Games\Blizzard\World of Warcraft\_retail_`  
+or  
+`G:\Games\Blizzard\World of Warcraft\_retail_\Data`
+
+- Module replacement sounds live in:  
+`Interface\AddOns\LsTweeks\modules\sound_levels\sounds\`
+
+- The module-local reference file is:  
+`modules/sound_levels/sounds/sound_reference.md`
+
+<img src="./media/svg/divider_dashed.svg" width="100%">
+
 ### Custom Filtered Frames
 - Custom frames scan player auras directly with API call `C_UnitAuras.GetAuraDataByIndex()` and a selected AuraFilters string.
 

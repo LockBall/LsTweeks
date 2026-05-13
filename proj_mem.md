@@ -97,7 +97,7 @@ Important `sound_levels` keys:
 ## Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
 - WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
-- Replacement audio files live under `modules/sound_levels/sounds/`; current planned dungeon-ready paths are `dungeon_ready_shush.ogg`, `dungeon_ready_shusher.ogg`, and `dungeon_ready_shushest.ogg`.
+- Replacement audio files live under `modules/sound_levels/sounds/`; current planned Ready Check paths are `levelup2_shush.ogg`, `levelup2_shusher.ogg`, and `levelup2_shushest.ogg`.
 - Keep the UI preset-based unless we add generated audio variants for each slider step.
 
 Important `aura_frames` keys:
