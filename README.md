@@ -169,8 +169,10 @@ Libraries are unmodified.
 or  
 `G:\Games\Blizzard\World of Warcraft\_retail_\Data`
 
-- Module replacement sounds live in:  
-`Interface\AddOns\LsTweeks\modules\sound_levels\sounds\`
+- Ready Check replacement sounds live in:  
+`Interface\AddOns\LsTweeks\media\sounds\levelup2\`
+
+- Ready Check can use the original Blizzard sound or replacement files `levelup2_0.ogg` through `levelup2_40.ogg`; `0` is the loudest replacement and `40` is the quietest.
 
 - The module-local reference file is:  
 `modules/sound_levels/sounds/sound_reference.md`

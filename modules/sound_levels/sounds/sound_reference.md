@@ -2,10 +2,13 @@
 
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
-Replacement files:
-- `file_name_shush.ogg`
-- `file_name_shusher.ogg`
-- `file_name_shushest.ogg`
+Ready Check replacement files:
+- `levelup2_0.ogg` through `levelup2_40.ogg`
+- `Original` is a separate checkbox and uses the unmodified WoW sound.
+- `0` is the loudest replacement.
+- `40` is quietest.
+
+Original uses the unmodified WoW sound instead of a replacement file.
 
 ## Test Sound
 
@@ -40,6 +43,6 @@ Related events that are not replacement triggers:
 
 Replacement files live in:
 
-`Interface\AddOns\LsTweeks\modules\sound_levels\sounds\`
+`Interface\AddOns\LsTweeks\media\sounds\levelup2\`
 
 The addon mutes known original Blizzard FileDataIDs, then plays the selected replacement file from this folder.

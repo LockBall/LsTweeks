@@ -27,6 +27,14 @@ function M.on_reset_complete()
         if play_on_adjust and play_on_adjust.SetChecked then
             play_on_adjust:SetChecked(target_db.play_on_adjust == true)
         end
+        local sound_off = M.controls[target_key .. "_sound_off"]
+        if sound_off and sound_off.SetChecked then
+            sound_off:SetChecked(target_db.sound_off == true)
+        end
+        local use_original = M.controls[target_key .. "_use_original"]
+        if use_original and use_original.SetChecked then
+            use_original:SetChecked(target_db.use_original == true)
+        end
     end
 end
 
@@ -49,4 +57,3 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
     end
 end)
-

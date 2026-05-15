@@ -22,12 +22,26 @@ end
 function M.get_target_db(target_key)
     local db = M.get_db()
     db.targets[target_key] = db.targets[target_key] or {}
+    local had_use_original = db.targets[target_key].use_original ~= nil
+    local preset_before_defaults = db.targets[target_key].preset
     local defaults = M.defaults
         and M.defaults.sound_levels
         and M.defaults.sound_levels.targets
         and M.defaults.sound_levels.targets[target_key]
     if defaults then
         addon.apply_defaults(defaults, db.targets[target_key])
+    end
+    if not had_use_original and preset_before_defaults and preset_before_defaults ~= "original" then
+        db.targets[target_key].use_original = false
+    end
+    if db.targets[target_key].preset == "original" then
+        db.targets[target_key].use_original = true
+        local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+        db.targets[target_key].preset = target and target.default_preset or "0"
+    end
+    if not M.is_valid_preset_value(db.targets[target_key].preset) then
+        local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+        db.targets[target_key].preset = target and target.default_preset or "0"
     end
     return db.targets[target_key]
 end
@@ -41,6 +55,15 @@ function M.get_preset_by_value(value)
     return M.PRESET_OPTIONS and M.PRESET_OPTIONS[1]
 end
 
+function M.is_valid_preset_value(value)
+    for _, option in ipairs(M.PRESET_OPTIONS or {}) do
+        if option.value == value then
+            return true
+        end
+    end
+    return false
+end
+
 function M.get_preset_by_slider_value(value)
     local rounded = math.floor((tonumber(value) or 1) + 0.5)
     for _, option in ipairs(M.PRESET_OPTIONS or {}) do
@@ -52,13 +75,17 @@ function M.get_preset_by_slider_value(value)
 end
 
 function M.should_mute_original(target_db)
-    local preset = target_db and target_db.preset or "original"
-    return preset ~= "original"
+    if target_db and target_db.sound_off == true then
+        return true
+    end
+    return not (target_db and target_db.use_original == true)
 end
 
 function M.should_play_replacement(target_db)
-    local preset = target_db and target_db.preset or "original"
-    return preset ~= "original"
+    if target_db and target_db.sound_off == true then
+        return false
+    end
+    return not (target_db and target_db.use_original == true)
 end
 
 function M.get_ordered_sound_targets()
@@ -79,4 +106,3 @@ function M.get_ordered_sound_targets()
     end)
     return targets
 end
-
