@@ -32,9 +32,8 @@ local UI = {
     detail_width = 560,
     detail_height = 230,
     level_slider_width = 500,
-    level_slider_tick_inset = 8,
-    level_slider_tick_offset_x = 2.5,
-    level_slider_tick_span_adjust_x = 5.5,
+    level_slider_tick_start_x = 10.5,
+    level_slider_tick_end_x = 490,
 }
 
 local function is_adjustment_preset(value)
@@ -137,8 +136,8 @@ local function build_sound_detail_panel(parent, target_key, target)
     desc:SetJustifyH("LEFT")
     desc:SetText((target.description ~= "" and target.description) or " ")
 
-    local level_label = box:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    level_label:SetPoint("TOP", desc, "BOTTOM", 0, -26)
+    local level_label = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    level_label:SetPoint("TOP", desc, "BOTTOM", 0, -18)
     level_label:SetText("Level")
 
     local current_preset = M.get_preset_by_value(target_db.preset)
@@ -146,14 +145,14 @@ local function build_sound_detail_panel(parent, target_key, target)
     local preset_count = math.max(#preset_options, 1)
     local slider = CreateFrame("Slider", addon_name .. target_key .. "SoundLevelSlider", box, "MinimalSliderTemplate")
     slider:SetSize(UI.level_slider_width, 18)
-    slider:SetPoint("TOP", level_label, "BOTTOM", 0, -22)
+    slider:SetPoint("TOP", level_label, "BOTTOM", 0, -12)
     slider:SetMinMaxValues(1, preset_count)
     slider:SetValueStep(1)
     slider:SetObeyStepOnDrag(true)
     slider:SetValue(current_preset and current_preset.slider_value or preset_count)
 
-    local tick_start = UI.level_slider_tick_inset + UI.level_slider_tick_offset_x
-    local tick_width = UI.level_slider_width - (UI.level_slider_tick_inset * 2) + UI.level_slider_tick_span_adjust_x
+    local tick_start = UI.level_slider_tick_start_x
+    local tick_width = UI.level_slider_tick_end_x - UI.level_slider_tick_start_x
     for _, option in ipairs(preset_options) do
         local x = tick_start
         if preset_count > 1 then
@@ -206,7 +205,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             M.apply_sound_levels()
         end
     )
-    off_container:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -UI.level_slider_tick_inset, -36)
+    off_container:SetPoint("TOPRIGHT", slider, "BOTTOMLEFT", UI.level_slider_tick_end_x, -36)
     M.controls[target_key .. "_sound_off"] = off_cb
 
     local original_container, original_cb = addon.CreateCheckbox(
@@ -219,7 +218,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             M.apply_sound_levels()
         end
     )
-    original_container:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", UI.level_slider_tick_inset, -36)
+    original_container:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", UI.level_slider_tick_start_x, -36)
     M.controls[target_key .. "_use_original"] = original_cb
 
     local adjust_container, adjust_cb = addon.CreateCheckbox(
