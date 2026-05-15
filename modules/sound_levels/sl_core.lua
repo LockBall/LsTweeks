@@ -42,6 +42,28 @@ local function play_preview_soundkit(target)
     return will_play ~= false
 end
 
+local function play_original_file(target)
+    local file_id = target and target.original_file_ids and target.original_file_ids[1]
+    if not file_id then
+        return play_preview_soundkit(target)
+    end
+
+    for _, original_file_id in ipairs(target.original_file_ids or {}) do
+        unmute_file(original_file_id)
+    end
+
+    M.stop_preview_sound()
+    local did_play, sound_handle
+    if C_Sound and C_Sound.PlaySoundFile then
+        did_play, sound_handle = C_Sound.PlaySoundFile(file_id, "Master")
+    elseif PlaySoundFile then
+        did_play, sound_handle = PlaySoundFile(file_id, "Master")
+    end
+    M._preview_sound_handle = sound_handle
+    if did_play == false then return play_preview_soundkit(target) end
+    return true
+end
+
 function M.unmute_all_sound_files()
     for _, target in pairs(M.SOUND_TARGETS or {}) do
         for _, file_id in ipairs(target.original_file_ids or {}) do
@@ -72,8 +94,13 @@ function M.play_replacement(target_key)
     if not target then return false end
 
     local target_db = M.get_target_db(target_key)
-    if (target_db.preset or "original") == "original" then
-        return play_preview_soundkit(target)
+    if target_db.sound_off == true then
+        M.stop_preview_sound()
+        return false
+    end
+
+    if target_db.use_original == true then
+        return play_original_file(target)
     end
 
     if not M.should_play_replacement(target_db) then return false end
@@ -155,4 +182,3 @@ function M.sync_registered_events()
         end
     end
 end
-

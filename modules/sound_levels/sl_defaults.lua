@@ -6,25 +6,34 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-M.PRESET_OPTIONS = {
-    { value = "original", text = "Original", slider_value = 1 },
-    { value = "shush", text = "Shush", slider_value = 2 },
-    { value = "shusher", text = "Shusher", slider_value = 3 },
-    { value = "shushest", text = "Shushest", slider_value = 4 },
-}
+local SOUND_PATH = "Interface\\AddOns\\LsTweeks\\media\\sounds\\"
+local LEVELUP2_PATH = SOUND_PATH .. "levelup2\\"
+
+local function build_numbered_replacement_paths(folder, filename, min_level, max_level)
+    local paths = {}
+    for level = min_level, max_level do
+        paths[tostring(level)] = folder .. filename .. "_" .. level .. ".ogg"
+    end
+    return paths
+end
+
+M.PRESET_OPTIONS = {}
+for level = 0, 40 do
+    M.PRESET_OPTIONS[#M.PRESET_OPTIONS + 1] = {
+        value = tostring(level),
+        text = tostring(level),
+        slider_value = level + 1,
+    }
+end
 
 M.SOUND_TARGETS = {
     test_sound = {
         label = "Test Sound",
         order = 1,
         description = "",
-        default_preset = "original",
+        default_preset = "0",
         preview_soundkit = "IG_CHARACTER_INFO_TAB",
-        replacement_paths = {
-            shush = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\test_sound_shush.ogg",
-            shusher = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\test_sound_shusher.ogg",
-            shushest = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\test_sound_shushest.ogg",
-        },
+        replacement_paths = {},
         original_file_ids = {},
         events = {},
     },
@@ -32,13 +41,9 @@ M.SOUND_TARGETS = {
         label = "Ready Check",
         order = 10,
         description = "",
-        default_preset = "original",
+        default_preset = "0",
         preview_soundkit = "READY_CHECK",
-        replacement_paths = {
-            shush = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shush.ogg",
-            shusher = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shusher.ogg",
-            shushest = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2_shushest.ogg",
-        },
+        replacement_paths = build_numbered_replacement_paths(LEVELUP2_PATH, "levelup2", 0, 40),
         original_file_ids = {
             567478,
         },
@@ -53,11 +58,15 @@ M.defaults = {
     sound_levels = {
         targets = {
             test_sound = {
-                preset = "original",
+                preset = "0",
+                use_original = true,
+                sound_off = false,
                 play_on_adjust = true,
             },
             ready_check = {
-                preset = "original",
+                preset = "0",
+                use_original = true,
+                sound_off = false,
                 play_on_adjust = false,
             },
         },
