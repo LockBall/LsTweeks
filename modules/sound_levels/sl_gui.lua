@@ -5,6 +5,8 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
+local TICK_COLOR_R, TICK_COLOR_G, TICK_COLOR_B, TICK_COLOR_A = 0.62, 0.62, 0.62, 0.9
+
 local STRINGS = {
     sound_off_label = "Off",
     use_original_label = "Original",
@@ -32,21 +34,10 @@ local UI = {
     detail_width = 560,
     detail_height = 230,
     level_slider_width = 500,
+    -- Visual calibration for tick marks against the usable slider track.
     level_slider_tick_start_x = 10.5,
     level_slider_tick_end_x = 490,
 }
-
-local function is_adjustment_preset(value)
-    return tonumber(value) ~= nil
-end
-
-local function should_show_tick(value)
-    return is_adjustment_preset(value)
-end
-
-local function get_tick_color(value)
-    return 0.62, 0.62, 0.62, 0.9
-end
 
 local function should_show_slider_label(value)
     local level = tonumber(value)
@@ -61,11 +52,11 @@ local function get_tick_height(value)
     return 4
 end
 
-local function create_tick(parent, anchor, value, height, point, relative_point, x, y)
+local function create_tick(parent, slider, height, x)
     local tick = parent:CreateTexture(nil, "OVERLAY")
-    tick:SetColorTexture(get_tick_color(value))
+    tick:SetColorTexture(TICK_COLOR_R, TICK_COLOR_G, TICK_COLOR_B, TICK_COLOR_A)
     tick:SetSize(1, height)
-    tick:SetPoint(point, anchor, relative_point, x, y)
+    tick:SetPoint("TOP", slider, "BOTTOMLEFT", x, -4)
     return tick
 end
 
@@ -159,9 +150,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             x = tick_start + (((option.slider_value or 1) - 1) * (tick_width / (preset_count - 1)))
         end
 
-        if should_show_tick(option.value) then
-            create_tick(box, slider, option.value, get_tick_height(option.value), "TOP", "BOTTOMLEFT", x, -4)
-        end
+        create_tick(box, slider, get_tick_height(option.value), x)
 
         if should_show_slider_label(option.value) then
             local label = box:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
