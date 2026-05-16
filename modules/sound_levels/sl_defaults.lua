@@ -6,8 +6,9 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-local SOUND_PATH = "Interface\\AddOns\\LsTweeks\\media\\sounds\\"
-local LEVELUP2_PATH = SOUND_PATH .. "levelup2\\"
+M.SOUND_ASSET_PATHS = {
+    levelup2 = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2\\",
+}
 
 local function build_numbered_replacement_paths(folder, filename, min_level, max_level)
     local paths = {}
@@ -18,19 +19,11 @@ local function build_numbered_replacement_paths(folder, filename, min_level, max
 end
 
 M.PRESET_OPTIONS = {}
-for position = 0, 24 do
-    local file_level = 24 - position
-    local major_tick = (position % 6) == 0
-    local midpoint_tick = (position % 6) == 3
-    local tick_label = ""
-    if major_tick or midpoint_tick then
-        tick_label = tostring((position / 24) * 100)
-    end
+for position = 0, 20 do
+    local file_level = 20 - position
     M.PRESET_OPTIONS[#M.PRESET_OPTIONS + 1] = {
         value = tostring(file_level),
-        text = tick_label,
-        major_tick = major_tick,
-        midpoint_tick = midpoint_tick,
+        percent = position * 5,
         slider_value = position + 1,
     }
 end
@@ -50,9 +43,9 @@ M.SOUND_TARGETS = {
         label = "Ready Check",
         order = 10,
         description = "",
-        default_preset = "12",
+        default_preset = "10",
         preview_soundkit = "READY_CHECK",
-        replacement_paths = build_numbered_replacement_paths(LEVELUP2_PATH, "levelup2", 0, 24),
+        replacement_paths = build_numbered_replacement_paths(M.SOUND_ASSET_PATHS.levelup2, "levelup2", 0, 19),
         original_file_ids = {
             567478,
         },
@@ -73,7 +66,7 @@ M.defaults = {
                 play_on_adjust = true,
             },
             ready_check = {
-                preset = "12",
+                preset = "10",
                 use_original = false,
                 sound_off = false,
                 play_on_adjust = false,
