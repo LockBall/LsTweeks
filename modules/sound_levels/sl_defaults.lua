@@ -60,7 +60,9 @@ M.SOUND_TARGETS = {
         description = "",
         default_preset = "0",
         replacement_asset = "achievmentsound1",
-        original_file_ids = {},
+        original_file_ids = {
+            569143,
+        },
         events = {},
     },
     ready_check = {

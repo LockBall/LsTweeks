@@ -18,6 +18,7 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - Module name: `test_sound`
 - UI label: `Achievement`
 - Replacement folder: `modules/sound_levels/sounds/achievmentsound1`
+- FileDataID: `569143`
 - Purpose: quick local test entry for slider and preview behavior
 
 
