@@ -2,22 +2,22 @@
 
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
-Ready Check replacement files:
-- `levelup2_0.ogg` through `levelup2_19.ogg`
+Replacement file sets:
+- Achievement test: `achievmentsound1_0.ogg` through `achievmentsound1_19.ogg`
+- Ready Check: `levelup2_0.ogg` through `levelup2_19.ogg`
 - `Original` is a separate checkbox and uses the unmodified WoW sound.
 - The UI shows replacement volume as `0-100%`.
 - `0%` is off and plays no replacement.
-- Nonzero replacement levels map in 5% steps to `levelup2_19.ogg` through `levelup2_0.ogg`.
-- `100%` maps to `levelup2_0.ogg`, the loudest replacement.
+- Nonzero replacement levels map in 5% steps from `_19.ogg` through `_0.ogg`.
+- `100%` maps to `_0.ogg`, the loudest replacement.
 
 Original uses the unmodified WoW sound instead of a replacement file. Selecting Original leaves the replacement slider at its current position but dims it until the slider is moved.
 
-## Test Sound
+## Achievement Test Sound
 
 - Module name: `test_sound`
-- UI label: `Test Sound`
-- Original source: built-in WoW SoundKit
-- SoundKit key: `IG_CHARACTER_INFO_TAB`
+- UI label: `Achievement`
+- Replacement folder: `modules/sound_levels/sounds/achievmentsound1`
 - Purpose: quick local test entry for slider and preview behavior
 
 
@@ -43,6 +43,8 @@ Related events that are not replacement triggers:
 
 ## Replacement Path
 
-Replacement file paths are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSET_PATHS`.
+Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`.
 
-The addon mutes known original Blizzard FileDataIDs, then plays the selected replacement file from this folder.
+Each sound target references a file set with `replacement_asset`. To add another file-backed sound, add the folder and filename prefix to `M.SOUND_ASSETS`, then add a target in `M.SOUND_TARGETS` that points at that asset key.
+
+The addon mutes known original Blizzard FileDataIDs when present, then plays the selected replacement file from the configured target folder.

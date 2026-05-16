@@ -13,7 +13,7 @@ local STRINGS = {
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
         .. "\n\nUse the Original checkbox to compare Blizzard's sound against replacement volume 0-100%."
-        .. "\n\nThey suppress the original file and play replacement files from " .. M.SOUND_ASSET_PATHS.levelup2,
+        .. "\n\nThey suppress the original file and play replacement files from the configured module sound folders.",
 }
 
 local UI = {
@@ -92,6 +92,14 @@ end
 local function format_percent(option)
     local percent = option and option.percent or 0
     return tostring(math.floor(percent + 0.5)) .. "%"
+end
+
+local function has_replacement_paths(target)
+    return target and target.replacement_paths and next(target.replacement_paths) ~= nil
+end
+
+local function has_original_playback(target)
+    return target and (target.preview_soundkit or #(target.original_file_ids or {}) > 0)
 end
 
 local function build_slider_panel(parent, target_key, target)
@@ -198,8 +206,8 @@ local function build_slider_panel(parent, target_key, target)
     slider_options_row:SetSize(UI.slider_width, 24)
     slider_options_row:SetPoint("TOP", slider_widget, "BOTTOM", 0, -6)
 
-    local original_container
-    original_container, original_checkbox = addon.CreateCheckbox(
+    local original_container, original_label
+    original_container, original_checkbox, original_label = addon.CreateCheckbox(
         slider_panel,
         STRINGS.use_original_label,
         target_db.use_original == true,
@@ -216,6 +224,13 @@ local function build_slider_panel(parent, target_key, target)
         end
     )
     sync_original_inactive_state()
+    if not has_original_playback(target) then
+        target_db.use_original = false
+        original_checkbox:SetChecked(false)
+        original_checkbox:Disable()
+        original_label:SetTextColor(0.55, 0.55, 0.55, 1)
+        sync_original_inactive_state()
+    end
     original_container:SetPoint("RIGHT", slider_options_row, "RIGHT", 0, 0)
     M.controls[target_key .. "_use_original"] = original_checkbox
 
@@ -230,7 +245,7 @@ local function build_slider_panel(parent, target_key, target)
     play_on_adjust_frame:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
     M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_checkbox
 
-    if #(target.original_file_ids or {}) == 0 and not target.preview_soundkit then
+    if not has_original_playback(target) and not has_replacement_paths(target) then
         local missing_sound_status = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
         missing_sound_status:SetPoint("BOTTOMLEFT", slider_panel, "BOTTOMLEFT", UI.slider_panel_pad_x, 14)
         missing_sound_status:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))

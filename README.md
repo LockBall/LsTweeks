@@ -169,7 +169,7 @@ Libraries are unmodified.
 or  
 `G:\Games\Blizzard\World of Warcraft\_retail_\Data`
 
-- Ready Check replacement sounds live under the Sound Levels module. The runtime path is configured in `modules/sound_levels/sl_defaults.lua` as `M.SOUND_ASSET_PATHS.levelup2`.
+- Replacement sounds live under the Sound Levels module. Runtime file-set config is centralized in `modules/sound_levels/sl_defaults.lua` as `M.SOUND_ASSETS`; sound targets reference those file sets with `replacement_asset`.
 
 - Ready Check can use the original Blizzard sound or replacement volume `0-100%`; `0%` is off, and 5% increments map through files `levelup2_19.ogg` to `levelup2_0.ogg`, from quietest to loudest.
 

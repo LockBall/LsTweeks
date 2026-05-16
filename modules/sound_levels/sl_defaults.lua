@@ -6,16 +6,41 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-M.SOUND_ASSET_PATHS = {
-    levelup2 = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2\\",
+M.REPLACEMENT_FILE_MIN_LEVEL = 0
+M.REPLACEMENT_FILE_MAX_LEVEL = 19
+
+M.SOUND_ASSETS = {
+    achievmentsound1 = {
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\achievmentsound1\\",
+        filename = "achievmentsound1",
+    },
+    levelup2 = {
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2\\",
+        filename = "levelup2",
+    },
 }
 
-local function build_numbered_replacement_paths(folder, filename, min_level, max_level)
+local function build_numbered_replacement_paths(asset_key, min_level, max_level)
+    local asset = M.SOUND_ASSETS and M.SOUND_ASSETS[asset_key]
+    if not asset then return {} end
+
     local paths = {}
     for level = min_level, max_level do
-        paths[tostring(level)] = folder .. filename .. "_" .. level .. ".ogg"
+        paths[tostring(level)] = asset.folder .. asset.filename .. "_" .. level .. ".ogg"
     end
     return paths
+end
+
+local function apply_replacement_paths(targets)
+    for _, target in pairs(targets or {}) do
+        if target.replacement_asset and not target.replacement_paths then
+            target.replacement_paths = build_numbered_replacement_paths(
+                target.replacement_asset,
+                M.REPLACEMENT_FILE_MIN_LEVEL,
+                M.REPLACEMENT_FILE_MAX_LEVEL
+            )
+        end
+    end
 end
 
 M.PRESET_OPTIONS = {}
@@ -30,12 +55,11 @@ end
 
 M.SOUND_TARGETS = {
     test_sound = {
-        label = "Test Sound",
+        label = "Achievement",
         order = 1,
         description = "",
         default_preset = "0",
-        preview_soundkit = "IG_CHARACTER_INFO_TAB",
-        replacement_paths = {},
+        replacement_asset = "achievmentsound1",
         original_file_ids = {},
         events = {},
     },
@@ -45,7 +69,7 @@ M.SOUND_TARGETS = {
         description = "",
         default_preset = "10",
         preview_soundkit = "READY_CHECK",
-        replacement_paths = build_numbered_replacement_paths(M.SOUND_ASSET_PATHS.levelup2, "levelup2", 0, 19),
+        replacement_asset = "levelup2",
         original_file_ids = {
             567478,
         },
@@ -55,6 +79,7 @@ M.SOUND_TARGETS = {
         },
     },
 }
+apply_replacement_paths(M.SOUND_TARGETS)
 
 M.defaults = {
     sound_levels = {
@@ -63,7 +88,7 @@ M.defaults = {
         targets = {
             test_sound = {
                 preset = "0",
-                use_original = true,
+                use_original = false,
                 sound_off = false,
                 play_on_adjust = true,
             },

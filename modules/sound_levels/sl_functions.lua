@@ -22,8 +22,7 @@ end
 function M.get_target_db(target_key)
     local db = M.get_db()
     db.targets[target_key] = db.targets[target_key] or {}
-    local had_use_original = db.targets[target_key].use_original ~= nil
-    local preset_before_defaults = db.targets[target_key].preset
+    local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
     local defaults = M.defaults
         and M.defaults.sound_levels
         and M.defaults.sound_levels.targets
@@ -31,17 +30,11 @@ function M.get_target_db(target_key)
     if defaults then
         addon.apply_defaults(defaults, db.targets[target_key])
     end
-    if not had_use_original and preset_before_defaults and preset_before_defaults ~= "original" then
-        db.targets[target_key].use_original = false
-    end
-    if db.targets[target_key].preset == "original" then
-        db.targets[target_key].use_original = true
-        local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
-        db.targets[target_key].preset = target and target.default_preset or "0"
-    end
     if not M.is_valid_preset_value(db.targets[target_key].preset) then
-        local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
         db.targets[target_key].preset = target and target.default_preset or "0"
+    end
+    if target and not target.preview_soundkit and #(target.original_file_ids or {}) == 0 then
+        db.targets[target_key].use_original = false
     end
     return db.targets[target_key]
 end

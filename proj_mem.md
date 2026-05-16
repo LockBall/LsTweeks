@@ -100,8 +100,8 @@ Important `sound_levels` keys:
 ## Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
 - WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
-- Replacement audio file paths are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSET_PATHS`; Ready Check replacement presets use `levelup2_0.ogg` through `levelup2_19.ogg`, with `levelup2_0.ogg` loudest and `levelup2_19.ogg` quietest. The UI presents this as `0-100%` in 5% steps; slider `0%` is off and replaces the old Off checkbox.
-- Original playback is controlled by `use_original`; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
+- Replacement audio file sets are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`; targets reference them with `replacement_asset`. File-backed targets use `M.REPLACEMENT_FILE_MIN_LEVEL` through `M.REPLACEMENT_FILE_MAX_LEVEL`, currently 20 files where `_0.ogg` is loudest and `_19.ogg` is quietest. The UI presents this as `0-100%` in 5% steps; slider `0%` is off and replaces the old Off checkbox.
+- Original playback is controlled by `use_original` for targets with original FileDataIDs or a SoundKit fallback; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
