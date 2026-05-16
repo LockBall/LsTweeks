@@ -3,10 +3,11 @@
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
 Ready Check replacement files:
-- `levelup2_0.ogg` through `levelup2_40.ogg`
+- `levelup2_0.ogg` through `levelup2_24.ogg`
 - `Original` is a separate checkbox and uses the unmodified WoW sound.
-- `0` is the loudest replacement.
-- `40` is quietest.
+- The UI shows replacement volume as `0-100%`.
+- `0%` maps to `levelup2_24.ogg`, the quietest replacement.
+- `100%` maps to `levelup2_0.ogg`, the loudest replacement.
 
 Original uses the unmodified WoW sound instead of a replacement file.
 

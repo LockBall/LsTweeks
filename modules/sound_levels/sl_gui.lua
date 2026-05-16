@@ -15,7 +15,7 @@ local STRINGS = {
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
-        .. "\n\nUse the Original checkbox to compare Blizzard's sound against replacement levels 0-40."
+        .. "\n\nUse the Original checkbox to compare Blizzard's sound against replacement volume 0-100%."
         .. "\n\nThey suppress the original file and play replacement files from media\\sounds\\levelup2.",
 }
 
@@ -39,16 +39,14 @@ local UI = {
     level_slider_tick_end_x = 490,
 }
 
-local function should_show_slider_label(value)
-    local level = tonumber(value)
-    return level and (level % 4) == 0
+local function should_show_slider_label(option)
+    return option and (option.major_tick == true or option.midpoint_tick == true)
 end
 
-local function get_tick_height(value)
-    local level = tonumber(value)
-    if not level then return 0 end
-    if (level % 4) == 0 then return 10 end
-    if (level % 2) == 0 then return 7 end
+local function get_tick_height(option)
+    if not option then return 0 end
+    if option.major_tick == true then return 10 end
+    if option.midpoint_tick == true then return 7 end
     return 4
 end
 
@@ -150,12 +148,12 @@ local function build_sound_detail_panel(parent, target_key, target)
             x = tick_start + (((option.slider_value or 1) - 1) * (tick_width / (preset_count - 1)))
         end
 
-        create_tick(box, slider, get_tick_height(option.value), x)
+        create_tick(box, slider, get_tick_height(option), x)
 
-        if should_show_slider_label(option.value) then
+        if should_show_slider_label(option) then
             local label = box:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
             label:SetPoint("TOP", slider, "BOTTOMLEFT", x, -16)
-            label:SetText(option.text)
+            label:SetText(option.text .. "%")
         end
     end
 
@@ -173,6 +171,13 @@ local function build_sound_detail_panel(parent, target_key, target)
         end
 
         target_db.preset = new_preset
+        if target_db.use_original == true then
+            target_db.use_original = false
+            local original_cb = M.controls[target_key .. "_use_original"]
+            if original_cb and original_cb.SetChecked then
+                original_cb:SetChecked(false)
+            end
+        end
         M.apply_sound_levels()
     end)
     slider:SetScript("OnMouseUp", function()
@@ -194,7 +199,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             M.apply_sound_levels()
         end
     )
-    off_container:SetPoint("TOPRIGHT", slider, "BOTTOMLEFT", UI.level_slider_tick_end_x, -36)
+    off_container:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", UI.level_slider_tick_start_x, -36)
     M.controls[target_key .. "_sound_off"] = off_cb
 
     local original_container, original_cb = addon.CreateCheckbox(
@@ -207,7 +212,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             M.apply_sound_levels()
         end
     )
-    original_container:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", UI.level_slider_tick_start_x, -36)
+    original_container:SetPoint("TOPRIGHT", slider, "BOTTOMLEFT", UI.level_slider_tick_end_x, -36)
     M.controls[target_key .. "_use_original"] = original_cb
 
     local adjust_container, adjust_cb = addon.CreateCheckbox(

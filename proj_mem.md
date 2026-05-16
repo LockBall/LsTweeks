@@ -91,7 +91,7 @@ Top-level keys include:
 
 Important `sound_levels` keys:
 - `sound_levels.enabled`
-- `sound_levels.targets.<target>.preset` where Ready Check replacement presets are numeric strings `"0"` through `"40"`
+- `sound_levels.targets.<target>.preset` where Ready Check replacement presets store file-level strings `"0"` through `"24"`; the UI maps these to `100%` through `0%`
 - `sound_levels.targets.<target>.use_original`
 - `sound_levels.targets.<target>.sound_off`
 - `sound_levels.targets.<target>.play_on_adjust`
@@ -99,7 +99,7 @@ Important `sound_levels` keys:
 ## Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
 - WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
-- Replacement audio files live under `media/sounds/levelup2/`; Ready Check replacement presets use `levelup2_0.ogg` through `levelup2_40.ogg`, with `0` the loudest replacement and `40` quietest.
+- Replacement audio files live under `media/sounds/levelup2/`; Ready Check replacement presets use `levelup2_0.ogg` through `levelup2_24.ogg`, with `levelup2_0.ogg` loudest and `levelup2_24.ogg` quietest. The UI presents this as `0-100%` from quietest to loudest.
 - Original playback is controlled by `use_original`; replacement volume remains preset-based through the numeric slider.
 
 Important `aura_frames` keys:

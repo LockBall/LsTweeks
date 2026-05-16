@@ -172,7 +172,7 @@ or
 - Ready Check replacement sounds live in:  
 `Interface\AddOns\LsTweeks\media\sounds\levelup2\`
 
-- Ready Check can use the original Blizzard sound or replacement files `levelup2_0.ogg` through `levelup2_40.ogg`; `0` is the loudest replacement and `40` is the quietest.
+- Ready Check can use the original Blizzard sound or replacement volume `0-100%`; this maps to files `levelup2_24.ogg` through `levelup2_0.ogg`, from quietest to loudest.
 
 - The module-local reference file is:  
 `modules/sound_levels/sounds/sound_reference.md`
