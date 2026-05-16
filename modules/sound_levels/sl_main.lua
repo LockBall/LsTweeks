@@ -13,6 +13,12 @@ local CATEGORY_NAME = "Sound Levels"
 function M.on_reset_complete()
     local db = M.get_db()
     addon.apply_defaults(M.defaults.sound_levels, db)
+    if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
+        db.last_sound_key = M.defaults.sound_levels.last_sound_key
+    end
+    if type(db.last_tab_index) ~= "number" then
+        db.last_tab_index = M.defaults.sound_levels.last_tab_index
+    end
     M.apply_sound_levels()
     M.sync_registered_events()
 

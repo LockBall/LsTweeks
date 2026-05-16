@@ -26,12 +26,15 @@ local UI = {
     panel_width = 590,
     list_width = 190,
     list_row_height = 26,
-    detail_x = 230,
-    sound_panel_y = -18,
-    detail_width = 560,
-    detail_height = 190,
-    level_slider_width = 360,
-    level_control_width = 500,
+    slider_panel_x = 230,
+    slider_panel_y = -18,
+    slider_panel_width = 370,
+    slider_panel_pad_x = 16,
+    slider_panel_height = 70,
+    slider_width = 275,
+    slider_height = 20,
+    slider_frame_width = 400,
+    slider_frame_height = 22,
 }
 
 local function apply_box_backdrop(frame)
@@ -94,49 +97,49 @@ local function format_percent(option)
     return tostring(math.floor(percent + 0.5)) .. "%"
 end
 
-local function build_sound_detail_panel(parent, target_key, target)
+local function build_slider_panel(parent, target_key, target)
     local target_db = M.get_target_db(target_key)
 
-    local box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    box:SetSize(UI.detail_width, UI.detail_height)
-    box:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.detail_x, UI.sound_panel_y)
-    apply_box_backdrop(box)
+    local slider_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    slider_panel:SetSize(UI.slider_panel_width, UI.slider_panel_height)
+    slider_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.slider_panel_x, UI.slider_panel_y)
+    apply_box_backdrop(slider_panel)
 
-    local desc = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    desc:SetPoint("TOPLEFT", box, "TOPLEFT", 16, -16)
-    desc:SetWidth(UI.detail_width - 32)
-    desc:SetJustifyH("LEFT")
-    desc:SetText((target.description ~= "" and target.description) or " ")
+    local target_note = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    target_note:SetPoint("TOPLEFT", slider_panel, "TOPLEFT", UI.slider_panel_pad_x, -16)
+    target_note:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
+    target_note:SetJustifyH("LEFT")
+    target_note:SetText((target.description ~= "" and target.description) or " ")
 
-    local play_button = create_play_button(box, target_key)
-    play_button:SetPoint("TOP", desc, "BOTTOM", 0, -10)
-
-    local level_control = CreateFrame("Frame", nil, box)
-    level_control:SetSize(UI.level_control_width, 22)
-    level_control:SetPoint("TOP", play_button, "BOTTOM", 0, -10)
+    local slider_container = CreateFrame("Frame", nil, slider_panel)
+    slider_container:SetSize(UI.slider_frame_width, UI.slider_frame_height)
+    slider_container:SetPoint("CENTER", slider_panel, "CENTER", 0, 12)
 
     local current_preset = M.get_preset_by_value(target_db.preset)
     local preset_options = M.PRESET_OPTIONS or {}
     local preset_count = math.max(#preset_options, 1)
     local initial_slider_value = target_db.sound_off == true and 1 or (current_preset and current_preset.slider_value or preset_count)
 
-    local slider = CreateFrame("Slider", addon_name .. target_key .. "SoundLevelSlider", box, "MinimalSliderWithSteppersTemplate")
-    slider:SetSize(UI.level_slider_width, 20)
-    slider:SetPoint("CENTER", level_control, "CENTER", 0, 0)
-    slider:Init(initial_slider_value, 1, preset_count, preset_count - 1, {
+    local slider_widget = CreateFrame("Slider", addon_name .. target_key .. "SoundLevelSlider", slider_panel, "MinimalSliderWithSteppersTemplate")
+    slider_widget:SetSize(UI.slider_width, UI.slider_height)
+    slider_widget:SetPoint("CENTER", slider_container, "CENTER", 0, 0)
+    slider_widget:Init(initial_slider_value, 1, preset_count, preset_count - 1, {
         [MinimalSliderWithSteppersMixin.Label.Right] = CreateMinimalSliderFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
             return format_percent(M.get_preset_by_slider_value(value))
         end),
     })
-    slider.Slider:SetValueStep(1)
-    slider.Slider:SetObeyStepOnDrag(true)
+    slider_widget.Slider:SetValueStep(1)
+    slider_widget.Slider:SetObeyStepOnDrag(true)
 
-    local original_cb = nil
+    local play_button = create_play_button(slider_panel, target_key)
+    play_button:SetPoint("RIGHT", slider_widget, "LEFT", 0, 0)
+
+    local original_checkbox = nil
     local suppress_original_clear = false
 
     local function set_slider_inactive(inactive)
         local alpha = inactive and 0.45 or 1
-        slider:SetAlpha(alpha)
+        slider_widget:SetAlpha(alpha)
     end
 
     local function sync_original_inactive_state()
@@ -146,19 +149,19 @@ local function build_sound_detail_panel(parent, target_key, target)
     local function clear_original_from_slider_interaction()
         if target_db.use_original ~= true then return end
         target_db.use_original = false
-        if original_cb and original_cb.SetChecked then
-            original_cb:SetChecked(false)
+        if original_checkbox and original_checkbox.SetChecked then
+            original_checkbox:SetChecked(false)
         end
         sync_original_inactive_state()
     end
 
     sync_original_inactive_state()
 
-    slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
+    slider_widget:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
         local option = M.get_preset_by_slider_value(value)
         local slider_value = option and option.slider_value or preset_count
-        if slider.Slider:GetValue() ~= slider_value then
-            slider:SetValue(slider_value)
+        if slider_widget.Slider:GetValue() ~= slider_value then
+            slider_widget:SetValue(slider_value)
             return
         end
 
@@ -185,22 +188,22 @@ local function build_sound_detail_panel(parent, target_key, target)
         target_db.preset = new_preset
         M.apply_sound_levels()
     end)
-    M.controls[target_key .. "_preset"] = slider
-    slider._lstweeks_set_sound_level_value = function(_, value)
+    M.controls[target_key .. "_preset"] = slider_widget
+    slider_widget._lstweeks_set_sound_level_value = function(_, value)
         suppress_original_clear = true
-        slider:SetValue(value)
+        slider_widget:SetValue(value)
         suppress_original_clear = false
         sync_original_inactive_state()
     end
-    slider._lstweeks_sync_original_state = sync_original_inactive_state
+    slider_widget._lstweeks_sync_original_state = sync_original_inactive_state
 
-    local control_row = CreateFrame("Frame", nil, box)
-    control_row:SetSize(UI.level_slider_width, 24)
-    control_row:SetPoint("TOP", slider, "BOTTOM", 0, -6)
+    local slider_options_row = CreateFrame("Frame", nil, slider_panel)
+    slider_options_row:SetSize(UI.slider_width, 24)
+    slider_options_row:SetPoint("TOP", slider_widget, "BOTTOM", 0, -6)
 
     local original_container
-    original_container, original_cb = addon.CreateCheckbox(
-        box,
+    original_container, original_checkbox = addon.CreateCheckbox(
+        slider_panel,
         STRINGS.use_original_label,
         target_db.use_original == true,
         function(is_checked)
@@ -208,7 +211,7 @@ local function build_sound_detail_panel(parent, target_key, target)
             if is_checked == true then
                 target_db.sound_off = false
             else
-                target_db.sound_off = slider.Slider:GetValue() == 1
+                target_db.sound_off = slider_widget.Slider:GetValue() == 1
             end
             sync_original_inactive_state()
             M.stop_preview_sound()
@@ -216,29 +219,29 @@ local function build_sound_detail_panel(parent, target_key, target)
         end
     )
     sync_original_inactive_state()
-    original_container:SetPoint("RIGHT", control_row, "RIGHT", 0, 0)
-    M.controls[target_key .. "_use_original"] = original_cb
+    original_container:SetPoint("RIGHT", slider_options_row, "RIGHT", 0, 0)
+    M.controls[target_key .. "_use_original"] = original_checkbox
 
-    local adjust_container, adjust_cb = addon.CreateCheckbox(
-        box,
+    local play_on_adjust_container, play_on_adjust_checkbox = addon.CreateCheckbox(
+        slider_panel,
         STRINGS.play_on_adjust_label,
         target_db.play_on_adjust == true,
         function(is_checked)
             target_db.play_on_adjust = is_checked == true
         end
     )
-    adjust_container:SetPoint("LEFT", control_row, "LEFT", 0, 0)
-    M.controls[target_key .. "_play_on_adjust"] = adjust_cb
+    play_on_adjust_container:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
+    M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_checkbox
 
     if #(target.original_file_ids or {}) == 0 and not target.preview_soundkit then
-        local status = box:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        status:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", 16, 14)
-        status:SetWidth(UI.detail_width - 32)
+        local status = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        status:SetPoint("BOTTOMLEFT", slider_panel, "BOTTOMLEFT", UI.slider_panel_pad_x, 14)
+        status:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
         status:SetJustifyH("LEFT")
         status:SetText(STRINGS.status_waiting)
     end
 
-    return box
+    return slider_panel
 end
 
 local function build_general_tab(parent)
@@ -269,61 +272,65 @@ local function build_general_tab(parent)
 end
 
 local function build_sounds_tab(parent)
-    M.get_db()
+    local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
-    local selected_key = targets[1] and targets[1].key
+    local selected_key = (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) and db.last_sound_key or (targets[1] and targets[1].key)
     local rows = {}
-    local detail_panels = {}
+    local slider_panels = {}
 
-    local list_box = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    list_box:SetSize(UI.list_width, 260)
-    list_box:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.sound_panel_y)
-    apply_box_backdrop(list_box)
+    local target_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    target_list_panel:SetSize(UI.list_width, 260)
+    target_list_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.slider_panel_y)
+    apply_box_backdrop(target_list_panel)
 
     local function select_sound(target_key)
-        selected_key = target_key
-        for _, row in ipairs(rows) do
-            local selected = row.target_key == selected_key
-            row.bg:SetShown(selected)
-            row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
+        if not (target_key and M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]) then
+            return
         end
-        for _, panel in pairs(detail_panels) do
+        selected_key = target_key
+        db.last_sound_key = target_key
+        for _, target_row in ipairs(rows) do
+            local selected = target_row.target_key == selected_key
+            target_row.bg:SetShown(selected)
+            target_row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
+        end
+        for _, panel in pairs(slider_panels) do
             panel:Hide()
         end
         local target = M.SOUND_TARGETS and M.SOUND_TARGETS[selected_key]
         if target then
-            if not detail_panels[selected_key] then
-                detail_panels[selected_key] = build_sound_detail_panel(parent, selected_key, target)
+            if not slider_panels[selected_key] then
+                slider_panels[selected_key] = build_slider_panel(parent, selected_key, target)
             end
-            detail_panels[selected_key]:Show()
+            slider_panels[selected_key]:Show()
         end
     end
 
     for i, entry in ipairs(targets) do
-        local row = CreateFrame("Button", nil, list_box)
-        row:SetSize(UI.list_width - 18, UI.list_row_height)
-        row:SetPoint("TOPLEFT", list_box, "TOPLEFT", 9, -(10 + ((i - 1) * UI.list_row_height)))
-        row.target_key = entry.key
+        local target_row = CreateFrame("Button", nil, target_list_panel)
+        target_row:SetSize(UI.list_width - 18, UI.list_row_height)
+        target_row:SetPoint("TOPLEFT", target_list_panel, "TOPLEFT", 9, -(10 + ((i - 1) * UI.list_row_height)))
+        target_row.target_key = entry.key
 
-        row.bg = row:CreateTexture(nil, "BACKGROUND")
-        row.bg:SetAllPoints()
-        row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
-        row.bg:Hide()
+        target_row.bg = target_row:CreateTexture(nil, "BACKGROUND")
+        target_row.bg:SetAllPoints()
+        target_row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
+        target_row.bg:Hide()
 
-        local hover = row:CreateTexture(nil, "HIGHLIGHT")
+        local hover = target_row:CreateTexture(nil, "HIGHLIGHT")
         hover:SetAllPoints()
         hover:SetColorTexture(1, 1, 1, 0.08)
 
-        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        row.text:SetPoint("LEFT", row, "LEFT", 8, 0)
-        row.text:SetPoint("RIGHT", row, "RIGHT", -8, 0)
-        row.text:SetJustifyH("LEFT")
-        row.text:SetText(entry.label)
-        row:SetScript("OnClick", function()
+        target_row.text = target_row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        target_row.text:SetPoint("LEFT", target_row, "LEFT", 8, 0)
+        target_row.text:SetPoint("RIGHT", target_row, "RIGHT", -8, 0)
+        target_row.text:SetJustifyH("LEFT")
+        target_row.text:SetText(entry.label)
+        target_row:SetScript("OnClick", function()
             select_sound(entry.key)
         end)
 
-        rows[#rows + 1] = row
+        rows[#rows + 1] = target_row
     end
 
     if selected_key then
@@ -332,17 +339,22 @@ local function build_sounds_tab(parent)
 end
 
 function M.BuildSettings(parent)
+    local db = M.get_db()
     local tabs = {}
     local panels = {}
-    local selected_index = 1
 
     local tab_defs = {
         { label = "General", builder = build_general_tab },
         { label = "Sounds", builder = build_sounds_tab },
     }
+    local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 
     local function select_tab(index)
+        if not tab_defs[index] then
+            index = 1
+        end
         selected_index = index
+        db.last_tab_index = index
         for i, button in ipairs(tabs) do
             if i == selected_index then
                 PanelTemplates_SelectTab(button)
@@ -362,13 +374,13 @@ function M.BuildSettings(parent)
         PanelTemplates_TabResize(tab, 0)
         tabs[i] = tab
 
-        local panel = CreateFrame("Frame", nil, parent)
-        panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, UI.content_top)
-        panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-        panel:Hide()
-        panels[i] = panel
+        local tab_panel = CreateFrame("Frame", nil, parent)
+        tab_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, UI.content_top)
+        tab_panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+        tab_panel:Hide()
+        panels[i] = tab_panel
 
-        def.builder(panel)
+        def.builder(tab_panel)
         tab:SetScript("OnClick", function(self)
             select_tab(self:GetID())
         end)

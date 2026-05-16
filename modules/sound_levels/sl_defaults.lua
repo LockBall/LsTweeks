@@ -58,6 +58,8 @@ M.SOUND_TARGETS = {
 
 M.defaults = {
     sound_levels = {
+        last_tab_index = 1,
+        last_sound_key = "ready_check",
         targets = {
             test_sound = {
                 preset = "0",

@@ -95,6 +95,7 @@ Important `sound_levels` keys:
 - `sound_levels.targets.<target>.use_original`
 - `sound_levels.targets.<target>.sound_off`
 - `sound_levels.targets.<target>.play_on_adjust`
+- `sound_levels.last_tab_index` and `sound_levels.last_sound_key` restore the Sound Levels UI tab and selected sound when reopening after reload
 
 ## Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
