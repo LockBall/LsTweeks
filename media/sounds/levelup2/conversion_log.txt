@@ -1,13 +1,13 @@
 AudioFix conversion log
 Status: success
-Generated: 2026-05-15T14:08:46
+Generated: 2026-05-15T20:37:16
 
 Settings:
 Source: F:\from_git\AudioFix\media\levelup2\levelup2.ogg
 Output folder: F:\from_git\AudioFix\media\levelup2\levelup2_out
 Maximum dB: 0.000
-Minimum dB: -60.000
-Interval dB: 1.500
+Minimum dB: -24.000
+Interval dB: 1.000
 Raw peak dB: 0.813
 Headroom dB: 0.500
 Raw + Head gain dB: -1.313
@@ -18,43 +18,27 @@ Overwrite: True
 Files:
 index	output_file	gain_db	status	message
 0	levelup2_0.ogg	-1.313	success	validated
-1	levelup2_1.ogg	-2.813	success	validated
-2	levelup2_2.ogg	-4.313	success	validated
-3	levelup2_3.ogg	-5.813	success	validated
-4	levelup2_4.ogg	-7.313	success	validated
-5	levelup2_5.ogg	-8.813	success	validated
-6	levelup2_6.ogg	-10.313	success	validated
-7	levelup2_7.ogg	-11.813	success	validated
-8	levelup2_8.ogg	-13.313	success	validated
-9	levelup2_9.ogg	-14.813	success	validated
-10	levelup2_10.ogg	-16.313	success	validated
-11	levelup2_11.ogg	-17.813	success	validated
-12	levelup2_12.ogg	-19.313	success	validated
-13	levelup2_13.ogg	-20.813	success	validated
-14	levelup2_14.ogg	-22.313	success	validated
-15	levelup2_15.ogg	-23.813	success	validated
-16	levelup2_16.ogg	-25.313	success	validated
-17	levelup2_17.ogg	-26.813	success	validated
-18	levelup2_18.ogg	-28.313	success	validated
-19	levelup2_19.ogg	-29.813	success	validated
-20	levelup2_20.ogg	-31.313	success	validated
-21	levelup2_21.ogg	-32.813	success	validated
-22	levelup2_22.ogg	-34.313	success	validated
-23	levelup2_23.ogg	-35.813	success	validated
-24	levelup2_24.ogg	-37.313	success	validated
-25	levelup2_25.ogg	-38.813	success	validated
-26	levelup2_26.ogg	-40.313	success	validated
-27	levelup2_27.ogg	-41.813	success	validated
-28	levelup2_28.ogg	-43.313	success	validated
-29	levelup2_29.ogg	-44.813	success	validated
-30	levelup2_30.ogg	-46.313	success	validated
-31	levelup2_31.ogg	-47.813	success	validated
-32	levelup2_32.ogg	-49.313	success	validated
-33	levelup2_33.ogg	-50.813	success	validated
-34	levelup2_34.ogg	-52.313	success	validated
-35	levelup2_35.ogg	-53.813	success	validated
-36	levelup2_36.ogg	-55.313	success	validated
-37	levelup2_37.ogg	-56.813	success	validated
-38	levelup2_38.ogg	-58.313	success	validated
-39	levelup2_39.ogg	-59.813	success	validated
-40	levelup2_40.ogg	-61.313	success	validated
+1	levelup2_1.ogg	-2.313	success	validated
+2	levelup2_2.ogg	-3.313	success	validated
+3	levelup2_3.ogg	-4.313	success	validated
+4	levelup2_4.ogg	-5.313	success	validated
+5	levelup2_5.ogg	-6.313	success	validated
+6	levelup2_6.ogg	-7.313	success	validated
+7	levelup2_7.ogg	-8.313	success	validated
+8	levelup2_8.ogg	-9.313	success	validated
+9	levelup2_9.ogg	-10.313	success	validated
+10	levelup2_10.ogg	-11.313	success	validated
+11	levelup2_11.ogg	-12.313	success	validated
+12	levelup2_12.ogg	-13.313	success	validated
+13	levelup2_13.ogg	-14.313	success	validated
+14	levelup2_14.ogg	-15.313	success	validated
+15	levelup2_15.ogg	-16.313	success	validated
+16	levelup2_16.ogg	-17.313	success	validated
+17	levelup2_17.ogg	-18.313	success	validated
+18	levelup2_18.ogg	-19.313	success	validated
+19	levelup2_19.ogg	-20.313	success	validated
+20	levelup2_20.ogg	-21.313	success	validated
+21	levelup2_21.ogg	-22.313	success	validated
+22	levelup2_22.ogg	-23.313	success	validated
+23	levelup2_23.ogg	-24.313	success	validated
+24	levelup2_24.ogg	-25.313	success	validated
