@@ -48,12 +48,9 @@ local function apply_box_backdrop(frame)
     frame:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.9)
 end
 
-local function create_play_button(parent, target_key, anchor)
+local function create_play_button(parent, target_key)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(32, 32)
-    if anchor then
-        button:SetPoint("TOP", anchor, "BOTTOM", -70, -64)
-    end
 
     local button_ring = button:CreateTexture(nil, "BORDER")
     button_ring:SetAllPoints()
@@ -222,7 +219,7 @@ local function build_slider_panel(parent, target_key, target)
     original_container:SetPoint("RIGHT", slider_options_row, "RIGHT", 0, 0)
     M.controls[target_key .. "_use_original"] = original_checkbox
 
-    local play_on_adjust_container, play_on_adjust_checkbox = addon.CreateCheckbox(
+    local play_on_adjust_frame, play_on_adjust_checkbox = addon.CreateCheckbox(
         slider_panel,
         STRINGS.play_on_adjust_label,
         target_db.play_on_adjust == true,
@@ -230,15 +227,15 @@ local function build_slider_panel(parent, target_key, target)
             target_db.play_on_adjust = is_checked == true
         end
     )
-    play_on_adjust_container:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
+    play_on_adjust_frame:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
     M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_checkbox
 
     if #(target.original_file_ids or {}) == 0 and not target.preview_soundkit then
-        local status = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        status:SetPoint("BOTTOMLEFT", slider_panel, "BOTTOMLEFT", UI.slider_panel_pad_x, 14)
-        status:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
-        status:SetJustifyH("LEFT")
-        status:SetText(STRINGS.status_waiting)
+        local missing_sound_status = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        missing_sound_status:SetPoint("BOTTOMLEFT", slider_panel, "BOTTOMLEFT", UI.slider_panel_pad_x, 14)
+        missing_sound_status:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
+        missing_sound_status:SetJustifyH("LEFT")
+        missing_sound_status:SetText(STRINGS.status_waiting)
     end
 
     return slider_panel
@@ -275,7 +272,7 @@ local function build_sounds_tab(parent)
     local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
     local selected_key = (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) and db.last_sound_key or (targets[1] and targets[1].key)
-    local rows = {}
+    local target_rows = {}
     local slider_panels = {}
 
     local target_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -289,13 +286,13 @@ local function build_sounds_tab(parent)
         end
         selected_key = target_key
         db.last_sound_key = target_key
-        for _, target_row in ipairs(rows) do
+        for _, target_row in ipairs(target_rows) do
             local selected = target_row.target_key == selected_key
             target_row.bg:SetShown(selected)
             target_row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
         end
-        for _, panel in pairs(slider_panels) do
-            panel:Hide()
+        for _, sound_slider_panel in pairs(slider_panels) do
+            sound_slider_panel:Hide()
         end
         local target = M.SOUND_TARGETS and M.SOUND_TARGETS[selected_key]
         if target then
@@ -317,9 +314,9 @@ local function build_sounds_tab(parent)
         target_row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
         target_row.bg:Hide()
 
-        local hover = target_row:CreateTexture(nil, "HIGHLIGHT")
-        hover:SetAllPoints()
-        hover:SetColorTexture(1, 1, 1, 0.08)
+        local target_row_hover = target_row:CreateTexture(nil, "HIGHLIGHT")
+        target_row_hover:SetAllPoints()
+        target_row_hover:SetColorTexture(1, 1, 1, 0.08)
 
         target_row.text = target_row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         target_row.text:SetPoint("LEFT", target_row, "LEFT", 8, 0)
@@ -330,7 +327,7 @@ local function build_sounds_tab(parent)
             select_sound(entry.key)
         end)
 
-        rows[#rows + 1] = target_row
+        target_rows[#target_rows + 1] = target_row
     end
 
     if selected_key then
@@ -341,7 +338,7 @@ end
 function M.BuildSettings(parent)
     local db = M.get_db()
     local tabs = {}
-    local panels = {}
+    local tab_panels = {}
 
     local tab_defs = {
         { label = "General", builder = build_general_tab },
@@ -358,10 +355,10 @@ function M.BuildSettings(parent)
         for i, button in ipairs(tabs) do
             if i == selected_index then
                 PanelTemplates_SelectTab(button)
-                panels[i]:Show()
+                tab_panels[i]:Show()
             else
                 PanelTemplates_DeselectTab(button)
-                panels[i]:Hide()
+                tab_panels[i]:Hide()
             end
         end
     end
@@ -378,7 +375,7 @@ function M.BuildSettings(parent)
         tab_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, UI.content_top)
         tab_panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
         tab_panel:Hide()
-        panels[i] = tab_panel
+        tab_panels[i] = tab_panel
 
         def.builder(tab_panel)
         tab:SetScript("OnClick", function(self)
