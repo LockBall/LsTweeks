@@ -3,13 +3,14 @@
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
 Ready Check replacement files:
-- `levelup2_0.ogg` through `levelup2_24.ogg`
+- `levelup2_0.ogg` through `levelup2_19.ogg`
 - `Original` is a separate checkbox and uses the unmodified WoW sound.
 - The UI shows replacement volume as `0-100%`.
-- `0%` maps to `levelup2_24.ogg`, the quietest replacement.
+- `0%` is off and plays no replacement.
+- Nonzero replacement levels map in 5% steps to `levelup2_19.ogg` through `levelup2_0.ogg`.
 - `100%` maps to `levelup2_0.ogg`, the loudest replacement.
 
-Original uses the unmodified WoW sound instead of a replacement file.
+Original uses the unmodified WoW sound instead of a replacement file. Selecting Original leaves the replacement slider at its current position but dims it until the slider is moved.
 
 ## Test Sound
 
@@ -42,8 +43,6 @@ Related events that are not replacement triggers:
 
 ## Replacement Path
 
-Replacement files live in:
-
-`Interface\AddOns\LsTweeks\media\sounds\levelup2\`
+Replacement file paths are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSET_PATHS`.
 
 The addon mutes known original Blizzard FileDataIDs, then plays the selected replacement file from this folder.

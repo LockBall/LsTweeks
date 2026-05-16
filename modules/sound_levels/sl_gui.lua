@@ -5,10 +5,7 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-local TICK_COLOR_R, TICK_COLOR_G, TICK_COLOR_B, TICK_COLOR_A = 0.62, 0.62, 0.62, 0.9
-
 local STRINGS = {
-    sound_off_label = "Off",
     use_original_label = "Original",
     play_on_adjust_label = "Play Sound on Adjust",
     status_waiting = "Waiting for Blizzard FileDataID and replacement sound files.",
@@ -16,7 +13,7 @@ local STRINGS = {
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
         .. "\n\nUse the Original checkbox to compare Blizzard's sound against replacement volume 0-100%."
-        .. "\n\nThey suppress the original file and play replacement files from media\\sounds\\levelup2.",
+        .. "\n\nThey suppress the original file and play replacement files from " .. M.SOUND_ASSET_PATHS.levelup2,
 }
 
 local UI = {
@@ -33,30 +30,10 @@ local UI = {
     sound_panel_y = -18,
     detail_width = 560,
     detail_height = 230,
-    level_slider_width = 500,
-    -- Visual calibration for tick marks against the usable slider track.
-    level_slider_tick_start_x = 10.5,
-    level_slider_tick_end_x = 490,
+    level_slider_width = 432,
+    level_button_size = 22,
+    level_control_width = 500,
 }
-
-local function should_show_slider_label(option)
-    return option and (option.major_tick == true or option.midpoint_tick == true)
-end
-
-local function get_tick_height(option)
-    if not option then return 0 end
-    if option.major_tick == true then return 10 end
-    if option.midpoint_tick == true then return 7 end
-    return 4
-end
-
-local function create_tick(parent, slider, height, x)
-    local tick = parent:CreateTexture(nil, "OVERLAY")
-    tick:SetColorTexture(TICK_COLOR_R, TICK_COLOR_G, TICK_COLOR_B, TICK_COLOR_A)
-    tick:SetSize(1, height)
-    tick:SetPoint("TOP", slider, "BOTTOMLEFT", x, -4)
-    return tick
-end
 
 local function apply_box_backdrop(frame)
     frame:SetBackdrop({
@@ -111,6 +88,38 @@ local function create_play_button(parent, target_key, anchor)
     return button
 end
 
+local function format_percent(option)
+    local percent = option and option.percent or 0
+    return tostring(math.floor(percent + 0.5)) .. "%"
+end
+
+local function create_slider_arrow_button(parent, anchor, point, relative_point, x_offset, is_increment)
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(UI.level_button_size, UI.level_button_size)
+    button:SetPoint(point, anchor, relative_point, x_offset, 0)
+    button:SetNormalTexture(is_increment and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up" or "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
+    button:SetPushedTexture(is_increment and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down" or "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
+    button:SetDisabledTexture(is_increment and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled" or "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled")
+
+    local normal = button:GetNormalTexture()
+    if normal then
+        normal:SetTexCoord(0.18, 0.82, 0.16, 0.84)
+        normal:SetVertexColor(0.88, 0.88, 0.88, 0.95)
+    end
+    local pushed = button:GetPushedTexture()
+    if pushed then
+        pushed:SetTexCoord(0.18, 0.82, 0.16, 0.84)
+        pushed:SetVertexColor(0.72, 0.72, 0.72, 0.95)
+    end
+    local disabled = button:GetDisabledTexture()
+    if disabled then
+        disabled:SetTexCoord(0.18, 0.82, 0.16, 0.84)
+        disabled:SetVertexColor(0.45, 0.45, 0.45, 0.75)
+    end
+
+    return button
+end
+
 local function build_sound_detail_panel(parent, target_key, target)
     local target_db = M.get_target_db(target_key)
 
@@ -129,33 +138,65 @@ local function build_sound_detail_panel(parent, target_key, target)
     level_label:SetPoint("TOP", desc, "BOTTOM", 0, -18)
     level_label:SetText("Level")
 
+    local percent_label = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    percent_label:SetPoint("TOP", level_label, "BOTTOM", 0, -4)
+
     local current_preset = M.get_preset_by_value(target_db.preset)
     local preset_options = M.PRESET_OPTIONS or {}
     local preset_count = math.max(#preset_options, 1)
+    local initial_slider_value = target_db.sound_off == true and 1 or (current_preset and current_preset.slider_value or preset_count)
+    local initial_option = M.get_preset_by_slider_value(initial_slider_value)
+    percent_label:SetText(format_percent(initial_option))
+
+    local level_control = CreateFrame("Frame", nil, box)
+    level_control:SetSize(UI.level_control_width, UI.level_button_size)
+    level_control:SetPoint("TOP", percent_label, "BOTTOM", 0, -8)
+
     local slider = CreateFrame("Slider", addon_name .. target_key .. "SoundLevelSlider", box, "MinimalSliderTemplate")
     slider:SetSize(UI.level_slider_width, 18)
-    slider:SetPoint("TOP", level_label, "BOTTOM", 0, -12)
+    slider:SetPoint("CENTER", level_control, "CENTER", 0, 0)
     slider:SetMinMaxValues(1, preset_count)
     slider:SetValueStep(1)
     slider:SetObeyStepOnDrag(true)
-    slider:SetValue(current_preset and current_preset.slider_value or preset_count)
+    slider:SetValue(initial_slider_value)
 
-    local tick_start = UI.level_slider_tick_start_x
-    local tick_width = UI.level_slider_tick_end_x - UI.level_slider_tick_start_x
-    for _, option in ipairs(preset_options) do
-        local x = tick_start
-        if preset_count > 1 then
-            x = tick_start + (((option.slider_value or 1) - 1) * (tick_width / (preset_count - 1)))
-        end
+    local decrement_button = create_slider_arrow_button(level_control, slider, "RIGHT", "LEFT", -10, false)
+    local increment_button = create_slider_arrow_button(level_control, slider, "LEFT", "RIGHT", 10, true)
+    local original_cb = nil
+    local suppress_original_clear = false
 
-        create_tick(box, slider, get_tick_height(option), x)
-
-        if should_show_slider_label(option) then
-            local label = box:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-            label:SetPoint("TOP", slider, "BOTTOMLEFT", x, -16)
-            label:SetText(option.text .. "%")
+    local function set_slider_inactive(inactive)
+        local alpha = inactive and 0.45 or 1
+        slider:SetAlpha(alpha)
+        decrement_button:SetAlpha(alpha)
+        increment_button:SetAlpha(alpha)
+        if inactive then
+            percent_label:SetTextColor(0.55, 0.55, 0.55, 1)
+        else
+            percent_label:SetTextColor(1, 1, 1, 1)
         end
     end
+
+    local function update_slider_buttons(slider_value)
+        decrement_button:SetEnabled(slider_value > 1)
+        increment_button:SetEnabled(slider_value < preset_count)
+    end
+
+    local function sync_original_inactive_state()
+        set_slider_inactive(target_db.use_original == true)
+    end
+
+    local function clear_original_from_slider_interaction()
+        if target_db.use_original ~= true then return end
+        target_db.use_original = false
+        if original_cb and original_cb.SetChecked then
+            original_cb:SetChecked(false)
+        end
+        sync_original_inactive_state()
+    end
+
+    update_slider_buttons(initial_slider_value)
+    sync_original_inactive_state()
 
     slider:SetScript("OnValueChanged", function(self, value)
         local option = M.get_preset_by_slider_value(value)
@@ -165,19 +206,26 @@ local function build_sound_detail_panel(parent, target_key, target)
             return
         end
 
+        percent_label:SetText(format_percent(option))
+        update_slider_buttons(slider_value)
+        if suppress_original_clear then
+            return
+        end
+        clear_original_from_slider_interaction()
+
         local new_preset = (option and option.value) or target.default_preset or "0"
+        local is_off = slider_value == 1
+        local changed = target_db.preset ~= new_preset or target_db.sound_off ~= is_off
+        target_db.sound_off = is_off
         if target_db.preset == new_preset then
+            if changed then
+                M.stop_preview_sound()
+                M.apply_sound_levels()
+            end
             return
         end
 
         target_db.preset = new_preset
-        if target_db.use_original == true then
-            target_db.use_original = false
-            local original_cb = M.controls[target_key .. "_use_original"]
-            if original_cb and original_cb.SetChecked then
-                original_cb:SetChecked(false)
-            end
-        end
         M.apply_sound_levels()
     end)
     slider:SetScript("OnMouseUp", function()
@@ -185,34 +233,48 @@ local function build_sound_detail_panel(parent, target_key, target)
             M.queue_adjust_preview(target_key)
         end
     end)
+    decrement_button:SetScript("OnClick", function()
+        slider:SetValue(math.max(1, slider:GetValue() - 1))
+        if target_db.play_on_adjust == true then
+            M.queue_adjust_preview(target_key)
+        end
+    end)
+    increment_button:SetScript("OnClick", function()
+        slider:SetValue(math.min(preset_count, slider:GetValue() + 1))
+        if target_db.play_on_adjust == true then
+            M.queue_adjust_preview(target_key)
+        end
+    end)
     M.controls[target_key .. "_preset"] = slider
+    slider._lstweeks_set_sound_level_value = function(_, value)
+        suppress_original_clear = true
+        slider:SetValue(value)
+        suppress_original_clear = false
+        sync_original_inactive_state()
+    end
+    slider._lstweeks_sync_original_state = sync_original_inactive_state
 
     local play_button = create_play_button(box, target_key, slider)
 
-    local off_container, off_cb = addon.CreateCheckbox(
-        box,
-        STRINGS.sound_off_label,
-        target_db.sound_off == true,
-        function(is_checked)
-            target_db.sound_off = is_checked == true
-            M.stop_preview_sound()
-            M.apply_sound_levels()
-        end
-    )
-    off_container:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", UI.level_slider_tick_start_x, -36)
-    M.controls[target_key .. "_sound_off"] = off_cb
-
-    local original_container, original_cb = addon.CreateCheckbox(
+    local original_container
+    original_container, original_cb = addon.CreateCheckbox(
         box,
         STRINGS.use_original_label,
         target_db.use_original == true,
         function(is_checked)
             target_db.use_original = is_checked == true
+            if is_checked == true then
+                target_db.sound_off = false
+            else
+                target_db.sound_off = slider:GetValue() == 1
+            end
+            sync_original_inactive_state()
             M.stop_preview_sound()
             M.apply_sound_levels()
         end
     )
-    original_container:SetPoint("TOPRIGHT", slider, "BOTTOMLEFT", UI.level_slider_tick_end_x, -36)
+    sync_original_inactive_state()
+    original_container:SetPoint("TOPLEFT", level_control, "BOTTOMLEFT", 0, -28)
     M.controls[target_key .. "_use_original"] = original_cb
 
     local adjust_container, adjust_cb = addon.CreateCheckbox(

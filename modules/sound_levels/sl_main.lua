@@ -21,19 +21,23 @@ function M.on_reset_complete()
         local preset = M.controls[target_key .. "_preset"]
         if preset and preset.SetValue then
             local option = M.get_preset_by_value(target_db.preset)
-            preset:SetValue(option and option.slider_value or 1)
+            local slider_value = target_db.sound_off == true and 1 or (option and option.slider_value or 1)
+            if preset._lstweeks_set_sound_level_value then
+                preset:_lstweeks_set_sound_level_value(slider_value)
+            else
+                preset:SetValue(slider_value)
+            end
         end
         local play_on_adjust = M.controls[target_key .. "_play_on_adjust"]
         if play_on_adjust and play_on_adjust.SetChecked then
             play_on_adjust:SetChecked(target_db.play_on_adjust == true)
         end
-        local sound_off = M.controls[target_key .. "_sound_off"]
-        if sound_off and sound_off.SetChecked then
-            sound_off:SetChecked(target_db.sound_off == true)
-        end
         local use_original = M.controls[target_key .. "_use_original"]
         if use_original and use_original.SetChecked then
             use_original:SetChecked(target_db.use_original == true)
+        end
+        if preset and preset._lstweeks_sync_original_state then
+            preset:_lstweeks_sync_original_state()
         end
     end
 end
