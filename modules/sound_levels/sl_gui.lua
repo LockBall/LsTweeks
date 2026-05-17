@@ -125,7 +125,7 @@ local function build_slider_panel(parent, target_key, target)
     local preset_count = math.max(#preset_options, 1)
     local initial_slider_value = target_db.sound_off == true and 1 or (current_preset and current_preset.slider_value or preset_count)
 
-    local slider_widget = CreateFrame("Slider", nil, slider_panel, "MinimalSliderWithSteppersTemplate")
+    local slider_widget = CreateFrame("Frame", nil, slider_panel, "MinimalSliderWithSteppersTemplate")
     slider_widget:SetSize(UI.slider_width, UI.slider_height)
     slider_widget:SetPoint("CENTER", slider_container, "CENTER", 0, 0)
     slider_widget:Init(initial_slider_value, 1, preset_count, preset_count - 1, {
