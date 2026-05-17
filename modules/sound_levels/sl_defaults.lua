@@ -44,13 +44,18 @@ local function apply_replacement_paths(targets)
 end
 
 M.PRESET_OPTIONS = {}
+M.PRESET_OPTIONS_BY_VALUE = {}
+M.PRESET_OPTIONS_BY_SLIDER_VALUE = {}
 for position = 0, 20 do
     local file_level = 20 - position
-    M.PRESET_OPTIONS[#M.PRESET_OPTIONS + 1] = {
+    local option = {
         value = tostring(file_level),
         percent = position * 5,
         slider_value = position + 1,
     }
+    M.PRESET_OPTIONS[#M.PRESET_OPTIONS + 1] = option
+    M.PRESET_OPTIONS_BY_VALUE[option.value] = option
+    M.PRESET_OPTIONS_BY_SLIDER_VALUE[option.slider_value] = option
 end
 
 M.SOUND_TARGETS = {
@@ -82,6 +87,18 @@ M.SOUND_TARGETS = {
     },
 }
 apply_replacement_paths(M.SOUND_TARGETS)
+
+M.SOUND_EVENT_TARGETS = {}
+for target_key, target in pairs(M.SOUND_TARGETS) do
+    for _, event_name in ipairs(target.events or {}) do
+        local event_targets = M.SOUND_EVENT_TARGETS[event_name]
+        if not event_targets then
+            event_targets = {}
+            M.SOUND_EVENT_TARGETS[event_name] = event_targets
+        end
+        event_targets[#event_targets + 1] = target_key
+    end
+end
 
 M.defaults = {
     sound_levels = {
