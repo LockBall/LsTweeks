@@ -79,8 +79,8 @@ local function read_live_aura_timing(iid, need_live)
     if not (ok and live_duration) then return nil, nil end
 
     local live_expiration
-    if live_duration.GetExpirationTime then
-        local e = live_duration:GetExpirationTime()
+    if live_duration.GetEndTime then
+        local e = live_duration:GetEndTime()
         if e ~= nil and not issecretvalue(e) then live_expiration = e end
     end
 
@@ -415,7 +415,7 @@ local function hook_cd_item_frame(child)
             if ok_r and result_r and not issecretvalue(result_r) then
                 remaining = result_r
             end
-            local ok_e, result_e = pcall(function() return dur_obj:GetExpirationTime() end)
+            local ok_e, result_e = pcall(function() return dur_obj:GetEndTime() end)
             if ok_e and result_e and not issecretvalue(result_e) then
                 expiration = result_e
             end
