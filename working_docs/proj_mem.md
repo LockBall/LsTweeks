@@ -12,7 +12,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 - Ketho review workflow: use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`), enable `wowAPI.luals.frameXML` when reviewing Blizzard FrameXML/CDM/widget usage, and treat LuaLS findings as manual review prompts. For shell checks, LuaLS can run `--check`, but it needs explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath` to avoid extension-folder write errors. Prefer confirming questionable APIs against Ketho annotations and Warcraft Wiki before changing functional code.
 - Vendored libraries under `libs/` are excluded from LuaLS diagnostics in workspace settings. Do not edit third-party library files for style/type warnings unless intentionally updating the library.
-- Release package command: `powershell -ExecutionPolicy Bypass -File tools/package.ps1`. It writes `dist/LsTweeks-<version>.zip` with one top-level `LsTweeks/` folder. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. README image assets and Sound Levels reference/log files are public-facing and included.
+- Release package command: `powershell -ExecutionPolicy Bypass -File tools/package.ps1`. It derives the addon/package folder from the single root `.toc` filename, writes `dist/<toc-name>-<version>.zip`, and automatically runs `tools/verify-package.ps1`. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. The verifier also has hard-coded invariant required/forbidden paths so a bad policy edit cannot bless an obviously wrong package. README image assets and Sound Levels reference/log files are public-facing and included.
 - Packaging is data-driven: update `tools/package-policy.json` first when changing public include/exclude behavior, then run the package command to verify.
 
 ## AddOn Summary
@@ -74,9 +74,10 @@ media/
   readme_images/         public README image assets
   svg/                   public README SVG assets
 tools/
-  package.ps1            builds dist/LsTweeks-<version>.zip
+  package.ps1            builds dist/<toc-name>-<version>.zip
   package-policy.json    single source of truth for release zip include/exclude policy
   package_me.md          packaging instructions
+  verify-package.ps1     verifies release zips against package-policy.json and TOC references
 working_docs/            internal docs excluded from release zips
   proj_mem.md            project memory for coding agents
   ToDo.md                active internal task list
