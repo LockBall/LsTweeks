@@ -554,7 +554,7 @@ end
 function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, display_name, is_debuff, frame_opts)
     local category = show_key:sub(6)
     frame_opts = frame_opts or {}
-    local frame = CreateFrame("Frame", "LsTweaksAuraFrame_"..show_key, UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     frame.category = category
     frame.is_custom = frame_opts.is_custom == true
     frame.custom_entry = frame_opts.custom_entry

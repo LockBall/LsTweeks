@@ -4,7 +4,7 @@
 
 local addon_name, addon = ...
 
-local _dropdown_blocker = CreateFrame("Frame", "LsTweeksDropdownBlocker", UIParent)
+local _dropdown_blocker = CreateFrame("Frame", nil, UIParent)
 _dropdown_blocker:SetAllPoints(UIParent)
 _dropdown_blocker:SetFrameStrata("FULLSCREEN")
 _dropdown_blocker:SetFrameLevel(98)
@@ -45,18 +45,18 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     local row_h = cfg.row_height or 22
     local selected = (cfg.get_value and cfg.get_value()) or (options[1] and options[1].value)
 
-    local container = CreateFrame("Frame", name, parent)
+    local container = CreateFrame("Frame", nil, parent)
     container:SetSize(width, 22)
 
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     label:SetPoint("BOTTOM", container, "TOP", 0, 2)
     label:SetText(label_text)
 
-    local btn = CreateFrame("Button", name.."Btn", container, "UIPanelButtonTemplate")
+    local btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     btn:SetAllPoints(container)
     local btn_text = btn:GetFontString()
 
-    local popup = CreateFrame("Frame", name.."Popup", UIParent, "BackdropTemplate")
+    local popup = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     popup:SetSize(width, #options * row_h + 4)
     popup:SetFrameStrata("FULLSCREEN_DIALOG")
     popup:SetFrameLevel(100)
