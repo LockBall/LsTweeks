@@ -1,8 +1,8 @@
 ## Title: L's Tweeks
 ## Title-enUS: L's Tweeks
 ## Author: LockBall
-## Notes: UI adjustments and optional modules
-## Notes-enUS: UI adjustments and optional modules
+## Notes: Configurable aura frames, sound controls, and UI tweaks
+## Notes-enUS: Configurable aura frames, sound controls, and UI tweaks
 ## Category: User Interface
 ## Category-enUS: User Interface
 ## Interface: 120005

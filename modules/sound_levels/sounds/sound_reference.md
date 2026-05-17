@@ -20,24 +20,25 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - Replacement folder: `modules/sound_levels/sounds/achievmentsound1`
 - FileDataID: `569143`
 - Purpose: quick local test entry for slider and preview behavior
-
+- Note: the folder and filename prefix intentionally use the shipped `achievmentsound1` spelling.
 
 ## Ready Check
-- UI label: `Ready Check`    Blizzard dungeon / LFG proposal ready sound
+
+- UI label: `Ready Check`
+- Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
 - SoundKit key: `READY_CHECK`
-- file path/name: `sound/interface/levelup2.ogg`
+- File path/name: `sound/interface/levelup2.ogg`
 - FileDataID: `567478`
 - SoundKitID: `8960`
 - Trigger events:
-    - `READY_CHECK` - party/raid ready check started by a party or raid leader.
-    - `LFG_PROPOSAL_SHOW` - dungeon / LFG proposal popup appears.
+  - `READY_CHECK` - party/raid ready check started by a party or raid leader.
+  - `LFG_PROPOSAL_SHOW` - dungeon/LFG proposal popup appears.
 - Link: https://www.wowhead.com/tbc/sound=8960/readycheck
 
 Related events that are not replacement triggers:
 - `READY_CHECK_CONFIRM` - a player confirms ready or not ready.
 - `READY_CHECK_FINISHED` - the ready check completes.
 - `LFG_READY_CHECK_PLAYER_IS_READY` - an LFG ready-check player is ready.
-
 
 - Warcraft Wiki PlaySound reference: https://warcraft.wiki.gg/wiki/API_PlaySound
 
