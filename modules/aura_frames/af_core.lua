@@ -223,8 +223,6 @@ function M.ensure_blizz_cdm_loaded()
     M._blizz_cdm_load_attempted = true
     if C_AddOns and C_AddOns.LoadAddOn then
         pcall(C_AddOns.LoadAddOn, "Blizzard_CooldownViewer")
-    elseif LoadAddOn then
-        pcall(LoadAddOn, "Blizzard_CooldownViewer")
     end
 end
 

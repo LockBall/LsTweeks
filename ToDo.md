@@ -10,7 +10,7 @@
 
 - [x] d) Resolved `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: removed unsupported extra argument from `CreateFontString()` calls. Font sizing remains handled by existing font templates and timer font application code.
 
-- [ ] e) Review `modules/aura_frames/af_core.lua:226`: legacy global `LoadAddOn` fallback is not recognized by Ketho; confirm whether keeping only `C_AddOns.LoadAddOn` is appropriate for the supported client.
+- [x] e) Resolved `modules/aura_frames/af_core.lua:226`: removed obsolete global `LoadAddOn` fallback. Supported WoW 12.0.5+ clients use `C_AddOns.LoadAddOn()`.
 ---
 
 ## Potential Future Features
