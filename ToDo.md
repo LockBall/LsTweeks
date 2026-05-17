@@ -15,7 +15,7 @@ Commit: `Store tree group metadata outside FontStrings`.
 
 - [x] f) Resolved `modules/combat_text.lua:56`: removed the obsolete direct `PlayerFrame.HitIndicator` fallback and kept the current Retail `PlayerFrame.PlayerFrameContent.PlayerFrameContentMain.HitIndicator` path confirmed by Ketho FrameXML. Commit: `Remove legacy HitIndicator fallback`. Test: enable "Disable portrait combat text," enter combat with a training dummy, and confirm damage/healing numbers no longer appear over the player portrait; then disable the setting and confirm they return.
 
-- [ ] g) Review `modules/sound_levels/sl_gui.lua:131` and `165`: LuaLS cannot infer `MinimalSliderWithSteppersTemplate` mixin methods on the created slider. Determine whether this is an annotation limitation, a template/type mismatch, or needs a safer runtime guard.
+- [x] g) Resolved `modules/sound_levels/sl_gui.lua:128`: create `MinimalSliderWithSteppersTemplate` as a `Frame` wrapper instead of a `Slider`, matching Ketho FrameXML's template type and preserving the child `Slider` usage. Commit: `Use correct sound slider wrapper type`. Test: open `/lst` > Sound Levels, move the replacement volume slider, use stepper arrows, switch tabs/sounds, and confirm the displayed percent plus preview/play behavior still works.
 
 ## Potential Future Features
 
