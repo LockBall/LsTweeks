@@ -1,5 +1,5 @@
 ## L's Tweeks
-A modular World of Warcraft UI addon for interface adjustments and configurable aura frames.
+A modular World of Warcraft UI addon for interface adjustments, configurable aura frames, adjustable sound levels.
 
 <hr style="border:0; border-top:6px solid currentColor; opacity:0.12; margin:0.75rem 0;" />
 &nbsp;

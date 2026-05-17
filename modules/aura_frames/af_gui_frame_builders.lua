@@ -637,7 +637,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
 
     add_row_separator(1)
 
-    local enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
+    local enable_container, enable_cb
+    enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
         if not is_checked then
             value_table[frame_setting_key(frame_config, "move")] = false
             if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
