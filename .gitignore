@@ -46,5 +46,6 @@ pkgmeta.yml
 .toc.bak
 
 # CurseForge packager output
+dist/
 *.zip
 *.zipped

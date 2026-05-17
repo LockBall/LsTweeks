@@ -6,11 +6,14 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Treat this file as the project source of truth before non-trivial edits.
 - Update it when architecture, defaults, APIs, or debugging lessons change.
 - Do not store secrets, personal data, machine-local scratch notes, or session logs.
-- Format ToDo plans with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
+- Internal working docs live under `working_docs/`: `proj_mem.md`, `ToDo.md`, `ReviewNotes.md`, and `scratchpad.md`. Root markdown is public-facing release documentation.
+- Format ToDo plans in `working_docs/ToDo.md` with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
 - After significant changes, provide a concise git commit message.
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 - Ketho review workflow: use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`), enable `wowAPI.luals.frameXML` when reviewing Blizzard FrameXML/CDM/widget usage, and treat LuaLS findings as manual review prompts. For shell checks, LuaLS can run `--check`, but it needs explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath` to avoid extension-folder write errors. Prefer confirming questionable APIs against Ketho annotations and Warcraft Wiki before changing functional code.
 - Vendored libraries under `libs/` are excluded from LuaLS diagnostics in workspace settings. Do not edit third-party library files for style/type warnings unless intentionally updating the library.
+- Release package command: `powershell -ExecutionPolicy Bypass -File tools/package.ps1`. It writes `dist/LsTweeks-<version>.zip` with one top-level `LsTweeks/` folder. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. README image assets and Sound Levels reference/log files are public-facing and included.
+- Packaging is data-driven: update `tools/package-policy.json` first when changing public include/exclude behavior, then run the package command to verify.
 
 ## AddOn Summary
 **L's Tweeks** is a modular WoW 12.0.5+ UI addon by LockBall. Keep the intentional **Tweeks** spelling.
@@ -31,6 +34,10 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 ## File Map
 ```
+README.md                 public release/readme documentation
+sources.md                single source ledger for APIs, release references, tools, and embedded libraries
+LsTweeks.toc              addon metadata, interface number, version, load order
+LICENSE
 core/
   init.lua              addon entry, DB init, slash command, addon.UPDATE_INTERVALS, addon.UI_THEME
   main_frame.lua        settings shell and addon.register_category()
@@ -62,7 +69,20 @@ modules/
     af_debug_outlines.lua  optional icon-slot outlines
     af_screen_grid.lua     screen grid and snap helpers
 libs/                    embedded libraries, documented in sources.md
-media/fonts/             SourceCodePro selectable; other monospace fonts on disk
+media/
+  fonts/                 SourceCodePro selectable; other monospace fonts on disk
+  readme_images/         public README image assets
+  svg/                   public README SVG assets
+tools/
+  package.ps1            builds dist/LsTweeks-<version>.zip
+  package-policy.json    single source of truth for release zip include/exclude policy
+  package_me.md          packaging instructions
+working_docs/            internal docs excluded from release zips
+  proj_mem.md            project memory for coding agents
+  ToDo.md                active internal task list
+  ReviewNotes.md         reviewed manual findings and annotation gaps
+  scratchpad.md          local scratch notes
+dist/                    generated package output, ignored
 ```
 
 Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`.
@@ -104,6 +124,7 @@ Important `sound_levels` keys:
 - WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
 - Replacement audio file sets are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`; targets reference them with `replacement_asset`. File-backed targets use `M.REPLACEMENT_FILE_MIN_LEVEL` through `M.REPLACEMENT_FILE_MAX_LEVEL`, currently 20 files where `_0.ogg` is loudest and `_19.ogg` is quietest. The UI presents this as `0-100%` in 5% steps; slider `0%` is off and replaces the old Off checkbox.
 - Original playback is controlled by `use_original` for targets with original FileDataIDs or a SoundKit fallback; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
+- Sound reference/log files under `modules/sound_levels/sounds/` are public-facing and included in release zips.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
