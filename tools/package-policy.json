@@ -21,7 +21,9 @@
     "tools",
     "working_docs"
   ],
-  "excludeFiles": [],
+  "excludeFiles": [
+    ".gitignore"
+  ],
   "notes": [
     "README image assets under media/readme_images and media/svg are public-facing and included.",
     "Sound reference/log files under modules/sound_levels/sounds are public-facing and included.",

@@ -60,7 +60,96 @@ $policy = Get-Content -LiteralPath $policyPath -Raw | ConvertFrom-Json
 $policyIncludeFiles = @($policy.includeFiles | ForEach-Object {
     if ($_ -eq "<toc>") { $tocFile.Name } else { $_ }
 })
+$policyIncludeRoots = @($policy.includeRoots)
+$policyExcludeDirectories = @($policy.excludeDirectories)
+$policyExcludeFiles = @($policy.excludeFiles)
 $errors = New-Object System.Collections.Generic.List[string]
+
+function Normalize-RelativePath {
+    param([string]$Path)
+    return $Path.Replace("/", "\").Trim("\")
+}
+
+function Test-UnderAnyRoot {
+    param(
+        [string]$RelativePath,
+        [object[]]$Roots
+    )
+
+    $relative = Normalize-RelativePath $RelativePath
+    foreach ($root in @($Roots)) {
+        $normalizedRoot = Normalize-RelativePath $root
+        if ($relative -ieq $normalizedRoot -or $relative.StartsWith("$normalizedRoot\", [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Get-RepoRelativePath {
+    param([System.IO.FileSystemInfo]$Item)
+
+    $root = $repoRoot.TrimEnd("\")
+    $fullName = $Item.FullName
+    if ($fullName.Length -le $root.Length) {
+        return ""
+    }
+    return Normalize-RelativePath $fullName.Substring($root.Length + 1)
+}
+
+function Get-PolicyCoverageInventory {
+    $includedFiles = New-Object System.Collections.Generic.List[string]
+    $includedDirectories = New-Object System.Collections.Generic.List[string]
+    $excludedFiles = New-Object System.Collections.Generic.List[string]
+    $excludedDirectories = New-Object System.Collections.Generic.List[string]
+
+    $rootItems = @(Get-ChildItem -LiteralPath $repoRoot -Force)
+    foreach ($item in $rootItems) {
+        $relative = Get-RepoRelativePath $item
+        if ($item.PSIsContainer) {
+            if ((Test-UnderAnyRoot $relative $policyIncludeRoots)) {
+                $includedDirectories.Add($relative)
+                Get-ChildItem -LiteralPath $item.FullName -Force -Recurse | ForEach-Object {
+                    $childRelative = Get-RepoRelativePath $_
+                    if ($_.PSIsContainer) {
+                        $includedDirectories.Add($childRelative)
+                    } else {
+                        $includedFiles.Add($childRelative)
+                    }
+                }
+            } elseif ((Test-UnderAnyRoot $relative $policyExcludeDirectories)) {
+                $excludedDirectories.Add($relative)
+                Get-ChildItem -LiteralPath $item.FullName -Force -Recurse | ForEach-Object {
+                    $childRelative = Get-RepoRelativePath $_
+                    if ($_.PSIsContainer) {
+                        $excludedDirectories.Add($childRelative)
+                    } else {
+                        $excludedFiles.Add($childRelative)
+                    }
+                }
+            } else {
+                $errors.Add("Unaccounted top-level directory in workspace: $relative")
+            }
+        } else {
+            if ($policyIncludeFiles | Where-Object { (Normalize-RelativePath $_) -ieq $relative } | Select-Object -First 1) {
+                $includedFiles.Add($relative)
+            } elseif ($policyExcludeFiles | Where-Object { (Normalize-RelativePath $_) -ieq $relative } | Select-Object -First 1) {
+                $excludedFiles.Add($relative)
+            } else {
+                $errors.Add("Unaccounted top-level file in workspace: $relative")
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        IncludedFiles = @($includedFiles)
+        IncludedDirectories = @($includedDirectories)
+        ExcludedFiles = @($excludedFiles)
+        ExcludedDirectories = @($excludedDirectories)
+    }
+}
+
+$coverage = Get-PolicyCoverageInventory
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($resolvedZipPath)
@@ -75,6 +164,10 @@ try {
 
     if ($entryNames.Count -eq 0) {
         $errors.Add("Zip contains no file entries.")
+    }
+
+    if ($entryNames.Count -ne $coverage.IncludedFiles.Count) {
+        $errors.Add("Zip file count does not match policy-included workspace files. Zip: $($entryNames.Count), expected: $($coverage.IncludedFiles.Count)")
     }
 
     $topLevels = @(
@@ -110,7 +203,7 @@ try {
         }
     }
 
-    foreach ($root in @($policy.includeRoots)) {
+    foreach ($root in $policyIncludeRoots) {
         $prefix = "$addonName\$root\"
         $found = $entryNames | Where-Object { $_.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1
         if (-not $found) {
@@ -126,7 +219,7 @@ try {
         }
     }
 
-    foreach ($dir in @($policy.excludeDirectories)) {
+    foreach ($dir in $policyExcludeDirectories) {
         $prefix = "$addonName\$dir\"
         $found = $entryNames | Where-Object { $_.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1
         if ($found) {
@@ -142,7 +235,7 @@ try {
         }
     }
 
-    foreach ($file in @($policy.excludeFiles)) {
+    foreach ($file in $policyExcludeFiles) {
         $expected = "$addonName\$file"
         if ($entrySet.ContainsKey($expected.ToLowerInvariant())) {
             $errors.Add("Excluded file is present: $expected")
@@ -187,6 +280,7 @@ try {
     Write-Host "Package verification passed."
     Write-Host "Zip: $resolvedZipPath"
     Write-Host "Entries: $($entryNames.Count)"
+    Write-Host "Policy coverage: $($coverage.IncludedFiles.Count) included files, $($coverage.IncludedDirectories.Count) included folders, $($coverage.ExcludedFiles.Count) excluded files, $($coverage.ExcludedDirectories.Count) excluded folders"
 } finally {
     $zip.Dispose()
 }
