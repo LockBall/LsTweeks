@@ -95,6 +95,7 @@ function M.build_frames_tab(p, frames_data)
     sel_highlight:Hide()
 
     local group_boxes = {}
+    local fs_group_keys = {}
     local function set_active_group_title(group_key)
         for key, frame in pairs(group_boxes) do
             if frame and frame.SetBackdropBorderColor then
@@ -116,7 +117,7 @@ function M.build_frames_tab(p, frames_data)
             sel_highlight:SetPoint("TOPLEFT",     fs:GetParent(), "TOPLEFT",     0, 0)
             sel_highlight:SetPoint("BOTTOMRIGHT", fs:GetParent(), "BOTTOMRIGHT", 0, 0)
             sel_highlight:Show()
-            set_active_group_title(fs._group_key)
+            set_active_group_title(fs_group_keys[fs])
         else
             sel_highlight:Hide()
             set_active_group_title(nil)
@@ -247,7 +248,7 @@ function M.build_frames_tab(p, frames_data)
                     row.del_btn:SetAlpha(0)
                 end)
                 cat_btn:Show()
-                cat_fs._group_key = "filters"
+                fs_group_keys[cat_fs] = "filters"
                 node_fs_map[cat_key] = cat_fs
 
                 -- Inline rename EditBox (hidden by default; shown on double-click or rename trigger)
@@ -356,7 +357,7 @@ function M.build_frames_tab(p, frames_data)
                     if child_fs ~= selected_fs then child_fs:SetTextColor(unpack(NORM_COLOR)) end
                 end)
                 child_btn:SetShown(custom_expanded[id])
-                child_fs._group_key = "filters"
+                fs_group_keys[child_fs] = "filters"
                 node_fs_map[child_key] = child_fs
 
                 local child_entry = entry
@@ -546,7 +547,7 @@ function M.build_frames_tab(p, frames_data)
         local cat_w = TREE_W - cat_x - PAD
         local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
         cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
-        cat_fs._group_key = cooldown_group_keys[cat] and "cooldown" or "buffs"
+        fs_group_keys[cat_fs] = cooldown_group_keys[cat] and "cooldown" or "buffs"
         node_fs_map[cat] = cat_fs
         cat_btn:SetScript("OnClick", function()
             set_selected(cat_fs)

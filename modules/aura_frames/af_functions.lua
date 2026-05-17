@@ -44,7 +44,11 @@ local function read_main_frame_reference()
     local ui_center_x, ui_center_y = UIParent:GetCenter()
     if main_frame and ui_center_x and ui_center_y then
         local right = main_frame.GetRight and main_frame:GetRight()
-        local _, center_y = main_frame.GetCenter and main_frame:GetCenter()
+        local center_y
+        if main_frame.GetCenter then
+            local center_x
+            center_x, center_y = main_frame:GetCenter()
+        end
         if right and center_y then
             return right - ui_center_x, center_y - ui_center_y
         end

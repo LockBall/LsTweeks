@@ -158,8 +158,9 @@ function M.tick_visible_icons(now)
                     local need_live_fallback = (remaining == nil) and (type(obj.aura_index) == "number")
                         and (show_timer_text or (obj.bar and obj.bar:IsShown()))
                     if need_live_fallback then
-                        local ok, live_duration = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
-                        if not ok then live_duration = nil end
+                        local live_duration = nil
+                        local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
+                        if ok then live_duration = result end
                         if live_duration then
                             live_remaining = live_duration:GetRemainingDuration()
                             if live_remaining ~= nil and not issecretvalue(live_remaining) then

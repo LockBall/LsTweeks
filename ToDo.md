@@ -1,21 +1,23 @@
 ## Let's Do It !
 
-### 1. Ketho / LuaLS Manual Review
+### 1. Ketho / LuaLS Follow-up Review
 
-- [x] a) Resolved `modules/aura_frames/af_gui_frame_builders.lua:647`: `enable_cb` was referenced inside the callback passed to `bound_cb()` in the same local declaration statement. Declared `enable_container` and `enable_cb` before assignment so the callback captures the intended local.
+- [x] a) Resolved `modules/aura_frames/af_core.lua:162`: restructured `C_UnitAuras.GetAuraDuration()` `pcall` handling so failed calls do not assign `nil` into a variable LuaLS inferred as `DurationObject`. Timer fallback behavior is unchanged.
+Commit: `Clean up aura duration pcall handling`.
 
-- [x] b) Resolved `modules/aura_frames/af_scan.lua:82` and `modules/aura_frames/af_scan.lua:418`: replaced undocumented `DurationObject:GetExpirationTime()` calls with `DurationObject:GetEndTime()`, which is the current public API for absolute duration end time.
+- [x] b) Resolved `modules/aura_frames/af_functions.lua:47`: expanded guarded `GetCenter()` call so multi-return assignment is explicit and no longer depends on `and` short-circuit behavior.
+Commit: `Clarify guarded GetCenter assignment`.
 
-- [x] c) Resolved `modules/aura_frames/af_scan.lua:446`: removed dead guarded `CooldownViewerItemDataMixin.SetCooldownInfo` hook. Current FrameXML sets `cooldownInfo` through `SetCooldownID()` / `OnCooldownIDSet()`, and the existing `SetCooldownID` hook covers the refresh path.
+- [x] c) Resolved `modules/aura_frames/af_gui_tree.lua:250`, `359`, and `549`: moved tree group metadata from injected `FontString._group_key` fields into a local side table keyed by FontString.
+Commit: `Store tree group metadata outside FontStrings`.
 
-- [x] d) Resolved `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: removed unsupported extra argument from `CreateFontString()` calls. Font sizing remains handled by existing font templates and timer font application code.
+- [ ] d) Review `modules/aura_frames/af_gui_tree.lua:179` and `548`: `SetFont(row.cat_fs:GetFont(), ...)` may pass a nil font path according to LuaLS. Add a fallback font path if appropriate.
 
-- [x] e) Resolved `modules/aura_frames/af_core.lua:226`: removed obsolete global `LoadAddOn` fallback. Supported WoW 12.0.5+ clients use `C_AddOns.LoadAddOn()`.
+- [ ] e) Review `modules/aura_frames/af_main.lua:207`: Ketho/LuaLS does not expose `GameTooltip.SetUnitAuraByAuraInstanceID` on the tooltip type, though Blizzard FrameXML uses it. Confirm whether this is an annotation gap or a client-version concern.
 
-- [x] f) Resolved unnecessary global namespace pollution from addon-created frame names. Removed global names from dropdown internals, aura frame containers, grid overlay, and Sound Levels slider/tab controls; kept intentional globals for SavedVariables, slash command, libraries, and the main settings frame.
+- [ ] f) Review `modules/combat_text.lua:56`: `PlayerFrame.HitIndicator` is not present in Ketho's `PlayerFrame` type. Confirm whether this should stay as a guarded FrameXML field lookup or use a different access path.
 
----
-
+- [ ] g) Review `modules/sound_levels/sl_gui.lua:131` and `165`: LuaLS cannot infer `MinimalSliderWithSteppersTemplate` mixin methods on the created slider. Determine whether this is an annotation limitation, a template/type mismatch, or needs a safer runtime guard.
 
 ## Potential Future Features
 
