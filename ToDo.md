@@ -11,11 +11,9 @@ Commit: `Clarify guarded GetCenter assignment`.
 - [x] c) Resolved `modules/aura_frames/af_gui_tree.lua:250`, `359`, and `549`: moved tree group metadata from injected `FontString._group_key` fields into a local side table keyed by FontString.
 Commit: `Store tree group metadata outside FontStrings`.
 
-- [ ] d) Review `modules/aura_frames/af_gui_tree.lua:179` and `548`: `SetFont(row.cat_fs:GetFont(), ...)` may pass a nil font path according to LuaLS. Add a fallback font path if appropriate.
+- [x] d) Resolved `modules/aura_frames/af_gui_tree.lua:179` and `548`: added `apply_tree_label_outline()` helper with `STANDARD_TEXT_FONT` fallback and replaced duplicated `SetFont(GetFont())` calls. Commit: `Add safe tree label font fallback`. Test: open `/lst` > Buffs & Debuffs > Frames and confirm tree labels render with outline in Buffs, WoW Cooldown, and Filters.
 
-- [ ] e) Review `modules/aura_frames/af_main.lua:207`: Ketho/LuaLS does not expose `GameTooltip.SetUnitAuraByAuraInstanceID` on the tooltip type, though Blizzard FrameXML uses it. Confirm whether this is an annotation gap or a client-version concern.
-
-- [ ] f) Review `modules/combat_text.lua:56`: `PlayerFrame.HitIndicator` is not present in Ketho's `PlayerFrame` type. Confirm whether this should stay as a guarded FrameXML field lookup or use a different access path.
+- [x] f) Resolved `modules/combat_text.lua:56`: removed the obsolete direct `PlayerFrame.HitIndicator` fallback and kept the current Retail `PlayerFrame.PlayerFrameContent.PlayerFrameContentMain.HitIndicator` path confirmed by Ketho FrameXML. Commit: `Remove legacy HitIndicator fallback`. Test: enable "Disable portrait combat text," enter combat with a training dummy, and confirm damage/healing numbers no longer appear over the player portrait; then disable the setting and confirm they return.
 
 - [ ] g) Review `modules/sound_levels/sl_gui.lua:131` and `165`: LuaLS cannot infer `MinimalSliderWithSteppersTemplate` mixin methods on the created slider. Determine whether this is an annotation limitation, a template/type mismatch, or needs a safer runtime guard.
 

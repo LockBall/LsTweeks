@@ -38,7 +38,7 @@ local STRINGS = {
 local hitIndicatorFrame = nil
 local hookApplied = false
 local hidePortraitText = false
--- Supports both legacy and current UnitFrame paths.
+-- Current Retail UnitFrame path.
 local function get_hit_indicator()
     if hitIndicatorFrame then return hitIndicatorFrame end
     
@@ -50,12 +50,6 @@ local function get_hit_indicator()
             hitIndicatorFrame = main.HitIndicator
             return hitIndicatorFrame
         end
-    end
-    
-    -- Fallback for potential frame restructuring
-    if PlayerFrame and PlayerFrame.HitIndicator then
-        hitIndicatorFrame = PlayerFrame.HitIndicator
-        return hitIndicatorFrame
     end
     
     return nil
