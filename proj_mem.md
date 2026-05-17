@@ -10,6 +10,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - After significant changes, provide a concise git commit message.
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 - Ketho review workflow: use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`), enable `wowAPI.luals.frameXML` when reviewing Blizzard FrameXML/CDM/widget usage, and treat LuaLS findings as manual review prompts. For shell checks, LuaLS can run `--check`, but it needs explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath` to avoid extension-folder write errors. Prefer confirming questionable APIs against Ketho annotations and Warcraft Wiki before changing functional code.
+- Vendored libraries under `libs/` are excluded from LuaLS diagnostics in workspace settings. Do not edit third-party library files for style/type warnings unless intentionally updating the library.
 
 ## AddOn Summary
 **L's Tweeks** is a modular WoW 12.0.5+ UI addon by LockBall. Keep the intentional **Tweeks** spelling.
@@ -60,7 +61,7 @@ modules/
     af_test_aura.lua       preview aura entries
     af_debug_outlines.lua  optional icon-slot outlines
     af_screen_grid.lua     screen grid and snap helpers
-libs/                    embedded libraries, documented in libs/sources.md
+libs/                    embedded libraries, documented in sources.md
 media/fonts/             SourceCodePro selectable; other monospace fonts on disk
 ```
 
