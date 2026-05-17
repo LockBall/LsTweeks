@@ -56,6 +56,7 @@ Currently excluded workspace/private paths:
 - `dist/`
 - `tools/`
 - `working_docs/`
+- `.gitignore`
 
 README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Sound Levels reference/log files under `modules/sound_levels/sounds/` are public-facing and included.
 
@@ -73,6 +74,8 @@ The verifier checks:
 - the zip has one top-level folder matching the root `.toc` filename
 - required included roots/files from `package-policy.json` are present
 - excluded roots/files from `package-policy.json` are absent
+- every top-level workspace file/folder is accounted for by an include or exclude policy rule
+- the zip file count matches the number of policy-included workspace files
 - invariant required public files/roots are present even if the policy is edited incorrectly
 - invariant forbidden private/workspace roots are absent even if the policy is edited incorrectly
 - all Lua/XML files referenced by the root `.toc` file exist inside the zip
