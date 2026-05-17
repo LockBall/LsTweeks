@@ -1,0 +1,31 @@
+{
+  "includeRoots": [
+    "core",
+    "functions",
+    "libs",
+    "media",
+    "modules"
+  ],
+  "includeFiles": [
+    "LICENSE",
+    "README.md",
+    "sources.md",
+    "LsTweeks.toc"
+  ],
+  "excludeDirectories": [
+    ".git",
+    ".github",
+    ".venv",
+    ".vscode",
+    "dist",
+    "tools",
+    "working_docs"
+  ],
+  "excludeFiles": [],
+  "notes": [
+    "README image assets under media/readme_images and media/svg are public-facing and included.",
+    "Sound reference/log files under modules/sound_levels/sounds are public-facing and included.",
+    "Internal working markdown files live under working_docs and are excluded.",
+    "The package must contain one top-level LsTweeks/ folder."
+  ]
+}
