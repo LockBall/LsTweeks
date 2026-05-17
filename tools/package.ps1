@@ -6,18 +6,31 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$addonName = "LsTweeks"
-$tocPath = Join-Path $repoRoot "$addonName.toc"
 $policyPath = Join-Path $PSScriptRoot "package-policy.json"
+$verifyScriptPath = Join-Path $PSScriptRoot "verify-package.ps1"
 
-if (-not (Test-Path -LiteralPath $tocPath)) {
-    throw "Missing TOC file: $tocPath"
+function Get-AddonToc {
+    $tocFiles = @(Get-ChildItem -LiteralPath $repoRoot -File -Filter "*.toc")
+    if ($tocFiles.Count -eq 0) {
+        throw "Missing root TOC file."
+    }
+    if ($tocFiles.Count -gt 1) {
+        throw "Expected exactly one root TOC file, found: $($tocFiles.Name -join ', ')"
+    }
+    return $tocFiles[0]
 }
 
 if (-not (Test-Path -LiteralPath $policyPath)) {
     throw "Missing package policy file: $policyPath"
 }
 
+if (-not (Test-Path -LiteralPath $verifyScriptPath)) {
+    throw "Missing package verifier script: $verifyScriptPath"
+}
+
+$tocFile = Get-AddonToc
+$addonName = [System.IO.Path]::GetFileNameWithoutExtension($tocFile.Name)
+$tocPath = $tocFile.FullName
 $versionLine = Get-Content -LiteralPath $tocPath | Where-Object { $_ -match '^##\s*Version:\s*(.+)$' } | Select-Object -First 1
 $version = if ($versionLine -match '^##\s*Version:\s*(.+)$') { $Matches[1].Trim() } else { "dev" }
 
@@ -28,7 +41,9 @@ $zipPath = Join-Path $outputRoot "$addonName-$version.zip"
 
 $policy = Get-Content -LiteralPath $policyPath -Raw | ConvertFrom-Json
 $publicRoots = @($policy.includeRoots)
-$publicFiles = @($policy.includeFiles)
+$publicFiles = @($policy.includeFiles | ForEach-Object {
+    if ($_ -eq "<toc>") { $tocFile.Name } else { $_ }
+})
 $excludeNames = @($policy.excludeDirectories)
 $excludeFiles = @($policy.excludeFiles)
 
@@ -126,3 +141,5 @@ $zipItem = Get-Item -LiteralPath $zipPath
 Write-Host "Created $($zipItem.FullName)"
 Write-Host "Version $version"
 Write-Host "Size $([Math]::Round($zipItem.Length / 1MB, 2)) MB"
+
+& $verifyScriptPath $zipPath
