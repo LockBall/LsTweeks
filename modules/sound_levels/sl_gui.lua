@@ -125,7 +125,7 @@ local function build_slider_panel(parent, target_key, target)
     local preset_count = math.max(#preset_options, 1)
     local initial_slider_value = target_db.sound_off == true and 1 or (current_preset and current_preset.slider_value or preset_count)
 
-    local slider_widget = CreateFrame("Slider", addon_name .. target_key .. "SoundLevelSlider", slider_panel, "MinimalSliderWithSteppersTemplate")
+    local slider_widget = CreateFrame("Slider", nil, slider_panel, "MinimalSliderWithSteppersTemplate")
     slider_widget:SetSize(UI.slider_width, UI.slider_height)
     slider_widget:SetPoint("CENTER", slider_container, "CENTER", 0, 0)
     slider_widget:Init(initial_slider_value, 1, preset_count, preset_count - 1, {
@@ -379,7 +379,7 @@ function M.BuildSettings(parent)
     end
 
     for i, def in ipairs(tab_defs) do
-        local tab = CreateFrame("Button", addon_name .. "SoundLevelsTab" .. i, parent, "PanelTabButtonTemplate")
+        local tab = CreateFrame("Button", nil, parent, "PanelTabButtonTemplate")
         tab:SetText(def.label)
         tab:SetID(i)
         tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and parent or tabs[i-1], i == 1 and "TOPLEFT" or "RIGHT", i == 1 and UI.pad_x or 5, i == 1 and UI.pad_y or 0)

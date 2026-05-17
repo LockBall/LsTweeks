@@ -11,7 +11,11 @@
 - [x] d) Resolved `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: removed unsupported extra argument from `CreateFontString()` calls. Font sizing remains handled by existing font templates and timer font application code.
 
 - [x] e) Resolved `modules/aura_frames/af_core.lua:226`: removed obsolete global `LoadAddOn` fallback. Supported WoW 12.0.5+ clients use `C_AddOns.LoadAddOn()`.
+
+- [x] f) Resolved unnecessary global namespace pollution from addon-created frame names. Removed global names from dropdown internals, aura frame containers, grid overlay, and Sound Levels slider/tab controls; kept intentional globals for SavedVariables, slash command, libraries, and the main settings frame.
+
 ---
+
 
 ## Potential Future Features
 

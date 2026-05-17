@@ -73,7 +73,7 @@ end
 
 function M.create_grid_overlay()
     if M.grid_overlay then return end
-    local overlay = CreateFrame("Frame", "LsTweaksGridOverlay", UIParent)
+    local overlay = CreateFrame("Frame", nil, UIParent)
     overlay:SetAllPoints(UIParent)
     overlay:SetFrameStrata("BACKGROUND")
     overlay:SetFrameLevel(0)
