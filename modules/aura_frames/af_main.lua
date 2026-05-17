@@ -312,7 +312,7 @@ local function create_icon_text_regions(obj, category)
     obj.name_slot = CreateFrame("Frame", nil, obj.text_overlay)
     M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
 
-    obj.name_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
+    obj.name_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     obj.name_text:SetJustifyH("LEFT")
     obj.name_text:SetWordWrap(false)
     if obj.name_text.SetMaxLines then
@@ -322,7 +322,7 @@ local function create_icon_text_regions(obj, category)
     obj.timer_slot = CreateFrame("Frame", nil, obj.text_overlay)
     M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
 
-    obj.time_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall", 7)
+    obj.time_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     M.apply_number_font_to_text(obj.time_text, category)
     obj.time_text:SetWordWrap(false)
     if obj.time_text.SetMaxLines then

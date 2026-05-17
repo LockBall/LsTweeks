@@ -8,7 +8,7 @@
 
 - [x] c) Resolved `modules/aura_frames/af_scan.lua:446`: removed dead guarded `CooldownViewerItemDataMixin.SetCooldownInfo` hook. Current FrameXML sets `cooldownInfo` through `SetCooldownID()` / `OnCooldownIDSet()`, and the existing `SetCooldownID` hook covers the refresh path.
 
-- [ ] d) Review `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: `CreateFontString()` is called with five arguments; Ketho annotations expect a maximum of four.
+- [x] d) Resolved `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: removed unsupported extra argument from `CreateFontString()` calls. Font sizing remains handled by existing font templates and timer font application code.
 
 - [ ] e) Review `modules/aura_frames/af_core.lua:226`: legacy global `LoadAddOn` fallback is not recognized by Ketho; confirm whether keeping only `C_AddOns.LoadAddOn` is appropriate for the supported client.
 ---
