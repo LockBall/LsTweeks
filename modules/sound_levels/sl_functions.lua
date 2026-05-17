@@ -40,30 +40,19 @@ function M.get_target_db(target_key)
 end
 
 function M.get_preset_by_value(value)
-    for _, option in ipairs(M.PRESET_OPTIONS or {}) do
-        if option.value == value then
-            return option
-        end
-    end
+    local option = M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value]
+    if option then return option end
     return M.PRESET_OPTIONS and M.PRESET_OPTIONS[1]
 end
 
 function M.is_valid_preset_value(value)
-    for _, option in ipairs(M.PRESET_OPTIONS or {}) do
-        if option.value == value then
-            return true
-        end
-    end
-    return false
+    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value] ~= nil or false
 end
 
 function M.get_preset_by_slider_value(value)
     local rounded = math.floor((tonumber(value) or 1) + 0.5)
-    for _, option in ipairs(M.PRESET_OPTIONS or {}) do
-        if option.slider_value == rounded then
-            return option
-        end
-    end
+    local option = M.PRESET_OPTIONS_BY_SLIDER_VALUE and M.PRESET_OPTIONS_BY_SLIDER_VALUE[rounded]
+    if option then return option end
     return M.PRESET_OPTIONS and M.PRESET_OPTIONS[1]
 end
 

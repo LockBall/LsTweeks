@@ -153,12 +153,11 @@ function M.queue_adjust_preview(target_key)
 end
 
 local function handle_event(_, event)
-    for target_key, target in pairs(M.SOUND_TARGETS or {}) do
-        for _, target_event in ipairs(target.events or {}) do
-            if target_event == event then
-                M.play_event_replacement(target_key)
-                return
-            end
+    local event_targets = M.SOUND_EVENT_TARGETS and M.SOUND_EVENT_TARGETS[event]
+    if not event_targets then return end
+    for _, target_key in ipairs(event_targets) do
+        if M.play_event_replacement(target_key) then
+            return
         end
     end
 end
@@ -172,13 +171,7 @@ function M.sync_registered_events()
     M.event_frame:UnregisterAllEvents()
     M.get_db()
 
-    local registered = {}
-    for _, target in pairs(M.SOUND_TARGETS or {}) do
-        for _, event_name in ipairs(target.events or {}) do
-            if not registered[event_name] then
-                M.event_frame:RegisterEvent(event_name)
-                registered[event_name] = true
-            end
-        end
+    for event_name in pairs(M.SOUND_EVENT_TARGETS or {}) do
+        M.event_frame:RegisterEvent(event_name)
     end
 end
