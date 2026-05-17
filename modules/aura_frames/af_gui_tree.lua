@@ -141,6 +141,11 @@ function M.build_frames_tab(p, frames_data)
         return btn, fs
     end
 
+    local function apply_tree_label_outline(fs)
+        local font_path, font_size = fs:GetFont()
+        fs:SetFont(font_path or STANDARD_TEXT_FONT, font_size or 11, "OUTLINE")
+    end
+
     -- Reused row controls for custom frame tree entries.
     local custom_row_pool = {}
     -- Tracks the current y cursor so + Custom button can be repositioned.
@@ -177,7 +182,7 @@ function M.build_frames_tab(p, frames_data)
         row.cat_btn = CreateFrame("Button", nil, tree_frame)
         row.cat_fs = row.cat_btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         row.cat_fs:SetPoint("LEFT", row.cat_btn, "LEFT", 4, 0)
-        row.cat_fs:SetFont(row.cat_fs:GetFont(), select(2, row.cat_fs:GetFont()) or 11, "OUTLINE")
+        apply_tree_label_outline(row.cat_fs)
 
         row.rename_box = CreateFrame("EditBox", nil, tree_frame, "InputBoxTemplate")
         row.rename_box:SetAutoFocus(true)
@@ -546,7 +551,7 @@ function M.build_frames_tab(p, frames_data)
         local cat_x = PAD
         local cat_w = TREE_W - cat_x - PAD
         local cat_btn, cat_fs = make_tree_btn(tree_frame, data.name, cat_x, y, cat_w)
-        cat_fs:SetFont(cat_fs:GetFont(), select(2, cat_fs:GetFont()) or 11, "OUTLINE")
+        apply_tree_label_outline(cat_fs)
         fs_group_keys[cat_fs] = cooldown_group_keys[cat] and "cooldown" or "buffs"
         node_fs_map[cat] = cat_fs
         cat_btn:SetScript("OnClick", function()
