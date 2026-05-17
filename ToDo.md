@@ -6,7 +6,7 @@
 
 - [x] b) Resolved `modules/aura_frames/af_scan.lua:82` and `modules/aura_frames/af_scan.lua:418`: replaced undocumented `DurationObject:GetExpirationTime()` calls with `DurationObject:GetEndTime()`, which is the current public API for absolute duration end time.
 
-- [ ] c) Review `modules/aura_frames/af_scan.lua:446`: `CooldownViewerItemDataMixin.SetCooldownInfo` is not present in Ketho FrameXML annotations. Confirm whether this hook is obsolete, version-specific, or intentionally guarded fallback code.
+- [x] c) Resolved `modules/aura_frames/af_scan.lua:446`: removed dead guarded `CooldownViewerItemDataMixin.SetCooldownInfo` hook. Current FrameXML sets `cooldownInfo` through `SetCooldownID()` / `OnCooldownIDSet()`, and the existing `SetCooldownID` hook covers the refresh path.
 
 - [ ] d) Review `modules/aura_frames/af_main.lua:315` and `modules/aura_frames/af_main.lua:325`: `CreateFontString()` is called with five arguments; Ketho annotations expect a maximum of four.
 

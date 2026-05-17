@@ -443,12 +443,6 @@ local function install_cooldown_viewer_item_hooks()
         pcall(hooksecurefunc, CooldownViewerItemDataMixin, "SetCooldownID", on_item_changed)
     end
 
-    if CooldownViewerItemDataMixin.SetCooldownInfo then
-        pcall(hooksecurefunc, CooldownViewerItemDataMixin, "SetCooldownInfo", function(child)
-            on_item_changed(child)
-        end)
-    end
-
     if CooldownViewerItemDataMixin.ClearCooldownID then
         pcall(hooksecurefunc, CooldownViewerItemDataMixin, "ClearCooldownID", function(child)
             child._lstweeks_cooldown_id = nil
