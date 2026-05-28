@@ -77,6 +77,7 @@ local function make_preset_frame_settings_config(data)
             show = data.show_key,
             move = data.move_key,
             timer = data.timer_key,
+            timer_swipe = "timer_swipe_" .. cat,
             tooltip = "tooltip_" .. cat,
             bg = data.bg_key,
             scale = data.scale_key,
@@ -108,6 +109,7 @@ local function make_custom_frame_settings_config(entry)
         y = default_position.y,
     }
     if entry.tooltip == nil then entry.tooltip = true end
+    if entry.timer_swipe == nil then entry.timer_swipe = true end
     return {
         id = id,
         is_custom = true,
@@ -121,6 +123,7 @@ local function make_custom_frame_settings_config(entry)
             show = "show",
             move = "move",
             timer = "timer",
+            timer_swipe = "timer_swipe",
             tooltip = "tooltip",
             bg = "bg",
             scale = "scale",
@@ -677,7 +680,27 @@ local function build_frame_settings_panel(parent, frame_config, opts)
 
     add_row_separator(2)
 
-    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1)
+    local timer_swipe_container, timer_swipe_checkbox
+    local function refresh_timer_swipe_control()
+        if not timer_swipe_checkbox then return end
+        local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
+        if bar_mode_enabled then
+            if timer_swipe_checkbox.SetChecked then timer_swipe_checkbox:SetChecked(false) end
+            if timer_swipe_checkbox.Disable then timer_swipe_checkbox:Disable() end
+            if timer_swipe_container then timer_swipe_container:SetAlpha(0.45) end
+        else
+            if timer_swipe_checkbox.SetChecked then
+                timer_swipe_checkbox:SetChecked(value_table[frame_setting_key(frame_config, "timer_swipe")] == true)
+            end
+            if timer_swipe_checkbox.Enable then timer_swipe_checkbox:Enable() end
+            if timer_swipe_container then timer_swipe_container:SetAlpha(1) end
+        end
+    end
+
+    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1, function()
+        refresh_timer_swipe_control()
+        update()
+    end)
     local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
     bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, -4)
     if opts.bar_color_control_key then
@@ -693,10 +716,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
 
     add_row_separator(3)
 
-    if opts.show_timer_controls ~= false then
+    local has_timer_controls = opts.show_timer_controls ~= false
+    if has_timer_controls then
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
     end
-    bound_cb("Tooltip", "tooltip", 4, 4)
+    local tooltip_container = bound_cb("Tooltip", "tooltip", 4, 4)
+    if has_timer_controls then
+        timer_swipe_container, timer_swipe_checkbox = bound_cb("Timer Swipe", "timer_swipe", 4, 4)
+        timer_swipe_container:ClearAllPoints()
+        timer_swipe_container:SetPoint("TOPLEFT", tooltip_container, "BOTTOMLEFT", 0, 0)
+        M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
+        refresh_timer_swipe_control()
+    end
     add_row_separator(4)
 
     local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)

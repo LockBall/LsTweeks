@@ -386,6 +386,7 @@ function M.sync_general_controls_from_db()
             "show_" .. cat,
             "move_" .. cat,
             "timer_" .. cat,
+            "timer_swipe_" .. cat,
             "tooltip_" .. cat,
             "bg_" .. cat,
             "bar_mode_" .. cat,
@@ -397,6 +398,10 @@ function M.sync_general_controls_from_db()
             if M.db[key] ~= nil then
                 set_checked(key, M.db[key])
             end
+        end
+        local refresh_timer_swipe = M.controls["timer_swipe_refresh_timer_swipe_" .. cat]
+        if refresh_timer_swipe then
+            refresh_timer_swipe()
         end
     end
 

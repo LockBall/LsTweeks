@@ -312,9 +312,11 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local barTextC      = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bgC           = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
+    local show_timer_swipe = (not bar_mode) and M.get_setting(cfg_db, category, "timer_swipe", true) ~= false
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     self._show_timer_text = show_timer_text
+    self._show_timer_swipe = show_timer_swipe
     self._show_tooltip    = M.get_setting(cfg_db, category, "tooltip", true) ~= false
     self._show_cooldown_overlay = cooldown_icon_overlay
     self._bar_mode        = bar_mode

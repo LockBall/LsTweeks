@@ -402,6 +402,7 @@ local function update_aura_timer_and_bar(
     timer_category,
     bar_mode,
     show_render_timer_text,
+    show_timer_swipe,
     is_static_frame,
     live_remaining,
     live_duration,
@@ -460,7 +461,7 @@ local function update_aura_timer_and_bar(
             if bar_mode then
                 obj.bar:SetMinMaxValues(0, entry.duration)
                 obj.bar:SetValue(remaining)
-            else
+            elseif show_timer_swipe then
                 apply_cooldown_overlay(obj, nil, entry.expiration, entry.duration)
             end
         else
@@ -693,6 +694,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local is_static_frame = (self.category == "static")
     local show_cooldown_overlay = self._show_cooldown_overlay == true
     local show_render_timer_text = show_timer_text and not show_cooldown_overlay
+    local show_timer_swipe = self._show_timer_swipe ~= false
     local tooltip_enabled = self._show_tooltip ~= false
 
     for i = 1, display_count do
@@ -729,6 +731,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             timer_category,
             bar_mode,
             show_render_timer_text,
+            show_timer_swipe,
             is_static_frame,
             live_remaining,
             live_duration,
