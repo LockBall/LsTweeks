@@ -339,6 +339,11 @@ local function bind_icon_tooltip(obj)
     obj:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+    obj:SetScript("OnMouseUp", function(self, button)
+        if M.try_cancel_aura_icon then
+            M.try_cancel_aura_icon(self, button)
+        end
+    end)
 end
 
 local function create_aura_icon(parent, category, bar_bg_default)

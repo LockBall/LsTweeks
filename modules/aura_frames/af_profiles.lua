@@ -9,6 +9,7 @@ local M = addon.aura_frames
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs",
     "enable_blizz_debuffs",
+    "cancel_modifier",
     "fade_wow_cooldown_ooc",
     "wow_cooldown_ooc_alpha",
     "short_threshold",

@@ -34,6 +34,89 @@ local DEFAULT_TIMER_BEHAVIOR = {
     format = "time",
 }
 
+local CANCELABLE_AURA_FILTER = "HELPFUL|CANCELABLE"
+
+local function normalize_cancel_modifier(modifier)
+    if modifier == "OFF" or modifier == "CTRL" or modifier == "ALT" or modifier == "SHIFT" then
+        return modifier
+    end
+    return "CTRL"
+end
+
+local function is_cancel_modifier_down(modifier)
+    if modifier == "CTRL" then return IsControlKeyDown and IsControlKeyDown() end
+    if modifier == "ALT" then return IsAltKeyDown and IsAltKeyDown() end
+    if modifier == "SHIFT" then return IsShiftKeyDown and IsShiftKeyDown() end
+    return false
+end
+
+local function is_frame_category_cancelable(frame)
+    if not frame then return false end
+    if frame.is_custom then return true end
+    return frame.category == "static" or frame.category == "long"
+end
+
+local function refresh_aura_frames_after_cancel()
+    if M.mark_aura_scan_dirty then
+        M.mark_aura_scan_dirty()
+    end
+
+    local function refresh()
+        if not (M.frames and M.update_auras) then return end
+        for _, frame in pairs(M.frames) do
+            local params = frame.update_params
+            if params then
+                M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
+                    params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
+            end
+        end
+    end
+
+    if C_Timer and C_Timer.After then
+        C_Timer.After(M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.next_frame or 0, refresh)
+    else
+        refresh()
+    end
+end
+
+local function find_cancelable_buff_index(aura_instance_id)
+    if not (C_UnitAuras and C_UnitAuras.GetBuffDataByIndex and aura_instance_id) then return nil end
+
+    local index = 1
+    while true do
+        local aura = C_UnitAuras.GetBuffDataByIndex("player", index, CANCELABLE_AURA_FILTER)
+        if not aura then return nil end
+        if aura.auraInstanceID == aura_instance_id then
+            return index
+        end
+        index = index + 1
+    end
+end
+
+function M.try_cancel_aura_icon(obj, button)
+    if button ~= "RightButton" then return false end
+    if InCombatLockdown and InCombatLockdown() then return false end
+    if not (M.db and obj) then return false end
+
+    local modifier = normalize_cancel_modifier(M.db.cancel_modifier)
+    if modifier == "OFF" then return false end
+    if not is_cancel_modifier_down(modifier) then return false end
+
+    if obj.is_test_preview or obj.is_spell_cooldown then return false end
+    if type(obj.aura_index) ~= "number" then return false end
+    if not is_frame_category_cancelable(obj:GetParent()) then return false end
+    if type(CancelUnitBuff) ~= "function" then return false end
+
+    local buff_index = find_cancelable_buff_index(obj.aura_index)
+    if not buff_index then return false end
+
+    local ok = pcall(CancelUnitBuff, "player", buff_index, CANCELABLE_AURA_FILTER)
+    if ok then
+        refresh_aura_frames_after_cancel()
+    end
+    return ok
+end
+
 function M.get_cdm_viewer_frame(category)
     local frame_name = M.CDM_VIEWER_FRAMES[category]
     return frame_name and _G[frame_name] or nil

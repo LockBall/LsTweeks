@@ -134,6 +134,7 @@ Important `aura_frames` keys:
 - Timer fallback: `timer_number_font`, `timer_number_font_size`, `timer_number_font_bold`
 - Preset per-category keys: `<setting>_<category>` such as `show_static`, `color_debuff`, `scale_short`
 - Timer swipe keys: preset frames use `timer_swipe_<category>` and custom frames use `timer_swipe`; Bar Mode suppresses normal icon timer swipes regardless of the saved timer swipe value, and CDM cooldown-mode swipe overlays intentionally remain visible even when timer swipe is off.
+- Aura cancel modifier: `cancel_modifier` is a global Aura Frames setting (`OFF`, `CTRL`, `ALT`, `SHIFT`; default `CTRL`). Modifier + right `OnMouseUp` cancellation is out-of-combat only, owned by `M.try_cancel_aura_icon()` in `af_functions.lua`, and only cancels auras resolved through a fresh `HELPFUL|CANCELABLE` scan.
 - Positions: `aura_frames.positions.<category> = { point, x, y }`
 - Custom frames: array entries with `id`, `name`, filter fields, flat presentation keys, and `position`
 - Profiles: complete Aura Frames snapshots excluding editor/session state such as selected tabs/nodes, grid visibility, and debug outlines

@@ -381,6 +381,15 @@ function M.sync_general_controls_from_db()
     set_checked("snap_to_grid_checkbox", M.db.snap_to_grid)
     set_checked("show_grid_checkbox", M.db.show_grid)
 
+    local cancel_modifier = M.controls.cancel_modifier_dropdown
+    if cancel_modifier and cancel_modifier.SetValue then
+        local value = M.db.cancel_modifier
+        if value ~= "OFF" and value ~= "CTRL" and value ~= "ALT" and value ~= "SHIFT" then
+            value = M.defaults.cancel_modifier or "CTRL"
+        end
+        cancel_modifier:SetValue(value)
+    end
+
     for _, cat in ipairs(M.CATEGORIES or {}) do
         local keys = {
             "show_" .. cat,

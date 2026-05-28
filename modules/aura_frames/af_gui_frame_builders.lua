@@ -21,6 +21,20 @@ local function get_timer_font_options()
     return options
 end
 
+local CANCEL_MODIFIER_OPTIONS = {
+    { value = "OFF", text = "OFF" },
+    { value = "CTRL", text = "CTRL" },
+    { value = "ALT", text = "ALT" },
+    { value = "SHIFT", text = "SHIFT" },
+}
+
+local function normalize_cancel_modifier(value)
+    if value == "OFF" or value == "CTRL" or value == "ALT" or value == "SHIFT" then
+        return value
+    end
+    return "CTRL"
+end
+
 local function create_bound_checkbox_control(parent, label, value_table, value_key, grid, row, column, control_key, on_change, default_update, after_checked, after_unchecked)
     local container, checkbox, _ = addon.CreateCheckbox(parent, label, value_table[value_key],
         function(is_checked)
@@ -468,6 +482,17 @@ function M.build_general_tab(p)
     end)
     threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
 
+    local cancel_modifier = addon.CreateDropdown(addon_name.."CancelModifier", p, "Cancel Modifier", CANCEL_MODIFIER_OPTIONS, {
+        width = 120,
+        get_value = function()
+            return normalize_cancel_modifier(M.db.cancel_modifier or M.defaults.cancel_modifier)
+        end,
+        on_select = function(value)
+            M.db.cancel_modifier = normalize_cancel_modifier(value)
+        end,
+    })
+    cancel_modifier:SetPoint("LEFT", threshold, "RIGHT", 35, 0)
+    M.controls.cancel_modifier_dropdown = cancel_modifier
 
     -- Show Bar Section Outlines Checkbox
     local outlines_container, outlines_btn, _ = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,

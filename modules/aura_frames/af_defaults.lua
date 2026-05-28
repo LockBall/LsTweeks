@@ -202,6 +202,7 @@ M.defaults = {
     snap_to_grid   = true,
     show_grid      = true,
     show_bar_section_outlines = false,
+    cancel_modifier = "CTRL",
     fade_wow_cooldown_ooc = true,
     wow_cooldown_ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,

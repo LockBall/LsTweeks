@@ -13,6 +13,7 @@ Slash command: `/lst`
 - Custom filtered aura frames using AuraFilters such as `HELPFUL|IMPORTANT`.
 - Icon and bar presentation modes with configurable growth direction, spacing, width, colors, timers, and test-aura previews.
 - Per-frame tooltip visibility.
+- Optional modifier-right-click cancellation for eligible player buffs.
 - Aura Frame Profiles for saving and loading complete aura-frame setups across characters.
 - Optional hiding of Blizzard buff and debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
