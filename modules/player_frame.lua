@@ -9,13 +9,19 @@ addon.player_frame = addon.player_frame or {
 
 local M = addon.player_frame
 
+local FADE_DEFAULTS = {
+    fade_alpha = 0.5,
+    fade_delay = 2.0,
+    fade_length = 4.0,
+}
+
 local defaults = {
     player_frame = {
         hide_portrait_combat_text = false,
         fade_out_of_combat = false,
-        fade_alpha = 0.5,
-        fade_delay = 2.0,
-        fade_length = 4.0,
+        fade_alpha = FADE_DEFAULTS.fade_alpha,
+        fade_delay = FADE_DEFAULTS.fade_delay,
+        fade_length = FADE_DEFAULTS.fade_length,
     },
 }
 
@@ -128,15 +134,8 @@ local function is_player_in_combat()
 end
 
 local function get_clamped_fade_value(db, key, min_value, max_value)
-    local value = tonumber(db and db[key]) or defaults.player_frame[key]
+    local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
     return math.max(min_value, math.min(max_value, value))
-end
-
-local function get_fade_slider_def(key)
-    for _, def in ipairs(FADE_SLIDER_DEFS) do
-        if def.key == key then return def end
-    end
-    return nil
 end
 
 local function stop_fade_transition()
@@ -152,18 +151,15 @@ local function stop_fade_transition()
 end
 
 local function get_fade_delay(db)
-    local def = get_fade_slider_def("fade_delay")
-    return get_clamped_fade_value(db, "fade_delay", def.min, def.max)
+    return get_clamped_fade_value(db, "fade_delay", 0, 5)
 end
 
 local function get_fade_length(db)
-    local def = get_fade_slider_def("fade_length")
-    return get_clamped_fade_value(db, "fade_length", def.min, def.max)
+    return get_clamped_fade_value(db, "fade_length", 0, 10)
 end
 
 local function get_fade_alpha(db)
-    local def = get_fade_slider_def("fade_alpha")
-    return get_clamped_fade_value(db, "fade_alpha", def.min, def.max)
+    return get_clamped_fade_value(db, "fade_alpha", 0.1, 1.0)
 end
 
 local function get_fade_update_frame()
@@ -283,7 +279,7 @@ function M.on_reset_complete()
     for _, def in ipairs(FADE_SLIDER_DEFS) do
         local slider = M.controls[def.control_key]
         if slider and slider.slider then
-            slider.slider:SetValue((db and db[def.key]) or defaults.player_frame[def.key])
+            slider.slider:SetValue(get_clamped_fade_value(db, def.key, def.min, def.max))
         end
     end
 end
@@ -415,12 +411,12 @@ loader:SetScript("OnEvent", function(self, event, name)
                         def.step,
                         db,
                         def.key,
-                        defaults.player_frame,
+                        FADE_DEFAULTS,
                         M.update_player_frame
                     )
                     M.controls[def.control_key] = slider
 
-                    if index == 1 then
+                    if index == 1 or not previous_slider then
                         slider:SetPoint("TOPLEFT", fadeNotePanel, "BOTTOMLEFT", 0, cfg.slider_offset_y)
                     else
                         slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
