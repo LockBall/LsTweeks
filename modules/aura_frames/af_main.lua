@@ -15,7 +15,6 @@ local format = string.format
 local issecretvalue = issecretvalue
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
-local NEXT_FRAME_INTERVAL = UPDATE_INTERVALS.next_frame
 
 local WOW_COOLDOWN_REFRESH_PROFILES = {
     immediate = {
@@ -696,47 +695,6 @@ end
 -- ============================================================================
 -- STARTUP ORCHESTRATION
 
-local function is_legacy_bar_bg(c)
-    return type(c) == "table"
-        and c.r == 0.6 and c.g == 0.6 and c.b == 0.6
-        and (c.a == 0.25 or c.a == nil)
-end
-
-local function migrate_timer_font_settings()
-    if not M.db.timer_number_font then
-        M.db.timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY
-    end
-    if not M.db.timer_number_font_size then
-        M.db.timer_number_font_size = M.get_timer_number_font_size() or 10
-    end
-
-    -- Static frame has no timer text, so it does not need per-category timer font settings.
-    for _, cat in ipairs(M.TIMER_CATEGORIES) do
-        local font_key = "timer_number_font_"..cat
-        local size_key = "timer_number_font_size_"..cat
-        if not M.db[font_key] then
-            M.db[font_key] = M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
-        end
-        if not M.db[size_key] then
-            M.db[size_key] = M.get_timer_number_font_size() or 10
-        end
-        local bold_key = "timer_number_font_bold_"..cat
-        if M.db[bold_key] == nil then
-            M.db[bold_key] = M.db.timer_number_font_bold or false
-        end
-    end
-end
-
-local function migrate_legacy_bar_bg_settings()
-    for _, cat in ipairs(M.CATEGORIES) do
-        local bg_key = "bar_bg_color_" .. cat
-        if is_legacy_bar_bg(M.db[bg_key]) then
-            local fill = M.db["color_" .. cat] or { r = 1, g = 1, b = 1 }
-            M.db[bg_key] = { r = fill.r, g = fill.g, b = fill.b, a = M.BAR_BG_ALPHA_DEFAULT }
-        end
-    end
-end
-
 local function prepare_aura_frame_db()
     if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
     M.db = Ls_Tweeks_DB.aura_frames
@@ -745,9 +703,6 @@ local function prepare_aura_frame_db()
     if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
     if M.apply_cdm_default_positions_to_db then M.apply_cdm_default_positions_to_db() end
-
-    migrate_timer_font_settings()
-    migrate_legacy_bar_bg_settings()
 end
 
 local function create_startup_aura_frames()
@@ -772,21 +727,6 @@ local function create_startup_aura_frames()
     end
 end
 
-local function migrate_saved_frame_positions_next_frame()
-    -- Defer one frame so GetLeft()/GetTop() return valid screen coordinates.
-    C_Timer.After(NEXT_FRAME_INTERVAL, function()
-        for _, frame in pairs(M.frames) do
-            local pos = M.get_frame_position_table(frame)
-            if pos and pos.point ~= "TOPLEFT" then
-                local x, y = M.sync_frame_position_to_db(frame, pos)
-                if x and y then
-                    M.apply_saved_frame_position(frame)
-                end
-            end
-        end
-    end)
-end
-
 local function start_visible_icon_ticker()
     -- Timer text and bar fill need smooth tenths; heavier aura scans stay event-bucketed.
     C_Timer.NewTicker(UPDATE_INTERVALS.tenth_sec, function()
@@ -801,7 +741,6 @@ local function register_aura_frame_settings()
 end
 
 local function start_aura_frame_runtime_services()
-    migrate_saved_frame_positions_next_frame()
     start_visible_icon_ticker()
 
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)

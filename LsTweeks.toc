@@ -35,7 +35,7 @@ functions\dropdown.lua
 modules\about.lua
 modules\settings\st_defaults.lua
 modules\settings\st_main.lua
-modules\combat_text.lua
+modules\player_frame.lua
 modules\sound_levels\sl_defaults.lua
 modules\sound_levels\sl_functions.lua
 modules\sound_levels\sl_core.lua

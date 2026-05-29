@@ -52,7 +52,7 @@ functions/
   slider_with_box.lua   CreateSliderWithBox() with built-in tenth-sec debounce
 modules/
   about.lua
-  combat_text.lua
+  player_frame.lua
   sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
   settings/             settings defaults + minimap/open-on-reload/interface alpha panel
   aura_frames/
@@ -110,7 +110,7 @@ Violations here can create invisible or unstable controls.
 
 ## Saved Variables Shape
 Top-level keys include:
-`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `combat_text`, `sound_levels`, and `aura_frames`.
+`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `player_frame`, `sound_levels`, and `aura_frames`.
 
 Important `sound_levels` keys:
 - `sound_levels.enabled`
@@ -167,7 +167,7 @@ Important `aura_frames` keys:
 
 ### Position, Drag, Resize
 - Aura frame positions are stored as unscaled UIParent-center coordinates.
-- CDM default positions are dynamic: new/missing or untouched legacy CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
+- CDM default positions are dynamic: new/missing CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
 - New custom frame default positions are also based on the current main GUI right edge with a 32px gap; existing saved/profile custom positions are not overwritten.
 - Use `M.apply_frame_position()`, `M.read_frame_position()`, `M.sync_frame_position_to_db()`, `M.apply_saved_frame_position()`, and `M.sync_frame_position_from_drag()` rather than branching on preset vs custom manually.
 - Drag/resize state is centralized through `M.start_frame_drag()` / `M.stop_frame_drag()` and `frame._is_user_positioning`.

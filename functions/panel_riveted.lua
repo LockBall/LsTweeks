@@ -11,7 +11,7 @@ addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
     borderColor = { 0.6, 0.6, 0.6, 0.6 },
 
     -- Layout helpers for modules that create riveted panels
-    padding        = 33,    -- inner content padding
+    padding        = 28,    -- inner content padding
     panel_margin   = 60,    -- margin from parent edges when sizing panel width
     panel_min_height = 60,  -- minimum panel height
     panel_max_width  = 420, -- maximum panel width

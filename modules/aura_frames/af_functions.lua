@@ -17,13 +17,6 @@ local CDM_DEFAULT_POSITION_Y_OFFSETS = {
     tracked_buffs = -75,
     tracked_bars = -125,
 }
-local LEGACY_CDM_DEFAULT_POSITIONS = {
-    essential = { point = "TOPLEFT", x = -100, y = 25 },
-    utility = { point = "TOPLEFT", x = -100, y = -25 },
-    tracked_buffs = { point = "TOPLEFT", x = -100, y = -75 },
-    tracked_bars = { point = "TOPLEFT", x = -100, y = -125 },
-}
-
 local TIMER_BEHAVIOR = {
     static = { enabled = false, format = "none" },
     short  = { enabled = true,  format = "decimal" },
@@ -181,20 +174,12 @@ function M.refresh_cdm_default_positions()
     end
 end
 
-local function is_legacy_cdm_default_position(category, pos)
-    local legacy = LEGACY_CDM_DEFAULT_POSITIONS[category]
-    return legacy and pos
-        and (pos.point == legacy.point or pos.point == nil)
-        and pos.x == legacy.x
-        and pos.y == legacy.y
-end
-
 function M.apply_cdm_default_positions_to_db()
     if not (M.db and M.db.positions) then return end
     M.refresh_cdm_default_positions()
     for category in pairs(CDM_DEFAULT_POSITION_Y_OFFSETS) do
         local default_pos = M.defaults and M.defaults.positions and M.defaults.positions[category]
-        if default_pos and (not M.db.positions[category] or is_legacy_cdm_default_position(category, M.db.positions[category])) then
+        if default_pos and not M.db.positions[category] then
             M.db.positions[category] = M.db.positions[category] or {}
             M.db.positions[category].point = default_pos.point
             M.db.positions[category].x = default_pos.x

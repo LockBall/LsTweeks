@@ -1,6 +1,6 @@
 ## L's Tweeks
 
-L's Tweeks is a modular World of Warcraft Retail UI addon for configurable player aura frames, small interface adjustments, portrait combat text control, and quieter replacement sounds.
+L's Tweeks is a modular World of Warcraft Retail UI addon for configurable player aura frames, player frame adjustments, small interface adjustments, and quieter replacement sounds.
 
 Supported client: Retail 12.0.5+  
 TOC interface: `120005`  
@@ -17,7 +17,7 @@ Slash command: `/lst`
 - Aura Frame Profiles for saving and loading complete aura-frame setups across characters.
 - Optional hiding of Blizzard buff and debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
-- Toggle for Blizzard portrait combat text.
+- Player Frame module with a toggle for Blizzard portrait combat text.
 - Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets.
 
 ## Installation
