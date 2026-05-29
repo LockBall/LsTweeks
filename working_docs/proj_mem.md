@@ -112,6 +112,18 @@ Violations here can create invisible or unstable controls.
 Top-level keys include:
 `minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `player_frame`, `sound_levels`, and `aura_frames`.
 
+Important `player_frame` keys:
+- `hide_portrait_combat_text`: hides Player Frame portrait combat text.
+- `fade_out_of_combat`: enables Out Of Combat (OOC) Player Frame fading.
+- `fade_alpha`: target OOC alpha, default `0.5`.
+- `fade_delay`: seconds to stay fully visible after combat, default `2.0`.
+- `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `4.0`.
+
+Player Frame runtime notes:
+- `modules/player_frame.lua` owns Player Frame settings, portrait combat text hiding, and OOC fade behavior.
+- OOC fade is delay plus fade length: combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`.
+- Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
+
 Important `sound_levels` keys:
 - `sound_levels.enabled`
 - `sound_levels.targets.<target>.preset` where Ready Check replacement presets store file-level strings `"0"` through `"19"`; the UI maps these to `100%` through `5%`, with slider `0%` setting `sound_off`

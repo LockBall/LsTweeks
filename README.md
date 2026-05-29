@@ -17,7 +17,7 @@ Slash command: `/lst`
 - Aura Frame Profiles for saving and loading complete aura-frame setups across characters.
 - Optional hiding of Blizzard buff and debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
-- Player Frame module with a toggle for Blizzard portrait combat text.
+- Player Frame module for portrait combat text and out-of-combat fade controls.
 - Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets.
 
 ## Installation
