@@ -55,7 +55,7 @@ Currently excluded workspace/private paths:
 - `.vscode/`
 - `dist/`
 - `tools/`
-- `working_docs/`
+- `internal_docs/`
 - `.gitignore`
 
 README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Sound Levels reference/log files under `modules/sound_levels/sounds/` are public-facing and included.

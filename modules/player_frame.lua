@@ -254,6 +254,13 @@ local function set_portrait_combat_text_hidden(disable)
     end
 end
 
+local function set_player_frame_setting(key, value)
+    local db = get_player_frame_db()
+    if not db then return end
+    db[key] = value
+    M.update_player_frame()
+end
+
 function M.update_player_frame()
     local db = get_player_frame_db()
     if not db then return end
@@ -264,18 +271,18 @@ end
 function M.on_reset_complete()
     if not Ls_Tweeks_DB then return end
     addon.apply_defaults(defaults, Ls_Tweeks_DB)
+    local db = get_player_frame_db()
+    if not db then return end
+
     M.update_player_frame()
     local cb = M.controls.hide_portrait_combat_text_checkbox
     if cb and cb.SetChecked then
-        local db = get_player_frame_db()
-        cb:SetChecked(db and db.hide_portrait_combat_text or false)
+        cb:SetChecked(db.hide_portrait_combat_text or false)
     end
     local fade_cb = M.controls.fade_out_of_combat_checkbox
     if fade_cb and fade_cb.SetChecked then
-        local db = get_player_frame_db()
-        fade_cb:SetChecked(db and db.fade_out_of_combat or false)
+        fade_cb:SetChecked(db.fade_out_of_combat or false)
     end
-    local db = get_player_frame_db()
     for _, def in ipairs(FADE_SLIDER_DEFS) do
         local slider = M.controls[def.control_key]
         if slider and slider.slider then
@@ -349,10 +356,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                     STRINGS.checkbox_label,
                     db and db.hide_portrait_combat_text,
                     function(is_checked)
-                        local current_db = get_player_frame_db()
-                        if not current_db then return end
-                        current_db.hide_portrait_combat_text = is_checked
-                        M.update_player_frame()
+                        set_player_frame_setting("hide_portrait_combat_text", is_checked)
                     end
                 )
                 M.controls.hide_portrait_combat_text_checkbox = cb
@@ -391,10 +395,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                     STRINGS.fade_checkbox_label,
                     db and db.fade_out_of_combat,
                     function(is_checked)
-                        local current_db = get_player_frame_db()
-                        if not current_db then return end
-                        current_db.fade_out_of_combat = is_checked
-                        M.update_player_frame()
+                        set_player_frame_setting("fade_out_of_combat", is_checked)
                     end
                 )
                 M.controls.fade_out_of_combat_checkbox = fade_cb

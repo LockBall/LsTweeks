@@ -44,7 +44,7 @@ $invariantForbiddenRoots = @(
     ".vscode",
     "dist",
     "tools",
-    "working_docs"
+    "internal_docs"
 )
 
 if (-not (Test-Path -LiteralPath $policyPath)) {

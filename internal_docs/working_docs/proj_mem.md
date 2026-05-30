@@ -6,8 +6,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Treat this file as the project source of truth before non-trivial edits.
 - Update it when architecture, defaults, APIs, or debugging lessons change.
 - Do not store secrets, personal data, machine-local scratch notes, or session logs.
-- Internal working docs live under `working_docs/`: `proj_mem.md`, `ToDo.md`, `ReviewNotes.md`, and `scratchpad.md`. Root markdown is public-facing release documentation.
-- Format ToDo plans in `working_docs/ToDo.md` with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
+- Internal docs live under `internal_docs/`. Active working docs live under `internal_docs/working_docs/`: `proj_mem.md`, `ToDo.md`, and `scratchpad.md`. Completed-feature notes live under `internal_docs/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
+- Format ToDo plans in `internal_docs/working_docs/ToDo.md` with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
 - After significant changes, provide a concise git commit message.
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 - Ketho review workflow: use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`), enable `wowAPI.luals.frameXML` when reviewing Blizzard FrameXML/CDM/widget usage, and treat LuaLS findings as manual review prompts. For shell checks, LuaLS can run `--check`, but it needs explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath` to avoid extension-folder write errors. Prefer confirming questionable APIs against Ketho annotations and Warcraft Wiki before changing functional code.
@@ -78,11 +78,15 @@ tools/
   package-policy.json    single source of truth for release zip include/exclude policy
   package_me.md          packaging instructions
   verify-package.ps1     verifies release zips against package-policy.json and TOC references
-working_docs/            internal docs excluded from release zips
-  proj_mem.md            project memory for coding agents
-  ToDo.md                active internal task list
-  ReviewNotes.md         reviewed manual findings and annotation gaps
-  scratchpad.md          local scratch notes
+internal_docs/           internal docs excluded from release zips
+  working_docs/          active development docs
+    proj_mem.md          project memory for coding agents
+    ToDo.md              active internal task list
+    scratchpad.md        local scratch notes
+  completed_features/    completed-feature notes reviewed on demand
+    aura_cancel.md       aura cancellation research, boundaries, and lessons learned
+    aura_tooltips.md     tooltip annotation gap review and test notes
+    sound_levels.md      slider template warning review and runtime notes
 dist/                    generated package output, ignored
 ```
 
@@ -134,6 +138,7 @@ Important `sound_levels` keys:
 
 ## Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
+- Completed Sound Levels investigation notes live in `internal_docs/completed_features/sound_levels.md`.
 - WoW does not expose true per-sound volume control or custom channels. This module uses preset replacement behavior: mute known original FileDataIDs with `MuteSoundFile` / `C_Sound.MuteSoundFile`, then optionally play addon-owned replacement files with `PlaySoundFile` / `C_Sound.PlaySoundFile`.
 - Replacement audio file sets are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`; targets reference them with `replacement_asset`. File-backed targets use `M.REPLACEMENT_FILE_MIN_LEVEL` through `M.REPLACEMENT_FILE_MAX_LEVEL`, currently 20 files where `_0.ogg` is loudest and `_19.ogg` is quietest. The UI presents this as `0-100%` in 5% steps; slider `0%` is off and replaces the old Off checkbox.
 - Original playback is controlled by `use_original` for targets with original FileDataIDs or a SoundKit fallback; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
@@ -153,6 +158,7 @@ Important `aura_frames` keys:
 
 ## Aura Frames Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
+- Completed Aura Frames feature notes live in `internal_docs/completed_features/`, including aura cancellation and tooltip annotation-gap reviews.
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - First-install visible frames are only `static`, `short`, `long`, `debuff`. CDM defaults keep `show_*`, `move_*`, and `test_aura_*` false.

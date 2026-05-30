@@ -3,4 +3,3 @@
 ### 1. Potential Future Features
 
 - [ ] a) Brief guided tour on first install with an option to manually initiate.
-- [ ] b) Portrait dim out of combat.

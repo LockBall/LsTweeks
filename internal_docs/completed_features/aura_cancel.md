@@ -1,4 +1,4 @@
-# Aura Cancel Interaction Notes
+# Aura Cancel Notes
 
 Date: 2026-05-26
 Scope decision: out-of-combat only, real cancelable player buffs only, selectable modifier key (CTRL/ALT/SHIFT), no in-combat support.
