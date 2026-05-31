@@ -1,7 +1,6 @@
 -- Player frame tweaks, currently focused on hiding Blizzard portrait combat text.
 -- Registers the "Player Frame" settings category and applies changes immediately.
 local addon_name, addon = ...
-
 addon.player_frame = addon.player_frame or {
     controls = {},
     frames = {}
@@ -13,7 +12,10 @@ local FADE_DEFAULTS = {
     fade_alpha = 0.5,
     fade_delay = 2.0,
     fade_length = 4.0,
+    health_visible_threshold = 75,
 }
+
+M.FADE_DEFAULTS = FADE_DEFAULTS
 
 local defaults = {
     player_frame = {
@@ -22,6 +24,7 @@ local defaults = {
         fade_alpha = FADE_DEFAULTS.fade_alpha,
         fade_delay = FADE_DEFAULTS.fade_delay,
         fade_length = FADE_DEFAULTS.fade_length,
+        health_visible_threshold = FADE_DEFAULTS.health_visible_threshold,
     },
 }
 
@@ -29,11 +32,8 @@ local UI_CONFIG = {
     checkbox_offset_x = 20,
     checkbox_offset_y = -20,
     row_gap_y = 18,
-    control_gap_x = 18,
-    control_offset_y = -6,
     slider_gap_x = 18,
     slider_offset_y = -8,
-    panel_width = 475,
 }
 
 local STRINGS = {
@@ -43,6 +43,7 @@ local STRINGS = {
     fade_slider_label = "Fade Alpha",
     fade_delay_slider_label = "Fade Delay",
     fade_length_slider_label = "Fade Length",
+    health_visible_slider_label = "Low Health %",
     combat_text_help =
         "Hides the default damage and healing numbers on the Player Frame 'portrait'."
         .. "\nTestable while fighting training dummies in rested areas.",
@@ -52,12 +53,7 @@ local STRINGS = {
 
 local hitIndicatorFrame = nil
 local hookApplied = false
-local playerFrameHookApplied = false
 local hidePortraitText = false
-local fadeDelayEndTime = 0
-local fadeDelayTimer = nil
-local fadeUpdateFrame = nil
-local fadeActive = false
 
 local FADE_SLIDER_DEFS = {
     {
@@ -86,6 +82,15 @@ local FADE_SLIDER_DEFS = {
         min = 0,
         max = 10,
         step = 0.25,
+    },
+    {
+        key = "health_visible_threshold",
+        control_key = "health_visible_threshold_slider",
+        name_suffix = "HealthVisibleThreshold",
+        label_key = "health_visible_slider_label",
+        min = 0,
+        max = 100,
+        step = 1,
     },
 }
 
@@ -119,126 +124,11 @@ local function setup_on_show_hook(frame)
     hookApplied = true
 end
 
-local function setup_player_frame_on_show_hook(frame)
-    if playerFrameHookApplied or not frame then return end
-
-    frame:HookScript("OnShow", function()
-        M.update_player_frame()
-    end)
-    playerFrameHookApplied = true
-end
-
-local function is_player_in_combat()
-    return (InCombatLockdown and InCombatLockdown())
-        or (UnitAffectingCombat and UnitAffectingCombat("player"))
-end
-
 local function get_clamped_fade_value(db, key, min_value, max_value)
     local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
     return math.max(min_value, math.min(max_value, value))
 end
 
-local function stop_fade_transition()
-    fadeDelayEndTime = 0
-    if fadeDelayTimer then
-        fadeDelayTimer:Cancel()
-        fadeDelayTimer = nil
-    end
-    fadeActive = false
-    if fadeUpdateFrame then
-        fadeUpdateFrame:SetScript("OnUpdate", nil)
-    end
-end
-
-local function get_fade_delay(db)
-    return get_clamped_fade_value(db, "fade_delay", 0, 5)
-end
-
-local function get_fade_length(db)
-    return get_clamped_fade_value(db, "fade_length", 0, 10)
-end
-
-local function get_fade_alpha(db)
-    return get_clamped_fade_value(db, "fade_alpha", 0.1, 1.0)
-end
-
-local function get_fade_update_frame()
-    if fadeUpdateFrame then return fadeUpdateFrame end
-    fadeUpdateFrame = CreateFrame("Frame")
-    return fadeUpdateFrame
-end
-
-local function begin_fade_delay(db)
-    stop_fade_transition()
-    if not (db and db.fade_out_of_combat) then return end
-
-    local delay = get_fade_delay(db)
-    if delay <= 0 then return end
-
-    fadeDelayEndTime = GetTime() + delay
-    if C_Timer and C_Timer.NewTimer then
-        fadeDelayTimer = C_Timer.NewTimer(delay, function()
-            fadeDelayTimer = nil
-            fadeDelayEndTime = 0
-            M.update_player_frame()
-        end)
-    end
-end
-
-local function apply_ooc_fade_alpha(db, animate)
-    local alpha = get_fade_alpha(db)
-    local length = get_fade_length(db)
-
-    if not animate or length <= 0 or PlayerFrame:GetAlpha() == alpha then
-        stop_fade_transition()
-        PlayerFrame:SetAlpha(alpha)
-        return
-    end
-
-    local current_alpha = PlayerFrame:GetAlpha()
-    local start_time = GetTime()
-    local update_frame = get_fade_update_frame()
-
-    fadeActive = true
-    update_frame:SetScript("OnUpdate", function(self)
-        if not fadeActive or not PlayerFrame then
-            self:SetScript("OnUpdate", nil)
-            return
-        end
-
-        if is_player_in_combat() then
-            stop_fade_transition()
-            PlayerFrame:SetAlpha(1)
-            return
-        end
-
-        local progress = math.min(1, (GetTime() - start_time) / length)
-        PlayerFrame:SetAlpha(current_alpha + ((alpha - current_alpha) * progress))
-        if progress >= 1 then
-            fadeActive = false
-            self:SetScript("OnUpdate", nil)
-            PlayerFrame:SetAlpha(alpha)
-        end
-    end)
-end
-
-local function apply_player_frame_fade(db)
-    if not PlayerFrame then return end
-
-    setup_player_frame_on_show_hook(PlayerFrame)
-    if is_player_in_combat() or not (db and db.fade_out_of_combat) then
-        stop_fade_transition()
-        PlayerFrame:SetAlpha(1)
-        return
-    end
-
-    if GetTime() < fadeDelayEndTime then
-        PlayerFrame:SetAlpha(1)
-        return
-    end
-
-    apply_ooc_fade_alpha(db, true)
-end
 
 local function set_portrait_combat_text_hidden(disable)
     local h = get_hit_indicator()
@@ -258,14 +148,40 @@ local function set_player_frame_setting(key, value)
     local db = get_player_frame_db()
     if not db then return end
     db[key] = value
+    if key == "health_visible_threshold" then
+        M.fade.on_threshold_changed()
+    end
     M.update_player_frame()
+end
+
+local function attach_help_tooltip(target, title, body)
+    if not target then return end
+
+    target:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if title and title ~= "" then
+            GameTooltip:SetText(title, 1, 0.82, 0)
+        else
+            GameTooltip:ClearLines()
+        end
+        GameTooltip:AddLine(body or "", 0.95, 0.95, 0.95, true)
+        GameTooltip:Show()
+    end)
+
+    target:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 end
 
 function M.update_player_frame()
     local db = get_player_frame_db()
     if not db then return end
     set_portrait_combat_text_hidden(db.hide_portrait_combat_text)
-    apply_player_frame_fade(db)
+    M.fade.apply(db)
+end
+
+function M.update_health_fade(force_visible_start)
+    M.fade.update_health(force_visible_start, get_player_frame_db())
 end
 
 function M.on_reset_complete()
@@ -296,6 +212,8 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
 loader:RegisterEvent("PLAYER_REGEN_DISABLED")
 loader:RegisterEvent("PLAYER_REGEN_ENABLED")
+loader:RegisterUnitEvent("UNIT_HEALTH", "player")
+loader:RegisterUnitEvent("UNIT_MAXHEALTH", "player")
 
 local function init_complete(self)
     self:UnregisterEvent("ADDON_LOADED")
@@ -312,7 +230,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         if addon.register_category then
             addon.register_category(STRINGS.category_name, function(parent)
                 local cfg = UI_CONFIG
-                local panel_style = addon.RIVETED_PANEL_STYLE
                 local db = get_player_frame_db()
                 local row1 = CreateFrame("Frame", nil, parent)
                 row1:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
@@ -321,37 +238,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local row2 = CreateFrame("Frame", nil, parent)
                 row2:SetSize(1, 1)
 
-                local panelWidth = cfg.panel_width
-                local panelMinHeight = panel_style.panel_min_height
-                local textPad = panel_style.padding
-
-                local combatNotePanel, combatNoteText = addon.CreateRivetedPanel(
-                    row1,
-                    panelWidth,
-                    panelMinHeight,
-                    row1,
-                    "TOPLEFT",
-                    0,
-                    0
-                )
-
-                if not combatNotePanel or not combatNoteText then return end
-                combatNotePanel:ClearAllPoints()
-                combatNotePanel:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
-
-                combatNoteText:ClearAllPoints()
-                combatNoteText:SetJustifyH("LEFT")
-                combatNoteText:SetJustifyV("TOP")
-                combatNoteText:SetWordWrap(true)
-                combatNoteText:SetText(STRINGS.combat_text_help)
-
-                combatNoteText:SetPoint("TOPLEFT", combatNotePanel, "TOPLEFT", textPad, -textPad)
-                combatNoteText:SetPoint("RIGHT", combatNotePanel, "RIGHT", -textPad, 0)
-
-                local combatTextHeight = combatNoteText:GetHeight()
-                combatNotePanel:SetHeight(math.max(panelMinHeight, combatTextHeight + (textPad * 2)))
-
-                local cb_container, cb = addon.CreateCheckbox(
+                local cb_container, cb, cb_label = addon.CreateCheckbox(
                     row1,
                     STRINGS.checkbox_label,
                     db and db.hide_portrait_combat_text,
@@ -360,37 +247,13 @@ loader:SetScript("OnEvent", function(self, event, name)
                     end
                 )
                 M.controls.hide_portrait_combat_text_checkbox = cb
-                cb_container:SetPoint("TOPLEFT", combatNotePanel, "TOPRIGHT", cfg.control_gap_x, cfg.control_offset_y)
+                cb_container:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
 
-                row2:SetPoint("TOPLEFT", combatNotePanel, "BOTTOMLEFT", 0, -cfg.row_gap_y)
+                attach_help_tooltip(cb_label, STRINGS.checkbox_label, STRINGS.combat_text_help)
 
-                local fadeNotePanel, fadeNoteText = addon.CreateRivetedPanel(
-                    row2,
-                    panelWidth,
-                    panelMinHeight,
-                    row2,
-                    "TOPLEFT",
-                    0,
-                    0
-                )
+                row2:SetPoint("TOPLEFT", cb_container, "BOTTOMLEFT", 0, -cfg.row_gap_y)
 
-                if not fadeNotePanel or not fadeNoteText then return end
-                fadeNotePanel:ClearAllPoints()
-                fadeNotePanel:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
-
-                fadeNoteText:ClearAllPoints()
-                fadeNoteText:SetJustifyH("LEFT")
-                fadeNoteText:SetJustifyV("TOP")
-                fadeNoteText:SetWordWrap(true)
-                fadeNoteText:SetText(STRINGS.fade_help)
-
-                fadeNoteText:SetPoint("TOPLEFT", fadeNotePanel, "TOPLEFT", textPad, -textPad)
-                fadeNoteText:SetPoint("RIGHT", fadeNotePanel, "RIGHT", -textPad, 0)
-
-                local fadeTextHeight = fadeNoteText:GetHeight()
-                fadeNotePanel:SetHeight(math.max(panelMinHeight, fadeTextHeight + (textPad * 2)))
-
-                local fade_container, fade_cb = addon.CreateCheckbox(
+                local fade_container, fade_cb, fade_label = addon.CreateCheckbox(
                     row2,
                     STRINGS.fade_checkbox_label,
                     db and db.fade_out_of_combat,
@@ -399,7 +262,9 @@ loader:SetScript("OnEvent", function(self, event, name)
                     end
                 )
                 M.controls.fade_out_of_combat_checkbox = fade_cb
-                fade_container:SetPoint("TOPLEFT", fadeNotePanel, "TOPRIGHT", cfg.control_gap_x, cfg.control_offset_y)
+                fade_container:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
+
+                attach_help_tooltip(fade_label, STRINGS.fade_checkbox_label, STRINGS.fade_help)
 
                 local previous_slider = nil
                 for index, def in ipairs(FADE_SLIDER_DEFS) do
@@ -418,7 +283,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                     M.controls[def.control_key] = slider
 
                     if index == 1 or not previous_slider then
-                        slider:SetPoint("TOPLEFT", fadeNotePanel, "BOTTOMLEFT", 0, cfg.slider_offset_y)
+                        slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
                     else
                         slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
                     end
@@ -430,10 +295,10 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.update_player_frame()
         init_complete(self)
     elseif event == "PLAYER_REGEN_DISABLED" then
-        stop_fade_transition()
-        M.update_player_frame()
+        M.fade.on_enter_combat(get_player_frame_db())
     elseif event == "PLAYER_REGEN_ENABLED" then
-        begin_fade_delay(get_player_frame_db())
-        M.update_player_frame()
+        M.fade.on_leave_combat(get_player_frame_db())
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+        M.fade.queue_health_update(get_player_frame_db)
     end
 end)
