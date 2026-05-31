@@ -44,6 +44,7 @@ local STRINGS = {
     fade_delay_slider_label = "Fade Delay",
     fade_length_slider_label = "Fade Length",
     health_visible_slider_label = "Low Health %",
+    health_probe_button_label = "Run Health Probe",
     combat_text_help =
         "Hides the default damage and healing numbers on the Player Frame 'portrait'."
         .. "\nTestable while fighting training dummies in rested areas.",
@@ -180,10 +181,6 @@ function M.update_player_frame()
     M.fade.apply(db)
 end
 
-function M.update_health_fade(force_visible_start)
-    M.fade.update_health(force_visible_start, get_player_frame_db())
-end
-
 function M.on_reset_complete()
     if not Ls_Tweeks_DB then return end
     addon.apply_defaults(defaults, Ls_Tweeks_DB)
@@ -238,6 +235,9 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local row2 = CreateFrame("Frame", nil, parent)
                 row2:SetSize(1, 1)
 
+                local row3 = CreateFrame("Frame", nil, parent)
+                row3:SetSize(1, 1)
+
                 local cb_container, cb, cb_label = addon.CreateCheckbox(
                     row1,
                     STRINGS.checkbox_label,
@@ -266,6 +266,7 @@ loader:SetScript("OnEvent", function(self, event, name)
 
                 attach_help_tooltip(fade_label, STRINGS.fade_checkbox_label, STRINGS.fade_help)
 
+                local first_slider = nil
                 local previous_slider = nil
                 for index, def in ipairs(FADE_SLIDER_DEFS) do
                     local slider = addon.CreateSliderWithBox(
@@ -284,18 +285,32 @@ loader:SetScript("OnEvent", function(self, event, name)
 
                     if index == 1 or not previous_slider then
                         slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
+                        first_slider = slider
                     else
                         slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
                     end
                     previous_slider = slider
                 end
+
+                row3:SetPoint("TOPLEFT", first_slider or fade_container, "BOTTOMLEFT", 0, -12)
+
+                local probe_button = CreateFrame("Button", nil, row3, "UIPanelButtonTemplate")
+                probe_button:SetSize(140, 24)
+                probe_button:SetText(STRINGS.health_probe_button_label)
+                probe_button:SetPoint("TOPLEFT", row3, "TOPLEFT", 0, 0)
+                probe_button:SetScript("OnClick", function()
+                    if M.health_probe and M.health_probe.run then
+                        M.health_probe.run(get_player_frame_db())
+                    end
+                end)
+                M.controls.health_probe_button = probe_button
             end)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         M.update_player_frame()
         init_complete(self)
     elseif event == "PLAYER_REGEN_DISABLED" then
-        M.fade.on_enter_combat(get_player_frame_db())
+        M.fade.on_enter_combat()
     elseif event == "PLAYER_REGEN_ENABLED" then
         M.fade.on_leave_combat(get_player_frame_db())
     elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then

@@ -52,9 +52,10 @@ functions/
   slider_with_box.lua   CreateSliderWithBox() with built-in tenth-sec debounce
 modules/
   about.lua
-  player_frame.lua       Player Frame settings, GUI, portrait combat text, event routing
   player_frame/
+    player_frame.lua     Player Frame settings, GUI, portrait combat text, event routing
     pf_fade.lua          Player Frame OOC fade runtime, health curve gate, fade timers
+    pf_health_probe.lua  Debug-only health API probe button implementation
   sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
   settings/             settings defaults + minimap/open-on-reload/interface alpha panel
   aura_frames/
@@ -127,7 +128,7 @@ Important `player_frame` keys:
 - `health_visible_threshold`: minimum health percentage required before OOC fade may start, default `75`.
 
 Player Frame runtime notes:
-- `modules/player_frame.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate.
+- `modules/player_frame/player_frame.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. `modules/player_frame/pf_health_probe.lua` owns the temporary/debug health API probe used to inspect Retail secret-value behavior.
 - OOC fade is delay plus fade length: combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`. Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` as a fallback; do not use `UnitAffectingCombat("player")` for this fade gate because it can remain sticky after regen and prevent post-combat refade. On `PLAYER_REGEN_ENABLED`, schedule the delay and set visible alpha, but do not immediately call the combat-gated full update while the delay is active; transient combat state can cancel the newly scheduled delay timer.
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
 - Retail 12.x health APIs can return Secret Values from tainted addon paths. Player Frame health fade is strictly OOC: combat cancels fade and sets plain alpha `1`. In-game testing showed direct `UnitHealthPercent()` predicates, hidden status-bar readers, and PlayerFrame healthbar reads all failed or stayed unavailable; the only working health gate is passing a `C_CurveUtil` step curve to `UnitHealthPercent("player", true, curve)` and sending the numeric result directly to `PlayerFrame:SetAlpha()`. Do not read/compare `PlayerFrame:GetAlpha()` for fade state; track the plain fade base alpha in module state. Health events should not stop an active fade. If health changes after the base fade has already reached the OOC target, one health event per combat/OOC cycle may force a fresh time-based fade from visible alpha; the one-shot flag must remain consumed until the next combat cycle or settings reset so later regen ticks cannot pulse the frame.
