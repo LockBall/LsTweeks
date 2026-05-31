@@ -230,7 +230,9 @@ function P.run(db)
     append_call_probe(lines, "C_Secrets.ShouldUnitHealthMaxBeSecret", function()
         return C_Secrets and C_Secrets.ShouldUnitHealthMaxBeSecret and C_Secrets.ShouldUnitHealthMaxBeSecret("player")
     end)
-    append_call_probe(lines, "HasSecretValues(PlayerFrame)", function() return HasSecretValues and HasSecretValues(PlayerFrame) end)
+    append_call_probe(lines, "PlayerFrame:HasSecretValues", function()
+        return PlayerFrame and PlayerFrame.HasSecretValues and PlayerFrame:HasSecretValues()
+    end)
 
     append_call_probe(lines, "UnitExists", function() return UnitExists("player") end)
     append_call_probe(lines, "UnitIsConnected", function() return UnitIsConnected("player") end)
@@ -240,16 +242,13 @@ function P.run(db)
     append_call_probe(lines, "UnitIsUnconscious", function() return UnitIsUnconscious and UnitIsUnconscious("player") end)
     append_call_probe(lines, "UnitIsFeignDeath", function() return UnitIsFeignDeath and UnitIsFeignDeath("player") end)
 
-    append_statusbar_probe(lines, "PlayerFrame.healthbar", PlayerFrame and PlayerFrame.healthbar)
-    append_statusbar_probe(lines, "PlayerFrame.HealthBar", PlayerFrame and PlayerFrame.HealthBar)
-    append_statusbar_probe(lines, "PFContentMain.HealthBar", PlayerFrame
+    local content_main = PlayerFrame
         and PlayerFrame.PlayerFrameContent
         and PlayerFrame.PlayerFrameContent.PlayerFrameContentMain
-        and PlayerFrame.PlayerFrameContent.PlayerFrameContentMain.HealthBar)
-    append_statusbar_probe(lines, "PFContentMain.HealthBarArea", PlayerFrame
-        and PlayerFrame.PlayerFrameContent
-        and PlayerFrame.PlayerFrameContent.PlayerFrameContentMain
-        and PlayerFrame.PlayerFrameContent.PlayerFrameContentMain.HealthBarArea)
+    append_statusbar_probe(lines, "PlayerFrame.healthbar", PlayerFrame and PlayerFrame["healthbar"])
+    append_statusbar_probe(lines, "PlayerFrame.HealthBar", PlayerFrame and PlayerFrame["HealthBar"])
+    append_statusbar_probe(lines, "PFContentMain.HealthBar", content_main and content_main["HealthBar"])
+    append_statusbar_probe(lines, "PFContentMain.HealthBarArea", content_main and content_main["HealthBarArea"])
     append_playerframe_statusbar_scan(lines)
     append_playerframe_health_name_scan(lines)
 

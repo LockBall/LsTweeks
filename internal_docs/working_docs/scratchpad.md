@@ -23,7 +23,7 @@ Date: 2026-05-31
 - Tainted addon code generally cannot compare or do arithmetic on secret values.
 - `Region:SetAlpha(alpha)` is documented as accepting secret arguments when tainted and adding the `Alpha` secret aspect.
 - `C_CurveUtil.CreateCurve()` and `UnitHealthPercent(unit, usePredicted, curve)` were tested as a possible modern path for mapping health percent to display alpha without addon Lua inspecting the value.
-- Current implementation direction: direct `UnitHealthPercent("player", true)`, hidden `StatusBar`, and default PlayerFrame healthbar read approaches failed in-game. The only working health gate so far is the curve path: pass a `C_CurveUtil` step curve to `UnitHealthPercent("player", true, curve)` and apply the result directly to `PlayerFrame:SetAlpha()`. Health events must not restart an active fade loop.
+- Current implementation direction: direct `UnitHealthPercent("player", true)`, hidden `StatusBar`, and default PlayerFrame healthbar read approaches failed in-game. The only working health gate so far is the curve path: pass a `C_CurveUtil` curve to `UnitHealthPercent("player", true, curve)` and apply the result directly to `PlayerFrame:SetAlpha()`. Current code uses an eased release curve so alpha stays `1` below the threshold and changes more gently above it, avoiding a hard snap when regen crosses the threshold. Health events must not restart an active fade loop.
 - Do not probe Blizzard health bar internals for the health gate.
 - Unknown health must keep `PlayerFrame` visible.
 - Since the user clarified this is OOC-only, avoid all in-combat health threshold checks and only evaluate/update health fade while not in combat.
