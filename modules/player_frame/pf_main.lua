@@ -13,6 +13,7 @@ local FADE_DEFAULTS = {
     fade_delay = 2.0,
     fade_length = 5.0,
     health_visible_threshold = 80,
+    health_release_speed = 50,
 }
 
 M.FADE_DEFAULTS = FADE_DEFAULTS
@@ -25,6 +26,7 @@ local defaults = {
         fade_delay = FADE_DEFAULTS.fade_delay,
         fade_length = FADE_DEFAULTS.fade_length,
         health_visible_threshold = FADE_DEFAULTS.health_visible_threshold,
+        health_release_speed = FADE_DEFAULTS.health_release_speed,
     },
 }
 
@@ -44,6 +46,7 @@ local STRINGS = {
     fade_delay_slider_label = "Fade Delay",
     fade_length_slider_label = "Fade Length",
     health_visible_slider_label = "Low Health %",
+    health_release_speed_slider_label = "Health Fade Speed",
     combat_text_help =
         "Hides the default damage and healing numbers on the Player Frame 'portrait'."
         .. "\nTestable while fighting training dummies in rested areas.",
@@ -57,6 +60,8 @@ local STRINGS = {
         "Time in seconds to fade out.",
     health_visible_help =
         "Player Frame fully visible if health is below this. 0 disables.",
+    health_release_speed_help =
+        "How quickly visibility drops above Low Health %.",
 }
 
 local hitIndicatorFrame = nil
@@ -103,6 +108,16 @@ local FADE_SLIDER_DEFS = {
         min = 0,
         max = 100,
         step = 1,
+    },
+    {
+        key = "health_release_speed",
+        control_key = "health_release_speed_slider",
+        name_suffix = "HealthReleaseSpeed",
+        label_key = "health_release_speed_slider_label",
+        help_key = "health_release_speed_help",
+        min = 0,
+        max = 100,
+        step = 5,
     },
 }
 

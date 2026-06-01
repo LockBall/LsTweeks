@@ -12,6 +12,12 @@ local math_max = math.max
 local ALPHA_EPSILON       = 0.001
 local HEALTH_UPDATE_DELAY = (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec) or 0.1
 local HEALTH_RELEASE_CAP  = 0.99
+local RELEASE_25_MIN      = 0.06
+local RELEASE_25_MAX      = 0.30
+local RELEASE_50_MIN      = 0.20
+local RELEASE_50_MAX      = 0.60
+local RELEASE_75_MIN      = 0.50
+local RELEASE_75_MAX      = 0.90
 
 local STATE_IDLE   = "idle"
 local STATE_COMBAT = "combat"
@@ -26,7 +32,6 @@ local fadeTicker        = nil
 local queuedHealthTimer = nil
 local queuedApply       = false
 local pfHookApplied     = false
-local healthRestartUsed = false
 local currentBaseAlpha  = 1
 ---@type LuaCurveObject?
 local healthCurve       = nil
@@ -45,6 +50,11 @@ local function get_fade_delay(db)  return get_clamped_db(db, "fade_delay",      
 local function get_fade_length(db) return get_clamped_db(db, "fade_length",             0, 10) end
 local function get_fade_alpha(db)  return get_clamped_db(db, "fade_alpha",            0.1, 1.0) end
 local function get_threshold(db)   return get_clamped_db(db, "health_visible_threshold", 0, 100) end
+local function get_release_speed(db) return get_clamped_db(db, "health_release_speed",   0, 100) / 100 end
+
+local function lerp(a, b, t)
+    return a + ((b - a) * t)
+end
 
 local function get_health_curve()
     if healthCurve then return healthCurve end
@@ -65,12 +75,16 @@ local function get_health_gated_alpha(db, base_alpha)
     local release_start = math_min(threshold / 100, HEALTH_RELEASE_CAP)
     local release_span  = 1 - release_start
     local alpha_span    = 1 - base_alpha
+    local release_speed = get_release_speed(db)
+    local release_25    = lerp(RELEASE_25_MIN, RELEASE_25_MAX, release_speed)
+    local release_50    = lerp(RELEASE_50_MIN, RELEASE_50_MAX, release_speed)
+    local release_75    = lerp(RELEASE_75_MIN, RELEASE_75_MAX, release_speed)
     curve:ClearPoints()
     curve:AddPoint(0, 1)
     curve:AddPoint(release_start, 1)
-    curve:AddPoint(release_start + (release_span * 0.25), 1 - (alpha_span * 0.08))
-    curve:AddPoint(release_start + (release_span * 0.50), 1 - (alpha_span * 0.25))
-    curve:AddPoint(release_start + (release_span * 0.75), 1 - (alpha_span * 0.55))
+    curve:AddPoint(release_start + (release_span * 0.25), 1 - (alpha_span * release_25))
+    curve:AddPoint(release_start + (release_span * 0.50), 1 - (alpha_span * release_50))
+    curve:AddPoint(release_start + (release_span * 0.75), 1 - (alpha_span * release_75))
     curve:AddPoint(1, base_alpha)
 
     local ok, alpha = pcall(UnitHealthPercent, "player", true, curve)
@@ -171,7 +185,6 @@ end
 
 function F.on_enter_combat()
     playerInCombat = true
-    healthRestartUsed = false
     cancel_delay()
     stop_animation()
     state = STATE_COMBAT
@@ -180,7 +193,6 @@ end
 
 function F.on_leave_combat(db)
     playerInCombat = false
-    healthRestartUsed = false
     cancel_delay()
     stop_animation()
     set_base_alpha(db, 1, false)
@@ -211,13 +223,7 @@ function F.on_health_update(db)
     if state == STATE_DELAY or state == STATE_FADING then return end
 
     if state == STATE_FADED then
-        if healthRestartUsed then
-            set_base_alpha(db, get_fade_alpha(db), true)
-            return
-        end
-
-        healthRestartUsed = true
-        begin_fade(db, true)
+        set_base_alpha(db, get_fade_alpha(db), true)
     end
 end
 
@@ -235,7 +241,6 @@ function F.apply(db)
         cancel_delay()
         stop_animation()
         state = STATE_IDLE
-        healthRestartUsed = false
         set_base_alpha(db, 1, false)
         return
     end
@@ -254,7 +259,6 @@ function F.apply(db)
 end
 
 function F.on_threshold_changed()
-    healthRestartUsed = false
     stop_animation()
     if state ~= STATE_DELAY then
         state = STATE_IDLE
