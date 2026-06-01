@@ -1,4 +1,5 @@
--- Player Frame health diagnostics. This is test-only output for evaluating Retail health APIs.
+-- Archived Player Frame health diagnostics.
+-- Not loaded by LsTweeks.toc; copy into the addon module list temporarily if this probe is needed again.
 local _, addon = ...
 addon.player_frame = addon.player_frame or { controls = {}, frames = {} }
 

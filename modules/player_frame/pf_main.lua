@@ -11,8 +11,8 @@ local M = addon.player_frame
 local FADE_DEFAULTS = {
     fade_alpha = 0.5,
     fade_delay = 2.0,
-    fade_length = 4.0,
-    health_visible_threshold = 75,
+    fade_length = 5.0,
+    health_visible_threshold = 80,
 }
 
 M.FADE_DEFAULTS = FADE_DEFAULTS
@@ -44,12 +44,19 @@ local STRINGS = {
     fade_delay_slider_label = "Fade Delay",
     fade_length_slider_label = "Fade Length",
     health_visible_slider_label = "Low Health %",
-    health_probe_button_label = "Run Health Probe",
     combat_text_help =
         "Hides the default damage and healing numbers on the Player Frame 'portrait'."
         .. "\nTestable while fighting training dummies in rested areas.",
     fade_help =
         "Fades out the Player Frame when Out Of Combat (OOC).",
+    fade_alpha_help =
+        "Visibility, 1 is max.",
+    fade_delay_help =
+        "Time in seconds before fade out begins.",
+    fade_length_help =
+        "Time in seconds to fade out.",
+    health_visible_help =
+        "Player Frame fully visible if health is below this. 0 disables.",
 }
 
 local hitIndicatorFrame = nil
@@ -62,6 +69,7 @@ local FADE_SLIDER_DEFS = {
         control_key = "fade_alpha_slider",
         name_suffix = "FadeAlpha",
         label_key = "fade_slider_label",
+        help_key = "fade_alpha_help",
         min = 0.1,
         max = 1.0,
         step = 0.05,
@@ -71,6 +79,7 @@ local FADE_SLIDER_DEFS = {
         control_key = "fade_delay_slider",
         name_suffix = "FadeDelay",
         label_key = "fade_delay_slider_label",
+        help_key = "fade_delay_help",
         min = 0,
         max = 5,
         step = 0.25,
@@ -80,6 +89,7 @@ local FADE_SLIDER_DEFS = {
         control_key = "fade_length_slider",
         name_suffix = "FadeLength",
         label_key = "fade_length_slider_label",
+        help_key = "fade_length_help",
         min = 0,
         max = 10,
         step = 0.25,
@@ -89,6 +99,7 @@ local FADE_SLIDER_DEFS = {
         control_key = "health_visible_threshold_slider",
         name_suffix = "HealthVisibleThreshold",
         label_key = "health_visible_slider_label",
+        help_key = "health_visible_help",
         min = 0,
         max = 100,
         step = 1,
@@ -235,9 +246,6 @@ loader:SetScript("OnEvent", function(self, event, name)
                 local row2 = CreateFrame("Frame", nil, parent)
                 row2:SetSize(1, 1)
 
-                local row3 = CreateFrame("Frame", nil, parent)
-                row3:SetSize(1, 1)
-
                 local cb_container, cb, cb_label = addon.CreateCheckbox(
                     row1,
                     STRINGS.checkbox_label,
@@ -249,7 +257,7 @@ loader:SetScript("OnEvent", function(self, event, name)
                 M.controls.hide_portrait_combat_text_checkbox = cb
                 cb_container:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
 
-                attach_help_tooltip(cb_label, STRINGS.checkbox_label, STRINGS.combat_text_help)
+                attach_help_tooltip(cb_label, nil, STRINGS.combat_text_help)
 
                 row2:SetPoint("TOPLEFT", cb_container, "BOTTOMLEFT", 0, -cfg.row_gap_y)
 
@@ -264,9 +272,8 @@ loader:SetScript("OnEvent", function(self, event, name)
                 M.controls.fade_out_of_combat_checkbox = fade_cb
                 fade_container:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
 
-                attach_help_tooltip(fade_label, STRINGS.fade_checkbox_label, STRINGS.fade_help)
+                attach_help_tooltip(fade_label, nil, STRINGS.fade_help)
 
-                local first_slider = nil
                 local previous_slider = nil
                 for index, def in ipairs(FADE_SLIDER_DEFS) do
                     local slider = addon.CreateSliderWithBox(
@@ -282,28 +289,17 @@ loader:SetScript("OnEvent", function(self, event, name)
                         M.update_player_frame
                     )
                     M.controls[def.control_key] = slider
+                    if def.help_key then
+                        attach_help_tooltip(slider, nil, STRINGS[def.help_key])
+                    end
 
                     if index == 1 or not previous_slider then
                         slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
-                        first_slider = slider
                     else
                         slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
                     end
                     previous_slider = slider
                 end
-
-                row3:SetPoint("TOPLEFT", first_slider or fade_container, "BOTTOMLEFT", 0, -12)
-
-                local probe_button = CreateFrame("Button", nil, row3, "UIPanelButtonTemplate")
-                probe_button:SetSize(140, 24)
-                probe_button:SetText(STRINGS.health_probe_button_label)
-                probe_button:SetPoint("TOPLEFT", row3, "TOPLEFT", 0, 0)
-                probe_button:SetScript("OnClick", function()
-                    if M.health_probe and M.health_probe.run then
-                        M.health_probe.run(get_player_frame_db())
-                    end
-                end)
-                M.controls.health_probe_button = probe_button
             end)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then

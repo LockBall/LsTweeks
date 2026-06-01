@@ -24,8 +24,10 @@ local playerInCombat    = (InCombatLockdown and InCombatLockdown()) or false
 local fadeDelayTimer    = nil
 local fadeTicker        = nil
 local queuedHealthTimer = nil
+local queuedApply       = false
 local pfHookApplied     = false
 local healthRestartUsed = false
+local currentBaseAlpha  = 1
 ---@type LuaCurveObject?
 local healthCurve       = nil
 
@@ -78,6 +80,7 @@ end
 
 local function set_base_alpha(db, base_alpha, use_health_gate)
     if not PlayerFrame then return end
+    currentBaseAlpha = base_alpha
     if use_health_gate then
         local ok = pcall(PlayerFrame.SetAlpha, PlayerFrame, get_health_gated_alpha(db, base_alpha))
         if not ok then
@@ -102,13 +105,14 @@ local function cancel_delay()
     end
 end
 
-local function begin_fade(db)
+local function begin_fade(db, force_visible_start)
     stop_animation()
     cancel_delay()
     state = STATE_FADING
 
     local target = get_fade_alpha(db)
     local length = get_fade_length(db)
+    local start_alpha = force_visible_start and 1 or currentBaseAlpha
 
     if length <= ALPHA_EPSILON then
         set_base_alpha(db, target, true)
@@ -116,7 +120,7 @@ local function begin_fade(db)
         return
     end
 
-    set_base_alpha(db, 1, false)
+    set_base_alpha(db, start_alpha, not force_visible_start)
 
     local elapsed = 0
     fadeTicker = C_Timer.NewTicker(HEALTH_UPDATE_DELAY, function()
@@ -129,7 +133,7 @@ local function begin_fade(db)
 
         elapsed = math_min(length, elapsed + HEALTH_UPDATE_DELAY)
         local progress = elapsed / length
-        local base_alpha = 1 + ((target - 1) * progress)
+        local base_alpha = start_alpha + ((target - start_alpha) * progress)
         set_base_alpha(db, base_alpha, true)
 
         if elapsed >= length then
@@ -140,14 +144,23 @@ local function begin_fade(db)
     end)
 end
 
-local function on_delay_expired(db)
+local function on_delay_expired(db, force_visible_start)
     if playerInCombat or not (db and db.fade_out_of_combat) then
-        state = STATE_IDLE
+        state = playerInCombat and STATE_COMBAT or STATE_IDLE
         set_base_alpha(db, 1, false)
         return
     end
 
-    begin_fade(db)
+    begin_fade(db, force_visible_start)
+end
+
+local function queue_apply(db)
+    if queuedApply then return end
+    queuedApply = true
+    C_Timer.After(0, function()
+        queuedApply = false
+        on_delay_expired(db, false)
+    end)
 end
 
 function F.stop_transition()
@@ -183,13 +196,13 @@ function F.on_leave_combat(db)
         if C_Timer and C_Timer.NewTimer then
             fadeDelayTimer = C_Timer.NewTimer(delay, function()
                 fadeDelayTimer = nil
-                on_delay_expired(db)
+                on_delay_expired(db, true)
             end)
         else
-            on_delay_expired(db)
+            on_delay_expired(db, true)
         end
     else
-        on_delay_expired(db)
+        on_delay_expired(db, true)
     end
 end
 
@@ -204,7 +217,7 @@ function F.on_health_update(db)
         end
 
         healthRestartUsed = true
-        begin_fade(db)
+        begin_fade(db, true)
     end
 end
 
@@ -237,9 +250,7 @@ function F.apply(db)
 
     if state == STATE_DELAY or state == STATE_FADING then return end
 
-    C_Timer.After(0, function()
-        on_delay_expired(db)
-    end)
+    queue_apply(db)
 end
 
 function F.on_threshold_changed()
@@ -263,8 +274,4 @@ function F.queue_health_update(get_db)
     else
         F.on_health_update(get_db and get_db())
     end
-end
-
-function F.get_debug_state()
-    return state, playerInCombat
 end

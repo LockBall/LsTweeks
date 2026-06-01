@@ -59,7 +59,6 @@ The `pip*.exe` launchers now embed the current `LsTweeks` path.
 Addon validation also passes:
 
 ```powershell
-luac -p modules/player_frame.lua
+luac -p modules/player_frame/pf_main.lua modules/player_frame/pf_fade.lua
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\package.ps1
 ```
-

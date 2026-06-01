@@ -26,7 +26,12 @@ local STRINGS = {
     title = "To begin, click a module button on the left.",
     version_label = "Version: ",
     description = "A modular collection of UI tweaks."
-    .. "\n\nBuff and DeBuff handling inspired by and based on Elkano's Buff Bars by Elkano.",
+    .. "\n\n• About: Version and module overview."
+    .. "\n\n• Settings: Addon window, minimap, reload, and reset options."
+    .. "\n\n• Player Frame: Portrait combat text and visibility controls."
+    .. "\n\n• Buffs & Debuffs: Aura Frames for custom buff, debuff, cooldown, and aura displays."
+    .. "\n\n• Sound Levels: Per-sound replacement and volume controls."
+    .. "\n\n\nBuff and DeBuff handling inspired by Elkano's Buff Bars.",
 }
 
 -- Build About page content
