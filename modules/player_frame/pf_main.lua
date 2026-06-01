@@ -13,7 +13,7 @@ local FADE_DEFAULTS = {
     fade_delay = 2.0,
     fade_length = 5.0,
     health_visible_threshold = 80,
-    health_release_speed = 50,
+    health_release_speed = 75,
 }
 
 M.FADE_DEFAULTS = FADE_DEFAULTS

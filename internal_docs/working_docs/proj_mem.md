@@ -125,7 +125,7 @@ Important `player_frame` keys:
 - `fade_delay`: seconds to stay fully visible after combat, default `2.0`.
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `5.0`.
 - `health_visible_threshold`: health curve release point for OOC fade, default `80`. Below this point the pass-through curve keeps PlayerFrame fully visible; above it the curve eases toward the normal time-fade alpha instead of snapping.
-- `health_release_speed`: 0-100 health curve tuning for how quickly visibility drops above `health_visible_threshold`, default `50`.
+- `health_release_speed`: 0-100 health curve tuning for how quickly visibility drops above `health_visible_threshold`, default `75`.
 
 Player Frame runtime notes:
 - `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `internal_docs/tests/player_frame_health_probe.lua` and is not loaded by the addon.
