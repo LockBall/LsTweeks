@@ -9,6 +9,9 @@ local STRINGS = {
     use_original_label = "Original",
     play_on_adjust_label = "Play on Adjust",
     status_waiting = "Waiting for Blizzard FileDataID and replacement sound files.",
+    fishing_help_text =
+        "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
+        .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
@@ -95,7 +98,18 @@ local function format_percent(option)
 end
 
 local function has_replacement_paths(target)
-    return target and target.replacement_paths and next(target.replacement_paths) ~= nil
+    if not target then return false end
+    if target.replacement_paths and next(target.replacement_paths) ~= nil then
+        return true
+    end
+    if target.replacement_path_sets then
+        for _, path_set in ipairs(target.replacement_path_sets) do
+            if path_set and next(path_set) ~= nil then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 local function has_original_playback(target)
@@ -293,6 +307,103 @@ local function build_general_tab(parent)
     reset:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -20)
 end
 
+local function build_fishing_tab(parent)
+    local focus_db = M.get_fishing_focus_db()
+    local focus_defaults = {}
+
+    local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
+    title:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
+    title:SetText("Fishing")
+
+    local help_panel, help_text = addon.CreateRivetedPanel(
+        parent,
+        UI.panel_width,
+        addon.RIVETED_PANEL_STYLE.panel_min_height,
+        title,
+        "TOPLEFT",
+        0,
+        -34
+    )
+    help_text:ClearAllPoints()
+    help_text:SetPoint("TOPLEFT", help_panel, "TOPLEFT", 22, -20)
+    help_text:SetPoint("RIGHT", help_panel, "RIGHT", -22, 0)
+    help_text:SetJustifyH("LEFT")
+    help_text:SetJustifyV("TOP")
+    help_text:SetWordWrap(true)
+    help_text:SetText(STRINGS.fishing_help_text)
+    help_panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, help_text:GetHeight() + 40))
+
+    local enable_row, enable_checkbox = addon.CreateCheckbox(
+        parent,
+        "Enable Fishing Focus",
+        focus_db.enabled == true,
+        function(is_checked)
+            focus_db.enabled = is_checked == true
+            M.sync_fishing_focus_events()
+        end
+    )
+    enable_row:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 6, -16)
+    M.controls.fishing_focus_enabled = enable_checkbox
+
+    local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    current_panel:SetSize(UI.panel_width, 42)
+    current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
+    apply_box_backdrop(current_panel)
+
+    local current_title = current_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    current_title:SetPoint("TOPLEFT", current_panel, "TOPLEFT", 14, -8)
+    current_title:SetText("Current normal channel volumes")
+
+    local current_values = current_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    current_values:SetPoint("TOPLEFT", current_title, "BOTTOMLEFT", 0, -5)
+    current_values:SetPoint("RIGHT", current_panel, "RIGHT", -14, 0)
+    current_values:SetJustifyH("LEFT")
+
+    local function refresh_current_values()
+        local parts = {}
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+            local current_percent = M.get_current_sound_channel_percent(channel)
+            focus_defaults[channel.key] = current_percent
+            parts[#parts + 1] = channel.label .. " " .. tostring(current_percent) .. "%"
+        end
+        current_values:SetText(table.concat(parts, "   "))
+    end
+    refresh_current_values()
+    M.controls.fishing_focus_refresh_current = refresh_current_values
+
+    local sliders_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    sliders_panel:SetSize(UI.panel_width, 230)
+    sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -14)
+    apply_box_backdrop(sliders_panel)
+
+    local sliders_title = sliders_panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    sliders_title:SetPoint("TOPLEFT", sliders_panel, "TOPLEFT", 14, -12)
+    sliders_title:SetText("Fishing channel profile")
+
+    local column_count = #(M.FISHING_FOCUS_CHANNELS or {})
+    local column_width = (UI.panel_width - 28) / math.max(column_count, 1)
+    for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        local slider = addon.CreateSliderWithBox(
+            addon_name .. "_FishingFocus_" .. channel.key,
+            sliders_panel,
+            channel.label,
+            0,
+            100,
+            1,
+            focus_db,
+            channel.key,
+            focus_defaults,
+            function()
+                M.resync_fishing_focus()
+            end
+        )
+        local column_center_x = 14 + ((i - 1) * column_width) + (column_width / 2)
+        slider:SetPoint("TOP", sliders_panel, "TOPLEFT", column_center_x, -44)
+        slider:SetScale(0.86)
+        M.controls["fishing_focus_" .. channel.key] = slider
+    end
+end
+
 local function build_sounds_tab(parent)
     local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
@@ -368,6 +479,7 @@ function M.BuildSettings(parent)
     local tab_defs = {
         { label = "General", builder = build_general_tab },
         { label = "Sounds", builder = build_sounds_tab },
+        { label = "Fishing", builder = build_fishing_tab },
     }
     local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 
@@ -381,6 +493,9 @@ function M.BuildSettings(parent)
             if i == selected_index then
                 PanelTemplates_SelectTab(button)
                 tab_panels[i]:Show()
+                if tab_defs[i] and tab_defs[i].label == "Fishing" and M.controls.fishing_focus_refresh_current then
+                    M.controls.fishing_focus_refresh_current()
+                end
             else
                 PanelTemplates_DeselectTab(button)
                 tab_panels[i]:Hide()

@@ -29,12 +29,23 @@ local function play_preview_soundkit(target)
 end
 
 local function play_original_file(target)
-    local file_id = target and target.original_file_ids and target.original_file_ids[1]
+    if target and target.preview_soundkit then
+        return play_preview_soundkit(target)
+    end
+
+    local original_file_ids = target and target.original_file_ids
+    local file_count = original_file_ids and #original_file_ids or 0
+    local file_id = file_count > 0 and original_file_ids[1]
     if not file_id then
         return play_preview_soundkit(target)
     end
 
-    for _, original_file_id in ipairs(target.original_file_ids or {}) do
+    if file_count > 1 then
+        target._original_cycle_index = ((target._original_cycle_index or 0) % file_count) + 1
+        file_id = original_file_ids[target._original_cycle_index]
+    end
+
+    for _, original_file_id in ipairs(original_file_ids or {}) do
         _UnmuteSoundFile(original_file_id)
     end
 
@@ -69,6 +80,9 @@ function M.apply_sound_levels()
     end
     M.rebuild_event_cache()
     M.sync_registered_events()
+    if M.sync_fishing_focus_events then
+        M.sync_fishing_focus_events()
+    end
 end
 
 function M.play_replacement(target_key)
@@ -86,7 +100,7 @@ function M.play_replacement(target_key)
     end
 
     local preset = target_db.preset
-    local path = target.replacement_paths and target.replacement_paths[preset]
+    local path = M.get_next_replacement_path(target, preset)
     if not path then return play_preview_soundkit(target) end
 
     M.stop_preview_sound()
@@ -121,8 +135,12 @@ local function handle_event(_, event)
     if not slots then return end
     for i = 1, #slots do
         local slot = slots[i]
-        if slot.path then
-            _PlaySoundFile(slot.path, slot.channel)
+        if slot.paths then
+            local count = #slot.paths
+            local index = slot.next_index or 1
+            local path = slot.paths[index]
+            slot.next_index = (index % count) + 1
+            _PlaySoundFile(path, slot.channel)
             return
         end
         if slot.use_soundkit and slot.soundkit_id then

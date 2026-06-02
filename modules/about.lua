@@ -32,6 +32,7 @@ local STRINGS = {
     .. "\n\n• Buffs & Debuffs: Aura Frames for custom buff, debuff, cooldown, and aura displays."
     .. "\n\n• Sound Levels: Per-sound replacement and volume controls."
     .. "\n\n\nBuff and DeBuff handling inspired by Elkano's Buff Bars.",
+    credits = "Additional inspiration: BetterCooldownManager, ArcUI, and Angleur.",
 }
 
 -- Build About page content
@@ -78,6 +79,13 @@ local function build_about_page(parent)
     -- Auto-size panel to fit content
     local textHeight = descText:GetHeight()
     descPanel:SetHeight(math.max(panel_style.panel_min_height, textHeight + (pad * 2)))
+
+    local credits = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    credits:SetPoint("TOPLEFT", descPanel, "BOTTOMLEFT", pad, -12)
+    credits:SetPoint("RIGHT", descPanel, "RIGHT", -pad, 0)
+    credits:SetJustifyH("LEFT")
+    credits:SetWordWrap(true)
+    credits:SetText(STRINGS.credits)
     
 end
 

@@ -29,11 +29,10 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - SoundKit Key: `UI_Alert_AchievementGained`
 - SoundKitID:   `12891`
 - File Path :   `/spells/achievmentsound1.ogg`
-- Source Audio: mono
-- Final Audio: declipped, stereo, 8 ms leading pad on right channel
+- Source Audio: `mono`
+- Final Audio: declipped, stereod, 8 ms leading pad on right channel
 - Link: https://www.wowhead.com/sound=12891/ui-alert-achievementgained
-
-- Note: serves as a demo sound to learn the interface and hear stereo difference
+- Note: serves as demo sound to learn interface and hear stereo effect
 
 
 ### Ready Check - levelup2
@@ -42,7 +41,7 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - SoundKit Key: `READY_CHECK`
 - SoundKitID:   `8960`
 - File Path:    `/interface/levelup2.ogg`
-- Source Audio: stereo
+- Source Audio: `stereo`
 - Final Audio: declipped, 8 ms leading pad on right channel
 - Link: https://www.wowhead.com/tbc/sound=8960/readycheck
 - Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
@@ -74,12 +73,16 @@ Related events that are not replacement triggers:
   https://www.wowhead.com/sound=195838/LevelUp
 - Note: these LevelUp name variants are aliases with no difference when they resolve to the same FileDataID.
 
-### Fishing Hooked
-- UI Label:   `Fishing Bobber`
-- FileDataID: 
-- Source Audio: 
-- Final Audio: 
+
+### Fishing Bobber
+- UI Label:     `Fishing Bobber`
+- FileDataID:   `569285`, `568970`, `569044`
+- SoundKit Key:
+- SoundKitID:   `3355`
+- File Path:    `/spells/fishingbobber_ver2_1, 2, 3 .ogg`
+- Source Audio: `mono`
+- Final Audio: mono, boosted()
 - Link: https://www.wowhead.com/sound=3355/fishing-hooked
-- File Path: /spells/fishingbobber_ver2_1, 2, 3 .ogg
-- consists of 3 different audio files so we need a method to play them cyclically
-- files are mono and exhibit no clipping so de-clipping unecessary
+- consists of 3 different audio files
+- files are mono with no clipping, although they can be too quiet to hear easily they also have some very high peaks that prevent a plain maximization from increasing the overall loudness of the audio. use GoldWave AutoGain to increase overall loudness
+- Runtime note: exact bite timing is not exposed to Lua by the tested sound, object, tooltip, channel, or gamepad hooks. Current addon support is Fishing Focus, a temporary channel-volume profile applied only during the Fishing channel.

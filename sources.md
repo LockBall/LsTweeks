@@ -18,6 +18,11 @@ Reference sources used for addon behavior, public release preparation, documenta
 - `GameTooltip:SetUnitAura`: https://warcraft.wiki.gg/wiki/API_GameTooltip_SetUnitAura
 - `PlaySound`: https://warcraft.wiki.gg/wiki/API_PlaySound
 
+## Addon References
+
+- Angleur: https://www.curseforge.com/wow/addons/angleur
+  - Referenced for Fishing Focus-style temporary audio profile behavior during fishing.
+
 ## Tools
 
 - CascView download page: https://www.zezula.net/en/casc/main.html

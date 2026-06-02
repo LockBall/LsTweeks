@@ -114,7 +114,8 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 ## Credits
 
 - LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge.
-- Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, and ArcUI.
+- Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, ArcUI, and Angleur.
+- Fishing Focus was informed by Angleur's Ultra Focus audio-profile approach.
 - Addon design and implementation by **LockBall**.
 - Special thanks to **DiscoMouse**.
 - Portions of this addon were developed with assistance from generative tools.

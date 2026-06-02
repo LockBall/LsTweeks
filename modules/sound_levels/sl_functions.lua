@@ -65,6 +65,37 @@ function M.should_mute_original(target_db)
     return not (target_db and target_db.use_original == true)
 end
 
+function M.get_replacement_paths_for_preset(target, preset)
+    if not target then return nil end
+    if target.replacement_path_sets then
+        local paths = {}
+        for _, path_set in ipairs(target.replacement_path_sets) do
+            local path = path_set and path_set[preset]
+            if path then
+                paths[#paths + 1] = path
+            end
+        end
+        if #paths > 0 then
+            return paths
+        end
+    end
+    local path = target.replacement_paths and target.replacement_paths[preset]
+    if path then
+        return { path }
+    end
+    return nil
+end
+
+function M.get_next_replacement_path(target, preset)
+    local paths = M.get_replacement_paths_for_preset(target, preset)
+    if not paths then return nil end
+    local count = #paths
+    if count == 1 then return paths[1] end
+
+    target._replacement_cycle_index = ((target._replacement_cycle_index or 0) % count) + 1
+    return paths[target._replacement_cycle_index]
+end
+
 function M.get_ordered_sound_targets()
     local targets = {}
     for target_key, target in pairs(M.SOUND_TARGETS or {}) do
@@ -86,7 +117,8 @@ end
 
 -- Builds a flat, pre-resolved cache of event → slot list used by handle_event.
 -- Called once after apply_sound_levels(); each slot contains only what the hot
--- path needs so the event handler touches no DB or defaults machinery at all.
+-- path needs, including one or more resolved paths, so the event handler
+-- touches no DB or defaults machinery at all.
 function M.rebuild_event_cache()
     local cache = {}
     for event_name, target_keys in pairs(M.SOUND_EVENT_TARGETS or {}) do
@@ -96,14 +128,14 @@ function M.rebuild_event_cache()
             if target then
                 local target_db = M.get_target_db(target_key)
                 local muted = M.should_mute_original(target_db)
-                local path = nil
+                local paths = nil
                 local use_soundkit = false
                 local soundkit_id = nil
 
                 if muted and target_db.sound_off ~= true then
                     local preset = target_db.preset
-                    path = target.replacement_paths and target.replacement_paths[preset]
-                    if not path then
+                    paths = M.get_replacement_paths_for_preset(target, preset)
+                    if not paths then
                         -- fall back to soundkit preview
                         local sk = target.preview_soundkit
                         if type(sk) == "number" then
@@ -116,12 +148,13 @@ function M.rebuild_event_cache()
                     end
                 end
 
-                if path or (use_soundkit and soundkit_id) then
+                if paths or (use_soundkit and soundkit_id) then
                     slots[#slots + 1] = {
-                        path         = path,
+                        paths        = paths,
                         use_soundkit = use_soundkit,
                         soundkit_id  = soundkit_id,
                         channel      = target.channel or "Master",
+                        next_index   = 1,
                     }
                 end
             end

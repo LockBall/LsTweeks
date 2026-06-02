@@ -18,6 +18,18 @@ M.SOUND_ASSETS = {
         folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2\\",
         filename = "levelup2",
     },
+    FishingBobber_ver2_1 = {
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\FishingBobber_ver2_1\\",
+        filename = "FishingBobber_ver2_1",
+    },
+    FishingBobber_ver2_2 = {
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\FishingBobber_ver2_2\\",
+        filename = "FishingBobber_ver2_2",
+    },
+    FishingBobber_ver2_3 = {
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\FishingBobber_ver2_3\\",
+        filename = "FishingBobber_ver2_3",
+    },
 }
 
 local function build_numbered_replacement_paths(asset_key, min_level, max_level)
@@ -39,6 +51,17 @@ local function apply_replacement_paths(targets)
                 M.REPLACEMENT_FILE_MIN_LEVEL,
                 M.REPLACEMENT_FILE_MAX_LEVEL
             )
+        end
+        if target.replacement_assets and not target.replacement_path_sets then
+            local path_sets = {}
+            for _, asset_key in ipairs(target.replacement_assets) do
+                path_sets[#path_sets + 1] = build_numbered_replacement_paths(
+                    asset_key,
+                    M.REPLACEMENT_FILE_MIN_LEVEL,
+                    M.REPLACEMENT_FILE_MAX_LEVEL
+                )
+            end
+            target.replacement_path_sets = path_sets
         end
     end
 end
@@ -90,6 +113,25 @@ M.SOUND_TARGETS = {
             "LFG_PROPOSAL_SHOW",
         },
     },
+    fishing_bobber = {
+        label = "Fishing Bobber",
+        order = 20,
+        description = "Runtime trigger pending; defaults to Original until the fishing bobber event is confirmed.",
+        default_preset = "0",
+        channel = "SFX",
+        preview_soundkit = 3355,
+        replacement_assets = {
+            "FishingBobber_ver2_1",
+            "FishingBobber_ver2_2",
+            "FishingBobber_ver2_3",
+        },
+        original_file_ids = {
+            569285,
+            568970,
+            569044,
+        },
+        events = {},
+    },
 }
 apply_replacement_paths(M.SOUND_TARGETS)
 
@@ -109,6 +151,9 @@ M.defaults = {
     sound_levels = {
         last_tab_index = 1,
         last_sound_key = "ready_check",
+        fishing_focus = {
+            enabled = false,
+        },
         targets = {
             achievement = {
                 preset = "0",
@@ -121,6 +166,12 @@ M.defaults = {
                 use_original = false,
                 sound_off = false,
                 play_on_adjust = false,
+            },
+            fishing_bobber = {
+                preset = "0",
+                use_original = true,
+                sound_off = false,
+                play_on_adjust = true,
             },
         },
     },
