@@ -17,7 +17,6 @@ function M.on_reset_complete()
         db.last_tab_index = M.defaults.sound_levels.last_tab_index
     end
     M.apply_sound_levels()
-    M.sync_registered_events()
 
     for target_key in pairs(M.SOUND_TARGETS or {}) do
         local target_db = M.get_target_db(target_key)
@@ -53,7 +52,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         M.get_db()
         M.apply_sound_levels()
-        M.sync_registered_events()
         if addon.register_category and M.BuildSettings then
             addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900 })
         end

@@ -116,14 +116,14 @@ function M.rebuild_event_cache()
                     end
                 end
 
-                slots[#slots + 1] = {
-                    muted        = muted,
-                    sound_off    = target_db.sound_off == true,
-                    path         = path,
-                    use_soundkit = use_soundkit,
-                    soundkit_id  = soundkit_id,
-                    channel      = target.channel or "Master",
-                }
+                if path or (use_soundkit and soundkit_id) then
+                    slots[#slots + 1] = {
+                        path         = path,
+                        use_soundkit = use_soundkit,
+                        soundkit_id  = soundkit_id,
+                        channel      = target.channel or "Master",
+                    }
+                end
             end
         end
         if #slots > 0 then

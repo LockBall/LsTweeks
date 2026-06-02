@@ -30,8 +30,9 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - SoundKitID:   `12891`
 - File Path :   `/spells/achievmentsound1.ogg`
 - Source Audio: mono
+- Final Audio: declipped, stereo, 8 ms leading pad on right channel
 - Link: https://www.wowhead.com/sound=12891/ui-alert-achievementgained
-- Changes: converted to stereo with 8 ms leading pad on the right channel
+
 - Note: serves as a demo sound to learn the interface and hear stereo difference
 
 
@@ -42,6 +43,7 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - SoundKitID:   `8960`
 - File Path:    `/interface/levelup2.ogg`
 - Source Audio: stereo
+- Final Audio: declipped, 8 ms leading pad on right channel
 - Link: https://www.wowhead.com/tbc/sound=8960/readycheck
 - Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
 - Trigger events:
@@ -64,7 +66,8 @@ Related events that are not replacement triggers:
 - SoundKit Key: `LEVELUPSOUND`, `LEVELUP`, `LevelUp`
 - SoundKitID:   `124`, `888`, `195838`, 
 - File Path:    `/spells/levelup.ogg`, `/interface/levelup.ogg`
-- Source Audio:        
+- Source Audio:
+- Final Audio:     
 - Link(s):
   https://www.wowhead.com/sound=124/LEVELUPSOUND
   https://www.wowhead.com/sound=888/LEVELUP
@@ -72,8 +75,10 @@ Related events that are not replacement triggers:
 - Note: these LevelUp name variants are aliases with no difference when they resolve to the same FileDataID.
 
 ### Fishing Hooked
-- UI Label:
-- FileDataID:
+- UI Label:   `Fishing Bobber`
+- FileDataID: 
+- Source Audio: 
+- Final Audio: 
 - Link: https://www.wowhead.com/sound=3355/fishing-hooked
 - File Path: /spells/fishingbobber_ver2_1, 2, 3 .ogg
 - consists of 3 different audio files so we need a method to play them cyclically

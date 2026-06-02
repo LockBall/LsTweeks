@@ -68,6 +68,7 @@ function M.apply_sound_levels()
         end
     end
     M.rebuild_event_cache()
+    M.sync_registered_events()
 end
 
 function M.play_replacement(target_key)
@@ -120,13 +121,6 @@ local function handle_event(_, event)
     if not slots then return end
     for i = 1, #slots do
         local slot = slots[i]
-        if not slot.muted then
-            -- original plays naturally; nothing to do
-            return
-        end
-        if slot.sound_off then
-            return
-        end
         if slot.path then
             _PlaySoundFile(slot.path, slot.channel)
             return
@@ -144,9 +138,21 @@ function M.sync_registered_events()
         M.event_frame:SetScript("OnEvent", handle_event)
     end
 
-    M.event_frame:UnregisterAllEvents()
+    local registered = M._registered_events or {}
+    M._registered_events = registered
+    local desired = M._event_cache or {}
 
-    for event_name in pairs(M.SOUND_EVENT_TARGETS or {}) do
-        M.event_frame:RegisterEvent(event_name)
+    for event_name in pairs(registered) do
+        if not desired[event_name] then
+            M.event_frame:UnregisterEvent(event_name)
+            registered[event_name] = nil
+        end
+    end
+
+    for event_name in pairs(desired) do
+        if not registered[event_name] then
+            M.event_frame:RegisterEvent(event_name)
+            registered[event_name] = true
+        end
     end
 end
