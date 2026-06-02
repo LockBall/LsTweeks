@@ -22,7 +22,8 @@ local function play_preview_soundkit(target)
     if not soundkit_id then return false end
 
     M.stop_preview_sound()
-    local will_play, sound_handle = _PlaySound(soundkit_id)
+    local channel = target.channel or "Master"
+    local will_play, sound_handle = _PlaySound(soundkit_id, channel)
     M._preview_sound_handle = sound_handle
     return will_play ~= false
 end
@@ -131,7 +132,7 @@ local function handle_event(_, event)
             return
         end
         if slot.use_soundkit and slot.soundkit_id then
-            _PlaySound(slot.soundkit_id)
+            _PlaySound(slot.soundkit_id, slot.channel)
             return
         end
     end

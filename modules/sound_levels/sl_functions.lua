@@ -44,7 +44,7 @@ end
 function M.get_preset_by_value(value)
     local option = M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value]
     if option then return option end
-    return M.PRESET_OPTIONS and M.PRESET_OPTIONS[1]
+    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE["0"]
 end
 
 function M.is_valid_preset_value(value)
@@ -52,10 +52,10 @@ function M.is_valid_preset_value(value)
 end
 
 function M.get_preset_by_slider_value(value)
-    local rounded = math.floor((tonumber(value) or 1) + 0.5)
+    local rounded = math.floor((tonumber(value) or 0) + 0.5)
     local option = M.PRESET_OPTIONS_BY_SLIDER_VALUE and M.PRESET_OPTIONS_BY_SLIDER_VALUE[rounded]
     if option then return option end
-    return M.PRESET_OPTIONS and M.PRESET_OPTIONS[1]
+    return M.PRESET_OPTIONS_BY_SLIDER_VALUE and M.PRESET_OPTIONS_BY_SLIDER_VALUE[0]
 end
 
 function M.should_mute_original(target_db)

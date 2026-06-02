@@ -122,13 +122,15 @@ local function build_slider_panel(parent, target_key, target)
 
     local current_preset = M.get_preset_by_value(target_db.preset)
     local preset_options = M.PRESET_OPTIONS or {}
-    local preset_count = math.max(#preset_options, 1)
-    local initial_slider_value = target_db.sound_off == true and 1 or (current_preset and current_preset.slider_value or preset_count)
+    local slider_min = 0
+    local slider_max = math.max(#preset_options - 1, 0)
+    local slider_steps = slider_max - slider_min
+    local initial_slider_value = target_db.sound_off == true and slider_min or (current_preset and current_preset.slider_value or slider_max)
 
     local slider_widget = CreateFrame("Frame", nil, slider_panel, "MinimalSliderWithSteppersTemplate")
     slider_widget:SetSize(UI.slider_width, UI.slider_height)
     slider_widget:SetPoint("CENTER", slider_container, "CENTER", 0, 0)
-    slider_widget:Init(initial_slider_value, 1, preset_count, preset_count - 1, {
+    slider_widget:Init(initial_slider_value, slider_min, slider_max, slider_steps, {
         [MinimalSliderWithSteppersMixin.Label.Right] = CreateMinimalSliderFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
             return format_percent(M.get_preset_by_slider_value(value))
         end),
@@ -164,7 +166,7 @@ local function build_slider_panel(parent, target_key, target)
 
     slider_widget:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, value)
         local option = M.get_preset_by_slider_value(value)
-        local slider_value = option and option.slider_value or preset_count
+        local slider_value = option and option.slider_value or slider_min
         if slider_widget.Slider:GetValue() ~= slider_value then
             slider_widget:SetValue(slider_value)
             return
@@ -178,13 +180,21 @@ local function build_slider_panel(parent, target_key, target)
             M.queue_adjust_preview(target_key)
         end
 
-        local new_preset = (option and option.value) or target.default_preset or "0"
-        local is_off = slider_value == 1
-        local changed = target_db.preset ~= new_preset or target_db.sound_off ~= is_off
+        local is_off = slider_value == slider_min
+        local new_preset = option and option.value
+        local changed = target_db.sound_off ~= is_off or ((not is_off) and target_db.preset ~= new_preset)
         target_db.sound_off = is_off
-        if target_db.preset == new_preset then
+        if is_off then
             if changed then
                 M.stop_preview_sound()
+                M.apply_sound_levels()
+            end
+            return
+        end
+
+        new_preset = new_preset or target.default_preset or "0"
+        if target_db.preset == new_preset then
+            if changed then
                 M.apply_sound_levels()
             end
             return
@@ -216,7 +226,7 @@ local function build_slider_panel(parent, target_key, target)
             if is_checked == true then
                 target_db.sound_off = false
             else
-                target_db.sound_off = slider_widget.Slider:GetValue() == 1
+                target_db.sound_off = slider_widget.Slider:GetValue() == slider_min
             end
             sync_original_inactive_state()
             M.stop_preview_sound()

@@ -49,12 +49,15 @@ M.PRESET_OPTIONS_BY_SLIDER_VALUE = {}
 for position = 0, 20 do
     local file_level = 20 - position
     local option = {
-        value = tostring(file_level),
+        value = position == 0 and nil or tostring(file_level),
         percent = position * 5,
-        slider_value = position + 1,
+        slider_value = position,
+        sound_off = position == 0,
     }
     M.PRESET_OPTIONS[#M.PRESET_OPTIONS + 1] = option
-    M.PRESET_OPTIONS_BY_VALUE[option.value] = option
+    if option.value then
+        M.PRESET_OPTIONS_BY_VALUE[option.value] = option
+    end
     M.PRESET_OPTIONS_BY_SLIDER_VALUE[option.slider_value] = option
 end
 

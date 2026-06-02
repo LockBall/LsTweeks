@@ -9,7 +9,6 @@ local CATEGORY_NAME = "Sound Levels"
 
 function M.on_reset_complete()
     M._defaults_applied = nil
-    addon.apply_defaults(M.defaults.sound_levels, Ls_Tweeks_DB)
     local db = M.get_db()
     if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
         db.last_sound_key = M.defaults.sound_levels.last_sound_key
@@ -25,7 +24,7 @@ function M.on_reset_complete()
         local preset = M.controls[target_key .. "_preset"]
         if preset and preset.SetValue then
             local option = M.get_preset_by_value(target_db.preset)
-            local slider_value = target_db.sound_off == true and 1 or (option and option.slider_value or 1)
+            local slider_value = target_db.sound_off == true and 0 or (option and option.slider_value or 0)
             if preset._lstweeks_set_sound_level_value then
                 preset:_lstweeks_set_sound_level_value(slider_value)
             else
