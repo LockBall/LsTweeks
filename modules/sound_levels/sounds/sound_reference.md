@@ -76,3 +76,5 @@ Related events that are not replacement triggers:
 - FileDataID:
 - Link: https://www.wowhead.com/sound=3355/fishing-hooked
 - File Path: /spells/fishingbobber_ver2_1, 2, 3 .ogg
+- consists of 3 different audio files so we need a method to play them cyclically
+- files are mono and exhibit no clipping so de-clipping unecessary
