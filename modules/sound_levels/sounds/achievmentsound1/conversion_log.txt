@@ -1,0 +1,40 @@
+AudioFix conversion log
+Status: success
+Generated: 2026-06-01T21:35:12
+
+Settings:
+Source: F:\from_git\AudioFix\media\achievmentsound1\achievmentsound1_declip_high_-2_2ch_8msR.wav
+Source channels: stereo
+Output folder: F:\from_git\AudioFix\media\achievmentsound1\achievmentsound1_out
+Minimum dB: -28.000
+Interval dB: 1.474
+Peak/headroom gain: disabled
+Raw peak dB: -0.349
+Headroom dB: unknown
+Raw + Head gain dB: unknown
+Encoder mode: Vorbis Quality
+Vorbis quality: 8
+Overwrite: True
+
+Files:
+index	output_file	gain_db	status	message
+0	achievmentsound1_0.ogg	0.000	success	validated
+1	achievmentsound1_1.ogg	-1.474	success	validated
+2	achievmentsound1_2.ogg	-2.947	success	validated
+3	achievmentsound1_3.ogg	-4.421	success	validated
+4	achievmentsound1_4.ogg	-5.895	success	validated
+5	achievmentsound1_5.ogg	-7.368	success	validated
+6	achievmentsound1_6.ogg	-8.842	success	validated
+7	achievmentsound1_7.ogg	-10.316	success	validated
+8	achievmentsound1_8.ogg	-11.789	success	validated
+9	achievmentsound1_9.ogg	-13.263	success	validated
+10	achievmentsound1_10.ogg	-14.737	success	validated
+11	achievmentsound1_11.ogg	-16.211	success	validated
+12	achievmentsound1_12.ogg	-17.684	success	validated
+13	achievmentsound1_13.ogg	-19.158	success	validated
+14	achievmentsound1_14.ogg	-20.632	success	validated
+15	achievmentsound1_15.ogg	-22.105	success	validated
+16	achievmentsound1_16.ogg	-23.579	success	validated
+17	achievmentsound1_17.ogg	-25.053	success	validated
+18	achievmentsound1_18.ogg	-26.526	success	validated
+19	achievmentsound1_19.ogg	-28.000	success	validated

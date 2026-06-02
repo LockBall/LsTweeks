@@ -2,47 +2,6 @@
 
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
-Replacement file sets:
-- Achievement test: `achievmentsound1_0.ogg` through `achievmentsound1_19.ogg`
-- Ready Check: `levelup2_0.ogg` through `levelup2_19.ogg`
-- `Original` is a separate checkbox and uses the unmodified WoW sound.
-- The UI shows replacement volume as `0-100%`.
-- `0%` is off and plays no replacement.
-- Nonzero replacement levels map in 5% steps from `_19.ogg` through `_0.ogg`.
-- `100%` maps to `_0.ogg`, the loudest replacement.
-
-Original uses the unmodified WoW sound instead of a replacement file. Selecting Original leaves the replacement slider at its current position but dims it until the slider is moved.
-
-## Achievement Test Sound
-
-- Module name: `test_sound`
-- UI label: `Achievement`
-- Replacement folder: `modules/sound_levels/sounds/achievmentsound1`
-- FileDataID: `569143`
-- Purpose: quick local test entry for slider and preview behavior
-- Note: the folder and filename prefix intentionally use the shipped `achievmentsound1` spelling.
-
-## Ready Check
-
-- UI label: `Ready Check`
-- Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
-- SoundKit key: `READY_CHECK`
-- File path/name: `sound/interface/levelup2.ogg`
-- FileDataID: `567478`
-- SoundKitID: `8960`
-- Trigger events:
-  - `READY_CHECK` - party/raid ready check started by a party or raid leader.
-  - `LFG_PROPOSAL_SHOW` - dungeon/LFG proposal popup appears.
-- Link: https://www.wowhead.com/tbc/sound=8960/readycheck
-
-Related events that are not replacement triggers:
-- `READY_CHECK_CONFIRM` - a player confirms ready or not ready.
-- `READY_CHECK_FINISHED` - the ready check completes.
-- `LFG_READY_CHECK_PLAYER_IS_READY` - an LFG ready-check player is ready.
-
-- Warcraft Wiki PlaySound reference: https://warcraft.wiki.gg/wiki/API_PlaySound
-
-
 ## Replacement Path
 
 Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`.
@@ -50,3 +9,70 @@ Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` u
 Each sound target references a file set with `replacement_asset`. To add another file-backed sound, add the folder and filename prefix to `M.SOUND_ASSETS`, then add a target in `M.SOUND_TARGETS` that points at that asset key.
 
 The addon mutes known original Blizzard FileDataIDs when present, then plays the selected replacement file from the configured target folder.
+
+
+- The `Original` setting is a separate checkbox and uses the unmodified WoW sound.
+- The UI shows replacement volume as `0-100%`.
+- `0%` is off and plays no replacement.
+- Nonzero replacement levels map in 5% steps from `_19.ogg` through `_0.ogg`. 
+- filenames are `file_name_0.ogg` through `file_name_19.ogg` Where 0 is the 0 dB, loudest file.
+- `100%` maps to `_0.ogg`, the loudest replacement.
+
+Original uses the unmodified WoW sound instead of a replacement file. Selecting Original leaves the replacement slider at its current position but dims it until the slider is moved.
+
+## Sounds, Available
+- the file path / name is where, in the extracted from CASC *sound* folder, the file is located'
+
+### Achievement - achievmentsound1
+- UI label:     `Achievement`
+- FileDataID:   `569143`
+- SoundKit Key: `UI_Alert_AchievementGained`
+- SoundKitID:   `12891`
+- File Path :   `/spells/achievmentsound1.ogg`
+- Source Audio: mono
+- Link: https://www.wowhead.com/sound=12891/ui-alert-achievementgained
+- Changes: converted to stereo with 8 ms leading pad on the right channel
+- Note: serves as a demo sound to learn the interface and hear stereo difference
+
+
+### Ready Check - levelup2
+- UI Label:     `Ready Check`
+- FileDataID:   `567478`
+- SoundKit Key: `READY_CHECK`
+- SoundKitID:   `8960`
+- File Path:    `/interface/levelup2.ogg`
+- Source Audio: stereo
+- Link: https://www.wowhead.com/tbc/sound=8960/readycheck
+- Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
+- Trigger events:
+  - `READY_CHECK` - party/raid ready check started by a party or raid leader.
+  - `LFG_PROPOSAL_SHOW` - dungeon/LFG proposal popup appears.
+Related events that are not replacement triggers:
+- `READY_CHECK_CONFIRM` - a player confirms ready or not ready.
+- `READY_CHECK_FINISHED` - the ready check completes.
+- `LFG_READY_CHECK_PLAYER_IS_READY` - an LFG ready-check player is ready.
+
+- Warcraft Wiki PlaySound reference: https://warcraft.wiki.gg/wiki/API_PlaySound
+
+---
+
+## Sounds , Future
+
+### LevelUp
+- UI Label:     `Level Up`
+- FileDataID:   `569593`
+- SoundKit Key: `LEVELUPSOUND`, `LEVELUP`, `LevelUp`
+- SoundKitID:   `124`, `888`, `195838`, 
+- File Path:    `/spells/levelup.ogg`, `/interface/levelup.ogg`
+- Source Audio:        
+- Link(s):
+  https://www.wowhead.com/sound=124/LEVELUPSOUND
+  https://www.wowhead.com/sound=888/LEVELUP
+  https://www.wowhead.com/sound=195838/LevelUp
+- Note: these LevelUp name variants are aliases with no difference when they resolve to the same FileDataID.
+
+### Fishing Hooked
+- UI Label:
+- FileDataID:
+- Link: https://www.wowhead.com/sound=3355/fishing-hooked
+- File Path: /spells/fishingbobber_ver2_1, 2, 3 .ogg
