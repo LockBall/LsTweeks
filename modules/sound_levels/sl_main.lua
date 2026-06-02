@@ -5,14 +5,12 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-M.controls = M.controls or {}
-M.frames = M.frames or {}
-
 local CATEGORY_NAME = "Sound Levels"
 
 function M.on_reset_complete()
+    M._defaults_applied = nil
+    addon.apply_defaults(M.defaults.sound_levels, Ls_Tweeks_DB)
     local db = M.get_db()
-    addon.apply_defaults(M.defaults.sound_levels, db)
     if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
         db.last_sound_key = M.defaults.sound_levels.last_sound_key
     end
@@ -62,8 +60,6 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then
-        if M.unmute_all_sound_files then
-            M.unmute_all_sound_files()
-        end
+        M.unmute_all_sound_files()
     end
 end)

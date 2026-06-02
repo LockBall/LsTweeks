@@ -5,21 +5,11 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-local function mute_file(file_id)
-    if C_Sound and C_Sound.MuteSoundFile then
-        C_Sound.MuteSoundFile(file_id)
-    elseif MuteSoundFile then
-        MuteSoundFile(file_id)
-    end
-end
-
-local function unmute_file(file_id)
-    if C_Sound and C_Sound.UnmuteSoundFile then
-        C_Sound.UnmuteSoundFile(file_id)
-    elseif UnmuteSoundFile then
-        UnmuteSoundFile(file_id)
-    end
-end
+local _PlaySoundFile   = (C_Sound and C_Sound.PlaySoundFile)   or PlaySoundFile
+local _PlaySound       = (C_Sound and C_Sound.PlaySound)       or PlaySound
+local _StopSound       = (C_Sound and C_Sound.StopSound)       or StopSound
+local _MuteSoundFile   = (C_Sound and C_Sound.MuteSoundFile)   or MuteSoundFile
+local _UnmuteSoundFile = (C_Sound and C_Sound.UnmuteSoundFile) or UnmuteSoundFile
 
 local function play_preview_soundkit(target)
     local soundkit_key = target and target.preview_soundkit
@@ -32,12 +22,7 @@ local function play_preview_soundkit(target)
     if not soundkit_id then return false end
 
     M.stop_preview_sound()
-    local will_play, sound_handle
-    if C_Sound and C_Sound.PlaySound then
-        will_play, sound_handle = C_Sound.PlaySound(soundkit_id)
-    elseif PlaySound then
-        will_play, sound_handle = PlaySound(soundkit_id)
-    end
+    local will_play, sound_handle = _PlaySound(soundkit_id)
     M._preview_sound_handle = sound_handle
     return will_play ~= false
 end
@@ -49,16 +34,12 @@ local function play_original_file(target)
     end
 
     for _, original_file_id in ipairs(target.original_file_ids or {}) do
-        unmute_file(original_file_id)
+        _UnmuteSoundFile(original_file_id)
     end
 
     M.stop_preview_sound()
-    local did_play, sound_handle
-    if C_Sound and C_Sound.PlaySoundFile then
-        did_play, sound_handle = C_Sound.PlaySoundFile(file_id, "Master")
-    elseif PlaySoundFile then
-        did_play, sound_handle = PlaySoundFile(file_id, "Master")
-    end
+    local channel = target.channel or "Master"
+    local did_play, sound_handle = _PlaySoundFile(file_id, channel)
     M._preview_sound_handle = sound_handle
     if did_play == false then return play_preview_soundkit(target) end
     return true
@@ -67,7 +48,7 @@ end
 function M.unmute_all_sound_files()
     for _, target in pairs(M.SOUND_TARGETS or {}) do
         for _, file_id in ipairs(target.original_file_ids or {}) do
-            unmute_file(file_id)
+            _UnmuteSoundFile(file_id)
         end
     end
 end
@@ -79,17 +60,16 @@ function M.apply_sound_levels()
         local mute = M.should_mute_original(target_db)
         for _, file_id in ipairs(target.original_file_ids or {}) do
             if mute then
-                mute_file(file_id)
+                _MuteSoundFile(file_id)
             else
-                unmute_file(file_id)
+                _UnmuteSoundFile(file_id)
             end
         end
     end
+    M.rebuild_event_cache()
 end
 
 function M.play_replacement(target_key)
-    M.get_db()
-
     local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
     if not target then return false end
 
@@ -103,41 +83,23 @@ function M.play_replacement(target_key)
         return play_original_file(target)
     end
 
-    if not M.should_play_replacement(target_db) then return false end
-
     local preset = target_db.preset
     local path = target.replacement_paths and target.replacement_paths[preset]
     if not path then return play_preview_soundkit(target) end
 
     M.stop_preview_sound()
-    local did_play, sound_handle
-    if C_Sound and C_Sound.PlaySoundFile then
-        did_play, sound_handle = C_Sound.PlaySoundFile(path, "Master")
-    elseif PlaySoundFile then
-        did_play, sound_handle = PlaySoundFile(path, "Master")
-    end
+    local channel = target.channel or "Master"
+    local did_play, sound_handle = _PlaySoundFile(path, channel)
     M._preview_sound_handle = sound_handle
     if did_play == false then return play_preview_soundkit(target) end
     return true
-end
-
-function M.play_event_replacement(target_key)
-    local target_db = M.get_target_db(target_key)
-    if not M.should_mute_original(target_db) then
-        return false
-    end
-    return M.play_replacement(target_key)
 end
 
 function M.stop_preview_sound()
     local handle = M._preview_sound_handle
     M._preview_sound_handle = nil
     if not handle then return end
-    if C_Sound and C_Sound.StopSound then
-        C_Sound.StopSound(handle)
-    elseif StopSound then
-        StopSound(handle)
-    end
+    _StopSound(handle)
 end
 
 function M.queue_adjust_preview(target_key)
@@ -153,10 +115,23 @@ function M.queue_adjust_preview(target_key)
 end
 
 local function handle_event(_, event)
-    local event_targets = M.SOUND_EVENT_TARGETS and M.SOUND_EVENT_TARGETS[event]
-    if not event_targets then return end
-    for _, target_key in ipairs(event_targets) do
-        if M.play_event_replacement(target_key) then
+    local slots = M._event_cache and M._event_cache[event]
+    if not slots then return end
+    for i = 1, #slots do
+        local slot = slots[i]
+        if not slot.muted then
+            -- original plays naturally; nothing to do
+            return
+        end
+        if slot.sound_off then
+            return
+        end
+        if slot.path then
+            _PlaySoundFile(slot.path, slot.channel)
+            return
+        end
+        if slot.use_soundkit and slot.soundkit_id then
+            _PlaySound(slot.soundkit_id)
             return
         end
     end
@@ -169,7 +144,6 @@ function M.sync_registered_events()
     end
 
     M.event_frame:UnregisterAllEvents()
-    M.get_db()
 
     for event_name in pairs(M.SOUND_EVENT_TARGETS or {}) do
         M.event_frame:RegisterEvent(event_name)

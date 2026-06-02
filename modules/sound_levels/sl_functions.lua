@@ -6,13 +6,15 @@ addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
 M.controls = M.controls or {}
-M.frames = M.frames or {}
 
 function M.get_db()
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-    local defaults = addon.module_defaults and addon.module_defaults.sound_levels
-    if defaults then
-        addon.apply_defaults(defaults, Ls_Tweeks_DB)
+    if not M._defaults_applied then
+        local defaults = addon.module_defaults and addon.module_defaults.sound_levels
+        if defaults then
+            addon.apply_defaults(defaults, Ls_Tweeks_DB)
+        end
+        M._defaults_applied = true
     end
     Ls_Tweeks_DB.sound_levels = Ls_Tweeks_DB.sound_levels or {}
     Ls_Tweeks_DB.sound_levels.targets = Ls_Tweeks_DB.sound_levels.targets or {}
@@ -46,7 +48,7 @@ function M.get_preset_by_value(value)
 end
 
 function M.is_valid_preset_value(value)
-    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value] ~= nil or false
+    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value] ~= nil
 end
 
 function M.get_preset_by_slider_value(value)
@@ -59,13 +61,6 @@ end
 function M.should_mute_original(target_db)
     if target_db and target_db.sound_off == true then
         return true
-    end
-    return not (target_db and target_db.use_original == true)
-end
-
-function M.should_play_replacement(target_db)
-    if target_db and target_db.sound_off == true then
-        return false
     end
     return not (target_db and target_db.use_original == true)
 end
@@ -87,4 +82,53 @@ function M.get_ordered_sound_targets()
         return a.order < b.order
     end)
     return targets
+end
+
+-- Builds a flat, pre-resolved cache of event → slot list used by handle_event.
+-- Called once after apply_sound_levels(); each slot contains only what the hot
+-- path needs so the event handler touches no DB or defaults machinery at all.
+function M.rebuild_event_cache()
+    local cache = {}
+    for event_name, target_keys in pairs(M.SOUND_EVENT_TARGETS or {}) do
+        local slots = {}
+        for _, target_key in ipairs(target_keys) do
+            local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+            if target then
+                local target_db = M.get_target_db(target_key)
+                local muted = M.should_mute_original(target_db)
+                local path = nil
+                local use_soundkit = false
+                local soundkit_id = nil
+
+                if muted and target_db.sound_off ~= true then
+                    local preset = target_db.preset
+                    path = target.replacement_paths and target.replacement_paths[preset]
+                    if not path then
+                        -- fall back to soundkit preview
+                        local sk = target.preview_soundkit
+                        if type(sk) == "number" then
+                            soundkit_id = sk
+                            use_soundkit = true
+                        elseif type(sk) == "string" and SOUNDKIT then
+                            soundkit_id = SOUNDKIT[sk]
+                            use_soundkit = soundkit_id ~= nil
+                        end
+                    end
+                end
+
+                slots[#slots + 1] = {
+                    muted        = muted,
+                    sound_off    = target_db.sound_off == true,
+                    path         = path,
+                    use_soundkit = use_soundkit,
+                    soundkit_id  = soundkit_id,
+                    channel      = target.channel or "Master",
+                }
+            end
+        end
+        if #slots > 0 then
+            cache[event_name] = slots
+        end
+    end
+    M._event_cache = cache
 end

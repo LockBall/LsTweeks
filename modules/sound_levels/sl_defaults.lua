@@ -59,11 +59,12 @@ for position = 0, 20 do
 end
 
 M.SOUND_TARGETS = {
-    test_sound = {
+    achievement = {
         label = "Achievement",
         order = 1,
         description = "",
         default_preset = "0",
+        channel = "SFX",
         replacement_asset = "achievmentsound1",
         original_file_ids = {
             569143,
@@ -75,6 +76,7 @@ M.SOUND_TARGETS = {
         order = 10,
         description = "",
         default_preset = "10",
+        channel = "SFX",
         preview_soundkit = "READY_CHECK",
         replacement_asset = "levelup2",
         original_file_ids = {
@@ -105,7 +107,7 @@ M.defaults = {
         last_tab_index = 1,
         last_sound_key = "ready_check",
         targets = {
-            test_sound = {
+            achievement = {
                 preset = "0",
                 use_original = false,
                 sound_off = false,
