@@ -43,6 +43,10 @@ modules\sound_levels\sl_core.lua
 modules\sound_levels\sl_fishing.lua
 modules\sound_levels\sl_gui.lua
 modules\sound_levels\sl_main.lua
+modules\skyriding_vigor\sv_defaults.lua
+modules\skyriding_vigor\sv_gui.lua
+modules\skyriding_vigor\sv_bar.lua
+modules\skyriding_vigor\sv_main.lua
 
 # --- Aura Frames Module ---
 modules\aura_frames\af_defaults.lua

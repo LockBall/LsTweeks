@@ -13,7 +13,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 Run from the addon root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/package.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
 Output:
@@ -65,7 +65,7 @@ README image assets under `media/readme_images/` and `media/svg/` are public-fac
 Run verification directly with:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/verify-package.ps1 dist/<toc-name>-<version>.zip
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/verify-package.ps1 dist/<toc-name>-<version>.zip
 ```
 
 The verifier checks:

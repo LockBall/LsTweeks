@@ -18,6 +18,7 @@ Slash command: `/lst`
 - Optional hiding of Blizzard buff and debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Player Frame module for portrait combat text and out-of-combat fade controls.
+- Skyriding Vigor module that restores a compact player vigor display using Blizzard UI assets.
 - Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets, plus Fishing Focus channel controls.
 
 ## Installation
@@ -41,6 +42,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, and interface transparency options.
+- Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, and fade behavior.
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
@@ -118,6 +120,7 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 - LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge.
 - Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, ArcUI, and Angleur.
 - Fishing Focus was informed by Angleur's Ultra Focus audio-profile approach.
+- Skyriding Vigor was informed by DragonRider's restored vigor-display concept; this addon uses its own implementation and Blizzard UI assets.
 - Addon design and implementation by **LockBall**.
 - Special thanks to **DiscoMouse**.
 - Portions of this addon were developed with assistance from generative tools.

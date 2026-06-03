@@ -15,7 +15,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Ketho review workflow: use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`), enable `wowAPI.luals.frameXML` when reviewing Blizzard FrameXML/CDM/widget usage, and treat LuaLS findings as manual review prompts. For shell checks, LuaLS can run `--check`, but it needs explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath` to avoid extension-folder write errors. Prefer confirming questionable APIs against Ketho annotations and Warcraft Wiki before changing functional code.
 - Ketho direct annotation check (for AI agent use): extension lives at `C:\Users\D00D\.vscode\extensions\ketho.wow-api-0.22.3\`. Sound/audio APIs split across two files: `Annotations/Core/Blizzard_APIDocumentationGenerated/SoundDocumentation.lua` (C_Sound namespace: PlaySound, StopSound, IsPlaying, GetSoundScaledVolume) and `Annotations/Core/Data/Wiki.lua` (global functions: PlaySoundFile, MuteSoundFile, UnmuteSoundFile, StopSound — grep by name). Deprecated sound APIs are in `Annotations/Core/FrameXML/Blizzard_Deprecated/Deprecated_SoundScript.lua`. `UISoundSubType` and `SoundHandle` type aliases are in `Annotations/Core/Type/BlizzardType.lua`. For any module, grep `Annotations/` for the API names used, read the matching annotation for signature and return types, then cross-check call sites in the module against those signatures.
 - Vendored libraries under `libs/` are excluded from LuaLS diagnostics in workspace settings. Do not edit third-party library files for style/type warnings unless intentionally updating the library.
-- Release package command: `powershell -ExecutionPolicy Bypass -File tools/package.ps1`. It derives the addon/package folder from the single root `.toc` filename, writes `dist/<toc-name>-<version>.zip`, and automatically runs `tools/verify-package.ps1`. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. The verifier also has hard-coded invariant required/forbidden paths so a bad policy edit cannot bless an obviously wrong package. README image assets and Sound Levels reference/log files are public-facing and included.
+- Default shell for project work: use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
+- Release package command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1`. It derives the addon/package folder from the single root `.toc` filename, writes `dist/<toc-name>-<version>.zip`, and automatically runs `tools/verify-package.ps1`. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. The verifier also has hard-coded invariant required/forbidden paths so a bad policy edit cannot bless an obviously wrong package. README image assets and Sound Levels reference/log files are public-facing and included.
 - Packaging is data-driven: update `tools/package-policy.json` first when changing public include/exclude behavior, then run the package command to verify.
 
 ## AddOn Summary
@@ -59,6 +60,11 @@ modules/
     pf_main.lua          Player Frame settings, GUI, portrait combat text, event routing
     pf_fade.lua          Player Frame OOC fade runtime, health curve gate, fade timers
   sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
+  skyriding_vigor/       restored Skyriding Vigor display using Blizzard atlas assets and spell charges
+    sv_defaults.lua      Skyriding Vigor defaults
+    sv_gui.lua           Skyriding Vigor settings UI
+    sv_bar.lua           Skyriding Vigor bar visuals, Blizzard atlas slots, wing layout, positioning
+    sv_main.lua          Skyriding Vigor runtime, events, charge/glide state, category bootstrap
   settings/             settings defaults + minimap/open-on-reload/interface alpha panel
   aura_frames/
     af_defaults.lua        Aura Frame defaults, FRAME_DEFS, category lists, custom template
@@ -161,6 +167,25 @@ Important `sound_levels` keys:
 - Each sound target declares a `channel` field (e.g. `"SFX"`, `"Master"`) used for all playback calls; defaults to `"Master"` if absent. Achievement and Ready Check both use `"SFX"`.
 - Hot path performance: `M._event_cache` is a flat pre-baked table keyed by event name; each slot holds only actionable replacement playback data (`paths` or `soundkit_id`, plus `channel`). Off and Original targets do not create event-cache slots. `handle_event` does one table lookup and walks a small array — no DB access, no `apply_defaults` at event time. Cache is rebuilt by `M.rebuild_event_cache()` at the end of every `apply_sound_levels()`, then `M.sync_registered_events()` diffs registered events against the actionable cache so events for Off/Original targets are not registered. `get_db()` applies defaults only once per session (guarded by `M._defaults_applied`); cleared on reset.
 - WoW sound APIs are resolved to upvalue locals at file load in `sl_core.lua` (`_PlaySoundFile`, `_PlaySound`, `_StopSound`, `_MuteSoundFile`, `_UnmuteSoundFile`). Call them directly — do not re-check `C_Sound` at call sites.
+
+Important `skyriding_vigor` keys:
+- `enabled`: toggles the restored vigor display.
+- `fade_when_full`: lowers alpha when vigor is full and the player is not gliding.
+- `fade_alpha`: alpha used by `fade_when_full`.
+- `move_mode`: shows the frame and enables left-drag positioning.
+- `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
+- `spacing` and `scale`: presentation settings. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
+- `position`: UIParent-relative saved position.
+- The settings panel uses `CreateGlobalReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
+
+Skyriding Vigor runtime notes:
+- The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
+- Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
+- Visibility comes from `C_PlayerInfo.GetGlidingInfo()` plus `PLAYER_CAN_GLIDE_CHANGED` / `PLAYER_IS_GLIDING_CHANGED`.
+- Vigor charges come from `C_Spell.GetSpellCharges()` with spell fallback IDs `372610` (Skyward Ascent) and `372608` (Surge Forward), because existing addon references disagree. Guard secret charge values with `issecretvalue`.
+- Default Vigor node dimensions come from Blizzard `UIWidgetFillUpFrameTemplateMixin`: `dragonriding_vigor = { width = 42, height = 45 }`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
+- Skyriding Vigor wing placement is centralized in `M.WING_LAYOUT` in `sv_bar.lua`; tune shared `overlap_x`, mirrored `offset_x`, and shared `offset_y` instead of changing node sizing.
+- Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`

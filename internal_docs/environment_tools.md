@@ -17,7 +17,7 @@ Observed working tools:
 ```text
 cmd         -> ver                  -> Microsoft Windows 10.0.26200.8457
 pwsh.exe    -> $PSVersionTable...   -> PowerShell 7.6.2
-powershell  -> $PSVersionTable...   -> PowerShell 7.6.2
+powershell  -> $PSVersionTable...   -> PowerShell 7.6.2 in Codex shell mapping; `Get-Command powershell` may still resolve to legacy Windows PowerShell
 .venv       -> Python 3.13.7, pip 25.2
 ```
 
@@ -70,7 +70,7 @@ F:\from_git\agent_config
 ```
 
 ```cmd
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File repair_codex_config.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File repair_codex_config.ps1
 ```
 
 The script backs up `C:\Users\D00D\.codex\config.toml`, removes any existing `[windows]` block, and appends the working `sandbox = "unelevated"` block.
@@ -82,10 +82,10 @@ In a fresh Codex session or after restarting VS Code, verify native shell access
 ```text
 shell: cmd         command: ver
 shell: pwsh.exe    command: $PSVersionTable.PSVersion
-shell: powershell  command: $PSVersionTable.PSVersion
+shell: powershell  command: $PSVersionTable.PSVersion  # compatibility check only
 ```
 
-PowerShell launched through `cmd` is only a workaround. The intended fixed state is direct native execution for all three shells.
+Default to `pwsh.exe` for project work unless there is an explicit reason to use another shell. `powershell.exe` is legacy Windows PowerShell on a normal Windows PATH, even when the Codex `shell: powershell` mapping currently reports PowerShell 7. PowerShell launched through `cmd` is only a workaround. The intended fixed state is direct native execution for all required shells.
 
 If shell execution still fails after the config is correct:
 
@@ -174,7 +174,7 @@ After shell and venv checks pass, validate the addon:
 
 ```powershell
 luac -p modules/player_frame/pf_main.lua modules/player_frame/pf_fade.lua
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\package.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools\package.ps1
 ```
 
 Expected package result:
