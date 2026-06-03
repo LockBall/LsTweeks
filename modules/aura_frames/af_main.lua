@@ -841,7 +841,7 @@ local function refresh_aura_frame_settings_after_reset()
     end
 end
 
--- RESET AND REFRESH: Restores UI states following a settings reset or global change
+-- RESET AND REFRESH: Restores UI states following an Aura Frames settings reset.
 function M.on_reset_complete()
     -- Reset conductor: recover runtime state, reconcile frame ownership, then
     -- refresh visible frames and settings controls from the replaced DB.

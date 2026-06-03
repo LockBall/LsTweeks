@@ -34,10 +34,19 @@ local STRINGS = {
     y_position = "Y Position",
 }
 
+local function get_spec(key)
+    return M.SETTING_SPECS[key]
+end
+
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     local db = M.get_db and M.get_db()
     local defaults = M.DEFAULTS or {}
+    local x_spec = get_spec("x_position")
+    local y_spec = get_spec("y_position")
+    local scale_spec = get_spec("scale")
+    local spacing_spec = get_spec("spacing")
+    local fade_alpha_spec = get_spec("fade_alpha")
     local col_step_x = cfg.slider_width + cfg.slider_gap_x
 
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
@@ -71,9 +80,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorXPosition",
         parent,
         STRINGS.x_position,
-        -1000,
-        1000,
-        1,
+        x_spec.min,
+        x_spec.max,
+        x_spec.step,
         db.position,
         "x",
         default_position
@@ -88,9 +97,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorYPosition",
         parent,
         STRINGS.y_position,
-        -1000,
-        1000,
-        1,
+        y_spec.min,
+        y_spec.max,
+        y_spec.step,
         db.position,
         "y",
         default_position
@@ -105,13 +114,13 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorScale",
         parent,
         STRINGS.scale,
-        0.5,
-        2,
-        0.05,
+        scale_spec.min,
+        scale_spec.max,
+        scale_spec.step,
         db,
         "scale",
         defaults,
-        M.refresh
+        M.refresh_layout
     )
     M.controls.scale = scale_slider
     scale_slider:SetPoint("TOPLEFT", y_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
@@ -120,13 +129,13 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorSpacing",
         parent,
         STRINGS.spacing,
-        0,
-        10,
-        0.5,
+        spacing_spec.min,
+        spacing_spec.max,
+        spacing_spec.step,
         db,
         "spacing",
         defaults,
-        M.refresh
+        M.refresh_layout
     )
     M.controls.spacing = spacing_slider
     spacing_slider:SetPoint("TOPLEFT", scale_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
@@ -141,9 +150,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorFadeAlpha",
         parent,
         STRINGS.fade_alpha,
-        0.05,
-        1,
-        0.05,
+        fade_alpha_spec.min,
+        fade_alpha_spec.max,
+        fade_alpha_spec.step,
         db,
         "fade_alpha",
         defaults,
@@ -152,8 +161,10 @@ function M.BuildSettings(parent)
     M.controls.fade_alpha = fade_alpha_slider
     fade_alpha_slider:SetPoint("TOPLEFT", fade_container, "TOPRIGHT", 24, 0)
 
-    if addon.CreateGlobalReset and db then
-        local reset_panel = addon.CreateGlobalReset(parent, db, defaults)
+    if addon.CreateModuleReset and db then
+        local reset_panel = addon.CreateModuleReset(parent, db, defaults, {
+            after_reset = M.on_reset_complete,
+        })
         reset_panel:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", cfg.reset_bottom_x, cfg.reset_bottom_y)
         M.controls.reset_panel = reset_panel
     end

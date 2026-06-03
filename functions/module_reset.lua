@@ -1,11 +1,12 @@
--- ARM-code safety reset button: addon.CreateGlobalReset(parent, db, defaults, opts).
+-- ARM-code safety reset button: addon.CreateModuleReset(parent, db, defaults, opts).
 -- The user must type "arm" into an input box before the reset button activates, preventing accidental wipes.
 -- Blocked entirely during combat via InCombatLockdown(). Optional opts.before_reset
--- lets callers refresh dynamic defaults immediately before the copy.
+-- lets callers refresh dynamic defaults immediately before the copy. Optional
+-- opts.after_reset lets a module resync only its own runtime/controls.
 
 local addon_name, addon = ...
 
-function addon.CreateGlobalReset(parent, db, defaults, opts)
+function addon.CreateModuleReset(parent, db, defaults, opts)
     opts = opts or {}
 
     -------- CONFIGURATION VARIABLES --------
@@ -255,15 +256,12 @@ function addon.CreateGlobalReset(parent, db, defaults, opts)
             end
         end
 
-        -- Notify modules with a reset hook
-        for _, module in pairs(addon) do
-            if type(module) == "table" and module.on_reset_complete then
-                module.on_reset_complete()
-            end
+        if opts.after_reset then
+            opts.after_reset()
         end
 
         disarm()
-        print("|cff00ff00LsTweaks:|r Global reset complete and synchronized.")
+        print("|cff00ff00LsTweaks:|r Module reset complete and synchronized.")
     end)
 
     return container

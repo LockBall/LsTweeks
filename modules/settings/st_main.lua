@@ -1,5 +1,5 @@
 -- General addon settings panel: minimap button toggle, open-on-reload toggle, and interface transparency slider.
--- Registered as the "Settings" sidebar category; on_reset_complete() resyncs all controls from DB after a global reset.
+-- Registered as the "Settings" sidebar category; on_reset_complete() resyncs controls from DB after settings changes.
 local addon_name, addon = ...
 
 -- Initialize module table

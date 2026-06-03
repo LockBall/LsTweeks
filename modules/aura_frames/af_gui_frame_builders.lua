@@ -507,7 +507,7 @@ function M.build_general_tab(p)
     M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
     -- reset panel
-    local resetPanel = addon.CreateGlobalReset(p, M.db, M.defaults, {
+    local resetPanel = addon.CreateModuleReset(p, M.db, M.defaults, {
         preserve_label = "Keep Profiles",
         preserve_default = true,
         preserve_keys = { "profiles", "last_profile_name" },
@@ -516,6 +516,7 @@ function M.build_general_tab(p)
                 M.refresh_cdm_default_positions()
             end
         end,
+        after_reset = M.on_reset_complete,
     })
     resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
 end

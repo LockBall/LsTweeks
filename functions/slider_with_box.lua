@@ -148,7 +148,15 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         if default_value == nil then
             default_value = min_v
         end
-        slider:SetValue(default_value)
+        if db_table then
+            db_table[db_key] = default_value
+        end
+        eb:SetText(format_display_value(default_value))
+        if slider:GetValue() ~= default_value then
+            slider:SetValue(default_value)
+        else
+            run_callback()
+        end
     end)
 
     -- Expose inner slider so callers can call SetValue to update the display.

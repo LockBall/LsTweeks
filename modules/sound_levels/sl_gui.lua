@@ -297,7 +297,9 @@ local function build_general_tab(parent)
     local panel_padding = addon.RIVETED_PANEL_STYLE.padding
     panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, text:GetHeight() + (panel_padding * 2)))
 
-    local reset = addon.CreateGlobalReset(parent, M.get_db(), M.defaults.sound_levels)
+    local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.sound_levels, {
+        after_reset = M.on_reset_complete,
+    })
     reset:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -20)
 end
 

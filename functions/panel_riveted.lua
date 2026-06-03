@@ -106,7 +106,7 @@ end
 
 -- Shared corner-rivet painter. Paints 4 masked screws at the corners of `frame`.
 -- Optional offsets allow shifting all rivets together without changing inset.
--- Used by both CreateRivetedPanel (above) and module_reset's CreateGlobalReset.
+-- Used by both CreateRivetedPanel (above) and module_reset's CreateModuleReset.
 function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
     local rivetStyle = addon.RIVETED_PANEL_STYLE.rivet
     local ox = offsetX or 0

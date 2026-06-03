@@ -12,7 +12,13 @@ local M = addon.skyriding_vigor
 local C_PlayerInfo_GetGlidingInfo = C_PlayerInfo and C_PlayerInfo.GetGlidingInfo
 local C_Spell_GetSpellCharges = C_Spell and C_Spell.GetSpellCharges
 local GetTime = GetTime
+local IsAdvancedFlyableArea = IsAdvancedFlyableArea
+local IsMounted = IsMounted
+local UnitPower = UnitPower
+local UnitPowerDisplayMod = UnitPowerDisplayMod
+local UnitPowerMax = UnitPowerMax
 local issecretvalue = issecretvalue
+local floor = math.floor
 local max = math.max
 local min = math.min
 
@@ -21,17 +27,48 @@ local VIGOR_SPELL_IDS = {
     372608, -- Surge Forward
 }
 
-local TICK_SECONDS = 0.1
+local TICK_SECONDS = 0.2
 local FALLBACK_MAX_SLOTS = 6
+local VIGOR_POWER_TYPES = {
+    25, -- Enum.PowerType.AlternateMount
+    10, -- Enum.PowerType.Alternate
+}
 
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
+local SETTING_SPECS = M.SETTING_SPECS
+local SLIDER_KEYS = M.SLIDER_KEYS
 M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
+
+local function clamp_number(value, fallback, spec)
+    value = tonumber(value)
+    if not value then value = fallback end
+    if spec and value < spec.min then return spec.min end
+    if spec and value > spec.max then return spec.max end
+    return value
+end
+
+local function normalize_db(db)
+    if not db then return end
+
+    db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
+    db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
+    db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
+    db.position = db.position or {}
+    db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_SPECS.x_position)
+    db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_SPECS.y_position)
+    db.position.point = "CENTER"
+    db.position.relativePoint = "CENTER"
+end
 
 local function get_db()
     if not Ls_Tweeks_DB then return nil end
     Ls_Tweeks_DB.skyriding_vigor = Ls_Tweeks_DB.skyriding_vigor or {}
-    addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
+    if not M._defaults_applied then
+        addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
+        M._defaults_applied = true
+    end
+    normalize_db(Ls_Tweeks_DB.skyriding_vigor)
     return Ls_Tweeks_DB.skyriding_vigor
 end
 
@@ -41,7 +78,48 @@ local function is_secret(value)
     return issecretvalue and issecretvalue(value)
 end
 
+local function normalize_power_value(value, max_power, max_slots, power_type)
+    if not value or not max_power or max_power <= 0 then return nil end
+
+    local display_mod = UnitPowerDisplayMod and UnitPowerDisplayMod(power_type) or 0
+    if display_mod and display_mod > 1 then
+        return floor((value / display_mod) + 0.5)
+    end
+
+    if max_power > max_slots then
+        return floor(((value / max_power) * max_slots) + 0.5)
+    end
+
+    return value
+end
+
+local function get_vigor_power_info()
+    if not UnitPower or not UnitPowerMax then return nil end
+
+    local max_slots = M.MAX_SLOTS or FALLBACK_MAX_SLOTS
+    for _, power_type in ipairs(VIGOR_POWER_TYPES) do
+        local max_power = UnitPowerMax("player", power_type)
+        if max_power and not is_secret(max_power) and max_power > 0 then
+            local current = UnitPower("player", power_type)
+            if current and not is_secret(current) then
+                current = normalize_power_value(current, max_power, max_slots, power_type)
+                max_power = normalize_power_value(max_power, max_power, max_slots, power_type)
+                if current and max_power and max_power > 0 then
+                    return min(current, max_slots), min(max_power, max_slots), 0, 0
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
 local function get_charge_info()
+    local current, max_charges, start_time, duration = get_vigor_power_info()
+    if current and max_charges then
+        return current, max_charges, start_time, duration
+    end
+
     if not C_Spell_GetSpellCharges then return nil end
 
     for _, spell_id in ipairs(VIGOR_SPELL_IDS) do
@@ -49,9 +127,8 @@ local function get_charge_info()
         if info and info.maxCharges and not is_secret(info.maxCharges) and info.maxCharges > 0 then
             local current = info.currentCharges or 0
             local max_slots = M.MAX_SLOTS or FALLBACK_MAX_SLOTS
-            local max_charges = info.maxCharges or max_slots
             if not is_secret(current) then
-                return current, min(max_charges, max_slots), info.cooldownStartTime or 0, info.cooldownDuration or 0
+                return min(current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
             end
         end
     end
@@ -65,6 +142,11 @@ local function get_gliding_state()
     return is_gliding and true or false, can_glide and true or false
 end
 
+local function is_mounted_in_advanced_flyable_area()
+    return IsMounted and IsMounted()
+        and IsAdvancedFlyableArea and IsAdvancedFlyableArea()
+end
+
 local function stop_ticker()
     if M.ticker then
         M.ticker:Cancel()
@@ -72,13 +154,19 @@ local function stop_ticker()
     end
 end
 
-local function should_tick(db, can_glide)
-    return db and db.enabled and (db.move_mode or can_glide or (M.frame and M.frame:IsShown()))
+local function set_frame_alpha(frame, alpha)
+    if frame._sv_alpha == alpha then return end
+    frame:SetAlpha(alpha)
+    frame._sv_alpha = alpha
 end
 
-local function update_ticker(can_glide)
+local function should_tick(db, needs_progress_updates)
+    return db and db.enabled and needs_progress_updates
+end
+
+local function update_ticker(needs_progress_updates)
     local db = get_db()
-    if should_tick(db, can_glide) then
+    if should_tick(db, needs_progress_updates) then
         if not M.ticker then
             M.ticker = C_Timer.NewTicker(TICK_SECONDS, function()
                 M.refresh()
@@ -110,6 +198,19 @@ end
 
 M.sync_position_controls = sync_position_controls
 
+local function sync_slider_controls(db)
+    for _, key in ipairs(SLIDER_KEYS) do
+        local control = M.controls[key]
+        if control and control.slider then
+            local value = db[key]
+            if value == nil then value = DEFAULTS[key] end
+            if value ~= nil and control.slider:GetValue() ~= value then
+                control.slider:SetValue(value)
+            end
+        end
+    end
+end
+
 function M.refresh()
     local db = get_db()
     local frame = M.ensure_frame()
@@ -126,10 +227,11 @@ function M.refresh()
         current, max_charges, start_time, duration = 4, max_slots, GetTime() - 2, 5
     end
 
-    local should_show = db.enabled and current and max_charges and (db.move_mode or can_glide)
+    local should_show = db.enabled and current and max_charges
+        and (db.move_mode or can_glide or is_mounted_in_advanced_flyable_area())
     if not should_show then
         frame:Hide()
-        update_ticker(can_glide)
+        update_ticker(false)
         return
     end
     current = current or 0
@@ -139,6 +241,7 @@ function M.refresh()
     if duration and duration > 0 and start_time and start_time > 0 then
         progress = min(max((GetTime() - start_time) / duration, 0), 1)
     end
+    local needs_progress_updates = db.move_mode or (current < max_charges and duration and duration > 0 and start_time and start_time > 0)
 
     for i = 1, max_slots do
         if i <= max_charges then
@@ -156,20 +259,23 @@ function M.refresh()
     end
 
     if db.fade_when_full and not db.move_mode and current >= max_charges and not is_gliding then
-        frame:SetAlpha(db.fade_alpha or DEFAULTS.fade_alpha or 0.25)
+        set_frame_alpha(frame, db.fade_alpha or DEFAULTS.fade_alpha or 0.25)
     else
-        frame:SetAlpha(1)
+        set_frame_alpha(frame, 1)
     end
 
-    frame:Show()
-    update_ticker(can_glide)
+    if not frame:IsShown() then
+        frame:Show()
+    end
+    update_ticker(needs_progress_updates)
 end
 
 function M.on_reset_complete()
     local db = get_db()
     if not db then return end
-    M.apply_position()
-    M.refresh()
+    if M.invalidate_layout then
+        M.invalidate_layout()
+    end
 
     local enabled_cb = M.controls.enabled
     if enabled_cb and enabled_cb.SetChecked then
@@ -187,19 +293,27 @@ function M.on_reset_complete()
     if snap_cb and snap_cb.SetChecked then
         snap_cb:SetChecked(db.snap_to_grid or false)
     end
-    for _, key in ipairs({ "fade_alpha", "spacing", "scale" }) do
-        local slider = M.controls[key]
-        if slider and slider.slider then
-            slider.slider:SetValue(db[key] or DEFAULTS[key])
-        end
-    end
+    sync_slider_controls(db)
     sync_position_controls(db)
+    M.apply_position()
+    M.refresh()
 end
 
 function M.set_db_value(key, value)
     local db = get_db()
     if not db then return end
     db[key] = value
+    if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
+        M.refresh_layout()
+    else
+        M.refresh()
+    end
+end
+
+function M.refresh_layout()
+    if M.invalidate_layout then
+        M.invalidate_layout()
+    end
     M.refresh()
 end
 
@@ -260,6 +374,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
+        M._defaults_applied = true
         M.ensure_frame()
         M.apply_layout()
         if addon.register_category then

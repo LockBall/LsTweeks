@@ -11,6 +11,7 @@ local M = addon.skyriding_vigor
 
 local GetCursorPosition = GetCursorPosition
 local InCombatLockdown = InCombatLockdown
+local abs = math.abs
 local max = math.max
 local min = math.min
 
@@ -43,8 +44,13 @@ end
 
 local function set_center_position(frame, x, y)
     if not frame then return end
-    frame._center_x = x or 0
-    frame._center_y = y or 0
+    x = x or 0
+    y = y or 0
+    if frame._center_x == x and frame._center_y == y then
+        return
+    end
+    frame._center_x = x
+    frame._center_y = y
     frame:ClearAllPoints()
     frame:SetPoint("CENTER", UIParent, "CENTER", frame._center_x, frame._center_y)
 end
@@ -53,6 +59,16 @@ local function get_saved_center(db)
     local defaults = get_defaults()
     local pos = db and db.position or defaults.position or {}
     return pos.x or 0, pos.y or 0
+end
+
+local function get_spacing_pixels(db)
+    local defaults = get_defaults()
+    local default_spacing = defaults.spacing or 5
+    local spacing_setting = db and db.spacing
+    if spacing_setting == nil then
+        spacing_setting = default_spacing
+    end
+    return spacing_setting - default_spacing
 end
 
 local function get_cursor_position()
@@ -114,57 +130,81 @@ local function set_atlas_native(texture, atlas)
     texture:SetVertexColor(1, 1, 1, 1)
 end
 
+local function hide_region(region)
+    if region and region.Hide then
+        region:Hide()
+    end
+end
+
 local function set_slot_progress(slot, progress)
     progress = max(0, min(progress or 0, 1))
 
-    slot.bar:ClearAllPoints()
-    slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
-    slot.bar:SetMinMaxValues(0, 1)
+    if slot._bar_texture ~= "dragonriding_vigor_fill" then
+        slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
+        slot._bar_texture = "dragonriding_vigor_fill"
+    end
     slot.bar:SetValue(progress)
 end
 
 local function set_slot_fill_bounds(slot)
+    if slot._fill_bounds_set then return end
+
     slot.bar:ClearAllPoints()
     slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
     slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
+    slot.bar:SetMinMaxValues(0, 1)
+    slot._fill_bounds_set = true
 end
 
 local function create_slot(parent, index)
-    local ok, slot = pcall(CreateFrame, "StatusBar", addon_name .. "SkyridingVigorSlot" .. index, parent, "UIWidgetFillUpFrameTemplate")
+    local ok, slot = pcall(CreateFrame, "Frame", addon_name .. "SkyridingVigorSlot" .. index, parent, "UIWidgetFillUpFrameTemplate")
     if not ok or not slot then
         slot = CreateFrame("Frame", addon_name .. "SkyridingVigorSlot" .. index, parent)
     end
     slot:SetSize(DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT)
 
     slot.background = slot.BG or slot:CreateTexture(nil, "BACKGROUND", nil, 0)
-    if not slot.background:GetPoint() then
-        slot.background:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    end
+    slot.background:ClearAllPoints()
+    slot.background:SetPoint("CENTER", slot, "CENTER", 0, 0)
     set_atlas_native(slot.background, "dragonriding_vigor_background")
 
     slot.bar = slot.Bar or CreateFrame("StatusBar", nil, slot)
     slot.bar:SetOrientation("VERTICAL")
+    slot.bar:ClearAllPoints()
     slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
     slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
     slot.bar:SetFrameLevel(slot:GetFrameLevel() + 1)
     slot.bar:SetMinMaxValues(0, 1)
     slot.bar:SetValue(0)
     slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
+    slot._bar_texture = "dragonriding_vigor_fill"
+    slot._fill_bounds_set = true
 
     slot.cover_frame = slot.cover_frame or CreateFrame("Frame", nil, slot)
-    if not slot.cover_frame:GetPoint() then
-        slot.cover_frame:SetAllPoints(slot)
-    end
+    slot.cover_frame:ClearAllPoints()
+    slot.cover_frame:SetAllPoints(slot)
     slot.cover_frame:SetFrameLevel(slot.bar:GetFrameLevel() + 2)
 
     slot.cover = slot.Frame or slot.cover_frame:CreateTexture(nil, "OVERLAY", nil, 3)
-    if not slot.cover:GetPoint() then
-        slot.cover:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    end
+    slot.cover:ClearAllPoints()
+    slot.cover:SetPoint("CENTER", slot, "CENTER", 0, 0)
     slot.cover:SetDrawLayer("OVERLAY", 7)
     set_atlas_native(slot.cover, "dragonriding_vigor_frame")
+
+    hide_region(slot.Spark)
+    hide_region(slot.SparkMask)
+    hide_region(slot.Flash)
+    hide_region(slot.Flipbook)
+    hide_region(slot.BurstFlipbook)
+    hide_region(slot.FilledFlipbook)
+    if slot.bar then
+        hide_region(slot.bar.Spark)
+        hide_region(slot.bar.SparkMask)
+        hide_region(slot.bar.Flipbook)
+        hide_region(slot.bar.FlipbookMask)
+        hide_region(slot.bar.BurstFlipbook)
+        hide_region(slot.bar.FilledFlipbook)
+    end
 
     return slot
 end
@@ -173,16 +213,37 @@ function M.set_slot_state(index, state, progress)
     local slot = M.slots[index]
     if not slot then return end
 
+    local effective_progress
+    if state == "full" then
+        effective_progress = 1
+    elseif state == "filling" then
+        effective_progress = max(0, min(progress or 0, 1))
+    else
+        effective_progress = 0
+    end
+
+    if slot._state == state and abs((slot._progress or -1) - effective_progress) < 0.001 then
+        return
+    end
+
     set_slot_fill_bounds(slot)
     if state == "full" then
-        slot.bar:SetStatusBarTexture("dragonriding_vigor_fillfull")
-        slot.bar:SetValue(1)
+        if slot._bar_texture ~= "dragonriding_vigor_fillfull" then
+            slot.bar:SetStatusBarTexture("dragonriding_vigor_fillfull")
+            slot._bar_texture = "dragonriding_vigor_fillfull"
+        end
+        slot.bar:SetValue(effective_progress)
     elseif state == "filling" then
-        set_slot_progress(slot, progress)
+        set_slot_progress(slot, effective_progress)
     else
-        slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-        slot.bar:SetValue(0)
+        if slot._bar_texture ~= "dragonriding_vigor_fill" then
+            slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
+            slot._bar_texture = "dragonriding_vigor_fill"
+        end
+        slot.bar:SetValue(effective_progress)
     end
+    slot._state = state
+    slot._progress = effective_progress
 end
 
 function M.set_slot_visible(index, visible)
@@ -190,9 +251,13 @@ function M.set_slot_visible(index, visible)
     if not slot then return end
 
     if visible then
-        slot:Show()
+        if not slot:IsShown() then
+            slot:Show()
+        end
     else
-        slot:Hide()
+        if slot:IsShown() then
+            slot:Hide()
+        end
     end
 end
 
@@ -255,6 +320,7 @@ function M.ensure_frame()
     end)
 
     M.frame = frame
+    M.invalidate_layout()
     for i = 1, MAX_SLOTS do
         M.slots[i] = create_slot(visual_frame, i)
     end
@@ -270,9 +336,14 @@ function M.set_wing_layout(values)
     if values.offset_x ~= nil then WING_LAYOUT.offset_x = values.offset_x end
     if values.offset_y ~= nil then WING_LAYOUT.offset_y = values.offset_y end
 
+    M.invalidate_layout()
     if M.frame and M.refresh then
         M.refresh()
     end
+end
+
+function M.invalidate_layout()
+    M._layout_signature = nil
 end
 
 function M.apply_layout()
@@ -281,8 +352,7 @@ function M.apply_layout()
     if not db or not frame then return end
 
     local defaults = get_defaults()
-    local spacing_setting = db.spacing or defaults.spacing or 5
-    local spacing = spacing_setting - 5
+    local spacing = get_spacing_pixels(db)
     local scale = db.scale or defaults.scale or 1
     local width = DEFAULT_NODE_WIDTH
     local height = DEFAULT_NODE_HEIGHT
@@ -299,6 +369,17 @@ function M.apply_layout()
     if center_x == nil or center_y == nil then
         center_x, center_y = get_saved_center(db)
     end
+    if frame._center_x == nil or frame._center_y == nil then
+        set_center_position(frame, center_x, center_y)
+    end
+
+    local layout_signature = spacing .. ":" .. scale .. ":" .. total_width .. ":" .. total_height .. ":"
+        .. first_slot_x .. ":" .. right_decor_x .. ":" .. WING_LAYOUT.overlap_x .. ":"
+        .. WING_LAYOUT.offset_x .. ":" .. WING_LAYOUT.offset_y
+    if M._layout_signature == layout_signature then
+        return
+    end
+    M._layout_signature = layout_signature
 
     frame:SetSize(total_width * scale, total_height * scale)
     frame:SetScale(1)
@@ -314,12 +395,7 @@ function M.apply_layout()
         local slot = M.slots[i]
         slot:ClearAllPoints()
         slot:SetSize(width, height)
-        if i == 1 then
-            slot:SetPoint("LEFT", visual_frame or frame, "LEFT", first_slot_x, 0)
-        else
-            slot:SetPoint("LEFT", M.slots[i - 1], "RIGHT", spacing, 0)
-        end
-        M.set_slot_state(i, "empty", 0)
+        slot:SetPoint("LEFT", visual_frame or frame, "LEFT", first_slot_x + ((width + spacing) * (i - 1)), 0)
     end
 
     if M.decor_left and M.decor_right and M.slots[1] and M.slots[MAX_SLOTS] then
@@ -344,9 +420,18 @@ end
 
 function M.set_move_mode(enabled)
     local frame = M.ensure_frame()
-    frame:EnableMouse(enabled and true or false)
+    local mouse_enabled = enabled and true or false
+    if frame._mouse_enabled ~= mouse_enabled then
+        frame:EnableMouse(mouse_enabled)
+        frame._mouse_enabled = mouse_enabled
+    end
     if enabled then
-        frame:SetAlpha(1)
-        frame:Show()
+        if frame._sv_alpha ~= 1 then
+            frame:SetAlpha(1)
+            frame._sv_alpha = 1
+        end
+        if not frame:IsShown() then
+            frame:Show()
+        end
     end
 end

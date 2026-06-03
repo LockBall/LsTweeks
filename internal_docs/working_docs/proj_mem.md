@@ -51,7 +51,7 @@ functions/
   checkbox.lua          CreateCheckbox()
   color_picker.lua      CreateColorPicker()
   dropdown.lua          CreateDropdown() custom popup, not UIDropDownMenu
-  module_reset.lua      CreateGlobalReset() ARM-code reset
+  module_reset.lua      CreateModuleReset() ARM-code module reset
   panel_riveted.lua     riveted panel style helpers
   slider_with_box.lua   CreateSliderWithBox() with built-in tenth-sec debounce
 modules/
@@ -61,7 +61,7 @@ modules/
     pf_fade.lua          Player Frame OOC fade runtime, health curve gate, fade timers
   sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
   skyriding_vigor/       restored Skyriding Vigor display using Blizzard atlas assets and spell charges
-    sv_defaults.lua      Skyriding Vigor defaults
+    sv_defaults.lua      Skyriding Vigor DB defaults, setting specs, slider key lists
     sv_gui.lua           Skyriding Vigor settings UI
     sv_bar.lua           Skyriding Vigor bar visuals, Blizzard atlas slots, wing layout, positioning
     sv_main.lua          Skyriding Vigor runtime, events, charge/glide state, category bootstrap
@@ -107,7 +107,7 @@ Every Lua file starts with a short responsibility header before `local addon_nam
 ## Core Architecture Rules
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
-- Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset.
+- Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
@@ -174,19 +174,23 @@ Important `skyriding_vigor` keys:
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
-- `spacing` and `scale`: presentation settings. The spacing slider is a user-facing 0-10 range at 0.5 steps; `0` maps to the tight visual-zero layout, `5` is the default visual spacing, and `10` is max spread. Runtime layout subtracts 5 before anchoring nodes. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
+- `spacing` and `scale`: presentation settings. Slider ranges/steps live in `M.SETTING_SPECS` from `sv_defaults.lua`. The spacing slider is a user-facing 0-10 range at 0.5 steps; `0` maps to the tight visual-zero layout, `5` is the default visual spacing, and `10` is max spread. Runtime layout subtracts `DEFAULTS.spacing` before anchoring nodes so slider reset and visual reset share the same default source. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
+- Slider reset buttons must explicitly write the DB and run their callback even when the slider already displays the default value; otherwise stale DB/layout values can survive while the visible control looks reset.
+- Skyriding Vigor layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache is invalidated even when the reset value is numerically unchanged.
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
-- The settings panel uses `CreateGlobalReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
+- The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
 
 Skyriding Vigor runtime notes:
 - The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
 - Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
-- Visibility comes from `C_PlayerInfo.GetGlidingInfo()` plus `PLAYER_CAN_GLIDE_CHANGED` / `PLAYER_IS_GLIDING_CHANGED`.
-- Vigor charges come from `C_Spell.GetSpellCharges()` with spell fallback IDs `372610` (Skyward Ascent) and `372608` (Surge Forward), because existing addon references disagree. Guard secret charge values with `issecretvalue`.
+- Visibility comes from readable vigor charges plus either move mode, `C_PlayerInfo.GetGlidingInfo()` `canGlide`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). `canGlide` alone can be false while grounded on a Skyriding-capable mount.
+- Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 - Default Vigor node dimensions come from Blizzard `UIWidgetFillUpFrameTemplateMixin`: `dragonriding_vigor = { width = 42, height = 45 }`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
+- When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill is intentionally inset inside each 42x45 node so fractional scale filtering cannot expose blue fill outside the gold frame; keep `sv_bar.lua` fill insets separate from node dimensions.
 - Skyriding Vigor wing placement is centralized in `M.WING_LAYOUT` in `sv_bar.lua`; tune shared `overlap_x`, mirrored `offset_x`, and shared `offset_y` instead of changing node sizing.
-- Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress.
+- Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: the shared module reset helper calls every module reset hook, not just the module whose DB was wiped.
+- Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout or reset slot visuals on each tick: `sv_bar.lua` caches layout by signature, slot state/visibility setters guard repeated values, and `sv_main.lua` applies defaults once per session.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
@@ -240,7 +244,7 @@ Important `aura_frames` keys:
 ### Profiles And Reset
 - Aura Frame Profiles live under `M.db.profiles`; save/load is owned by `af_profiles.lua` with an explicit schema.
 - Loading a profile is blocked in combat, replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
-- General reset uses `CreateGlobalReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
+- General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
 
 ## Aura Frames GUI
