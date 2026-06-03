@@ -20,6 +20,8 @@ Reference sources used for addon behavior, public release preparation, documenta
 
 ## Addon References
 
+- Elkano's BuffBars: https://www.curseforge.com/wow/addons/elkbuffbars
+  - Referenced for Aura Frames inspiration, especially buff/debuff bar presentation, grouping/bucketing, and configurable aura display behavior.
 - Angleur: https://www.curseforge.com/wow/addons/angleur
   - Referenced for Fishing Focus-style temporary audio profile behavior during fishing.
 
