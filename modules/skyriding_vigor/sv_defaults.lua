@@ -17,7 +17,7 @@ M.defaults = {
             point = "CENTER",
             relativePoint = "CENTER",
             x = 0,
-            y = -200,
+            y = 0,
         },
     },
 }

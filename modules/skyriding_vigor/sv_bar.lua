@@ -44,7 +44,7 @@ end
 local function set_center_position(frame, x, y)
     if not frame then return end
     frame._center_x = x or 0
-    frame._center_y = y or -200
+    frame._center_y = y or 0
     frame:ClearAllPoints()
     frame:SetPoint("CENTER", UIParent, "CENTER", frame._center_x, frame._center_y)
 end
@@ -52,7 +52,7 @@ end
 local function get_saved_center(db)
     local defaults = get_defaults()
     local pos = db and db.position or defaults.position or {}
-    return pos.x or 0, pos.y or -200
+    return pos.x or 0, pos.y or 0
 end
 
 local function get_cursor_position()

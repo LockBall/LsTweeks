@@ -175,7 +175,7 @@ Important `skyriding_vigor` keys:
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `spacing` and `scale`: presentation settings. The spacing slider is a user-facing 0-10 range at 0.5 steps; `0` maps to the tight visual-zero layout, `5` is the default visual spacing, and `10` is max spread. Runtime layout subtracts 5 before anchoring nodes. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
-- `position`: UIParent-relative saved position.
+- `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
 - The settings panel uses `CreateGlobalReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
 
 Skyriding Vigor runtime notes:
