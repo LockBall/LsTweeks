@@ -1,4 +1,7 @@
--- Temporary Fishing Bobber sound probe.
+-- Archived Fishing Bobber sound probe.
+-- The bobber replacement path was removed because tested Lua hooks/APIs did
+-- not expose reliable bite timing. Keep this probe as long-term diagnostic
+-- capture for future re-testing.
 -- Usage:
 -- 1. Temporarily add this file near the end of LsTweeks.toc, or paste it into
 --    a small test addon.
@@ -18,14 +21,15 @@ local last_vignette_signature = nil
 local last_channel_signature = nil
 local last_gamepad_signature = nil
 local frame = CreateFrame("Frame")
-local wide_frame = CreateFrame("Frame")
-local object_frame = CreateFrame("Frame")
+local poll_frame = CreateFrame("Frame")
 local watched_file_ids = {
-    [569285] = "FishingBobber_ver2_1",
-    [568970] = "FishingBobber_ver2_2",
-    [569044] = "FishingBobber_ver2_3",
+    [569285] = "Fishing bobber original 1",
+    [568970] = "Fishing bobber original 2",
+    [569044] = "Fishing bobber original 3",
 }
 
+-- Retained as negative-result probe context. These event classes were observed
+-- as too noisy for useful bite-timing evidence during earlier wide testing.
 local noisy_events = {
     COMBAT_LOG_EVENT_UNFILTERED = true,
     CURSOR_UPDATE = true,
@@ -195,6 +199,9 @@ local function log_gamepad_state(reason)
     )
 end
 
+-- Retained as negative-result investigation paths. These object, tooltip, and
+-- vignette probes did not expose reliable bobber bite timing, but they document
+-- what was checked and can be re-enabled if Blizzard changes related APIs.
 local function log_object_state(reason, guid)
     if not enabled then return end
 
@@ -410,7 +417,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
     out(event, ...)
 end)
 
-object_frame:SetScript("OnUpdate", function(self, elapsed)
+poll_frame:SetScript("OnUpdate", function(self, elapsed)
     if not (enabled and wide_enabled) then return end
     if GetTime() > fishing_window_until then return end
     self.elapsed = (self.elapsed or 0) + elapsed
@@ -418,6 +425,9 @@ object_frame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = 0
     log_channel_state("poll")
     log_gamepad_state("poll")
+    log_object_state("poll")
+    log_tooltip_state("poll")
+    log_vignette_state("poll")
 end)
 
 SLASH_LSTWEEKS_FISHING_SOUND_PROBE1 = "/lstfishprobe"

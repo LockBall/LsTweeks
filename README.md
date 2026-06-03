@@ -18,7 +18,7 @@ Slash command: `/lst`
 - Optional hiding of Blizzard buff and debuff frames.
 - Optional minimap button, open-on-reload setting, and main panel transparency.
 - Player Frame module for portrait combat text and out-of-combat fade controls.
-- Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets.
+- Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets, plus Fishing Focus channel controls.
 
 ## Installation
 
@@ -41,7 +41,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, and interface transparency options.
-- Open **Sound Levels** to configure quieter replacement sounds or keep the original Blizzard sound.
+- Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
 ## Aura Frames
@@ -92,6 +92,8 @@ Current sound targets:
 - `Ready Check`: replacement control for ready check and LFG proposal sounds.
 
 Replacement volume is shown as `0-100%` in 5% steps. `0%` is off. The **Original** checkbox keeps Blizzard's original sound and dims the replacement slider until the slider is moved.
+
+Fishing Focus is available on the **Fishing** tab. It temporarily applies a separate Master, Effects, Music, Ambience, and Dialog channel profile while the player is channeling Fishing, then restores the normal channel volumes when fishing ends. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
 Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
 

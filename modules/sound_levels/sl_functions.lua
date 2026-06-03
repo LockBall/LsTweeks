@@ -67,18 +67,6 @@ end
 
 function M.get_replacement_paths_for_preset(target, preset)
     if not target then return nil end
-    if target.replacement_path_sets then
-        local paths = {}
-        for _, path_set in ipairs(target.replacement_path_sets) do
-            local path = path_set and path_set[preset]
-            if path then
-                paths[#paths + 1] = path
-            end
-        end
-        if #paths > 0 then
-            return paths
-        end
-    end
     local path = target.replacement_paths and target.replacement_paths[preset]
     if path then
         return { path }
@@ -89,11 +77,7 @@ end
 function M.get_next_replacement_path(target, preset)
     local paths = M.get_replacement_paths_for_preset(target, preset)
     if not paths then return nil end
-    local count = #paths
-    if count == 1 then return paths[1] end
-
-    target._replacement_cycle_index = ((target._replacement_cycle_index or 0) % count) + 1
-    return paths[target._replacement_cycle_index]
+    return paths[1]
 end
 
 function M.get_ordered_sound_targets()

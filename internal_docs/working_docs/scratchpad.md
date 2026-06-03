@@ -16,7 +16,7 @@ Read first:
 - `LsTweeks.toc`
 
 Current implementation summary:
-- Exact Fishing Bobber bite replacement is blocked; the bite moment was not exposed through tested Lua hooks/APIs.
+- Exact Fishing Bobber bite replacement is blocked and its replacement target/assets were removed; the bite moment was not exposed through tested Lua hooks/APIs.
 - Fishing Focus is the chosen user-facing solution: a temporary second sound-channel profile while the player channels Fishing.
 - Fishing Focus lives in `modules/sound_levels/sl_fishing.lua`.
 - The UI lives in the Sound Levels `Fishing` tab.

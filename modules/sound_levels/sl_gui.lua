@@ -102,13 +102,6 @@ local function has_replacement_paths(target)
     if target.replacement_paths and next(target.replacement_paths) ~= nil then
         return true
     end
-    if target.replacement_path_sets then
-        for _, path_set in ipairs(target.replacement_path_sets) do
-            if path_set and next(path_set) ~= nil then
-                return true
-            end
-        end
-    end
     return false
 end
 
