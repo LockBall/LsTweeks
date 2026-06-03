@@ -94,9 +94,10 @@ function addon.CreateRivetedPanel(parent, width, height, anchorTo, anchorPoint, 
     inner:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background")
     inner:SetVertexColor(0.06, 0.06, 0.07, 0.6)
 
+    local text_padding = addon.RIVETED_PANEL_STYLE.padding
     local text = panel:CreateFontString(nil, "ARTWORK", addon.RIVETED_PANEL_STYLE.font_panel)
-    text:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -12)
-    text:SetPoint("RIGHT", panel, "RIGHT", -12, 0)
+    text:SetPoint("TOPLEFT", panel, "TOPLEFT", text_padding, -text_padding)
+    text:SetPoint("RIGHT", panel, "RIGHT", -text_padding, 0)
     text:SetJustifyH("LEFT")
     text:SetWordWrap(true)
 

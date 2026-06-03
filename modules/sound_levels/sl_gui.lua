@@ -11,7 +11,8 @@ local STRINGS = {
     status_waiting = "Waiting for Blizzard FileDataID and replacement sound files.",
     fishing_help_text =
         "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
-        .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored.",
+        .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored."
+        .. "\n\nThe FishingBobber splash sound plays on the Effects channel. Increase that first. You can also reduce other channels to emphasize the difference.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
@@ -38,6 +39,8 @@ local UI = {
     slider_height = 20,
     slider_frame_width = 400,
     slider_frame_height = 22,
+    fishing_slider_width = 130,
+    fishing_slider_gap = 10,
 }
 
 local function apply_box_backdrop(frame)
@@ -287,44 +290,82 @@ local function build_general_tab(parent)
         0,
         -34
     )
-    text:ClearAllPoints()
-    text:SetPoint("TOPLEFT", panel, "TOPLEFT", 22, -22)
-    text:SetPoint("RIGHT", panel, "RIGHT", -22, 0)
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
     text:SetWordWrap(true)
     text:SetText(STRINGS.help_text)
-    panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, text:GetHeight() + 44))
+    local panel_padding = addon.RIVETED_PANEL_STYLE.padding
+    panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, text:GetHeight() + (panel_padding * 2)))
 
     local reset = addon.CreateGlobalReset(parent, M.get_db(), M.defaults.sound_levels)
     reset:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -20)
 end
 
+function M.sync_fishing_focus_controls()
+    local focus_db = M.get_fishing_focus_db()
+    local focus_enabled = M.controls.fishing_focus_enabled
+    if focus_enabled and focus_enabled.SetChecked then
+        focus_enabled:SetChecked(focus_db.enabled == true)
+    end
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        local slider = M.controls["fishing_focus_" .. channel.key]
+        if slider and slider.slider and slider.slider.SetValue then
+            slider.slider:SetValue(focus_db[channel.key])
+        end
+    end
+    if M.controls.fishing_focus_refresh_current then
+        M.controls.fishing_focus_refresh_current()
+    end
+end
+
+local function create_fishing_header_bar(parent, title_text, play_profile_key)
+    local title_bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    title_bar:SetHeight(26)
+    title_bar:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+    title_bar:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+    title_bar:SetBackdropColor(0.14, 0.14, 0.14, 0.65)
+
+    local title = title_bar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("CENTER", title_bar, "CENTER", 0, 0)
+    title:SetText(title_text)
+
+    local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
+    play_button:SetSize(54, 20)
+    play_button:SetPoint("RIGHT", title_bar, "RIGHT", -8, 0)
+    play_button:SetText("Play")
+    play_button:SetScript("OnClick", function()
+        M.play_fishing_bobber_preview(play_profile_key)
+    end)
+
+    return title_bar
+end
+
 local function build_fishing_tab(parent)
     local focus_db = M.get_fishing_focus_db()
     local focus_defaults = {}
-
-    local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
-    title:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
-    title:SetText("Fishing")
+    local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
+    local sliders_panel_width = math.max(
+        UI.panel_width,
+        28 + (slider_count * UI.fishing_slider_width) + (math.max(slider_count - 1, 0) * UI.fishing_slider_gap)
+    )
 
     local help_panel, help_text = addon.CreateRivetedPanel(
         parent,
-        UI.panel_width,
+        sliders_panel_width,
         addon.RIVETED_PANEL_STYLE.panel_min_height,
-        title,
+        parent,
         "TOPLEFT",
-        0,
-        -34
+        UI.pad_x,
+        UI.pad_y
     )
-    help_text:ClearAllPoints()
-    help_text:SetPoint("TOPLEFT", help_panel, "TOPLEFT", 22, -20)
-    help_text:SetPoint("RIGHT", help_panel, "RIGHT", -22, 0)
+    local help_padding = addon.RIVETED_PANEL_STYLE.padding
+    help_text:SetFontObject(GameFontHighlight)
     help_text:SetJustifyH("LEFT")
     help_text:SetJustifyV("TOP")
     help_text:SetWordWrap(true)
     help_text:SetText(STRINGS.fishing_help_text)
-    help_panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, help_text:GetHeight() + 40))
+    help_panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, help_text:GetHeight() + (help_padding * 2)))
 
     local enable_row, enable_checkbox = addon.CreateCheckbox(
         parent,
@@ -338,44 +379,77 @@ local function build_fishing_tab(parent)
     enable_row:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 6, -16)
     M.controls.fishing_focus_enabled = enable_checkbox
 
-    local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    current_panel:SetSize(UI.panel_width, 42)
+    local enable_tooltip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    enable_tooltip:SetFrameStrata("TOOLTIP")
+    enable_tooltip:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    enable_tooltip:SetBackdropColor(0.02, 0.02, 0.02, 0.92)
+    enable_tooltip:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.95)
+    enable_tooltip:Hide()
+
+    local enable_tooltip_text = enable_tooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    enable_tooltip_text:SetPoint("CENTER", enable_tooltip, "CENTER", 0, 0)
+    enable_tooltip_text:SetText("Activate Fishing Volumes While Fishing")
+    enable_tooltip:SetSize(enable_tooltip_text:GetStringWidth() + 24, enable_tooltip_text:GetStringHeight() + 14)
+
+    local function show_enable_tooltip(owner)
+        enable_tooltip:ClearAllPoints()
+        enable_tooltip:SetPoint("LEFT", owner, "RIGHT", 8, 0)
+        enable_tooltip:Show()
+    end
+    local function hide_enable_tooltip()
+        enable_tooltip:Hide()
+    end
+    enable_row:EnableMouse(true)
+    enable_row:SetScript("OnEnter", function(self)
+        show_enable_tooltip(self)
+    end)
+    enable_row:SetScript("OnLeave", hide_enable_tooltip)
+
+    local current_panel = CreateFrame("Frame", nil, parent)
+    current_panel:SetSize(sliders_panel_width, 70)
     current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
-    apply_box_backdrop(current_panel)
 
-    local current_title = current_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    current_title:SetPoint("TOPLEFT", current_panel, "TOPLEFT", 14, -8)
-    current_title:SetText("Current normal channel volumes")
+    create_fishing_header_bar(current_panel, "Normal Volumes", "current")
 
-    local current_values = current_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    current_values:SetPoint("TOPLEFT", current_title, "BOTTOMLEFT", 0, -5)
-    current_values:SetPoint("RIGHT", current_panel, "RIGHT", -14, 0)
-    current_values:SetJustifyH("LEFT")
+    local current_labels = {}
 
     local function refresh_current_values()
-        local parts = {}
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local current_percent = M.get_current_sound_channel_percent(channel)
-            focus_defaults[channel.key] = current_percent
-            parts[#parts + 1] = channel.label .. " " .. tostring(current_percent) .. "%"
+            focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, current_percent)
+            local label = current_labels[channel.key]
+            if label then
+                label:SetText(tostring(current_percent) .. "%")
+            end
         end
-        current_values:SetText(table.concat(parts, "   "))
     end
-    refresh_current_values()
     M.controls.fishing_focus_refresh_current = refresh_current_values
 
-    local sliders_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    sliders_panel:SetSize(UI.panel_width, 230)
-    sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -14)
-    apply_box_backdrop(sliders_panel)
+    local sliders_panel = CreateFrame("Frame", nil, parent)
+    sliders_panel:SetSize(sliders_panel_width, 230)
+    sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -16)
 
-    local sliders_title = sliders_panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    sliders_title:SetPoint("TOPLEFT", sliders_panel, "TOPLEFT", 14, -12)
-    sliders_title:SetText("Fishing channel profile")
+    create_fishing_header_bar(sliders_panel, "Fishing Volumes", "fishing")
 
-    local column_count = #(M.FISHING_FOCUS_CHANNELS or {})
-    local column_width = (UI.panel_width - 28) / math.max(column_count, 1)
     for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        local column_x = 14 + ((i - 1) * (UI.fishing_slider_width + UI.fishing_slider_gap))
+        local current_channel_label = current_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        current_channel_label:SetSize(UI.fishing_slider_width, 16)
+        current_channel_label:SetPoint("TOPLEFT", current_panel, "TOPLEFT", column_x, -30)
+        current_channel_label:SetJustifyH("CENTER")
+        current_channel_label:SetText(channel.label)
+
+        local current_label = current_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        current_label:SetSize(UI.fishing_slider_width, 16)
+        current_label:SetPoint("TOPLEFT", current_panel, "TOPLEFT", column_x, -48)
+        current_label:SetJustifyH("CENTER")
+        current_labels[channel.key] = current_label
+
         local slider = addon.CreateSliderWithBox(
             addon_name .. "_FishingFocus_" .. channel.key,
             sliders_panel,
@@ -390,11 +464,23 @@ local function build_fishing_tab(parent)
                 M.resync_fishing_focus()
             end
         )
-        local column_center_x = 14 + ((i - 1) * column_width) + (column_width / 2)
-        slider:SetPoint("TOP", sliders_panel, "TOPLEFT", column_center_x, -44)
-        slider:SetScale(0.86)
+        slider:SetSize(UI.fishing_slider_width, 95)
+        slider:SetPoint("TOPLEFT", sliders_panel, "TOPLEFT", column_x, -40)
         M.controls["fishing_focus_" .. channel.key] = slider
+
+        if channel.key == "sfx" then
+            local use_current_button = CreateFrame("Button", nil, sliders_panel, "UIPanelButtonTemplate")
+            use_current_button:SetSize(94, 22)
+            use_current_button:SetPoint("TOP", slider, "BOTTOM", 0, -8)
+            use_current_button:SetText("Use Current")
+            use_current_button:SetScript("OnClick", function()
+                M.copy_current_sound_channels_to_fishing_focus()
+                M.sync_fishing_focus_controls()
+                M.resync_fishing_focus()
+            end)
+        end
     end
+    refresh_current_values()
 end
 
 local function build_sounds_tab(parent)

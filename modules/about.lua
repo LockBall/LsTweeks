@@ -65,18 +65,13 @@ local function build_about_page(parent)
     if not descPanel or not descText then return end
 
     -- Configure description text in panel
-    local pad = panel_style.padding
-    descText:ClearAllPoints()
     descText:SetJustifyH("LEFT")
     descText:SetJustifyV("TOP")
     descText:SetWordWrap(true)
     descText:SetText(STRINGS.description)
 
-    -- Anchor with padding
-    descText:SetPoint("TOPLEFT", descPanel, "TOPLEFT", pad, -pad)
-    descText:SetPoint("RIGHT", descPanel, "RIGHT", -pad, 0)
-
     -- Auto-size panel to fit content
+    local pad = panel_style.padding
     local textHeight = descText:GetHeight()
     descPanel:SetHeight(math.max(panel_style.panel_min_height, textHeight + (pad * 2)))
 

@@ -8,6 +8,9 @@ local M = addon.sound_levels
 local CATEGORY_NAME = "Sound Levels"
 
 function M.on_reset_complete()
+    if M.stop_fishing_bobber_preview then
+        M.stop_fishing_bobber_preview()
+    end
     M.restore_fishing_focus()
     M._defaults_applied = nil
     local db = M.get_db()
@@ -44,19 +47,8 @@ function M.on_reset_complete()
         end
     end
 
-    local focus_db = M.get_fishing_focus_db()
-    local focus_enabled = M.controls.fishing_focus_enabled
-    if focus_enabled and focus_enabled.SetChecked then
-        focus_enabled:SetChecked(focus_db.enabled == true)
-    end
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-        local slider = M.controls["fishing_focus_" .. channel.key]
-        if slider and slider.slider and slider.slider.SetValue then
-            slider.slider:SetValue(focus_db[channel.key])
-        end
-    end
-    if M.controls.fishing_focus_refresh_current then
-        M.controls.fishing_focus_refresh_current()
+    if M.sync_fishing_focus_controls then
+        M.sync_fishing_focus_controls()
     end
     M.sync_fishing_focus_events()
 end
@@ -74,6 +66,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then
+        if M.stop_fishing_bobber_preview then
+            M.stop_fishing_bobber_preview()
+        end
         M.restore_fishing_focus()
         M.unmute_all_sound_files()
     end

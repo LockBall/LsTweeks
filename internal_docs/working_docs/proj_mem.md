@@ -144,6 +144,7 @@ Important `sound_levels` keys:
 - `sound_levels.targets.<target>.play_on_adjust`
 - `sound_levels.fishing_focus.enabled` toggles the Fishing Focus channel profile.
 - `sound_levels.fishing_focus.master`, `sfx`, `music`, `ambience`, and `dialog` store 0-100 channel volumes applied only while the player is channeling Fishing. Missing/reset Fishing Focus channel values initialize from the user's current normal Sound_*Volume CVars, not hardcoded volume defaults.
+- Fishing Focus Effects (`sfx`) initializes 25 percentage points above the user's normal Effects volume, clamped to 100; other Fishing Focus channels initialize from current normal channel values.
 - `sound_levels.last_tab_index` and `sound_levels.last_sound_key` restore the Sound Levels UI tab and selected sound when reopening after reload
 
 ## Sound Levels Ownership
@@ -154,6 +155,7 @@ Important `sound_levels` keys:
 - Replacement audio file sets are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`; targets reference them with `replacement_asset`. File-backed targets use `M.REPLACEMENT_FILE_MIN_LEVEL` through `M.REPLACEMENT_FILE_MAX_LEVEL`, currently 20 files where `_0.ogg` is loudest and `_19.ogg` is quietest. The UI presents this as `0-100%` in 5% steps; slider `0%` is off and replaces the old Off checkbox.
 - The removed Fishing Bobber replacement experiment was the only multi-file target. Current replacement targets use one `replacement_asset` each.
 - Fishing Bobber bite timing is not exposed through tested Lua hooks/APIs (sound hooks, soft-interact/world-loot/object state, tooltip APIs, vignettes, channel updates, or gamepad vibration hooks). Do not re-add Bobber replacement controls without a new confirmed runtime trigger. The implemented user-facing control is **Fishing Focus**: an opt-in second channel-volume profile that caches current Sound_* CVars on Fishing channel start (`131476`), applies configured Master/SFX/Music/Ambience/Dialog values, and restores cached values on channel stop/reset/logout.
+- Fishing Focus preview buttons temporarily apply either the Normal or Fishing channel profile, play FishingBobber SoundKit `3355` on the Effects/SFX channel, then restore cached channel CVars.
 - Original playback is controlled by `use_original` for targets with original FileDataIDs or a SoundKit fallback; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
 - Sound reference/log files under `modules/sound_levels/sounds/` are public-facing and included in release zips.
 - Each sound target declares a `channel` field (e.g. `"SFX"`, `"Master"`) used for all playback calls; defaults to `"Master"` if absent. Achievement and Ready Check both use `"SFX"`.
@@ -226,6 +228,7 @@ Important `aura_frames` keys:
 - Debug outlines: `M.db.show_bar_section_outlines`; remove tagged textures with `Hide()` + `SetTexture(nil)`, not `SetParent(nil)`.
 - Screen grid: `M.snap_to_grid()`, `M.snap_frame_position()`, `M.set_grid_visible()`. Grid preserves flush screen-edge positions before rounding.
 - Riveted panel style: `addon.ApplyRivetedPanelStyle()` / `addon.AddRivetCorners()`.
+- `addon.CreateRivetedPanel()` owns default text padding through `addon.RIVETED_PANEL_STYLE.padding`; callers should not clear/reanchor returned text just to avoid rivets.
 
 ## Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.

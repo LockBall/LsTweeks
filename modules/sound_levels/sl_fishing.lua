@@ -6,11 +6,15 @@ addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
 local FISHING_CHANNEL_SPELL_ID = 131476
+local FISHING_BOBBER_SOUNDKIT_ID = 3355
+local FISHING_BOBBER_PREVIEW_RESTORE_DELAY = 2.0
+local _PlaySound = (C_Sound and C_Sound.PlaySound) or PlaySound
+local _StopSound = (C_Sound and C_Sound.StopSound) or StopSound
 
 M.FISHING_FOCUS_CHANNELS = {
     { key = "master", label = "Master", cvar = "Sound_MasterVolume" },
-    { key = "sfx", label = "Effects", cvar = "Sound_SFXVolume" },
     { key = "music", label = "Music", cvar = "Sound_MusicVolume" },
+    { key = "sfx", label = "Effects", cvar = "Sound_SFXVolume" },
     { key = "ambience", label = "Ambience", cvar = "Sound_AmbienceVolume" },
     { key = "dialog", label = "Dialog", cvar = "Sound_DialogVolume" },
 }
@@ -46,6 +50,14 @@ local function read_channel_percent(channel)
     return math.max(0, math.min(100, math.floor((value * 100) + 0.5)))
 end
 
+function M.get_default_fishing_focus_channel_percent(channel, current_percent)
+    current_percent = current_percent or read_channel_percent(channel)
+    if channel and channel.key == "sfx" then
+        return math.min(100, current_percent + 25)
+    end
+    return current_percent
+end
+
 function M.get_fishing_focus_db()
     local db = M.get_db()
     db.fishing_focus = db.fishing_focus or {}
@@ -55,14 +67,14 @@ function M.get_fishing_focus_db()
     end
     if db.fishing_focus.initialized_from_current ~= true then
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-            db.fishing_focus[channel.key] = read_channel_percent(channel)
+            db.fishing_focus[channel.key] = M.get_default_fishing_focus_channel_percent(channel)
         end
         db.fishing_focus.initialized_from_current = true
     end
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         local value = tonumber(db.fishing_focus[channel.key])
         if not value then
-            value = read_channel_percent(channel)
+            value = M.get_default_fishing_focus_channel_percent(channel)
         end
         db.fishing_focus[channel.key] = math.max(0, math.min(100, value))
     end
@@ -70,8 +82,55 @@ function M.get_fishing_focus_db()
     return db.fishing_focus
 end
 
+function M.copy_current_sound_channels_to_fishing_focus()
+    local focus_db = M.get_fishing_focus_db()
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        focus_db[channel.key] = read_channel_percent(channel)
+    end
+    return focus_db
+end
+
 function M.get_current_sound_channel_percent(channel)
     return read_channel_percent(channel)
+end
+
+local function restore_bobber_preview_profile()
+    if M._fishing_bobber_preview_timer then
+        M._fishing_bobber_preview_timer:Cancel()
+        M._fishing_bobber_preview_timer = nil
+    end
+    if M._fishing_bobber_preview_handle then
+        _StopSound(M._fishing_bobber_preview_handle)
+        M._fishing_bobber_preview_handle = nil
+    end
+    for cvar_name, value in pairs(M._fishing_bobber_preview_cached or {}) do
+        if value ~= nil then
+            set_cvar(cvar_name, value)
+        end
+    end
+    M._fishing_bobber_preview_cached = nil
+end
+
+function M.stop_fishing_bobber_preview()
+    restore_bobber_preview_profile()
+end
+
+function M.play_fishing_bobber_preview(profile_key)
+    restore_bobber_preview_profile()
+
+    local focus_db = M.get_fishing_focus_db()
+    local cached = {}
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        cached[channel.cvar] = get_cvar(channel.cvar)
+        local percent = profile_key == "fishing" and focus_db[channel.key] or read_channel_percent(channel)
+        set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
+    end
+    M._fishing_bobber_preview_cached = cached
+
+    local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID)
+    M._fishing_bobber_preview_handle = sound_handle
+    M._fishing_bobber_preview_timer = C_Timer.NewTimer(FISHING_BOBBER_PREVIEW_RESTORE_DELAY, restore_bobber_preview_profile)
+    return did_play ~= false
 end
 
 function M.apply_fishing_focus()
