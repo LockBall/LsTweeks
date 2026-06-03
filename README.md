@@ -93,7 +93,7 @@ Current sound targets:
 
 Replacement volume is shown as `0-100%` in 5% steps. `0%` is off. The **Original** checkbox keeps Blizzard's original sound and dims the replacement slider until the slider is moved.
 
-Fishing Focus is available on the **Fishing** tab. It temporarily applies a separate Master, Effects, Music, Ambience, and Dialog channel profile while the player is channeling Fishing, then restores the normal channel volumes when fishing ends. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
+Fishing Focus is available on the **Fishing** tab. It temporarily applies a separate Master, Music, Effects, Ambience, and Dialog channel profile while the player is channeling Fishing, then restores the normal channel volumes when fishing ends. The Fishing profile initializes from the user's normal channel volumes, with Effects set 25 percentage points higher, clamped to 100%. The tab includes Normal and Fishing profile preview buttons that play the Fishing Bobber splash sound for comparison. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
 Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
 
