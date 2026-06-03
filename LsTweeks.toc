@@ -59,6 +59,4 @@ modules\aura_frames\af_gui_tree.lua
 modules\aura_frames\af_debug_outlines.lua
 modules\aura_frames\af_screen_grid.lua
 
-# --- Temporary Internal Probes ---
-internal_docs\tests\fishing_sound_probe.lua
 modules\aura_frames\af_main.lua

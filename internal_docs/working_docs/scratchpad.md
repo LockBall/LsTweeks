@@ -28,4 +28,3 @@ Next useful checks:
 - Review `sl_fishing.lua`, `sl_gui.lua`, and TOC integration for correctness.
 - Test in-game UI layout: five channel sliders should appear as separate columns.
 - Test runtime: enable Fishing Focus, set obvious channel values, cast Fishing, confirm CVars change during channel and restore afterward.
-- Decide whether to remove the temporary `internal_docs/tests/fishing_sound_probe.lua` TOC entry before release.

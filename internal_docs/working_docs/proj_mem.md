@@ -7,6 +7,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Update it when architecture, defaults, APIs, or debugging lessons change.
 - Do not store secrets, personal data, machine-local scratch notes, or session logs.
 - Internal docs live under `internal_docs/`. Active working docs live under `internal_docs/working_docs/`: `proj_mem.md`, `ToDo.md`, and `scratchpad.md`. Completed-feature notes live under `internal_docs/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
+- Environment recovery notes live in `internal_docs/environment_tools.md`; check them first if Codex shell execution, Windows sandbox setup, or the local `.venv` breaks.
 - Format ToDo plans in `internal_docs/working_docs/ToDo.md` with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
 - After significant changes, provide a concise git commit message.
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
@@ -82,6 +83,7 @@ tools/
   package_me.md          packaging instructions
   verify-package.ps1     verifies release zips against package-policy.json and TOC references
 internal_docs/           internal docs excluded from release zips
+  environment_tools.md   Codex shell/sandbox and project venv recovery notes
   working_docs/          active development docs
     proj_mem.md          project memory for coding agents
     ToDo.md              active internal task list
