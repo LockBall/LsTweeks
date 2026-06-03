@@ -84,6 +84,9 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         if step >= 1 then
             return tostring(math.floor(v + 0.5))
         end
+        if step >= 0.1 then
+            return format("%.1f", v)
+        end
         return format("%.2f", v)
     end
 

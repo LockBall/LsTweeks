@@ -169,12 +169,20 @@ function addon.CreateGlobalReset(parent, db, defaults, opts)
     animAlpha:SetSmoothing("IN_OUT")
     ag:SetLooping("BOUNCE")
 
-    -- SECURITY LOGIC: AUTO-CLEAR
-    container:SetScript("OnHide", function()
+    local function disarm()
         eb:SetText("")
         eb:ClearFocus()
         btn:Disable()
         ag:Stop()
+        bgTex:SetAlpha(DIM_ALPHA)
+        pulseTex:SetAlpha(0)
+        eb:SetFontObject("NumberFontNormal")
+        eb:SetTextColor(1, 1, 1)
+    end
+
+    -- SECURITY LOGIC: AUTO-CLEAR
+    container:SetScript("OnHide", function()
+        disarm()
     end)
 
     -- INTERACTIVE SCRIPTS
@@ -254,6 +262,7 @@ function addon.CreateGlobalReset(parent, db, defaults, opts)
             end
         end
 
+        disarm()
         print("|cff00ff00LsTweaks:|r Global reset complete and synchronized.")
     end)
 

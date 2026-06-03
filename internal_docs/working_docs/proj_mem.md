@@ -174,7 +174,7 @@ Important `skyriding_vigor` keys:
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
-- `spacing` and `scale`: presentation settings. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
+- `spacing` and `scale`: presentation settings. The spacing slider is a user-facing 0-10 range at 0.5 steps; `0` maps to the tight visual-zero layout, `5` is the default visual spacing, and `10` is max spread. Runtime layout subtracts 5 before anchoring nodes. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
 - `position`: UIParent-relative saved position.
 - The settings panel uses `CreateGlobalReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
 
@@ -184,6 +184,7 @@ Skyriding Vigor runtime notes:
 - Visibility comes from `C_PlayerInfo.GetGlidingInfo()` plus `PLAYER_CAN_GLIDE_CHANGED` / `PLAYER_IS_GLIDING_CHANGED`.
 - Vigor charges come from `C_Spell.GetSpellCharges()` with spell fallback IDs `372610` (Skyward Ascent) and `372608` (Surge Forward), because existing addon references disagree. Guard secret charge values with `issecretvalue`.
 - Default Vigor node dimensions come from Blizzard `UIWidgetFillUpFrameTemplateMixin`: `dragonriding_vigor = { width = 42, height = 45 }`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
+- Vigor fill is intentionally inset inside each 42x45 node so fractional scale filtering cannot expose blue fill outside the gold frame; keep `sv_bar.lua` fill insets separate from node dimensions.
 - Skyriding Vigor wing placement is centralized in `M.WING_LAYOUT` in `sv_bar.lua`; tune shared `overlap_x`, mirrored `offset_x`, and shared `offset_y` instead of changing node sizing.
 - Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress.
 

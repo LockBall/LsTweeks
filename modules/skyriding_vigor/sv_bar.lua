@@ -17,11 +17,13 @@ local min = math.min
 local MAX_SLOTS = 6
 local DEFAULT_NODE_WIDTH = 42
 local DEFAULT_NODE_HEIGHT = 45
+local FILL_INSET_X = 4
+local FILL_INSET_Y = 4
 local GRID_SIZE = 20
 local WING_LAYOUT = {
     overlap_x = 19,
     offset_x = 0,
-    offset_y = 0,
+    offset_y = -14,
 }
 
 M.MAX_SLOTS = MAX_SLOTS
@@ -91,6 +93,9 @@ function M.save_position()
     db.position.relativePoint = "CENTER"
     db.position.x = xOfs or 0
     db.position.y = yOfs or 0
+    if M.sync_position_controls then
+        M.sync_position_controls(db)
+    end
 end
 
 function M.apply_position()
@@ -115,7 +120,7 @@ local function set_slot_progress(slot, progress)
     slot.bar:ClearAllPoints()
     slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
     slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT)
+    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
     slot.bar:SetMinMaxValues(0, 1)
     slot.bar:SetValue(progress)
 end
@@ -123,7 +128,7 @@ end
 local function set_slot_fill_bounds(slot)
     slot.bar:ClearAllPoints()
     slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT)
+    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
 end
 
 local function create_slot(parent, index)
@@ -142,7 +147,7 @@ local function create_slot(parent, index)
     slot.bar = slot.Bar or CreateFrame("StatusBar", nil, slot)
     slot.bar:SetOrientation("VERTICAL")
     slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT)
+    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
     slot.bar:SetFrameLevel(slot:GetFrameLevel() + 1)
     slot.bar:SetMinMaxValues(0, 1)
     slot.bar:SetValue(0)
@@ -158,6 +163,7 @@ local function create_slot(parent, index)
     if not slot.cover:GetPoint() then
         slot.cover:SetPoint("CENTER", slot, "CENTER", 0, 0)
     end
+    slot.cover:SetDrawLayer("OVERLAY", 7)
     set_atlas_native(slot.cover, "dragonriding_vigor_frame")
 
     return slot
@@ -275,7 +281,8 @@ function M.apply_layout()
     if not db or not frame then return end
 
     local defaults = get_defaults()
-    local spacing = db.spacing or defaults.spacing or 6
+    local spacing_setting = db.spacing or defaults.spacing or 5
+    local spacing = spacing_setting - 5
     local scale = db.scale or defaults.scale or 1
     local width = DEFAULT_NODE_WIDTH
     local height = DEFAULT_NODE_HEIGHT

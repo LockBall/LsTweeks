@@ -89,6 +89,27 @@ local function update_ticker(can_glide)
     end
 end
 
+local function sync_position_controls(db)
+    local position = db and db.position
+    if not position then return end
+
+    local x_slider = M.controls.x_position
+    if x_slider and x_slider.slider and position.x ~= nil and x_slider.slider:GetValue() ~= position.x then
+        M._syncing_position_controls = true
+        x_slider.slider:SetValue(position.x)
+        M._syncing_position_controls = nil
+    end
+
+    local y_slider = M.controls.y_position
+    if y_slider and y_slider.slider and position.y ~= nil and y_slider.slider:GetValue() ~= position.y then
+        M._syncing_position_controls = true
+        y_slider.slider:SetValue(position.y)
+        M._syncing_position_controls = nil
+    end
+end
+
+M.sync_position_controls = sync_position_controls
+
 function M.refresh()
     local db = get_db()
     local frame = M.ensure_frame()
@@ -172,6 +193,7 @@ function M.on_reset_complete()
             slider.slider:SetValue(db[key] or DEFAULTS[key])
         end
     end
+    sync_position_controls(db)
 end
 
 function M.set_db_value(key, value)
@@ -192,6 +214,27 @@ function M.set_snap_to_grid(value)
     M.refresh()
 end
 
+function M.set_position_axis(axis, value)
+    if M._syncing_position_controls then return end
+    if axis ~= "x" and axis ~= "y" then return end
+
+    local db = get_db()
+    if not db then return end
+
+    db.position = db.position or {}
+    if value == nil then
+        value = db.position[axis]
+    end
+    if value == nil then
+        value = DEFAULTS.position and DEFAULTS.position[axis] or 0
+    end
+    db.position.point = "CENTER"
+    db.position.relativePoint = "CENTER"
+    db.position[axis] = value
+
+    M.apply_position()
+end
+
 function M.reset_position()
     local db = get_db()
     if not db then return end
@@ -199,6 +242,7 @@ function M.reset_position()
     addon.deep_copy_into(DEFAULTS.position or {}, db.position)
     M.apply_position()
     M.refresh()
+    sync_position_controls(db)
 end
 
 local loader = CreateFrame("Frame")
