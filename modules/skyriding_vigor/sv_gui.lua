@@ -9,6 +9,8 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
+local CreateFrame = CreateFrame
+
 local UI_CONFIG = {
     title_offset_x = 20,
     title_offset_y = -20,

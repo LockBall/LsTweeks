@@ -9,11 +9,17 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
+local C_Texture_GetAtlasInfo = C_Texture and C_Texture.GetAtlasInfo
+local CreateFrame = CreateFrame
 local GetCursorPosition = GetCursorPosition
 local InCombatLockdown = InCombatLockdown
+local UIParent = UIParent
 local abs = math.abs
+local floor = math.floor
 local max = math.max
 local min = math.min
+local error = error
+local tostring = tostring
 
 local MAX_SLOTS = 6
 local NODE_FRAME_ATLAS = "dragonriding_vigor_frame"
@@ -57,7 +63,7 @@ local SHOW_FRAME_LAYER = true
 local WING_LAYOUT = {
     scale_x = 1,
     scale_y = 1,
-    node_gap_x = -20.0,
+    node_gap_x = -18.0,
     offset_y = -15.0,
 }
 
@@ -84,7 +90,7 @@ local function get_defaults()
 end
 
 local function snap_value(value)
-    return math.floor(((value or 0) / GRID_SIZE) + 0.5) * GRID_SIZE
+    return floor(((value or 0) / GRID_SIZE) + 0.5) * GRID_SIZE
 end
 
 local function set_center_position(frame, x, y)
@@ -107,8 +113,8 @@ local function get_saved_center(db)
 end
 
 local function get_atlas_size(atlas)
-    if C_Texture and C_Texture.GetAtlasInfo then
-        local info = C_Texture.GetAtlasInfo(atlas)
+    if C_Texture_GetAtlasInfo then
+        local info = C_Texture_GetAtlasInfo(atlas)
         if info and info.width and info.height and info.width > 0 and info.height > 0 then
             return info.width, info.height
         end
@@ -453,12 +459,16 @@ end
 
 function M.invalidate_layout()
     M._layout_signature = nil
+    M._layout_dirty = true
 end
 
 function M.apply_layout()
     local db = get_db()
     local frame = M.ensure_frame()
     if not db or not frame then return end
+    if not M._layout_dirty and M._layout_signature then
+        return
+    end
 
     local defaults = get_defaults()
     local spacing = get_spacing_pixels(db)
@@ -496,9 +506,11 @@ function M.apply_layout()
         .. WING_LAYOUT.scale_x .. ":" .. WING_LAYOUT.scale_y .. ":"
         .. WING_LAYOUT.offset_y
     if M._layout_signature == layout_signature then
+        M._layout_dirty = false
         return
     end
     M._layout_signature = layout_signature
+    M._layout_dirty = false
 
     frame:SetSize(total_width * scale, total_height * scale)
     frame:SetScale(1)

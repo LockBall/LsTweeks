@@ -7,7 +7,6 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
     slots = {},
 }
 
-local SV = addon.skyriding_vigor
 local M = {}
 
 M.defaults = {

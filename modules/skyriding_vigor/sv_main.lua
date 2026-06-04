@@ -9,10 +9,13 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
+local C_Timer_NewTicker = C_Timer and C_Timer.NewTicker
 local C_PlayerInfo_GetGlidingInfo = C_PlayerInfo and C_PlayerInfo.GetGlidingInfo
 local C_Spell_GetSpellCharges = C_Spell and C_Spell.GetSpellCharges
+local CreateFrame = CreateFrame
 local GetTime = GetTime
 local IsAdvancedFlyableArea = IsAdvancedFlyableArea
+local IsFlying = IsFlying
 local IsMounted = IsMounted
 local UnitPower = UnitPower
 local UnitPowerDisplayMod = UnitPowerDisplayMod
@@ -21,6 +24,8 @@ local issecretvalue = issecretvalue
 local floor = math.floor
 local max = math.max
 local min = math.min
+local ipairs = ipairs
+local tonumber = tonumber
 
 local VIGOR_SPELL_IDS = {
     372610, -- Skyward Ascent
@@ -50,7 +55,7 @@ local SLIDER_KEYS = M.SLIDER_KEYS
 M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
 
-local loader
+local loader = CreateFrame("Frame")
 
 local function clamp_number(value, fallback, spec)
     value = tonumber(value)
@@ -79,9 +84,18 @@ local function get_db()
     if not M._defaults_applied then
         addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
         M._defaults_applied = true
+        M._db_normalized = false
     end
-    normalize_db(Ls_Tweeks_DB.skyriding_vigor)
-    return Ls_Tweeks_DB.skyriding_vigor
+    local db = Ls_Tweeks_DB.skyriding_vigor
+    if M._db ~= db then
+        M._db = db
+        M._db_normalized = false
+    end
+    if not M._db_normalized then
+        normalize_db(db)
+        M._db_normalized = true
+    end
+    return db
 end
 
 M.get_db = get_db
@@ -154,6 +168,10 @@ local function get_gliding_state()
     return is_gliding and true or false, can_glide and true or false
 end
 
+local function is_player_flying()
+    return IsFlying and IsFlying()
+end
+
 local function is_mounted_in_advanced_flyable_area()
     return IsMounted and IsMounted()
         and IsAdvancedFlyableArea and IsAdvancedFlyableArea()
@@ -216,8 +234,15 @@ end
 
 local function render_fill_test()
     local db = get_db()
+    if not db then return end
+    if not db.enabled then
+        disable_runtime()
+        sync_runtime_events(false)
+        return
+    end
+
     local frame = M.ensure_frame()
-    if not db or not frame then return end
+    if not frame then return end
 
     M.apply_layout()
     M.set_move_mode(false)
@@ -249,11 +274,10 @@ local function should_tick(db, needs_progress_updates)
     return db and db.enabled and needs_progress_updates
 end
 
-local function update_ticker(needs_progress_updates)
-    local db = get_db()
+local function update_ticker(db, needs_progress_updates)
     if should_tick(db, needs_progress_updates) then
         if not M.ticker then
-            M.ticker = C_Timer.NewTicker(TICK_SECONDS, function()
+            M.ticker = C_Timer_NewTicker(TICK_SECONDS, function()
                 M.refresh()
             end)
         end
@@ -323,7 +347,7 @@ function M.refresh()
     M.apply_layout()
     M.set_move_mode(db.move_mode)
 
-    local is_gliding, can_glide = get_gliding_state()
+    local is_gliding = get_gliding_state()
     local current, max_charges, start_time, duration = get_charge_info()
     local max_slots = M.MAX_SLOTS
 
@@ -331,11 +355,11 @@ function M.refresh()
         current, max_charges, start_time, duration = 4, max_slots, GetTime() - 2, 5
     end
 
-    local should_show = db.enabled and current and max_charges
-        and (db.move_mode or can_glide or is_mounted_in_advanced_flyable_area())
+    local should_show = current and max_charges
+        and (db.move_mode or is_gliding or is_player_flying() or is_mounted_in_advanced_flyable_area())
     if not should_show then
         frame:Hide()
-        update_ticker(false)
+        update_ticker(db, false)
         return
     end
     current = current or 0
@@ -362,7 +386,9 @@ function M.refresh()
         end
     end
 
-    if db.fade_when_full and not db.move_mode and current >= max_charges and not is_gliding then
+    local is_active_flight = is_gliding or is_player_flying()
+    local charges_full = current >= min(max_charges, max_slots)
+    if db.fade_when_full and not db.move_mode and charges_full and not is_active_flight then
         set_frame_alpha(frame, db.fade_alpha or DEFAULTS.fade_alpha or 0.25)
     else
         set_frame_alpha(frame, 1)
@@ -371,7 +397,7 @@ function M.refresh()
     if not frame:IsShown() then
         frame:Show()
     end
-    update_ticker(needs_progress_updates)
+    update_ticker(db, needs_progress_updates)
 end
 
 function M.set_fill_test_enabled(enabled)
@@ -388,7 +414,7 @@ function M.set_fill_test_enabled(enabled)
         M._fill_test_started_at = GetTime()
         render_fill_test()
         if not M.fill_test_ticker then
-            M.fill_test_ticker = C_Timer.NewTicker(FILL_TEST_TICK_SECONDS, function()
+            M.fill_test_ticker = C_Timer_NewTicker(FILL_TEST_TICK_SECONDS, function()
                 render_fill_test()
             end)
         end
@@ -404,6 +430,7 @@ function M.toggle_fill_test()
 end
 
 function M.on_reset_complete()
+    M._db_normalized = false
     local db = get_db()
     if not db then return end
     if M.invalidate_layout then
@@ -501,7 +528,6 @@ function M.reset_position()
     sync_position_controls(db)
 end
 
-loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 
 loader:SetScript("OnEvent", function(self, event, name)
@@ -510,6 +536,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
         M._defaults_applied = true
+        M._db_normalized = false
         local db = get_db()
         sync_runtime_events(db and db.enabled)
         if addon.register_category then

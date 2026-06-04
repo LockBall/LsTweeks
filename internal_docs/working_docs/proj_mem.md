@@ -170,7 +170,7 @@ Important `sound_levels` keys:
 
 Important `skyriding_vigor` keys:
 - `enabled`: toggles the restored vigor display.
-- `fade_when_full`: lowers alpha when vigor is full and the player is not gliding.
+- `fade_when_full`: lowers alpha when vigor is full and move mode is off.
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
@@ -183,14 +183,15 @@ Important `skyriding_vigor` keys:
 Skyriding Vigor runtime notes:
 - The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
 - Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
-- Visibility comes from readable vigor charges plus either move mode, `C_PlayerInfo.GetGlidingInfo()` `canGlide`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). `canGlide` alone can be false while grounded on a Skyriding-capable mount.
+- Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, `IsFlying()`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). Grounded mounted visibility is allowed; `fade_when_full` handles idle/full states so the bar is unobtrusive.
+- `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` restores full alpha even when charges are full; plain ground movement must not, because grounded mounted running can otherwise make a full bar pop to full alpha.
 - Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 - Default Vigor node dimensions come from Blizzard atlas metadata for `dragonriding_vigor_frame`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill/background dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`; tune scale/offset there instead of changing node dimensions or adding alternate fill sizing paths.
 - Skyriding Vigor wing placement is centralized in the local `WING_LAYOUT` table in `sv_bar.lua`; tune `node_gap_x`, wing scale, and shared `offset_y` instead of changing node sizing.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
-- Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout or reset slot visuals on each tick: `sv_bar.lua` caches layout by signature, slot state/visibility setters guard repeated values, and `sv_main.lua` applies defaults once per session.
+- Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout, reset slot visuals, or normalize DB on each tick: `sv_bar.lua` uses a dirty layout cache, slot state/visibility setters guard repeated values, and `sv_main.lua` applies defaults once per session then normalizes DB only after load/reset/table replacement.
 - When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop normal/fill-test tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
 
 Important `aura_frames` keys:
