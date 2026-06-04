@@ -32,7 +32,8 @@ local VIGOR_SPELL_IDS = {
     372608, -- Surge Forward
 }
 
-local TICK_SECONDS = 0.2
+local TICK_SECONDS = addon.UPDATE_INTERVALS.fifth_sec
+-- Fill test animation needs a smoother local cadence than normal runtime refreshes.
 local FILL_TEST_TICK_SECONDS = 0.05
 local FILL_TEST_NODE_SECONDS = 0.55
 local VIGOR_POWER_TYPES = {
@@ -104,7 +105,7 @@ local function is_secret(value)
     return issecretvalue and issecretvalue(value)
 end
 
-local function normalize_power_value(value, max_power, max_slots, power_type)
+local function normalize_power_value(value, max_power, slot_count, power_type)
     if not value or not max_power or max_power <= 0 then return nil end
 
     local display_mod = UnitPowerDisplayMod and UnitPowerDisplayMod(power_type) or 0
@@ -112,8 +113,8 @@ local function normalize_power_value(value, max_power, max_slots, power_type)
         return floor((value / display_mod) + 0.5)
     end
 
-    if max_power > max_slots then
-        return floor(((value / max_power) * max_slots) + 0.5)
+    if max_power > slot_count then
+        return floor(((value / max_power) * slot_count) + 0.5)
     end
 
     return value
@@ -151,10 +152,10 @@ local function get_charge_info()
     for _, spell_id in ipairs(VIGOR_SPELL_IDS) do
         local info = C_Spell_GetSpellCharges(spell_id)
         if info and info.maxCharges and not is_secret(info.maxCharges) and info.maxCharges > 0 then
-            local current = info.currentCharges or 0
+            local spell_current = info.currentCharges or 0
             local max_slots = M.MAX_SLOTS
-            if not is_secret(current) then
-                return min(current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
+            if not is_secret(spell_current) then
+                return min(spell_current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
             end
         end
     end
@@ -347,7 +348,7 @@ function M.refresh()
     M.apply_layout()
     M.set_move_mode(db.move_mode)
 
-    local is_gliding = get_gliding_state()
+    local is_gliding, _ = get_gliding_state()
     local current, max_charges, start_time, duration = get_charge_info()
     local max_slots = M.MAX_SLOTS
 
@@ -369,7 +370,8 @@ function M.refresh()
     if duration and duration > 0 and start_time and start_time > 0 then
         progress = min(max((GetTime() - start_time) / duration, 0), 1)
     end
-    local needs_progress_updates = db.move_mode or (current < max_charges and duration and duration > 0 and start_time and start_time > 0)
+    local needs_progress_updates = not db.move_mode
+        and (current < max_charges and duration and duration > 0 and start_time and start_time > 0)
 
     for i = 1, max_slots do
         if i <= max_charges then
@@ -534,9 +536,6 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-        addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
-        M._defaults_applied = true
-        M._db_normalized = false
         local db = get_db()
         sync_runtime_events(db and db.enabled)
         if addon.register_category then

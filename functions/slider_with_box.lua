@@ -93,18 +93,18 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     eb:SetText(format_display_value((db_table and db_table[db_key]) or min_v))
 
 
-    local function run_callback()
+    local function run_callback(value)
         if type(callback) == "function" then
-            callback()
+            callback(value)
         end
     end
 
     local debounce_timer = nil
-    local function debounced_callback()
+    local function debounced_callback(value)
         if debounce_timer then debounce_timer:Cancel() end
         debounce_timer = C_Timer.NewTimer(UPDATE_INTERVALS.tenth_sec, function()
             debounce_timer = nil
-            run_callback()
+            run_callback(value)
         end)
     end
 
@@ -118,7 +118,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         end
         eb:SetText(format_display_value(value))
         if not container._suppress_callback then
-            debounced_callback()
+            debounced_callback(value)
         end
     end)
 
@@ -157,7 +157,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         if slider:GetValue() ~= default_value then
             slider:SetValue(default_value)
         else
-            run_callback()
+            run_callback(default_value)
         end
     end)
 

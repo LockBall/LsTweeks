@@ -43,11 +43,9 @@ local function get_spec(key)
 end
 
 local function set_setting_from_slider(key)
-    return function()
+    return function(value)
         if M._syncing_slider_controls then return end
-        local db = M.get_db and M.get_db()
-        if not db then return end
-        M.set_db_value(key, db[key])
+        M.set_db_value(key, value)
     end
 end
 

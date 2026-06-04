@@ -7,9 +7,9 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
     slots = {},
 }
 
-local M = {}
+local defs = {}
 
-M.defaults = {
+defs.defaults = {
     skyriding_vigor = {
         enabled = true,
         fade_when_full = true,
@@ -28,6 +28,6 @@ M.defaults = {
 }
 
 addon.module_defaults = addon.module_defaults or {}
-addon.module_defaults.sv = M.defaults
+addon.module_defaults.sv = defs.defaults
 
-return M
+return defs

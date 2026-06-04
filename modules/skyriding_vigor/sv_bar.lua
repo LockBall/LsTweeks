@@ -26,6 +26,7 @@ local NODE_FRAME_ATLAS = "dragonriding_vigor_frame"
 local NODE_BACKGROUND_ATLAS = "dragonriding_vigor_background"
 local NODE_FILL_ATLAS = "dragonriding_vigor_fill"
 local NODE_FILL_FULL_ATLAS = "dragonriding_vigor_fillfull"
+local DECOR_ATLAS = "dragonriding_vigor_decor"
 local GRID_SIZE = 20
 
 local SCALE_RANGE = { min = 0.5, max = 2, step = 0.05 }
@@ -127,6 +128,13 @@ local function get_node_size()
         M._node_width, M._node_height = get_atlas_size(NODE_FRAME_ATLAS)
     end
     return M._node_width, M._node_height
+end
+
+local function get_decor_size()
+    if not M._decor_width or not M._decor_height then
+        M._decor_width, M._decor_height = get_atlas_size(DECOR_ATLAS)
+    end
+    return M._decor_width, M._decor_height
 end
 
 local function get_fill_size()
@@ -378,12 +386,12 @@ local function ensure_decor(parent)
 
     M.decor_left = M.decor_left_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_left:SetAllPoints(M.decor_left_frame)
-    M.decor_left:SetAtlas("dragonriding_vigor_decor", true)
+    M.decor_left:SetAtlas(DECOR_ATLAS, true)
     M.decor_left:SetTexCoord(1, 0, 0, 1)
 
     M.decor_right = M.decor_right_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_right:SetAllPoints(M.decor_right_frame)
-    M.decor_right:SetAtlas("dragonriding_vigor_decor", true)
+    M.decor_right:SetAtlas(DECOR_ATLAS, true)
 end
 
 function M.ensure_frame()
@@ -404,6 +412,8 @@ function M.ensure_frame()
     frame:SetScript("OnDragStart", function(self)
         local db = get_db()
         if not db or not db.move_mode or InCombatLockdown() then return end
+        if self._is_dragging then return end
+        self._is_dragging = true
         local cursor_x, cursor_y = get_cursor_position()
         local center_x = self._center_x
         local center_y = self._center_y
@@ -426,6 +436,7 @@ function M.ensure_frame()
 
     frame:SetScript("OnDragStop", function(self)
         self:SetScript("OnUpdate", nil)
+        self._is_dragging = false
         self._drag_start_cursor_x = nil
         self._drag_start_cursor_y = nil
         self._drag_start_center_x = nil
@@ -463,20 +474,20 @@ function M.invalidate_layout()
 end
 
 function M.apply_layout()
-    local db = get_db()
-    local frame = M.ensure_frame()
-    if not db or not frame then return end
     if not M._layout_dirty and M._layout_signature then
         return
     end
+
+    local db = get_db()
+    local frame = M.ensure_frame()
+    if not db or not frame then return end
 
     local defaults = get_defaults()
     local spacing = get_spacing_pixels(db)
     local scale = db.scale or defaults.scale or 1
     local width, height = get_node_size()
     local frame_width, frame_height = get_frame_size()
-    local decor_width = M.decor_left and M.decor_left:GetWidth() or 64
-    local decor_height = M.decor_left and M.decor_left:GetHeight() or 64
+    local decor_width, decor_height = get_decor_size()
     local wing_width = decor_width * WING_LAYOUT.scale_x
     local wing_height = decor_height * WING_LAYOUT.scale_y
     local frame_edge_inset_x = get_frame_edge_inset_x(frame_width)
