@@ -18,14 +18,8 @@ function M.uses_cooldown_icon_overlay(category, bar_mode, db)
     return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
 end
 
-local function set_shown_if_changed(frame, shown)
-    if not frame then return end
-    if shown then
-        if not frame:IsShown() then frame:Show() end
-    elseif frame:IsShown() then
-        frame:Hide()
-    end
-end
+local set_shown_if_changed = M.set_shown_if_changed
+local clear_timer_text = M.clear_timer_text
 
 local function set_scale_if_changed(frame, scale)
     if not frame then return end
@@ -61,7 +55,7 @@ local function apply_position_if_changed(frame, scale_key, fallback_y, scale)
     frame._lstweeks_pos_x = x
     frame._lstweeks_pos_y = y
     frame._lstweeks_pos_scale = scale
-    M.apply_saved_frame_position(frame, scale_key, fallback_y)
+    M.apply_saved_frame_position(frame, scale_key, fallback_y, scale)
 end
 
 local function set_size_if_changed(frame, width, height)
@@ -114,79 +108,78 @@ function M.tick_visible_icons(now)
     local db = M.db
     local short_threshold = (db and db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
-    for _, frame in pairs(M.frames) do
+    local frames_list = M.frames_list
+    if not frames_list then return end
+    for frame_index = 1, #frames_list do
+        local frame = frames_list[frame_index]
         if frame:IsVisible() then
             local is_static_frame = (frame.category == "static")
             local show_timer_text = frame._show_timer_text
             local bar_mode = frame._bar_mode
             local show_cooldown_overlay = frame._show_cooldown_overlay == true
-            local display_count = frame._display_count
-            if display_count == nil or display_count > #frame.icons then
-                display_count = #frame.icons
+            local display_count = frame._display_count or 0
+            local icon_count = #frame.icons
+            if display_count > icon_count then
+                display_count = icon_count
             end
             for i = 1, display_count do
                 local obj = frame.icons[i]
-                if obj:IsShown() and obj.is_test_preview and M.update_test_preview_state then
-                    M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
-                end
-                if obj:IsShown() and is_static_frame then
-                    if obj.time_text._last_text ~= "" then
-                        obj.time_text:SetText("")
-                        obj.time_text._last_text = ""
+                if obj:IsShown() then
+                    if obj.is_test_preview and M.update_test_preview_state then
+                        M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
                     end
-                elseif obj:IsShown() and ((type(obj.aura_index) == "number") or obj.is_spell_cooldown or obj.is_test_preview) then
-                    if show_timer_text then
-                        if show_cooldown_overlay then
+                    if is_static_frame then
+                        clear_timer_text(obj.time_text)
+                    elseif (type(obj.aura_index) == "number") or obj.is_spell_cooldown or obj.is_test_preview then
+                        if show_timer_text then
+                            if show_cooldown_overlay then
+                                if obj.time_text:IsShown() then obj.time_text:Hide() end
+                                clear_timer_text(obj.time_text)
+                            elseif not obj.time_text:IsShown() then
+                                obj.time_text:Show()
+                            end
+                        else
                             if obj.time_text:IsShown() then obj.time_text:Hide() end
-                            obj.time_text:SetText("")
-                            obj.time_text._last_text = ""
-                        elseif not obj.time_text:IsShown() then
-                            obj.time_text:Show()
                         end
-                    else
-                        if obj.time_text:IsShown() then obj.time_text:Hide() end
-                    end
-                    local remaining
-                    if obj.aura_expiration and obj.aura_expiration > 0 then
-                        remaining = math_max(0, obj.aura_expiration - now)
-                    elseif obj.aura_scan_time and obj.aura_remaining
-                        and not issecretvalue(obj.aura_remaining)
-                        and obj.aura_remaining > 0 then
-                        remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
-                    end
-                    local live_remaining
-                    local need_live_fallback = (remaining == nil) and (type(obj.aura_index) == "number")
-                        and (show_timer_text or (obj.bar and obj.bar:IsShown()))
-                    if need_live_fallback then
-                        local live_duration = nil
-                        local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
-                        if ok then live_duration = result end
-                        if live_duration then
-                            live_remaining = live_duration:GetRemainingDuration()
-                            if live_remaining ~= nil and not issecretvalue(live_remaining) then
-                                remaining = live_remaining
+                        local remaining
+                        if obj.aura_expiration and obj.aura_expiration > 0 then
+                            remaining = math_max(0, obj.aura_expiration - now)
+                        elseif obj.aura_scan_time and obj.aura_remaining
+                            and not issecretvalue(obj.aura_remaining)
+                            and obj.aura_remaining > 0 then
+                            remaining = math_max(0, obj.aura_remaining - (now - obj.aura_scan_time))
+                        end
+                        local live_remaining
+                        local need_live_fallback = (remaining == nil) and (type(obj.aura_index) == "number")
+                            and (show_timer_text or (obj.bar and obj.bar:IsShown()))
+                        if need_live_fallback then
+                            local live_duration = nil
+                            local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
+                            if ok then live_duration = result end
+                            if live_duration then
+                                live_remaining = live_duration:GetRemainingDuration()
+                                if live_remaining ~= nil and not issecretvalue(live_remaining) then
+                                    remaining = live_remaining
+                                end
                             end
                         end
-                    end
-                    if remaining and remaining > 0 then
-                        if show_timer_text and not show_cooldown_overlay then
-                            M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
-                        end
-                        if obj.bar and obj.bar:IsShown() then
-                            if obj.aura_duration and obj.aura_duration > 0 then
-                                obj.bar:SetMinMaxValues(0, obj.aura_duration)
+                        if remaining and remaining > 0 then
+                            if show_timer_text and not show_cooldown_overlay then
+                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
                             end
-                            obj.bar:SetValue(remaining)
-                        end
-                    elseif remaining == 0 then
-                        if obj.time_text._last_text ~= "" then
-                            obj.time_text:SetText("")
-                            obj.time_text._last_text = ""
-                        end
-                        obj.grey_cooldown = false
-                    elseif live_remaining ~= nil and issecretvalue(live_remaining) then
-                        if show_timer_text and not show_cooldown_overlay then
-                            M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
+                            if obj.bar and obj.bar:IsShown() then
+                                if obj.aura_duration and obj.aura_duration > 0 then
+                                    obj.bar:SetMinMaxValues(0, obj.aura_duration)
+                                end
+                                obj.bar:SetValue(remaining)
+                            end
+                        elseif remaining == 0 then
+                            clear_timer_text(obj.time_text)
+                            obj.grey_cooldown = false
+                        elseif live_remaining ~= nil and issecretvalue(live_remaining) then
+                            if show_timer_text and not show_cooldown_overlay then
+                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
+                            end
                         end
                     end
                 end

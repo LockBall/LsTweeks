@@ -24,6 +24,7 @@ local _scratch_old_map      = {}
 local _scratch_old_cat      = {}
 local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
+local _scratch_added_lookup = {}
 local _scratch_viewer_children = {}
 local _custom_aura_scan_cache = {}
 local AURA_SCAN_BUCKET_CATEGORIES = { "static", "short", "long", "debuff" }
@@ -164,10 +165,12 @@ local function get_safe_spell_id(raw_spell_id, old_entry)
 end
 
 local function get_aura_spell_id(aura, fallback_entry)
-    local sid = get_safe_spell_id(aura and aura.spellId, nil)
-    if sid then return sid end
-    sid = get_safe_spell_id(aura and aura.spellID, nil)
-    if sid then return sid end
+    if aura then
+        local sid = aura.spellId
+        if sid ~= nil and not issecretvalue(sid) then return sid end
+        sid = aura.spellID
+        if sid ~= nil and not issecretvalue(sid) then return sid end
+    end
     return get_safe_spell_id(nil, fallback_entry)
 end
 
@@ -231,7 +234,7 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
     max_limit = max_limit or custom_entry.max_icons or M.MAX_ICONS_LIMIT
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
-    local cache_key = aura_filter .. "\001" .. tostring(short_threshold)
+    local cache_key = aura_filter .. "|" .. tostring(short_threshold)
     local cached = _custom_aura_scan_cache[cache_key]
     if not cached then
         cached = { entries = {}, next_index = 1, complete = false }
@@ -480,11 +483,13 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             hook_cd_item_frame(child)
 
             local iid = child.auraInstanceID
+            local has_active_aura_entry = false
             if iid then
                 local aura_entry = M._aura_map[iid]
                 if aura_entry then
                     aura_entry.cdm_order = cdm_order
                     target_map[iid] = aura_entry
+                    has_active_aura_entry = true
                 end
             end
 
@@ -535,7 +540,9 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 spell_id = spell_id or cached.spell_id
             end
 
-            if (not iid) and cooldown_id and icon then
+            -- Blizzard can retain child.auraInstanceID after the active aura expires
+            -- in combat. Fall back to cooldown display unless we mapped a live aura.
+            if not has_active_aura_entry and cooldown_id and icon then
                 local expiration = cached and cached.expiration or 0
                 local duration = cached and cached.duration or 0
                 local remaining = (expiration and expiration > now) and (expiration - now) or 0
@@ -588,7 +595,8 @@ local function build_added_by_key(map)
 end
 
 local function build_added_lookup(info)
-    local lookup = {}
+    local lookup = _scratch_added_lookup
+    wipe(lookup)
     local count  = 0
     if not info then return lookup, count end
     if info.addedAuras then

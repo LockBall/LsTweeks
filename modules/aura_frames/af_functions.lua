@@ -7,8 +7,7 @@ addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local MAIN_FRAME_FALLBACK_HALF_WIDTH = 475
-local CDM_DEFAULT_POSITION_GAP = 32
-local CUSTOM_DEFAULT_POSITION_GAP = 32
+local DEFAULT_POSITION_GAP = 32
 local CUSTOM_DEFAULT_POSITION_START_Y = 50
 local CUSTOM_DEFAULT_POSITION_STEP_Y = -50
 local CDM_DEFAULT_POSITION_Y_OFFSETS = {
@@ -28,6 +27,23 @@ local DEFAULT_TIMER_BEHAVIOR = {
 }
 
 local CANCELABLE_AURA_FILTER = "HELPFUL|CANCELABLE"
+
+function M.set_shown_if_changed(frame, shown)
+    if not frame then return end
+    if shown then
+        if not frame:IsShown() then frame:Show() end
+    elseif frame:IsShown() then
+        frame:Hide()
+    end
+end
+
+function M.clear_timer_text(font_string)
+    if not font_string then return end
+    if font_string._last_text ~= "" then
+        font_string:SetText("")
+        font_string._last_text = ""
+    end
+end
 
 local function normalize_cancel_modifier(modifier)
     if modifier == "OFF" or modifier == "CTRL" or modifier == "ALT" or modifier == "SHIFT" then
@@ -55,8 +71,11 @@ local function refresh_aura_frames_after_cancel()
     end
 
     local function refresh()
-        if not (M.frames and M.update_auras) then return end
-        for _, frame in pairs(M.frames) do
+        if not M.update_auras then return end
+        local frames_list = M.frames_list
+        if not frames_list then return end
+        for i = 1, #frames_list do
+            local frame = frames_list[i]
             local params = frame.update_params
             if params then
                 M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
@@ -138,7 +157,7 @@ function M.get_default_cdm_frame_position(category)
     local main_right_x, main_center_y = read_main_frame_reference()
     return {
         point = "TOPLEFT",
-        x = main_right_x + CDM_DEFAULT_POSITION_GAP,
+        x = main_right_x + DEFAULT_POSITION_GAP,
         y = main_center_y + y_offset,
     }
 end
@@ -156,7 +175,7 @@ function M.get_default_custom_frame_position(id)
     local index = get_custom_position_index(id)
     return {
         point = "TOPLEFT",
-        x = main_right_x + CUSTOM_DEFAULT_POSITION_GAP,
+        x = main_right_x + DEFAULT_POSITION_GAP,
         y = main_center_y + CUSTOM_DEFAULT_POSITION_START_Y + ((index - 1) * CUSTOM_DEFAULT_POSITION_STEP_Y),
     }
 end
@@ -230,11 +249,11 @@ function M.get_frame_position_scale(frame, scale_key)
     return scale
 end
 
-function M.apply_saved_frame_position(frame, scale_key, fallback_y)
+function M.apply_saved_frame_position(frame, scale_key, fallback_y, scale)
     if not frame then return end
     local pos = M.get_frame_position_table(frame)
     if pos then
-        M.apply_frame_position(frame, pos, M.get_frame_position_scale(frame, scale_key))
+        M.apply_frame_position(frame, pos, scale or M.get_frame_position_scale(frame, scale_key))
     else
         frame:ClearAllPoints()
         frame:SetPoint("TOPLEFT", UIParent, "CENTER", -100, fallback_y or 75)
@@ -427,7 +446,6 @@ function M.get_frame_activity_state(frame, show_key, move_key)
         needs_custom_scan = enabled and is_custom,
         needs_cdm_viewer = enabled and is_cdm,
         needs_cdm_scan = enabled and is_cdm,
-        should_show_frame = enabled,
     }
 end
 
@@ -458,34 +476,31 @@ function M.get_timer_number_font_size(category, cfg_db)
     return tonumber(value) or 10
 end
 
--- Returns the next available auto-name ("Custom 1" .. "Custom N").
-local function next_custom_name()
+local function next_custom_slot(field, prefix, fallback)
     local used = {}
     if M.db and M.db.custom_frames then
         for _, entry in ipairs(M.db.custom_frames) do
-            used[entry.name] = true
+            local value = entry[field]
+            if value ~= nil then
+                used[value] = true
+            end
         end
     end
     for n = 1, M.MAX_CUSTOM_FRAMES do
-        local candidate = "Custom " .. n
+        local candidate = prefix .. n
         if not used[candidate] then return candidate end
     end
-    return "Custom"
+    return fallback
+end
+
+-- Returns the next available auto-name ("Custom 1" .. "Custom N").
+local function next_custom_name()
+    return next_custom_slot("name", "Custom ", "Custom")
 end
 
 -- Returns the next available stable id ("custom_1" .. "custom_N").
 local function next_custom_id()
-    local used = {}
-    if M.db and M.db.custom_frames then
-        for _, entry in ipairs(M.db.custom_frames) do
-            used[entry.id] = true
-        end
-    end
-    for n = 1, M.MAX_CUSTOM_FRAMES do
-        local candidate = "custom_" .. n
-        if not used[candidate] then return candidate end
-    end
-    return "custom_x"
+    return next_custom_slot("id", "custom_", "custom_x")
 end
 
 -- Creates a new custom frame entry table from the template.

@@ -8,6 +8,7 @@ local M = addon.aura_frames
 
 -- Runtime state tables. The saved DB is attached during ADDON_LOADED.
 M.frames = M.frames or {}
+M.frames_list = M.frames_list or {}
 M.controls = M.controls or {}
 
 -- CACHED GLOBALS AND CONSTANTS
@@ -27,6 +28,16 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
         prepare_viewers = false,
         clear_child_cache = false,
         defer_zero = true,
+    },
+    combat_entry = {
+        delays = {
+            UPDATE_INTERVALS.tenth_sec,
+            UPDATE_INTERVALS.fifth_sec,
+            UPDATE_INTERVALS.six_tenths_sec,
+        },
+        prepare_viewers = false,
+        clear_child_cache = false,
+        mark_scan_dirty = true,
     },
     startup = {
         delays = {
@@ -50,6 +61,35 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
         clear_child_cache = true,
     },
 }
+
+local function remove_runtime_frame_from_list(frame)
+    local frames_list = M.frames_list
+    if not (frames_list and frame) then return end
+    for i = #frames_list, 1, -1 do
+        if frames_list[i] == frame then
+            table.remove(frames_list, i)
+        end
+    end
+end
+
+local function register_runtime_frame(show_key, frame)
+    local old_frame = M.frames[show_key]
+    if old_frame and old_frame ~= frame then
+        remove_runtime_frame_from_list(old_frame)
+    end
+    remove_runtime_frame_from_list(frame)
+    M.frames[show_key] = frame
+    M.frames_list[#M.frames_list + 1] = frame
+end
+
+local function unregister_runtime_frame(show_key)
+    local frame = M.frames[show_key]
+    if frame then
+        remove_runtime_frame_from_list(frame)
+    end
+    M.frames[show_key] = nil
+    return frame
+end
 
 M.NUMBER_FONT_OPTIONS = {
     {
@@ -119,8 +159,10 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
 end
 
 function M.apply_number_font_to_all()
-    if not M.frames then return end
-    for _, frame in pairs(M.frames) do
+    local frames_list = M.frames_list
+    if not frames_list then return end
+    for i = 1, #frames_list do
+        local frame = frames_list[i]
         if frame and frame.icons then
             local category = frame.category
             local cfg_db = frame._cfg_db
@@ -135,6 +177,10 @@ end
 
 local function run_wow_cooldown_refresh(refresh_config)
     if not M.frames then return end
+
+    if refresh_config.mark_scan_dirty and M.mark_aura_scan_dirty then
+        M.mark_aura_scan_dirty()
+    end
 
     if M.update_all_blizz_cdm_visibility then
         M.update_all_blizz_cdm_visibility()
@@ -156,7 +202,7 @@ local function run_wow_cooldown_refresh(refresh_config)
         local show_key = M.get_preset_keys(category).show_key
         local frame = M.frames[show_key]
         local p = frame and frame.update_params
-        if p then
+        if p and (needs_viewer or frame:IsShown()) then
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end
@@ -169,6 +215,7 @@ local function schedule_wow_cooldown_refresh(delay, refresh_config)
         .. "|" .. tostring(refresh_config.prepare_viewers == true)
         .. "|" .. tostring(refresh_config.clear_child_cache == true)
         .. "|" .. tostring(refresh_config.defer_zero == true)
+        .. "|" .. tostring(refresh_config.mark_scan_dirty == true)
     if M._cdm_refresh_pending[key] then return end
 
     local function refresh()
@@ -536,6 +583,12 @@ local function handle_aura_frame_event(frame, event, unit, info)
     if not params then return end
     if not is_aura_frame_event_relevant(event, unit) then return end
 
+    local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
+    if not activity.enabled then
+        frame._pending_aura_info = nil
+        return
+    end
+
     -- Do not scan inside the event handler. C_UnitAuras calls made directly
     -- during event dispatch can return secret values in combat, so every frame
     -- update is deferred through the short aura bucket below.
@@ -544,6 +597,11 @@ local function handle_aura_frame_event(frame, event, unit, info)
     end
     if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
         M.mark_aura_scan_dirty()
+    end
+    if event == "PLAYER_REGEN_DISABLED"
+        and M.WOW_COOLDOWN_CATEGORIES
+        and M.WOW_COOLDOWN_CATEGORIES[params.category] then
+        M.queue_wow_cooldown_refresh("combat_entry")
     end
 
     queue_deferred_aura_scan(frame, params)
@@ -601,7 +659,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     )
     bind_aura_frame_events(frame, category)
     
-    M.frames[show_key] = frame
+    register_runtime_frame(show_key, frame)
     return frame
 end
 
@@ -637,15 +695,6 @@ function M.create_custom_frame(entry)
         }
     )
 
-    -- Override update_params to use flat entry keys and the selected AuraFilters string.
-    frame.update_params.show_key    = show_key
-    frame.update_params.move_key    = "move"
-    frame.update_params.timer_key   = "timer"
-    frame.update_params.bg_key      = "bg"
-    frame.update_params.scale_key   = "scale"
-    frame.update_params.spacing_key = "spacing"
-    frame.update_params.aura_filter = aura_filter
-
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
 
     return frame
@@ -667,12 +716,11 @@ end
 function M.destroy_custom_frame(id)
     if not id then return end
     local show_key = "show_" .. id
-    local frame    = M.frames[show_key]
+    local frame = unregister_runtime_frame(show_key)
     if frame then
         frame:Hide()
         frame:UnregisterAllEvents()
         frame:SetScript("OnEvent", nil)
-        M.frames[show_key] = nil
     end
     if M.db and M.db.custom_frames then
         for i, entry in ipairs(M.db.custom_frames) do
@@ -751,7 +799,9 @@ local function start_aura_frame_runtime_services()
     M.queue_wow_cooldown_refresh("startup")
 
     register_aura_frame_settings()
-    M.create_grid_overlay()
+    if M.db.show_grid then
+        M.create_grid_overlay()
+    end
 end
 
 -- Startup conductor: keep addon-loaded work in order while each step
@@ -826,7 +876,10 @@ local function refresh_frame_after_reset(frame)
 end
 
 local function refresh_aura_frames_after_reset()
-    for _, frame in pairs(M.frames) do
+    local frames_list = M.frames_list
+    if not frames_list then return end
+    for i = 1, #frames_list do
+        local frame = frames_list[i]
         refresh_frame_after_reset(frame)
     end
 end

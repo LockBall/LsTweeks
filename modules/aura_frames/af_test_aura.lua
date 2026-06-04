@@ -78,11 +78,10 @@ function M.append_test_aura(aura_map, show_key, filter, short_threshold)
 end
 
 function M.update_test_preview_state(obj, show_key, short_threshold, now)
-    local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
+    local duration, remaining = get_test_preview_state(show_key, short_threshold, now)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining
     obj.aura_expiration = now + remaining
     obj.aura_scan_time = now
-    obj.aura_count = count
 end

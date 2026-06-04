@@ -211,7 +211,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         grid,
         4,
         1,
-        labels.timer_text_control_key,
+        labels.timer_text_control_key or timer_text_key,
         nil,
         update
     )
@@ -224,7 +224,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         grid,
         4,
         1,
-        labels.bold_control_key,
+        labels.bold_control_key or timer_bold_key,
         refresh_fonts,
         update
     )
@@ -472,7 +472,10 @@ function M.build_general_tab(p)
 
     -- Short Buff Threshold slider
     local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
-        for k, v in pairs(M.frames) do
+        local frames_list = M.frames_list
+        if not frames_list then return end
+        for i = 1, #frames_list do
+            local v = frames_list[i]
             local params = v.update_params
             if params then
                 M.update_auras(v, params.show_key, params.move_key, params.timer_key, params.bg_key,

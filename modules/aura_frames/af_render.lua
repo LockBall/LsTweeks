@@ -23,6 +23,7 @@ local TIMER_DIR_REMAINING  = Enum.StatusBarTimerDirection and Enum.StatusBarTime
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
+local clear_timer_text = M.clear_timer_text
 
 -- Scratch tables reused every render_aura_map call to avoid per-frame allocation.
 local _scratch_list      = {}
@@ -64,19 +65,13 @@ function M.set_timer_text(font_string, category, seconds)
     if not font_string then return end
 
     if seconds == nil then
-        if font_string._last_text ~= "" then
-            font_string:SetText("")
-            font_string._last_text = ""
-        end
+        clear_timer_text(font_string)
         return
     end
 
     local behavior = M.get_timer_behavior(category)
     if behavior.enabled == false then
-        if font_string._last_text ~= "" then
-            font_string:SetText("")
-            font_string._last_text = ""
-        end
+        clear_timer_text(font_string)
         return
     end
 
@@ -89,10 +84,7 @@ function M.set_timer_text(font_string, category, seconds)
     end
 
     if seconds <= 0 then
-        if font_string._last_text ~= "" then
-            font_string:SetText("")
-            font_string._last_text = ""
-        end
+        clear_timer_text(font_string)
         return
     end
 
@@ -167,14 +159,7 @@ local function set_icon_greyed(texture, greyed)
     end
 end
 
-local function set_shown_if_changed(frame, shown)
-    if not frame then return end
-    if shown then
-        if not frame:IsShown() then frame:Show() end
-    elseif frame:IsShown() then
-        frame:Hide()
-    end
-end
+local set_shown_if_changed = M.set_shown_if_changed
 
 local function set_texture_if_changed(texture, value)
     if not texture then return end
@@ -273,7 +258,6 @@ local function set_count_text(obj, text, point, relative_to, relative_point, x, 
             obj.count_text:Show()
         end
     else
-        obj._lstweeks_count_text = nil
         if obj.count_text:IsShown() then
             obj.count_text:Hide()
         end
@@ -367,10 +351,7 @@ local function configure_aura_visual(
 end
 
 local function clear_timer_and_fill_bar(obj, bar_mode)
-    if obj.time_text._last_text ~= "" then
-        obj.time_text:SetText("")
-        obj.time_text._last_text = ""
-    end
+    clear_timer_text(obj.time_text)
     if bar_mode then
         obj.bar:SetMinMaxValues(0, 1)
         obj.bar:SetValue(1)
@@ -381,10 +362,7 @@ local function set_render_timer_text(show_render_timer_text, obj, timer_category
     if show_render_timer_text then
         M.set_timer_text(obj.time_text, timer_category, seconds)
     else
-        if obj.time_text._last_text ~= "" then
-            obj.time_text:SetText("")
-            obj.time_text._last_text = ""
-        end
+        clear_timer_text(obj.time_text)
     end
 end
 
@@ -446,10 +424,7 @@ local function update_aura_timer_and_bar(
             clear_timer_and_fill_bar(obj, bar_mode)
         end
     elseif cooldown_duration then
-        if obj.time_text._last_text ~= "" then
-            obj.time_text:SetText("")
-            obj.time_text._last_text = ""
-        end
+        clear_timer_text(obj.time_text)
         if bar_mode and not set_duration_object_bar(obj, cooldown_duration) then
             obj.bar:SetMinMaxValues(0, 1)
             obj.bar:SetValue(1)

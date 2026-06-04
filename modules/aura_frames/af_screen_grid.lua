@@ -11,6 +11,19 @@ local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
 local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)
 local GRID_OFFSET_Y = -0.5  -- up (positive, no + sign) or down (negative)
 local EDGE_SNAP_TOLERANCE = 2
+local _grid_line_specs = {}
+
+local function add_grid_line_spec(index, is_vertical, pos, alpha)
+    local spec = _grid_line_specs[index]
+    if not spec then
+        spec = {}
+        _grid_line_specs[index] = spec
+    end
+    spec.v = is_vertical
+    spec.pos = pos
+    spec.alpha = alpha
+    return index + 1
+end
 
 local function build_grid_lines()
     local overlay = M.grid_overlay
@@ -22,32 +35,31 @@ local function build_grid_lines()
     local cx  = math.floor(ucx - UIParent:GetLeft() + 0.5) + GRID_OFFSET_X
     local cy  = math.floor(UIParent:GetTop() - ucy  + 0.5) - GRID_OFFSET_Y
 
-    -- build flat list of line specs
-    local specs = {}
-    local function vspec(x, a) specs[#specs+1] = { v=true,  pos=x, alpha=a } end
-    local function hspec(y, a) specs[#specs+1] = { v=false, pos=y, alpha=a } end
+    local spec_count = 1
 
-    vspec(cx, 0.25)
-    hspec(cy, 0.25)
+    spec_count = add_grid_line_spec(spec_count, true, cx, 0.25)
+    spec_count = add_grid_line_spec(spec_count, false, cy, 0.25)
     local step = GRID_SIZE
     while step <= math.max(cx, w - cx) + GRID_SIZE do
-        vspec(cx + step, 0.10)
-        vspec(cx - step, 0.10)
+        spec_count = add_grid_line_spec(spec_count, true, cx + step, 0.10)
+        spec_count = add_grid_line_spec(spec_count, true, cx - step, 0.10)
         step = step + GRID_SIZE
     end
     step = GRID_SIZE
     while step <= math.max(cy, h - cy) + GRID_SIZE do
-        hspec(cy + step, 0.10)
-        hspec(cy - step, 0.10)
+        spec_count = add_grid_line_spec(spec_count, false, cy + step, 0.10)
+        spec_count = add_grid_line_spec(spec_count, false, cy - step, 0.10)
         step = step + GRID_SIZE
     end
+    spec_count = spec_count - 1
 
     -- Reuse pooled textures; only allocate when pool is exhausted.
     -- WoW cannot destroy textures, so the pool grows to the high-water mark
     -- and stabilises there — no unbounded accumulation across rebuilds.
     M.grid_lines = M.grid_lines or {}
     local pool = M.grid_lines
-    for i, s in ipairs(specs) do
+    for i = 1, spec_count do
+        local s = _grid_line_specs[i]
         local t = pool[i]
         if not t then
             t = overlay:CreateTexture(nil, "BACKGROUND")
@@ -66,7 +78,7 @@ local function build_grid_lines()
         t:Show()
     end
     -- hide pool entries beyond what this layout needs
-    for i = #specs + 1, #pool do
+    for i = spec_count + 1, #pool do
         pool[i]:Hide()
     end
 end
@@ -86,8 +98,12 @@ function M.create_grid_overlay()
 end
 
 function M.set_grid_visible(show)
-    if not M.grid_overlay then M.create_grid_overlay() end
-    if show then M.grid_overlay:Show() else M.grid_overlay:Hide() end
+    if show then
+        if not M.grid_overlay then M.create_grid_overlay() end
+        M.grid_overlay:Show()
+    elseif M.grid_overlay then
+        M.grid_overlay:Hide()
+    end
 end
 
 -- snap a coordinate to the nearest grid line (respects offset)
