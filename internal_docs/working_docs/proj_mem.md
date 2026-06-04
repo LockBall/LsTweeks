@@ -17,7 +17,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Vendored libraries under `libs/` are excluded from LuaLS diagnostics in workspace settings. Do not edit third-party library files for style/type warnings unless intentionally updating the library.
 - Default shell for project work: use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
 - Release package command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1`. It derives the addon/package folder from the single root `.toc` filename, writes `dist/<toc-name>-<version>.zip`, and automatically runs `tools/verify-package.ps1`. Packaging instructions live in `tools/package_me.md`; include/exclude policy lives in `tools/package-policy.json`. The verifier also has hard-coded invariant required/forbidden paths so a bad policy edit cannot bless an obviously wrong package. README image assets and Sound Levels reference/log files are public-facing and included.
-- Packaging is data-driven: update `tools/package-policy.json` first when changing public include/exclude behavior, then run the package command to verify.
+- Packaging is data-driven: update `tools/package-policy.json` first when changing public include/exclude behavior, then run the package command to verify. The package still uses an explicit public include list; `tools/verify-package.ps1` treats top-level `.gitignore`-ignored artifacts as excluded for coverage so local dev caches do not need duplicate policy entries.
 
 ## AddOn Summary
 **L's Tweeks** is a modular WoW 12.0.5+ UI addon by LockBall. Keep the intentional **Tweeks** spelling.

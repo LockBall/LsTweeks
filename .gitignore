@@ -31,9 +31,17 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+coverage/
 
 # Lua compiler output
 luac.out
+
+# LuaLS check output
+.luacheck-logs/
+.luacheck-meta/
+.lua-language-server/
+.luarc.json
+.luarc.jsonc
 
 # WoW packager artifacts
 pkgmeta.yaml

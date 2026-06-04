@@ -15,9 +15,6 @@
   "excludeDirectories": [
     ".git",
     ".github",
-    ".venv",
-    ".vscode",
-    "dist",
     "tools",
     "internal_docs"
   ],

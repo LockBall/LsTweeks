@@ -41,7 +41,6 @@ local BACKGROUND_LAYOUT = {
     offset_y = 0.00,
 }
 local SHOW_BACKGROUND_LAYER = true
-local DRAW_BACKGROUND_IN_FRONT_OF_FRAME = false
 
 local FILL_LAYOUT = {
     scale_x = 0.50,
@@ -50,7 +49,6 @@ local FILL_LAYOUT = {
     offset_y = 0.00,
 }
 local SHOW_FILL_LAYER = true
-local DRAW_FILL_IN_FRONT_OF_FRAME = false
 
 local FRAME_LAYOUT = {
     scale_x = 1.00,
@@ -277,15 +275,6 @@ local function create_slot(parent, index)
     local frame_level = base_level + 3
     local background_level = base_level + 1
     local fill_level = base_level + 2
-    if DRAW_BACKGROUND_IN_FRONT_OF_FRAME then
-        frame_level = base_level + 1
-        background_level = base_level + 2
-        fill_level = base_level + 3
-    elseif DRAW_FILL_IN_FRONT_OF_FRAME then
-        background_level = base_level + 1
-        frame_level = base_level + 2
-        fill_level = base_level + 3
-    end
 
     slot.background_frame = CreateFrame("Frame", nil, slot)
     slot.background_frame:ClearAllPoints()
@@ -386,12 +375,12 @@ local function ensure_decor(parent)
 
     M.decor_left = M.decor_left_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_left:SetAllPoints(M.decor_left_frame)
-    M.decor_left:SetAtlas(DECOR_ATLAS, true)
+    M.decor_left:SetAtlas(DECOR_ATLAS, false)
     M.decor_left:SetTexCoord(1, 0, 0, 1)
 
     M.decor_right = M.decor_right_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_right:SetAllPoints(M.decor_right_frame)
-    M.decor_right:SetAtlas(DECOR_ATLAS, true)
+    M.decor_right:SetAtlas(DECOR_ATLAS, false)
 end
 
 function M.ensure_frame()

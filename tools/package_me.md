@@ -31,6 +31,7 @@ The addon package name comes from the root `.toc` filename. The version comes fr
 The zip must contain one top-level folder matching the root `.toc` filename.
 
 Included and excluded paths are defined in `package-policy.json`.
+Top-level files or folders ignored by `.gitignore` are treated as excluded by the verifier, so local cache/build artifacts do not need duplicate entries in `package-policy.json`.
 
 Currently included public roots:
 
@@ -51,12 +52,11 @@ Currently excluded workspace/private paths:
 
 - `.git/`
 - `.github/`
-- `.venv/`
-- `.vscode/`
-- `dist/`
 - `tools/`
 - `internal_docs/`
 - `.gitignore`
+
+Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
 
 README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Sound Levels reference/log files under `modules/sound_levels/sounds/` are public-facing and included.
 
@@ -74,7 +74,7 @@ The verifier checks:
 - the zip has one top-level folder matching the root `.toc` filename
 - required included roots/files from `package-policy.json` are present
 - excluded roots/files from `package-policy.json` are absent
-- every top-level workspace file/folder is accounted for by an include or exclude policy rule
+- every top-level workspace file/folder is accounted for by an include rule, an explicit exclude rule, or `.gitignore`
 - the zip file count matches the number of policy-included workspace files
 - invariant required public files/roots are present even if the policy is edited incorrectly
 - invariant forbidden private/workspace roots are absent even if the policy is edited incorrectly

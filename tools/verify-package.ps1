@@ -97,6 +97,40 @@ function Get-RepoRelativePath {
     return Normalize-RelativePath $fullName.Substring($root.Length + 1)
 }
 
+function Test-GitIgnored {
+    param(
+        [string]$RelativePath,
+        [bool]$IsDirectory
+    )
+
+    $relative = (Normalize-RelativePath $RelativePath).Replace("\", "/")
+    if ($IsDirectory -and -not $relative.EndsWith("/")) {
+        $relative = "$relative/"
+    }
+
+    & git -C $repoRoot check-ignore --quiet --no-index -- $relative
+    return $LASTEXITCODE -eq 0
+}
+
+function Add-ExcludedDirectory {
+    param(
+        [System.IO.DirectoryInfo]$Directory,
+        [System.Collections.Generic.List[string]]$ExcludedDirectories,
+        [System.Collections.Generic.List[string]]$ExcludedFiles
+    )
+
+    $relative = Get-RepoRelativePath $Directory
+    $ExcludedDirectories.Add($relative)
+    Get-ChildItem -LiteralPath $Directory.FullName -Force -Recurse | ForEach-Object {
+        $childRelative = Get-RepoRelativePath $_
+        if ($_.PSIsContainer) {
+            $ExcludedDirectories.Add($childRelative)
+        } else {
+            $ExcludedFiles.Add($childRelative)
+        }
+    }
+}
+
 function Get-PolicyCoverageInventory {
     $includedFiles = New-Object System.Collections.Generic.List[string]
     $includedDirectories = New-Object System.Collections.Generic.List[string]
@@ -118,15 +152,9 @@ function Get-PolicyCoverageInventory {
                     }
                 }
             } elseif ((Test-UnderAnyRoot $relative $policyExcludeDirectories)) {
-                $excludedDirectories.Add($relative)
-                Get-ChildItem -LiteralPath $item.FullName -Force -Recurse | ForEach-Object {
-                    $childRelative = Get-RepoRelativePath $_
-                    if ($_.PSIsContainer) {
-                        $excludedDirectories.Add($childRelative)
-                    } else {
-                        $excludedFiles.Add($childRelative)
-                    }
-                }
+                Add-ExcludedDirectory -Directory $item -ExcludedDirectories $excludedDirectories -ExcludedFiles $excludedFiles
+            } elseif (Test-GitIgnored -RelativePath $relative -IsDirectory $true) {
+                Add-ExcludedDirectory -Directory $item -ExcludedDirectories $excludedDirectories -ExcludedFiles $excludedFiles
             } else {
                 $errors.Add("Unaccounted top-level directory in workspace: $relative")
             }
@@ -134,6 +162,8 @@ function Get-PolicyCoverageInventory {
             if ($policyIncludeFiles | Where-Object { (Normalize-RelativePath $_) -ieq $relative } | Select-Object -First 1) {
                 $includedFiles.Add($relative)
             } elseif ($policyExcludeFiles | Where-Object { (Normalize-RelativePath $_) -ieq $relative } | Select-Object -First 1) {
+                $excludedFiles.Add($relative)
+            } elseif (Test-GitIgnored -RelativePath $relative -IsDirectory $false) {
                 $excludedFiles.Add($relative)
             } else {
                 $errors.Add("Unaccounted top-level file in workspace: $relative")
