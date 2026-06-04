@@ -128,6 +128,8 @@ Violations here can create invisible or unstable controls.
 Top-level keys include:
 `minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `player_frame`, `sound_levels`, and `aura_frames`.
 
+## Player Frame
+
 Important `player_frame` keys:
 - `hide_portrait_combat_text`: hides Player Frame portrait combat text.
 - `fade_out_of_combat`: enables Out Of Combat (OOC) Player Frame fading.
@@ -137,11 +139,13 @@ Important `player_frame` keys:
 - `health_visible_threshold`: health curve release point for OOC fade, default `80`. Below this point the pass-through curve keeps PlayerFrame fully visible; above it the curve eases toward the normal time-fade alpha instead of snapping.
 - `health_release_speed`: 0-100 health curve tuning for how quickly visibility drops above `health_visible_threshold`, default `75`.
 
-Player Frame runtime notes:
+### Player Frame Runtime Notes
 - `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `internal_docs/tests/player_frame_health_probe.lua` and is not loaded by the addon.
 - OOC fade is delay plus fade length: combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`. Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` as a fallback; do not use `UnitAffectingCombat("player")` for this fade gate because it can remain sticky after regen and prevent post-combat refade. On `PLAYER_REGEN_ENABLED`, schedule the delay and set visible alpha, but do not immediately call the combat-gated full update while the delay is active; transient combat state can cancel the newly scheduled delay timer.
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
 - Retail 12.x health APIs can return Secret Values from tainted addon paths. Player Frame health fade is strictly OOC: combat cancels fade and sets plain alpha `1`. In-game testing showed `UnitHealth`, `UnitHealthPercent`, `CurveConstants.ScaleTo100`, custom `UnitHealthPercent` curves, and PlayerFrame health bars all return secret current-health values OOC. The usable pattern is pass-through only: compute a normal time-based base alpha, build a `C_CurveUtil` curve where low health maps to `1` and health above the threshold eases toward the base alpha, then pass the `UnitHealthPercent("player", true, curve)` result directly to `PlayerFrame:SetAlpha()`. Do not use Lua comparisons/arithmetic/string conversion on current health or curve output. Health events should not stop or restart an active fade; after the base fade is already at target, health events only refresh the gated target alpha and must not force a full-visible restart.
+
+## Sound Levels
 
 Important `sound_levels` keys:
 - `sound_levels.targets.<target>.preset` where Ready Check replacement presets store file-level strings `"0"` through `"19"`; the UI maps these to `100%` through `5%`, with slider `0%` setting `sound_off`
@@ -153,7 +157,7 @@ Important `sound_levels` keys:
 - Fishing Focus Effects (`sfx`) initializes 25 percentage points above the user's normal Effects volume, clamped to 100; other Fishing Focus channels initialize from current normal channel values.
 - `sound_levels.last_tab_index` and `sound_levels.last_sound_key` restore the Sound Levels UI tab and selected sound when reopening after reload
 
-## Sound Levels Ownership
+### Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
 - Fishing Focus behavior lives in `modules/sound_levels/sl_fishing.lua`; keep fishing-channel CVar profile logic out of the generic replacement sound runtime.
 - Completed Sound Levels investigation notes live in `internal_docs/completed_features/sound_levels.md`.
@@ -168,6 +172,8 @@ Important `sound_levels` keys:
 - Hot path performance: `M._event_cache` is a flat pre-baked table keyed by event name; each slot holds only actionable replacement playback data (`paths` or `soundkit_id`, plus `channel`). Off and Original targets do not create event-cache slots. `handle_event` does one table lookup and walks a small array — no DB access, no `apply_defaults` at event time. Cache is rebuilt by `M.rebuild_event_cache()` at the end of every `apply_sound_levels()`, then `M.sync_registered_events()` diffs registered events against the actionable cache so events for Off/Original targets are not registered. `get_db()` applies defaults only once per session (guarded by `M._defaults_applied`); cleared on reset.
 - WoW sound APIs are resolved to upvalue locals at file load in `sl_core.lua` (`_PlaySoundFile`, `_PlaySound`, `_StopSound`, `_MuteSoundFile`, `_UnmuteSoundFile`). Call them directly — do not re-check `C_Sound` at call sites.
 
+## Skyriding Vigor
+
 Important `skyriding_vigor` keys:
 - `enabled`: toggles the restored vigor display.
 - `fade_when_full`: lowers alpha when vigor is full and move mode is off.
@@ -179,20 +185,27 @@ Important `skyriding_vigor` keys:
 - Skyriding Vigor layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache is invalidated even when the reset value is numerically unchanged.
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
 - The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
+- `sv_settings.lua` is old/gone. The active settings file is `modules/skyriding_vigor/sv_gui.lua`.
+- X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
 
-Skyriding Vigor runtime notes:
+### Skyriding Vigor Runtime Notes
 - The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
 - Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
 - Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, `IsFlying()`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). Grounded mounted visibility is allowed; `fade_when_full` handles idle/full states so the bar is unobtrusive.
 - `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` restores full alpha even when charges are full; plain ground movement must not, because grounded mounted running can otherwise make a full bar pop to full alpha.
 - Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
-- Default Vigor node dimensions come from Blizzard atlas metadata for `dragonriding_vigor_frame`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
+- Default Vigor node dimensions come from Blizzard atlas metadata for `dragonriding_vigor_frame`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole. Decor wing dimensions also come from `C_Texture.GetAtlasInfo("dragonriding_vigor_decor")`, not live texture `GetWidth()`/`GetHeight()` reads; decor textures use `SetAtlas(DECOR_ATLAS, false)` because layout owns explicit sizing.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill/background dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`; tune scale/offset there instead of changing node dimensions or adding alternate fill sizing paths.
 - Skyriding Vigor wing placement is centralized in the local `WING_LAYOUT` table in `sv_bar.lua`; tune `node_gap_x`, wing scale, and shared `offset_y` instead of changing node sizing.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
+- `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
+- `FILL_TEST_TICK_SECONDS = 0.05` remains module-local because it is animation cadence, not normal runtime refresh cadence.
+- Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can restart a ticker.
 - Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout, reset slot visuals, or normalize DB on each tick: `sv_bar.lua` uses a dirty layout cache, slot state/visibility setters guard repeated values, and `sv_main.lua` applies defaults once per session then normalizes DB only after load/reset/table replacement.
 - When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop normal/fill-test tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
+
+## Aura Frames
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
@@ -206,7 +219,7 @@ Important `aura_frames` keys:
 - Custom frames: array entries with `id`, `name`, filter fields, flat presentation keys, and `position`
 - Profiles: complete Aura Frames snapshots excluding editor/session state such as selected tabs/nodes, grid visibility, and debug outlines
 
-## Aura Frames Ownership
+### Aura Frames Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
 - Completed Aura Frames feature notes live in `internal_docs/completed_features/`, including aura cancellation and tooltip annotation-gap reviews.
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
@@ -215,7 +228,7 @@ Important `aura_frames` keys:
 - Preset DB keys use `aura_frames.<setting>_<category>`; custom frame entries use flat keys.
 - Preset and custom frame settings share the same presentation model via normalized `frame_config.keys` and `build_frame_settings_panel()` in `af_gui_frame_builders.lua`.
 
-### Runtime Gates And Refresh
+### Aura Frames Runtime Gates And Refresh
 - Frame processing is enabled-rooted. Disabled frames must not do move-shell work, previews, scans, render, layout, or CDM viewer prep.
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
 - UNIT_AURA is batched at `UPDATE_INTERVALS.tenth_sec`; timer text/bar updates also tick at `tenth_sec`.
@@ -224,7 +237,7 @@ Important `aura_frames` keys:
 - CDM viewer frames are alpha-hidden with mouse disabled; do not `Hide()` them or they stop producing useful child state.
 - CDM Blizzard-viewer hide settings must be applied for every CDM category on startup/reload, independent of whether the matching addon CDM frame is enabled.
 
-### Scanning, Rendering, Timers
+### Aura Frames Scanning, Rendering, Timers
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.
 - `M._aura_map` remains the master auraInstanceID map; `M.unified_scan()` rebuilds `M._aura_maps_by_category` as derived preset buckets each scan.
 - Sorted aura ID results are shared in `af_render.lua`; invalidate them through `M.clear_sorted_aura_ids_cache()` when aura data is marked dirty or rescanned.
@@ -233,7 +246,7 @@ Important `aura_frames` keys:
 - Custom scan results are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; aura-affecting events clear the cache.
 - Timer text enable/format behavior is centralized in `af_functions.lua` via `M.get_timer_behavior()` and `M.is_timer_text_enabled()`. Timer alignment remains layout behavior in `af_icon_layout.lua`.
 
-### Position, Drag, Resize
+### Aura Frames Position, Drag, Resize
 - Aura frame positions are stored as unscaled UIParent-center coordinates.
 - CDM default positions are dynamic: new/missing CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
 - New custom frame default positions are also based on the current main GUI right edge with a 32px gap; existing saved/profile custom positions are not overwritten.
@@ -243,20 +256,20 @@ Important `aura_frames` keys:
 - `update_auras()` guards stable frame-shell setters for scale, position, size, height, alpha, backdrop, and move-shell visibility.
 - Move Reset uses `M.create_move_reset_button()` and `M.reset_frame_move_placement()`. It resets position/width, not Move Mode.
 
-### Profiles And Reset
+### Aura Frames Profiles And Reset
 - Aura Frame Profiles live under `M.db.profiles`; save/load is owned by `af_profiles.lua` with an explicit schema.
 - Loading a profile is blocked in combat, replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
 
-## Aura Frames GUI
+### Aura Frames GUI
 - `af_gui.lua` owns the shell: tabs are **General**, **Frames**, **Profiles**.
 - `af_gui_tree.lua` owns the Frames sidebar groups: **Buffs**, **WoW Cooldown**, **Filters**.
 - `af_gui_frame_builders.lua` owns General, preset/CDM, custom settings, and custom filter panels.
 - CDM controls are source-specific additions layered through `opts.build_source_controls`.
 - Shared presentation controls stay in the common builder; use hooks only for real source-specific behavior.
 
-## Debug, Grid, Style
+### Aura Frames Debug, Grid, Style
 - Debug outlines: `M.db.show_bar_section_outlines`; remove tagged textures with `Hide()` + `SetTexture(nil)`, not `SetParent(nil)`.
 - Screen grid: `M.snap_to_grid()`, `M.snap_frame_position()`, `M.set_grid_visible()`. Grid preserves flush screen-edge positions before rounding.
 - Riveted panel style: `addon.ApplyRivetedPanelStyle()` / `addon.AddRivetCorners()`.
