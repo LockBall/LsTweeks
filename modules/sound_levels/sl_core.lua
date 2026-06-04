@@ -12,13 +12,7 @@ local _MuteSoundFile   = (C_Sound and C_Sound.MuteSoundFile)   or MuteSoundFile
 local _UnmuteSoundFile = (C_Sound and C_Sound.UnmuteSoundFile) or UnmuteSoundFile
 
 local function play_preview_soundkit(target)
-    local soundkit_key = target and target.preview_soundkit
-    local soundkit_id = nil
-    if type(soundkit_key) == "number" then
-        soundkit_id = soundkit_key
-    elseif type(soundkit_key) == "string" and SOUNDKIT then
-        soundkit_id = SOUNDKIT[soundkit_key]
-    end
+    local soundkit_id = M.resolve_soundkit_id(target and target.preview_soundkit)
     if not soundkit_id then return false end
 
     M.stop_preview_sound()
@@ -38,11 +32,6 @@ local function play_original_file(target)
     local file_id = file_count > 0 and original_file_ids[1]
     if not file_id then
         return play_preview_soundkit(target)
-    end
-
-    if file_count > 1 then
-        target._original_cycle_index = ((target._original_cycle_index or 0) % file_count) + 1
-        file_id = original_file_ids[target._original_cycle_index]
     end
 
     for _, original_file_id in ipairs(original_file_ids or {}) do
@@ -80,9 +69,6 @@ function M.apply_sound_levels()
     end
     M.rebuild_event_cache()
     M.sync_registered_events()
-    if M.sync_fishing_focus_events then
-        M.sync_fishing_focus_events()
-    end
 end
 
 function M.play_replacement(target_key)
@@ -118,11 +104,23 @@ function M.stop_preview_sound()
     _StopSound(handle)
 end
 
-function M.queue_adjust_preview(target_key)
+function M.cancel_adjust_preview()
     if M._adjust_preview_timer then
         M._adjust_preview_timer:Cancel()
         M._adjust_preview_timer = nil
     end
+end
+
+function M.stop_all_previews()
+    M.cancel_adjust_preview()
+    M.stop_preview_sound()
+    if M.stop_fishing_bobber_preview then
+        M.stop_fishing_bobber_preview()
+    end
+end
+
+function M.queue_adjust_preview(target_key)
+    M.cancel_adjust_preview()
     M.stop_preview_sound()
     M._adjust_preview_timer = C_Timer.NewTimer(0.12, function()
         M._adjust_preview_timer = nil
@@ -140,7 +138,10 @@ local function handle_event(_, event)
             local index = slot.next_index or 1
             local path = slot.paths[index]
             slot.next_index = (index % count) + 1
-            _PlaySoundFile(path, slot.channel)
+            local did_play = _PlaySoundFile(path, slot.channel)
+            if did_play == false and slot.soundkit_id then
+                _PlaySound(slot.soundkit_id, slot.channel)
+            end
             return
         end
         if slot.use_soundkit and slot.soundkit_id then
@@ -151,14 +152,18 @@ local function handle_event(_, event)
 end
 
 function M.sync_registered_events()
+    local registered = M._registered_events or {}
+    M._registered_events = registered
+    local desired = M._event_cache or {}
+
+    if not M.event_frame and next(desired) == nil then
+        return
+    end
+
     if not M.event_frame then
         M.event_frame = CreateFrame("Frame")
         M.event_frame:SetScript("OnEvent", handle_event)
     end
-
-    local registered = M._registered_events or {}
-    M._registered_events = registered
-    local desired = M._event_cache or {}
 
     for event_name in pairs(registered) do
         if not desired[event_name] then

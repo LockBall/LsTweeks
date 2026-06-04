@@ -29,8 +29,10 @@ function M.get_target_db(target_key)
         and M.defaults.sound_levels
         and M.defaults.sound_levels.targets
         and M.defaults.sound_levels.targets[target_key]
-    if defaults then
+    M._target_defaults_applied = M._target_defaults_applied or {}
+    if defaults and not M._target_defaults_applied[target_key] then
         addon.apply_defaults(defaults, db.targets[target_key])
+        M._target_defaults_applied[target_key] = true
     end
     if not M.is_valid_preset_value(db.targets[target_key].preset) then
         db.targets[target_key].preset = target and target.default_preset or "0"
@@ -65,19 +67,23 @@ function M.should_mute_original(target_db)
     return not (target_db and target_db.use_original == true)
 end
 
-function M.get_replacement_paths_for_preset(target, preset)
-    if not target then return nil end
-    local path = target.replacement_paths and target.replacement_paths[preset]
-    if path then
-        return { path }
+function M.resolve_soundkit_id(soundkit_key)
+    if type(soundkit_key) == "number" then
+        return soundkit_key
+    end
+    if type(soundkit_key) == "string" and SOUNDKIT then
+        return SOUNDKIT[soundkit_key]
     end
     return nil
 end
 
+function M.get_replacement_path_for_preset(target, preset)
+    if not target then return nil end
+    return target.replacement_paths and target.replacement_paths[preset]
+end
+
 function M.get_next_replacement_path(target, preset)
-    local paths = M.get_replacement_paths_for_preset(target, preset)
-    if not paths then return nil end
-    return paths[1]
+    return M.get_replacement_path_for_preset(target, preset)
 end
 
 function M.get_ordered_sound_targets()
@@ -114,21 +120,16 @@ function M.rebuild_event_cache()
                 local muted = M.should_mute_original(target_db)
                 local paths = nil
                 local use_soundkit = false
-                local soundkit_id = nil
+                local soundkit_id = M.resolve_soundkit_id(target.preview_soundkit)
 
                 if muted and target_db.sound_off ~= true then
                     local preset = target_db.preset
-                    paths = M.get_replacement_paths_for_preset(target, preset)
-                    if not paths then
+                    local path = M.get_replacement_path_for_preset(target, preset)
+                    if path then
+                        paths = { path }
+                    else
                         -- fall back to soundkit preview
-                        local sk = target.preview_soundkit
-                        if type(sk) == "number" then
-                            soundkit_id = sk
-                            use_soundkit = true
-                        elseif type(sk) == "string" and SOUNDKIT then
-                            soundkit_id = SOUNDKIT[sk]
-                            use_soundkit = soundkit_id ~= nil
-                        end
+                        use_soundkit = soundkit_id ~= nil
                     end
                 end
 

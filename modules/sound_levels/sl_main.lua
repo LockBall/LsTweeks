@@ -8,11 +8,12 @@ local M = addon.sound_levels
 local CATEGORY_NAME = "Sound Levels"
 
 function M.on_reset_complete()
-    if M.stop_fishing_bobber_preview then
-        M.stop_fishing_bobber_preview()
+    if M.stop_all_previews then
+        M.stop_all_previews()
     end
     M.restore_fishing_focus()
     M._defaults_applied = nil
+    M._target_defaults_applied = nil
     local db = M.get_db()
     if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
         db.last_sound_key = M.defaults.sound_levels.last_sound_key
@@ -61,13 +62,16 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         M.get_db()
         M.apply_sound_levels()
+        if M.sync_fishing_focus_events then
+            M.sync_fishing_focus_events()
+        end
         if addon.register_category and M.BuildSettings then
             addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900 })
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then
-        if M.stop_fishing_bobber_preview then
-            M.stop_fishing_bobber_preview()
+        if M.stop_all_previews then
+            M.stop_all_previews()
         end
         M.restore_fishing_focus()
         M.unmute_all_sound_files()

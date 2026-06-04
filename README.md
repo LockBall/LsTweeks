@@ -8,18 +8,37 @@ Slash command: `/lst`
 
 ## Features
 
-- Buffs & Debuffs module with configurable player aura frames.
-- Preset aura frames for static buffs, short buffs, long buffs, debuffs, and WoW Cooldown Manager groups.
-- Custom filtered aura frames using AuraFilters such as `HELPFUL|IMPORTANT`.
-- Icon and bar presentation modes with configurable growth direction, spacing, width, colors, timers, and test-aura previews.
-- Per-frame tooltip visibility.
+### Aura Frames
+
+- Configurable player aura frames for buffs, debuffs, and WoW Cooldown Manager groups.
+- Preset frames for static buffs, short buffs, long buffs, debuffs, essential cooldowns, utility cooldowns, tracked buffs, and tracked bars.
+- Custom filtered frames using AuraFilters such as `HELPFUL|IMPORTANT`.
+- Icon and bar presentation modes with configurable growth direction, spacing, width, colors, timers, tooltips, and test-aura previews.
 - Optional modifier-right-click cancellation for eligible player buffs.
-- Aura Frame Profiles for saving and loading complete aura-frame setups across characters.
+- Profiles for saving and loading complete aura-frame setups across characters.
 - Optional hiding of Blizzard buff and debuff frames.
-- Optional minimap button, open-on-reload setting, and main panel transparency.
-- Player Frame module for portrait combat text and out-of-combat fade controls.
-- Skyriding Vigor module that restores a compact player vigor display using Blizzard UI assets.
-- Sound Levels panel for quieter addon replacement sounds, currently including Achievement test and Ready Check targets, plus Fishing Focus channel controls.
+
+### Player Frame
+
+- Optional hiding of Player Frame portrait combat text.
+- Optional out-of-combat Player Frame fade controls.
+
+### Skyriding Vigor
+
+- Restores a compact player vigor display using Blizzard UI assets.
+- Adjustable position, size, spacing, and fade behavior.
+
+### Sound Levels
+
+- Quieter addon replacement sounds for supported targets, currently including Achievement test and Ready Check.
+- Per-target Original behavior and replacement volume controls.
+- Fishing Focus channel controls for temporarily changing game channel volumes while fishing.
+
+### Settings
+
+- Optional minimap button.
+- Open-on-reload setting.
+- Main panel transparency control.
 
 ## Installation
 
@@ -124,18 +143,6 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 - Addon design and implementation by **LockBall**.
 - Special thanks to **DiscoMouse**.
 - Portions of this addon were developed with assistance from generative tools.
-
-## Technical Notes
-
-- Aura scans are deferred and batched at 0.1 seconds to avoid reading protected or secret aura fields inside event dispatch.
-- Preset buff classification is derived from live aura timing data and scan-local fallback state; no learned spell lists are stored.
-- Frame geometry updates are skipped during combat; timers and bars continue updating, and layout catches up after combat.
-- CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
-- Current client interface number can be checked in chat with:
-
-```lua
-/dump (select(4, GetBuildInfo()))
-```
 
 ## Sources
 

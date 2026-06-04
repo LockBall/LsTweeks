@@ -7,6 +7,7 @@ local M = addon.sound_levels
 
 local FISHING_CHANNEL_SPELL_ID = 131476
 local FISHING_BOBBER_SOUNDKIT_ID = 3355
+local FISHING_BOBBER_SOUND_CHANNEL = "SFX"
 local FISHING_BOBBER_PREVIEW_RESTORE_DELAY = 2.0
 local _PlaySound = (C_Sound and C_Sound.PlaySound) or PlaySound
 local _StopSound = (C_Sound and C_Sound.StopSound) or StopSound
@@ -118,16 +119,22 @@ end
 function M.play_fishing_bobber_preview(profile_key)
     restore_bobber_preview_profile()
 
+    if profile_key ~= "fishing" then
+        local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID, FISHING_BOBBER_SOUND_CHANNEL)
+        M._fishing_bobber_preview_handle = sound_handle
+        return did_play ~= false
+    end
+
     local focus_db = M.get_fishing_focus_db()
     local cached = {}
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         cached[channel.cvar] = get_cvar(channel.cvar)
-        local percent = profile_key == "fishing" and focus_db[channel.key] or read_channel_percent(channel)
+        local percent = focus_db[channel.key]
         set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
     end
     M._fishing_bobber_preview_cached = cached
 
-    local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID)
+    local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID, FISHING_BOBBER_SOUND_CHANNEL)
     M._fishing_bobber_preview_handle = sound_handle
     M._fishing_bobber_preview_timer = C_Timer.NewTimer(FISHING_BOBBER_PREVIEW_RESTORE_DELAY, restore_bobber_preview_profile)
     return did_play ~= false
@@ -149,6 +156,9 @@ function M.apply_fishing_focus()
 end
 
 function M.restore_fishing_focus()
+    if M.stop_fishing_bobber_preview then
+        M.stop_fishing_bobber_preview()
+    end
     if not M._fishing_focus_active then return end
 
     for cvar_name, value in pairs(M._fishing_focus_cached or {}) do
@@ -167,7 +177,7 @@ function M.resync_fishing_focus()
 end
 
 local function handle_fishing_focus_event(_, event, unit, _, spell_id)
-    if unit ~= "player" or spell_id ~= FISHING_CHANNEL_SPELL_ID then return end
+    if spell_id ~= FISHING_CHANNEL_SPELL_ID then return end
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         M.apply_fishing_focus()
     elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then

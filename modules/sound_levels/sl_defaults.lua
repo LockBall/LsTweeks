@@ -21,7 +21,7 @@ M.SOUND_ASSETS = {
 }
 
 local function build_numbered_replacement_paths(asset_key, min_level, max_level)
-    local asset = M.SOUND_ASSETS and M.SOUND_ASSETS[asset_key]
+    local asset = M.SOUND_ASSETS[asset_key]
     if not asset then return {} end
 
     local paths = {}
