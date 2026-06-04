@@ -10,7 +10,8 @@ local math_min = math.min
 local math_max = math.max
 
 local ALPHA_EPSILON       = 0.001
-local HEALTH_UPDATE_DELAY = (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec) or 0.1
+local FADE_TICK_INTERVAL  = (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec) or 0.1
+local HEALTH_DEBOUNCE_DELAY = FADE_TICK_INTERVAL
 local HEALTH_RELEASE_CAP  = 0.99
 local RELEASE_25_MIN      = 0.06
 local RELEASE_25_MAX      = 0.30
@@ -35,14 +36,18 @@ local pfHookApplied     = false
 local currentBaseAlpha  = 1
 ---@type LuaCurveObject?
 local healthCurve       = nil
+local curveBaseAlpha    = nil
+local curveThreshold    = nil
+local curveReleaseSpeed = nil
 
-local function get_defaults()
-    return M.FADE_DEFAULTS or {}
-end
+local DEFAULTS = M.FADE_DEFAULTS or {}
 
 local function get_clamped_db(db, key, lo, hi)
-    local defaults = get_defaults()
-    local v = tonumber(db and db[key]) or defaults[key]
+    if M.get_clamped_fade_value then
+        return M.get_clamped_fade_value(db, key, lo, hi)
+    end
+
+    local v = tonumber(db and db[key]) or DEFAULTS[key]
     return math_max(lo, math_min(hi, v))
 end
 
@@ -64,6 +69,12 @@ local function get_health_curve()
     return healthCurve
 end
 
+local function clear_health_curve_cache()
+    curveBaseAlpha = nil
+    curveThreshold = nil
+    curveReleaseSpeed = nil
+end
+
 local function get_health_gated_alpha(db, base_alpha)
     local threshold = get_threshold(db)
     if threshold <= 0 then return base_alpha end
@@ -76,16 +87,23 @@ local function get_health_gated_alpha(db, base_alpha)
     local release_span  = 1 - release_start
     local alpha_span    = 1 - base_alpha
     local release_speed = get_release_speed(db)
-    local release_25    = lerp(RELEASE_25_MIN, RELEASE_25_MAX, release_speed)
-    local release_50    = lerp(RELEASE_50_MIN, RELEASE_50_MAX, release_speed)
-    local release_75    = lerp(RELEASE_75_MIN, RELEASE_75_MAX, release_speed)
-    curve:ClearPoints()
-    curve:AddPoint(0, 1)
-    curve:AddPoint(release_start, 1)
-    curve:AddPoint(release_start + (release_span * 0.25), 1 - (alpha_span * release_25))
-    curve:AddPoint(release_start + (release_span * 0.50), 1 - (alpha_span * release_50))
-    curve:AddPoint(release_start + (release_span * 0.75), 1 - (alpha_span * release_75))
-    curve:AddPoint(1, base_alpha)
+    if base_alpha ~= curveBaseAlpha or threshold ~= curveThreshold or release_speed ~= curveReleaseSpeed then
+        local release_25 = lerp(RELEASE_25_MIN, RELEASE_25_MAX, release_speed)
+        local release_50 = lerp(RELEASE_50_MIN, RELEASE_50_MAX, release_speed)
+        local release_75 = lerp(RELEASE_75_MIN, RELEASE_75_MAX, release_speed)
+
+        curve:ClearPoints()
+        curve:AddPoint(0, 1)
+        curve:AddPoint(release_start, 1)
+        curve:AddPoint(release_start + (release_span * 0.25), 1 - (alpha_span * release_25))
+        curve:AddPoint(release_start + (release_span * 0.50), 1 - (alpha_span * release_50))
+        curve:AddPoint(release_start + (release_span * 0.75), 1 - (alpha_span * release_75))
+        curve:AddPoint(1, base_alpha)
+
+        curveBaseAlpha = base_alpha
+        curveThreshold = threshold
+        curveReleaseSpeed = release_speed
+    end
 
     local ok, alpha = pcall(UnitHealthPercent, "player", true, curve)
     if ok then return alpha end
@@ -119,6 +137,13 @@ local function cancel_delay()
     end
 end
 
+local function cancel_health_update()
+    if queuedHealthTimer then
+        queuedHealthTimer:Cancel()
+        queuedHealthTimer = nil
+    end
+end
+
 local function begin_fade(db, force_visible_start)
     stop_animation()
     cancel_delay()
@@ -137,7 +162,7 @@ local function begin_fade(db, force_visible_start)
     set_base_alpha(db, start_alpha, not force_visible_start)
 
     local elapsed = 0
-    fadeTicker = C_Timer.NewTicker(HEALTH_UPDATE_DELAY, function()
+    fadeTicker = C_Timer.NewTicker(FADE_TICK_INTERVAL, function()
         if not PlayerFrame or playerInCombat then
             stop_animation()
             state = playerInCombat and STATE_COMBAT or STATE_IDLE
@@ -145,7 +170,7 @@ local function begin_fade(db, force_visible_start)
             return
         end
 
-        elapsed = math_min(length, elapsed + HEALTH_UPDATE_DELAY)
+        elapsed = math_min(length, elapsed + FADE_TICK_INTERVAL)
         local progress = elapsed / length
         local base_alpha = start_alpha + ((target - start_alpha) * progress)
         set_base_alpha(db, base_alpha, true)
@@ -180,6 +205,7 @@ end
 function F.stop_transition()
     cancel_delay()
     stop_animation()
+    cancel_health_update()
     state = STATE_IDLE
 end
 
@@ -187,6 +213,7 @@ function F.on_enter_combat()
     playerInCombat = true
     cancel_delay()
     stop_animation()
+    cancel_health_update()
     state = STATE_COMBAT
     set_base_alpha(nil, 1, false)
 end
@@ -205,14 +232,10 @@ function F.on_leave_combat(db)
     local delay = get_fade_delay(db)
     if delay > ALPHA_EPSILON then
         state = STATE_DELAY
-        if C_Timer and C_Timer.NewTimer then
-            fadeDelayTimer = C_Timer.NewTimer(delay, function()
-                fadeDelayTimer = nil
-                on_delay_expired(db, true)
-            end)
-        else
+        fadeDelayTimer = C_Timer.NewTimer(delay, function()
+            fadeDelayTimer = nil
             on_delay_expired(db, true)
-        end
+        end)
     else
         on_delay_expired(db, true)
     end
@@ -230,6 +253,8 @@ end
 function F.apply(db)
     if not PlayerFrame then return end
 
+    playerInCombat = (InCombatLockdown and InCombatLockdown()) or false
+
     if not pfHookApplied then
         PlayerFrame:HookScript("OnShow", function()
             M.update_player_frame()
@@ -240,6 +265,7 @@ function F.apply(db)
     if not (db and db.fade_out_of_combat) then
         cancel_delay()
         stop_animation()
+        cancel_health_update()
         state = STATE_IDLE
         set_base_alpha(db, 1, false)
         return
@@ -248,6 +274,7 @@ function F.apply(db)
     if playerInCombat then
         cancel_delay()
         stop_animation()
+        cancel_health_update()
         state = STATE_COMBAT
         set_base_alpha(db, 1, false)
         return
@@ -258,24 +285,24 @@ function F.apply(db)
     queue_apply(db)
 end
 
-function F.on_threshold_changed()
+function F.on_threshold_changed(db)
+    clear_health_curve_cache()
     stop_animation()
     if state ~= STATE_DELAY then
         state = STATE_IDLE
+        if db and db.fade_out_of_combat and not playerInCombat then
+            queue_apply(db)
+        end
     end
 end
 
 function F.queue_health_update(get_db)
-    if queuedHealthTimer then
-        queuedHealthTimer:Cancel()
+    local db = get_db and get_db()
+    if playerInCombat or not (db and db.fade_out_of_combat) then return end
+
+    cancel_health_update()
+    queuedHealthTimer = C_Timer.NewTimer(HEALTH_DEBOUNCE_DELAY, function()
         queuedHealthTimer = nil
-    end
-    if C_Timer and C_Timer.NewTimer then
-        queuedHealthTimer = C_Timer.NewTimer(HEALTH_UPDATE_DELAY, function()
-            queuedHealthTimer = nil
-            F.on_health_update(get_db and get_db())
-        end)
-    else
         F.on_health_update(get_db and get_db())
-    end
+    end)
 end

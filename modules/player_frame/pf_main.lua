@@ -8,6 +8,9 @@ addon.player_frame = addon.player_frame or {
 
 local M = addon.player_frame
 
+local math_min = math.min
+local math_max = math.max
+
 local FADE_DEFAULTS = {
     fade_alpha = 0.5,
     fade_delay = 2.0,
@@ -67,6 +70,8 @@ local STRINGS = {
 local hitIndicatorFrame = nil
 local hookApplied = false
 local hidePortraitText = false
+local fadeEventsRegistered = false
+local loader = nil
 
 local FADE_SLIDER_DEFS = {
     {
@@ -151,17 +156,37 @@ local function setup_on_show_hook(frame)
     hookApplied = true
 end
 
-local function get_clamped_fade_value(db, key, min_value, max_value)
+function M.get_clamped_fade_value(db, key, min_value, max_value)
     local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
-    return math.max(min_value, math.min(max_value, value))
+    return math_max(min_value, math_min(max_value, value))
 end
 
+local function sync_fade_events(db)
+    if not loader then return end
+
+    local should_register = db and db.fade_out_of_combat
+    if should_register == fadeEventsRegistered then return end
+
+    if should_register then
+        loader:RegisterEvent("PLAYER_REGEN_DISABLED")
+        loader:RegisterEvent("PLAYER_REGEN_ENABLED")
+        loader:RegisterUnitEvent("UNIT_HEALTH", "player")
+        loader:RegisterUnitEvent("UNIT_MAXHEALTH", "player")
+    else
+        loader:UnregisterEvent("PLAYER_REGEN_DISABLED")
+        loader:UnregisterEvent("PLAYER_REGEN_ENABLED")
+        loader:UnregisterEvent("UNIT_HEALTH")
+        loader:UnregisterEvent("UNIT_MAXHEALTH")
+    end
+
+    fadeEventsRegistered = should_register and true or false
+end
 
 local function set_portrait_combat_text_hidden(disable)
     local h = get_hit_indicator()
     if not h then return end
 
-    hidePortraitText = disable and true or false
+    hidePortraitText = disable == true
 
     if hidePortraitText then
         h:SetAlpha(0)
@@ -175,8 +200,18 @@ local function set_player_frame_setting(key, value)
     local db = get_player_frame_db()
     if not db then return end
     db[key] = value
+    if key == "fade_out_of_combat" then
+        sync_fade_events(db)
+    end
     if key == "health_visible_threshold" then
-        M.fade.on_threshold_changed()
+        M.fade.on_threshold_changed(db)
+    end
+    M.update_player_frame()
+end
+
+local function on_fade_slider_changed(key)
+    if key == "health_visible_threshold" then
+        M.fade.on_threshold_changed(get_player_frame_db())
     end
     M.update_player_frame()
 end
@@ -184,7 +219,7 @@ end
 local function attach_help_tooltip(target, title, body)
     if not target then return end
 
-    target:SetScript("OnEnter", function(self)
+    target:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         if title and title ~= "" then
             GameTooltip:SetText(title, 1, 0.82, 0)
@@ -195,7 +230,7 @@ local function attach_help_tooltip(target, title, body)
         GameTooltip:Show()
     end)
 
-    target:SetScript("OnLeave", function()
+    target:HookScript("OnLeave", function()
         GameTooltip:Hide()
     end)
 end
@@ -203,6 +238,7 @@ end
 function M.update_player_frame()
     local db = get_player_frame_db()
     if not db then return end
+    sync_fade_events(db)
     set_portrait_combat_text_hidden(db.hide_portrait_combat_text)
     M.fade.apply(db)
 end
@@ -225,18 +261,14 @@ function M.on_reset_complete()
     for _, def in ipairs(FADE_SLIDER_DEFS) do
         local slider = M.controls[def.control_key]
         if slider and slider.slider then
-            slider.slider:SetValue(get_clamped_fade_value(db, def.key, def.min, def.max))
+            slider.slider:SetValue(M.get_clamped_fade_value(db, def.key, def.min, def.max))
         end
     end
 end
 
-local loader = CreateFrame("Frame")
+loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
-loader:RegisterEvent("PLAYER_REGEN_DISABLED")
-loader:RegisterEvent("PLAYER_REGEN_ENABLED")
-loader:RegisterUnitEvent("UNIT_HEALTH", "player")
-loader:RegisterUnitEvent("UNIT_MAXHEALTH", "player")
 
 local function init_complete(self)
     self:UnregisterEvent("ADDON_LOADED")
@@ -291,6 +323,7 @@ loader:SetScript("OnEvent", function(self, event, name)
 
                 local previous_slider = nil
                 for index, def in ipairs(FADE_SLIDER_DEFS) do
+                    local slider_key = def.key
                     local slider = addon.CreateSliderWithBox(
                         addon_name .. "PlayerFrame" .. def.name_suffix,
                         row2,
@@ -301,14 +334,16 @@ loader:SetScript("OnEvent", function(self, event, name)
                         db,
                         def.key,
                         FADE_DEFAULTS,
-                        M.update_player_frame
+                        function()
+                            on_fade_slider_changed(slider_key)
+                        end
                     )
                     M.controls[def.control_key] = slider
                     if def.help_key then
                         attach_help_tooltip(slider, nil, STRINGS[def.help_key])
                     end
 
-                    if index == 1 or not previous_slider then
+                    if index == 1 then
                         slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
                     else
                         slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
