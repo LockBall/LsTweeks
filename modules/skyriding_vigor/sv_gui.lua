@@ -32,10 +32,21 @@ local STRINGS = {
     scale = "Scale",
     x_position = "X Position",
     y_position = "Y Position",
+    fill_test = "Fill Test",
+    stop_fill_test = "Stop Test",
 }
 
 local function get_spec(key)
     return M.SETTING_SPECS[key]
+end
+
+local function set_setting_from_slider(key)
+    return function()
+        if M._syncing_slider_controls then return end
+        local db = M.get_db and M.get_db()
+        if not db then return end
+        M.set_db_value(key, db[key])
+    end
 end
 
 function M.BuildSettings(parent)
@@ -72,6 +83,17 @@ function M.BuildSettings(parent)
     reset_button:SetText("Reset Position")
     reset_button:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, 0)
     reset_button:SetScript("OnClick", M.reset_position)
+
+    local fill_test_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    fill_test_button:SetSize(90, 22)
+    fill_test_button:SetText(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
+    fill_test_button:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x, 0)
+    fill_test_button:SetScript("OnClick", function()
+        if M.toggle_fill_test then
+            M.toggle_fill_test()
+        end
+    end)
+    M.controls.fill_test_button = fill_test_button
 
     db.position = db.position or {}
     local default_position = defaults.position or {}
@@ -120,7 +142,7 @@ function M.BuildSettings(parent)
         db,
         "scale",
         defaults,
-        M.refresh_layout
+        set_setting_from_slider("scale")
     )
     M.controls.scale = scale_slider
     scale_slider:SetPoint("TOPLEFT", y_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
@@ -135,7 +157,7 @@ function M.BuildSettings(parent)
         db,
         "spacing",
         defaults,
-        M.refresh_layout
+        set_setting_from_slider("spacing")
     )
     M.controls.spacing = spacing_slider
     spacing_slider:SetPoint("TOPLEFT", scale_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
@@ -156,7 +178,7 @@ function M.BuildSettings(parent)
         db,
         "fade_alpha",
         defaults,
-        M.refresh
+        set_setting_from_slider("fade_alpha")
     )
     M.controls.fade_alpha = fade_alpha_slider
     fade_alpha_slider:SetPoint("TOPLEFT", fade_container, "TOPRIGHT", 24, 0)

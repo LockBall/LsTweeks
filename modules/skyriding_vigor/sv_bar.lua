@@ -16,19 +16,64 @@ local max = math.max
 local min = math.min
 
 local MAX_SLOTS = 6
-local DEFAULT_NODE_WIDTH = 42
-local DEFAULT_NODE_HEIGHT = 45
-local FILL_INSET_X = 4
-local FILL_INSET_Y = 4
+local NODE_FRAME_ATLAS = "dragonriding_vigor_frame"
+local NODE_BACKGROUND_ATLAS = "dragonriding_vigor_background"
+local NODE_FILL_ATLAS = "dragonriding_vigor_fill"
+local NODE_FILL_FULL_ATLAS = "dragonriding_vigor_fillfull"
 local GRID_SIZE = 20
+
+local SCALE_RANGE = { min = 0.5, max = 2, step = 0.05 }
+local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
+local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
+local POSITION_RANGE = { min = -1000, max = 1000, step = 1 }
+
+local BACKGROUND_LAYOUT = {
+    scale_x = 0.50,
+    scale_y = 0.50,
+    offset_x = 0.00,
+    offset_y = 0.00,
+}
+local SHOW_BACKGROUND_LAYER = true
+local DRAW_BACKGROUND_IN_FRONT_OF_FRAME = false
+
+local FILL_LAYOUT = {
+    scale_x = 0.50,
+    scale_y = 0.50,
+    offset_x = 0.00,
+    offset_y = 0.00,
+}
+local SHOW_FILL_LAYER = true
+local DRAW_FILL_IN_FRONT_OF_FRAME = false
+
+local FRAME_LAYOUT = {
+    scale_x = 1.00,
+    scale_y = 1.00,
+    offset_x = 0.00,
+    offset_y = 0.00,
+    visible_edge_inset_x = 11.00,
+}
+local SHOW_FRAME_LAYER = true
+
 local WING_LAYOUT = {
-    overlap_x = 19,
-    offset_x = 0,
-    offset_y = -14,
+    scale_x = 1,
+    scale_y = 1,
+    node_gap_x = -20.0,
+    offset_y = -15.0,
 }
 
 M.MAX_SLOTS = MAX_SLOTS
-M.WING_LAYOUT = WING_LAYOUT
+M.SETTING_SPECS = {
+    fade_alpha = FADE_ALPHA_RANGE,
+    scale = SCALE_RANGE,
+    spacing = SPACING_RANGE,
+    x_position = POSITION_RANGE,
+    y_position = POSITION_RANGE,
+}
+M.SLIDER_KEYS = { "fade_alpha", "spacing", "scale" }
+M.LAYOUT_SETTING_KEYS = {
+    scale = true,
+    spacing = true,
+}
 
 local function get_db()
     return M.get_db and M.get_db()
@@ -61,6 +106,51 @@ local function get_saved_center(db)
     return pos.x or 0, pos.y or 0
 end
 
+local function get_atlas_size(atlas)
+    if C_Texture and C_Texture.GetAtlasInfo then
+        local info = C_Texture.GetAtlasInfo(atlas)
+        if info and info.width and info.height and info.width > 0 and info.height > 0 then
+            return info.width, info.height
+        end
+    end
+    error(addon_name .. ": missing atlas metadata for " .. tostring(atlas), 2)
+end
+
+local function get_node_size()
+    if not M._node_width or not M._node_height then
+        M._node_width, M._node_height = get_atlas_size(NODE_FRAME_ATLAS)
+    end
+    return M._node_width, M._node_height
+end
+
+local function get_fill_size()
+    local width, height = get_node_size()
+    return max(1, width * FILL_LAYOUT.scale_x), max(1, height * FILL_LAYOUT.scale_y)
+end
+
+local function get_background_size()
+    local width, height = get_node_size()
+    return max(1, width * BACKGROUND_LAYOUT.scale_x), max(1, height * BACKGROUND_LAYOUT.scale_y)
+end
+
+local function get_frame_size()
+    local width, height = get_node_size()
+    return max(1, width * FRAME_LAYOUT.scale_x), max(1, height * FRAME_LAYOUT.scale_y)
+end
+
+local function get_frame_left_in_slot(node_width, frame_width)
+    return ((node_width - frame_width) / 2) + FRAME_LAYOUT.offset_x
+end
+
+local function get_frame_edge_inset_x(frame_width)
+    return min(max(0, FRAME_LAYOUT.visible_edge_inset_x or 0), max(0, (frame_width - 1) / 2))
+end
+
+local function get_frame_edge_width(frame_width)
+    local edge_inset_x = get_frame_edge_inset_x(frame_width)
+    return max(1, frame_width - (edge_inset_x * 2))
+end
+
 local function get_spacing_pixels(db)
     local defaults = get_defaults()
     local default_spacing = defaults.spacing or 5
@@ -68,7 +158,7 @@ local function get_spacing_pixels(db)
     if spacing_setting == nil then
         spacing_setting = default_spacing
     end
-    return spacing_setting - default_spacing
+    return spacing_setting
 end
 
 local function get_cursor_position()
@@ -123,88 +213,101 @@ function M.apply_position()
     set_center_position(frame, xOfs, yOfs)
 end
 
-local function set_atlas_native(texture, atlas)
+local function set_atlas_sized(texture, atlas, width, height)
     if not texture then return end
-    texture:SetAtlas(atlas, true)
+    texture:SetAtlas(atlas, false)
+    texture:SetSize(width, height)
     texture:SetDesaturated(false)
     texture:SetVertexColor(1, 1, 1, 1)
 end
 
-local function hide_region(region)
-    if region and region.Hide then
-        region:Hide()
+local function set_bar_atlas(slot, atlas)
+    local fill_width, fill_height = get_fill_size()
+    slot.bar:SetStatusBarTexture(atlas)
+    local texture = slot.bar:GetStatusBarTexture()
+    if texture then
+        set_atlas_sized(texture, atlas, fill_width, fill_height)
     end
 end
 
 local function set_slot_progress(slot, progress)
     progress = max(0, min(progress or 0, 1))
 
-    if slot._bar_texture ~= "dragonriding_vigor_fill" then
-        slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-        slot._bar_texture = "dragonriding_vigor_fill"
+    if slot._bar_texture ~= NODE_FILL_ATLAS then
+        set_bar_atlas(slot, NODE_FILL_ATLAS)
+        slot._bar_texture = NODE_FILL_ATLAS
     end
     slot.bar:SetValue(progress)
 end
 
 local function set_slot_fill_bounds(slot)
     if slot._fill_bounds_set then return end
+    local fill_width, fill_height = get_fill_size()
 
     slot.bar:ClearAllPoints()
-    slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
+    slot.bar:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.bar:SetSize(fill_width, fill_height)
     slot.bar:SetMinMaxValues(0, 1)
     slot._fill_bounds_set = true
 end
 
 local function create_slot(parent, index)
-    local ok, slot = pcall(CreateFrame, "Frame", addon_name .. "SkyridingVigorSlot" .. index, parent, "UIWidgetFillUpFrameTemplate")
-    if not ok or not slot then
-        slot = CreateFrame("Frame", addon_name .. "SkyridingVigorSlot" .. index, parent)
+    local width, height = get_node_size()
+    local fill_width, fill_height = get_fill_size()
+    local bg_width, bg_height = get_background_size()
+    local frame_width, frame_height = get_frame_size()
+    local slot = CreateFrame("Frame", addon_name .. "SkyridingVigorSlot" .. index, parent)
+    slot:SetSize(width, height)
+
+    local base_level = slot:GetFrameLevel()
+    local frame_level = base_level + 3
+    local background_level = base_level + 1
+    local fill_level = base_level + 2
+    if DRAW_BACKGROUND_IN_FRONT_OF_FRAME then
+        frame_level = base_level + 1
+        background_level = base_level + 2
+        fill_level = base_level + 3
+    elseif DRAW_FILL_IN_FRONT_OF_FRAME then
+        background_level = base_level + 1
+        frame_level = base_level + 2
+        fill_level = base_level + 3
     end
-    slot:SetSize(DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT)
 
-    slot.background = slot.BG or slot:CreateTexture(nil, "BACKGROUND", nil, 0)
+    slot.background_frame = CreateFrame("Frame", nil, slot)
+    slot.background_frame:ClearAllPoints()
+    slot.background_frame:SetAllPoints(slot)
+    slot.background_frame:SetFrameLevel(background_level)
+
+    slot.background = slot.background_frame:CreateTexture(nil, "ARTWORK", nil, 0)
     slot.background:ClearAllPoints()
-    slot.background:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    set_atlas_native(slot.background, "dragonriding_vigor_background")
+    slot.background:SetPoint("CENTER", slot, "CENTER", BACKGROUND_LAYOUT.offset_x, BACKGROUND_LAYOUT.offset_y)
+    set_atlas_sized(slot.background, NODE_BACKGROUND_ATLAS, bg_width, bg_height)
+    slot.background:SetShown(SHOW_BACKGROUND_LAYER)
 
-    slot.bar = slot.Bar or CreateFrame("StatusBar", nil, slot)
+    slot.bar = CreateFrame("StatusBar", nil, slot)
     slot.bar:SetOrientation("VERTICAL")
     slot.bar:ClearAllPoints()
-    slot.bar:SetPoint("CENTER", slot, "CENTER", 0, 0)
-    slot.bar:SetSize(DEFAULT_NODE_WIDTH - (FILL_INSET_X * 2), DEFAULT_NODE_HEIGHT - (FILL_INSET_Y * 2))
-    slot.bar:SetFrameLevel(slot:GetFrameLevel() + 1)
+    slot.bar:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.bar:SetSize(fill_width, fill_height)
+    slot.bar:SetFrameLevel(fill_level)
     slot.bar:SetMinMaxValues(0, 1)
     slot.bar:SetValue(0)
-    slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-    slot._bar_texture = "dragonriding_vigor_fill"
+    set_bar_atlas(slot, NODE_FILL_ATLAS)
+    slot.bar:SetShown(SHOW_FILL_LAYER)
+    slot._bar_texture = NODE_FILL_ATLAS
     slot._fill_bounds_set = true
 
-    slot.cover_frame = slot.cover_frame or CreateFrame("Frame", nil, slot)
+    slot.cover_frame = CreateFrame("Frame", nil, slot)
     slot.cover_frame:ClearAllPoints()
     slot.cover_frame:SetAllPoints(slot)
-    slot.cover_frame:SetFrameLevel(slot.bar:GetFrameLevel() + 2)
+    slot.cover_frame:SetFrameLevel(frame_level)
 
-    slot.cover = slot.Frame or slot.cover_frame:CreateTexture(nil, "OVERLAY", nil, 3)
+    slot.cover = slot.cover_frame:CreateTexture(nil, "OVERLAY", nil, 3)
     slot.cover:ClearAllPoints()
-    slot.cover:SetPoint("CENTER", slot, "CENTER", 0, 0)
+    slot.cover:SetPoint("CENTER", slot, "CENTER", FRAME_LAYOUT.offset_x, FRAME_LAYOUT.offset_y)
     slot.cover:SetDrawLayer("OVERLAY", 7)
-    set_atlas_native(slot.cover, "dragonriding_vigor_frame")
-
-    hide_region(slot.Spark)
-    hide_region(slot.SparkMask)
-    hide_region(slot.Flash)
-    hide_region(slot.Flipbook)
-    hide_region(slot.BurstFlipbook)
-    hide_region(slot.FilledFlipbook)
-    if slot.bar then
-        hide_region(slot.bar.Spark)
-        hide_region(slot.bar.SparkMask)
-        hide_region(slot.bar.Flipbook)
-        hide_region(slot.bar.FlipbookMask)
-        hide_region(slot.bar.BurstFlipbook)
-        hide_region(slot.bar.FilledFlipbook)
-    end
+    set_atlas_sized(slot.cover, NODE_FRAME_ATLAS, frame_width, frame_height)
+    slot.cover:SetShown(SHOW_FRAME_LAYER)
 
     return slot
 end
@@ -228,17 +331,17 @@ function M.set_slot_state(index, state, progress)
 
     set_slot_fill_bounds(slot)
     if state == "full" then
-        if slot._bar_texture ~= "dragonriding_vigor_fillfull" then
-            slot.bar:SetStatusBarTexture("dragonriding_vigor_fillfull")
-            slot._bar_texture = "dragonriding_vigor_fillfull"
+        if slot._bar_texture ~= NODE_FILL_FULL_ATLAS then
+            set_bar_atlas(slot, NODE_FILL_FULL_ATLAS)
+            slot._bar_texture = NODE_FILL_FULL_ATLAS
         end
         slot.bar:SetValue(effective_progress)
     elseif state == "filling" then
         set_slot_progress(slot, effective_progress)
     else
-        if slot._bar_texture ~= "dragonriding_vigor_fill" then
-            slot.bar:SetStatusBarTexture("dragonriding_vigor_fill")
-            slot._bar_texture = "dragonriding_vigor_fill"
+        if slot._bar_texture ~= NODE_FILL_ATLAS then
+            set_bar_atlas(slot, NODE_FILL_ATLAS)
+            slot._bar_texture = NODE_FILL_ATLAS
         end
         slot.bar:SetValue(effective_progress)
     end
@@ -262,13 +365,18 @@ function M.set_slot_visible(index, visible)
 end
 
 local function ensure_decor(parent)
-    if M.decor_left and M.decor_right then return end
+    if M.decor_left_frame and M.decor_right_frame and M.decor_left and M.decor_right then return end
 
-    M.decor_left = parent:CreateTexture(nil, "ARTWORK", nil, -1)
+    M.decor_left_frame = CreateFrame("Frame", nil, parent)
+    M.decor_right_frame = CreateFrame("Frame", nil, parent)
+
+    M.decor_left = M.decor_left_frame:CreateTexture(nil, "ARTWORK", nil, -1)
+    M.decor_left:SetAllPoints(M.decor_left_frame)
     M.decor_left:SetAtlas("dragonriding_vigor_decor", true)
     M.decor_left:SetTexCoord(1, 0, 0, 1)
 
-    M.decor_right = parent:CreateTexture(nil, "ARTWORK", nil, -1)
+    M.decor_right = M.decor_right_frame:CreateTexture(nil, "ARTWORK", nil, -1)
+    M.decor_right:SetAllPoints(M.decor_right_frame)
     M.decor_right:SetAtlas("dragonriding_vigor_decor", true)
 end
 
@@ -332,8 +440,9 @@ end
 function M.set_wing_layout(values)
     if not values then return end
 
-    if values.overlap_x ~= nil then WING_LAYOUT.overlap_x = values.overlap_x end
-    if values.offset_x ~= nil then WING_LAYOUT.offset_x = values.offset_x end
+    if values.node_gap_x ~= nil then WING_LAYOUT.node_gap_x = values.node_gap_x end
+    if values.scale_x ~= nil then WING_LAYOUT.scale_x = values.scale_x end
+    if values.scale_y ~= nil then WING_LAYOUT.scale_y = values.scale_y end
     if values.offset_y ~= nil then WING_LAYOUT.offset_y = values.offset_y end
 
     M.invalidate_layout()
@@ -354,15 +463,22 @@ function M.apply_layout()
     local defaults = get_defaults()
     local spacing = get_spacing_pixels(db)
     local scale = db.scale or defaults.scale or 1
-    local width = DEFAULT_NODE_WIDTH
-    local height = DEFAULT_NODE_HEIGHT
+    local width, height = get_node_size()
+    local frame_width, frame_height = get_frame_size()
     local decor_width = M.decor_left and M.decor_left:GetWidth() or 64
     local decor_height = M.decor_left and M.decor_left:GetHeight() or 64
-    local nodes_width = (width * MAX_SLOTS) + (spacing * (MAX_SLOTS - 1))
-    local first_slot_x = decor_width - WING_LAYOUT.overlap_x
-    local right_decor_x = first_slot_x + nodes_width - WING_LAYOUT.overlap_x
-    local total_width = right_decor_x + decor_width
-    local total_height = max(height, decor_height)
+    local wing_width = decor_width * WING_LAYOUT.scale_x
+    local wing_height = decor_height * WING_LAYOUT.scale_y
+    local frame_edge_inset_x = get_frame_edge_inset_x(frame_width)
+    local frame_edge_width = get_frame_edge_width(frame_width)
+    local nodes_width = (frame_edge_width * MAX_SLOTS) + (spacing * (MAX_SLOTS - 1))
+    local first_frame_edge_x = wing_width + WING_LAYOUT.node_gap_x
+    local frame_edge_left_in_slot = get_frame_left_in_slot(width, frame_width) + frame_edge_inset_x
+    local first_slot_x = first_frame_edge_x - frame_edge_left_in_slot
+    local node_step = frame_edge_width + spacing
+    local right_decor_x = first_frame_edge_x + nodes_width + WING_LAYOUT.node_gap_x
+    local total_width = right_decor_x + wing_width
+    local total_height = max(height, frame_height, wing_height)
     local visual_frame = M.visual_frame
     local center_x = frame._center_x
     local center_y = frame._center_y
@@ -374,8 +490,11 @@ function M.apply_layout()
     end
 
     local layout_signature = spacing .. ":" .. scale .. ":" .. total_width .. ":" .. total_height .. ":"
-        .. first_slot_x .. ":" .. right_decor_x .. ":" .. WING_LAYOUT.overlap_x .. ":"
-        .. WING_LAYOUT.offset_x .. ":" .. WING_LAYOUT.offset_y
+        .. first_slot_x .. ":" .. first_frame_edge_x .. ":" .. right_decor_x .. ":"
+        .. node_step .. ":" .. frame_width .. ":" .. frame_height .. ":" .. frame_edge_width .. ":"
+        .. frame_edge_inset_x .. ":" .. WING_LAYOUT.node_gap_x .. ":"
+        .. WING_LAYOUT.scale_x .. ":" .. WING_LAYOUT.scale_y .. ":"
+        .. WING_LAYOUT.offset_y
     if M._layout_signature == layout_signature then
         return
     end
@@ -395,24 +514,26 @@ function M.apply_layout()
         local slot = M.slots[i]
         slot:ClearAllPoints()
         slot:SetSize(width, height)
-        slot:SetPoint("LEFT", visual_frame or frame, "LEFT", first_slot_x + ((width + spacing) * (i - 1)), 0)
+        slot:SetPoint("LEFT", visual_frame or frame, "LEFT", first_slot_x + (node_step * (i - 1)), 0)
     end
 
-    if M.decor_left and M.decor_right and M.slots[1] and M.slots[MAX_SLOTS] then
-        M.decor_left:ClearAllPoints()
-        M.decor_right:ClearAllPoints()
-        M.decor_left:SetPoint(
+    if M.decor_left_frame and M.decor_right_frame and M.slots[1] and M.slots[MAX_SLOTS] then
+        M.decor_left_frame:ClearAllPoints()
+        M.decor_right_frame:ClearAllPoints()
+        M.decor_left_frame:SetSize(wing_width, wing_height)
+        M.decor_right_frame:SetSize(wing_width, wing_height)
+        M.decor_left_frame:SetPoint(
             "CENTER",
             visual_frame or frame,
             "LEFT",
-            (decor_width / 2) - WING_LAYOUT.offset_x,
+            wing_width / 2,
             WING_LAYOUT.offset_y
         )
-        M.decor_right:SetPoint(
+        M.decor_right_frame:SetPoint(
             "CENTER",
             visual_frame or frame,
             "LEFT",
-            right_decor_x + (decor_width / 2) + WING_LAYOUT.offset_x,
+            right_decor_x + (wing_width / 2),
             WING_LAYOUT.offset_y
         )
     end

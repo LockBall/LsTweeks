@@ -28,10 +28,20 @@ local VIGOR_SPELL_IDS = {
 }
 
 local TICK_SECONDS = 0.2
-local FALLBACK_MAX_SLOTS = 6
+local FILL_TEST_TICK_SECONDS = 0.05
+local FILL_TEST_NODE_SECONDS = 0.55
 local VIGOR_POWER_TYPES = {
     25, -- Enum.PowerType.AlternateMount
     10, -- Enum.PowerType.Alternate
+}
+local RUNTIME_EVENTS = {
+    "PLAYER_ENTERING_WORLD",
+    "PLAYER_CAN_GLIDE_CHANGED",
+    "PLAYER_IS_GLIDING_CHANGED",
+    "SPELL_UPDATE_CHARGES",
+    "SPELL_UPDATE_COOLDOWN",
+    "MOUNT_JOURNAL_USABILITY_CHANGED",
+    "PLAYER_MOUNT_DISPLAY_CHANGED",
 }
 
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
@@ -39,6 +49,8 @@ local SETTING_SPECS = M.SETTING_SPECS
 local SLIDER_KEYS = M.SLIDER_KEYS
 M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
+
+local loader
 
 local function clamp_number(value, fallback, spec)
     value = tonumber(value)
@@ -96,7 +108,7 @@ end
 local function get_vigor_power_info()
     if not UnitPower or not UnitPowerMax then return nil end
 
-    local max_slots = M.MAX_SLOTS or FALLBACK_MAX_SLOTS
+    local max_slots = M.MAX_SLOTS
     for _, power_type in ipairs(VIGOR_POWER_TYPES) do
         local max_power = UnitPowerMax("player", power_type)
         if max_power and not is_secret(max_power) and max_power > 0 then
@@ -126,7 +138,7 @@ local function get_charge_info()
         local info = C_Spell_GetSpellCharges(spell_id)
         if info and info.maxCharges and not is_secret(info.maxCharges) and info.maxCharges > 0 then
             local current = info.currentCharges or 0
-            local max_slots = M.MAX_SLOTS or FALLBACK_MAX_SLOTS
+            local max_slots = M.MAX_SLOTS
             if not is_secret(current) then
                 return min(current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
             end
@@ -154,10 +166,83 @@ local function stop_ticker()
     end
 end
 
+local function sync_fill_test_button()
+    local button = M.controls and M.controls.fill_test_button
+    if button and button.SetText then
+        button:SetText(M._fill_test_enabled and "Stop Test" or "Fill Test")
+    end
+end
+
+local function stop_fill_test_ticker()
+    if M.fill_test_ticker then
+        M.fill_test_ticker:Cancel()
+        M.fill_test_ticker = nil
+    end
+end
+
+local function sync_runtime_events(enabled)
+    if not loader then return end
+    enabled = enabled and true or false
+    if M._runtime_events_registered == enabled then return end
+
+    for _, event in ipairs(RUNTIME_EVENTS) do
+        if enabled then
+            loader:RegisterEvent(event)
+        else
+            loader:UnregisterEvent(event)
+        end
+    end
+    M._runtime_events_registered = enabled
+end
+
+local function disable_runtime()
+    stop_ticker()
+    stop_fill_test_ticker()
+    M._fill_test_enabled = false
+    M._fill_test_started_at = nil
+    sync_fill_test_button()
+    if M.frame then
+        M.frame:Hide()
+        M.frame:EnableMouse(false)
+        M.frame._mouse_enabled = false
+    end
+end
+
 local function set_frame_alpha(frame, alpha)
     if frame._sv_alpha == alpha then return end
     frame:SetAlpha(alpha)
     frame._sv_alpha = alpha
+end
+
+local function render_fill_test()
+    local db = get_db()
+    local frame = M.ensure_frame()
+    if not db or not frame then return end
+
+    M.apply_layout()
+    M.set_move_mode(false)
+    set_frame_alpha(frame, 1)
+
+    local max_slots = M.MAX_SLOTS
+    local elapsed = (GetTime() - (M._fill_test_started_at or GetTime())) / FILL_TEST_NODE_SECONDS
+    local step = elapsed % (max_slots + 1)
+    local full_count = min(floor(step), max_slots)
+    local progress = step - full_count
+
+    for i = 1, max_slots do
+        M.set_slot_visible(i, true)
+        if i <= full_count then
+            M.set_slot_state(i, "full", 1)
+        elseif i == full_count + 1 and i <= max_slots then
+            M.set_slot_state(i, "filling", progress)
+        else
+            M.set_slot_state(i, "empty", 0)
+        end
+    end
+
+    if not frame:IsShown() then
+        frame:Show()
+    end
 end
 
 local function should_tick(db, needs_progress_updates)
@@ -199,29 +284,48 @@ end
 M.sync_position_controls = sync_position_controls
 
 local function sync_slider_controls(db)
+    M._syncing_slider_controls = true
     for _, key in ipairs(SLIDER_KEYS) do
         local control = M.controls[key]
         if control and control.slider then
             local value = db[key]
             if value == nil then value = DEFAULTS[key] end
             if value ~= nil and control.slider:GetValue() ~= value then
+                control._suppress_callback = true
                 control.slider:SetValue(value)
+                control._suppress_callback = nil
             end
         end
     end
+    M._syncing_slider_controls = nil
 end
 
 function M.refresh()
     local db = get_db()
+    if not db then return end
+
+    if not db.enabled then
+        disable_runtime()
+        sync_runtime_events(false)
+        return
+    end
+
+    sync_runtime_events(true)
+
     local frame = M.ensure_frame()
-    if not db or not frame then return end
+    if not frame then return end
+
+    if M._fill_test_enabled then
+        render_fill_test()
+        return
+    end
 
     M.apply_layout()
     M.set_move_mode(db.move_mode)
 
     local is_gliding, can_glide = get_gliding_state()
     local current, max_charges, start_time, duration = get_charge_info()
-    local max_slots = M.MAX_SLOTS or FALLBACK_MAX_SLOTS
+    local max_slots = M.MAX_SLOTS
 
     if db.move_mode and not current then
         current, max_charges, start_time, duration = 4, max_slots, GetTime() - 2, 5
@@ -270,6 +374,35 @@ function M.refresh()
     update_ticker(needs_progress_updates)
 end
 
+function M.set_fill_test_enabled(enabled)
+    enabled = enabled and true or false
+    if M._fill_test_enabled == enabled then return end
+    local db = get_db()
+    if enabled and (not db or not db.enabled) then return end
+
+    M._fill_test_enabled = enabled
+    sync_fill_test_button()
+
+    if enabled then
+        stop_ticker()
+        M._fill_test_started_at = GetTime()
+        render_fill_test()
+        if not M.fill_test_ticker then
+            M.fill_test_ticker = C_Timer.NewTicker(FILL_TEST_TICK_SECONDS, function()
+                render_fill_test()
+            end)
+        end
+    else
+        stop_fill_test_ticker()
+        M._fill_test_started_at = nil
+        M.refresh()
+    end
+end
+
+function M.toggle_fill_test()
+    M.set_fill_test_enabled(not M._fill_test_enabled)
+end
+
 function M.on_reset_complete()
     local db = get_db()
     if not db then return end
@@ -295,6 +428,7 @@ function M.on_reset_complete()
     end
     sync_slider_controls(db)
     sync_position_controls(db)
+    sync_fill_test_button()
     M.apply_position()
     M.refresh()
 end
@@ -302,7 +436,15 @@ end
 function M.set_db_value(key, value)
     local db = get_db()
     if not db then return end
+    if key == "enabled" then
+        value = value and true or false
+    end
     db[key] = value
+    if key == "enabled" and not value then
+        disable_runtime()
+        sync_runtime_events(false)
+        return
+    end
     if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
         M.refresh_layout()
     else
@@ -359,15 +501,8 @@ function M.reset_position()
     sync_position_controls(db)
 end
 
-local loader = CreateFrame("Frame")
+loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
-loader:RegisterEvent("PLAYER_ENTERING_WORLD")
-loader:RegisterEvent("PLAYER_CAN_GLIDE_CHANGED")
-loader:RegisterEvent("PLAYER_IS_GLIDING_CHANGED")
-loader:RegisterEvent("SPELL_UPDATE_CHARGES")
-loader:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-loader:RegisterEvent("MOUNT_JOURNAL_USABILITY_CHANGED")
-loader:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 
 loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
@@ -375,10 +510,13 @@ loader:SetScript("OnEvent", function(self, event, name)
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
         M._defaults_applied = true
-        M.ensure_frame()
-        M.apply_layout()
+        local db = get_db()
+        sync_runtime_events(db and db.enabled)
         if addon.register_category then
             addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901 })
+        end
+        if db and db.enabled then
+            M.refresh()
         end
         return
     end

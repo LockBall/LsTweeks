@@ -28,20 +28,6 @@ M.defaults = {
     },
 }
 
-SV.SETTING_SPECS = {
-    fade_alpha = { min = 0.05, max = 1, step = 0.05 },
-    scale = { min = 0.5, max = 2, step = 0.05 },
-    spacing = { min = 0, max = 10, step = 0.5 },
-    x_position = { min = -1000, max = 1000, step = 1 },
-    y_position = { min = -1000, max = 1000, step = 1 },
-}
-
-SV.SLIDER_KEYS = { "fade_alpha", "spacing", "scale" }
-SV.LAYOUT_SETTING_KEYS = {
-    scale = true,
-    spacing = true,
-}
-
 addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.sv = M.defaults
 

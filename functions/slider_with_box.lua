@@ -117,7 +117,9 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
             db_table[db_key] = value
         end
         eb:SetText(format_display_value(value))
-        debounced_callback()
+        if not container._suppress_callback then
+            debounced_callback()
+        end
     end)
 
     eb:SetScript("OnEnterPressed", function(self)

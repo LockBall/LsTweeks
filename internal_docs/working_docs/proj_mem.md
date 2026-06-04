@@ -61,9 +61,9 @@ modules/
     pf_fade.lua          Player Frame OOC fade runtime, health curve gate, fade timers
   sound_levels/          preset sound controls; mutes known FileDataIDs and plays addon replacement audio
   skyriding_vigor/       restored Skyriding Vigor display using Blizzard atlas assets and spell charges
-    sv_defaults.lua      Skyriding Vigor DB defaults, setting specs, slider key lists
+    sv_defaults.lua      Skyriding Vigor DB defaults
+    sv_bar.lua           Skyriding Vigor bar visuals, Blizzard atlas slots, wing layout, positioning, bar setting specs
     sv_gui.lua           Skyriding Vigor settings UI
-    sv_bar.lua           Skyriding Vigor bar visuals, Blizzard atlas slots, wing layout, positioning
     sv_main.lua          Skyriding Vigor runtime, events, charge/glide state, category bootstrap
   settings/             settings defaults + minimap/open-on-reload/interface alpha panel
   aura_frames/
@@ -174,7 +174,7 @@ Important `skyriding_vigor` keys:
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
-- `spacing` and `scale`: presentation settings. Slider ranges/steps live in `M.SETTING_SPECS` from `sv_defaults.lua`. The spacing slider is a user-facing 0-10 range at 0.5 steps; `0` maps to the tight visual-zero layout, `5` is the default visual spacing, and `10` is max spread. Runtime layout subtracts `DEFAULTS.spacing` before anchoring nodes so slider reset and visual reset share the same default source. Node width/height follow Blizzard's fixed `dragonriding_vigor` art dimensions.
+- `spacing` and `scale`: presentation settings. Slider ranges/steps live in named range tables near the bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`. The spacing slider is a user-facing 0-25 pixel range at 0.5 steps; `0` means visible node frame edges touch, `5` is the default 5px frame-edge gap, and higher values add spread. Runtime layout applies this value directly between visible `FRAME_LAYOUT` frame edges, not between invisible slot anchors and not as an offset from the default. Because Blizzard's frame atlas includes horizontal transparent padding, `FRAME_LAYOUT.visible_edge_inset_x` in `sv_bar.lua` defines the visible frame edge used by spacing math without changing the drawn texture. Node width/height are derived only from Blizzard's `dragonriding_vigor_frame` atlas metadata.
 - Slider reset buttons must explicitly write the DB and run their callback even when the slider already displays the default value; otherwise stale DB/layout values can survive while the visible control looks reset.
 - Skyriding Vigor layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache is invalidated even when the reset value is numerically unchanged.
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
@@ -185,12 +185,13 @@ Skyriding Vigor runtime notes:
 - Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
 - Visibility comes from readable vigor charges plus either move mode, `C_PlayerInfo.GetGlidingInfo()` `canGlide`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). `canGlide` alone can be false while grounded on a Skyriding-capable mount.
 - Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
-- Default Vigor node dimensions come from Blizzard `UIWidgetFillUpFrameTemplateMixin`: `dragonriding_vigor = { width = 42, height = 45 }`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
+- Default Vigor node dimensions come from Blizzard atlas metadata for `dragonriding_vigor_frame`; six fixed-shape nodes plus centered `dragonriding_vigor_decor` side wings are scaled as a whole.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
-- Vigor fill is intentionally inset inside each 42x45 node so fractional scale filtering cannot expose blue fill outside the gold frame; keep `sv_bar.lua` fill insets separate from node dimensions.
-- Skyriding Vigor wing placement is centralized in `M.WING_LAYOUT` in `sv_bar.lua`; tune shared `overlap_x`, mirrored `offset_x`, and shared `offset_y` instead of changing node sizing.
-- Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: the shared module reset helper calls every module reset hook, not just the module whose DB was wiped.
+- Vigor fill/background dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`; tune scale/offset there instead of changing node dimensions or adding alternate fill sizing paths.
+- Skyriding Vigor wing placement is centralized in the local `WING_LAYOUT` table in `sv_bar.lua`; tune `node_gap_x`, wing scale, and shared `offset_y` instead of changing node sizing.
+- Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
 - Avoid always-running `OnUpdate`; the module uses a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout or reset slot visuals on each tick: `sv_bar.lua` caches layout by signature, slot state/visibility setters guard repeated values, and `sv_main.lua` applies defaults once per session.
+- When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop normal/fill-test tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
 
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
