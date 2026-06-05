@@ -139,7 +139,7 @@ local function make_entry(iid, name, icon, duration, expiration, spell_id, dispe
 end
 
 -- Update an existing entry in place (avoids allocation on unchanged auras).
-local function update_entry(entry, name, icon, duration, expiration, spell_id, dispel_name, rem, count, live_rem, live_cnt, category)
+local function update_entry(entry, name, icon, duration, expiration, spell_id, dispel_name, rem, count, scan_rem, live_cnt, category)
     entry.name          = name
     entry.icon          = icon
     entry.duration      = duration
@@ -148,7 +148,7 @@ local function update_entry(entry, name, icon, duration, expiration, spell_id, d
     entry.dispel_name   = dispel_name
     entry.remaining     = rem
     entry.count         = count
-    entry.live_remaining = live_rem
+    entry.scan_remaining = scan_rem
     entry.live_count    = live_cnt
     entry.order_key     = make_order_key(spell_id, name, icon, entry.is_helpful)
     if category then entry.category = category end
@@ -213,7 +213,7 @@ local function build_custom_aura_entry(aura, aura_filter, short_threshold, custo
         expiration = safe_expiration,
         remaining = safe_remaining or 0,
         count = stacks,
-        live_remaining = live_remaining,
+        scan_remaining = live_remaining,
         live_count = live_count,
         filter = aura_filter,
         is_helpful = is_helpful,
@@ -301,6 +301,8 @@ local function is_spell_on_real_cooldown(spell_id)
 end
 
 local function store_viewer_children(...)
+    -- Reuse one scratch table instead of allocating { viewer:GetChildren() }
+    -- during repeated CDM walks. Callers must consume it before the next call.
     local children = _scratch_viewer_children
     wipe(children)
     for i = 1, select("#", ...) do
@@ -675,14 +677,19 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     local max_helpful = get_max_icons_for_frame_defs(db, max_helpful_hint, false)
 
-    -- Track old category by spell for scan-local secret-field fallback.
-    -- Built lazily from old_map each scan — no persistent table needed.
-    local old_cat_by_spell = _scratch_old_cat
-    wipe(old_cat_by_spell)
-    for _, entry in pairs(old_map) do
-        if entry.is_helpful and entry.spell_id and entry.category then
-            old_cat_by_spell[entry.spell_id] = entry.category
+    local old_cat_by_spell = nil
+    local function get_old_category_by_spell(spell_id)
+        if not spell_id then return nil end
+        if not old_cat_by_spell then
+            old_cat_by_spell = _scratch_old_cat
+            wipe(old_cat_by_spell)
+            for _, entry in pairs(old_map) do
+                if entry.is_helpful and entry.spell_id and entry.category then
+                    old_cat_by_spell[entry.spell_id] = entry.category
+                end
+            end
         end
+        return old_cat_by_spell[spell_id]
     end
 
     local i, count = 1, 0
@@ -724,11 +731,11 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 category = "static"
             elseif expires_known == true then
                 local old_cat = (old_entry and old_entry.category)
-                    or (safe_spell_id and old_cat_by_spell[safe_spell_id])
+                    or get_old_category_by_spell(safe_spell_id)
                 category = old_cat or "short"
             else
                 local old_cat = (old_entry and old_entry.category)
-                    or (safe_spell_id and old_cat_by_spell[safe_spell_id])
+                    or get_old_category_by_spell(safe_spell_id)
                 if old_cat then
                     category = old_cat
                 elseif added_lookup[iid] and replacement_pref_cat then
@@ -760,7 +767,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
                 entry = make_entry(iid, name, icon, safe_duration, safe_expiration,
                     safe_spell_id, dispel, safe_remaining or 0, stacks,
                     true, category, recovered_at or GetTime())
-                entry.live_remaining = live_remaining
+                entry.scan_remaining = live_remaining
                 entry.live_count     = live_count
                 cur_map[iid] = entry
             end

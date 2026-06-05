@@ -447,7 +447,7 @@ local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_st
         and (not is_spell_cooldown)
         and (show_timer_text or bar_mode)
         and type(entry.instance_id) == "number"
-        and ((not has_cached_timing) or entry.live_remaining ~= nil)
+        and ((not has_cached_timing) or entry.scan_remaining ~= nil)
     local live_duration = nil
     if need_live_duration then
         local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", entry.instance_id)
@@ -459,7 +459,7 @@ local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_st
         live_duration = cooldown_duration
     end
 
-    return live_duration, get_duration_object_remaining(live_duration) or entry.live_remaining, cooldown_duration
+    return live_duration, get_duration_object_remaining(live_duration) or entry.scan_remaining, cooldown_duration
 end
 
 local function add_custom_entries_to_render_list(list, aura_map)
