@@ -280,6 +280,8 @@ end
 -- tabs settings controls
 function M.BuildSettings(parent)
     local tabs, panels = {}, {}
+    local _, main_content_height = addon.main_frame and addon.main_frame.GetContentAreaSize and addon.main_frame:GetContentAreaSize()
+    local panel_height = math.max(50, (main_content_height or parent:GetHeight() or 0) - 78)
 
     -- Category controls are derived from FRAME_DEFS so GUI labels, DB keys,
     -- runtime frame creation, and CDM metadata stay in one place.
@@ -337,7 +339,7 @@ function M.BuildSettings(parent)
 
         local p = CreateFrame("Frame", nil, parent)
         p:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -78)
-        p:SetSize(741, 50)  -- tab content panel: 925 frame - 12 B.l - 140 sidebar - 12 B.r - 20 margin
+        p:SetSize(741, panel_height)  -- width: 925 frame - 12 B.l - 140 sidebar - 12 B.r - 20 margin
         p:Hide()
 
         if data.is_general then

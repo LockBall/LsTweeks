@@ -24,7 +24,7 @@ local function create_main_frame()
 
     -- MAIN CONTAINER
     local frame = CreateFrame("Frame", "Ls_Tweeks_main_frame", UIParent, "BackdropTemplate")
-    frame:SetSize(950, 650)
+    frame:SetSize(950, 675)
     frame:SetPoint("CENTER")
     frame:Hide()
 
@@ -115,6 +115,11 @@ local function create_main_frame()
     content_area:SetBackdropColor(0.08, 0.08, 0.08, 0.9)
     content_area:SetFrameLevel(frame:GetFrameLevel() + 1)
     frame.content_area = content_area
+    function frame:GetContentAreaSize()
+        local width = frame:GetWidth() - 140 - B.l - B.r
+        local height = frame:GetHeight() - B.t - 26 - B.b
+        return width, height
+    end
 
     -- COLLAPSE BUTTON
     local collapsed      = false

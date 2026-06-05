@@ -108,6 +108,7 @@ modules/
     af_core.lua            tick_visible_icons(), update_auras(), Blizzard frame/CDM visibility
     af_profiles.lua        Aura Frame profile save/load/apply schema
     af_gui*.lua            settings shell, tree, content panel builders
+    af_gui_grid.lua        shared Aura Frames settings grid row/column placement helper
     af_main.lua            runtime init, frame/icon pool creation, events, drag/resize, reset
     af_test_aura.lua       preview aura entries
     af_debug_outlines.lua  optional icon-slot outlines
@@ -161,7 +162,8 @@ Violations here can create invisible or unstable controls.
 - Do not use `frame:GetWidth()` at build time; it can be 0 before render.
 - Factory functions should not place controls externally when the caller owns placement.
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.
-- `M.create_settings_grid()` owns the Aura Frames 4-column settings grid used by preset and custom panels.
+- `M.create_settings_grid()` in `af_gui_grid.lua` owns the Aura Frames 4-column settings grid used by preset and custom panels.
+- Aura Frames tab and tree heights derive from `addon.main_frame:GetContentAreaSize()`, so the main settings window height in `core/main_frame.lua` is the single height knob.
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
@@ -271,9 +273,9 @@ Important `skyriding_vigor` keys:
 Important `aura_frames` keys:
 - Session/UI: `last_tab_index`, `last_frames_node`, `last_profile_name`
 - Global AF settings: `short_threshold`, `enable_blizz_buffs`, `enable_blizz_debuffs`, `snap_to_grid`, `show_grid`, `show_bar_section_outlines`
-- CDM fade: `fade_wow_cooldown_ooc`, `wow_cooldown_ooc_alpha`
 - Timer fallback: `timer_number_font`, `timer_number_font_size`, `timer_number_font_bold`
 - Preset per-category keys: `<setting>_<category>` such as `show_static`, `color_debuff`, `scale_short`
+- OOC fade: preset frames use `fade_ooc_<category>`, `ooc_alpha_<category>`, `fade_delay_<category>`, and `fade_length_<category>`; custom frames use flat `fade_ooc`, `ooc_alpha`, `fade_delay`, and `fade_length`. Fade timing defaults are 2s delay and 4s fade length. Legacy global CDM fade keys are migrated into per-CDM-frame settings when missing.
 - Timer swipe keys: preset frames use `timer_swipe_<category>` and custom frames use `timer_swipe`; Bar Mode suppresses normal icon timer swipes regardless of the saved timer swipe value, and CDM cooldown-mode swipe overlays intentionally remain visible even when timer swipe is off.
 - Aura cancel modifier: `cancel_modifier` is a global Aura Frames setting (`OFF`, `CTRL`, `ALT`, `SHIFT`; default `CTRL`). Modifier + right `OnMouseUp` cancellation is out-of-combat only, owned by `M.try_cancel_aura_icon()` in `af_functions.lua`, and only cancels auras resolved through a fresh `HELPFUL|CANCELABLE` scan.
 - Positions: `aura_frames.positions.<category> = { point, x, y }`

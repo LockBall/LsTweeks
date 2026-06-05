@@ -308,14 +308,6 @@ end
 -- The icon pool is a fixed set of reusable icon/bar frame objects owned by one
 -- aura frame. It is created up front because WoW combat lockdown makes runtime
 -- frame creation unsafe; render code updates and shows/hides these pooled objects.
-local function get_icon_pool_bar_bg_default(cfg_db, category)
-    return cfg_db["bar_bg_color_"..category]
-        or cfg_db["bar_bg_color"]
-        or cfg_db["color_"..category]
-        or cfg_db["color"]
-        or { r = 1, g = 1, b = 1, a = M.BAR_BG_ALPHA_DEFAULT }
-end
-
 local function create_icon_cooldown(obj)
     local cooldown = CreateFrame("Cooldown", nil, obj, "CooldownFrameTemplate")
     cooldown:SetAllPoints(obj)
@@ -408,7 +400,7 @@ end
 local function create_aura_icon_pool(frame, cfg_db, category)
     frame.icons = {}
     local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or M.DEFAULT_MAX_ICONS
-    local bar_bg_default = get_icon_pool_bar_bg_default(cfg_db, category)
+    local bar_bg_default = M.get_bar_bg_color(cfg_db, category)
 
     for i = 1, pool_size do
         frame.icons[i] = create_aura_icon(frame, category, bar_bg_default)
@@ -674,6 +666,10 @@ function M.create_custom_frame(entry)
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
+    if entry.fade_ooc == nil then entry.fade_ooc = false end
+    if entry.ooc_alpha == nil then entry.ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA end
+    if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
+    if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
     local aura_filter = M.get_custom_aura_filter(entry)
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,
@@ -718,6 +714,7 @@ function M.destroy_custom_frame(id)
     local show_key = "show_" .. id
     local frame = unregister_runtime_frame(show_key)
     if frame then
+        if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
         frame:Hide()
         frame:UnregisterAllEvents()
         frame:SetScript("OnEvent", nil)
@@ -749,6 +746,7 @@ local function prepare_aura_frame_db()
     M._aura_scan_dirty = true
 
     if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
+    if M.migrate_legacy_cdm_fade_settings then M.migrate_legacy_cdm_fade_settings(M.db) end
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
     if M.apply_cdm_default_positions_to_db then M.apply_cdm_default_positions_to_db() end
 end

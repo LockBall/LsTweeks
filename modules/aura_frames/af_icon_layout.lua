@@ -91,10 +91,9 @@ function M.set_height_for_growth(self, new_height, growth)
     local delta = new_height - old_height
 
     local point, relative_to, relative_point, x, y = self:GetPoint(1)
+    if not point then return end
 
     self:SetHeight(new_height)
-
-    if not point then return end
 
     if relative_to and relative_to ~= UIParent then
         relative_to = UIParent

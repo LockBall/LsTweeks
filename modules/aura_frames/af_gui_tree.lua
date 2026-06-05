@@ -12,10 +12,10 @@ function M.build_frames_tab(p, frames_data)
 
     -- Left tree list sidebar
     local TREE_W         = 140
-    local TREE_H         = 480
     local TREE_GAP_LEFT  = 10
     local TREE_GAP_RIGHT = 10
     local TREE_TOP_Y     = 10
+    local TREE_H         = math.max(100, (p:GetHeight() or 0) - TREE_TOP_Y)
     local PAD            = 10
     local ROW_H          = 15
     local ARROW_W        = 18

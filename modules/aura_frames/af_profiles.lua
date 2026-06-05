@@ -10,8 +10,6 @@ local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs",
     "enable_blizz_debuffs",
     "cancel_modifier",
-    "fade_wow_cooldown_ooc",
-    "wow_cooldown_ooc_alpha",
     "short_threshold",
     "timer_number_font",
     "timer_number_font_size",
@@ -31,6 +29,10 @@ local PROFILE_CATEGORY_PREFIXES = {
     "bar_mode",
     "color",
     "bar_bg_color",
+    "fade_ooc",
+    "ooc_alpha",
+    "fade_delay",
+    "fade_length",
     "bg_color",
     "max_icons",
     "growth",
@@ -62,6 +64,10 @@ local CUSTOM_PROFILE_KEYS = {
     "bar_mode",
     "color",
     "bar_bg_color",
+    "fade_ooc",
+    "ooc_alpha",
+    "fade_delay",
+    "fade_length",
     "bg_color",
     "max_icons",
     "growth",
@@ -232,6 +238,9 @@ function M.apply_aura_frame_profile_data(profile_data)
 
     apply_keys(profile_data, M.db, PROFILE_GLOBAL_KEYS)
     apply_category_keys(profile_data)
+    if M.migrate_legacy_cdm_fade_settings then
+        M.migrate_legacy_cdm_fade_settings(M.db, profile_data)
+    end
     M.db.positions = deep_copy(profile_data.positions or {})
     M.db.custom_frames = deep_copy(profile_data.custom_frames or {})
 

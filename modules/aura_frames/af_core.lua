@@ -8,6 +8,7 @@ local math_ceil      = math.ceil
 local GetTime        = GetTime
 local issecretvalue  = issecretvalue
 local C_UnitAuras    = C_UnitAuras
+local C_Timer        = C_Timer
 local wipe           = wipe
 local InCombatLockdown = InCombatLockdown
 
@@ -35,6 +36,104 @@ local function set_alpha_if_changed(frame, alpha)
     if frame._lstweeks_applied_alpha == alpha then return end
     frame._lstweeks_applied_alpha = alpha
     frame:SetAlpha(alpha)
+end
+
+local function cancel_frame_ooc_fade(frame)
+    if not frame then return end
+    if frame._ooc_fade_timer then
+        frame._ooc_fade_timer:Cancel()
+        frame._ooc_fade_timer = nil
+    end
+    if frame._ooc_fade_state then
+        frame._ooc_fade_state = nil
+        frame:SetScript("OnUpdate", nil)
+    end
+end
+M.cancel_frame_ooc_fade = cancel_frame_ooc_fade
+
+local function clamp_ooc_alpha(value)
+    value = tonumber(value) or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA
+    if value < 0.1 then return 0.1 end
+    if value > 1 then return 1 end
+    return value
+end
+
+local function normalize_fade_seconds(value)
+    value = tonumber(value) or 0
+    if value < 0 then return 0 end
+    return value
+end
+
+local function start_frame_ooc_fade(frame, state)
+    if not (frame and frame._ooc_fade_state == state) then return end
+    local duration = state.duration
+    if duration <= 0 then
+        set_alpha_if_changed(frame, state.target_alpha)
+        state.done = true
+        return
+    end
+
+    state.start_time = GetTime()
+    state.start_alpha = frame._lstweeks_applied_alpha or (frame.GetAlpha and frame:GetAlpha()) or 1
+    frame:SetScript("OnUpdate", function(self)
+        local fade_state = self._ooc_fade_state
+        if not fade_state then
+            self:SetScript("OnUpdate", nil)
+            return
+        end
+
+        local progress = (GetTime() - fade_state.start_time) / fade_state.duration
+        if progress >= 1 then
+            set_alpha_if_changed(self, fade_state.target_alpha)
+            fade_state.done = true
+            self:SetScript("OnUpdate", nil)
+            return
+        end
+
+        local alpha = fade_state.start_alpha + ((fade_state.target_alpha - fade_state.start_alpha) * progress)
+        set_alpha_if_changed(self, alpha)
+    end)
+end
+
+local function apply_ooc_fade(frame, enabled, is_moving, in_combat, target_alpha, delay, duration)
+    if not enabled or is_moving then
+        cancel_frame_ooc_fade(frame)
+        set_alpha_if_changed(frame, 1)
+        return
+    end
+
+    if in_combat then
+        cancel_frame_ooc_fade(frame)
+        set_alpha_if_changed(frame, 1)
+        return
+    end
+
+    target_alpha = clamp_ooc_alpha(target_alpha)
+    delay = normalize_fade_seconds(delay)
+    duration = normalize_fade_seconds(duration)
+
+    local signature = target_alpha .. "|" .. delay .. "|" .. duration
+    local state = frame._ooc_fade_state
+    if state and state.signature == signature then return end
+
+    cancel_frame_ooc_fade(frame)
+    state = {
+        signature = signature,
+        target_alpha = target_alpha,
+        duration = duration,
+    }
+    frame._ooc_fade_state = state
+
+    if delay > 0 and C_Timer and C_Timer.NewTimer then
+        frame._ooc_fade_timer = C_Timer.NewTimer(delay, function()
+            if frame._ooc_fade_state == state then
+                frame._ooc_fade_timer = nil
+                start_frame_ooc_fade(frame, state)
+            end
+        end)
+    else
+        start_frame_ooc_fade(frame, state)
+    end
 end
 
 local function apply_position_if_changed(frame, scale_key, fallback_y, scale)
@@ -198,6 +297,8 @@ local function set_blizz_frame_state(frame, hide)
         frame:UnregisterAllEvents()
         if frame.SetScript then frame:SetScript("OnShow", nil) end
     else
+        -- Best-effort restore for Blizzard's default frames after we disabled them.
+        -- If default buff/debuff behavior drifts, verify Blizzard's current event list.
         frame:RegisterEvent("UNIT_AURA")
         frame:RegisterEvent("PLAYER_ENTERING_WORLD")
         frame:Show()
@@ -287,6 +388,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
+        cancel_frame_ooc_fade(self)
+        set_alpha_if_changed(self, 1)
         set_shown_if_changed(self, false)
         set_shown_if_changed(self.title_bar, false)
         set_shown_if_changed(self.bottom_title_bar, false)
@@ -294,14 +397,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         return
     end
 
-    local bar_bg_alpha  = M.BAR_BG_ALPHA_DEFAULT
     local bar_mode_key  = self._bar_mode_key or ("bar_mode_" .. category)
     self._bar_mode_key  = bar_mode_key
     local bar_mode      = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
     local frame_width   = cfg_db["width_" .. category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing       = cfg_db[spacing_key] or cfg_db["spacing"] or 6
     local color         = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
-    local barBgC        = M.get_setting(cfg_db, category, "bar_bg_color", { r = color.r, g = color.g, b = color.b, a = bar_bg_alpha })
+    local barBgC        = M.get_bar_bg_color(cfg_db, category, color)
     local barTextC      = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bgC           = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
@@ -397,11 +499,16 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    if M.WOW_COOLDOWN_CATEGORIES[category] and M.db and M.db.fade_wow_cooldown_ooc and not is_moving then
-        set_alpha_if_changed(self, in_combat and 1 or (M.db.wow_cooldown_ooc_alpha or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA))
-    else
-        set_alpha_if_changed(self, 1)
-    end
+    local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
+    apply_ooc_fade(
+        self,
+        fade_ooc,
+        is_moving,
+        in_combat,
+        M.get_setting(cfg_db, category, "ooc_alpha", M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA),
+        M.get_setting(cfg_db, category, "fade_delay", M.DEFAULT_OOC_FADE_DELAY),
+        M.get_setting(cfg_db, category, "fade_length", M.DEFAULT_OOC_FADE_LENGTH)
+    )
 
     if preview_enabled then
         M.append_test_aura(self._aura_map, show_key, aura_filter, short_threshold)

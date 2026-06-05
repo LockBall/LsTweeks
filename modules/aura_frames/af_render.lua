@@ -326,12 +326,7 @@ local function configure_aura_visual(
         set_shown_if_changed(obj.bar, true)
         set_status_bar_color_if_changed(obj.bar, color.r, color.g, color.b, color.a or 1)
         if obj.bar_bg then
-            local bg = bar_bg_color or {
-                r = color.r,
-                g = color.g,
-                b = color.b,
-                a = M.BAR_BG_ALPHA_DEFAULT,
-            }
+            local bg = bar_bg_color or M.get_bar_bg_color(nil, nil, color)
             set_texture_color_if_changed(obj.bar_bg, bg.r, bg.g, bg.b, bg.a or 1)
         end
         set_name_text_if_changed(obj.name_text, entry.name)  -- name may be secret; SetText is safe

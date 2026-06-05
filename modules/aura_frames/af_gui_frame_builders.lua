@@ -52,7 +52,7 @@ local function create_bound_checkbox_control(parent, label, value_table, value_k
             end
         end
     )
-    grid.place_at(container, row, column)
+    grid:place_at(container, row, column)
     if control_key then
         M.controls[control_key] = checkbox
     end
@@ -101,6 +101,10 @@ local function make_preset_frame_settings_config(data)
             color = "color_" .. cat,
             bar_text_color = "bar_text_color_" .. cat,
             bar_bg_color = "bar_bg_color_" .. cat,
+            fade_ooc = "fade_ooc_" .. cat,
+            ooc_alpha = "ooc_alpha_" .. cat,
+            fade_delay = "fade_delay_" .. cat,
+            fade_length = "fade_length_" .. cat,
             bar_mode = "bar_mode_" .. cat,
             growth = "growth_" .. cat,
             max_icons = "max_icons_" .. cat,
@@ -124,6 +128,10 @@ local function make_custom_frame_settings_config(entry)
     }
     if entry.tooltip == nil then entry.tooltip = true end
     if entry.timer_swipe == nil then entry.timer_swipe = true end
+    if entry.fade_ooc == nil then entry.fade_ooc = false end
+    if entry.ooc_alpha == nil then entry.ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA end
+    if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
+    if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
     return {
         id = id,
         is_custom = true,
@@ -147,6 +155,10 @@ local function make_custom_frame_settings_config(entry)
             color = "color",
             bar_text_color = "bar_text_color",
             bar_bg_color = "bar_bg_color",
+            fade_ooc = "fade_ooc",
+            ooc_alpha = "ooc_alpha",
+            fade_delay = "fade_delay",
+            fade_length = "fade_length",
             bar_mode = "bar_mode",
             growth = "growth",
             max_icons = "max_icons",
@@ -166,7 +178,7 @@ end
 local function create_frame_color_picker(parent, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
     local key = frame_setting_key(frame_config, logical_key)
     local picker = addon.CreateColorPicker(parent, frame_config.value_table, key, has_alpha, label, frame_config.defaults_table, update)
-    grid.place_at(picker, row, column, "picker")
+    grid:place_at(picker, row, column, "picker")
     if control_key then M.controls[control_key] = picker end
     return picker
 end
@@ -190,6 +202,7 @@ end
 local function create_frame_timer_controls(parent, frame_config, grid, update, labels)
     local id = frame_config.id
     local control_prefix = labels.control_prefix or id
+    local row = labels.row or 4
     local dropdown_name = labels.dropdown_name or (addon_name .. id .. "TimerFont")
     local font_size_name = labels.font_size_name or (addon_name .. id .. "TimerFontSize")
     local timer_text_key = frame_setting_key(frame_config, "timer")
@@ -209,7 +222,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         frame_config.value_table,
         timer_text_key,
         grid,
-        4,
+        row,
         1,
         labels.timer_text_control_key or timer_text_key,
         nil,
@@ -222,7 +235,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         frame_config.value_table,
         timer_bold_key,
         grid,
-        4,
+        row,
         1,
         labels.bold_control_key or timer_bold_key,
         refresh_fonts,
@@ -241,7 +254,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         end,
         labels.font_dropdown_width or 120
     )
-    grid.place_at(timer_font, 4, 2, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
+    grid:place_at(timer_font, row, 2, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
     M.controls[labels.font_control_key or ("timer_number_font_dropdown_" .. control_prefix)] = timer_font
 
     local font_size_slider = addon.CreateSliderWithBox(
@@ -256,7 +269,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         frame_config.defaults_table,
         refresh_fonts
     )
-    grid.place_at(font_size_slider, 4, 3)
+    grid:place_at(font_size_slider, row, 3)
     M.controls[labels.font_size_control_key or ("timer_number_font_size_slider_" .. control_prefix)] = font_size_slider
 
     local timer_color_picker = addon.CreateColorPicker(
@@ -270,6 +283,12 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     )
     timer_color_picker:SetPoint("TOPLEFT", timer_bold_container, "BOTTOMLEFT", 0, -4)
     M.controls[labels.color_control_key or ("timer_color_picker_" .. control_prefix)] = timer_color_picker
+
+    return {
+        timer_text_container = timer_text_container,
+        timer_font = timer_font,
+        font_size_slider = font_size_slider,
+    }
 end
 
 local function create_frame_position_controls(parent, frame_config, grid, update, options)
@@ -364,9 +383,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
     end)
     if options.width_control_key then M.controls[options.width_control_key] = width_slider end
 
-    grid.place_at(x_slider, 1, 2)
-    grid.place_at(y_slider, 1, 3)
-    grid.place_at(width_slider, 1, 4)
+    grid:place_at(x_slider, 1, 2)
+    grid:place_at(y_slider, 1, 3)
+    grid:place_at(width_slider, 1, 4)
 
     local snap_container = create_snap_to_grid_checkbox(parent, move_container)
 
@@ -605,8 +624,6 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     opts = opts or {}
     local update = opts.update
     local grid = M.create_settings_grid(parent)
-    local place_at = grid.place_at
-    local add_row_separator = grid.add_row_separator
     local value_table = frame_config.value_table
 
     local function control_key(logical_key)
@@ -667,7 +684,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         sync_on_drag_stop = true,
     })
 
-    add_row_separator(1)
+    grid:add_row_separator(1)
 
     local enable_container, enable_cb
     enable_container, enable_cb = bound_cb("Enable Frame", "show", 2, 1, function(is_checked)
@@ -691,9 +708,14 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end)
     test_aura_container:ClearAllPoints()
     test_aura_container:SetPoint("TOPLEFT", enable_container, "BOTTOMLEFT", 0, 0)
+    local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
+    tooltip_container:ClearAllPoints()
+    tooltip_container:SetPoint("TOPLEFT", test_aura_container, "BOTTOMLEFT", 0, 0)
 
-    bound_cb("Frame BG", "bg", 2, 2)
-    bound_picker("bg_color", true, "Frame BG Color", 2, 3)
+    local frame_bg_container = bound_cb("Frame BG", "bg", 2, 2)
+    local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 2, 2)
+    frame_bg_color_picker:ClearAllPoints()
+    frame_bg_color_picker:SetPoint("TOPLEFT", frame_bg_container, "BOTTOMLEFT", 0, -4)
 
     if opts.build_source_controls then
         opts.build_source_controls({
@@ -707,7 +729,19 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         })
     end
 
-    add_row_separator(2)
+    grid:add_row_separator(2)
+
+    bound_cb("Fade OOC", "fade_ooc", 3, 1)
+    local ooc_alpha_slider = create_frame_slider(parent, frame_config, "OOCAlpha", "OOC Alpha", 0.1, 1, 0.05, "ooc_alpha", update)
+    grid:place_at(ooc_alpha_slider, 3, 2)
+
+    local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", 0, 10, 0.1, "fade_delay", update)
+    grid:place_at(fade_delay_slider, 3, 3)
+
+    local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", 0, 10, 0.1, "fade_length", update)
+    grid:place_at(fade_length_slider, 3, 4)
+
+    grid:add_row_separator(3)
 
     local timer_swipe_container, timer_swipe_checkbox
     local function refresh_timer_swipe_control()
@@ -726,7 +760,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         end
     end
 
-    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1, function()
+    local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 4, 1, function()
         refresh_timer_swipe_control()
         update()
     end)
@@ -735,38 +769,45 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     if opts.bar_color_control_key then
         M.controls[opts.bar_color_control_key] = bar_color_picker
     end
-    bound_picker("bar_text_color", false, "Bar Text Color", 3, 2)
-    bound_picker("bar_bg_color", true, "Bar BG Color", 3, 3)
+    bound_picker("bar_text_color", false, "Bar Text Color", 4, 2)
+    bound_picker("bar_bg_color", true, "Bar BG Color", 4, 3)
 
     local growth_dropdown = create_growth_dropdown(parent, frame_config, update)
-    place_at(growth_dropdown, 3, 4, "dropdown", {
+    grid:place_at(growth_dropdown, 4, 4, "dropdown", {
         y_offset = opts.growth_y_offset or -15,
     })
 
-    add_row_separator(3)
+    grid:add_row_separator(4)
 
     local has_timer_controls = opts.show_timer_controls ~= false
+    local timer_controls
     if has_timer_controls then
-        create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
-    end
-    local tooltip_container = bound_cb("Tooltip", "tooltip", 4, 4)
-    if has_timer_controls then
-        timer_swipe_container, timer_swipe_checkbox = bound_cb("Timer Swipe", "timer_swipe", 4, 4)
-        timer_swipe_container:ClearAllPoints()
-        timer_swipe_container:SetPoint("TOPLEFT", tooltip_container, "BOTTOMLEFT", 0, 0)
+        timer_controls = create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
+        timer_swipe_container, timer_swipe_checkbox = bound_cb("Timer Swipe", "timer_swipe", 5, 4)
         M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
         refresh_timer_swipe_control()
     end
-    add_row_separator(4)
 
     local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
-    place_at(scale_slider, 5, 1)
+    grid:place_at(scale_slider, 5, 1)
+    if timer_controls and timer_controls.timer_text_container then
+        scale_slider:ClearAllPoints()
+        scale_slider:SetPoint("TOPLEFT", timer_controls.timer_text_container, "BOTTOMLEFT", 0, -82)
+    end
 
     local spacing_slider = create_frame_slider(parent, frame_config, "Spacing", "Spacing", 0, 20, 0.1, "spacing", update)
-    place_at(spacing_slider, 5, 2)
+    grid:place_at(spacing_slider, 5, 2)
+    if timer_controls and timer_controls.timer_font then
+        spacing_slider:ClearAllPoints()
+        spacing_slider:SetPoint("TOPLEFT", timer_controls.timer_font, "BOTTOMLEFT", 0, -69)
+    end
 
     local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons", opts.on_max_icons_changed)
-    place_at(max_icons_slider, 5, 4)
+    grid:place_at(max_icons_slider, 5, 4)
+    if timer_swipe_container then
+        max_icons_slider:ClearAllPoints()
+        max_icons_slider:SetPoint("TOPLEFT", timer_swipe_container, "BOTTOMLEFT", 0, -82)
+    end
 end
 
 -- ============================================================================
@@ -800,6 +841,7 @@ function M.build_preset_frame_panel(p, data)
         bar_color_control_key = "bar_color_picker_" .. cat,
         show_timer_controls = cat ~= "static",
         timer_labels = {
+            row = 5,
             control_prefix = cat,
             dropdown_name = addon_name .. cat .. "TimerFont",
             font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
@@ -857,6 +899,7 @@ function M.build_custom_settings_panel(p, entry)
         bar_color_control_key = "custom_" .. id .. "_bar_color",
         growth_y_offset = -33,
         timer_labels = {
+            row = 5,
             control_prefix = "custom_" .. id,
             dropdown_name = addon_name .. id .. "TimerFont",
             font_size_name = addon_name .. id .. "TimerFontSize",
@@ -873,7 +916,7 @@ function M.build_custom_settings_panel(p, entry)
             print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
         end,
         build_source_controls = function(ctx)
-            ctx.grid.place_at(create_frame_name_control(ctx.parent, entry), 2, 4, nil, { width = 130 })
+            ctx.grid:place_at(create_frame_name_control(ctx.parent, entry), 2, 4, nil, { width = 130 })
         end,
     })
 end

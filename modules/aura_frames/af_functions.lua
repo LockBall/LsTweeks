@@ -389,6 +389,37 @@ function M.get_setting(cfg_db, category, key, fallback)
     return fallback
 end
 
+function M.migrate_legacy_cdm_fade_settings(dest, source)
+    dest = dest or M.db
+    source = source or dest
+    if not (dest and source and M.CDM_CATEGORIES) then return end
+
+    local legacy_fade = source.fade_wow_cooldown_ooc
+    local legacy_alpha = source.wow_cooldown_ooc_alpha
+    if legacy_fade == nil and legacy_alpha == nil then return end
+
+    for _, category in ipairs(M.CDM_CATEGORIES) do
+        local fade_key = "fade_ooc_" .. category
+        local alpha_key = "ooc_alpha_" .. category
+        if source[fade_key] == nil and legacy_fade ~= nil then
+            dest[fade_key] = legacy_fade == true
+        end
+        if source[alpha_key] == nil and legacy_alpha ~= nil then
+            dest[alpha_key] = legacy_alpha
+        end
+    end
+end
+
+function M.get_bar_bg_color(cfg_db, category, color)
+    color = color or M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
+    return M.get_setting(cfg_db, category, "bar_bg_color", {
+        r = color.r or 1,
+        g = color.g or 1,
+        b = color.b or 1,
+        a = M.BAR_BG_ALPHA_DEFAULT,
+    })
+end
+
 function M.normalize_timer_category(category)
     if type(category) == "string" and category:sub(1, 5) == "show_" then
         return category:sub(6)
@@ -579,63 +610,4 @@ function M.apply_thin_border_backdrop(frame, bg_color, border_color)
     if border_color then
         frame:SetBackdropBorderColor(border_color.r or 1, border_color.g or 1, border_color.b or 1, border_color.a or 1)
     end
-end
-
-function M.create_settings_grid(parent, opts)
-    opts = opts or {}
-    local col_gap    = opts.col_gap or 150
-    local col_width  = opts.col_width or 190
-    local col_offset = opts.col_offset or -20
-    local row_gap    = opts.row_gap or 20
-    local grid = {
-        [1] = col_offset,
-        [2] = col_gap + col_offset,
-        [3] = col_gap * 2 + col_offset,
-        [4] = col_gap * 3 + col_offset,
-        col_width = col_width,
-        col_align = opts.col_align or { "center", "center", "center", "center" },
-        row_start = opts.row_start or 10,
-        row_gap = row_gap,
-        row_heights = opts.row_heights or { 130, 60, 90, 120, 110 },
-        reset_btn_width = opts.reset_btn_width or 110,
-        offsets = opts.offsets or { default = 0, dropdown = 8, picker = 4 },
-        content_rows = opts.content_rows or 5,
-    }
-
-    function grid.place_at(control, row, column, slot, place_opts)
-        if not control then return end
-        place_opts = place_opts or {}
-        local align = place_opts.align or grid.col_align[column] or "left"
-        local x = grid[column]
-        local y = grid.row_start
-        for i = 1, (row - 1) do
-            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
-        end
-        if place_opts.valign == "bottom" then
-            y = y - (grid.row_heights[row] or grid.row_heights[#grid.row_heights])
-        end
-        local y_offset = grid.offsets[slot or "default"] or 0
-        if place_opts.y_offset then y_offset = y_offset + place_opts.y_offset end
-        local width = place_opts.width or (control.GetWidth and control:GetWidth() or 0)
-        if align == "center" then
-            x = x + math.floor((grid.col_width - width) / 2)
-        elseif align == "right" then
-            x = x + grid.col_width - width
-        end
-        control:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y + y_offset)
-    end
-
-    function grid.add_row_separator(row)
-        local line = parent:CreateTexture(nil, "BACKGROUND")
-        line:SetColorTexture(1, 1, 1, 0.08)
-        line:SetHeight(2)
-        local y = grid.row_start
-        for i = 1, row do
-            y = y - (grid.row_heights[i] or grid.row_heights[#grid.row_heights])
-        end
-        line:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, y + math.floor(grid.row_gap / 2))
-        line:SetWidth(grid[4] + grid.col_width - 12)
-    end
-
-    return grid
 end
