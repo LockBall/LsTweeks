@@ -96,7 +96,7 @@ local function start_frame_ooc_fade(frame, state)
 end
 
 local function apply_ooc_fade(frame, enabled, is_moving, in_combat, target_alpha, delay, duration)
-    if not enabled or is_moving then
+    if not enabled or is_moving or frame._is_mouse_over then
         cancel_frame_ooc_fade(frame)
         set_alpha_if_changed(frame, 1)
         return
@@ -133,6 +133,42 @@ local function apply_ooc_fade(frame, enabled, is_moving, in_combat, target_alpha
         end)
     else
         start_frame_ooc_fade(frame, state)
+    end
+end
+
+function M.refresh_frame_ooc_fade(frame)
+    if not frame then return end
+    local params = frame.update_params
+    local cfg_db = M.get_frame_config_db(frame)
+    if not (params and cfg_db) then return end
+
+    local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
+    if not activity.enabled then
+        cancel_frame_ooc_fade(frame)
+        set_alpha_if_changed(frame, 1)
+        return
+    end
+
+    local category = frame.category
+    local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
+    apply_ooc_fade(
+        frame,
+        fade_ooc,
+        activity.moving == true,
+        InCombatLockdown and InCombatLockdown(),
+        M.get_setting(cfg_db, category, "ooc_alpha", M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA),
+        M.get_setting(cfg_db, category, "fade_delay", M.DEFAULT_OOC_FADE_DELAY),
+        M.get_setting(cfg_db, category, "fade_length", M.DEFAULT_OOC_FADE_LENGTH)
+    )
+end
+
+function M.set_aura_frame_hovered(frame, hovered)
+    if not frame then return end
+    hovered = hovered == true
+    if frame._is_mouse_over == hovered then return end
+    frame._is_mouse_over = hovered
+    if M.refresh_frame_ooc_fade then
+        M.refresh_frame_ooc_fade(frame)
     end
 end
 
@@ -200,8 +236,86 @@ end
 -- TIMER TICKER
 
 
+local function aura_icon_needs_tick(obj, frame, now)
+    if not (obj and obj:IsShown()) then return false end
+    if obj.is_test_preview then return true end
+    if obj.is_spell_cooldown then return true end
+
+    local is_static_frame = frame and frame.category == "static"
+    if is_static_frame then return false end
+
+    local show_timer_text = frame and frame._show_timer_text
+    local show_cooldown_overlay = frame and frame._show_cooldown_overlay == true
+    local bar_visible = obj.bar and obj.bar:IsShown()
+    if not (bar_visible or (show_timer_text and not show_cooldown_overlay)) then
+        return false
+    end
+
+    if obj.aura_expiration and obj.aura_expiration > now then return true end
+    if obj.aura_scan_time and obj.aura_remaining and not issecretvalue(obj.aura_remaining) and obj.aura_remaining > 0 then
+        return true
+    end
+    return type(obj.aura_index) == "number"
+end
+
+function M.frame_needs_visible_icon_tick(frame, now)
+    if not (frame and frame:IsVisible() and frame.icons) then return false end
+    local display_count = frame._display_count or 0
+    if display_count <= 0 then return false end
+    local icon_count = #frame.icons
+    if display_count > icon_count then display_count = icon_count end
+    now = now or GetTime()
+    for i = 1, display_count do
+        if aura_icon_needs_tick(frame.icons[i], frame, now) then
+            return true
+        end
+    end
+    return false
+end
+
+function M.any_frame_needs_visible_icon_tick(now)
+    local frames_list = M.frames_list
+    if not frames_list then return false end
+    now = now or GetTime()
+    for i = 1, #frames_list do
+        if M.frame_needs_visible_icon_tick(frames_list[i], now) then
+            return true
+        end
+    end
+    return false
+end
+
+function M.stop_visible_icon_ticker()
+    local ticker = M._visible_icon_ticker
+    if ticker then
+        ticker:Cancel()
+        M._visible_icon_ticker = nil
+    end
+end
+
+function M.ensure_visible_icon_ticker()
+    if M._visible_icon_ticker then return end
+    if not (C_Timer and C_Timer.NewTicker) then return end
+    if not M.any_frame_needs_visible_icon_tick() then return end
+
+    M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.tenth_sec, function()
+        M.tick_visible_icons()
+        if not M.any_frame_needs_visible_icon_tick() then
+            M.stop_visible_icon_ticker()
+        end
+    end)
+end
+
+function M.refresh_visible_icon_ticker()
+    if M.any_frame_needs_visible_icon_tick() then
+        M.ensure_visible_icon_ticker()
+    else
+        M.stop_visible_icon_ticker()
+    end
+end
+
 -- Shared ticker update path for all visible aura icon objects.
--- Runs from af_main.lua and keeps timer/bar text fresh between scans.
+-- Started on demand and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
     now = now or GetTime()
     local db = M.db
@@ -394,6 +508,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         set_shown_if_changed(self.title_bar, false)
         set_shown_if_changed(self.bottom_title_bar, false)
         set_shown_if_changed(self.resizer, false)
+        if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
         return
     end
 
@@ -499,16 +614,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
-    apply_ooc_fade(
-        self,
-        fade_ooc,
-        is_moving,
-        in_combat,
-        M.get_setting(cfg_db, category, "ooc_alpha", M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA),
-        M.get_setting(cfg_db, category, "fade_delay", M.DEFAULT_OOC_FADE_DELAY),
-        M.get_setting(cfg_db, category, "fade_length", M.DEFAULT_OOC_FADE_LENGTH)
-    )
+    M.refresh_frame_ooc_fade(self)
 
     if preview_enabled then
         M.append_test_aura(self._aura_map, show_key, aura_filter, short_threshold)
@@ -519,6 +625,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local display_count = M.render_aura_map(
         self, self._aura_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
+    if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
 
     local lc = self._layout_cache
     local icon_timer_h = layout_show_timer_text and 12 or 0

@@ -275,7 +275,8 @@ Important `aura_frames` keys:
 - Global AF settings: `short_threshold`, `enable_blizz_buffs`, `enable_blizz_debuffs`, `snap_to_grid`, `show_grid`, `show_bar_section_outlines`
 - Timer fallback: `timer_number_font`, `timer_number_font_size`, `timer_number_font_bold`
 - Preset per-category keys: `<setting>_<category>` such as `show_static`, `color_debuff`, `scale_short`
-- OOC fade: preset frames use `fade_ooc_<category>`, `ooc_alpha_<category>`, `fade_delay_<category>`, and `fade_length_<category>`; custom frames use flat `fade_ooc`, `ooc_alpha`, `fade_delay`, and `fade_length`. Fade timing defaults are 2s delay and 4s fade length. Legacy global CDM fade keys are migrated into per-CDM-frame settings when missing.
+- OOC fade: preset frames use `fade_ooc_<category>`, `ooc_alpha_<category>`, `fade_delay_<category>`, and `fade_length_<category>`; custom frames use flat `fade_ooc`, `ooc_alpha`, `fade_delay`, and `fade_length`. Fade timing defaults are 2s delay and 3s fade length. Legacy global CDM fade keys are migrated into per-CDM-frame settings when missing.
+- Aura Frames OOC fade immediately restores full alpha while the mouse is over title bars, the resize handle, or visible icons/bars; leaving the visible frame controls resumes the configured delay/fade.
 - Timer swipe keys: preset frames use `timer_swipe_<category>` and custom frames use `timer_swipe`; Bar Mode suppresses normal icon timer swipes regardless of the saved timer swipe value, and CDM cooldown-mode swipe overlays intentionally remain visible even when timer swipe is off.
 - Aura cancel modifier: `cancel_modifier` is a global Aura Frames setting (`OFF`, `CTRL`, `ALT`, `SHIFT`; default `CTRL`). Modifier + right `OnMouseUp` cancellation is out-of-combat only, owned by `M.try_cancel_aura_icon()` in `af_functions.lua`, and only cancels auras resolved through a fresh `HELPFUL|CANCELABLE` scan.
 - Positions: `aura_frames.positions.<category> = { point, x, y }`
@@ -296,6 +297,7 @@ Important `aura_frames` keys:
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
 - UNIT_AURA is batched at `UPDATE_INTERVALS.tenth_sec`; timer text/bar updates also tick at `tenth_sec`.
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
+- Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking.
 - CDM refresh scheduling is centralized in `M.queue_wow_cooldown_refresh(profile)` (`af_main.lua`). Use profiles `"immediate"`, `"startup"`, `"settings"`, `"hook"` instead of local timer chains.
 - CDM viewer frames are alpha-hidden with mouse disabled; do not `Hide()` them or they stop producing useful child state.
 - CDM Blizzard-viewer hide settings must be applied for every CDM category on startup/reload, independent of whether the matching addon CDM frame is enabled.

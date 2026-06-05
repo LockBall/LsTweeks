@@ -302,6 +302,75 @@ local function show_aura_icon_tooltip(obj)
     GameTooltip:Show()
 end
 
+local function aura_frame_contains_mouse(frame)
+    if not frame then return false end
+    if frame.title_bar and frame.title_bar.IsMouseOver and frame.title_bar:IsMouseOver() then return true end
+    if frame.bottom_title_bar and frame.bottom_title_bar.IsMouseOver and frame.bottom_title_bar:IsMouseOver() then return true end
+    if frame.resizer and frame.resizer.IsMouseOver and frame.resizer:IsMouseOver() then return true end
+
+    local icons = frame.icons
+    if icons then
+        local display_count = frame._display_count or #icons
+        if display_count > #icons then display_count = #icons end
+        for i = 1, display_count do
+            local icon = icons[i]
+            if icon and icon:IsShown() and icon.IsMouseOver and icon:IsMouseOver() then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function stop_frame_hover_check(frame)
+    if frame and frame._hover_check_ticker then
+        frame._hover_check_ticker:Cancel()
+        frame._hover_check_ticker = nil
+    end
+end
+
+local function frame_uses_ooc_fade(frame)
+    if not frame then return false end
+    local params = frame.update_params
+    local cfg_db = M.get_frame_config_db and M.get_frame_config_db(frame)
+    if not (params and cfg_db) then return false end
+
+    local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
+    if not activity.enabled or activity.moving then return false end
+    return M.get_setting(cfg_db, frame.category, "fade_ooc", false) == true
+end
+
+local function set_frame_hovered(frame, hovered)
+    if hovered and not frame_uses_ooc_fade(frame) then return false end
+    if M.set_aura_frame_hovered then
+        M.set_aura_frame_hovered(frame, hovered)
+    end
+    if not hovered then
+        stop_frame_hover_check(frame)
+    end
+    return true
+end
+
+local function handle_frame_mouse_enter(frame)
+    if not set_frame_hovered(frame, true) then return end
+    if frame and not frame._hover_check_ticker and C_Timer and C_Timer.NewTicker then
+        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.tenth_sec, function()
+            if not aura_frame_contains_mouse(frame) then
+                set_frame_hovered(frame, false)
+            end
+        end)
+    end
+end
+
+local function handle_frame_mouse_leave(frame)
+    if not frame then return end
+    C_Timer.After(0, function()
+        if not aura_frame_contains_mouse(frame) then
+            set_frame_hovered(frame, false)
+        end
+    end)
+end
+
 -- ============================================================================
 -- AURA ICON POOL
 
@@ -373,9 +442,13 @@ end
 
 local function bind_icon_tooltip(obj)
     obj:EnableMouse(true)
-    obj:SetScript("OnEnter", show_aura_icon_tooltip)
+    obj:SetScript("OnEnter", function(self)
+        handle_frame_mouse_enter(self:GetParent())
+        show_aura_icon_tooltip(self)
+    end)
     obj:SetScript("OnLeave", function()
         GameTooltip:Hide()
+        handle_frame_mouse_leave(obj:GetParent())
     end)
     obj:SetScript("OnMouseUp", function(self, button)
         if M.try_cancel_aura_icon then
@@ -433,6 +506,12 @@ local function create_title_bar(parent, label, scale_key, is_bottom)
 
     tb:EnableMouse(true)
     tb:RegisterForDrag("LeftButton")
+    tb:SetScript("OnEnter", function()
+        handle_frame_mouse_enter(parent)
+    end)
+    tb:SetScript("OnLeave", function()
+        handle_frame_mouse_leave(parent)
+    end)
     tb:SetScript("OnDragStart", function()
         M.start_frame_drag(parent)
     end)
@@ -485,6 +564,12 @@ local function create_aura_frame_resizer(frame, category)
     frame.resizer:SetSize(16, 16)
     frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    frame.resizer:SetScript("OnEnter", function()
+        handle_frame_mouse_enter(frame)
+    end)
+    frame.resizer:SetScript("OnLeave", function()
+        handle_frame_mouse_leave(frame)
+    end)
 
     frame:SetScript("OnSizeChanged", function(s, w)
         if s._clamping_size then return end
@@ -618,7 +703,10 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     frame:SetMovable(true) 
     frame:SetResizable(true) 
+    frame:EnableMouse(true)
     frame:SetClampedToScreen(true)
+    frame:SetScript("OnEnter", handle_frame_mouse_enter)
+    frame:SetScript("OnLeave", handle_frame_mouse_leave)
     if frame.SetResizeBounds then
         frame:SetResizeBounds(M.MIN_FRAME_WIDTH, M.MIN_FRAME_HEIGHT)
     end
@@ -715,9 +803,11 @@ function M.destroy_custom_frame(id)
     local frame = unregister_runtime_frame(show_key)
     if frame then
         if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
+        stop_frame_hover_check(frame)
         frame:Hide()
         frame:UnregisterAllEvents()
         frame:SetScript("OnEvent", nil)
+        if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
     end
     if M.db and M.db.custom_frames then
         for i, entry in ipairs(M.db.custom_frames) do
@@ -773,13 +863,6 @@ local function create_startup_aura_frames()
     end
 end
 
-local function start_visible_icon_ticker()
-    -- Timer text and bar fill need smooth tenths; heavier aura scans stay event-bucketed.
-    C_Timer.NewTicker(UPDATE_INTERVALS.tenth_sec, function()
-        M.tick_visible_icons()
-    end)
-end
-
 local function register_aura_frame_settings()
     if addon.register_category and M.BuildSettings then
         addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end)
@@ -787,8 +870,6 @@ local function register_aura_frame_settings()
 end
 
 local function start_aura_frame_runtime_services()
-    start_visible_icon_ticker()
-
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     if M.update_all_blizz_cdm_visibility then
