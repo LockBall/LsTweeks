@@ -48,6 +48,21 @@ Test groups:
 4. Let the active aura expire in combat.
 5. Confirm cooldown appears immediately after active aura expires.
 
+## First In-Combat Cast Case
+
+1. Reload UI or start from a fresh session.
+2. Put Divine Protection in Utility.
+3. Enter combat before casting.
+4. Cast Divine Protection.
+5. Confirm the first cast shows active aura duration before cooldown.
+6. Repeat once more in the same session and confirm behavior stays consistent.
+
+Reload/wait variant:
+1. Reload UI.
+2. Wait out of combat long enough for CDM viewer state to settle.
+3. Enter combat and cast Divine Protection from Utility.
+4. Confirm Utility still shows active aura duration before cooldown, matching Essential.
+
 ## Pass Criteria
 
 Pass:
