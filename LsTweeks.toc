@@ -65,6 +65,3 @@ modules\aura_frames\af_debug_outlines.lua
 modules\aura_frames\af_screen_grid.lua
 
 modules\aura_frames\af_main.lua
-
-# --- Temporary internal profiling probe; remove after /lstprofile capture ---
-internal_docs\tests\addon_cpu_profile.lua

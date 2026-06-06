@@ -186,24 +186,26 @@ local function handle_fishing_focus_event(_, event, unit, _, spell_id)
 end
 
 function M.sync_fishing_focus_events()
-    local focus_db = M.get_fishing_focus_db()
-    if not M.fishing_focus_frame then
-        M.fishing_focus_frame = CreateFrame("Frame")
-        M.fishing_focus_frame:SetScript("OnEvent", handle_fishing_focus_event)
-    end
-
-    if focus_db.enabled == true then
-        if not M._fishing_focus_events_registered then
-            M.fishing_focus_frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
-            M.fishing_focus_frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
-            M._fishing_focus_events_registered = true
-        end
-    else
+    local db = M.get_db()
+    local raw_focus_db = db and db.fishing_focus
+    if not (raw_focus_db and raw_focus_db.enabled == true) then
         M.restore_fishing_focus()
-        if M._fishing_focus_events_registered then
+        if M._fishing_focus_events_registered and M.fishing_focus_frame then
             M.fishing_focus_frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
             M.fishing_focus_frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
             M._fishing_focus_events_registered = false
         end
+        return
+    end
+
+    M.get_fishing_focus_db()
+    if not M.fishing_focus_frame then
+        M.fishing_focus_frame = CreateFrame("Frame")
+        M.fishing_focus_frame:SetScript("OnEvent", handle_fishing_focus_event)
+    end
+    if not M._fishing_focus_events_registered then
+        M.fishing_focus_frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "player")
+        M.fishing_focus_frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
+        M._fishing_focus_events_registered = true
     end
 end

@@ -39,7 +39,8 @@ addon.UPDATE_INTERVALS.aura_visible_icon_tick = addon.UPDATE_INTERVALS.tenth_sec
 addon.UPDATE_INTERVALS.aura_hover_check = addon.UPDATE_INTERVALS.fifth_sec
 
 -- CPU profile hotness: low; active only during Player Frame fade.
-addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.fifth_sec
+addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.tenth_sec
+-- fifth_sec looks jittery 
 
 -- CPU profile hotness: moderate; visible in broad profile but already 0.2s.
 addon.UPDATE_INTERVALS.skyriding_vigor_tick = addon.UPDATE_INTERVALS.fifth_sec

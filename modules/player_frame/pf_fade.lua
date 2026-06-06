@@ -255,13 +255,6 @@ function F.apply(db)
 
     playerInCombat = (InCombatLockdown and InCombatLockdown()) or false
 
-    if not pfHookApplied then
-        PlayerFrame:HookScript("OnShow", function()
-            M.update_player_frame()
-        end)
-        pfHookApplied = true
-    end
-
     if not (db and db.fade_out_of_combat) then
         cancel_delay()
         stop_animation()
@@ -269,6 +262,13 @@ function F.apply(db)
         state = STATE_IDLE
         set_base_alpha(db, 1, false)
         return
+    end
+
+    if not pfHookApplied then
+        PlayerFrame:HookScript("OnShow", function()
+            M.update_player_frame()
+        end)
+        pfHookApplied = true
     end
 
     if playerInCombat then

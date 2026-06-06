@@ -248,6 +248,120 @@ the hot helper chain substantially. `set_timer_text` fell from about 0.69ms/s to
 also improved from about 1.57ms/s to 1.03ms/s, with average render cost falling
 from 0.1283ms to 0.1153ms. This supports keeping the render cleanup.
 
+### 2026-06-06, Follow-Up Render/CDM Baseline
+
+Context: 69.9s broad addon run after render cleanup, used to decide the next CDM
+read-path review target.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1169 | 349.672 | 0.2991 | 1.426 |
+| `aura_frames.render_aura_map` | 1169 | 150.933 | 0.1291 | 0.865 |
+| `aura_frames.tick_visible_icons` | 660 | 101.816 | 0.1543 | 2.398 |
+| `aura_frames.unified_scan` | 110 | 52.405 | 0.4764 | 1.061 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 664 | 42.314 | 0.0637 | 0.310 |
+| `aura_frames.set_timer_text` | 5829 | 32.065 | 0.0055 | 2.190 |
+| `aura_frames.get_frame_activity_state` | 4686 | 31.048 | 0.0066 | 0.082 |
+| `skyriding_vigor.refresh` | 585 | 26.719 | 0.0457 | 0.177 |
+| `aura_frames.get_setting` | 11130 | 19.022 | 0.0017 | 0.038 |
+| `aura_frames.refresh_frame_ooc_fade` | 1171 | 17.142 | 0.0146 | 0.083 |
+| `aura_frames.get_timer_behavior` | 3237 | 13.545 | 0.0042 | 0.040 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 660 | 11.645 | 0.0176 | 0.057 |
+| `aura_frames.is_timer_text_enabled` | 1169 | 11.564 | 0.0099 | 0.090 |
+| `aura_frames.normalize_timer_category` | 4406 | 8.187 | 0.0019 | 0.071 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1390 | 8.043 | 0.0058 | 0.038 |
+| `aura_frames.get_frame_config_db` | 4690 | 7.188 | 0.0015 | 0.076 |
+| `aura_frames.mark_aura_scan_dirty` | 1164 | 7.071 | 0.0061 | 0.087 |
+| `aura_frames.get_bar_bg_color` | 1169 | 6.360 | 0.0054 | 0.039 |
+| `aura_frames.merge_aura_info` | 1152 | 5.993 | 0.0052 | 0.023 |
+| `aura_frames.scan_custom_aura_map` | 101 | 5.904 | 0.0585 | 0.244 |
+| `skyriding_vigor.ensure_frame` | 1170 | 2.223 | 0.0019 | 0.018 |
+| `skyriding_vigor.set_move_mode` | 585 | 2.138 | 0.0037 | 0.035 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1169 | 1.887 | 0.0016 | 0.035 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1274 | 1.742 | 0.0014 | 0.023 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1164 | 1.499 | 0.0013 | 0.049 |
+| `aura_frames.refresh_visible_icon_ticker` | 1169 | 1.484 | 0.0013 | 0.011 |
+| `aura_frames.get_cdm_viewer_frame` | 700 | 1.312 | 0.0019 | 0.024 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 664 | 1.157 | 0.0017 | 0.032 |
+| `skyriding_vigor.apply_layout` | 585 | 0.845 | 0.0014 | 0.008 |
+| `aura_frames.get_custom_aura_filter` | 101 | 0.609 | 0.0060 | 0.012 |
+| `aura_frames.update_blizz_cdm_visibility` | 20 | 0.225 | 0.0112 | 0.025 |
+| `aura_frames.cdm_category_needs_viewer` | 12 | 0.205 | 0.0171 | 0.042 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 3 | 0.181 | 0.0604 | 0.077 |
+| `aura_frames.get_custom_modifier_def` | 101 | 0.162 | 0.0016 | 0.004 |
+| `aura_frames.queue_wow_cooldown_refresh` | 4 | 0.133 | 0.0332 | 0.104 |
+| `aura_frames.get_preset_keys` | 24 | 0.122 | 0.0051 | 0.034 |
+| `aura_frames.set_aura_frame_hovered` | 4 | 0.101 | 0.0253 | 0.062 |
+| `player_frame.fade.on_enter_combat` | 1 | 0.054 | 0.0543 | 0.054 |
+| `aura_frames.ensure_blizz_cdm_viewer_always_visible` | 8 | 0.030 | 0.0038 | 0.005 |
+| `aura_frames.ensure_blizz_cdm_loaded` | 28 | 0.026 | 0.0009 | 0.002 |
+
+Compared with the prior render-cleanup run, `set_timer_text` average cost improved
+again, but this run had far more timer-text calls per second. CDM preparation and
+viewer lookup were cheap in this run; the remaining CDM-specific review target is
+`add_cooldown_viewer_category_entries`, about 0.61ms/s with a stable 0.064ms
+average call cost.
+
+### 2026-06-06, Longer Follow-Up Render/CDM Baseline
+
+Context: 101.6s broad addon run after render cleanup, with more update/render
+activity than the prior follow-up run.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1590 | 491.977 | 0.3094 | 2.190 |
+| `aura_frames.render_aura_map` | 1590 | 212.559 | 0.1337 | 0.943 |
+| `aura_frames.tick_visible_icons` | 962 | 159.282 | 0.1656 | 0.520 |
+| `aura_frames.unified_scan` | 157 | 79.201 | 0.5045 | 1.516 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 880 | 55.834 | 0.0634 | 0.350 |
+| `aura_frames.set_timer_text` | 9802 | 48.080 | 0.0049 | 0.142 |
+| `aura_frames.get_frame_activity_state` | 6245 | 42.445 | 0.0068 | 0.135 |
+| `skyriding_vigor.refresh` | 731 | 34.122 | 0.0467 | 0.181 |
+| `aura_frames.get_setting` | 15139 | 27.764 | 0.0018 | 1.963 |
+| `aura_frames.refresh_frame_ooc_fade` | 1596 | 23.349 | 0.0146 | 0.082 |
+| `aura_frames.get_timer_behavior` | 4505 | 19.422 | 0.0043 | 0.066 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 962 | 17.090 | 0.0178 | 0.065 |
+| `aura_frames.is_timer_text_enabled` | 1590 | 15.979 | 0.0100 | 0.067 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1996 | 12.103 | 0.0061 | 0.054 |
+| `aura_frames.normalize_timer_category` | 6095 | 11.527 | 0.0019 | 0.035 |
+| `aura_frames.get_bar_bg_color` | 1590 | 10.638 | 0.0067 | 1.972 |
+| `aura_frames.mark_aura_scan_dirty` | 1713 | 10.332 | 0.0060 | 0.071 |
+| `aura_frames.get_frame_config_db` | 6254 | 9.685 | 0.0015 | 0.050 |
+| `aura_frames.merge_aura_info` | 1692 | 9.659 | 0.0057 | 0.082 |
+| `aura_frames.scan_custom_aura_map` | 142 | 7.709 | 0.0543 | 0.257 |
+| `skyriding_vigor.ensure_frame` | 1462 | 2.778 | 0.0019 | 0.033 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1870 | 2.639 | 0.0014 | 0.064 |
+| `skyriding_vigor.set_move_mode` | 731 | 2.567 | 0.0035 | 0.027 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1590 | 2.383 | 0.0015 | 0.012 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1713 | 2.200 | 0.0013 | 0.014 |
+| `aura_frames.refresh_visible_icon_ticker` | 1590 | 2.197 | 0.0014 | 0.239 |
+| `aura_frames.get_cdm_viewer_frame` | 916 | 1.746 | 0.0019 | 0.010 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 880 | 1.631 | 0.0019 | 0.160 |
+| `skyriding_vigor.apply_layout` | 731 | 1.070 | 0.0015 | 0.014 |
+| `aura_frames.get_custom_aura_filter` | 142 | 0.941 | 0.0066 | 0.030 |
+| `aura_frames.update_blizz_cdm_visibility` | 20 | 0.331 | 0.0165 | 0.141 |
+| `aura_frames.set_aura_frame_hovered` | 6 | 0.289 | 0.0482 | 0.089 |
+| `aura_frames.get_custom_modifier_def` | 142 | 0.271 | 0.0019 | 0.006 |
+| `aura_frames.cdm_category_needs_viewer` | 12 | 0.179 | 0.0149 | 0.023 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 3 | 0.146 | 0.0486 | 0.054 |
+| `aura_frames.get_preset_keys` | 24 | 0.093 | 0.0039 | 0.008 |
+| `aura_frames.set_height_for_growth` | 1 | 0.083 | 0.0829 | 0.083 |
+| `player_frame.fade.on_enter_combat` | 1 | 0.070 | 0.0699 | 0.070 |
+| `aura_frames.queue_wow_cooldown_refresh` | 4 | 0.052 | 0.0129 | 0.026 |
+| `aura_frames.ensure_blizz_cdm_viewer_always_visible` | 8 | 0.031 | 0.0039 | 0.005 |
+
+Compared with the shorter follow-up baseline, average call costs stayed stable:
+`add_cooldown_viewer_category_entries` stayed near 0.064ms/call, `set_timer_text`
+improved to 0.0049ms/call, and `prepare_blizz_cdm_viewer` / `get_cdm_viewer_frame`
+remained cheap. The next actionable CPU target is still the CDM entry read path,
+but its absolute cost is modest.
+
+CDM read-path follow-up: reviewed `add_cooldown_viewer_category_entries()` after
+this run. No safe high-value cleanup was identified. The remaining cost is mainly
+the necessary live walk of Blizzard CDM child state, plus cooldown identity/timing
+fallbacks. Keep the current read-only approach unless a future profile shows a
+material regression or a specific CDM behavior issue gives a narrower change target.
+
 ### Template
 
 Context:
