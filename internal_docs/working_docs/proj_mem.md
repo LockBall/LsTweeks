@@ -263,10 +263,10 @@ Important `skyriding_vigor` keys:
 - Skyriding Vigor wing placement is centralized in the local `WING_LAYOUT` table in `sv_bar.lua`; tune `node_gap_x`, wing scale, and shared `offset_y` instead of changing node sizing.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
-- `FILL_TEST_TICK_SECONDS = 0.05` remains module-local because it is animation cadence, not normal runtime refresh cadence.
+- Fill Test uses simulated charge data through the normal `M.refresh()` path and the normal Skyriding Vigor ticker cadence. Do not reintroduce a separate faster fill-test render ticker unless the behavior intentionally diverges from runtime display.
 - Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can restart a ticker.
 - Avoid always-running `OnUpdate`; use a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout, reset slot visuals, or normalize DB on each tick.
-- When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop normal/fill-test tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
+- When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
 
 ### Aura Frames
 
@@ -285,7 +285,7 @@ Important `aura_frames` keys:
 
 #### Aura Frames Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
-- Completed Aura Frames feature notes live in `internal_docs/completed_features/`, including aura cancellation and tooltip annotation-gap reviews.
+- Completed Aura Frames feature notes live in `internal_docs/completed_features/`, including aura cancellation, tooltip annotation-gap, and runtime review notes.
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - First-install visible frames are only `static`, `short`, `long`, `debuff`. CDM defaults keep `show_*`, `move_*`, and `test_aura_*` false.

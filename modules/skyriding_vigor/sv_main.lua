@@ -33,8 +33,6 @@ local VIGOR_SPELL_IDS = {
 }
 
 local TICK_SECONDS = addon.UPDATE_INTERVALS.fifth_sec
--- Fill test animation needs a smoother local cadence than normal runtime refreshes.
-local FILL_TEST_TICK_SECONDS = 0.05
 local FILL_TEST_NODE_SECONDS = 0.55
 local VIGOR_POWER_TYPES = {
     25, -- Enum.PowerType.AlternateMount
@@ -192,13 +190,6 @@ local function sync_fill_test_button()
     end
 end
 
-local function stop_fill_test_ticker()
-    if M.fill_test_ticker then
-        M.fill_test_ticker:Cancel()
-        M.fill_test_ticker = nil
-    end
-end
-
 local function sync_runtime_events(enabled)
     if not loader then return end
     enabled = enabled and true or false
@@ -216,7 +207,6 @@ end
 
 local function disable_runtime()
     stop_ticker()
-    stop_fill_test_ticker()
     M._fill_test_enabled = false
     M._fill_test_started_at = nil
     sync_fill_test_button()
@@ -233,42 +223,14 @@ local function set_frame_alpha(frame, alpha)
     frame._sv_alpha = alpha
 end
 
-local function render_fill_test()
-    local db = get_db()
-    if not db then return end
-    if not db.enabled then
-        disable_runtime()
-        sync_runtime_events(false)
-        return
-    end
-
-    local frame = M.ensure_frame()
-    if not frame then return end
-
-    M.apply_layout()
-    M.set_move_mode(false)
-    set_frame_alpha(frame, 1)
-
+local function get_fill_test_charge_info()
     local max_slots = M.MAX_SLOTS
     local elapsed = (GetTime() - (M._fill_test_started_at or GetTime())) / FILL_TEST_NODE_SECONDS
     local step = elapsed % (max_slots + 1)
     local full_count = min(floor(step), max_slots)
     local progress = step - full_count
 
-    for i = 1, max_slots do
-        M.set_slot_visible(i, true)
-        if i <= full_count then
-            M.set_slot_state(i, "full", 1)
-        elseif i == full_count + 1 and i <= max_slots then
-            M.set_slot_state(i, "filling", progress)
-        else
-            M.set_slot_state(i, "empty", 0)
-        end
-    end
-
-    if not frame:IsShown() then
-        frame:Show()
-    end
+    return full_count, max_slots, GetTime() - (progress * FILL_TEST_NODE_SECONDS), FILL_TEST_NODE_SECONDS
 end
 
 local function should_tick(db, needs_progress_updates)
@@ -340,11 +302,6 @@ function M.refresh()
     local frame = M.ensure_frame()
     if not frame then return end
 
-    if M._fill_test_enabled then
-        render_fill_test()
-        return
-    end
-
     M.apply_layout()
     M.set_move_mode(db.move_mode)
 
@@ -352,12 +309,17 @@ function M.refresh()
     local current, max_charges, start_time, duration = get_charge_info()
     local max_slots = M.MAX_SLOTS
 
-    if db.move_mode and not current then
+    if M._fill_test_enabled then
+        current, max_charges, start_time, duration = get_fill_test_charge_info()
+        is_gliding = true
+    end
+
+    if not M._fill_test_enabled and db.move_mode and not current then
         current, max_charges, start_time, duration = 4, max_slots, GetTime() - 2, 5
     end
 
     local should_show = current and max_charges
-        and (db.move_mode or is_gliding or is_player_flying() or is_mounted_in_advanced_flyable_area())
+        and (M._fill_test_enabled or db.move_mode or is_gliding or is_player_flying() or is_mounted_in_advanced_flyable_area())
     if not should_show then
         frame:Hide()
         update_ticker(db, false)
@@ -370,8 +332,9 @@ function M.refresh()
     if duration and duration > 0 and start_time and start_time > 0 then
         progress = min(max((GetTime() - start_time) / duration, 0), 1)
     end
-    local needs_progress_updates = not db.move_mode
+    local needs_progress_updates = M._fill_test_enabled or (not db.move_mode
         and (current < max_charges and duration and duration > 0 and start_time and start_time > 0)
+    )
 
     for i = 1, max_slots do
         if i <= max_charges then
@@ -390,7 +353,7 @@ function M.refresh()
 
     local is_active_flight = is_gliding or is_player_flying()
     local charges_full = current >= min(max_charges, max_slots)
-    if db.fade_when_full and not db.move_mode and charges_full and not is_active_flight then
+    if db.fade_when_full and not M._fill_test_enabled and not db.move_mode and charges_full and not is_active_flight then
         set_frame_alpha(frame, db.fade_alpha or DEFAULTS.fade_alpha or 0.25)
     else
         set_frame_alpha(frame, 1)
@@ -414,14 +377,8 @@ function M.set_fill_test_enabled(enabled)
     if enabled then
         stop_ticker()
         M._fill_test_started_at = GetTime()
-        render_fill_test()
-        if not M.fill_test_ticker then
-            M.fill_test_ticker = C_Timer_NewTicker(FILL_TEST_TICK_SECONDS, function()
-                render_fill_test()
-            end)
-        end
+        M.refresh()
     else
-        stop_fill_test_ticker()
         M._fill_test_started_at = nil
         M.refresh()
     end

@@ -235,7 +235,7 @@ local function build_cdm_active_aura_entry(iid, category, cdm_order)
     local aura = get_aura_data_by_instance_id(iid)
     if not aura then return nil end
 
-    local is_harmful = aura.isHarmful == true or aura.filter == "HARMFUL"
+    local is_harmful = aura.isHarmful == true
     if is_harmful then return nil end
 
     local duration = aura.duration

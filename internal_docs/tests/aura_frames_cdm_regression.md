@@ -9,7 +9,7 @@ Blizzard reused CDM child frames do not carry stale cached spell name/icon ident
 
 Regression fixed:
 - Utility CDM frame could display cooldown immediately instead of active aura duration.
-- Root cause was stale `_lstweeks_cd_name` / `_lstweeks_cd_icon` on reused Blizzard
+- Root cause was stale addon-owned cached spell name/icon state for reused Blizzard
   CooldownViewer child frames after `cooldownID` or spell ID changed.
 
 ## Setup

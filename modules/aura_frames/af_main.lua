@@ -250,12 +250,12 @@ end
 
 local function try_set_unit_aura_tooltip(obj)
     if not obj.aura_index then return false end
-    if not GameTooltip.SetUnitAuraByAuraInstanceID then return false end
+    ---@diagnostic disable-next-line: undefined-field
+    local set_unit_aura_by_instance_id = GameTooltip.SetUnitAuraByAuraInstanceID
+    if not set_unit_aura_by_instance_id then return false end
 
     -- Modern API (12.0.5+): stable auraInstanceID lookup, no index fragility.
-    local ok = pcall(function()
-        GameTooltip:SetUnitAuraByAuraInstanceID("player", obj.aura_index)
-    end)
+    local ok = pcall(set_unit_aura_by_instance_id, GameTooltip, "player", obj.aura_index)
     return ok and tooltip_has_lines()
 end
 
