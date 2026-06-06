@@ -35,8 +35,24 @@ local function normalize_cancel_modifier(value)
     return "CTRL"
 end
 
+local function add_label_tooltip(container, label, text)
+    if not (container and label and text) then return end
+    local hitbox = CreateFrame("Frame", nil, container)
+    hitbox:SetPoint("LEFT", label, "LEFT", 0, 0)
+    hitbox:SetSize(math.ceil(label:GetStringWidth() or 0), math.ceil(label:GetStringHeight() or 16))
+    hitbox:EnableMouse(true)
+    hitbox:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(text, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    hitbox:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
 local function create_bound_checkbox_control(parent, label, value_table, value_key, grid, row, column, control_key, on_change, default_update, after_checked, after_unchecked)
-    local container, checkbox, _ = addon.CreateCheckbox(parent, label, value_table[value_key],
+    local container, checkbox, label_text = addon.CreateCheckbox(parent, label, value_table[value_key],
         function(is_checked)
             value_table[value_key] = is_checked
             if is_checked and after_checked then
@@ -56,7 +72,7 @@ local function create_bound_checkbox_control(parent, label, value_table, value_k
     if control_key then
         M.controls[control_key] = checkbox
     end
-    return container, checkbox
+    return container, checkbox, label_text
 end
 
 local function create_snap_to_grid_checkbox(parent, anchor_to)
@@ -739,8 +755,9 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:add_row_separator(1)
     grid:add_row_separator(2)
 
-    bound_cb("Fade OOC", "fade_ooc", 4, 1)
-    local ooc_alpha_slider = create_frame_slider(parent, frame_config, "OOCAlpha", "OOC Alpha", 0.1, 1, 0.05, "ooc_alpha", update)
+    local fade_ooc_container, _, fade_ooc_label = bound_cb("Fade OOC", "fade_ooc", 4, 1)
+    add_label_tooltip(fade_ooc_container, fade_ooc_label, "Fade Out Of Combat")
+    local ooc_alpha_slider = create_frame_slider(parent, frame_config, "OOCAlpha", "Fade Alpha", 0.1, 1, 0.05, "ooc_alpha", update)
     grid:place_at(ooc_alpha_slider, 4, 2)
 
     local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", 0, 10, 0.1, "fade_delay", update)
@@ -846,9 +863,9 @@ function M.build_preset_frame_panel(p, data)
             font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
             timer_text_label = "Timer Text",
             bold_label = "Bold",
-            font_label = "Font",
+            font_label = "Text Font",
             font_size_label = "Font Size",
-            color_label = "Color",
+            color_label = "Text Color",
             font_dropdown_width = 120,
             font_y_offset = -15,
         },
@@ -857,20 +874,20 @@ function M.build_preset_frame_panel(p, data)
             print("|cFFFFFF00LsTweaks:|r Pool size for " .. cat .. " changed. Please /reload to apply.")
         end,
         build_source_controls = function(ctx)
-            if cat == "essential" or cat == "utility" then
-                local cooldown_mode_container = ctx.bound_raw_cb("Cooldown Mode", "cooldown_mode_" .. cat, 6, 3, update)
-                local hide_blizz_cdm_container = ctx.bound_raw_cb(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 6, 3, function()
+            local function create_hide_blizz_cdm_control()
+                if not hide_blizz_cdm_label then return end
+                local hide_blizz_cdm_container = ctx.bound_raw_cb(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 2, 1, function()
                     M.update_blizz_cdm_visibility(cat)
                     update()
                 end)
                 hide_blizz_cdm_container:ClearAllPoints()
-                hide_blizz_cdm_container:SetPoint("TOPLEFT", cooldown_mode_container, "BOTTOMLEFT", 0, 0)
-            elseif hide_blizz_cdm_label then
-                ctx.bound_raw_cb(hide_blizz_cdm_label, "hide_blizz_cdm_" .. cat, 6, 3, function()
-                    M.update_blizz_cdm_visibility(cat)
-                    update()
-                end)
+                hide_blizz_cdm_container:SetPoint("TOPLEFT", ctx.tooltip_container, "BOTTOMLEFT", 0, 0)
             end
+
+            if cat == "essential" or cat == "utility" then
+                ctx.bound_raw_cb("Cooldown Mode", "cooldown_mode_" .. cat, 6, 1, update)
+            end
+            create_hide_blizz_cdm_control()
         end
     })
 end
