@@ -364,16 +364,27 @@ end
 -- Used as a fallback for cooldown display; active aura display prefers the
 -- Blizzard child auraInstanceID, and grey state comes from real spell cooldown data.
 M._cd_hook_cache = M._cd_hook_cache or {}
+M._cd_child_state = M._cd_child_state or setmetatable({}, { __mode = "k" })
+
+local function get_cd_child_state(child)
+    local state = M._cd_child_state[child]
+    if not state then
+        state = {}
+        M._cd_child_state[child] = state
+    end
+    return state
+end
 
 function M.clear_cooldown_viewer_child_cache(category)
     local viewer = M.get_cdm_viewer_frame(category)
     if not viewer then return end
     local children = copy_viewer_children(viewer)
     for _, child in ipairs(children) do
-        child._lstweeks_cooldown_id = nil
-        child._lstweeks_spell_id = nil
-        child._lstweeks_cd_name = nil
-        child._lstweeks_cd_icon = nil
+        local state = get_cd_child_state(child)
+        state.cooldown_id = nil
+        state.spell_id = nil
+        state.name = nil
+        state.icon = nil
     end
 end
 
@@ -388,10 +399,11 @@ end
 local function hook_cd_item_frame(child)
     local cd = child.Cooldown
     if not cd then return end
-    if child._lstweeks_cd_hooked == cd then
+    local child_state = get_cd_child_state(child)
+    if child_state.hooked_cd == cd then
         return
     end
-    child._lstweeks_cd_hooked = cd
+    child_state.hooked_cd = cd
 
     local cache = M._cd_hook_cache
 
@@ -400,25 +412,28 @@ local function hook_cd_item_frame(child)
     -- Utility can render a current cooldown with a stale Essential spell name/icon.
     local function set_child_cooldown_id(child_frame, cooldown_id)
         if cooldown_id == nil or issecretvalue(cooldown_id) then return false end
-        if child_frame._lstweeks_cooldown_id ~= cooldown_id then
-            child_frame._lstweeks_cooldown_id = cooldown_id
-            child_frame._lstweeks_cd_name = nil
-            child_frame._lstweeks_cd_icon = nil
+        local state = get_cd_child_state(child_frame)
+        if state.cooldown_id ~= cooldown_id then
+            state.cooldown_id = cooldown_id
+            state.name = nil
+            state.icon = nil
         end
         return true
     end
 
     local function set_child_spell_id(child_frame, spell_id)
         if spell_id == nil or issecretvalue(spell_id) then return false end
-        if child_frame._lstweeks_spell_id ~= spell_id then
-            child_frame._lstweeks_spell_id = spell_id
-            child_frame._lstweeks_cd_name = nil
-            child_frame._lstweeks_cd_icon = nil
+        local state = get_cd_child_state(child_frame)
+        if state.spell_id ~= spell_id then
+            state.spell_id = spell_id
+            state.name = nil
+            state.icon = nil
         end
         return true
     end
 
     local function refresh_child_identity()
+        local state = get_cd_child_state(child)
         local cooldown_id = child.cooldownID
         set_child_cooldown_id(child, cooldown_id)
 
@@ -430,35 +445,36 @@ local function hook_cd_item_frame(child)
             set_child_spell_id(child, sid)
         end
 
-        local sid = child._lstweeks_spell_id
+        local sid = state.spell_id
         if sid then
-            local cached = cache[child._lstweeks_cooldown_id]
+            local cached = cache[state.cooldown_id]
             if cached and cached.name and cached.icon then
-                child._lstweeks_cd_name = cached.name
-                child._lstweeks_cd_icon = cached.icon
+                state.name = cached.name
+                state.icon = cached.icon
             else
                 local name, icon = get_spell_display(sid)
                 if name or icon then
-                    child._lstweeks_cd_name = name or child._lstweeks_cd_name
-                    child._lstweeks_cd_icon = icon or child._lstweeks_cd_icon
+                    state.name = name or state.name
+                    state.icon = icon or state.icon
                 end
             end
         end
 
-        return child._lstweeks_cooldown_id
+        return state.cooldown_id
     end
 
     local function cache_timing(expiration, duration, duration_object)
         local cooldown_id = refresh_child_identity()
         if not cooldown_id then return end
-        local sid = child._lstweeks_spell_id
+        local state = get_cd_child_state(child)
+        local sid = state.spell_id
         cache[cooldown_id] = {
             expiration = expiration,
             duration = duration,
             duration_object = duration_object,
             spell_id = sid,
-            name = child._lstweeks_cd_name,
-            icon = child._lstweeks_cd_icon,
+            name = state.name,
+            icon = state.icon,
         }
         queue_cooldown_viewer_refresh()
     end
@@ -501,10 +517,11 @@ local function install_cooldown_viewer_item_hooks()
     M._lstweeks_cdv_item_hooks_installed = true
 
     local function on_item_changed(child, cooldown_id)
-        if cooldown_id ~= nil and not issecretvalue(cooldown_id) and child._lstweeks_cooldown_id ~= cooldown_id then
-            child._lstweeks_cooldown_id = cooldown_id
-            child._lstweeks_cd_name = nil
-            child._lstweeks_cd_icon = nil
+        local state = get_cd_child_state(child)
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) and state.cooldown_id ~= cooldown_id then
+            state.cooldown_id = cooldown_id
+            state.name = nil
+            state.icon = nil
         end
         hook_cd_item_frame(child)
         queue_cooldown_viewer_refresh()
@@ -516,7 +533,8 @@ local function install_cooldown_viewer_item_hooks()
 
     if CooldownViewerItemDataMixin.ClearCooldownID then
         pcall(hooksecurefunc, CooldownViewerItemDataMixin, "ClearCooldownID", function(child)
-            child._lstweeks_cooldown_id = nil
+            local state = get_cd_child_state(child)
+            state.cooldown_id = nil
             queue_cooldown_viewer_refresh()
         end)
     end
@@ -549,6 +567,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 cdm_order = (top * -10000) + left
             end
             hook_cd_item_frame(child)
+            local state = get_cd_child_state(child)
 
             local iid = child.auraInstanceID
             local has_active_aura_entry = false
@@ -575,20 +594,20 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             if info then
                 local cid = info.cooldownID or info.cooldownId
                 if cid ~= nil and not issecretvalue(cid) then
-                    if child._lstweeks_cooldown_id ~= cid then
-                        child._lstweeks_cooldown_id = cid
-                        child._lstweeks_cd_name = nil
-                        child._lstweeks_cd_icon = nil
+                    if state.cooldown_id ~= cid then
+                        state.cooldown_id = cid
+                        state.name = nil
+                        state.icon = nil
                     end
                     cooldown_id = cid
                     saw_identity = true
                 end
                 local sid = info.overrideSpellID or info.spellID
                 if sid and not issecretvalue(sid) then
-                    if child._lstweeks_spell_id ~= sid then
-                        child._lstweeks_spell_id = sid
-                        child._lstweeks_cd_name = nil
-                        child._lstweeks_cd_icon = nil
+                    if state.spell_id ~= sid then
+                        state.spell_id = sid
+                        state.name = nil
+                        state.icon = nil
                     end
                     saw_identity = true
                 end
@@ -597,22 +616,22 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 saw_identity = true
             end
             if not saw_identity then
-                child._lstweeks_cooldown_id = nil
-                child._lstweeks_spell_id = nil
-                child._lstweeks_cd_name = nil
-                child._lstweeks_cd_icon = nil
+                state.cooldown_id = nil
+                state.spell_id = nil
+                state.name = nil
+                state.icon = nil
             end
-            cooldown_id = cooldown_id or child._lstweeks_cooldown_id
+            cooldown_id = cooldown_id or state.cooldown_id
 
-            local spell_id = child._lstweeks_spell_id
-            local name = child._lstweeks_cd_name
-            local icon = child._lstweeks_cd_icon
+            local spell_id = state.spell_id
+            local name = state.name
+            local icon = state.icon
             if spell_id and (not name or not icon) then
                 local spell_name, spell_icon = get_spell_display(spell_id)
                 name = name or spell_name
                 icon = icon or spell_icon
-                child._lstweeks_cd_name = name
-                child._lstweeks_cd_icon = icon
+                state.name = name
+                state.icon = icon
             end
 
             local cached = cooldown_id and cache[cooldown_id]

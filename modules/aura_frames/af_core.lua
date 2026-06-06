@@ -456,29 +456,72 @@ function M.ensure_blizz_cdm_loaded()
     end
 end
 
+function M.ensure_blizz_cdm_viewer_always_visible(category)
+    if InCombatLockdown and InCombatLockdown() then return end
+    local frame = M.get_cdm_viewer_frame(category)
+    local visible_setting_enum = Enum and Enum.CooldownViewerVisibleSetting
+    local edit_setting_enum = Enum and Enum.EditModeCooldownViewerSetting
+    if not (frame and visible_setting_enum and edit_setting_enum) then return end
+
+    local always = visible_setting_enum.Always
+    if frame.visibleSetting == always then return end
+
+    if frame.UpdateSystemSettingValue then
+        pcall(frame.UpdateSystemSettingValue, frame, edit_setting_enum.VisibleSetting, always)
+    else
+        frame.visibleSetting = always
+    end
+
+    if frame.UpdateShownState then
+        pcall(frame.UpdateShownState, frame)
+    end
+end
+
 function M.update_blizz_cdm_visibility(category)
     M.ensure_blizz_cdm_loaded()
     local frame = M.get_cdm_viewer_frame(category)
     if not frame then return end
 
-    if not frame._lstweeks_cdm_visibility_hooked then
-        frame._lstweeks_cdm_visibility_hooked = true
-        frame:HookScript("OnShow", function()
-            if M.db and M.db["hide_blizz_cdm_" .. category] then
-                frame:SetAlpha(0)
-                frame:EnableMouse(false)
+    local hide = M.db and M.db["hide_blizz_cdm_" .. category]
+    local state = M._cd_viewer_state and M._cd_viewer_state[frame]
+    if not hide and not (state and state.forced_hidden) then return end
+
+    if not state then
+        M._cd_viewer_state = M._cd_viewer_state or setmetatable({}, { __mode = "k" })
+        state = {}
+        M._cd_viewer_state[frame] = state
+    end
+
+    local function apply_visibility_state()
+        local hide = M.db and M.db["hide_blizz_cdm_" .. category]
+        if hide then
+            state.forced_hidden = true
+            if frame.SetAlpha then frame:SetAlpha(0) end
+            if frame.EnableMouse then frame:EnableMouse(false) end
+            return
+        end
+
+        if state.forced_hidden then
+            state.forced_hidden = nil
+            if (not InCombatLockdown or not InCombatLockdown()) and frame.Show then
+                pcall(frame.Show, frame)
             end
+            if frame.SetAlpha then frame:SetAlpha(1) end
+            if frame.EnableMouse then frame:EnableMouse(true) end
+        end
+    end
+
+    local needs_hook = hide or state.forced_hidden
+    if needs_hook and not state.visibility_hooked then
+        state.visibility_hooked = true
+        frame:HookScript("OnShow", function()
+            apply_visibility_state()
         end)
     end
 
     -- Do not call Hide() here. Hidden CDM viewers stop producing the live child
     -- aura/cooldown state we read; alpha keeps them active but invisible.
-    local hide = M.db and M.db["hide_blizz_cdm_" .. category]
-    if not hide and (not InCombatLockdown or not InCombatLockdown()) and frame.Show then
-        pcall(frame.Show, frame)
-    end
-    frame:SetAlpha(hide and 0 or 1)
-    frame:EnableMouse(not hide)
+    apply_visibility_state()
 end
 
 function M.update_all_blizz_cdm_visibility()
@@ -494,8 +537,10 @@ function M.prepare_blizz_cdm_viewer(category)
     local frame = M.get_cdm_viewer_frame(category)
     if not frame then return end
 
-    -- Utility can start hidden on reload. Show it once outside combat so
-    -- Blizzard builds its child list, then apply alpha-based hiding.
+    M.ensure_blizz_cdm_viewer_always_visible(category)
+
+    -- Blizzard viewers must be shown while mirrored so they keep producing
+    -- child state. Visual suppression is handled below with alpha.
     if frame.Show then
         pcall(frame.Show, frame)
     end

@@ -873,6 +873,16 @@ function M.build_preset_frame_panel(p, data)
         on_max_icons_changed = function()
             print("|cFFFFFF00LsTweaks:|r Pool size for " .. cat .. " changed. Please /reload to apply.")
         end,
+        on_enable_changed = function(is_checked)
+            if is_checked or not hide_blizz_cdm_label then return end
+            local hide_key = "hide_blizz_cdm_" .. cat
+            M.db[hide_key] = false
+            local hide_cb = M.controls and M.controls[hide_key]
+            if hide_cb and hide_cb.SetChecked then
+                hide_cb:SetChecked(false)
+            end
+            M.update_blizz_cdm_visibility(cat)
+        end,
         build_source_controls = function(ctx)
             local function create_hide_blizz_cdm_control()
                 if not hide_blizz_cdm_label then return end
