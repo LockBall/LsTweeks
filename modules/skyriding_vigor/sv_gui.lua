@@ -28,6 +28,7 @@ local STRINGS = {
     enabled = "Enable Vigor Bar",
     fade_when_full = "Fade When Full",
     fade_alpha = "Fade Alpha",
+    fade_length = "Fade Length",
     move_mode = "Move Mode",
     snap_to_grid = "Snap to Grid",
     spacing = "Spacing",
@@ -58,6 +59,7 @@ function M.BuildSettings(parent)
     local scale_spec = get_spec("scale")
     local spacing_spec = get_spec("spacing")
     local fade_alpha_spec = get_spec("fade_alpha")
+    local fade_length_spec = get_spec("fade_length")
     local col_step_x = cfg.slider_width + cfg.slider_gap_x
 
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
@@ -182,6 +184,21 @@ function M.BuildSettings(parent)
     )
     M.controls.fade_alpha = fade_alpha_slider
     fade_alpha_slider:SetPoint("TOPLEFT", fade_container, "TOPRIGHT", 24, 0)
+
+    local fade_length_slider = addon.CreateSliderWithBox(
+        addon_name .. "SkyridingVigorFadeLength",
+        parent,
+        STRINGS.fade_length,
+        fade_length_spec.min,
+        fade_length_spec.max,
+        fade_length_spec.step,
+        db,
+        "fade_length",
+        defaults,
+        set_setting_from_slider("fade_length")
+    )
+    M.controls.fade_length = fade_length_slider
+    fade_length_slider:SetPoint("TOPLEFT", fade_alpha_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
 
     if addon.CreateModuleReset and db then
         local reset_panel = addon.CreateModuleReset(parent, db, defaults, {

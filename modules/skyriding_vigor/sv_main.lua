@@ -70,6 +70,7 @@ local function normalize_db(db)
     db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
+    db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_SPECS.fade_length)
     db.position = db.position or {}
     db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_SPECS.x_position)
     db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_SPECS.y_position)
@@ -205,22 +206,80 @@ local function sync_runtime_events(enabled)
     M._runtime_events_registered = enabled
 end
 
+local cancel_frame_fade
+local set_frame_alpha
+
 local function disable_runtime()
     stop_ticker()
     M._fill_test_enabled = false
     M._fill_test_started_at = nil
     sync_fill_test_button()
     if M.frame then
+        cancel_frame_fade(M.frame)
+        set_frame_alpha(M.frame, 1)
         M.frame:Hide()
         M.frame:EnableMouse(false)
         M.frame._mouse_enabled = false
     end
 end
 
-local function set_frame_alpha(frame, alpha)
+set_frame_alpha = function(frame, alpha)
     if frame._sv_alpha == alpha then return end
     frame:SetAlpha(alpha)
     frame._sv_alpha = alpha
+end
+
+cancel_frame_fade = function(frame)
+    if not frame then return end
+    if frame._sv_fade_state then
+        frame._sv_fade_state = nil
+        frame:SetScript("OnUpdate", nil)
+    end
+end
+
+local function fade_frame_alpha(frame, target_alpha, duration)
+    if not frame then return end
+    duration = tonumber(duration) or 0
+    local signature = tostring(target_alpha) .. ":" .. tostring(duration)
+    local state = frame._sv_fade_state
+    if state and state.signature == signature then return end
+
+    cancel_frame_fade(frame)
+    if duration <= 0 then
+        set_frame_alpha(frame, target_alpha)
+        return
+    end
+    if frame._sv_alpha == target_alpha then return end
+
+    state = {
+        signature = signature,
+        started_at = GetTime(),
+        start_alpha = frame._sv_alpha or (frame.GetAlpha and frame:GetAlpha()) or 1,
+        target_alpha = target_alpha,
+        duration = duration,
+    }
+    frame._sv_fade_state = state
+    frame:SetScript("OnUpdate", function(self)
+        local fade_state = self._sv_fade_state
+        if not fade_state then
+            self:SetScript("OnUpdate", nil)
+            return
+        end
+        local progress = (GetTime() - fade_state.started_at) / fade_state.duration
+        if progress >= 1 then
+            set_frame_alpha(self, fade_state.target_alpha)
+            self._sv_fade_state = nil
+            self:SetScript("OnUpdate", nil)
+            return
+        end
+        local alpha = fade_state.start_alpha + ((fade_state.target_alpha - fade_state.start_alpha) * progress)
+        set_frame_alpha(self, alpha)
+    end)
+end
+
+local function restore_frame_alpha(frame)
+    cancel_frame_fade(frame)
+    set_frame_alpha(frame, 1)
 end
 
 local function get_fill_test_charge_info()
@@ -321,6 +380,7 @@ function M.refresh()
     local should_show = current and max_charges
         and (M._fill_test_enabled or db.move_mode or is_gliding or is_player_flying() or is_mounted_in_advanced_flyable_area())
     if not should_show then
+        restore_frame_alpha(frame)
         frame:Hide()
         update_ticker(db, false)
         return
@@ -354,9 +414,9 @@ function M.refresh()
     local is_active_flight = is_gliding or is_player_flying()
     local charges_full = current >= min(max_charges, max_slots)
     if db.fade_when_full and not M._fill_test_enabled and not db.move_mode and charges_full and not is_active_flight then
-        set_frame_alpha(frame, db.fade_alpha or DEFAULTS.fade_alpha or 0.25)
+        fade_frame_alpha(frame, db.fade_alpha or DEFAULTS.fade_alpha or 0.25, db.fade_length or DEFAULTS.fade_length or 3)
     else
-        set_frame_alpha(frame, 1)
+        restore_frame_alpha(frame)
     end
 
     if not frame:IsShown() then

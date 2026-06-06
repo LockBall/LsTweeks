@@ -242,6 +242,7 @@ Important `skyriding_vigor` keys:
 - `enabled`: toggles the restored vigor display.
 - `fade_when_full`: lowers alpha when vigor is full and move mode is off.
 - `fade_alpha`: alpha used by `fade_when_full`.
+- `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `spacing` and `scale`: presentation settings. Slider ranges/steps live near bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`.

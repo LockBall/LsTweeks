@@ -14,6 +14,7 @@ defs.defaults = {
         enabled = true,
         fade_when_full = true,
         fade_alpha = 0.25,
+        fade_length = 3,
         move_mode = false,
         snap_to_grid = true,
         spacing = 5,

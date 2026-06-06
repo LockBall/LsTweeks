@@ -32,6 +32,7 @@ local GRID_SIZE = 20
 local SCALE_RANGE = { min = 0.5, max = 2, step = 0.05 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
+local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
 local POSITION_RANGE = { min = -1000, max = 1000, step = 1 }
 
 local BACKGROUND_LAYOUT = {
@@ -69,12 +70,13 @@ local WING_LAYOUT = {
 M.MAX_SLOTS = MAX_SLOTS
 M.SETTING_SPECS = {
     fade_alpha = FADE_ALPHA_RANGE,
+    fade_length = FADE_LENGTH_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
-M.SLIDER_KEYS = { "fade_alpha", "spacing", "scale" }
+M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale" }
 M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,
