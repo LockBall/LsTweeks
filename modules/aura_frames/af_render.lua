@@ -285,7 +285,7 @@ local function resolve_stack_text(entry, live_count)
     return live_count
 end
 
-local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category, tooltip_enabled)
+local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, tooltip_enabled)
     obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
     obj.aura_name       = entry.name
     obj.aura_duration   = entry.duration
@@ -293,6 +293,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, is_spell_
     obj.aura_expiration = (live_remaining and not issecretvalue(live_remaining) and live_remaining > 0)
                           and (now + live_remaining)
                           or entry.expiration
+    obj.aura_live_duration = (not is_spell_cooldown) and live_duration or nil
     obj.aura_scan_time  = now
     obj.aura_spell_id   = entry.spell_id
     obj.aura_category   = timer_category
@@ -591,6 +592,7 @@ local function hide_unused_icons(icons, first_unused_index)
         obj.is_spell_cooldown = false
         obj.grey_cooldown = false
         obj.aura_index = nil
+        obj.aura_live_duration = nil
         obj.tooltip_enabled = false
         obj._lstweeks_count_text = nil
         set_icon_greyed(obj.texture, false)
@@ -676,7 +678,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local live_duration, live_remaining, cooldown_duration =
             resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
 
-        assign_aura_object_metadata(obj, entry, live_remaining, is_spell_cooldown, now, timer_category, tooltip_enabled)
+        assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, tooltip_enabled)
 
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         local stack_text = resolve_stack_text(entry, live_count)

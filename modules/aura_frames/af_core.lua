@@ -258,6 +258,19 @@ local function aura_icon_needs_tick(obj, frame, now)
     return type(obj.aura_index) == "number"
 end
 
+local function get_cached_duration_remaining(obj)
+    local duration_object = obj and obj.aura_live_duration
+    if not (duration_object and type(duration_object.GetRemainingDuration) == "function") then
+        return nil
+    end
+    local ok, remaining = pcall(function()
+        return duration_object:GetRemainingDuration()
+    end)
+    if ok then return remaining end
+    obj.aura_live_duration = nil
+    return nil
+end
+
 function M.frame_needs_visible_icon_tick(frame, now)
     if not (frame and frame:IsVisible() and frame.icons) then return false end
     local display_count = frame._display_count or 0
@@ -366,13 +379,21 @@ function M.tick_visible_icons(now)
                         local need_live_fallback = (remaining == nil) and (type(obj.aura_index) == "number")
                             and (show_timer_text or (obj.bar and obj.bar:IsShown()))
                         if need_live_fallback then
-                            local live_duration = nil
-                            local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
-                            if ok then live_duration = result end
+                            local live_duration = obj.aura_live_duration
                             if live_duration then
-                                live_remaining = live_duration:GetRemainingDuration()
+                                live_remaining = get_cached_duration_remaining(obj)
                                 if live_remaining ~= nil and not issecretvalue(live_remaining) then
                                     remaining = live_remaining
+                                end
+                            else
+                                local ok, result = pcall(C_UnitAuras.GetAuraDuration, "player", obj.aura_index)
+                                if ok then live_duration = result end
+                                if live_duration then
+                                    obj.aura_live_duration = live_duration
+                                    live_remaining = get_cached_duration_remaining(obj)
+                                    if live_remaining ~= nil and not issecretvalue(live_remaining) then
+                                        remaining = live_remaining
+                                    end
                                 end
                             end
                         end

@@ -280,7 +280,11 @@ end
 -- tabs settings controls
 function M.BuildSettings(parent)
     local tabs, panels = {}, {}
-    local _, main_content_height = addon.main_frame and addon.main_frame.GetContentAreaSize and addon.main_frame:GetContentAreaSize()
+    local main_content_height
+    if addon.main_frame and addon.main_frame.GetContentAreaSize then
+        local _, height = addon.main_frame:GetContentAreaSize()
+        main_content_height = height
+    end
     local panel_height = math.max(50, (main_content_height or parent:GetHeight() or 0) - 78)
 
     -- Category controls are derived from FRAME_DEFS so GUI labels, DB keys,
