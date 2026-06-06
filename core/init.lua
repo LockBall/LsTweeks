@@ -26,6 +26,25 @@ addon.UPDATE_INTERVALS = {
     five_sec = 5.0,
 }
 
+-- Behavior-specific timing aliases. Keep these as the adjustment points for
+-- profiling and responsiveness tests instead of changing generic buckets.
+
+-- CPU profile hotness: high; drives deferred Aura Frames refresh/update work.
+addon.UPDATE_INTERVALS.aura_event_bucket = addon.UPDATE_INTERVALS.fifth_sec
+
+-- CPU profile hotness: high; strongest direct ticker candidate from the profile.
+addon.UPDATE_INTERVALS.aura_visible_icon_tick = addon.UPDATE_INTERVALS.tenth_sec
+
+-- CPU profile hotness: low; hover-only maintenance path.
+addon.UPDATE_INTERVALS.aura_hover_check = addon.UPDATE_INTERVALS.fifth_sec
+
+-- CPU profile hotness: low; active only during Player Frame fade.
+addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.fifth_sec
+
+-- CPU profile hotness: moderate; visible in broad profile but already 0.2s.
+addon.UPDATE_INTERVALS.skyriding_vigor_tick = addon.UPDATE_INTERVALS.fifth_sec
+
+
 function addon.get_version()
     if not addon.version and C_AddOns and C_AddOns.GetAddOnMetadata then
         addon.version = C_AddOns.GetAddOnMetadata(addon_name, "Version")

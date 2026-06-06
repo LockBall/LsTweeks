@@ -311,7 +311,7 @@ function M.ensure_visible_icon_ticker()
     if not (C_Timer and C_Timer.NewTicker) then return end
     if not M.any_frame_needs_visible_icon_tick() then return end
 
-    M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.tenth_sec, function()
+    M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_visible_icon_tick or M.UPDATE_INTERVALS.tenth_sec, function()
         M.tick_visible_icons()
         if not M.any_frame_needs_visible_icon_tick() then
             M.stop_visible_icon_ticker()

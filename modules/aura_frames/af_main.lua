@@ -354,7 +354,7 @@ end
 local function handle_frame_mouse_enter(frame)
     if not set_frame_hovered(frame, true) then return end
     if frame and not frame._hover_check_ticker and C_Timer and C_Timer.NewTicker then
-        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.tenth_sec, function()
+        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_hover_check or M.UPDATE_INTERVALS.tenth_sec, function()
             if not aura_frame_contains_mouse(frame) then
                 set_frame_hovered(frame, false)
             end
@@ -644,9 +644,9 @@ local function queue_deferred_aura_scan(frame, params)
 
     frame._scan_pending = true
     local f = frame
-    -- A tenth second matches ElkBuffBars' short UNIT_AURA bucket and coalesces
+    -- A short bucket matches ElkBuffBars' short UNIT_AURA bucket and coalesces
     -- noisy event bursts while ensuring scans run outside event-dispatch taint.
-    C_Timer.After(UPDATE_INTERVALS.tenth_sec, function()
+    C_Timer.After(UPDATE_INTERVALS.aura_event_bucket or UPDATE_INTERVALS.tenth_sec, function()
         f._scan_pending = false
         local event_info = f._pending_aura_info
         f._pending_aura_info = nil

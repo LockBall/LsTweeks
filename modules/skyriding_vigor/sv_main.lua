@@ -32,7 +32,7 @@ local VIGOR_SPELL_IDS = {
     372608, -- Surge Forward
 }
 
-local TICK_SECONDS = addon.UPDATE_INTERVALS.fifth_sec
+local TICK_SECONDS = addon.UPDATE_INTERVALS.skyriding_vigor_tick or addon.UPDATE_INTERVALS.fifth_sec
 local FILL_TEST_NODE_SECONDS = 0.55
 local VIGOR_POWER_TYPES = {
     25, -- Enum.PowerType.AlternateMount

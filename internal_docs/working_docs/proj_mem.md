@@ -150,6 +150,7 @@ Top-level keys include:
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
+- Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_tick` as profiling/test adjustment points instead of changing generic buckets directly.
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore events/Show and let Blizzard handlers run.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
@@ -295,7 +296,7 @@ Important `aura_frames` keys:
 #### Aura Frames Runtime Gates And Refresh
 - Frame processing is enabled-rooted. Disabled frames must not do move-shell work, previews, scans, render, layout, or CDM viewer prep.
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
-- UNIT_AURA is batched at `UPDATE_INTERVALS.tenth_sec`; timer text/bar updates also tick at `tenth_sec`.
+- UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
 - Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking.
 - CDM refresh scheduling is centralized in `M.queue_wow_cooldown_refresh(profile)` (`af_main.lua`). Use profiles `"immediate"`, `"startup"`, `"settings"`, `"hook"` instead of local timer chains.
