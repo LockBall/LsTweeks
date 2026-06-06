@@ -136,13 +136,13 @@ local function apply_ooc_fade(frame, enabled, is_moving, in_combat, target_alpha
     end
 end
 
-function M.refresh_frame_ooc_fade(frame)
+function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
     if not frame then return end
     local params = frame.update_params
-    local cfg_db = M.get_frame_config_db(frame)
+    cfg_db = cfg_db or M.get_frame_config_db(frame)
     if not (params and cfg_db) then return end
 
-    local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
+    activity = activity or M.get_frame_activity_state(frame, params.show_key, params.move_key)
     if not activity.enabled then
         cancel_frame_ooc_fade(frame)
         set_alpha_if_changed(frame, 1)
@@ -306,10 +306,10 @@ function M.stop_visible_icon_ticker()
     end
 end
 
-function M.ensure_visible_icon_ticker()
+function M.ensure_visible_icon_ticker(needs_tick_known)
     if M._visible_icon_ticker then return end
     if not (C_Timer and C_Timer.NewTicker) then return end
-    if not M.any_frame_needs_visible_icon_tick() then return end
+    if not needs_tick_known and not M.any_frame_needs_visible_icon_tick() then return end
 
     M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_visible_icon_tick or M.UPDATE_INTERVALS.tenth_sec, function()
         M.tick_visible_icons()
@@ -320,8 +320,9 @@ function M.ensure_visible_icon_ticker()
 end
 
 function M.refresh_visible_icon_ticker()
+    if M._visible_icon_ticker then return end
     if M.any_frame_needs_visible_icon_tick() then
-        M.ensure_visible_icon_ticker()
+        M.ensure_visible_icon_ticker(true)
     else
         M.stop_visible_icon_ticker()
     end
@@ -680,7 +681,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         end
     end
 
-    M.refresh_frame_ooc_fade(self)
+    M.refresh_frame_ooc_fade(self, activity, cfg_db)
 
     if preview_enabled then
         M.append_test_aura(self._aura_map, show_key, aura_filter, short_threshold)

@@ -135,6 +135,63 @@ ticker result supports keeping `aura_visible_icon_tick` at 0.2s if visual
 smoothness remains acceptable, but does not prove that `aura_event_bucket` should
 also stay at 0.2s.
 
+### 2026-06-06, Update Path Cleanup
+
+Context: 62.1s broad addon run after reducing repeated work in the Aura Frames
+`update_auras()` path. Runtime timing aliases remained at the current test values.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 761 | 250.175 | 0.3287 | 2.348 |
+| `aura_frames.render_aura_map` | 761 | 97.602 | 0.1283 | 0.807 |
+| `aura_frames.tick_visible_icons` | 571 | 96.670 | 0.1693 | 0.570 |
+| `aura_frames.set_timer_text` | 3602 | 42.553 | 0.0118 | 0.113 |
+| `aura_frames.unified_scan` | 72 | 41.879 | 0.5817 | 1.316 |
+| `skyriding_vigor.refresh` | 461 | 35.818 | 0.0777 | 0.879 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 436 | 28.815 | 0.0661 | 0.498 |
+| `aura_frames.get_frame_activity_state` | 3004 | 21.783 | 0.0073 | 0.100 |
+| `aura_frames.get_timer_behavior` | 4363 | 20.662 | 0.0047 | 0.076 |
+| `aura_frames.get_setting` | 7241 | 15.730 | 0.0022 | 2.072 |
+| `aura_frames.refresh_frame_ooc_fade` | 761 | 15.537 | 0.0204 | 2.116 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 571 | 12.326 | 0.0216 | 0.133 |
+| `aura_frames.normalize_timer_category` | 5124 | 10.491 | 0.0020 | 0.070 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1432 | 8.928 | 0.0062 | 0.053 |
+| `aura_frames.is_timer_text_enabled` | 761 | 8.432 | 0.0111 | 0.076 |
+| `aura_frames.mark_aura_scan_dirty` | 786 | 5.138 | 0.0065 | 0.054 |
+| `aura_frames.get_frame_config_db` | 3004 | 4.957 | 0.0017 | 0.061 |
+| `aura_frames.scan_custom_aura_map` | 65 | 4.494 | 0.0691 | 0.259 |
+| `aura_frames.get_bar_bg_color` | 761 | 4.457 | 0.0059 | 0.056 |
+| `aura_frames.merge_aura_info` | 765 | 4.456 | 0.0058 | 0.118 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 436 | 3.571 | 0.0082 | 0.089 |
+| `skyriding_vigor.set_slot_visible` | 960 | 2.503 | 0.0026 | 0.036 |
+| `skyriding_vigor.set_slot_state` | 960 | 2.467 | 0.0026 | 0.057 |
+| `skyriding_vigor.ensure_frame` | 922 | 2.310 | 0.0025 | 0.025 |
+| `skyriding_vigor.set_move_mode` | 461 | 2.081 | 0.0045 | 0.029 |
+| `aura_frames.get_cdm_viewer_frame` | 760 | 1.373 | 0.0018 | 0.031 |
+| `aura_frames.update_blizz_cdm_visibility` | 116 | 1.323 | 0.0114 | 0.045 |
+| `aura_frames.uses_cooldown_icon_overlay` | 761 | 1.265 | 0.0017 | 0.025 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 858 | 1.249 | 0.0015 | 0.017 |
+| `aura_frames.clear_custom_aura_scan_cache` | 786 | 1.106 | 0.0014 | 0.045 |
+| `aura_frames.refresh_visible_icon_ticker` | 761 | 0.917 | 0.0012 | 0.008 |
+| `skyriding_vigor.apply_layout` | 461 | 0.831 | 0.0018 | 0.023 |
+| `aura_frames.ensure_blizz_cdm_viewer_always_visible` | 104 | 0.559 | 0.0054 | 0.025 |
+| `aura_frames.get_custom_aura_filter` | 65 | 0.464 | 0.0071 | 0.029 |
+| `aura_frames.set_height_for_growth` | 6 | 0.364 | 0.0606 | 0.080 |
+| `aura_frames.get_frame_position_table` | 189 | 0.359 | 0.0019 | 0.008 |
+| `aura_frames.ensure_blizz_cdm_loaded` | 220 | 0.249 | 0.0011 | 0.006 |
+| `aura_frames.cdm_category_needs_viewer` | 12 | 0.215 | 0.0180 | 0.032 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 3 | 0.181 | 0.0602 | 0.079 |
+| `aura_frames.get_custom_modifier_def` | 65 | 0.148 | 0.0023 | 0.010 |
+
+Compared with the prior 0.2s run, the cleanup significantly reduced the targeted
+ticker-maintenance path: `refresh_visible_icon_ticker` fell from about 0.23ms/s
+to 0.01ms/s, `any_frame_needs_visible_icon_tick` fell from about 0.28ms/s to
+0.20ms/s, and `frame_needs_visible_icon_tick` fell from about 0.20ms/s to
+0.14ms/s. Passing existing activity/config context into OOC fade also helped:
+`refresh_frame_ooc_fade` fell from about 0.30ms/s to 0.25ms/s. This run had much
+higher visible-icon ticker pressure, so `tick_visible_icons` is not comparable
+to the prior run.
+
 ### Template
 
 Context:

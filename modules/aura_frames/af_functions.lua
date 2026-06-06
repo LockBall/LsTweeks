@@ -467,17 +467,23 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     local test_key = is_custom and "test_aura" or (category and ("test_aura_" .. category))
     local enabled = read_frame_bool(cfg_db, enabled_key)
 
-    return {
-        enabled = enabled,
-        moving = enabled and read_frame_bool(cfg_db, moving_key),
-        test_aura = enabled and read_frame_bool(cfg_db, test_key),
-        is_custom = is_custom,
-        is_cdm = is_cdm,
-        needs_shared_scan = enabled and not is_custom,
-        needs_custom_scan = enabled and is_custom,
-        needs_cdm_viewer = enabled and is_cdm,
-        needs_cdm_scan = enabled and is_cdm,
-    }
+    local activity = frame and frame._activity_state
+    if not activity then
+        activity = {}
+        if frame then frame._activity_state = activity end
+    end
+
+    activity.enabled = enabled
+    activity.moving = enabled and read_frame_bool(cfg_db, moving_key)
+    activity.test_aura = enabled and read_frame_bool(cfg_db, test_key)
+    activity.is_custom = is_custom
+    activity.is_cdm = is_cdm
+    activity.needs_shared_scan = enabled and not is_custom
+    activity.needs_custom_scan = enabled and is_custom
+    activity.needs_cdm_viewer = enabled and is_cdm
+    activity.needs_cdm_scan = enabled and is_cdm
+
+    return activity
 end
 
 function M.cdm_category_needs_viewer(category)
