@@ -24,6 +24,7 @@ local TIMER_DIR_REMAINING  = Enum.StatusBarTimerDirection and Enum.StatusBarTime
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 local clear_timer_text = M.clear_timer_text
+local set_shown_if_changed = M.set_shown_if_changed
 
 -- Scratch tables reused every render_aura_map call to avoid per-frame allocation.
 local _scratch_list      = {}
@@ -61,7 +62,7 @@ end
 
 -- Single timer text renderer for all aura timers (live + test).
 -- Keep behavior changes here so all timer displays stay consistent.
-function M.set_timer_text(font_string, category, seconds)
+function M.set_timer_text(font_string, category, seconds, behavior)
     if not font_string then return end
 
     if seconds == nil then
@@ -69,7 +70,7 @@ function M.set_timer_text(font_string, category, seconds)
         return
     end
 
-    local behavior = M.get_timer_behavior(category)
+    behavior = behavior or M.get_timer_behavior(category)
     if behavior.enabled == false then
         clear_timer_text(font_string)
         return
@@ -125,18 +126,51 @@ local function apply_cooldown_overlay(obj, duration_object, expiration, duration
     local cooldown = obj and obj.cooldown
     if not cooldown then return end
 
-    cooldown:Show()
     if duration_object and cooldown.SetCooldownFromDurationObject then
+        if cooldown._lstweeks_cd_kind == "duration_object"
+            and cooldown._lstweeks_cd_duration_object == duration_object
+            and cooldown:IsShown() then
+            return
+        end
+        set_shown_if_changed(cooldown, true)
         local ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object, true)
-        if ok then return end
+        if ok then
+            cooldown._lstweeks_cd_kind = "duration_object"
+            cooldown._lstweeks_cd_duration_object = duration_object
+            return
+        end
         ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object)
-        if ok then return end
+        if ok then
+            cooldown._lstweeks_cd_kind = "duration_object"
+            cooldown._lstweeks_cd_duration_object = duration_object
+            return
+        end
     end
 
     if expiration and duration and duration > 0 then
-        cooldown:SetCooldown(expiration - duration, duration)
+        local start_time = expiration - duration
+        if cooldown._lstweeks_cd_kind == "cooldown"
+            and cooldown._lstweeks_cd_start == start_time
+            and cooldown._lstweeks_cd_duration == duration
+            and cooldown:IsShown() then
+            return
+        end
+        set_shown_if_changed(cooldown, true)
+        cooldown:SetCooldown(start_time, duration)
+        cooldown._lstweeks_cd_kind = "cooldown"
+        cooldown._lstweeks_cd_duration_object = nil
+        cooldown._lstweeks_cd_start = start_time
+        cooldown._lstweeks_cd_duration = duration
     elseif cooldown.Clear then
+        if cooldown._lstweeks_cd_kind == "clear" and cooldown:IsShown() then
+            return
+        end
+        set_shown_if_changed(cooldown, true)
         cooldown:Clear()
+        cooldown._lstweeks_cd_kind = "clear"
+        cooldown._lstweeks_cd_duration_object = nil
+        cooldown._lstweeks_cd_start = nil
+        cooldown._lstweeks_cd_duration = nil
     end
 end
 
@@ -158,8 +192,6 @@ local function set_icon_greyed(texture, greyed)
         end
     end
 end
-
-local set_shown_if_changed = M.set_shown_if_changed
 
 local function set_texture_if_changed(texture, value)
     if not texture then return end
@@ -233,13 +265,37 @@ local function set_texture_color_if_changed(texture, r, g, b, a)
     texture:SetColorTexture(r, g, b, a)
 end
 
+local function set_bar_minmax_if_changed(bar, min_value, max_value)
+    if not bar then return end
+    if bar._lstweeks_min_value == min_value and bar._lstweeks_max_value == max_value then return end
+    bar._lstweeks_min_value = min_value
+    bar._lstweeks_max_value = max_value
+    bar:SetMinMaxValues(min_value, max_value)
+end
+
+local function set_count_point_if_changed(obj, point, relative_to, relative_point, x, y)
+    if not point then return end
+    if obj._lstweeks_count_point == point
+        and obj._lstweeks_count_relative_to == relative_to
+        and obj._lstweeks_count_relative_point == relative_point
+        and obj._lstweeks_count_x == x
+        and obj._lstweeks_count_y == y then
+        return
+    end
+
+    obj._lstweeks_count_point = point
+    obj._lstweeks_count_relative_to = relative_to
+    obj._lstweeks_count_relative_point = relative_point
+    obj._lstweeks_count_x = x
+    obj._lstweeks_count_y = y
+    obj.count_text:SetPoint(point, relative_to, relative_point, x, y)
+end
+
 local function set_count_text(obj, text, point, relative_to, relative_point, x, y)
     if issecretvalue(text) then
         obj._lstweeks_count_text = nil
         obj.count_text:SetText(text)
-        if point then
-            obj.count_text:SetPoint(point, relative_to, relative_point, x, y)
-        end
+        set_count_point_if_changed(obj, point, relative_to, relative_point, x, y)
         if not obj.count_text:IsShown() then
             obj.count_text:Show()
         end
@@ -251,9 +307,7 @@ local function set_count_text(obj, text, point, relative_to, relative_point, x, 
             obj.count_text:SetText(text)
             obj._lstweeks_count_text = text
         end
-        if point then
-            obj.count_text:SetPoint(point, relative_to, relative_point, x, y)
-        end
+        set_count_point_if_changed(obj, point, relative_to, relative_point, x, y)
         if not obj.count_text:IsShown() then
             obj.count_text:Show()
         end
@@ -285,7 +339,7 @@ local function resolve_stack_text(entry, live_count)
     return live_count
 end
 
-local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, tooltip_enabled)
+local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, timer_behavior, tooltip_enabled)
     obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
     obj.aura_name       = entry.name
     obj.aura_duration   = entry.duration
@@ -297,6 +351,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, live_dura
     obj.aura_scan_time  = now
     obj.aura_spell_id   = entry.spell_id
     obj.aura_category   = timer_category
+    obj.aura_timer_behavior = timer_behavior
     obj.tooltip_enabled = tooltip_enabled
     obj.is_test_preview = entry.is_test_preview or false
     obj.is_spell_cooldown = is_spell_cooldown
@@ -349,14 +404,14 @@ end
 local function clear_timer_and_fill_bar(obj, bar_mode)
     clear_timer_text(obj.time_text)
     if bar_mode then
-        obj.bar:SetMinMaxValues(0, 1)
+        set_bar_minmax_if_changed(obj.bar, 0, 1)
         obj.bar:SetValue(1)
     end
 end
 
-local function set_render_timer_text(show_render_timer_text, obj, timer_category, seconds)
+local function set_render_timer_text(show_render_timer_text, obj, timer_category, timer_behavior, seconds)
     if show_render_timer_text then
-        M.set_timer_text(obj.time_text, timer_category, seconds)
+        M.set_timer_text(obj.time_text, timer_category, seconds, timer_behavior)
     else
         clear_timer_text(obj.time_text)
     end
@@ -374,6 +429,7 @@ local function update_aura_timer_and_bar(
     obj,
     entry,
     timer_category,
+    timer_behavior,
     bar_mode,
     show_render_timer_text,
     show_timer_swipe,
@@ -401,18 +457,18 @@ local function update_aura_timer_and_bar(
             end
 
             if display_remaining and display_remaining > 0 then
-                set_render_timer_text(show_render_timer_text, obj, timer_category, display_remaining)
+                set_render_timer_text(show_render_timer_text, obj, timer_category, timer_behavior, display_remaining)
             else
-                set_render_timer_text(show_render_timer_text, obj, timer_category, remaining)
+                set_render_timer_text(show_render_timer_text, obj, timer_category, timer_behavior, remaining)
             end
             if bar_mode then
                 set_duration_object_bar(obj, live_duration)
             end
         elseif remaining > 0 then
-            set_render_timer_text(show_render_timer_text, obj, timer_category, remaining)
+            set_render_timer_text(show_render_timer_text, obj, timer_category, timer_behavior, remaining)
             if bar_mode then
                 if not set_duration_object_bar(obj, live_duration) then
-                    obj.bar:SetMinMaxValues(0, entry.duration > 0 and entry.duration or remaining)
+                    set_bar_minmax_if_changed(obj.bar, 0, entry.duration > 0 and entry.duration or remaining)
                     obj.bar:SetValue(remaining)
                 end
             end
@@ -422,15 +478,15 @@ local function update_aura_timer_and_bar(
     elseif cooldown_duration then
         clear_timer_text(obj.time_text)
         if bar_mode and not set_duration_object_bar(obj, cooldown_duration) then
-            obj.bar:SetMinMaxValues(0, 1)
+            set_bar_minmax_if_changed(obj.bar, 0, 1)
             obj.bar:SetValue(1)
         end
     elseif entry.duration > 0 then
         remaining = entry.expiration > 0 and math_max(0, entry.expiration - now) or entry.remaining
         if remaining > 0 then
-            set_render_timer_text(show_render_timer_text, obj, timer_category, remaining)
+            set_render_timer_text(show_render_timer_text, obj, timer_category, timer_behavior, remaining)
             if bar_mode then
-                obj.bar:SetMinMaxValues(0, entry.duration)
+                set_bar_minmax_if_changed(obj.bar, 0, entry.duration)
                 obj.bar:SetValue(remaining)
             elseif show_timer_swipe then
                 apply_cooldown_overlay(obj, nil, entry.expiration, entry.duration)
@@ -593,6 +649,7 @@ local function hide_unused_icons(icons, first_unused_index)
         obj.grey_cooldown = false
         obj.aura_index = nil
         obj.aura_live_duration = nil
+        obj.aura_timer_behavior = nil
         obj.tooltip_enabled = false
         obj._lstweeks_count_text = nil
         set_icon_greyed(obj.texture, false)
@@ -673,12 +730,13 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         local obj   = self.icons[i]
         local entry = list[i]
         local timer_category = get_timer_category(self, entry)
+        local timer_behavior = M.get_timer_behavior(timer_category)
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
         local live_duration, live_remaining, cooldown_duration =
             resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
 
-        assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, tooltip_enabled)
+        assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, timer_behavior, tooltip_enabled)
 
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         local stack_text = resolve_stack_text(entry, live_count)
@@ -701,6 +759,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             obj,
             entry,
             timer_category,
+            timer_behavior,
             bar_mode,
             show_render_timer_text,
             show_timer_swipe,

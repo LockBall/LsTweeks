@@ -232,6 +232,14 @@ local function set_backdrop_state_if_changed(frame, bg_r, bg_g, bg_b, bg_a, br_r
     frame:SetBackdropBorderColor(br_r, br_g, br_b, br_a)
 end
 
+local function set_bar_minmax_if_changed(bar, min_value, max_value)
+    if not bar then return end
+    if bar._lstweeks_min_value == min_value and bar._lstweeks_max_value == max_value then return end
+    bar._lstweeks_min_value = min_value
+    bar._lstweeks_max_value = max_value
+    bar:SetMinMaxValues(min_value, max_value)
+end
+
 -- ============================================================================
 -- TIMER TICKER
 
@@ -400,11 +408,11 @@ function M.tick_visible_icons(now)
                         end
                         if remaining and remaining > 0 then
                             if show_timer_text and not show_cooldown_overlay then
-                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining)
+                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining, obj.aura_timer_behavior)
                             end
                             if obj.bar and obj.bar:IsShown() then
                                 if obj.aura_duration and obj.aura_duration > 0 then
-                                    obj.bar:SetMinMaxValues(0, obj.aura_duration)
+                                    set_bar_minmax_if_changed(obj.bar, 0, obj.aura_duration)
                                 end
                                 obj.bar:SetValue(remaining)
                             end
@@ -413,7 +421,7 @@ function M.tick_visible_icons(now)
                             obj.grey_cooldown = false
                         elseif live_remaining ~= nil and issecretvalue(live_remaining) then
                             if show_timer_text and not show_cooldown_overlay then
-                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining)
+                                M.set_timer_text(obj.time_text, obj.aura_category or frame.category, live_remaining, obj.aura_timer_behavior)
                             end
                         end
                     end

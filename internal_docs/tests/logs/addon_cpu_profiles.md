@@ -192,6 +192,62 @@ to 0.01ms/s, `any_frame_needs_visible_icon_tick` fell from about 0.28ms/s to
 higher visible-icon ticker pressure, so `tick_visible_icons` is not comparable
 to the prior run.
 
+### 2026-06-06, Render Path Cleanup
+
+Context: 87.7s broad addon run after Aura Frames render cleanup: precomputed timer
+behavior reuse, cooldown overlay signature guard, guarded bar min/max writes, and
+count-text anchor caching.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 783 | 237.463 | 0.3033 | 3.710 |
+| `aura_frames.tick_visible_icons` | 826 | 94.347 | 0.1142 | 0.326 |
+| `aura_frames.render_aura_map` | 783 | 90.258 | 0.1153 | 0.669 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 508 | 31.549 | 0.0621 | 0.346 |
+| `aura_frames.unified_scan` | 77 | 29.083 | 0.3777 | 0.803 |
+| `aura_frames.set_timer_text` | 3234 | 28.344 | 0.0088 | 0.156 |
+| `aura_frames.refresh_frame_ooc_fade` | 783 | 16.440 | 0.0210 | 0.098 |
+| `aura_frames.get_frame_activity_state` | 2240 | 15.493 | 0.0069 | 0.095 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 826 | 14.314 | 0.0173 | 0.092 |
+| `aura_frames.get_setting` | 7483 | 13.621 | 0.0018 | 0.123 |
+| `skyriding_vigor.refresh` | 203 | 13.167 | 0.0649 | 0.223 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1760 | 9.534 | 0.0054 | 0.076 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 508 | 9.132 | 0.0180 | 3.005 |
+| `aura_frames.is_timer_text_enabled` | 783 | 8.054 | 0.0103 | 0.084 |
+| `aura_frames.get_timer_behavior` | 1811 | 8.033 | 0.0044 | 0.078 |
+| `aura_frames.get_cdm_viewer_frame` | 1332 | 5.302 | 0.0040 | 2.941 |
+| `aura_frames.normalize_timer_category` | 2594 | 4.874 | 0.0019 | 0.029 |
+| `aura_frames.get_bar_bg_color` | 783 | 4.754 | 0.0061 | 0.082 |
+| `aura_frames.update_blizz_cdm_visibility` | 384 | 4.183 | 0.0109 | 0.041 |
+| `aura_frames.get_frame_config_db` | 2240 | 3.628 | 0.0016 | 0.089 |
+| `aura_frames.mark_aura_scan_dirty` | 609 | 3.627 | 0.0060 | 0.035 |
+| `aura_frames.cdm_category_needs_viewer` | 164 | 2.681 | 0.0163 | 0.035 |
+| `aura_frames.merge_aura_info` | 441 | 2.421 | 0.0055 | 0.030 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 41 | 2.278 | 0.0556 | 0.089 |
+| `aura_frames.scan_custom_aura_map` | 55 | 2.093 | 0.0381 | 0.116 |
+| `aura_frames.get_preset_keys` | 328 | 1.411 | 0.0043 | 0.085 |
+| `aura_frames.uses_cooldown_icon_overlay` | 783 | 1.380 | 0.0018 | 0.024 |
+| `aura_frames.refresh_visible_icon_ticker` | 783 | 1.138 | 0.0015 | 0.093 |
+| `aura_frames.ensure_blizz_cdm_viewer_always_visible` | 220 | 0.987 | 0.0045 | 0.036 |
+| `aura_frames.set_height_for_growth` | 13 | 0.950 | 0.0731 | 0.096 |
+| `skyriding_vigor.ensure_frame` | 406 | 0.912 | 0.0022 | 0.016 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 686 | 0.892 | 0.0013 | 0.026 |
+| `skyriding_vigor.set_move_mode` | 203 | 0.884 | 0.0044 | 0.019 |
+| `aura_frames.clear_custom_aura_scan_cache` | 609 | 0.802 | 0.0013 | 0.025 |
+| `player_frame.get_clamped_fade_value` | 200 | 0.758 | 0.0038 | 0.013 |
+| `aura_frames.queue_wow_cooldown_refresh` | 55 | 0.730 | 0.0133 | 0.030 |
+| `aura_frames.get_frame_position_table` | 365 | 0.677 | 0.0019 | 0.015 |
+| `aura_frames.ensure_blizz_cdm_loaded` | 604 | 0.610 | 0.0010 | 0.007 |
+| `skyriding_vigor.set_slot_visible` | 270 | 0.554 | 0.0021 | 0.027 |
+| `skyriding_vigor.set_slot_state` | 270 | 0.536 | 0.0020 | 0.036 |
+
+Compared with the update-path-cleanup run, the targeted render changes improved
+the hot helper chain substantially. `set_timer_text` fell from about 0.69ms/s to
+0.32ms/s, `get_timer_behavior` fell from about 0.33ms/s to 0.09ms/s, and
+`normalize_timer_category` fell from about 0.17ms/s to 0.06ms/s. `render_aura_map`
+also improved from about 1.57ms/s to 1.03ms/s, with average render cost falling
+from 0.1283ms to 0.1153ms. This supports keeping the render cleanup.
+
 ### Template
 
 Context:

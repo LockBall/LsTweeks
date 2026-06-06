@@ -16,8 +16,8 @@
 
 ### 3. aura_frames render-path cleanup
 
-- [ ] a) Cache or pass timer behavior/category data so `set_timer_text()` does less repeated category normalization/lookup work.
-- [ ] b) Add a cooldown overlay signature guard to reduce repeated `Show()` / `SetCooldown*` work.
-- [ ] c) Guard bar `SetMinMaxValues()` writes while preserving live `SetValue()` progress updates.
-- [ ] d) Cache count-text anchor signatures so bar-mode stack text does not repeatedly call `SetPoint()`.
-- [ ] e) Reprofile with `/lstprofile report 40` and compare `render_aura_map`, `set_timer_text`, `get_timer_behavior`, and `normalize_timer_category`.
+- [x] a) Highest impact: cache or pass timer behavior/category data so `set_timer_text()` does less repeated category normalization/lookup work.
+- [x] b) Medium impact: add a cooldown overlay signature guard to reduce repeated `Show()` / `SetCooldown*` work.
+- [x] c) Medium impact: guard bar `SetMinMaxValues()` writes while preserving live `SetValue()` progress updates.
+- [x] d) Lower impact: cache count-text anchor signatures so bar-mode stack text does not repeatedly call `SetPoint()`.
+- [x] e) Validation: reprofile with `/lstprofile report 40` and compare `render_aura_map`, `set_timer_text`, `get_timer_behavior`, and `normalize_timer_category`.
