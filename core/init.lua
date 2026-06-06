@@ -93,6 +93,16 @@ end)
 -- Primary command: /lst (short for L's Tweeks)
 SLASH_LSTWEEKS1 = "/lst"
 SlashCmdList["LSTWEEKS"] = function(msg)
+    msg = (msg or ""):match("^%s*(.-)%s*$")
+    if msg == "cdmdebug" then
+        if addon.aura_frames and addon.aura_frames.debug_dump_cdm_viewers then
+            addon.aura_frames.debug_dump_cdm_viewers()
+        else
+            print("|cFFFFFF00LsTweaks:|r Aura Frames CDM debug is unavailable.")
+        end
+        return
+    end
+
     if addon.main_frame then
         if addon.main_frame:IsShown() then
             addon.main_frame:Hide()

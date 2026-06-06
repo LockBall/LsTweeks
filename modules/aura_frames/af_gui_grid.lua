@@ -57,10 +57,10 @@ function M.create_settings_grid(parent, opts)
         col_align = opts.col_align or { "center", "center", "center", "center" },
         row_start = opts.row_start or 10,
         row_gap = row_gap,
-        row_heights = opts.row_heights or { 115, 105, 115, 90, 250 },
+        row_heights = opts.row_heights or { 115, 115, 115, 115, 115, 115 },
         reset_btn_width = opts.reset_btn_width or 110,
         offsets = opts.offsets or { default = 0, dropdown = 8, picker = 4 },
-        content_rows = opts.content_rows or 5,
+        content_rows = opts.content_rows or 6,
     }
 
     grid.place_at = place_settings_grid_control

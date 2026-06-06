@@ -303,6 +303,7 @@ Important `aura_frames` keys:
 - CDM Blizzard-viewer hide settings must be applied for every CDM category on startup/reload, independent of whether the matching addon CDM frame is enabled.
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
 - CDM cooldown-mode entries must transition from active aura display to grey/cooldown display while already in combat. Divine Protection on Utility is the regression test: cast out of combat, enter combat, let the active aura expire, and verify the cooldown appears without waiting for combat exit. Do not gate cooldown fallback only on `not child.auraInstanceID`; Blizzard children can retain a stale `auraInstanceID` after the active aura is gone.
+- CDM viewer child frames are reused by Blizzard across categories/spells. When cached child identity changes (`cooldownID` or spell ID), clear `_lstweeks_cd_name` and `_lstweeks_cd_icon` before refilling them. Do not revert this: stale child display caches caused Utility to render active/cooldown states with mismatched Essential spell identity.
 
 #### Aura Frames Scanning, Rendering, Timers
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.

@@ -224,6 +224,50 @@ local function build_custom_aura_entry(aura, aura_filter, short_threshold, custo
     }
 end
 
+local function get_aura_data_by_instance_id(iid)
+    if not (iid and C_UnitAuras and C_UnitAuras.GetAuraDataByAuraInstanceID) then return nil end
+    local ok, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, "player", iid)
+    if ok then return aura end
+    return nil
+end
+
+local function build_cdm_active_aura_entry(iid, category, cdm_order)
+    local aura = get_aura_data_by_instance_id(iid)
+    if not aura then return nil end
+
+    local is_harmful = aura.isHarmful == true or aura.filter == "HARMFUL"
+    if is_harmful then return nil end
+
+    local duration = aura.duration
+    local expiration = aura.expirationTime
+    local remaining = compute_remaining(duration, expiration)
+    local need_live = (remaining == nil) or issecretvalue(remaining) or issecretvalue(expiration)
+    local live_remaining, live_expiration = read_live_aura_timing(iid, need_live)
+    local stacks, live_count = get_aura_stack_counts(aura, iid)
+    local safe_duration, safe_expiration, safe_remaining =
+        resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, nil)
+
+    local entry = make_entry(
+        iid,
+        aura.name,
+        aura.icon,
+        safe_duration,
+        safe_expiration,
+        get_aura_spell_id(aura),
+        aura.dispelName,
+        safe_remaining or 0,
+        stacks,
+        true,
+        category,
+        GetTime()
+    )
+    entry.scan_remaining = live_remaining
+    entry.live_count = live_count
+    entry.cdm_order = cdm_order
+    entry.order_key = "cdm|" .. tostring(cdm_order)
+    return entry
+end
+
 function M.clear_custom_aura_scan_cache()
     wipe(_custom_aura_scan_cache)
 end
@@ -315,6 +359,52 @@ local function copy_viewer_children(viewer)
     return store_viewer_children(viewer:GetChildren())
 end
 
+local function debug_value(value)
+    if value == nil then return "nil" end
+    if issecretvalue(value) then return "<secret>" end
+    return tostring(value)
+end
+
+local function debug_child_info(child)
+    local info = child and child.cooldownInfo
+    if not info then return "nil" end
+    return "cid=" .. debug_value(info.cooldownID or info.cooldownId)
+        .. " sid=" .. debug_value(info.spellID)
+        .. " osid=" .. debug_value(info.overrideSpellID)
+end
+
+function M.debug_dump_cdm_viewer(category)
+    local viewer = M.get_cdm_viewer_frame(category)
+    print("|cFFFFFF00LsTweaks CDM|r " .. tostring(category) .. " viewer=" .. debug_value(viewer and viewer:GetName()))
+    if not viewer then return end
+
+    local children = copy_viewer_children(viewer)
+    for i, child in ipairs(children) do
+        local shown = child.IsShown and child:IsShown()
+        local visible = child.IsVisible and child:IsVisible()
+        print(
+            string.format(
+                "  #%d shown=%s visible=%s aura=%s cid=%s info={%s} cache={cid=%s sid=%s name=%s icon=%s}",
+                i,
+                debug_value(shown),
+                debug_value(visible),
+                debug_value(child.auraInstanceID),
+                debug_value(child.cooldownID),
+                debug_child_info(child),
+                debug_value(child._lstweeks_cooldown_id),
+                debug_value(child._lstweeks_spell_id),
+                debug_value(child._lstweeks_cd_name),
+                debug_value(child._lstweeks_cd_icon)
+            )
+        )
+    end
+end
+
+function M.debug_dump_cdm_viewers()
+    M.debug_dump_cdm_viewer("essential")
+    M.debug_dump_cdm_viewer("utility")
+end
+
 -- Cache populated by hooks on Blizzard Cooldown widgets.
 -- Keyed by Blizzard cooldownID: { expiration, duration, duration_object, spell_id, name, icon }.
 -- Used as a fallback for cooldown display; active aura display prefers the
@@ -351,28 +441,48 @@ local function hook_cd_item_frame(child)
 
     local cache = M._cd_hook_cache
 
+    -- Blizzard reuses CooldownViewer child frames across CDM categories/spells.
+    -- Clear cached display identity whenever the child identity changes; otherwise
+    -- Utility can render a current cooldown with a stale Essential spell name/icon.
+    local function set_child_cooldown_id(child_frame, cooldown_id)
+        if cooldown_id == nil or issecretvalue(cooldown_id) then return false end
+        if child_frame._lstweeks_cooldown_id ~= cooldown_id then
+            child_frame._lstweeks_cooldown_id = cooldown_id
+            child_frame._lstweeks_cd_name = nil
+            child_frame._lstweeks_cd_icon = nil
+        end
+        return true
+    end
+
+    local function set_child_spell_id(child_frame, spell_id)
+        if spell_id == nil or issecretvalue(spell_id) then return false end
+        if child_frame._lstweeks_spell_id ~= spell_id then
+            child_frame._lstweeks_spell_id = spell_id
+            child_frame._lstweeks_cd_name = nil
+            child_frame._lstweeks_cd_icon = nil
+        end
+        return true
+    end
+
     local function refresh_child_identity()
         local cooldown_id = child.cooldownID
-        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
-            child._lstweeks_cooldown_id = cooldown_id
-        end
+        set_child_cooldown_id(child, cooldown_id)
 
         local info = child.cooldownInfo
         if info then
             local cid = info.cooldownID or info.cooldownId
-            if cid ~= nil and not issecretvalue(cid) then
-                child._lstweeks_cooldown_id = cid
-            end
+            set_child_cooldown_id(child, cid)
             local sid = info.overrideSpellID or info.spellID
-            if sid and not issecretvalue(sid) then
-                child._lstweeks_spell_id = sid
-            end
+            set_child_spell_id(child, sid)
         end
 
         local sid = child._lstweeks_spell_id
         if sid then
             local cached = cache[child._lstweeks_cooldown_id]
-            if not (cached and cached.name and cached.icon) then
+            if cached and cached.name and cached.icon then
+                child._lstweeks_cd_name = cached.name
+                child._lstweeks_cd_icon = cached.icon
+            else
                 local name, icon = get_spell_display(sid)
                 if name or icon then
                     child._lstweeks_cd_name = name or child._lstweeks_cd_name
@@ -437,8 +547,10 @@ local function install_cooldown_viewer_item_hooks()
     M._lstweeks_cdv_item_hooks_installed = true
 
     local function on_item_changed(child, cooldown_id)
-        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) and child._lstweeks_cooldown_id ~= cooldown_id then
             child._lstweeks_cooldown_id = cooldown_id
+            child._lstweeks_cd_name = nil
+            child._lstweeks_cd_icon = nil
         end
         hook_cd_item_frame(child)
         queue_cooldown_viewer_refresh()
@@ -488,6 +600,12 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             local has_active_aura_entry = false
             if iid then
                 local aura_entry = M._aura_map[iid]
+                if not aura_entry then
+                    aura_entry = build_cdm_active_aura_entry(iid, category, cdm_order)
+                    if aura_entry then
+                        M._aura_map[iid] = aura_entry
+                    end
+                end
                 if aura_entry then
                     aura_entry.cdm_order = cdm_order
                     target_map[iid] = aura_entry
@@ -503,13 +621,21 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             if info then
                 local cid = info.cooldownID or info.cooldownId
                 if cid ~= nil and not issecretvalue(cid) then
-                    child._lstweeks_cooldown_id = cid
+                    if child._lstweeks_cooldown_id ~= cid then
+                        child._lstweeks_cooldown_id = cid
+                        child._lstweeks_cd_name = nil
+                        child._lstweeks_cd_icon = nil
+                    end
                     cooldown_id = cid
                     saw_identity = true
                 end
                 local sid = info.overrideSpellID or info.spellID
                 if sid and not issecretvalue(sid) then
-                    child._lstweeks_spell_id = sid
+                    if child._lstweeks_spell_id ~= sid then
+                        child._lstweeks_spell_id = sid
+                        child._lstweeks_cd_name = nil
+                        child._lstweeks_cd_icon = nil
+                    end
                     saw_identity = true
                 end
             end
@@ -578,6 +704,12 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             local iid = child.auraInstanceID
             if iid then
                 local entry = M._aura_map[iid]
+                if not entry then
+                    entry = build_cdm_active_aura_entry(iid, category)
+                    if entry then
+                        M._aura_map[iid] = entry
+                    end
+                end
                 if entry then target_map[iid] = entry end
             end
         end
