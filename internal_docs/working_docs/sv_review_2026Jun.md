@@ -10,6 +10,7 @@
 - End Decor UI now uses one dropdown plus X/Y sliders. The sliders write per-style overrides to `skyriding_vigor.decor_layouts` so Default and Storm Race can be tuned independently from the same controls.
 - Removed the old shared end-decoration X/Y fallback from `WING_LAYOUT`; end-decor X/Y now comes from `DECOR_STYLES` defaults or saved `decor_layouts` overrides.
 - Node Scale is now style-specific via `skyriding_vigor.style_layouts.<style>.scale`; switching node style resyncs the Scale slider to that style's remembered value.
+- Fill Color picker was added as a per-node-style tint stored in `skyriding_vigor.style_layouts.<style>.fill_color`.
 
 ## Resolved During Review
 

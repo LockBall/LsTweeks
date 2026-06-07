@@ -249,6 +249,7 @@ Important `skyriding_vigor` keys:
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `style`: atlas style key for the vigor nodes. Defaults to `default`; the settings dropdown also exposes `storm_race`, which uses Blizzard `dragonriding_sgvigor_*` atlases where available.
 - `style_layouts.<style>.scale`: per-node-style scale override used by the Scale slider. Legacy `scale` remains as the first active style seed/compatibility value.
+- `style_layouts.<style>.fill_color`: per-node-style fill tint color used by the Fill Color picker.
 - `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
 - `decor_layouts.<decor_style>.decor_node_gap_x` and `.offset_y`: per-end-decoration-style X/Y UI overrides. Missing values initialize from `DECOR_STYLES`.
 - `spacing` and `scale`: presentation settings. Slider ranges/steps live near bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`. Scale range is `0.40-2.00` at `0.05` steps and displays two decimals.
@@ -268,6 +269,7 @@ Important `skyriding_vigor` keys:
 - Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
 - Skyriding Vigor node and end-decoration style selection is manual, DB-backed, and validated in `sv_bar.lua`. Missing or unknown style keys fall back to `default`.
 - Skyriding Vigor Scale is style-specific. `M.set_db_value("scale", value)` routes to the active `style_layouts` entry and style switching resyncs the Scale slider.
+- Skyriding Vigor Fill Color is style-specific and tints the active fill/full-fill status bar texture via `SetVertexColor`.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES`.
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.

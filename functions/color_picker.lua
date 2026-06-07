@@ -98,5 +98,15 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         })
     end)
 
+    container.SetValue = function(_, color)
+        if color then
+            button:SetBackdropColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+        end
+    end
+
+    container.GetValue = function()
+        return db_table[db_key]
+    end
+
     return container
 end

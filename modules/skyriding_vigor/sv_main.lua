@@ -395,6 +395,45 @@ function M.set_style_scale(value)
     M.refresh_layout()
 end
 
+function M.get_style_fill_color()
+    local db = get_db()
+    if not db then return { r = 1, g = 1, b = 1, a = 1 } end
+    local style_key = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    if M.get_style_fill_color_value then
+        return M.get_style_fill_color_value(db, style_key)
+    end
+    return { r = 1, g = 1, b = 1, a = 1 }
+end
+
+function M.get_style_fill_color_default()
+    local db = get_db()
+    local style_key = db and db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    if M.get_style_layout_default then
+        return M.get_style_layout_default(style_key, "fill_color") or { r = 1, g = 1, b = 1, a = 1 }
+    end
+    return { r = 1, g = 1, b = 1, a = 1 }
+end
+
+function M.set_style_fill_color(color)
+    local db = get_db()
+    if not db or type(color) ~= "table" then return end
+    local style_key = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    local layout = M.get_style_layout_table and M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.fill_color = {
+        r = color.r or 1,
+        g = color.g or 1,
+        b = color.b or 1,
+        a = color.a or 1,
+    }
+    if M.apply_fill_color then
+        M.apply_fill_color()
+    else
+        M.refresh()
+    end
+end
+
 local function get_decor_position_field(axis)
     if axis == "x" then
         return "decor_node_gap_x", "decor_x_position"
@@ -465,6 +504,13 @@ function M.sync_decor_position_controls(db)
             y_slider.slider:SetValue(value)
             y_slider._suppress_callback = nil
         end
+    end
+end
+
+function M.sync_style_color_controls()
+    local picker = M.controls and M.controls.fill_color
+    if picker and picker.SetValue and M.get_style_fill_color then
+        picker:SetValue(M.get_style_fill_color())
     end
 end
 
@@ -603,6 +649,7 @@ function M.on_reset_complete()
         decor_style_dropdown:SetValue(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
     end
     sync_slider_controls(db)
+    M.sync_style_color_controls(db)
     M.sync_decor_position_controls(db)
     sync_position_controls(db)
     sync_fill_test_button()
@@ -630,6 +677,9 @@ function M.set_db_value(key, value)
             db.scale = clamp_number(style_layout.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
         end
         sync_slider_controls(db)
+        if M.sync_style_color_controls then
+            M.sync_style_color_controls(db)
+        end
     end
     if key == "decor_style" and M.get_decor_layout_table then
         M.get_decor_layout_table(db, value, true)

@@ -38,6 +38,7 @@ local BAR_STYLES = {
         background_offset_x = 0.00,
         background_offset_y = 0.00,
         background_above_frame = false,
+        fill_color = { r = 1, g = 1, b = 1, a = 1 },
     },
     storm_race = {
         label = "Storm Race",
@@ -52,6 +53,7 @@ local BAR_STYLES = {
         background_offset_x = 0.00,
         background_offset_y = 0.00,
         background_above_frame = false,
+        fill_color = { r = 1, g = 1, b = 1, a = 1 },
     },
 }
 local BAR_STYLE_ORDER = { "default", "storm_race" }
@@ -190,8 +192,12 @@ function M.get_valid_bar_style_key(key)
 end
 
 function M.get_style_layout_default(style_key, field)
+    local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
     if field == "scale" then
         return (get_defaults().scale or 1)
+    elseif field == "fill_color" then
+        local color = style and style.fill_color or { r = 1, g = 1, b = 1, a = 1 }
+        return { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
     end
     return nil
 end
@@ -206,6 +212,9 @@ function M.get_style_layout_table(db, style_key, create, initial_scale)
         if layout.scale == nil then
             layout.scale = initial_scale or M.get_style_layout_default(style_key, "scale")
         end
+        if layout.fill_color == nil then
+            layout.fill_color = M.get_style_layout_default(style_key, "fill_color")
+        end
         return layout
     end
     return db.style_layouts and db.style_layouts[style_key] or nil
@@ -218,6 +227,17 @@ local function get_style_layout_number(db, style_key, field)
         value = M.get_style_layout_default(style_key, field)
     end
     return value
+end
+
+function M.get_style_fill_color_value(db, style_key)
+    db = db or get_db()
+    style_key = M.get_valid_bar_style_key(style_key or (db and db.style) or DEFAULT_STYLE_KEY)
+    local layout = M.get_style_layout_table(db, style_key, true)
+    local color = layout and layout.fill_color
+    if not color then
+        color = M.get_style_layout_default(style_key, "fill_color")
+    end
+    return color
 end
 
 local function get_decor_style(db)
@@ -465,6 +485,19 @@ local function set_bar_atlas(slot, atlas)
     local texture = slot.bar:GetStatusBarTexture()
     if texture then
         set_atlas_sized(texture, atlas, fill_width, fill_height)
+        local color = M.get_style_fill_color_value(get_db())
+        texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+    end
+end
+
+function M.apply_fill_color()
+    local color = M.get_style_fill_color_value(get_db())
+    for i = 1, MAX_SLOTS do
+        local slot = M.slots[i]
+        local texture = slot and slot.bar and slot.bar:GetStatusBarTexture()
+        if texture then
+            texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+        end
     end
 end
 

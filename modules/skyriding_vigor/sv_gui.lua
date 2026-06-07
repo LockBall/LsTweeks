@@ -33,6 +33,7 @@ local STRINGS = {
     move_mode = "Move Mode",
     snap_to_grid = "Snap to Grid",
     style = "Style",
+    fill_color = "Fill Color",
     decor_style = "End Decor",
     decor_x_position = "End Decor X",
     decor_y_position = "End Decor Y",
@@ -130,6 +131,35 @@ function M.BuildSettings(parent)
     )
     M.controls.style = style_dropdown
     style_dropdown:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 2, 0)
+
+    local fill_color_proxy = setmetatable({}, {
+        __index = function(_, key)
+            if key == "fill_color" then
+                return M.get_style_fill_color and M.get_style_fill_color() or { r = 1, g = 1, b = 1, a = 1 }
+            end
+            return nil
+        end,
+        __newindex = function(_, key, value)
+            if key == "fill_color" then
+                M.set_style_fill_color(value)
+            end
+        end,
+    })
+    local fill_color_defaults_proxy = setmetatable({}, {
+        __index = function(_, key)
+            if key == "fill_color" then
+                return M.get_style_fill_color_default and M.get_style_fill_color_default() or { r = 1, g = 1, b = 1, a = 1 }
+            end
+            return nil
+        end,
+    })
+    local fill_color_picker = addon.CreateColorPicker(parent, fill_color_proxy, "fill_color", true, STRINGS.fill_color, fill_color_defaults_proxy, function()
+        if M.apply_fill_color then
+            M.apply_fill_color()
+        end
+    end)
+    M.controls.fill_color = fill_color_picker
+    fill_color_picker:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 3, 0)
 
     db.position = db.position or {}
     local default_position = defaults.position or {}
