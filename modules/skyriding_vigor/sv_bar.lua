@@ -137,8 +137,8 @@ M.SETTING_SPECS = {
     fade_length = FADE_LENGTH_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
-    decor_x_position = { min = -100, max = 100, step = 0.5 },
-    decor_y_position = { min = -100, max = 100, step = 0.5 },
+    decor_x_position = { min = -30, max = 10, step = 0.5 },
+    decor_y_position = { min = -30, max = 10, step = 0.5 },
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
