@@ -7,12 +7,17 @@
 - DragonRider `Vigor.lua` confirms Storm side-art atlases: `dragonriding_sgvigor_decor_bronze`, `_dark`, `_gold`, and `_silver`. LsTweeks currently exposes only `default` and bronze `storm_race` end-decoration styles.
 - End-decoration alignment differs by style. `DECOR_STYLES` now owns per-style layout params, with current Storm Race values initialized to the old shared defaults pending visual tuning.
 - Storm Race node background uses `dragonriding_sgvigor_background`, but it does not share the default background sizing. `BAR_STYLES` now owns per-style background scale/offset fields; Storm Race starts at full node scale while Default preserves the old 0.5 scale.
-- End Decor UI now uses one dropdown plus X/Y sliders. The sliders write per-style overrides to `skyriding_vigor.decor_layouts` so Default and Storm Race can be tuned independently from the same controls.
+- End Decor UI now uses one dropdown plus X/Y/Scale sliders. The sliders write per-style overrides to `skyriding_vigor.decor_layouts` so Default and Storm Race can be tuned independently from the same controls.
 - Removed the old shared end-decoration X/Y fallback from `WING_LAYOUT`; end-decor X/Y now comes from `DECOR_STYLES` defaults or saved `decor_layouts` overrides.
 - Node Scale is now style-specific via `skyriding_vigor.style_layouts.<style>.scale`; switching node style resyncs the Scale slider to that style's remembered value.
 - Fill Color picker was added as a per-node-style tint stored in `skyriding_vigor.style_layouts.<style>.fill_color`.
 - Settings now has top-level module toggles stored under `Ls_Tweeks_DB.modules`. Runtime stop/start hooks were added for Player Frame, Sound Levels, Skyriding Vigor, and Aura Frames; Aura Frames uses a best-effort disable path that hides/unregisters owned runtime frames instead of destroying frame pools.
+- `sv_main.lua` still mixes DB normalization, ticker/event routing, and settings mutation. It remains workable; future cleanup could split DB normalization or setting mutation if either grows.
 
 ## Resolved During Review
 
 - Initial style-selector implementation used one shared `FRAME_LAYOUT.visible_edge_inset_x` spacing parameter. Storm Race art has a different node shape/padding, so forcing default layout metrics distorted the node shape. Fixed by restoring style-owned node metrics and moving visible-edge spacing parameters onto each style.
+- Charge/flight state detection was split from `sv_main.lua` into `sv_state.lua`. `sv_main.lua` now calls `M.get_charge_info()`, `M.get_gliding_state()`, `M.is_player_flying()`, and `M.is_mounted_in_advanced_flyable_area()`.
+- Active style scale, fill color, and decor position helpers were moved from `sv_main.lua` into `sv_bar.lua` so style-facing DB behavior stays with the bar style definitions.
+- Skyriding Vigor GUI control synchronization moved from `sv_main.lua` into `sv_gui.lua`. `sv_main.lua` now delegates reset/style/decor/button sync through `M.sync_settings_controls()` and related GUI helpers.
+- Skyriding Vigor alpha fade handling moved from `sv_main.lua` into `sv_fade.lua`. `sv_main.lua` now delegates full-charge fade policy through `M.apply_full_charge_fade()`.

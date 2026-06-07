@@ -45,6 +45,8 @@ modules\sound_levels\sl_gui.lua
 modules\sound_levels\sl_main.lua
 modules\skyriding_vigor\sv_defaults.lua
 modules\skyriding_vigor\sv_bar.lua
+modules\skyriding_vigor\sv_fade.lua
+modules\skyriding_vigor\sv_state.lua
 modules\skyriding_vigor\sv_gui.lua
 modules\skyriding_vigor\sv_main.lua
 

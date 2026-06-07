@@ -22,7 +22,7 @@ local STRINGS = {
     category_name = "Settings",
     title = "Addon Main Interface Settings",
     minimap_icon_label = "Minimap Icon",
-    modules_title = "Modules",
+    modules_title = "Module Enabler",
 }
 
 -- Apply saved interface transparency to the main frame — called on every Show

@@ -1,5 +1,5 @@
 -- Visual bar implementation for the Skyriding Vigor module.
--- Game-state detection and event routing live in sv_main.lua.
+-- Style presentation, atlas layout, positioning, and bar construction live here.
 local addon_name, addon = ...
 
 addon.skyriding_vigor = addon.skyriding_vigor or {
@@ -21,6 +21,10 @@ local min = math.min
 local error = error
 local tostring = tostring
 local tonumber = tonumber
+
+-- ============================================================================
+-- STYLE DEFINITIONS
+-- ============================================================================
 
 local MAX_SLOTS = 6
 local DEFAULT_STYLE_KEY = "default"
@@ -62,6 +66,7 @@ local DECOR_STYLES = {
     default = {
         label = "Default",
         atlas = "dragonriding_vigor_decor",
+        scale = 1,
         scale_x = 1,
         scale_y = 1,
         decor_node_gap_x = -18.0,
@@ -70,6 +75,7 @@ local DECOR_STYLES = {
     storm_race = {
         label = "Storm Race",
         atlas = "dragonriding_sgvigor_decor_bronze",
+        scale = 1,
         scale_x = 1,
         scale_y = 1,
         decor_node_gap_x = -20.0,
@@ -137,6 +143,7 @@ M.SETTING_SPECS = {
     fade_length = FADE_LENGTH_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
+    decor_scale = SCALE_RANGE,
     decor_x_position = { min = -30, max = 10, step = 0.5 },
     decor_y_position = { min = -30, max = 10, step = 0.5 },
     x_position = POSITION_RANGE,
@@ -150,6 +157,10 @@ M.LAYOUT_SETTING_KEYS = {
     decor_style = true,
 }
 
+-- ============================================================================
+-- SHARED ACCESSORS
+-- ============================================================================
+
 local function get_db()
     return M.get_db and M.get_db()
 end
@@ -158,12 +169,24 @@ local function get_defaults()
     return M.DEFAULTS or {}
 end
 
+local function clamp_number(value, fallback, spec)
+    value = tonumber(value)
+    if not value then value = fallback end
+    if spec and value < spec.min then return spec.min end
+    if spec and value > spec.max then return spec.max end
+    return value
+end
+
 local function atlas_exists(atlas)
     if not atlas then return true end
     if not C_Texture_GetAtlasInfo then return false end
     local info = C_Texture_GetAtlasInfo(atlas)
     return info and info.width and info.height and info.width > 0 and info.height > 0
 end
+
+-- ============================================================================
+-- STYLE DB HELPERS
+-- ============================================================================
 
 local function is_valid_style(style)
     return style and atlas_exists(style.frame) and atlas_exists(style.background)
@@ -240,6 +263,69 @@ function M.get_style_fill_color_value(db, style_key)
     return color
 end
 
+function M.get_style_scale()
+    local db = get_db()
+    local defaults = get_defaults()
+    if not db then return defaults.scale or 1 end
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local layout = M.get_style_layout_table(db, style_key, true)
+    local value = layout and layout.scale
+    if value == nil then
+        value = M.get_style_layout_default(style_key, "scale")
+    end
+    return value or defaults.scale or 1
+end
+
+function M.set_style_scale(value)
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local fallback = db.scale or defaults.scale or 1
+    local layout = M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.scale = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS.scale)
+    db.scale = layout.scale
+    M.refresh_layout()
+end
+
+function M.get_style_fill_color()
+    local db = get_db()
+    if not db then return { r = 1, g = 1, b = 1, a = 1 } end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    return M.get_style_fill_color_value(db, style_key) or { r = 1, g = 1, b = 1, a = 1 }
+end
+
+function M.get_style_fill_color_default()
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    return M.get_style_layout_default(style_key, "fill_color") or { r = 1, g = 1, b = 1, a = 1 }
+end
+
+function M.set_style_fill_color(color)
+    local db = get_db()
+    if not db or type(color) ~= "table" then return end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local layout = M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.fill_color = {
+        r = color.r or 1,
+        g = color.g or 1,
+        b = color.b or 1,
+        a = color.a or 1,
+    }
+    if M.apply_fill_color then
+        M.apply_fill_color()
+    elseif M.refresh then
+        M.refresh()
+    end
+end
+
 local function get_decor_style(db)
     local defaults = get_defaults()
     local key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
@@ -263,6 +349,8 @@ function M.get_decor_layout_default(style_key, field)
         return style and style.decor_node_gap_x or 0
     elseif field == "offset_y" then
         return style and style.offset_y or 0
+    elseif field == "scale" then
+        return style and (style.scale or style.scale_x or WING_LAYOUT.scale_x) or 1
     end
     return nil
 end
@@ -280,6 +368,9 @@ function M.get_decor_layout_table(db, style_key, create)
         if layout.offset_y == nil then
             layout.offset_y = M.get_decor_layout_default(style_key, "offset_y")
         end
+        if layout.scale == nil then
+            layout.scale = M.get_decor_layout_default(style_key, "scale")
+        end
         return layout
     end
     return db.decor_layouts and db.decor_layouts[style_key] or nil
@@ -293,6 +384,91 @@ local function get_decor_layout_number(db, style_key, field)
     end
     return value
 end
+
+local function get_decor_position_field(axis)
+    if axis == "x" then
+        return "decor_node_gap_x", "decor_x_position"
+    elseif axis == "y" then
+        return "offset_y", "decor_y_position"
+    end
+    return nil
+end
+
+function M.get_decor_position_axis(axis)
+    local field = get_decor_position_field(axis)
+    if not field then return 0 end
+    local db = get_db()
+    if not db then return 0 end
+    local defaults = get_defaults()
+    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    local value = layout and layout[field]
+    if value == nil then
+        value = M.get_decor_layout_default(style_key, field)
+    end
+    return value or 0
+end
+
+function M.get_decor_position_default(axis)
+    local field = get_decor_position_field(axis)
+    if not field then return 0 end
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    return M.get_decor_layout_default(style_key, field) or 0
+end
+
+function M.set_decor_position_axis(axis, value)
+    local field, spec_key = get_decor_position_field(axis)
+    if not field then return end
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local fallback = M.get_decor_layout_default(style_key, field) or 0
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout[field] = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS[spec_key])
+    M.refresh_layout()
+end
+
+function M.get_decor_scale()
+    local db = get_db()
+    if not db then return 1 end
+    local defaults = get_defaults()
+    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    local value = layout and layout.scale
+    if value == nil then
+        value = M.get_decor_layout_default(style_key, "scale")
+    end
+    return value or 1
+end
+
+function M.get_decor_scale_default()
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    return M.get_decor_layout_default(style_key, "scale") or 1
+end
+
+function M.set_decor_scale(value)
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local fallback = M.get_decor_layout_default(style_key, "scale") or 1
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.scale = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS.decor_scale)
+    M.refresh_layout()
+end
+
+-- ============================================================================
+-- POSITION HELPERS
+-- ============================================================================
 
 local function snap_value(value)
     return floor(((value or 0) / GRID_SIZE) + 0.5) * GRID_SIZE
@@ -316,6 +492,10 @@ local function get_saved_center(db)
     local pos = db and db.position or defaults.position or {}
     return pos.x or 0, pos.y or 0
 end
+
+-- ============================================================================
+-- ATLAS SIZE HELPERS
+-- ============================================================================
 
 local function get_atlas_size(atlas)
     if C_Texture_GetAtlasInfo then
@@ -393,6 +573,10 @@ local function get_spacing_pixels(db)
     return spacing_setting + (style.spacing_offset or 0)
 end
 
+-- ============================================================================
+-- DRAG HELPERS
+-- ============================================================================
+
 local function get_cursor_position()
     local scale = UIParent:GetEffectiveScale() or 1
     local x, y = GetCursorPosition()
@@ -444,6 +628,10 @@ function M.apply_position()
     local xOfs, yOfs = get_saved_center(db)
     set_center_position(frame, xOfs, yOfs)
 end
+
+-- ============================================================================
+-- SLOT RENDERING
+-- ============================================================================
 
 local function set_atlas_sized(texture, atlas, width, height)
     if not texture then return end
@@ -619,6 +807,10 @@ function M.set_slot_state(index, state, progress)
     slot._progress = effective_progress
 end
 
+-- ============================================================================
+-- FRAME AND SLOT API
+-- ============================================================================
+
 function M.set_slot_visible(index, visible)
     local slot = M.slots[index]
     if not slot then return end
@@ -708,6 +900,10 @@ function M.ensure_frame()
     return frame
 end
 
+-- ============================================================================
+-- LAYOUT
+-- ============================================================================
+
 function M.set_wing_layout(values)
     if not values then return end
 
@@ -742,8 +938,9 @@ function M.apply_layout()
     local frame_width, frame_height = get_frame_size()
     local decor_width, decor_height = get_decor_size()
     local decor_style_key, decor_style = get_decor_style(db)
-    local wing_scale_x = decor_style.scale_x or WING_LAYOUT.scale_x
-    local wing_scale_y = decor_style.scale_y or WING_LAYOUT.scale_y
+    local decor_scale = get_decor_layout_number(db, decor_style_key, "scale") or 1
+    local wing_scale_x = decor_scale * (decor_style.scale_x or WING_LAYOUT.scale_x)
+    local wing_scale_y = decor_scale * (decor_style.scale_y or WING_LAYOUT.scale_y)
     local wing_node_gap_x = get_decor_layout_number(db, decor_style_key, "decor_node_gap_x")
     if wing_node_gap_x == nil then wing_node_gap_x = 0 end
     local wing_offset_y = get_decor_layout_number(db, decor_style_key, "offset_y")
@@ -829,6 +1026,10 @@ function M.apply_layout()
         )
     end
 end
+
+-- ============================================================================
+-- INTERACTION STATE
+-- ============================================================================
 
 function M.set_move_mode(enabled)
     local frame = M.ensure_frame()

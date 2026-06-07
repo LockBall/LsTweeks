@@ -1,4 +1,5 @@
 -- Settings UI for the Skyriding Vigor module.
+-- Owns control construction and synchronization from the Skyriding Vigor DB.
 -- Runtime behavior and DB mutation helpers live in sv_main.lua.
 local addon_name, addon = ...
 
@@ -10,6 +11,10 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 local M = addon.skyriding_vigor
 
 local CreateFrame = CreateFrame
+
+-- ============================================================================
+-- CONFIGURATION
+-- ============================================================================
 
 local UI_CONFIG = {
     title_offset_x = 20,
@@ -37,6 +42,7 @@ local STRINGS = {
     decor_style = "End Decor",
     decor_x_position = "End Decor X",
     decor_y_position = "End Decor Y",
+    decor_scale = "End Decor Scale",
     spacing = "Spacing",
     scale = "Scale",
     x_position = "X Position",
@@ -44,6 +50,10 @@ local STRINGS = {
     fill_test = "Fill Test",
     stop_fill_test = "Stop Test",
 }
+
+-- ============================================================================
+-- SHARED HELPERS
+-- ============================================================================
 
 local function get_spec(key)
     return M.SETTING_SPECS[key]
@@ -65,6 +75,144 @@ local function add_row_separator(parent, anchor, y_offset)
     return line
 end
 
+-- ============================================================================
+-- CONTROL SYNCHRONIZATION
+-- ============================================================================
+
+function M.sync_fill_test_button()
+    local button = M.controls and M.controls.fill_test_button
+    if button and button.SetText then
+        button:SetText(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
+    end
+end
+
+function M.sync_position_controls(db)
+    local position = db and db.position
+    if not position then return end
+
+    local x_slider = M.controls.x_position
+    if x_slider and x_slider.slider and position.x ~= nil and x_slider.slider:GetValue() ~= position.x then
+        M._syncing_position_controls = true
+        x_slider.slider:SetValue(position.x)
+        M._syncing_position_controls = nil
+    end
+
+    local y_slider = M.controls.y_position
+    if y_slider and y_slider.slider and position.y ~= nil and y_slider.slider:GetValue() ~= position.y then
+        M._syncing_position_controls = true
+        y_slider.slider:SetValue(position.y)
+        M._syncing_position_controls = nil
+    end
+end
+
+function M.sync_slider_controls(db)
+    if not db then return end
+    local defaults = M.DEFAULTS or {}
+
+    M._syncing_slider_controls = true
+    for _, key in ipairs(M.SLIDER_KEYS or {}) do
+        local control = M.controls[key]
+        if control and control.slider then
+            local value
+            if key == "scale" and M.get_style_scale then
+                value = M.get_style_scale()
+            else
+                value = db[key]
+            end
+            if value == nil then value = defaults[key] end
+            if value ~= nil and control.slider:GetValue() ~= value then
+                control._suppress_callback = true
+                control.slider:SetValue(value)
+                control._suppress_callback = nil
+            end
+        end
+    end
+    M._syncing_slider_controls = nil
+end
+
+function M.sync_decor_position_controls(db)
+    db = db or (M.get_db and M.get_db())
+    if not db then return end
+
+    local x_slider = M.controls.decor_x_position
+    if x_slider and x_slider.slider then
+        local value = M.get_decor_position_axis and M.get_decor_position_axis("x")
+        if value ~= nil and x_slider.slider:GetValue() ~= value then
+            x_slider._suppress_callback = true
+            x_slider.slider:SetValue(value)
+            x_slider._suppress_callback = nil
+        end
+    end
+
+    local y_slider = M.controls.decor_y_position
+    if y_slider and y_slider.slider then
+        local value = M.get_decor_position_axis and M.get_decor_position_axis("y")
+        if value ~= nil and y_slider.slider:GetValue() ~= value then
+            y_slider._suppress_callback = true
+            y_slider.slider:SetValue(value)
+            y_slider._suppress_callback = nil
+        end
+    end
+
+    local scale_slider = M.controls.decor_scale
+    if scale_slider and scale_slider.slider then
+        local value = M.get_decor_scale and M.get_decor_scale()
+        if value ~= nil and scale_slider.slider:GetValue() ~= value then
+            scale_slider._suppress_callback = true
+            scale_slider.slider:SetValue(value)
+            scale_slider._suppress_callback = nil
+        end
+    end
+end
+
+function M.sync_style_color_controls()
+    local picker = M.controls and M.controls.fill_color
+    if picker and picker.SetValue and M.get_style_fill_color then
+        picker:SetValue(M.get_style_fill_color())
+    end
+end
+
+function M.sync_settings_controls(db)
+    db = db or (M.get_db and M.get_db())
+    if not db then return end
+
+    local defaults = M.DEFAULTS or {}
+    local enabled_cb = M.controls.enabled
+    if enabled_cb and enabled_cb.SetChecked then
+        enabled_cb:SetChecked(db.enabled or false)
+    end
+    local fade_cb = M.controls.fade_when_full
+    if fade_cb and fade_cb.SetChecked then
+        fade_cb:SetChecked(db.fade_when_full or false)
+    end
+    local move_cb = M.controls.move_mode
+    if move_cb and move_cb.SetChecked then
+        move_cb:SetChecked(db.move_mode or false)
+    end
+    local snap_cb = M.controls.snap_to_grid
+    if snap_cb and snap_cb.SetChecked then
+        snap_cb:SetChecked(db.snap_to_grid or false)
+    end
+    local style_dropdown = M.controls.style
+    if style_dropdown and style_dropdown.SetValue then
+        style_dropdown:SetValue(db.style or defaults.style or M.BAR_STYLE_DEFAULT)
+    end
+    local decor_style_dropdown = M.controls.decor_style
+    if decor_style_dropdown and decor_style_dropdown.SetValue then
+        decor_style_dropdown:SetValue(db.decor_style or defaults.decor_style or M.DECOR_STYLE_DEFAULT)
+    end
+
+    M.sync_slider_controls(db)
+    M.sync_style_color_controls()
+    M.sync_decor_position_controls(db)
+    M.sync_position_controls(db)
+    M.sync_fill_test_button()
+end
+
+-- ============================================================================
+-- SETTINGS CONSTRUCTION
+-- ============================================================================
+
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     local db = M.get_db and M.get_db()
@@ -73,6 +221,7 @@ function M.BuildSettings(parent)
     local y_spec = get_spec("y_position")
     local scale_spec = get_spec("scale")
     local spacing_spec = get_spec("spacing")
+    local decor_scale_spec = get_spec("decor_scale")
     local decor_x_spec = get_spec("decor_x_position")
     local decor_y_spec = get_spec("decor_y_position")
     local fade_alpha_spec = get_spec("fade_alpha")
@@ -234,12 +383,16 @@ function M.BuildSettings(parent)
         __index = function(_, key)
             if key == "x" or key == "y" then
                 return M.get_decor_position_axis and M.get_decor_position_axis(key) or 0
+            elseif key == "scale" then
+                return M.get_decor_scale and M.get_decor_scale() or 1
             end
             return nil
         end,
         __newindex = function(_, key, value)
             if key == "x" or key == "y" then
                 M.set_decor_position_axis(key, value)
+            elseif key == "scale" then
+                M.set_decor_scale(value)
             end
         end,
     })
@@ -247,6 +400,8 @@ function M.BuildSettings(parent)
         __index = function(_, key)
             if key == "x" or key == "y" then
                 return M.get_decor_position_default and M.get_decor_position_default(key) or 0
+            elseif key == "scale" then
+                return M.get_decor_scale_default and M.get_decor_scale_default() or 1
             end
             return nil
         end,
@@ -304,6 +459,24 @@ function M.BuildSettings(parent)
     )
     M.controls.decor_y_position = decor_y_slider
     decor_y_slider:SetPoint("TOPLEFT", decor_x_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
+
+    local decor_scale_slider = addon.CreateSliderWithBox(
+        addon_name .. "SkyridingVigorDecorScale",
+        parent,
+        STRINGS.decor_scale,
+        decor_scale_spec.min,
+        decor_scale_spec.max,
+        decor_scale_spec.step,
+        decor_position_proxy,
+        "scale",
+        decor_position_defaults_proxy,
+        function(value)
+            M.set_decor_scale(value)
+        end,
+        { display_decimals = 2 }
+    )
+    M.controls.decor_scale = decor_scale_slider
+    decor_scale_slider:SetPoint("TOPLEFT", decor_y_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
 
     local fade_container, fade_cb = addon.CreateCheckbox(parent, STRINGS.fade_when_full, db and db.fade_when_full, function(is_checked)
         M.set_db_value("fade_when_full", is_checked)
