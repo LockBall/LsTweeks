@@ -3,7 +3,7 @@
 ## Open Review Items
 
 - `sv_review_2026Jun.md` did not exist when the style-selector work began. I created this working-doc copy under `internal_docs/working_docs/` to keep review notes out of public release markdown.
-- Storm Race atlas references found in a public DragonRider theme example include `dragonriding_sgvigor_fill_flipbook` for animated recharge and use `dragonriding_sgvigor_fillfull` desaturated for empty fill. LsTweeks currently renders Vigor fill through a static `StatusBar`, so the new Storm Race selector uses `dragonriding_sgvigor_fillfull` for both filling and full states and does not implement the flipbook animation yet.
+- Storm Race atlas references found in a public DragonRider theme example include `dragonriding_sgvigor_fill_flipbook` for animated recharge and use `dragonriding_sgvigor_fillfull` desaturated for empty fill. An experimental Animated Fill checkbox was tested and discarded because the flipbook fill was hard to see and looked odd through the addon StatusBar path.
 - DragonRider `Vigor.lua` confirms Storm side-art atlases: `dragonriding_sgvigor_decor_bronze`, `_dark`, `_gold`, and `_silver`. LsTweeks currently exposes only `default` and bronze `storm_race` end-decoration styles.
 - End-decoration alignment differs by style. `DECOR_STYLES` now owns per-style layout params, with current Storm Race values initialized to the old shared defaults pending visual tuning.
 - Storm Race node background uses `dragonriding_sgvigor_background`, but it does not share the default background sizing. `BAR_STYLES` now owns per-style background scale/offset fields; Storm Race starts at full node scale while Default preserves the old 0.5 scale.
@@ -21,3 +21,4 @@
 - Active style scale, fill color, and decor position helpers were moved from `sv_main.lua` into `sv_bar.lua` so style-facing DB behavior stays with the bar style definitions.
 - Skyriding Vigor GUI control synchronization moved from `sv_main.lua` into `sv_gui.lua`. `sv_main.lua` now delegates reset/style/decor/button sync through `M.sync_settings_controls()` and related GUI helpers.
 - Skyriding Vigor alpha fade handling moved from `sv_main.lua` into `sv_fade.lua`. `sv_main.lua` now delegates full-charge fade policy through `M.apply_full_charge_fade()`.
+- Public README Skyriding Vigor text now mentions Fill Color and separate End Decor controls.
