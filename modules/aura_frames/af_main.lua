@@ -176,6 +176,7 @@ function M.apply_number_font_to_all()
 end
 
 local function run_wow_cooldown_refresh(refresh_config)
+    if addon.is_module_enabled and not addon.is_module_enabled("aura_frames") then return end
     if not M.frames then return end
 
     if refresh_config.mark_scan_dirty and M.mark_aura_scan_dirty then
@@ -865,11 +866,14 @@ end
 
 local function register_aura_frame_settings()
     if addon.register_category and M.BuildSettings then
-        addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end)
+        addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
+            module_key = "aura_frames",
+        })
     end
 end
 
 local function start_aura_frame_runtime_services()
+    M._module_runtime_enabled = true
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     if M.update_all_blizz_cdm_visibility then
@@ -877,10 +881,72 @@ local function start_aura_frame_runtime_services()
     end
     M.queue_wow_cooldown_refresh("startup")
 
-    register_aura_frame_settings()
     if M.db.show_grid then
         M.create_grid_overlay()
     end
+end
+
+local function restore_cdm_viewer_visibility()
+    if not M._cd_viewer_state then return end
+    for frame, state in pairs(M._cd_viewer_state) do
+        if frame and state and state.forced_hidden then
+            state.forced_hidden = nil
+            if frame.SetAlpha then frame:SetAlpha(1) end
+            if frame.EnableMouse then frame:EnableMouse(true) end
+            if (not InCombatLockdown or not InCombatLockdown()) and frame.Show then
+                pcall(frame.Show, frame)
+            end
+        end
+    end
+end
+
+local function stop_aura_frame_runtime_services()
+    M._module_runtime_enabled = false
+    if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
+    if M.set_grid_visible then M.set_grid_visible(false) end
+    if M.toggle_blizz_buffs then M.toggle_blizz_buffs(false) end
+    if M.toggle_blizz_debuffs then M.toggle_blizz_debuffs(false) end
+    restore_cdm_viewer_visibility()
+
+    for _, frame in ipairs(M.frames_list or {}) do
+        if frame then
+            if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
+            stop_frame_hover_check(frame)
+            frame:UnregisterAllEvents()
+            frame:SetScript("OnEvent", nil)
+            frame:Hide()
+            if frame.title_bar then frame.title_bar:Hide() end
+            if frame.bottom_title_bar then frame.bottom_title_bar:Hide() end
+            if frame.resizer then frame.resizer:Hide() end
+            frame._display_count = 0
+        end
+    end
+end
+
+local function rebind_existing_aura_frames()
+    for _, frame in ipairs(M.frames_list or {}) do
+        if frame and frame.update_params then
+            bind_aura_frame_events(frame, frame.category)
+            local p = frame.update_params
+            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+        end
+    end
+end
+
+function M.set_module_enabled(enabled)
+    if enabled then
+        if not M._module_started then
+            prepare_aura_frame_db()
+            create_startup_aura_frames()
+            M._module_started = true
+        else
+            rebind_existing_aura_frames()
+        end
+        start_aura_frame_runtime_services()
+        return
+    end
+
+    stop_aura_frame_runtime_services()
 end
 
 -- Startup conductor: keep addon-loaded work in order while each step
@@ -889,9 +955,13 @@ local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
-        prepare_aura_frame_db()
-        create_startup_aura_frames()
-        start_aura_frame_runtime_services()
+        register_aura_frame_settings()
+        if not addon.is_module_enabled or addon.is_module_enabled("aura_frames") then
+            prepare_aura_frame_db()
+            create_startup_aura_frames()
+            M._module_started = true
+            start_aura_frame_runtime_services()
+        end
         self:UnregisterEvent("ADDON_LOADED")
     end
 end)

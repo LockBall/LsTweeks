@@ -60,7 +60,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open the settings panel with `/lst` or the minimap button.
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
-- Open **Settings** for minimap, open-on-reload, and interface transparency options.
+- Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.
 - Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, style, and fade behavior.
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.

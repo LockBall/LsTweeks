@@ -45,6 +45,46 @@ addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.tenth_sec
 -- CPU profile hotness: moderate; visible in broad profile but already 0.2s.
 addon.UPDATE_INTERVALS.skyriding_vigor_tick = addon.UPDATE_INTERVALS.tenth_sec
 
+addon.FEATURE_MODULES = {
+    { key = "player_frame", label = "Player Frame" },
+    { key = "aura_frames", label = "Buffs & Debuffs" },
+    { key = "sound_levels", label = "Sound Levels" },
+    { key = "skyriding_vigor", label = "Skyriding Vigor" },
+}
+
+local function ensure_module_flags()
+    if not Ls_Tweeks_DB then return end
+    Ls_Tweeks_DB.modules = Ls_Tweeks_DB.modules or {}
+    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+        if Ls_Tweeks_DB.modules[module_def.key] == nil then
+            Ls_Tweeks_DB.modules[module_def.key] = true
+        end
+    end
+end
+
+function addon.is_module_enabled(module_key)
+    if not module_key then return true end
+    if not Ls_Tweeks_DB then return true end
+    ensure_module_flags()
+    return Ls_Tweeks_DB.modules[module_key] ~= false
+end
+
+function addon.set_module_enabled(module_key, enabled)
+    if not module_key or not Ls_Tweeks_DB then return end
+    ensure_module_flags()
+    enabled = enabled ~= false
+    if Ls_Tweeks_DB.modules[module_key] == enabled then return end
+    Ls_Tweeks_DB.modules[module_key] = enabled
+
+    local module_table = addon[module_key]
+    if module_table and module_table.set_module_enabled then
+        module_table.set_module_enabled(enabled)
+    end
+    if addon.main_frame and addon.main_frame.RefreshSidebar then
+        addon.main_frame:RefreshSidebar()
+    end
+end
+
 
 function addon.get_version()
     if not addon.version and C_AddOns and C_AddOns.GetAddOnMetadata then
@@ -67,6 +107,7 @@ local function init_db()
     if not Ls_Tweeks_DB.aura_frames then
         Ls_Tweeks_DB.aura_frames = {}
     end
+    ensure_module_flags()
 end
 
 -- MAIN INITIALIZATION SEQUENCE

@@ -54,6 +54,31 @@ function M.on_reset_complete()
     M.sync_fishing_focus_events()
 end
 
+function M.set_module_enabled(enabled)
+    if enabled then
+        M.get_db()
+        M.apply_sound_levels()
+        if M.sync_fishing_focus_events then
+            M.sync_fishing_focus_events()
+        end
+        return
+    end
+
+    if M.stop_all_previews then
+        M.stop_all_previews()
+    end
+    if M.restore_fishing_focus then
+        M.restore_fishing_focus()
+    end
+    if M.unmute_all_sound_files then
+        M.unmute_all_sound_files()
+    end
+    M._event_cache = {}
+    if M.sync_registered_events then
+        M.sync_registered_events()
+    end
+end
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_LOGOUT")
@@ -61,12 +86,14 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
         M.get_db()
-        M.apply_sound_levels()
-        if M.sync_fishing_focus_events then
-            M.sync_fishing_focus_events()
+        if not addon.is_module_enabled or addon.is_module_enabled("sound_levels") then
+            M.apply_sound_levels()
+            if M.sync_fishing_focus_events then
+                M.sync_fishing_focus_events()
+            end
         end
         if addon.register_category and M.BuildSettings then
-            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900 })
+            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900, module_key = "sound_levels" })
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then

@@ -22,6 +22,7 @@ local STRINGS = {
     category_name = "Settings",
     title = "Addon Main Interface Settings",
     minimap_icon_label = "Minimap Icon",
+    modules_title = "Modules",
 }
 
 -- Apply saved interface transparency to the main frame — called on every Show
@@ -96,6 +97,29 @@ local function build_settings_page(parent)
     )
     M.controls["alpha_slider"] = alpha_slider
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
+
+    local modules_title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
+    modules_title:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, -28)
+    modules_title:SetText(STRINGS.modules_title)
+    modules_title:SetTextColor(1, 0.82, 0, 1)
+    modules_title:SetFontObject("GameFontNormalLarge")
+
+    local previous_module_row = modules_title
+    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+        local module_container, module_checkbox = addon.CreateCheckbox(
+            parent,
+            module_def.label,
+            addon.is_module_enabled and addon.is_module_enabled(module_def.key),
+            function(is_checked)
+                if addon.set_module_enabled then
+                    addon.set_module_enabled(module_def.key, is_checked)
+                end
+            end
+        )
+        M.controls["module_" .. module_def.key] = module_checkbox
+        module_container:SetPoint("TOPLEFT", previous_module_row, "BOTTOMLEFT", 0, cfg.section_offset_y)
+        previous_module_row = module_container
+    end
 end
 
 function M.on_reset_complete()
@@ -115,6 +139,12 @@ function M.on_reset_complete()
     local alpha_slider = M.controls["alpha_slider"]
     if alpha_slider and alpha_slider.slider then
         alpha_slider.slider:SetValue(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
+    end
+    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+        local module_cb = M.controls["module_" .. module_def.key]
+        if module_cb and module_cb.SetChecked then
+            module_cb:SetChecked(addon.is_module_enabled and addon.is_module_enabled(module_def.key))
+        end
     end
 end
 

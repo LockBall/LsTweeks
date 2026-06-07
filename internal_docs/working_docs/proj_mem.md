@@ -140,13 +140,15 @@ Every Lua file starts with a short responsibility header before `local addon_nam
 
 ### Saved Variables Shape
 Top-level keys include:
-`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `player_frame`, `sound_levels`, and `aura_frames`.
+`minimap.hide`, `open_on_reload`, `interface_alpha`, `last_open_module`, `modules.<module_key>`, `player_frame`, `sound_levels`, `skyriding_vigor`, and `aura_frames`.
 
 ## Shared Architecture
 
 ### Core Architecture Rules
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
+- Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible in the sidebar but greys them out and disables selection.
+- Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.

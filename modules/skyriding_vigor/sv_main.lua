@@ -515,6 +515,12 @@ function M.sync_style_color_controls()
 end
 
 function M.refresh()
+    if addon.is_module_enabled and not addon.is_module_enabled("skyriding_vigor") then
+        disable_runtime()
+        sync_runtime_events(false)
+        return
+    end
+
     local db = get_db()
     if not db then return end
 
@@ -591,6 +597,21 @@ function M.refresh()
         frame:Show()
     end
     update_ticker(db, needs_progress_updates)
+end
+
+function M.set_module_enabled(enabled)
+    if enabled then
+        M._db_normalized = false
+        local db = get_db()
+        sync_runtime_events(db and db.enabled)
+        if db and db.enabled then
+            M.refresh()
+        end
+        return
+    end
+
+    disable_runtime()
+    sync_runtime_events(false)
 end
 
 function M.set_fill_test_enabled(enabled)
@@ -753,11 +774,13 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         local db = get_db()
-        sync_runtime_events(db and db.enabled)
-        if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901 })
+        if not addon.is_module_enabled or addon.is_module_enabled("skyriding_vigor") then
+            sync_runtime_events(db and db.enabled)
         end
-        if db and db.enabled then
+        if addon.register_category then
+            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901, module_key = "skyriding_vigor" })
+        end
+        if db and db.enabled and (not addon.is_module_enabled or addon.is_module_enabled("skyriding_vigor")) then
             M.refresh()
         end
         return

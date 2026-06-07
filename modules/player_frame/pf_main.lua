@@ -236,6 +236,7 @@ local function attach_help_tooltip(target, title, body)
 end
 
 function M.update_player_frame()
+    if addon.is_module_enabled and not addon.is_module_enabled("player_frame") then return end
     local db = get_player_frame_db()
     if not db then return end
     sync_fade_events(db)
@@ -263,6 +264,22 @@ function M.on_reset_complete()
         if slider and slider.slider then
             slider.slider:SetValue(M.get_clamped_fade_value(db, def.key, def.min, def.max))
         end
+    end
+end
+
+function M.set_module_enabled(enabled)
+    if enabled then
+        M.update_player_frame()
+        return
+    end
+
+    sync_fade_events(nil)
+    set_portrait_combat_text_hidden(false)
+    if M.fade and M.fade.stop_transition then
+        M.fade.stop_transition()
+    end
+    if PlayerFrame then
+        PlayerFrame:SetAlpha(1)
     end
 end
 
@@ -350,10 +367,12 @@ loader:SetScript("OnEvent", function(self, event, name)
                     end
                     previous_slider = slider
                 end
-            end)
+            end, { module_key = "player_frame" })
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
-        M.update_player_frame()
+        if not addon.is_module_enabled or addon.is_module_enabled("player_frame") then
+            M.update_player_frame()
+        end
         init_complete(self)
     elseif event == "PLAYER_REGEN_DISABLED" then
         M.fade.on_enter_combat()

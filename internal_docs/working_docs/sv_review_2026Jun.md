@@ -11,6 +11,7 @@
 - Removed the old shared end-decoration X/Y fallback from `WING_LAYOUT`; end-decor X/Y now comes from `DECOR_STYLES` defaults or saved `decor_layouts` overrides.
 - Node Scale is now style-specific via `skyriding_vigor.style_layouts.<style>.scale`; switching node style resyncs the Scale slider to that style's remembered value.
 - Fill Color picker was added as a per-node-style tint stored in `skyriding_vigor.style_layouts.<style>.fill_color`.
+- Settings now has top-level module toggles stored under `Ls_Tweeks_DB.modules`. Runtime stop/start hooks were added for Player Frame, Sound Levels, Skyriding Vigor, and Aura Frames; Aura Frames uses a best-effort disable path that hides/unregisters owned runtime frames instead of destroying frame pools.
 
 ## Resolved During Review
 
