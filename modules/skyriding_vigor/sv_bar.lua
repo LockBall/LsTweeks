@@ -20,13 +20,61 @@ local max = math.max
 local min = math.min
 local error = error
 local tostring = tostring
+local tonumber = tonumber
 
 local MAX_SLOTS = 6
-local NODE_FRAME_ATLAS = "dragonriding_vigor_frame"
-local NODE_BACKGROUND_ATLAS = "dragonriding_vigor_background"
-local NODE_FILL_ATLAS = "dragonriding_vigor_fill"
-local NODE_FILL_FULL_ATLAS = "dragonriding_vigor_fillfull"
-local DECOR_ATLAS = "dragonriding_vigor_decor"
+local DEFAULT_STYLE_KEY = "default"
+local BAR_STYLES = {
+    default = {
+        label = "Default",
+        frame = "dragonriding_vigor_frame",
+        background = "dragonriding_vigor_background",
+        fill = "dragonriding_vigor_fill",
+        fill_full = "dragonriding_vigor_fillfull",
+        visible_edge_inset_x = 11.00,
+        spacing_offset = 0.00,
+        background_scale_x = 0.50,
+        background_scale_y = 0.50,
+        background_offset_x = 0.00,
+        background_offset_y = 0.00,
+        background_above_frame = false,
+    },
+    storm_race = {
+        label = "Storm Race",
+        frame = "dragonriding_sgvigor_frame_bronze",
+        background = "dragonriding_sgvigor_background",
+        fill = "dragonriding_sgvigor_fillfull",
+        fill_full = "dragonriding_sgvigor_fillfull",
+        visible_edge_inset_x = 0.00,
+        spacing_offset = 0.00,
+        background_scale_x = 0.75,
+        background_scale_y = 0.75,
+        background_offset_x = 0.00,
+        background_offset_y = 0.00,
+        background_above_frame = false,
+    },
+}
+local BAR_STYLE_ORDER = { "default", "storm_race" }
+local DEFAULT_DECOR_STYLE_KEY = "default"
+local DECOR_STYLES = {
+    default = {
+        label = "Default",
+        atlas = "dragonriding_vigor_decor",
+        scale_x = 1,
+        scale_y = 1,
+        decor_node_gap_x = -18.0,
+        offset_y = -15.0,
+    },
+    storm_race = {
+        label = "Storm Race",
+        atlas = "dragonriding_sgvigor_decor_bronze",
+        scale_x = 1,
+        scale_y = 1,
+        decor_node_gap_x = -20.0,
+        offset_y = 5.0,
+    },
+}
+local DECOR_STYLE_ORDER = { "default", "storm_race" }
 local GRID_SIZE = 20
 
 local SCALE_RANGE = { min = 0.5, max = 2, step = 0.05 }
@@ -63,16 +111,32 @@ local SHOW_FRAME_LAYER = true
 local WING_LAYOUT = {
     scale_x = 1,
     scale_y = 1,
-    node_gap_x = -18.0,
-    offset_y = -15.0,
 }
 
 M.MAX_SLOTS = MAX_SLOTS
+M.BAR_STYLE_DEFAULT = DEFAULT_STYLE_KEY
+M.BAR_STYLE_OPTIONS = {}
+for _, key in ipairs(BAR_STYLE_ORDER) do
+    M.BAR_STYLE_OPTIONS[#M.BAR_STYLE_OPTIONS + 1] = {
+        value = key,
+        text = BAR_STYLES[key].label,
+    }
+end
+M.DECOR_STYLE_DEFAULT = DEFAULT_DECOR_STYLE_KEY
+M.DECOR_STYLE_OPTIONS = {}
+for _, key in ipairs(DECOR_STYLE_ORDER) do
+    M.DECOR_STYLE_OPTIONS[#M.DECOR_STYLE_OPTIONS + 1] = {
+        value = key,
+        text = DECOR_STYLES[key].label,
+    }
+end
 M.SETTING_SPECS = {
     fade_alpha = FADE_ALPHA_RANGE,
     fade_length = FADE_LENGTH_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
+    decor_x_position = { min = -100, max = 100, step = 0.5 },
+    decor_y_position = { min = -100, max = 100, step = 0.5 },
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
@@ -80,6 +144,8 @@ M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale" }
 M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,
+    style = true,
+    decor_style = true,
 }
 
 local function get_db()
@@ -88,6 +154,93 @@ end
 
 local function get_defaults()
     return M.DEFAULTS or {}
+end
+
+local function atlas_exists(atlas)
+    if not atlas then return true end
+    if not C_Texture_GetAtlasInfo then return false end
+    local info = C_Texture_GetAtlasInfo(atlas)
+    return info and info.width and info.height and info.width > 0 and info.height > 0
+end
+
+local function is_valid_style(style)
+    return style and atlas_exists(style.frame) and atlas_exists(style.background)
+        and atlas_exists(style.fill) and atlas_exists(style.fill_full)
+end
+
+local function is_valid_decor_style(style)
+    return style and atlas_exists(style.atlas)
+end
+
+local function get_bar_style(db)
+    local defaults = get_defaults()
+    local key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style = BAR_STYLES[key]
+    if is_valid_style(style) then
+        return key, style
+    end
+    return DEFAULT_STYLE_KEY, BAR_STYLES[DEFAULT_STYLE_KEY]
+end
+
+function M.get_valid_bar_style_key(key)
+    if is_valid_style(BAR_STYLES[key]) then
+        return key
+    end
+    return DEFAULT_STYLE_KEY
+end
+
+local function get_decor_style(db)
+    local defaults = get_defaults()
+    local key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style = DECOR_STYLES[key]
+    if is_valid_decor_style(style) then
+        return key, style
+    end
+    return DEFAULT_DECOR_STYLE_KEY, DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
+end
+
+function M.get_valid_decor_style_key(key)
+    if is_valid_decor_style(DECOR_STYLES[key]) then
+        return key
+    end
+    return DEFAULT_DECOR_STYLE_KEY
+end
+
+function M.get_decor_layout_default(style_key, field)
+    local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
+    if field == "decor_node_gap_x" then
+        return style and style.decor_node_gap_x or 0
+    elseif field == "offset_y" then
+        return style and style.offset_y or 0
+    end
+    return nil
+end
+
+function M.get_decor_layout_table(db, style_key, create)
+    if not db then return nil end
+    style_key = M.get_valid_decor_style_key(style_key or db.decor_style or DEFAULT_DECOR_STYLE_KEY)
+    if create then
+        db.decor_layouts = db.decor_layouts or {}
+        db.decor_layouts[style_key] = db.decor_layouts[style_key] or {}
+        local layout = db.decor_layouts[style_key]
+        if layout.decor_node_gap_x == nil then
+            layout.decor_node_gap_x = M.get_decor_layout_default(style_key, "decor_node_gap_x")
+        end
+        if layout.offset_y == nil then
+            layout.offset_y = M.get_decor_layout_default(style_key, "offset_y")
+        end
+        return layout
+    end
+    return db.decor_layouts and db.decor_layouts[style_key] or nil
+end
+
+local function get_decor_layout_number(db, style_key, field)
+    local layout = M.get_decor_layout_table(db, style_key, false)
+    local value = layout and tonumber(layout[field])
+    if value == nil then
+        value = M.get_decor_layout_default(style_key, field)
+    end
+    return value
 end
 
 local function snap_value(value)
@@ -124,15 +277,21 @@ local function get_atlas_size(atlas)
 end
 
 local function get_node_size()
-    if not M._node_width or not M._node_height then
-        M._node_width, M._node_height = get_atlas_size(NODE_FRAME_ATLAS)
+    local _, style = get_bar_style(get_db())
+    local atlas = style.frame
+    if M._node_size_atlas ~= atlas or not M._node_width or not M._node_height then
+        M._node_width, M._node_height = get_atlas_size(atlas)
+        M._node_size_atlas = atlas
     end
     return M._node_width, M._node_height
 end
 
 local function get_decor_size()
-    if not M._decor_width or not M._decor_height then
-        M._decor_width, M._decor_height = get_atlas_size(DECOR_ATLAS)
+    local _, style = get_decor_style(get_db())
+    local atlas = style.atlas
+    if M._decor_size_atlas ~= atlas or not M._decor_width or not M._decor_height then
+        M._decor_width, M._decor_height = get_atlas_size(atlas)
+        M._decor_size_atlas = atlas
     end
     return M._decor_width, M._decor_height
 end
@@ -144,7 +303,9 @@ end
 
 local function get_background_size()
     local width, height = get_node_size()
-    return max(1, width * BACKGROUND_LAYOUT.scale_x), max(1, height * BACKGROUND_LAYOUT.scale_y)
+    local _, style = get_bar_style(get_db())
+    return max(1, width * (style.background_scale_x or BACKGROUND_LAYOUT.scale_x)),
+        max(1, height * (style.background_scale_y or BACKGROUND_LAYOUT.scale_y))
 end
 
 local function get_frame_size()
@@ -157,7 +318,12 @@ local function get_frame_left_in_slot(node_width, frame_width)
 end
 
 local function get_frame_edge_inset_x(frame_width)
-    return min(max(0, FRAME_LAYOUT.visible_edge_inset_x or 0), max(0, (frame_width - 1) / 2))
+    local _, style = get_bar_style(get_db())
+    local inset = style.visible_edge_inset_x
+    if inset == nil then
+        inset = FRAME_LAYOUT.visible_edge_inset_x or 0
+    end
+    return min(max(0, inset), max(0, (frame_width - 1) / 2))
 end
 
 local function get_frame_edge_width(frame_width)
@@ -172,7 +338,8 @@ local function get_spacing_pixels(db)
     if spacing_setting == nil then
         spacing_setting = default_spacing
     end
-    return spacing_setting
+    local _, style = get_bar_style(db)
+    return spacing_setting + (style.spacing_offset or 0)
 end
 
 local function get_cursor_position()
@@ -235,6 +402,32 @@ local function set_atlas_sized(texture, atlas, width, height)
     texture:SetVertexColor(1, 1, 1, 1)
 end
 
+local function apply_slot_static_atlases(slot)
+    local _, style = get_bar_style(get_db())
+    local bg_width, bg_height = get_background_size()
+    local frame_width, frame_height = get_frame_size()
+
+    if slot.background_frame and slot.cover_frame then
+        if style.background_above_frame then
+            slot.background_frame:SetFrameLevel(slot.cover_frame:GetFrameLevel() + 1)
+        else
+            slot.background_frame:SetFrameLevel(slot.cover_frame:GetFrameLevel() - 2)
+        end
+    end
+
+    slot.background:ClearAllPoints()
+    slot.background:SetPoint(
+        "CENTER",
+        slot,
+        "CENTER",
+        style.background_offset_x or BACKGROUND_LAYOUT.offset_x,
+        style.background_offset_y or BACKGROUND_LAYOUT.offset_y
+    )
+    set_atlas_sized(slot.background, style.background, bg_width, bg_height)
+    set_atlas_sized(slot.cover, style.frame, frame_width, frame_height)
+    slot._static_style = style
+end
+
 local function set_bar_atlas(slot, atlas)
     local fill_width, fill_height = get_fill_size()
     slot.bar:SetStatusBarTexture(atlas)
@@ -247,9 +440,10 @@ end
 local function set_slot_progress(slot, progress)
     progress = max(0, min(progress or 0, 1))
 
-    if slot._bar_texture ~= NODE_FILL_ATLAS then
-        set_bar_atlas(slot, NODE_FILL_ATLAS)
-        slot._bar_texture = NODE_FILL_ATLAS
+    local _, style = get_bar_style(get_db())
+    if slot._bar_texture ~= style.fill then
+        set_bar_atlas(slot, style.fill)
+        slot._bar_texture = style.fill
     end
     slot.bar:SetValue(progress)
 end
@@ -268,8 +462,6 @@ end
 local function create_slot(parent, index)
     local width, height = get_node_size()
     local fill_width, fill_height = get_fill_size()
-    local bg_width, bg_height = get_background_size()
-    local frame_width, frame_height = get_frame_size()
     local slot = CreateFrame("Frame", addon_name .. "SkyridingVigorSlot" .. index, parent)
     slot:SetSize(width, height)
 
@@ -286,7 +478,6 @@ local function create_slot(parent, index)
     slot.background = slot.background_frame:CreateTexture(nil, "ARTWORK", nil, 0)
     slot.background:ClearAllPoints()
     slot.background:SetPoint("CENTER", slot, "CENTER", BACKGROUND_LAYOUT.offset_x, BACKGROUND_LAYOUT.offset_y)
-    set_atlas_sized(slot.background, NODE_BACKGROUND_ATLAS, bg_width, bg_height)
     slot.background:SetShown(SHOW_BACKGROUND_LAYER)
 
     slot.bar = CreateFrame("StatusBar", nil, slot)
@@ -297,9 +488,7 @@ local function create_slot(parent, index)
     slot.bar:SetFrameLevel(fill_level)
     slot.bar:SetMinMaxValues(0, 1)
     slot.bar:SetValue(0)
-    set_bar_atlas(slot, NODE_FILL_ATLAS)
     slot.bar:SetShown(SHOW_FILL_LAYER)
-    slot._bar_texture = NODE_FILL_ATLAS
     slot._fill_bounds_set = true
 
     slot.cover_frame = CreateFrame("Frame", nil, slot)
@@ -311,8 +500,11 @@ local function create_slot(parent, index)
     slot.cover:ClearAllPoints()
     slot.cover:SetPoint("CENTER", slot, "CENTER", FRAME_LAYOUT.offset_x, FRAME_LAYOUT.offset_y)
     slot.cover:SetDrawLayer("OVERLAY", 7)
-    set_atlas_sized(slot.cover, NODE_FRAME_ATLAS, frame_width, frame_height)
     slot.cover:SetShown(SHOW_FRAME_LAYER)
+    apply_slot_static_atlases(slot)
+    local _, style = get_bar_style(get_db())
+    set_bar_atlas(slot, style.fill)
+    slot._bar_texture = style.fill
 
     return slot
 end
@@ -330,23 +522,32 @@ function M.set_slot_state(index, state, progress)
         effective_progress = 0
     end
 
-    if slot._state == state and abs((slot._progress or -1) - effective_progress) < 0.001 then
+    local _, style = get_bar_style(get_db())
+    if slot._state == state and slot._static_style == style
+        and abs((slot._progress or -1) - effective_progress) < 0.001
+    then
         return
+    end
+
+    if slot._static_style ~= style then
+        apply_slot_static_atlases(slot)
+        slot._bar_texture = nil
+        slot._fill_bounds_set = false
     end
 
     set_slot_fill_bounds(slot)
     if state == "full" then
-        if slot._bar_texture ~= NODE_FILL_FULL_ATLAS then
-            set_bar_atlas(slot, NODE_FILL_FULL_ATLAS)
-            slot._bar_texture = NODE_FILL_FULL_ATLAS
+        if slot._bar_texture ~= style.fill_full then
+            set_bar_atlas(slot, style.fill_full)
+            slot._bar_texture = style.fill_full
         end
         slot.bar:SetValue(effective_progress)
     elseif state == "filling" then
         set_slot_progress(slot, effective_progress)
     else
-        if slot._bar_texture ~= NODE_FILL_ATLAS then
-            set_bar_atlas(slot, NODE_FILL_ATLAS)
-            slot._bar_texture = NODE_FILL_ATLAS
+        if slot._bar_texture ~= style.fill then
+            set_bar_atlas(slot, style.fill)
+            slot._bar_texture = style.fill
         end
         slot.bar:SetValue(effective_progress)
     end
@@ -377,12 +578,10 @@ local function ensure_decor(parent)
 
     M.decor_left = M.decor_left_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_left:SetAllPoints(M.decor_left_frame)
-    M.decor_left:SetAtlas(DECOR_ATLAS, false)
     M.decor_left:SetTexCoord(1, 0, 0, 1)
 
     M.decor_right = M.decor_right_frame:CreateTexture(nil, "ARTWORK", nil, -1)
     M.decor_right:SetAllPoints(M.decor_right_frame)
-    M.decor_right:SetAtlas(DECOR_ATLAS, false)
 end
 
 function M.ensure_frame()
@@ -448,10 +647,8 @@ end
 function M.set_wing_layout(values)
     if not values then return end
 
-    if values.node_gap_x ~= nil then WING_LAYOUT.node_gap_x = values.node_gap_x end
     if values.scale_x ~= nil then WING_LAYOUT.scale_x = values.scale_x end
     if values.scale_y ~= nil then WING_LAYOUT.scale_y = values.scale_y end
-    if values.offset_y ~= nil then WING_LAYOUT.offset_y = values.offset_y end
 
     M.invalidate_layout()
     if M.frame and M.refresh then
@@ -479,19 +676,27 @@ function M.apply_layout()
     local width, height = get_node_size()
     local frame_width, frame_height = get_frame_size()
     local decor_width, decor_height = get_decor_size()
-    local wing_width = decor_width * WING_LAYOUT.scale_x
-    local wing_height = decor_height * WING_LAYOUT.scale_y
+    local decor_style_key, decor_style = get_decor_style(db)
+    local wing_scale_x = decor_style.scale_x or WING_LAYOUT.scale_x
+    local wing_scale_y = decor_style.scale_y or WING_LAYOUT.scale_y
+    local wing_node_gap_x = get_decor_layout_number(db, decor_style_key, "decor_node_gap_x")
+    if wing_node_gap_x == nil then wing_node_gap_x = 0 end
+    local wing_offset_y = get_decor_layout_number(db, decor_style_key, "offset_y")
+    if wing_offset_y == nil then wing_offset_y = 0 end
+    local wing_width = decor_width * wing_scale_x
+    local wing_height = decor_height * wing_scale_y
     local frame_edge_inset_x = get_frame_edge_inset_x(frame_width)
     local frame_edge_width = get_frame_edge_width(frame_width)
     local nodes_width = (frame_edge_width * MAX_SLOTS) + (spacing * (MAX_SLOTS - 1))
-    local first_frame_edge_x = wing_width + WING_LAYOUT.node_gap_x
+    local first_frame_edge_x = wing_width + wing_node_gap_x
     local frame_edge_left_in_slot = get_frame_left_in_slot(width, frame_width) + frame_edge_inset_x
     local first_slot_x = first_frame_edge_x - frame_edge_left_in_slot
     local node_step = frame_edge_width + spacing
-    local right_decor_x = first_frame_edge_x + nodes_width + WING_LAYOUT.node_gap_x
+    local right_decor_x = first_frame_edge_x + nodes_width + wing_node_gap_x
     local total_width = right_decor_x + wing_width
     local total_height = max(height, frame_height, wing_height)
     local visual_frame = M.visual_frame
+    local style_key = get_bar_style(db)
     local center_x = frame._center_x
     local center_y = frame._center_y
     if center_x == nil or center_y == nil then
@@ -504,9 +709,9 @@ function M.apply_layout()
     local layout_signature = spacing .. ":" .. scale .. ":" .. total_width .. ":" .. total_height .. ":"
         .. first_slot_x .. ":" .. first_frame_edge_x .. ":" .. right_decor_x .. ":"
         .. node_step .. ":" .. frame_width .. ":" .. frame_height .. ":" .. frame_edge_width .. ":"
-        .. frame_edge_inset_x .. ":" .. WING_LAYOUT.node_gap_x .. ":"
-        .. WING_LAYOUT.scale_x .. ":" .. WING_LAYOUT.scale_y .. ":"
-        .. WING_LAYOUT.offset_y
+        .. frame_edge_inset_x .. ":" .. wing_node_gap_x .. ":"
+        .. wing_scale_x .. ":" .. wing_scale_y .. ":"
+        .. wing_offset_y .. ":" .. style_key .. ":" .. decor_style_key
     if M._layout_signature == layout_signature then
         M._layout_dirty = false
         return
@@ -532,6 +737,14 @@ function M.apply_layout()
     end
 
     if M.decor_left_frame and M.decor_right_frame and M.slots[1] and M.slots[MAX_SLOTS] then
+        if M.decor_left and M.decor_left._atlas ~= decor_style.atlas then
+            M.decor_left:SetAtlas(decor_style.atlas, false)
+            M.decor_left._atlas = decor_style.atlas
+        end
+        if M.decor_right and M.decor_right._atlas ~= decor_style.atlas then
+            M.decor_right:SetAtlas(decor_style.atlas, false)
+            M.decor_right._atlas = decor_style.atlas
+        end
         M.decor_left_frame:ClearAllPoints()
         M.decor_right_frame:ClearAllPoints()
         M.decor_left_frame:SetSize(wing_width, wing_height)
@@ -541,14 +754,14 @@ function M.apply_layout()
             visual_frame or frame,
             "LEFT",
             wing_width / 2,
-            WING_LAYOUT.offset_y
+            wing_offset_y
         )
         M.decor_right_frame:SetPoint(
             "CENTER",
             visual_frame or frame,
             "LEFT",
             right_decor_x + (wing_width / 2),
-            WING_LAYOUT.offset_y
+            wing_offset_y
         )
     end
 end

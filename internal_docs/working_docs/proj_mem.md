@@ -247,6 +247,9 @@ Important `skyriding_vigor` keys:
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
+- `style`: atlas style key for the vigor nodes. Defaults to `default`; the settings dropdown also exposes `storm_race`, which uses Blizzard `dragonriding_sgvigor_*` atlases where available.
+- `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
+- `decor_layouts.<decor_style>.decor_node_gap_x` and `.offset_y`: per-end-decoration-style X/Y UI overrides. Missing values initialize from `DECOR_STYLES`.
 - `spacing` and `scale`: presentation settings. Slider ranges/steps live near bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`.
 - `spacing` is a 0-25px user-facing range at 0.5 steps. Runtime layout applies it directly between visible `FRAME_LAYOUT` frame edges. `FRAME_LAYOUT.visible_edge_inset_x` compensates for transparent atlas padding; node dimensions come only from `dragonriding_vigor_frame` atlas metadata.
 - Slider reset buttons must write the DB and run their callback even when the slider already shows the default. Layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache invalidates even when values appear unchanged.
@@ -261,10 +264,12 @@ Important `skyriding_vigor` keys:
 - Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, `IsFlying()`, or the mounted advanced-flight fallback (`IsMounted()` + `IsAdvancedFlyableArea()`). Grounded mounted visibility is allowed; `fade_when_full` handles idle/full states.
 - `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` restores full alpha even when charges are full; plain ground movement must not.
 - Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
-- Default Vigor node dimensions come from Blizzard atlas metadata for `dragonriding_vigor_frame`; decor wing dimensions come from `C_Texture.GetAtlasInfo("dragonriding_vigor_decor")`. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
+- Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
+- Skyriding Vigor node and end-decoration style selection is manual, DB-backed, and validated in `sv_bar.lua`. Missing or unknown style keys fall back to `default`.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
-- Vigor fill/background dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`; tune scale/offset there instead of changing node dimensions or adding alternate fill sizing paths.
-- Skyriding Vigor wing placement is centralized in the local `WING_LAYOUT` table in `sv_bar.lua`; tune `node_gap_x`, wing scale, and shared `offset_y` instead of changing node sizing.
+- Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES`.
+- For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.
+- Skyriding Vigor end-decoration placement uses per-style defaults in `DECOR_STYLES` in `sv_bar.lua` (`decor_node_gap_x`, `offset_y`, `scale_x`, `scale_y`), with saved user X/Y overrides under `db.decor_layouts`. X/Y no longer use shared `WING_LAYOUT` fallback values.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
 - Fill Test uses simulated charge data through the normal `M.refresh()` path and the normal Skyriding Vigor ticker cadence. Do not reintroduce a separate faster fill-test render ticker unless the behavior intentionally diverges from runtime display.

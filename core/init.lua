@@ -43,7 +43,7 @@ addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.tenth_sec
 -- fifth_sec looks jittery 
 
 -- CPU profile hotness: moderate; visible in broad profile but already 0.2s.
-addon.UPDATE_INTERVALS.skyriding_vigor_tick = addon.UPDATE_INTERVALS.fifth_sec
+addon.UPDATE_INTERVALS.skyriding_vigor_tick = addon.UPDATE_INTERVALS.tenth_sec
 
 
 function addon.get_version()

@@ -26,7 +26,7 @@ Slash command: `/lst`
 ### Skyriding Vigor
 
 - Restores a compact player vigor display using Blizzard UI assets.
-- Adjustable position, size, spacing, and fade behavior.
+- Adjustable position, size, spacing, style, and fade behavior.
 
 ### Sound Levels
 
@@ -61,7 +61,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, and interface transparency options.
-- Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, and fade behavior.
+- Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, style, and fade behavior.
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 

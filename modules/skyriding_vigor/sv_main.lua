@@ -71,6 +71,19 @@ local function normalize_db(db)
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
     db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_SPECS.fade_length)
+    if M.get_valid_bar_style_key then
+        db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
+    else
+        db.style = db.style or DEFAULTS.style or "default"
+    end
+    if M.get_valid_decor_style_key then
+        db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
+    else
+        db.decor_style = db.decor_style or DEFAULTS.decor_style or "default"
+    end
+    if M.get_decor_layout_table then
+        M.get_decor_layout_table(db, db.decor_style, true)
+    end
     db.position = db.position or {}
     db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_SPECS.x_position)
     db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_SPECS.y_position)
@@ -346,6 +359,79 @@ local function sync_slider_controls(db)
     M._syncing_slider_controls = nil
 end
 
+local function get_decor_position_field(axis)
+    if axis == "x" then
+        return "decor_node_gap_x", "decor_x_position"
+    elseif axis == "y" then
+        return "offset_y", "decor_y_position"
+    end
+    return nil
+end
+
+function M.get_decor_position_axis(axis)
+    local field = get_decor_position_field(axis)
+    if not field then return 0 end
+    local db = get_db()
+    if not db then return 0 end
+    local style_key = db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT
+    local layout = M.get_decor_layout_table and M.get_decor_layout_table(db, style_key, true)
+    local value = layout and layout[field]
+    if value == nil and M.get_decor_layout_default then
+        value = M.get_decor_layout_default(style_key, field)
+    end
+    return value or 0
+end
+
+function M.get_decor_position_default(axis)
+    local field = get_decor_position_field(axis)
+    if not field then return 0 end
+    local db = get_db()
+    local style_key = db and db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT
+    if M.get_decor_layout_default then
+        return M.get_decor_layout_default(style_key, field) or 0
+    end
+    return 0
+end
+
+function M.set_decor_position_axis(axis, value)
+    local field, spec_key = get_decor_position_field(axis)
+    if not field then return end
+    local db = get_db()
+    if not db then return end
+    local style_key = db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT
+    local fallback = M.get_decor_layout_default and M.get_decor_layout_default(style_key, field) or 0
+    local layout = M.get_decor_layout_table and M.get_decor_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout[field] = clamp_number(value, fallback, SETTING_SPECS[spec_key])
+    M.refresh_layout()
+end
+
+function M.sync_decor_position_controls(db)
+    db = db or get_db()
+    if not db then return end
+
+    local x_slider = M.controls.decor_x_position
+    if x_slider and x_slider.slider then
+        local value = M.get_decor_position_axis("x")
+        if x_slider.slider:GetValue() ~= value then
+            x_slider._suppress_callback = true
+            x_slider.slider:SetValue(value)
+            x_slider._suppress_callback = nil
+        end
+    end
+
+    local y_slider = M.controls.decor_y_position
+    if y_slider and y_slider.slider then
+        local value = M.get_decor_position_axis("y")
+        if y_slider.slider:GetValue() ~= value then
+            y_slider._suppress_callback = true
+            y_slider.slider:SetValue(value)
+            y_slider._suppress_callback = nil
+        end
+    end
+end
+
 function M.refresh()
     local db = get_db()
     if not db then return end
@@ -472,7 +558,16 @@ function M.on_reset_complete()
     if snap_cb and snap_cb.SetChecked then
         snap_cb:SetChecked(db.snap_to_grid or false)
     end
+    local style_dropdown = M.controls.style
+    if style_dropdown and style_dropdown.SetValue then
+        style_dropdown:SetValue(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
+    end
+    local decor_style_dropdown = M.controls.decor_style
+    if decor_style_dropdown and decor_style_dropdown.SetValue then
+        decor_style_dropdown:SetValue(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
+    end
     sync_slider_controls(db)
+    M.sync_decor_position_controls(db)
     sync_position_controls(db)
     sync_fill_test_button()
     M.apply_position()
@@ -484,8 +579,16 @@ function M.set_db_value(key, value)
     if not db then return end
     if key == "enabled" then
         value = value and true or false
+    elseif key == "style" and M.get_valid_bar_style_key then
+        value = M.get_valid_bar_style_key(value)
+    elseif key == "decor_style" and M.get_valid_decor_style_key then
+        value = M.get_valid_decor_style_key(value)
     end
     db[key] = value
+    if key == "decor_style" and M.get_decor_layout_table then
+        M.get_decor_layout_table(db, value, true)
+        M.sync_decor_position_controls(db)
+    end
     if key == "enabled" and not value then
         disable_runtime()
         sync_runtime_events(false)
