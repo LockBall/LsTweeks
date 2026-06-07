@@ -9,6 +9,7 @@
 - Storm Race node background uses `dragonriding_sgvigor_background`, but it does not share the default background sizing. `BAR_STYLES` now owns per-style background scale/offset fields; Storm Race starts at full node scale while Default preserves the old 0.5 scale.
 - End Decor UI now uses one dropdown plus X/Y sliders. The sliders write per-style overrides to `skyriding_vigor.decor_layouts` so Default and Storm Race can be tuned independently from the same controls.
 - Removed the old shared end-decoration X/Y fallback from `WING_LAYOUT`; end-decor X/Y now comes from `DECOR_STYLES` defaults or saved `decor_layouts` overrides.
+- Node Scale is now style-specific via `skyriding_vigor.style_layouts.<style>.scale`; switching node style resyncs the Scale slider to that style's remembered value.
 
 ## Resolved During Review
 

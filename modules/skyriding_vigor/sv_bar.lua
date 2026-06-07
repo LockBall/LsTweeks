@@ -77,7 +77,7 @@ local DECOR_STYLES = {
 local DECOR_STYLE_ORDER = { "default", "storm_race" }
 local GRID_SIZE = 20
 
-local SCALE_RANGE = { min = 0.5, max = 2, step = 0.05 }
+local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
@@ -187,6 +187,37 @@ function M.get_valid_bar_style_key(key)
         return key
     end
     return DEFAULT_STYLE_KEY
+end
+
+function M.get_style_layout_default(style_key, field)
+    if field == "scale" then
+        return (get_defaults().scale or 1)
+    end
+    return nil
+end
+
+function M.get_style_layout_table(db, style_key, create, initial_scale)
+    if not db then return nil end
+    style_key = M.get_valid_bar_style_key(style_key or db.style or DEFAULT_STYLE_KEY)
+    if create then
+        db.style_layouts = db.style_layouts or {}
+        db.style_layouts[style_key] = db.style_layouts[style_key] or {}
+        local layout = db.style_layouts[style_key]
+        if layout.scale == nil then
+            layout.scale = initial_scale or M.get_style_layout_default(style_key, "scale")
+        end
+        return layout
+    end
+    return db.style_layouts and db.style_layouts[style_key] or nil
+end
+
+local function get_style_layout_number(db, style_key, field)
+    local layout = M.get_style_layout_table(db, style_key, false)
+    local value = layout and tonumber(layout[field])
+    if value == nil then
+        value = M.get_style_layout_default(style_key, field)
+    end
+    return value
 end
 
 local function get_decor_style(db)
@@ -672,7 +703,8 @@ function M.apply_layout()
 
     local defaults = get_defaults()
     local spacing = get_spacing_pixels(db)
-    local scale = db.scale or defaults.scale or 1
+    local style_key = get_bar_style(db)
+    local scale = get_style_layout_number(db, style_key, "scale") or defaults.scale or 1
     local width, height = get_node_size()
     local frame_width, frame_height = get_frame_size()
     local decor_width, decor_height = get_decor_size()
@@ -696,7 +728,6 @@ function M.apply_layout()
     local total_width = right_decor_x + wing_width
     local total_height = max(height, frame_height, wing_height)
     local visual_frame = M.visual_frame
-    local style_key = get_bar_style(db)
     local center_x = frame._center_x
     local center_y = frame._center_y
     if center_x == nil or center_y == nil then

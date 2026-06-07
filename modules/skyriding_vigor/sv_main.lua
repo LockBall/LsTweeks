@@ -76,6 +76,12 @@ local function normalize_db(db)
     else
         db.style = db.style or DEFAULTS.style or "default"
     end
+    if M.get_style_layout_table then
+        local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
+        if style_layout then
+            style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_SPECS.scale)
+        end
+    end
     if M.get_valid_decor_style_key then
         db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
     else
@@ -347,7 +353,12 @@ local function sync_slider_controls(db)
     for _, key in ipairs(SLIDER_KEYS) do
         local control = M.controls[key]
         if control and control.slider then
-            local value = db[key]
+            local value
+            if key == "scale" and M.get_style_scale then
+                value = M.get_style_scale()
+            else
+                value = db[key]
+            end
             if value == nil then value = DEFAULTS[key] end
             if value ~= nil and control.slider:GetValue() ~= value then
                 control._suppress_callback = true
@@ -357,6 +368,31 @@ local function sync_slider_controls(db)
         end
     end
     M._syncing_slider_controls = nil
+end
+
+function M.get_style_scale()
+    local db = get_db()
+    if not db then return DEFAULTS.scale or 1 end
+    local style_key = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    local layout = M.get_style_layout_table and M.get_style_layout_table(db, style_key, true)
+    local value = layout and layout.scale
+    if value == nil and M.get_style_layout_default then
+        value = M.get_style_layout_default(style_key, "scale")
+    end
+    return value or DEFAULTS.scale or 1
+end
+
+function M.set_style_scale(value)
+    local db = get_db()
+    if not db then return end
+    local style_key = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    local fallback = db.scale or DEFAULTS.scale or 1
+    local layout = M.get_style_layout_table and M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.scale = clamp_number(value, fallback, SETTING_SPECS.scale)
+    db.scale = layout.scale
+    M.refresh_layout()
 end
 
 local function get_decor_position_field(axis)
@@ -581,10 +617,20 @@ function M.set_db_value(key, value)
         value = value and true or false
     elseif key == "style" and M.get_valid_bar_style_key then
         value = M.get_valid_bar_style_key(value)
+    elseif key == "scale" and M.set_style_scale then
+        M.set_style_scale(value)
+        return
     elseif key == "decor_style" and M.get_valid_decor_style_key then
         value = M.get_valid_decor_style_key(value)
     end
     db[key] = value
+    if key == "style" and M.get_style_layout_table then
+        local style_layout = M.get_style_layout_table(db, value, true)
+        if style_layout and style_layout.scale ~= nil then
+            db.scale = clamp_number(style_layout.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
+        end
+        sync_slider_controls(db)
+    end
     if key == "decor_style" and M.get_decor_layout_table then
         M.get_decor_layout_table(db, value, true)
         M.sync_decor_position_controls(db)

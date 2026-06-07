@@ -1,10 +1,11 @@
--- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb).
+-- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb, opts).
 -- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
 local addon_name, addon = ...
 
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
-function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback)
+function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback, opts)
+    opts = opts or {}
     local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     container:SetSize(130, 95)
     container:SetBackdrop({
@@ -44,11 +45,24 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     -- Min/Max labels
     local min_lbl = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     min_lbl:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", slider_inset, control_gap)
-    min_lbl:SetText(min_v)
+    local function format_display_value(v)
+        if opts.display_decimals then
+            return format("%." .. opts.display_decimals .. "f", v)
+        end
+        if step >= 1 then
+            return tostring(math.floor(v + 0.5))
+        end
+        if step >= 0.1 then
+            return format("%.1f", v)
+        end
+        return format("%.2f", v)
+    end
+
+    min_lbl:SetText(format_display_value(min_v))
 
     local max_lbl = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     max_lbl:SetPoint("BOTTOMRIGHT", slider, "TOPRIGHT", -slider_inset, control_gap)
-    max_lbl:SetText(max_v)
+    max_lbl:SetText(format_display_value(max_v))
 
     -- Edit box
     local eb = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
@@ -79,16 +93,6 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     reset:SetText("Reset")
     reset:SetNormalFontObject("GameFontNormalSmall")
 
-
-    local function format_display_value(v)
-        if step >= 1 then
-            return tostring(math.floor(v + 0.5))
-        end
-        if step >= 0.1 then
-            return format("%.1f", v)
-        end
-        return format("%.2f", v)
-    end
 
     eb:SetText(format_display_value((db_table and db_table[db_key]) or min_v))
 

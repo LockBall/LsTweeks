@@ -248,9 +248,10 @@ Important `skyriding_vigor` keys:
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `style`: atlas style key for the vigor nodes. Defaults to `default`; the settings dropdown also exposes `storm_race`, which uses Blizzard `dragonriding_sgvigor_*` atlases where available.
+- `style_layouts.<style>.scale`: per-node-style scale override used by the Scale slider. Legacy `scale` remains as the first active style seed/compatibility value.
 - `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
 - `decor_layouts.<decor_style>.decor_node_gap_x` and `.offset_y`: per-end-decoration-style X/Y UI overrides. Missing values initialize from `DECOR_STYLES`.
-- `spacing` and `scale`: presentation settings. Slider ranges/steps live near bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`.
+- `spacing` and `scale`: presentation settings. Slider ranges/steps live near bar layout params in `sv_bar.lua`; DB defaults stay in `sv_defaults.lua`. Scale range is `0.40-2.00` at `0.05` steps and displays two decimals.
 - `spacing` is a 0-25px user-facing range at 0.5 steps. Runtime layout applies it directly between visible `FRAME_LAYOUT` frame edges. `FRAME_LAYOUT.visible_edge_inset_x` compensates for transparent atlas padding; node dimensions come only from `dragonriding_vigor_frame` atlas metadata.
 - Slider reset buttons must write the DB and run their callback even when the slider already shows the default. Layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache invalidates even when values appear unchanged.
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
@@ -266,6 +267,7 @@ Important `skyriding_vigor` keys:
 - Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 - Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
 - Skyriding Vigor node and end-decoration style selection is manual, DB-backed, and validated in `sv_bar.lua`. Missing or unknown style keys fall back to `default`.
+- Skyriding Vigor Scale is style-specific. `M.set_db_value("scale", value)` routes to the active `style_layouts` entry and style switching resyncs the Scale slider.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES`.
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.

@@ -179,7 +179,8 @@ function M.BuildSettings(parent)
         db,
         "scale",
         defaults,
-        set_setting_from_slider("scale")
+        set_setting_from_slider("scale"),
+        { display_decimals = 2 }
     )
     M.controls.scale = scale_slider
     scale_slider:SetPoint("TOPLEFT", y_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
@@ -237,8 +238,8 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.decor_style = decor_style_dropdown
-    decor_style_dropdown:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -(cfg.slider_row_height + cfg.slider_row_gap_y))
-    add_row_separator(parent, decor_style_dropdown, math.floor(cfg.grid_row_gap / 2))
+    decor_style_dropdown:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -(cfg.slider_row_height + cfg.slider_row_gap_y) - 25)
+    add_row_separator(parent, x_slider, -(cfg.slider_row_height + cfg.slider_row_gap_y) + math.floor(cfg.grid_row_gap / 2))
 
     local decor_x_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorXPosition",
@@ -255,7 +256,7 @@ function M.BuildSettings(parent)
         end
     )
     M.controls.decor_x_position = decor_x_slider
-    decor_x_slider:SetPoint("TOPLEFT", decor_style_dropdown, "TOPRIGHT", cfg.slider_gap_x, 0)
+    decor_x_slider:SetPoint("TOPLEFT", x_slider, "TOPLEFT", col_step_x, -(cfg.slider_row_height + cfg.slider_row_gap_y))
 
     local decor_y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorYPosition",
@@ -278,7 +279,7 @@ function M.BuildSettings(parent)
         M.set_db_value("fade_when_full", is_checked)
     end)
     M.controls.fade_when_full = fade_cb
-    fade_container:SetPoint("TOPLEFT", decor_style_dropdown, "TOPLEFT", 0, -(cfg.slider_row_height + cfg.slider_row_gap_y))
+    fade_container:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2))
     add_row_separator(parent, fade_container, math.floor(cfg.grid_row_gap / 2))
 
     local fade_alpha_slider = addon.CreateSliderWithBox(
