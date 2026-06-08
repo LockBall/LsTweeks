@@ -17,6 +17,10 @@
 - Settings now has top-level module toggles stored under `Ls_Tweeks_DB.modules`. Runtime stop/start hooks were added for Player Frame, Sound Levels, Skyriding Vigor, and Aura Frames; Aura Frames uses a best-effort disable path that hides/unregisters owned runtime frames instead of destroying frame pools.
 - `sv_main.lua` still mixes DB normalization, ticker/event routing, and settings mutation. It remains workable; future cleanup could split DB normalization or setting mutation if either grows.
 - Visibility originally allowed any readable charges plus `IsFlying()` or `IsMounted()` in `IsAdvancedFlyableArea()`, which made the bar display on normal non-skyriding mounts. Visibility is now gated by `GetGlidingInfo()`'s `can_glide` result for mounted/flying fallback paths.
+- WoW `BackdropTemplate` does not provide a built-in rounded/chamfered geometry option for frame backgrounds. Blizzard-style rounded/chamfered panels are usually texture/NineSlice art, not a shape flag on plain color backdrops.
+- Aura Frames chamfered frame backgrounds were deferred after custom texture-strip implementations proved visually fiddly. Revisit with dedicated NineSlice/custom texture assets rather than plain backdrop geometry.
+- A future plain-color rounded/chamfered Aura Frames background could use alpha-masked texture art or NineSlice assets tinted with `SetVertexColor`; WoW does not expose a simpler colored rounded-rectangle primitive.
+- Internet review found Masque skin repos as the closest open addon examples for shaped WoW UI texture assets, but most are button/icon skins rather than resizable plain panels. Blizzard UI texture mirrors are useful references but should not be treated as open-source vendorable assets.
 
 ## Resolved During Review
 
