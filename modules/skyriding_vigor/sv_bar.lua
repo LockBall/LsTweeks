@@ -68,6 +68,7 @@ local BAR_STYLES = {
         background_offset_y = 0.00,
         background_above_frame = false,
         fill_color = { r = 1, g = 1, b = 1, a = 1 },
+        fill_add_alpha = 0.18,
     },
     storm_race = {
         label = "Storm Race",
@@ -90,6 +91,7 @@ local BAR_STYLES = {
         background_offset_y = 0.00,
         background_above_frame = false,
         fill_color = { r = 1, g = 1, b = 1, a = 1 },
+        fill_add_alpha = 0.18,
     },
 }
 local BAR_STYLE_ORDER = { "default", "storm_race" }
@@ -128,6 +130,7 @@ local DECOR_STYLE_ORDER = { "default", "storm_race" }
 local GRID_SIZE = 20
 
 local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
+local FILL_ADD_ALPHA_RANGE = { min = 0, max = 1, step = 0.01 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
@@ -148,6 +151,7 @@ local FILL_LAYOUT = {
     offset_y = 0.00,
 }
 local SHOW_FILL_LAYER = true
+local FILL_ADD_ALPHA = 0.18
 
 local FRAME_LAYOUT = {
     scale_x = 1.00,
@@ -199,6 +203,7 @@ end
 M.SETTING_SPECS = {
     fade_alpha = FADE_ALPHA_RANGE,
     fade_length = FADE_LENGTH_RANGE,
+    fill_add_alpha = FILL_ADD_ALPHA_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
     decor_scale = SCALE_RANGE,
@@ -207,7 +212,7 @@ M.SETTING_SPECS = {
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
-M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale" }
+M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale", "fill_add_alpha" }
 M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,
@@ -329,6 +334,8 @@ function M.get_style_layout_default(style_key, field)
     elseif field == "fill_color" then
         local color = style and style.fill_color or { r = 1, g = 1, b = 1, a = 1 }
         return { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
+    elseif field == "fill_add_alpha" then
+        return style and style.fill_add_alpha or FILL_ADD_ALPHA
     end
     return nil
 end
@@ -345,6 +352,9 @@ function M.get_style_layout_table(db, style_key, create, initial_scale)
         end
         if layout.fill_color == nil then
             layout.fill_color = M.get_style_layout_default(style_key, "fill_color")
+        end
+        if layout.fill_add_alpha == nil then
+            layout.fill_add_alpha = M.get_style_layout_default(style_key, "fill_add_alpha")
         end
         layout.node_color = get_valid_node_color_key(BAR_STYLES[style_key], layout.node_color or M.get_style_layout_default(style_key, "node_color"))
         return layout
@@ -372,7 +382,7 @@ function M.get_style_fill_color_value(db, style_key)
     return color
 end
 
-local function fill_color_needs_desaturation(color)
+local function fill_color_is_custom(color)
     if not color then return false end
     return abs((color.r or 1) - 1) > 0.001
         or abs((color.g or 1) - 1) > 0.001
@@ -382,8 +392,17 @@ end
 local function apply_fill_texture_color(texture, color)
     if not texture then return end
     color = color or { r = 1, g = 1, b = 1, a = 1 }
-    texture:SetDesaturated(fill_color_needs_desaturation(color))
+    texture:SetDesaturated(fill_color_is_custom(color))
     texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+end
+
+local function apply_fill_boost_texture_color(texture, color)
+    if not texture then return end
+    color = color or { r = 1, g = 1, b = 1, a = 1 }
+    local add_alpha = M.get_style_fill_add_alpha and M.get_style_fill_add_alpha() or FILL_ADD_ALPHA
+    texture:SetDesaturated(true)
+    texture:SetBlendMode("ADD")
+    texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, (color.a or 1) * add_alpha)
 end
 
 function M.get_node_color()
@@ -473,6 +492,42 @@ function M.set_style_fill_color(color)
         b = color.b or 1,
         a = color.a or 1,
     }
+    if M.apply_fill_color then
+        M.apply_fill_color()
+    elseif M.refresh then
+        M.refresh()
+    end
+end
+
+function M.get_style_fill_add_alpha()
+    local db = get_db()
+    if not db then return FILL_ADD_ALPHA end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local layout = M.get_style_layout_table(db, style_key, true)
+    local value = layout and layout.fill_add_alpha
+    if value == nil then
+        value = M.get_style_layout_default(style_key, "fill_add_alpha")
+    end
+    return clamp_number(value, FILL_ADD_ALPHA, M.SETTING_SPECS and M.SETTING_SPECS.fill_add_alpha)
+end
+
+function M.get_style_fill_add_alpha_default()
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    return M.get_style_layout_default(style_key, "fill_add_alpha") or FILL_ADD_ALPHA
+end
+
+function M.set_style_fill_add_alpha(value)
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local layout = M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_SPECS and M.SETTING_SPECS.fill_add_alpha)
     if M.apply_fill_color then
         M.apply_fill_color()
     elseif M.refresh then
@@ -877,10 +932,20 @@ local function set_bar_atlas(slot, atlas)
     local fill_width, fill_height = get_fill_size()
     slot.bar:SetStatusBarTexture(atlas)
     local texture = slot.bar:GetStatusBarTexture()
+    local boost_texture
+    if slot.fill_boost then
+        slot.fill_boost:SetStatusBarTexture(atlas)
+        boost_texture = slot.fill_boost:GetStatusBarTexture()
+    end
     if texture then
         set_atlas_sized(texture, atlas, fill_width, fill_height)
         local color = M.get_style_fill_color_value(get_db())
         apply_fill_texture_color(texture, color)
+        if boost_texture then
+            set_atlas_sized(boost_texture, atlas, fill_width, fill_height)
+            apply_fill_boost_texture_color(boost_texture, color)
+            slot.fill_boost:SetShown(SHOW_FILL_LAYER and fill_color_is_custom(color) and M.get_style_fill_add_alpha() > 0)
+        end
     end
 end
 
@@ -891,6 +956,11 @@ function M.apply_fill_color()
         local texture = slot and slot.bar and slot.bar:GetStatusBarTexture()
         if texture then
             apply_fill_texture_color(texture, color)
+        end
+        local boost_texture = slot and slot.fill_boost and slot.fill_boost:GetStatusBarTexture()
+        if boost_texture then
+            apply_fill_boost_texture_color(boost_texture, color)
+            slot.fill_boost:SetShown(SHOW_FILL_LAYER and fill_color_is_custom(color) and M.get_style_fill_add_alpha() > 0)
         end
     end
 end
@@ -904,6 +974,9 @@ local function set_slot_progress(slot, progress)
         slot._bar_texture = style.fill
     end
     slot.bar:SetValue(progress)
+    if slot.fill_boost then
+        slot.fill_boost:SetValue(progress)
+    end
 end
 
 local function set_slot_fill_bounds(slot)
@@ -914,6 +987,12 @@ local function set_slot_fill_bounds(slot)
     slot.bar:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
     slot.bar:SetSize(fill_width, fill_height)
     slot.bar:SetMinMaxValues(0, 1)
+    if slot.fill_boost then
+        slot.fill_boost:ClearAllPoints()
+        slot.fill_boost:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+        slot.fill_boost:SetSize(fill_width, fill_height)
+        slot.fill_boost:SetMinMaxValues(0, 1)
+    end
     slot._fill_bounds_set = true
 end
 
@@ -948,6 +1027,16 @@ local function create_slot(parent, index)
     slot.bar:SetValue(0)
     slot.bar:SetShown(SHOW_FILL_LAYER)
     slot._fill_bounds_set = true
+
+    slot.fill_boost = CreateFrame("StatusBar", nil, slot)
+    slot.fill_boost:SetOrientation("VERTICAL")
+    slot.fill_boost:ClearAllPoints()
+    slot.fill_boost:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.fill_boost:SetSize(fill_width, fill_height)
+    slot.fill_boost:SetFrameLevel(fill_level)
+    slot.fill_boost:SetMinMaxValues(0, 1)
+    slot.fill_boost:SetValue(0)
+    slot.fill_boost:Hide()
 
     slot.cover_frame = CreateFrame("Frame", nil, slot)
     slot.cover_frame:ClearAllPoints()
@@ -1002,6 +1091,7 @@ function M.set_slot_state(index, state, progress)
             slot._bar_texture = style.fill_full
         end
         slot.bar:SetValue(effective_progress)
+        slot.fill_boost:SetValue(effective_progress)
     elseif state == "filling" then
         set_slot_progress(slot, effective_progress)
     else
@@ -1010,6 +1100,7 @@ function M.set_slot_state(index, state, progress)
             slot._bar_texture = style.fill
         end
         slot.bar:SetValue(effective_progress)
+        slot.fill_boost:SetValue(effective_progress)
     end
     slot._state = state
     slot._progress = effective_progress

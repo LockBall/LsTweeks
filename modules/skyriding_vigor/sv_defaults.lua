@@ -24,9 +24,11 @@ defs.defaults = {
         style_layouts = {
             default = {
                 fill_color = { r = 1, g = 1, b = 1, a = 1 },
+                fill_add_alpha = 0.18,
             },
             storm_race = {
                 fill_color = { r = 1, g = 1, b = 1, a = 1 },
+                fill_add_alpha = 0.18,
             },
         },
         position = {

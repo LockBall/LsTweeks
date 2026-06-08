@@ -40,6 +40,7 @@ local STRINGS = {
     style = "Style",
     node_color = "Node Color",
     fill_color = "Fill Color",
+    fill_add = "Fill Add",
     decor_style = "End Decor",
     decor_color = "Decor Color",
     decor_x_position = "End Decor X",
@@ -118,6 +119,8 @@ function M.sync_slider_controls(db)
             local value
             if key == "scale" and M.get_style_scale then
                 value = M.get_style_scale()
+            elseif key == "fill_add_alpha" and M.get_style_fill_add_alpha then
+                value = M.get_style_fill_add_alpha()
             else
                 value = db[key]
             end
@@ -245,6 +248,7 @@ function M.BuildSettings(parent)
     local y_spec = get_spec("y_position")
     local scale_spec = get_spec("scale")
     local spacing_spec = get_spec("spacing")
+    local fill_add_spec = get_spec("fill_add_alpha")
     local decor_scale_spec = get_spec("decor_scale")
     local decor_x_spec = get_spec("decor_x_position")
     local decor_y_spec = get_spec("decor_y_position")
@@ -303,7 +307,7 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.style = style_dropdown
-    style_dropdown:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 2, 0)
+    style_dropdown:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 3, 0)
 
     local node_color_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorNodeColor",
@@ -352,6 +356,45 @@ function M.BuildSettings(parent)
     end)
     M.controls.fill_color = fill_color_picker
     fill_color_picker:SetPoint("TOPLEFT", fill_test_button, "BOTTOMLEFT", 0, cfg.row_gap_y * -1)
+
+    local fill_add_proxy = setmetatable({}, {
+        __index = function(_, key)
+            if key == "fill_add_alpha" then
+                return M.get_style_fill_add_alpha and M.get_style_fill_add_alpha() or 0.18
+            end
+            return nil
+        end,
+        __newindex = function(_, key, value)
+            if key == "fill_add_alpha" then
+                M.set_style_fill_add_alpha(value)
+            end
+        end,
+    })
+    local fill_add_defaults_proxy = setmetatable({}, {
+        __index = function(_, key)
+            if key == "fill_add_alpha" then
+                return M.get_style_fill_add_alpha_default and M.get_style_fill_add_alpha_default() or 0.18
+            end
+            return nil
+        end,
+    })
+    local fill_add_slider = addon.CreateSliderWithBox(
+        addon_name .. "SkyridingVigorFillAdd",
+        parent,
+        STRINGS.fill_add,
+        fill_add_spec.min,
+        fill_add_spec.max,
+        fill_add_spec.step,
+        fill_add_proxy,
+        "fill_add_alpha",
+        fill_add_defaults_proxy,
+        function(value)
+            M.set_style_fill_add_alpha(value)
+        end,
+        { display_decimals = 2 }
+    )
+    M.controls.fill_add_alpha = fill_add_slider
+    fill_add_slider:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 2, 0)
 
     db.position = db.position or {}
     local default_position = defaults.position or {}

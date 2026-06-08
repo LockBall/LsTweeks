@@ -66,6 +66,8 @@ local function normalize_db(db)
         local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
         if style_layout then
             style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_SPECS.scale)
+            local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.18
+            style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_SPECS.fill_add_alpha)
         end
     end
     if M.get_valid_decor_style_key then
@@ -343,6 +345,9 @@ function M.set_db_value(key, value)
         value = M.get_valid_bar_style_key(value)
     elseif key == "scale" and M.set_style_scale then
         M.set_style_scale(value)
+        return
+    elseif key == "fill_add_alpha" and M.set_style_fill_add_alpha then
+        M.set_style_fill_add_alpha(value)
         return
     elseif key == "node_color" and M.set_node_color then
         M.set_node_color(value)
