@@ -16,6 +16,7 @@
 - Fill Color picker was added as a per-node-style tint stored in `skyriding_vigor.style_layouts.<style>.fill_color`. Non-white fill colors now auto-desaturate the fill texture before tinting. A per-style Fill Brightness slider was tested and discarded because RGB multiplication plus channel clamping shifted selected hues unpredictably.
 - Settings now has top-level module toggles stored under `Ls_Tweeks_DB.modules`. Runtime stop/start hooks were added for Player Frame, Sound Levels, Skyriding Vigor, and Aura Frames; Aura Frames uses a best-effort disable path that hides/unregisters owned runtime frames instead of destroying frame pools.
 - `sv_main.lua` still mixes DB normalization, ticker/event routing, and settings mutation. It remains workable; future cleanup could split DB normalization or setting mutation if either grows.
+- Visibility originally allowed any readable charges plus `IsFlying()` or `IsMounted()` in `IsAdvancedFlyableArea()`, which made the bar display on normal non-skyriding mounts. Visibility is now gated by `GetGlidingInfo()`'s `can_glide` result for mounted/flying fallback paths.
 
 ## Resolved During Review
 

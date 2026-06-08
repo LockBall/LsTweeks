@@ -208,13 +208,14 @@ function M.refresh()
     M.apply_layout()
     M.set_move_mode(db.move_mode)
 
-    local is_gliding, _ = M.get_gliding_state()
+    local is_gliding, can_glide = M.get_gliding_state()
     local current, max_charges, start_time, duration = M.get_charge_info()
     local max_slots = M.MAX_SLOTS
 
     if M._fill_test_enabled then
         current, max_charges, start_time, duration = get_fill_test_charge_info()
         is_gliding = true
+        can_glide = true
     end
 
     if not M._fill_test_enabled and db.move_mode and not current then
@@ -222,7 +223,12 @@ function M.refresh()
     end
 
     local should_show = current and max_charges
-        and (M._fill_test_enabled or db.move_mode or is_gliding or M.is_player_flying() or M.is_mounted_in_advanced_flyable_area())
+        and (
+            M._fill_test_enabled
+            or db.move_mode
+            or is_gliding
+            or (can_glide and (M.is_player_flying() or M.is_mounted_in_advanced_flyable_area(can_glide)))
+        )
     if not should_show then
         M.restore_frame_alpha(frame)
         frame:Hide()
@@ -255,7 +261,7 @@ function M.refresh()
         end
     end
 
-    local is_active_flight = is_gliding or M.is_player_flying()
+    local is_active_flight = is_gliding or (can_glide and M.is_player_flying())
     local charges_full = current >= min(max_charges, max_slots)
     M.apply_full_charge_fade(frame, db, charges_full, is_active_flight)
 

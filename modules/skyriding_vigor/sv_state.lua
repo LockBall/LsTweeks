@@ -113,7 +113,8 @@ function M.is_player_flying()
     return IsFlying and IsFlying()
 end
 
-function M.is_mounted_in_advanced_flyable_area()
+function M.is_mounted_in_advanced_flyable_area(can_glide)
+    if not can_glide then return false end
     return IsMounted and IsMounted()
         and IsAdvancedFlyableArea and IsAdvancedFlyableArea()
 end
