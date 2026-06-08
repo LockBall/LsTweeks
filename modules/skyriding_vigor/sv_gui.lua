@@ -38,12 +38,14 @@ local STRINGS = {
     move_mode = "Move Mode",
     snap_to_grid = "Snap to Grid",
     style = "Style",
+    node_color = "Node Color",
     fill_color = "Fill Color",
     decor_style = "End Decor",
+    decor_color = "Decor Color",
     decor_x_position = "End Decor X",
     decor_y_position = "End Decor Y",
     decor_scale = "End Decor Scale",
-    spacing = "Spacing",
+    spacing = "Node Spacing",
     scale = "Scale",
     x_position = "X Position",
     y_position = "Y Position",
@@ -66,12 +68,12 @@ local function set_setting_from_slider(key)
     end
 end
 
-local function add_row_separator(parent, anchor, y_offset)
+local function add_row_separator(parent, left_anchor, y_offset)
     local line = parent:CreateTexture(nil, "BACKGROUND")
     line:SetColorTexture(1, 1, 1, 0.08)
     line:SetHeight(2)
-    line:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, y_offset or 0)
-    line:SetPoint("RIGHT", parent, "RIGHT", -20, 0)
+    line:SetPoint("TOPLEFT", left_anchor, "TOPLEFT", 0, y_offset or 0)
+    line:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -20, y_offset or 0)
     return line
 end
 
@@ -172,6 +174,26 @@ function M.sync_style_color_controls()
     end
 end
 
+function M.sync_node_color_controls()
+    local dropdown = M.controls and M.controls.node_color
+    if dropdown and dropdown.SetValue and M.get_node_color then
+        dropdown:SetValue(M.get_node_color())
+        if dropdown.SetEnabled and M.bar_style_supports_node_color then
+            dropdown:SetEnabled(M.bar_style_supports_node_color())
+        end
+    end
+end
+
+function M.sync_decor_color_controls()
+    local dropdown = M.controls and M.controls.decor_color
+    if dropdown and dropdown.SetValue and M.get_decor_color then
+        dropdown:SetValue(M.get_decor_color())
+        if dropdown.SetEnabled and M.decor_style_supports_color then
+            dropdown:SetEnabled(M.decor_style_supports_color())
+        end
+    end
+end
+
 function M.sync_settings_controls(db)
     db = db or (M.get_db and M.get_db())
     if not db then return end
@@ -197,10 +219,12 @@ function M.sync_settings_controls(db)
     if style_dropdown and style_dropdown.SetValue then
         style_dropdown:SetValue(db.style or defaults.style or M.BAR_STYLE_DEFAULT)
     end
+    M.sync_node_color_controls()
     local decor_style_dropdown = M.controls.decor_style
     if decor_style_dropdown and decor_style_dropdown.SetValue then
         decor_style_dropdown:SetValue(db.decor_style or defaults.decor_style or M.DECOR_STYLE_DEFAULT)
     end
+    M.sync_decor_color_controls()
 
     M.sync_slider_controls(db)
     M.sync_style_color_controls()
@@ -238,18 +262,18 @@ function M.BuildSettings(parent)
         M.set_db_value("move_mode", is_checked)
     end)
     M.controls.move_mode = move_cb
-    move_container:SetPoint("TOPLEFT", enabled_container, "BOTTOMLEFT", 0, cfg.row_gap_y * -1)
+    move_container:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", 0, -(cfg.slider_row_height + cfg.slider_row_gap_y))
 
     local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
         M.set_snap_to_grid(is_checked)
     end)
     M.controls.snap_to_grid = snap_cb
-    snap_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x, 0)
+    snap_container:SetPoint("TOPLEFT", move_container, "BOTTOMLEFT", 0, -8)
 
     local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     reset_button:SetSize(110, 22)
     reset_button:SetText("Reset Position")
-    reset_button:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, 0)
+    reset_button:SetPoint("TOPLEFT", snap_container, "BOTTOMLEFT", 0, -8)
     reset_button:SetScript("OnClick", M.reset_position)
 
     local fill_test_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -281,6 +305,25 @@ function M.BuildSettings(parent)
     M.controls.style = style_dropdown
     style_dropdown:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 2, 0)
 
+    local node_color_dropdown = addon.CreateDropdown(
+        addon_name .. "SkyridingVigorNodeColor",
+        parent,
+        STRINGS.node_color,
+        M.NODE_COLOR_OPTIONS or {},
+        {
+            width = 130,
+            get_value = function()
+                return M.get_node_color and M.get_node_color() or M.NODE_COLOR_DEFAULT
+            end,
+            on_select = function(value)
+                M.set_db_value("node_color", value)
+            end,
+        }
+    )
+    M.controls.node_color = node_color_dropdown
+    node_color_dropdown:SetPoint("TOPLEFT", style_dropdown, "TOPRIGHT", cfg.slider_gap_x, 0)
+    M.sync_node_color_controls()
+
     local fill_color_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "fill_color" then
@@ -308,7 +351,7 @@ function M.BuildSettings(parent)
         end
     end)
     M.controls.fill_color = fill_color_picker
-    fill_color_picker:SetPoint("TOPLEFT", enabled_container, "TOPLEFT", col_step_x * 3, 0)
+    fill_color_picker:SetPoint("TOPLEFT", fill_test_button, "BOTTOMLEFT", 0, cfg.row_gap_y * -1)
 
     db.position = db.position or {}
     local default_position = defaults.position or {}
@@ -328,8 +371,8 @@ function M.BuildSettings(parent)
         M.set_position_axis("x", value)
     end)
     M.controls.x_position = x_slider
-    x_slider:SetPoint("TOPLEFT", move_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
-    add_row_separator(parent, x_slider, math.floor(cfg.grid_row_gap / 2))
+    x_slider:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x, 0)
+    add_row_separator(parent, move_container, math.floor(cfg.grid_row_gap / 2))
 
     local y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorYPosition",
@@ -407,6 +450,9 @@ function M.BuildSettings(parent)
         end,
     })
 
+    local decor_row_y = -(cfg.slider_row_height + cfg.slider_row_gap_y)
+    local decor_dropdown_y = decor_row_y - 25
+
     local decor_style_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorDecorStyle",
         parent,
@@ -423,8 +469,27 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.decor_style = decor_style_dropdown
-    decor_style_dropdown:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -(cfg.slider_row_height + cfg.slider_row_gap_y) - 25)
-    add_row_separator(parent, x_slider, -(cfg.slider_row_height + cfg.slider_row_gap_y) + math.floor(cfg.grid_row_gap / 2))
+    decor_style_dropdown:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, decor_dropdown_y)
+    add_row_separator(parent, move_container, -(cfg.slider_row_height + cfg.slider_row_gap_y) + math.floor(cfg.grid_row_gap / 2))
+
+    local decor_color_dropdown = addon.CreateDropdown(
+        addon_name .. "SkyridingVigorDecorColor",
+        parent,
+        STRINGS.decor_color,
+        M.DECOR_COLOR_OPTIONS or {},
+        {
+            width = 130,
+            get_value = function()
+                return M.get_decor_color and M.get_decor_color() or M.DECOR_COLOR_DEFAULT
+            end,
+            on_select = function(value)
+                M.set_db_value("decor_color", value)
+            end,
+        }
+    )
+    M.controls.decor_color = decor_color_dropdown
+    decor_color_dropdown:SetPoint("TOPLEFT", decor_style_dropdown, "TOPRIGHT", cfg.slider_gap_x, 0)
+    M.sync_decor_color_controls()
 
     local decor_x_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorXPosition",
@@ -441,7 +506,7 @@ function M.BuildSettings(parent)
         end
     )
     M.controls.decor_x_position = decor_x_slider
-    decor_x_slider:SetPoint("TOPLEFT", x_slider, "TOPLEFT", col_step_x, -(cfg.slider_row_height + cfg.slider_row_gap_y))
+    decor_x_slider:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, decor_row_y)
 
     local decor_y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorYPosition",
@@ -483,7 +548,7 @@ function M.BuildSettings(parent)
     end)
     M.controls.fade_when_full = fade_cb
     fade_container:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2))
-    add_row_separator(parent, fade_container, math.floor(cfg.grid_row_gap / 2))
+    add_row_separator(parent, move_container, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2) + math.floor(cfg.grid_row_gap / 2))
 
     local fade_alpha_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeAlpha",

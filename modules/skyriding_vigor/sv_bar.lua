@@ -28,10 +28,35 @@ local tonumber = tonumber
 
 local MAX_SLOTS = 6
 local DEFAULT_STYLE_KEY = "default"
+local DEFAULT_NODE_COLOR_KEY = "default"
+local NODE_COLORS = {
+    default = {
+        label = "Default",
+    },
+    bronze = {
+        label = "Bronze (Default)",
+    },
+    dark = {
+        label = "Dark",
+    },
+    gold = {
+        label = "Gold",
+    },
+    silver = {
+        label = "Silver",
+    },
+}
+local NODE_COLOR_ORDER = { "bronze", "dark", "gold", "silver" }
+local DEFAULT_DECOR_COLOR_KEY = "default"
+local DECOR_COLORS = NODE_COLORS
+local DECOR_COLOR_ORDER = NODE_COLOR_ORDER
 local BAR_STYLES = {
     default = {
         label = "Default",
         frame = "dragonriding_vigor_frame",
+        frame_colors = {
+            default = "dragonriding_vigor_frame",
+        },
         background = "dragonriding_vigor_background",
         fill = "dragonriding_vigor_fill",
         fill_full = "dragonriding_vigor_fillfull",
@@ -47,6 +72,13 @@ local BAR_STYLES = {
     storm_race = {
         label = "Storm Race",
         frame = "dragonriding_sgvigor_frame_bronze",
+        default_node_color = "bronze",
+        frame_colors = {
+            bronze = "dragonriding_sgvigor_frame_bronze",
+            dark = "dragonriding_sgvigor_frame_dark",
+            gold = "dragonriding_sgvigor_frame_gold",
+            silver = "dragonriding_sgvigor_frame_silver",
+        },
         background = "dragonriding_sgvigor_background",
         fill = "dragonriding_sgvigor_fillfull",
         fill_full = "dragonriding_sgvigor_fillfull",
@@ -66,6 +98,9 @@ local DECOR_STYLES = {
     default = {
         label = "Default",
         atlas = "dragonriding_vigor_decor",
+        atlas_colors = {
+            default = "dragonriding_vigor_decor",
+        },
         scale = 1,
         scale_x = 1,
         scale_y = 1,
@@ -75,6 +110,13 @@ local DECOR_STYLES = {
     storm_race = {
         label = "Storm Race",
         atlas = "dragonriding_sgvigor_decor_bronze",
+        default_decor_color = "bronze",
+        atlas_colors = {
+            bronze = "dragonriding_sgvigor_decor_bronze",
+            dark = "dragonriding_sgvigor_decor_dark",
+            gold = "dragonriding_sgvigor_decor_gold",
+            silver = "dragonriding_sgvigor_decor_silver",
+        },
         scale = 1,
         scale_x = 1,
         scale_y = 1,
@@ -130,6 +172,22 @@ for _, key in ipairs(BAR_STYLE_ORDER) do
         text = BAR_STYLES[key].label,
     }
 end
+M.NODE_COLOR_DEFAULT = DEFAULT_NODE_COLOR_KEY
+M.NODE_COLOR_OPTIONS = {}
+for _, key in ipairs(NODE_COLOR_ORDER) do
+    M.NODE_COLOR_OPTIONS[#M.NODE_COLOR_OPTIONS + 1] = {
+        value = key,
+        text = NODE_COLORS[key].label,
+    }
+end
+M.DECOR_COLOR_DEFAULT = DEFAULT_DECOR_COLOR_KEY
+M.DECOR_COLOR_OPTIONS = {}
+for _, key in ipairs(DECOR_COLOR_ORDER) do
+    M.DECOR_COLOR_OPTIONS[#M.DECOR_COLOR_OPTIONS + 1] = {
+        value = key,
+        text = DECOR_COLORS[key].label,
+    }
+end
 M.DECOR_STYLE_DEFAULT = DEFAULT_DECOR_STYLE_KEY
 M.DECOR_STYLE_OPTIONS = {}
 for _, key in ipairs(DECOR_STYLE_ORDER) do
@@ -154,6 +212,7 @@ M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,
     style = true,
+    node_color = true,
     decor_style = true,
 }
 
@@ -193,6 +252,38 @@ local function is_valid_style(style)
         and atlas_exists(style.fill) and atlas_exists(style.fill_full)
 end
 
+local function get_valid_node_color_key(style, key)
+    local atlas = style and style.frame_colors and style.frame_colors[key]
+    if key and atlas and atlas_exists(atlas) then
+        return key
+    end
+    atlas = style and style.default_node_color and style.frame_colors and style.frame_colors[style.default_node_color]
+    if atlas and atlas_exists(atlas) then
+        return style.default_node_color
+    end
+    atlas = style and style.frame_colors and style.frame_colors[DEFAULT_NODE_COLOR_KEY]
+    if atlas and atlas_exists(atlas) then
+        return DEFAULT_NODE_COLOR_KEY
+    end
+    return DEFAULT_NODE_COLOR_KEY
+end
+
+local function get_valid_decor_color_key(style, key)
+    local atlas = style and style.atlas_colors and style.atlas_colors[key]
+    if key and atlas and atlas_exists(atlas) then
+        return key
+    end
+    atlas = style and style.default_decor_color and style.atlas_colors and style.atlas_colors[style.default_decor_color]
+    if atlas and atlas_exists(atlas) then
+        return style.default_decor_color
+    end
+    atlas = style and style.atlas_colors and style.atlas_colors[DEFAULT_DECOR_COLOR_KEY]
+    if atlas and atlas_exists(atlas) then
+        return DEFAULT_DECOR_COLOR_KEY
+    end
+    return DEFAULT_DECOR_COLOR_KEY
+end
+
 local function is_valid_decor_style(style)
     return style and atlas_exists(style.atlas)
 end
@@ -214,10 +305,27 @@ function M.get_valid_bar_style_key(key)
     return DEFAULT_STYLE_KEY
 end
 
+function M.bar_style_supports_node_color(style_key)
+    local db = get_db()
+    local defaults = get_defaults()
+    style_key = M.get_valid_bar_style_key(style_key or (db and db.style) or defaults.style or DEFAULT_STYLE_KEY)
+    local style = BAR_STYLES[style_key]
+    if not style or not style.frame_colors then return false end
+
+    for key, atlas in pairs(style.frame_colors) do
+        if key ~= DEFAULT_NODE_COLOR_KEY and atlas_exists(atlas) then
+            return true
+        end
+    end
+    return false
+end
+
 function M.get_style_layout_default(style_key, field)
     local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
     if field == "scale" then
         return (get_defaults().scale or 1)
+    elseif field == "node_color" then
+        return get_valid_node_color_key(style, style and style.default_node_color or DEFAULT_NODE_COLOR_KEY)
     elseif field == "fill_color" then
         local color = style and style.fill_color or { r = 1, g = 1, b = 1, a = 1 }
         return { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
@@ -238,6 +346,7 @@ function M.get_style_layout_table(db, style_key, create, initial_scale)
         if layout.fill_color == nil then
             layout.fill_color = M.get_style_layout_default(style_key, "fill_color")
         end
+        layout.node_color = get_valid_node_color_key(BAR_STYLES[style_key], layout.node_color or M.get_style_layout_default(style_key, "node_color"))
         return layout
     end
     return db.style_layouts and db.style_layouts[style_key] or nil
@@ -261,6 +370,51 @@ function M.get_style_fill_color_value(db, style_key)
         color = M.get_style_layout_default(style_key, "fill_color")
     end
     return color
+end
+
+local function fill_color_needs_desaturation(color)
+    if not color then return false end
+    return abs((color.r or 1) - 1) > 0.001
+        or abs((color.g or 1) - 1) > 0.001
+        or abs((color.b or 1) - 1) > 0.001
+end
+
+local function apply_fill_texture_color(texture, color)
+    if not texture then return end
+    color = color or { r = 1, g = 1, b = 1, a = 1 }
+    texture:SetDesaturated(fill_color_needs_desaturation(color))
+    texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+end
+
+function M.get_node_color()
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
+    local layout = M.get_style_layout_table(db, style_key, true)
+    return get_valid_node_color_key(style, layout and layout.node_color or M.get_style_layout_default(style_key, "node_color"))
+end
+
+function M.set_node_color(value)
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
+    local layout = M.get_style_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.node_color = get_valid_node_color_key(style, value)
+    if M.sync_node_color_controls then
+        M.sync_node_color_controls()
+    end
+    M.refresh_layout()
+end
+
+local function get_frame_atlas(db, style_key, style)
+    local layout = M.get_style_layout_table(db, style_key, true)
+    local color_key = get_valid_node_color_key(style, layout and layout.node_color or nil)
+    return style.frame_colors and style.frame_colors[color_key] or style.frame
 end
 
 function M.get_style_scale()
@@ -343,6 +497,21 @@ function M.get_valid_decor_style_key(key)
     return DEFAULT_DECOR_STYLE_KEY
 end
 
+function M.decor_style_supports_color(style_key)
+    local db = get_db()
+    local defaults = get_defaults()
+    style_key = M.get_valid_decor_style_key(style_key or (db and db.decor_style) or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY)
+    local style = DECOR_STYLES[style_key]
+    if not style or not style.atlas_colors then return false end
+
+    for key, atlas in pairs(style.atlas_colors) do
+        if key ~= DEFAULT_DECOR_COLOR_KEY and atlas_exists(atlas) then
+            return true
+        end
+    end
+    return false
+end
+
 function M.get_decor_layout_default(style_key, field)
     local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
     if field == "decor_node_gap_x" then
@@ -351,6 +520,8 @@ function M.get_decor_layout_default(style_key, field)
         return style and style.offset_y or 0
     elseif field == "scale" then
         return style and (style.scale or style.scale_x or WING_LAYOUT.scale_x) or 1
+    elseif field == "decor_color" then
+        return get_valid_decor_color_key(style, style and style.default_decor_color or DEFAULT_DECOR_COLOR_KEY)
     end
     return nil
 end
@@ -371,6 +542,7 @@ function M.get_decor_layout_table(db, style_key, create)
         if layout.scale == nil then
             layout.scale = M.get_decor_layout_default(style_key, "scale")
         end
+        layout.decor_color = get_valid_decor_color_key(DECOR_STYLES[style_key], layout.decor_color or M.get_decor_layout_default(style_key, "decor_color"))
         return layout
     end
     return db.decor_layouts and db.decor_layouts[style_key] or nil
@@ -464,6 +636,37 @@ function M.set_decor_scale(value)
 
     layout.scale = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS.decor_scale)
     M.refresh_layout()
+end
+
+function M.get_decor_color()
+    local db = get_db()
+    local defaults = get_defaults()
+    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    return get_valid_decor_color_key(style, layout and layout.decor_color or M.get_decor_layout_default(style_key, "decor_color"))
+end
+
+function M.set_decor_color(value)
+    local db = get_db()
+    if not db then return end
+    local defaults = get_defaults()
+    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    if not layout then return end
+
+    layout.decor_color = get_valid_decor_color_key(style, value)
+    if M.sync_decor_color_controls then
+        M.sync_decor_color_controls()
+    end
+    M.refresh_layout()
+end
+
+local function get_decor_atlas(db, style_key, style)
+    local layout = M.get_decor_layout_table(db, style_key, true)
+    local color_key = get_valid_decor_color_key(style, layout and layout.decor_color or nil)
+    return style.atlas_colors and style.atlas_colors[color_key] or style.atlas
 end
 
 -- ============================================================================
@@ -642,9 +845,11 @@ local function set_atlas_sized(texture, atlas, width, height)
 end
 
 local function apply_slot_static_atlases(slot)
-    local _, style = get_bar_style(get_db())
+    local db = get_db()
+    local style_key, style = get_bar_style(db)
     local bg_width, bg_height = get_background_size()
     local frame_width, frame_height = get_frame_size()
+    local frame_atlas = get_frame_atlas(db, style_key, style)
 
     if slot.background_frame and slot.cover_frame then
         if style.background_above_frame then
@@ -663,8 +868,9 @@ local function apply_slot_static_atlases(slot)
         style.background_offset_y or BACKGROUND_LAYOUT.offset_y
     )
     set_atlas_sized(slot.background, style.background, bg_width, bg_height)
-    set_atlas_sized(slot.cover, style.frame, frame_width, frame_height)
+    set_atlas_sized(slot.cover, frame_atlas, frame_width, frame_height)
     slot._static_style = style
+    slot._frame_atlas = frame_atlas
 end
 
 local function set_bar_atlas(slot, atlas)
@@ -674,7 +880,7 @@ local function set_bar_atlas(slot, atlas)
     if texture then
         set_atlas_sized(texture, atlas, fill_width, fill_height)
         local color = M.get_style_fill_color_value(get_db())
-        texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+        apply_fill_texture_color(texture, color)
     end
 end
 
@@ -684,7 +890,7 @@ function M.apply_fill_color()
         local slot = M.slots[i]
         local texture = slot and slot.bar and slot.bar:GetStatusBarTexture()
         if texture then
-            texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+            apply_fill_texture_color(texture, color)
         end
     end
 end
@@ -774,14 +980,16 @@ function M.set_slot_state(index, state, progress)
         effective_progress = 0
     end
 
-    local _, style = get_bar_style(get_db())
-    if slot._state == state and slot._static_style == style
+    local db = get_db()
+    local style_key, style = get_bar_style(db)
+    local frame_atlas = get_frame_atlas(db, style_key, style)
+    if slot._state == state and slot._static_style == style and slot._frame_atlas == frame_atlas
         and abs((slot._progress or -1) - effective_progress) < 0.001
     then
         return
     end
 
-    if slot._static_style ~= style then
+    if slot._static_style ~= style or slot._frame_atlas ~= frame_atlas then
         apply_slot_static_atlases(slot)
         slot._bar_texture = nil
         slot._fill_bounds_set = false
@@ -938,6 +1146,8 @@ function M.apply_layout()
     local frame_width, frame_height = get_frame_size()
     local decor_width, decor_height = get_decor_size()
     local decor_style_key, decor_style = get_decor_style(db)
+    local decor_color = M.get_decor_color()
+    local decor_atlas = get_decor_atlas(db, decor_style_key, decor_style)
     local decor_scale = get_decor_layout_number(db, decor_style_key, "scale") or 1
     local wing_scale_x = decor_scale * (decor_style.scale_x or WING_LAYOUT.scale_x)
     local wing_scale_y = decor_scale * (decor_style.scale_y or WING_LAYOUT.scale_y)
@@ -967,12 +1177,13 @@ function M.apply_layout()
         set_center_position(frame, center_x, center_y)
     end
 
+    local node_color = M.get_node_color()
     local layout_signature = spacing .. ":" .. scale .. ":" .. total_width .. ":" .. total_height .. ":"
         .. first_slot_x .. ":" .. first_frame_edge_x .. ":" .. right_decor_x .. ":"
         .. node_step .. ":" .. frame_width .. ":" .. frame_height .. ":" .. frame_edge_width .. ":"
         .. frame_edge_inset_x .. ":" .. wing_node_gap_x .. ":"
         .. wing_scale_x .. ":" .. wing_scale_y .. ":"
-        .. wing_offset_y .. ":" .. style_key .. ":" .. decor_style_key
+        .. wing_offset_y .. ":" .. style_key .. ":" .. node_color .. ":" .. decor_style_key .. ":" .. decor_color
     if M._layout_signature == layout_signature then
         M._layout_dirty = false
         return
@@ -998,13 +1209,13 @@ function M.apply_layout()
     end
 
     if M.decor_left_frame and M.decor_right_frame and M.slots[1] and M.slots[MAX_SLOTS] then
-        if M.decor_left and M.decor_left._atlas ~= decor_style.atlas then
-            M.decor_left:SetAtlas(decor_style.atlas, false)
-            M.decor_left._atlas = decor_style.atlas
+        if M.decor_left and M.decor_left._atlas ~= decor_atlas then
+            M.decor_left:SetAtlas(decor_atlas, false)
+            M.decor_left._atlas = decor_atlas
         end
-        if M.decor_right and M.decor_right._atlas ~= decor_style.atlas then
-            M.decor_right:SetAtlas(decor_style.atlas, false)
-            M.decor_right._atlas = decor_style.atlas
+        if M.decor_right and M.decor_right._atlas ~= decor_atlas then
+            M.decor_right:SetAtlas(decor_atlas, false)
+            M.decor_right._atlas = decor_atlas
         end
         M.decor_left_frame:ClearAllPoints()
         M.decor_right_frame:ClearAllPoints()

@@ -148,6 +148,15 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         return selected
     end
 
+    container.SetEnabled = function(_, enabled)
+        enabled = enabled and true or false
+        btn:SetEnabled(enabled)
+        container:SetAlpha(enabled and 1 or 0.45)
+        if not enabled then
+            _hide_dropdown(popup)
+        end
+    end
+
     set_button_text(selected)
     return container
 end

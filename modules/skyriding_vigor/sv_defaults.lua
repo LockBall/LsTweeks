@@ -21,6 +21,14 @@ defs.defaults = {
         decor_style = "default",
         spacing = 5,
         scale = 1.0,
+        style_layouts = {
+            default = {
+                fill_color = { r = 1, g = 1, b = 1, a = 1 },
+            },
+            storm_race = {
+                fill_color = { r = 1, g = 1, b = 1, a = 1 },
+            },
+        },
         position = {
             point = "CENTER",
             relativePoint = "CENTER",

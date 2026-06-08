@@ -338,8 +338,14 @@ function M.set_db_value(key, value)
     elseif key == "scale" and M.set_style_scale then
         M.set_style_scale(value)
         return
+    elseif key == "node_color" and M.set_node_color then
+        M.set_node_color(value)
+        return
     elseif key == "decor_style" and M.get_valid_decor_style_key then
         value = M.get_valid_decor_style_key(value)
+    elseif key == "decor_color" and M.set_decor_color then
+        M.set_decor_color(value)
+        return
     end
     db[key] = value
     if key == "style" and M.get_style_layout_table then
@@ -353,11 +359,17 @@ function M.set_db_value(key, value)
         if M.sync_style_color_controls then
             M.sync_style_color_controls()
         end
+        if M.sync_node_color_controls then
+            M.sync_node_color_controls()
+        end
     end
     if key == "decor_style" and M.get_decor_layout_table then
         M.get_decor_layout_table(db, value, true)
         if M.sync_decor_position_controls then
             M.sync_decor_position_controls(db)
+        end
+        if M.sync_decor_color_controls then
+            M.sync_decor_color_controls()
         end
     end
     if key == "enabled" and not value then
