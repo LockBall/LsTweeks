@@ -8,7 +8,7 @@
 ## Interface: 120005
 ## Version: 0.10.0
 
-## IconTexture: Interface\AddOns\LsTweeks\media\icon_256.tga
+## IconTexture: Interface\AddOns\LsTweeks\media\icon.blp
 ## SavedVariables: Ls_Tweeks_DB
 
 # --- Libraries ---

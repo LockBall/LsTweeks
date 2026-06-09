@@ -1,5 +1,5 @@
 ## Let's Do It !
 
-### Potential Future Features
+### 2. Potential Future Features
 
 - [ ] a) Brief guided tour on first install with an option to manually initiate.
