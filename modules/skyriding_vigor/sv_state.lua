@@ -14,6 +14,8 @@ local C_Spell_GetSpellCharges = C_Spell and C_Spell.GetSpellCharges
 local IsAdvancedFlyableArea = IsAdvancedFlyableArea
 local IsFlying = IsFlying
 local IsMounted = IsMounted
+local UnitInVehicle = UnitInVehicle
+local UnitInVehicleControlSeat = UnitInVehicleControlSeat
 local UnitPower = UnitPower
 local UnitPowerDisplayMod = UnitPowerDisplayMod
 local UnitPowerMax = UnitPowerMax
@@ -117,4 +119,9 @@ function M.is_mounted_in_advanced_flyable_area(can_glide)
     if not can_glide then return false end
     return IsMounted and IsMounted()
         and IsAdvancedFlyableArea and IsAdvancedFlyableArea()
+end
+
+function M.is_player_ridealong_passenger()
+    return UnitInVehicle and UnitInVehicle("player")
+        and UnitInVehicleControlSeat and not UnitInVehicleControlSeat("player")
 end

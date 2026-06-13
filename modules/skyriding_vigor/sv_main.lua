@@ -29,6 +29,9 @@ local RUNTIME_EVENTS = {
     "SPELL_UPDATE_COOLDOWN",
     "MOUNT_JOURNAL_USABILITY_CHANGED",
     "PLAYER_MOUNT_DISPLAY_CHANGED",
+    "UNIT_ENTERED_VEHICLE",
+    "UNIT_EXITED_VEHICLE",
+    "VEHICLE_UPDATE",
 }
 
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
@@ -224,7 +227,10 @@ function M.refresh()
         current, max_charges, start_time, duration = 4, max_slots, GetTime() - 2, 5
     end
 
+    local is_ridealong_passenger = not M._fill_test_enabled and not db.move_mode
+        and M.is_player_ridealong_passenger and M.is_player_ridealong_passenger()
     local should_show = current and max_charges
+        and not is_ridealong_passenger
         and (
             M._fill_test_enabled
             or db.move_mode
