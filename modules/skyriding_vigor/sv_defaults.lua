@@ -17,7 +17,7 @@ defs.defaults = {
         fade_length = 3,
         show_spark = false,
         spark_color = { r = 1, g = 1, b = 1, a = 1 },
-        spark_size = 1,
+        spark_size = 5.00,
         move_mode = false,
         snap_to_grid = true,
         style = "default",
