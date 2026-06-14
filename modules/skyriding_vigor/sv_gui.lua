@@ -52,6 +52,7 @@ local STRINGS = {
     y_position = "Y Position",
     fill_test = "Fill Test",
     stop_fill_test = "Stop Test",
+    skyriding_talents = "Skyriding Talents",
 }
 
 -- ============================================================================
@@ -76,6 +77,27 @@ local function add_row_separator(parent, left_anchor, y_offset)
     line:SetPoint("TOPLEFT", left_anchor, "TOPLEFT", 0, y_offset or 0)
     line:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -20, y_offset or 0)
     return line
+end
+
+local function open_skyriding_talents()
+    if GenericTraitUI_LoadUI then
+        GenericTraitUI_LoadUI()
+    end
+
+    if GenericTraitFrame and Constants and Constants.MountDynamicFlightConsts
+        and GenericTraitFrame.SetConfigIDBySystemID and GenericTraitFrame.SetTreeID
+    then
+        GenericTraitFrame:SetConfigIDBySystemID(Constants.MountDynamicFlightConsts.TRAIT_SYSTEM_ID)
+        GenericTraitFrame:SetTreeID(Constants.MountDynamicFlightConsts.TREE_ID)
+        if ToggleFrame then
+            ToggleFrame(GenericTraitFrame)
+        elseif GenericTraitFrame.Show then
+            GenericTraitFrame:Show()
+        end
+        return
+    end
+
+    print("|cFFFFFF00LsTweaks:|r Skyriding Talents UI is not available.")
 end
 
 -- ============================================================================
@@ -590,7 +612,7 @@ function M.BuildSettings(parent)
         M.set_db_value("fade_when_full", is_checked)
     end)
     M.controls.fade_when_full = fade_cb
-    fade_container:SetPoint("TOPLEFT", x_slider, "TOPLEFT", 0, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2))
+    fade_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2))
     add_row_separator(parent, move_container, -((cfg.slider_row_height + cfg.slider_row_gap_y) * 2) + math.floor(cfg.grid_row_gap / 2))
 
     local fade_alpha_slider = addon.CreateSliderWithBox(
@@ -606,7 +628,7 @@ function M.BuildSettings(parent)
         set_setting_from_slider("fade_alpha")
     )
     M.controls.fade_alpha = fade_alpha_slider
-    fade_alpha_slider:SetPoint("TOPLEFT", fade_container, "TOPRIGHT", 24, 0)
+    fade_alpha_slider:SetPoint("TOPLEFT", fade_container, "TOPLEFT", col_step_x, 0)
 
     local fade_length_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeLength",
@@ -622,6 +644,16 @@ function M.BuildSettings(parent)
     )
     M.controls.fade_length = fade_length_slider
     fade_length_slider:SetPoint("TOPLEFT", fade_alpha_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
+
+    local talents_row_y = -((cfg.slider_row_height + cfg.slider_row_gap_y) * 3)
+    add_row_separator(parent, move_container, talents_row_y + math.floor(cfg.grid_row_gap / 2))
+
+    local skyriding_talents_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    skyriding_talents_button:SetSize(130, 22)
+    skyriding_talents_button:SetText(STRINGS.skyriding_talents)
+    skyriding_talents_button:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, talents_row_y)
+    skyriding_talents_button:SetScript("OnClick", open_skyriding_talents)
+    M.controls.skyriding_talents_button = skyriding_talents_button
 
     if addon.CreateModuleReset and db then
         local reset_panel = addon.CreateModuleReset(parent, db, defaults, {
