@@ -250,6 +250,8 @@ Important `skyriding_vigor` keys:
 - `fade_when_full`: lowers alpha when vigor is full and move mode is off.
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
+- `show_spark`: optional Blizzard spark atlas overlay on the actively filling vigor node. Defaults off.
+- `spark_color` and `spark_size`: global spark tint/alpha and height multiplier for the optional spark overlay.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `style`: atlas style key for the vigor nodes. Defaults to `default`; the settings dropdown also exposes `storm_race`, which uses Blizzard `dragonriding_sgvigor_*` atlases where available.
@@ -282,6 +284,7 @@ Important `skyriding_vigor` keys:
 - Skyriding Vigor Fill Color is style-specific and tints the active fill/full-fill status bar texture via `SetVertexColor`. Non-white fill colors automatically desaturate the fill texture first and show an additive duplicate fill layer to make custom colors read brighter. The Fill Add slider controls that duplicate layer's alpha per style. A Fill Brightness multiplier was tested and discarded because RGB multiplication plus channel clamping shifted selected hues unpredictably.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES` in `sv_styles.lua`.
+- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`.
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.
 - Skyriding Vigor end-decoration placement uses per-style defaults in `DECOR_STYLES` in `sv_styles.lua` (`decor_node_gap_x`, `offset_y`, `scale`, `scale_x`, `scale_y`, `decor_color`), with saved user X/Y/scale/color overrides under `db.decor_layouts`. X/Y no longer use shared `WING_LAYOUT` fallback values.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.

@@ -44,6 +44,12 @@ local FILL_LAYOUT = {
 }
 local SHOW_FILL_LAYER = true
 
+local SPARK_LAYOUT = {
+    offset_x = 0.00,
+    offset_y = 0.00,
+}
+local SHOW_SPARK_LAYER = true
+
 local FRAME_LAYOUT = {
     scale_x = 1.00,
     scale_y = 1.00,
@@ -295,6 +301,66 @@ local function set_bar_atlas(slot, atlas)
     end
 end
 
+local function set_spark_atlas(slot, atlas)
+    if not slot or not slot.spark or not atlas then return end
+
+    local fill_width, fill_height = get_fill_size()
+    local atlas_width, atlas_height = get_atlas_size(atlas)
+    local spark_size = M.get_spark_size and M.get_spark_size(get_db()) or 1
+    local spark_height = max(1, min(fill_height * 2, atlas_height * (fill_width / max(1, atlas_width)) * spark_size))
+
+    slot.spark:SetAtlas(atlas, false)
+    slot.spark:SetSize(fill_width, spark_height)
+    slot.spark:SetBlendMode("ADD")
+    local color = M.get_spark_color and M.get_spark_color(get_db()) or { r = 1, g = 1, b = 1, a = 1 }
+    slot.spark:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+    slot._spark_atlas = atlas
+end
+
+local function update_slot_spark(slot, state, progress, style_key, style)
+    if not slot or not slot.spark then return end
+
+    local db = get_db()
+    local spark_atlas = M.get_spark_atlas and M.get_spark_atlas(db, style_key, style)
+    local show_spark = SHOW_SPARK_LAYER and db and db.show_spark and state == "filling"
+        and progress and progress > 0 and progress < 1 and spark_atlas
+    if not show_spark then
+        slot.spark:Hide()
+        slot._spark_shown = false
+        return
+    end
+
+    if slot._spark_atlas ~= spark_atlas or not slot._spark_bounds_set then
+        set_spark_atlas(slot, spark_atlas)
+        slot._spark_bounds_set = true
+    else
+        local color = M.get_spark_color and M.get_spark_color(db) or { r = 1, g = 1, b = 1, a = 1 }
+        slot.spark:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+    end
+
+    local _, fill_height = get_fill_size()
+    local spark_x = FILL_LAYOUT.offset_x + (style.spark_offset_x or SPARK_LAYOUT.offset_x)
+    local spark_y = FILL_LAYOUT.offset_y - (fill_height / 2) + (fill_height * progress)
+        + (style.spark_offset_y or SPARK_LAYOUT.offset_y)
+    slot.spark:ClearAllPoints()
+    slot.spark:SetPoint("CENTER", slot, "CENTER", spark_x, spark_y)
+    slot.spark:Show()
+    slot._spark_shown = true
+end
+
+function M.apply_spark_settings()
+    for i = 1, MAX_SLOTS do
+        local slot = M.slots[i]
+        if slot then
+            slot._spark_bounds_set = false
+            slot._spark_enabled = nil
+        end
+    end
+    if M.refresh then
+        M.refresh()
+    end
+end
+
 function M.apply_fill_color()
     local color = M.get_style_fill_color_value(get_db())
     for i = 1, MAX_SLOTS do
@@ -338,6 +404,9 @@ local function set_slot_fill_bounds(slot)
         slot.fill_boost:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
         slot.fill_boost:SetSize(fill_width, fill_height)
         slot.fill_boost:SetMinMaxValues(0, 1)
+    end
+    if slot.spark then
+        slot._spark_bounds_set = false
     end
     slot._fill_bounds_set = true
 end
@@ -384,6 +453,16 @@ local function create_slot(parent, index)
     slot.fill_boost:SetValue(0)
     slot.fill_boost:Hide()
 
+    slot.spark_frame = CreateFrame("Frame", nil, slot)
+    slot.spark_frame:ClearAllPoints()
+    slot.spark_frame:SetAllPoints(slot)
+    slot.spark_frame:SetFrameLevel(fill_level + 1)
+
+    slot.spark = slot.spark_frame:CreateTexture(nil, "OVERLAY", nil, 2)
+    slot.spark:ClearAllPoints()
+    slot.spark:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.spark:Hide()
+
     slot.cover_frame = CreateFrame("Frame", nil, slot)
     slot.cover_frame:ClearAllPoints()
     slot.cover_frame:SetAllPoints(slot)
@@ -418,9 +497,14 @@ function M.set_slot_state(index, state, progress)
     local db = get_db()
     local style_key, style = M.get_bar_style(db)
     local frame_atlas = M.get_frame_atlas(db, style_key, style)
+    local spark_atlas = M.get_spark_atlas and M.get_spark_atlas(db, style_key, style)
+    local show_spark = db and db.show_spark and state == "filling" and effective_progress > 0
+        and effective_progress < 1 and spark_atlas
     if slot._state == state and slot._static_style == style and slot._frame_atlas == frame_atlas
+        and slot._spark_enabled == show_spark and (not show_spark or slot._spark_atlas == spark_atlas)
         and abs((slot._progress or -1) - effective_progress) < 0.001
     then
+        update_slot_spark(slot, state, effective_progress, style_key, style)
         return
     end
 
@@ -428,6 +512,7 @@ function M.set_slot_state(index, state, progress)
         apply_slot_static_atlases(slot)
         slot._bar_texture = nil
         slot._fill_bounds_set = false
+        slot._spark_bounds_set = false
     end
 
     set_slot_fill_bounds(slot)
@@ -448,8 +533,10 @@ function M.set_slot_state(index, state, progress)
         slot.bar:SetValue(effective_progress)
         slot.fill_boost:SetValue(effective_progress)
     end
+    update_slot_spark(slot, state, effective_progress, style_key, style)
     slot._state = state
     slot._progress = effective_progress
+    slot._spark_enabled = show_spark
 end
 
 -- ============================================================================

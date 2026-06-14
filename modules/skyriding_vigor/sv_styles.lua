@@ -51,6 +51,7 @@ local BAR_STYLES = {
         background = "dragonriding_vigor_background",
         fill = "dragonriding_vigor_fill",
         fill_full = "dragonriding_vigor_fillfull",
+        spark = "dragonriding_vigor_spark",
         visible_edge_inset_x = 11.00,
         spacing_offset = 0.00,
         background_scale_x = 0.50,
@@ -74,6 +75,7 @@ local BAR_STYLES = {
         background = "dragonriding_sgvigor_background",
         fill = "dragonriding_sgvigor_fillfull",
         fill_full = "dragonriding_sgvigor_fillfull",
+        spark = "dragonriding_sgvigor_spark",
         visible_edge_inset_x = 0.00,
         spacing_offset = 0.00,
         background_scale_x = 0.75,
@@ -121,6 +123,7 @@ local DECOR_STYLE_ORDER = { "default", "storm_race" }
 
 local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
 local FILL_ADD_ALPHA_RANGE = { min = 0, max = 1, step = 0.01 }
+local SPARK_SIZE_RANGE = { min = 0.50, max = 10.00, step = 0.05 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
@@ -164,6 +167,7 @@ M.SETTING_SPECS = {
     fade_alpha = FADE_ALPHA_RANGE,
     fade_length = FADE_LENGTH_RANGE,
     fill_add_alpha = FILL_ADD_ALPHA_RANGE,
+    spark_size = SPARK_SIZE_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
     decor_scale = SCALE_RANGE,
@@ -172,7 +176,7 @@ M.SETTING_SPECS = {
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
-M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale", "fill_add_alpha" }
+M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale", "fill_add_alpha", "spark_size" }
 M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,
@@ -403,6 +407,27 @@ local function get_frame_atlas(db, style_key, style)
 end
 
 M.get_frame_atlas = get_frame_atlas
+
+function M.get_spark_atlas(_db, _style_key, style)
+    local atlas = style and style.spark
+    if atlas and atlas_exists(atlas) then
+        return atlas
+    end
+    return nil
+end
+
+function M.get_spark_color(db)
+    db = db or get_db()
+    local defaults = get_defaults()
+    return db and db.spark_color or defaults.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+end
+
+function M.get_spark_size(db)
+    db = db or get_db()
+    local defaults = get_defaults()
+    local fallback = defaults.spark_size or 1
+    return clamp_number(db and db.spark_size, fallback, M.SETTING_SPECS and M.SETTING_SPECS.spark_size)
+end
 
 function M.get_style_scale()
     local db = get_db()

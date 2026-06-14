@@ -60,6 +60,15 @@ local function normalize_db(db)
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
     db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_SPECS.fade_length)
+    db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
+    if type(db.spark_color) ~= "table" then
+        local color = DEFAULTS.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+        db.spark_color = { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
+    end
+    db.spark_color.r = clamp_number(db.spark_color.r, DEFAULTS.spark_color and DEFAULTS.spark_color.r or 1)
+    db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color and DEFAULTS.spark_color.g or 1)
+    db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color and DEFAULTS.spark_color.b or 1)
+    db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color and DEFAULTS.spark_color.a or 1)
     if M.get_valid_bar_style_key then
         db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
     else
@@ -347,6 +356,10 @@ function M.set_db_value(key, value)
     if not db then return end
     if key == "enabled" then
         value = value and true or false
+    elseif key == "show_spark" then
+        value = value and true or false
+    elseif key == "spark_size" then
+        value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
     elseif key == "style" and M.get_valid_bar_style_key then
         value = M.get_valid_bar_style_key(value)
     elseif key == "scale" and M.set_style_scale then
@@ -396,6 +409,8 @@ function M.set_db_value(key, value)
     end
     if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
         M.refresh_layout()
+    elseif key == "spark_size" and M.apply_spark_settings then
+        M.apply_spark_settings()
     else
         M.refresh()
     end

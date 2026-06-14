@@ -35,6 +35,9 @@ local STRINGS = {
     fade_when_full = "Fade When Full",
     fade_alpha = "Fade Alpha",
     fade_length = "Fade Length",
+    show_spark = "Show Spark",
+    spark_color = "Spark Color",
+    spark_size = "Spark Size",
     move_mode = "Move Mode",
     snap_to_grid = "Snap to Grid",
     style = "Style",
@@ -199,6 +202,13 @@ function M.sync_style_color_controls()
     end
 end
 
+function M.sync_spark_color_controls()
+    local picker = M.controls and M.controls.spark_color
+    if picker and picker.SetValue and M.get_spark_color then
+        picker:SetValue(M.get_spark_color())
+    end
+end
+
 function M.sync_node_color_controls()
     local dropdown = M.controls and M.controls.node_color
     if dropdown and dropdown.SetValue and M.get_node_color then
@@ -232,6 +242,10 @@ function M.sync_settings_controls(db)
     if fade_cb and fade_cb.SetChecked then
         fade_cb:SetChecked(db.fade_when_full or false)
     end
+    local spark_cb = M.controls.show_spark
+    if spark_cb and spark_cb.SetChecked then
+        spark_cb:SetChecked(db.show_spark or false)
+    end
     local move_cb = M.controls.move_mode
     if move_cb and move_cb.SetChecked then
         move_cb:SetChecked(db.move_mode or false)
@@ -253,6 +267,7 @@ function M.sync_settings_controls(db)
 
     M.sync_slider_controls(db)
     M.sync_style_color_controls()
+    M.sync_spark_color_controls()
     M.sync_decor_position_controls(db)
     M.sync_position_controls(db)
     M.sync_fill_test_button()
@@ -276,6 +291,7 @@ function M.BuildSettings(parent)
     local decor_y_spec = get_spec("decor_y_position")
     local fade_alpha_spec = get_spec("fade_alpha")
     local fade_length_spec = get_spec("fade_length")
+    local spark_size_spec = get_spec("spark_size")
     local col_step_x = cfg.slider_width + cfg.slider_gap_x
 
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
@@ -654,6 +670,40 @@ function M.BuildSettings(parent)
     skyriding_talents_button:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, talents_row_y)
     skyriding_talents_button:SetScript("OnClick", open_skyriding_talents)
     M.controls.skyriding_talents_button = skyriding_talents_button
+
+    local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
+        M.set_db_value("show_spark", is_checked)
+    end)
+    M.controls.show_spark = spark_cb
+    spark_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x, talents_row_y)
+
+    db.spark_color = db.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+    local spark_color_defaults = {
+        spark_color = defaults.spark_color or { r = 1, g = 1, b = 1, a = 1 },
+    }
+    local spark_color_picker = addon.CreateColorPicker(parent, db, "spark_color", true, STRINGS.spark_color, spark_color_defaults, function()
+        if M.apply_spark_settings then
+            M.apply_spark_settings()
+        end
+    end)
+    M.controls.spark_color = spark_color_picker
+    spark_color_picker:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, talents_row_y)
+
+    local spark_size_slider = addon.CreateSliderWithBox(
+        addon_name .. "SkyridingVigorSparkSize",
+        parent,
+        STRINGS.spark_size,
+        spark_size_spec.min,
+        spark_size_spec.max,
+        spark_size_spec.step,
+        db,
+        "spark_size",
+        defaults,
+        set_setting_from_slider("spark_size"),
+        { display_decimals = 2 }
+    )
+    M.controls.spark_size = spark_size_slider
+    spark_size_slider:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 3, talents_row_y)
 
     if addon.CreateModuleReset and db then
         local reset_panel = addon.CreateModuleReset(parent, db, defaults, {
