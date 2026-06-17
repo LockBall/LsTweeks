@@ -5,7 +5,7 @@
 ## Notes-enUS: Configurable aura frames, sound controls, and UI tweaks
 ## Category: User Interface
 ## Category-enUS: User Interface
-## Interface: 120005
+## Interface: 120007
 ## Version: 0.10.0
 
 ## IconTexture: Interface\AddOns\LsTweeks\media\icon.blp

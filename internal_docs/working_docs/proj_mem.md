@@ -58,8 +58,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Slash command: `/lst` (`SLASH_LSTWEEKS1`)
 - SavedVariables: `Ls_Tweeks_DB`
-- Version edit point: `LsTweeks.toc` only
-- Current TOC Interface: `120005`; re-verify future bumps in-game with `/dump (select(4, GetBuildInfo()))`
+- Version edit point: `LsTweeks.toc` only; verify interface number in-game with `/dump (select(4, GetBuildInfo()))`
 
 ### Design Principles
 - **Single source of truth:** Defaults, category metadata, timing buckets, layout constants, and source-specific rules should have one owner.
