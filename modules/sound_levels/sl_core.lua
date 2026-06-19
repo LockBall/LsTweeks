@@ -24,6 +24,8 @@ end
 
 local function play_original_file(target)
     if target and target.preview_soundkit then
+        -- Prefer the SoundKit for Original previews when available; it matches
+        -- Blizzard's normal playback path while the file-level mute is active.
         return play_preview_soundkit(target)
     end
 
@@ -86,7 +88,7 @@ function M.play_replacement(target_key)
     end
 
     local preset = target_db.preset
-    local path = M.get_next_replacement_path(target, preset)
+    local path = M.get_replacement_path_for_preset(target, preset)
     if not path then return play_preview_soundkit(target) end
 
     M.stop_preview_sound()
@@ -133,12 +135,8 @@ local function handle_event(_, event)
     if not slots then return end
     for i = 1, #slots do
         local slot = slots[i]
-        if slot.paths then
-            local count = #slot.paths
-            local index = slot.next_index or 1
-            local path = slot.paths[index]
-            slot.next_index = (index % count) + 1
-            local did_play = _PlaySoundFile(path, slot.channel)
+        if slot.path then
+            local did_play = _PlaySoundFile(slot.path, slot.channel)
             if did_play == false and slot.soundkit_id then
                 _PlaySound(slot.soundkit_id, slot.channel)
             end

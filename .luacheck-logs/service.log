@@ -1,11 +1,11 @@
-[11:09:04.212][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:71]: Lua Lsp startup, root: 	C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server
-[11:09:04.214][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:72]: ROOT:	C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server
-[11:09:04.214][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:73]: LOGPATH:	g:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\.luacheck-logs
-[11:09:04.214][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:74]: METAPATH:	g:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\.luacheck-meta
-[11:09:04.215][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:75]: VERSION:	3.18.2-dev
-[11:09:05.664][info] [#0:script\language.lua:137]: VSC language: nil
-[11:09:05.664][info] [#0:script\language.lua:138]: LS  language: en-us
-[11:09:05.665][info] [#0:script\client.lua:657]: Client init	{
+[16:33:01.544][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:71]: Lua Lsp startup, root: 	C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server
+[16:33:01.545][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:72]: ROOT:	C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server
+[16:33:01.545][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:73]: LOGPATH:	.luacheck-logs
+[16:33:01.545][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:74]: METAPATH:	.luacheck-meta
+[16:33:01.546][info] [#0:C:/Users/D00D/.vscode/extensions/sumneko.lua-3.18.2-win32-x64/server\main.lua:75]: VERSION:	3.18.2-dev
+[16:33:01.617][info] [#0:script\language.lua:137]: VSC language: nil
+[16:33:01.617][info] [#0:script\language.lua:138]: LS  language: en-us
+[16:33:01.617][info] [#0:script\client.lua:657]: Client init	{
   capabilities = {
     textDocument = {
       completion = {
@@ -28,7 +28,7 @@
   },
   rootUri = "file:///g%3A/Games/Blizzard/World%20of%20Warcraft/_retail_/Interface/AddOns/LsTweeks"
 }
-[11:09:05.665][info] [#0:script\language.lua:137]: VSC language: nil
-[11:09:05.665][info] [#0:script\language.lua:138]: LS  language: en-us
-[11:09:05.665][info] [#0:script\workspace\workspace.lua:38]: Workspace init root: 	file:///g%3A/Games/Blizzard/World%20of%20Warcraft/_retail_/Interface/AddOns/LsTweeks
-[11:09:05.665][info] [#0:script\workspace\workspace.lua:42]: Log path: 	g:/Games/Blizzard/World of Warcraft/_retail_/Interface/AddOns/LsTweeks/.luacheck-logs/file_g%3A_Games_Blizzard_World%20of%20Warcraft__retail__Interface_AddOns_LsTweeks.log
+[16:33:01.617][info] [#0:script\language.lua:137]: VSC language: nil
+[16:33:01.617][info] [#0:script\language.lua:138]: LS  language: en-us
+[16:33:01.617][info] [#0:script\workspace\workspace.lua:38]: Workspace init root: 	file:///g%3A/Games/Blizzard/World%20of%20Warcraft/_retail_/Interface/AddOns/LsTweeks
+[16:33:01.617][info] [#0:script\workspace\workspace.lua:42]: Log path: 	.luacheck-logs/file_g%3A_Games_Blizzard_World%20of%20Warcraft__retail__Interface_AddOns_LsTweeks.log

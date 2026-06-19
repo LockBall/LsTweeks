@@ -222,6 +222,7 @@ Important `sound_levels` keys:
 #### Sound Levels Ownership
 - Sound target metadata lives in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_TARGETS`.
 - Replacement audio file sets are configured only in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`; targets reference them with `replacement_asset`.
+- The `achievmentsound1` / `AchievmentSound1` spelling is inherited from Blizzard's original asset naming and matches the on-disk replacement folder. Do not "fix" it unless all paths, files, and docs are intentionally migrated together.
 - Fishing Focus behavior lives in `modules/sound_levels/sl_fishing.lua`; keep fishing-channel CVar profile logic out of the generic replacement sound runtime.
 - Completed Sound Levels investigation notes live in `internal_docs/completed_features/sound_levels.md`.
 
@@ -232,7 +233,7 @@ Important `sound_levels` keys:
 - Original playback is controlled by `use_original` for targets with original FileDataIDs or a SoundKit fallback; when selected, the replacement slider remains at its saved position but is dimmed/inactive until the user moves it, which clears Original.
 - Sound reference/log files under `modules/sound_levels/sounds/` are public-facing and included in release zips.
 - Each sound target declares a `channel` field (e.g. `"SFX"`, `"Master"`) used for all playback calls; defaults to `"Master"` if absent. Achievement and Ready Check both use `"SFX"`. In-game testing confirmed `PlaySound(soundKitID, "SFX")` succeeds on the current client despite Ketho annotating `C_Sound.PlaySound` with numeric `UISoundSubType`.
-- Hot path performance: `M._event_cache` is a flat pre-baked table keyed by event name; each slot holds only actionable replacement playback data (`paths` or `soundkit_id`, plus `channel`). Off and Original targets do not create event-cache slots. `handle_event` must not touch DB/defaults and should fall back to the cached SoundKit when replacement file playback fails. `sync_registered_events()` diffs registrations against the actionable cache.
+- Hot path performance: `M._event_cache` is a flat pre-baked table keyed by event name; each slot holds only actionable replacement playback data (`path` or `soundkit_id`, plus `channel`). Off and Original targets do not create event-cache slots. `handle_event` must not touch DB/defaults and should fall back to the cached SoundKit when replacement file playback fails. `sync_registered_events()` diffs registrations against the actionable cache.
 - `get_db()` and per-target defaults are guarded once per session; reset clears both guards.
 - Preview cleanup must cancel pending timers as well as stop active sound handles; reset/logout should use the combined preview cleanup path.
 - Fishing Focus channel events use `RegisterUnitEvent(..., "player")`; keep the Fishing spell ID guard (`131476`) and do not add a redundant unit guard.

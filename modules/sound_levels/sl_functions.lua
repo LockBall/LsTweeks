@@ -82,10 +82,6 @@ function M.get_replacement_path_for_preset(target, preset)
     return target.replacement_paths and target.replacement_paths[preset]
 end
 
-function M.get_next_replacement_path(target, preset)
-    return M.get_replacement_path_for_preset(target, preset)
-end
-
 function M.get_ordered_sound_targets()
     local targets = {}
     for target_key, target in pairs(M.SOUND_TARGETS or {}) do
@@ -105,10 +101,9 @@ function M.get_ordered_sound_targets()
     return targets
 end
 
--- Builds a flat, pre-resolved cache of event → slot list used by handle_event.
+-- Builds a flat, pre-resolved cache of event -> slot list used by handle_event.
 -- Called once after apply_sound_levels(); each slot contains only what the hot
--- path needs, including one or more resolved paths, so the event handler
--- touches no DB or defaults machinery at all.
+-- path needs, so the event handler touches no DB or defaults machinery at all.
 function M.rebuild_event_cache()
     local cache = {}
     for event_name, target_keys in pairs(M.SOUND_EVENT_TARGETS or {}) do
@@ -118,28 +113,25 @@ function M.rebuild_event_cache()
             if target then
                 local target_db = M.get_target_db(target_key)
                 local muted = M.should_mute_original(target_db)
-                local paths = nil
+                local path = nil
                 local use_soundkit = false
                 local soundkit_id = M.resolve_soundkit_id(target.preview_soundkit)
 
                 if muted and target_db.sound_off ~= true then
                     local preset = target_db.preset
-                    local path = M.get_replacement_path_for_preset(target, preset)
-                    if path then
-                        paths = { path }
-                    else
+                    path = M.get_replacement_path_for_preset(target, preset)
+                    if not path then
                         -- fall back to soundkit preview
                         use_soundkit = soundkit_id ~= nil
                     end
                 end
 
-                if paths or (use_soundkit and soundkit_id) then
+                if path or (use_soundkit and soundkit_id) then
                     slots[#slots + 1] = {
-                        paths        = paths,
+                        path         = path,
                         use_soundkit = use_soundkit,
                         soundkit_id  = soundkit_id,
                         channel      = target.channel or "Master",
-                        next_index   = 1,
                     }
                 end
             end

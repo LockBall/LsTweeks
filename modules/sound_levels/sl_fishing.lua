@@ -42,7 +42,10 @@ end
 
 local function read_channel_percent(channel)
     if not channel then return 0 end
-    local raw_value = M._fishing_focus_active and M._fishing_focus_cached and M._fishing_focus_cached[channel.cvar]
+    local raw_value = nil
+    if M._fishing_focus_active and M._fishing_focus_cached then
+        raw_value = M._fishing_focus_cached[channel.cvar]
+    end
     if raw_value == nil then
         raw_value = get_cvar(channel.cvar)
     end
@@ -176,7 +179,7 @@ function M.resync_fishing_focus()
     end
 end
 
-local function handle_fishing_focus_event(_, event, unit, _, spell_id)
+local function handle_fishing_focus_event(_, event, _, _, spell_id)
     if spell_id ~= FISHING_CHANNEL_SPELL_ID then return end
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         M.apply_fishing_focus()

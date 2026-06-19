@@ -8,7 +8,6 @@ local M = addon.sound_levels
 local STRINGS = {
     use_original_label = "Original",
     play_on_adjust_label = "Play on Adjust",
-    status_waiting = "Waiting for Blizzard FileDataID and replacement sound files.",
     fishing_help_text =
         "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
         .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored."
@@ -98,14 +97,6 @@ end
 local function format_percent(option)
     local percent = option and option.percent or 0
     return tostring(math.floor(percent + 0.5)) .. "%"
-end
-
-local function has_replacement_paths(target)
-    if not target then return false end
-    if target.replacement_paths and next(target.replacement_paths) ~= nil then
-        return true
-    end
-    return false
 end
 
 local function has_original_playback(target)
@@ -264,14 +255,6 @@ local function build_slider_panel(parent, target_key, target)
     )
     play_on_adjust_frame:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
     M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_checkbox
-
-    if not has_original_playback(target) and not has_replacement_paths(target) then
-        local missing_sound_status = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        missing_sound_status:SetPoint("BOTTOMLEFT", slider_panel, "BOTTOMLEFT", UI.slider_panel_pad_x, 14)
-        missing_sound_status:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
-        missing_sound_status:SetJustifyH("LEFT")
-        missing_sound_status:SetText(STRINGS.status_waiting)
-    end
 
     return slider_panel
 end
