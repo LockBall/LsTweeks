@@ -123,7 +123,7 @@ local DECOR_STYLE_ORDER = { "default", "storm_race" }
 
 local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
 local FILL_ADD_ALPHA_RANGE = { min = 0, max = 1, step = 0.01 }
-local SPARK_SIZE_RANGE = { min = 0.50, max = 15.00, step = 0.5 }
+local SPARK_SIZE_RANGE = { min = 0.50, max = 10.00, step = 0.5 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
