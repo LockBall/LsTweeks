@@ -32,6 +32,7 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - Source Audio: `mono`
 - Final Audio: declipped, stereod, 8 ms leading pad on right channel
 - Link: https://www.wowhead.com/sound=12891/ui-alert-achievementgained
+- Note: `achievmentsound1` / `AchievmentSound1` spelling is inherited from Blizzard's original asset naming.
 - Note: serves as demo sound to learn interface and hear stereo effect
 
 
@@ -43,7 +44,7 @@ Original uses the unmodified WoW sound instead of a replacement file. Selecting 
 - File Path:    `/interface/levelup2.ogg`
 - Source Audio: `stereo`
 - Final Audio: declipped, 8 ms leading pad on right channel
-- Link: https://www.wowhead.com/tbc/sound=8960/readycheck
+- Link: https://www.wowhead.com/sound=8960/readycheck
 - Purpose: Blizzard party/raid ready check and dungeon/LFG proposal ready sound
 - Trigger events:
   - `READY_CHECK` - party/raid ready check started by a party or raid leader.
@@ -72,4 +73,3 @@ Related events that are not replacement triggers:
   https://www.wowhead.com/sound=888/LEVELUP
   https://www.wowhead.com/sound=195838/LevelUp
 - Note: these LevelUp name variants are aliases with no difference when they resolve to the same FileDataID.
-

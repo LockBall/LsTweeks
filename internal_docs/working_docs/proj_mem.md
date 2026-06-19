@@ -28,7 +28,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Treat this file as the project source of truth before non-trivial edits.
 - Update it when architecture, defaults, APIs, or debugging lessons change.
 - Do not store secrets, personal data, machine-local scratch notes, or session logs.
-- Internal docs live under `internal_docs/`. Active working docs live under `internal_docs/working_docs/`: `proj_mem.md`, `ToDo.md`, and `scratchpad.md`. Completed-feature notes live under `internal_docs/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
+- Internal docs live under `internal_docs/`. Active working docs live under `internal_docs/working_docs/`: `proj_mem.md`, `ToDo.md`, `scratchpad.md`, and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_docs/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 - `internal_docs/tests/` is long-term capture for probes, experiments, and developing tests. Do not delete files from it during cleanup unless the user explicitly asks to remove that specific test artifact.
 - Environment recovery notes live in `internal_docs/environment_tools.md`; check them first if Codex shell execution, Windows sandbox setup, or the local `.venv` breaks.
 - Format ToDo plans in `internal_docs/working_docs/ToDo.md` with numbered sections (`### 1. file/topic`) and lettered checkbox substeps (`- [ ] a) ...`).
@@ -131,6 +131,7 @@ internal_docs/           internal docs excluded from release zips
     proj_mem.md          project memory for coding agents
     ToDo.md              active internal task list
     scratchpad.md        local scratch notes
+    review_2026Jun/      focused review notes split by module/topic
   completed_features/    completed-feature notes reviewed on demand
     aura_cancel.md       aura cancellation research, boundaries, and lessons learned
     aura_tooltips.md     tooltip annotation gap review and test notes
@@ -151,6 +152,7 @@ Top-level keys include:
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible in the sidebar but greys them out and disables selection.
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
+- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. If disabled behavior is reworked, start with diagnostics such as a `/lst status` report, then consider lazy construction or LoadOnDemand-style boundaries for modules where the resource savings are worth the complexity.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
@@ -250,7 +252,7 @@ Important `skyriding_vigor` keys:
 - `fade_alpha`: alpha used by `fade_when_full`.
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
 - `show_spark`: optional Blizzard spark atlas overlay on the actively filling vigor node. Defaults off.
-- `spark_color` and `spark_size`: global spark tint/alpha and height multiplier for the optional spark overlay.
+- `spark_color` and `spark_size`: global spark tint/alpha and height multiplier for the optional spark overlay. `spark_size` defaults to `5.00`; range is `0.50-10.00` in `0.5` steps.
 - `move_mode`: shows the frame and enables left-drag positioning.
 - `snap_to_grid`: snaps drag-saved position offsets to a 20px grid.
 - `style`: atlas style key for the vigor nodes. Defaults to `default`; the settings dropdown also exposes `storm_race`, which uses Blizzard `dragonriding_sgvigor_*` atlases where available.
@@ -283,13 +285,14 @@ Important `skyriding_vigor` keys:
 - Skyriding Vigor Fill Color is style-specific and tints the active fill/full-fill status bar texture via `SetVertexColor`. Non-white fill colors automatically desaturate the fill texture first and show an additive duplicate fill layer to make custom colors read brighter. The Fill Add slider controls that duplicate layer's alpha per style. A Fill Brightness multiplier was tested and discarded because RGB multiplication plus channel clamping shifted selected hues unpredictably.
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES` in `sv_styles.lua`.
-- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`.
+- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Default-style spark placement still needs style-specific tuning: a global height cap/clamp attempt made the spark behave strangely and was reverted, so future work should inspect each style's atlas dimensions, offsets, and fill-edge math instead of adding a broad clamp.
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.
 - Skyriding Vigor end-decoration placement uses per-style defaults in `DECOR_STYLES` in `sv_styles.lua` (`decor_node_gap_x`, `offset_y`, `scale`, `scale_x`, `scale_y`, `decor_color`), with saved user X/Y/scale/color overrides under `db.decor_layouts`. X/Y no longer use shared `WING_LAYOUT` fallback values.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
-- Fill Test uses simulated charge data through the normal `M.refresh()` path and the normal Skyriding Vigor ticker cadence. Do not reintroduce a separate faster fill-test render ticker unless the behavior intentionally diverges from runtime display.
+- Fill Test uses simulated charge data through the normal `M.refresh()` path and the normal Skyriding Vigor ticker cadence. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Do not reintroduce a separate faster fill-test render ticker unless the behavior intentionally diverges from runtime display.
 - Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can restart a ticker.
+- The Skyriding Talents button must guard `InCombatLockdown()` before opening `GenericTraitFrame`; in combat, print the addon-owned yellow message instead of allowing Blizzard's generic blocked-action warning.
 - Avoid always-running `OnUpdate`; use a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout, reset slot visuals, or normalize DB on each tick.
 - When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
 
