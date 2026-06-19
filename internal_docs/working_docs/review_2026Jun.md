@@ -60,7 +60,7 @@ Recommended follow-up:
 
 
 ### Skyriding Vigor
-1. Priority: High | Impact: Medium | Change Risk: Low - `sv_gui.lua` opens `GenericTraitFrame` directly for the Skyriding Talents button. Test out of combat and in combat; likely add an `InCombatLockdown()` guard before any future adjustment.
+1. Priority: High | Impact: Medium | Change Risk: Low - `sv_gui.lua` Skyriding Talents button now guards combat before opening `GenericTraitFrame`. Verify in game that combat clicks print the LsTweaks message instead of Blizzard's generic addon-blocked warning, and that out-of-combat clicks still open Skyriding Talents.
 
 2. Priority: High | Impact: High | Change Risk: Medium - `sv_state.lua` guards secret values for both `UnitPowerMax` and `UnitPower`, which matches the 12.0.7 API concern. In-game test should still cover restricted/edge states, especially no-vigor mounts, passenger ridealong, and max vigor.
 

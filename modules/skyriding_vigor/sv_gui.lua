@@ -11,6 +11,7 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 local M = addon.skyriding_vigor
 
 local CreateFrame = CreateFrame
+local InCombatLockdown = InCombatLockdown
 
 -- ============================================================================
 -- CONFIGURATION
@@ -83,6 +84,11 @@ local function add_row_separator(parent, left_anchor, y_offset)
 end
 
 local function open_skyriding_talents()
+    if InCombatLockdown and InCombatLockdown() then
+        print("|cFFFFFF00LsTweaks: Cannot open Skyriding Talents while in combat. Try again out of combat.|r")
+        return
+    end
+
     if GenericTraitUI_LoadUI then
         GenericTraitUI_LoadUI()
     end
