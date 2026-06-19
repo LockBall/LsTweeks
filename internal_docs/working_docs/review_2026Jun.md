@@ -60,11 +60,11 @@ Recommended follow-up:
 
 
 ### Skyriding Vigor
-1. Priority: High | Impact: Medium | Change Risk: Low - `sv_gui.lua` Skyriding Talents button now guards combat before opening `GenericTraitFrame`. Verify in game that combat clicks print the LsTweaks message instead of Blizzard's generic addon-blocked warning, and that out-of-combat clicks still open Skyriding Talents.
+1. ~~Priority: High | Impact: Medium | Change Risk: Low - `sv_gui.lua` Skyriding Talents button now guards combat before opening `GenericTraitFrame`. Verified in game that combat clicks print the LsTweaks message instead of Blizzard's generic addon-blocked warning, and that out-of-combat clicks still open Skyriding Talents.~~
 
-2. Priority: High | Impact: High | Change Risk: Medium - `sv_state.lua` guards secret values for both `UnitPowerMax` and `UnitPower`, which matches the 12.0.7 API concern. In-game test should still cover restricted/edge states, especially no-vigor mounts, passenger ridealong, and max vigor.
+2. Priority: High | Impact: High | Change Risk: Medium - `sv_state.lua` guards secret values for both `UnitPowerMax` and `UnitPower`, which matches the 12.0.7 API concern. In-game testing covered normal skyriding, grounded skyriding, flying/gliding, full vigor, no-vigor, and non-skyriding mount states. Passenger/ridealong state still needs verification.
 
-3. Priority: Medium | Impact: Medium | Change Risk: Low - Fill Test cadence was reduced to make spark inspection easier. Verify in game that the slower fill is enough for spark color/size/placement tuning without making the test feel stalled.
+3. ~~Priority: Medium | Impact: Medium | Change Risk: Low - Fill Test cadence was reduced to `2.0` seconds per node to make spark inspection easier. Verified in game that the slower fill is enough for spark color/size/placement tuning without making the test feel stalled.~~
 
 4. Priority: Medium | Impact: Medium | Change Risk: Medium - Spark rendering uses atlas metadata and caches spark bounds. Visual validation is still needed for Default and Storm Race styles because color, alpha, and size can overpower the fill or clip against frame art. Spark Size max is currently `10.00`; revisit after tuning to decide whether that range should stay broad or be narrowed.
 

@@ -20,7 +20,7 @@ local ipairs = ipairs
 local tonumber = tonumber
 
 local TICK_SECONDS = addon.UPDATE_INTERVALS.skyriding_vigor_tick or addon.UPDATE_INTERVALS.fifth_sec
-local FILL_TEST_NODE_SECONDS = 1.5
+local FILL_TEST_NODE_SECONDS = 2.0
 local RUNTIME_EVENTS = {
     "PLAYER_ENTERING_WORLD",
     "PLAYER_CAN_GLIDE_CHANGED",
