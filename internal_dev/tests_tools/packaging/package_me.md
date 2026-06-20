@@ -13,7 +13,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 Run from the addon root:
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1
 ```
 
 Output:
@@ -51,9 +51,11 @@ Currently included public files:
 Currently excluded workspace/private paths:
 
 - `.git/`
+
 - `.github/`
-- `tools/`
-- `internal_docs/`
+
+- `internal_dev/`
+
 - `.gitignore`
 
 Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
@@ -65,7 +67,7 @@ README image assets under `media/readme_images/` and `media/svg/` are public-fac
 Run verification directly with:
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/verify-package.ps1 dist/<toc-name>-<version>.zip
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/verify-package.ps1 dist/<toc-name>-<version>.zip
 ```
 
 The verifier checks:
@@ -82,3 +84,4 @@ The verifier checks:
 - entries do not use unsafe rooted or parent-traversal paths
 
 After building, inspect `dist/<toc-name>-<version>.zip` externally if desired.
+

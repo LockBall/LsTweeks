@@ -174,7 +174,7 @@ After shell and venv checks pass, validate the addon:
 
 ```powershell
 luac -p modules/player_frame/pf_main.lua modules/player_frame/pf_fade.lua
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools\package.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\packaging\package.ps1
 ```
 
 Expected package result:
@@ -205,15 +205,15 @@ Do not rely on LuaLS automatically loading `.vscode/settings.json` during `--che
 Preferred helper script:
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_docs\tests_tools\kethos\run_luals_ketho.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1
 ```
 
-The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `.lua-language-server/`.
+The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`.
 
 Working local config path:
 
 ```text
-.lua-language-server\check-config.lua
+internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua
 ```
 
 That folder is ignored by git. If the file is missing, recreate it from `.vscode/settings.json` with explicit absolute libraries:
@@ -242,8 +242,10 @@ return {
         ignoreDir = {
             ".vscode",
             "libs",
-            ".lua-language-server",
-            ".luals-check",
+            "internal_dev/tests_tools/lua_checks/.lua-language-server",
+            "internal_dev/tests_tools/lua_checks/.luals-check",
+            "internal_dev/tests_tools/lua_checks/.luacheck-logs",
+            "internal_dev/tests_tools/lua_checks/.luacheck-meta",
         },
     },
     diagnostics = {
@@ -281,7 +283,8 @@ return {
 Manual diagnostics command from the repo root:
 
 ```powershell
-& "$env:USERPROFILE\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe" --check="$PWD" --configpath="$PWD\.lua-language-server\check-config.lua" --check_format=pretty --checklevel=Warning --logpath="$PWD\.lua-language-server\log" --metapath="$PWD\.lua-language-server\meta"
+& "$env:USERPROFILE\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe" --check="$PWD" --configpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua" --check_format=pretty --checklevel=Warning --logpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\log" --metapath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\meta"
 ```
 
 Expected known result as of 2026-06-20: three Sound Levels warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.
+

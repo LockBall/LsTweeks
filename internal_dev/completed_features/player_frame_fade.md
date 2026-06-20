@@ -12,7 +12,7 @@ Player Frame fading is split across:
 
 - `modules/player_frame/pf_fade.lua`: OOC fade runtime state, combat transitions, timers, health curve gate.
 
-The health API probe used during development is archived at `internal_docs/tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
+The health API probe used during development is archived at `internal_dev/tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 
 
 ## Final Behavior
@@ -60,3 +60,4 @@ The health API probe used during development is archived at `internal_docs/tests
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction during testing.
 
 - Health events should not interrupt or restart an active fade. After the base fade reaches its target, health events only refresh the gated target alpha and must not force a full-visible restart.
+

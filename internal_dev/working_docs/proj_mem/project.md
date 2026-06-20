@@ -1,6 +1,6 @@
 # LsTweeks Project Memory
 
-Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives next to this file in `internal_docs/working_docs/proj_mem/`.
+Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives next to this file in `internal_dev/working_docs/proj_mem/`.
 
 
 ## Table of Contents
@@ -43,15 +43,15 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 
 ### Workflow
-- Treat this file and the module files under `internal_docs/working_docs/proj_mem/` as the project source of truth before non-trivial edits.
+- Treat this file and the module files under `internal_dev/working_docs/proj_mem/` as the project source of truth before non-trivial edits.
 
 - Update this file or the relevant module file when architecture, defaults, APIs, or debugging lessons change.
 
 - Read `directives.md` for collaboration, documentation, cleanup, and engineering philosophy.
 
-- Internal docs live under `internal_docs/`. Active working docs live under `internal_docs/working_docs/`: project/module memory files under `proj_mem/`, `ToDo.md`, `scratchpad.md`, and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_docs/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
+- Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/`, `ToDo.md`, `scratchpad.md`, and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 
-- Tool recovery and diagnostics notes live in `internal_docs/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
+- Tool recovery and diagnostics notes live in `internal_dev/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
 
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 
@@ -61,9 +61,9 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Treat LuaLS diagnostics as review prompts, not automatic change requests.
 
-- Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`.
+- Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `internal_dev/tests_tools/lua_checks/`.
 
-- Preferred shell helper: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_docs\tests_tools\kethos\run_luals_ketho.ps1`.
+- Preferred shell helper: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1`.
 
 - Direct annotation root: `C:\Users\D00D\.vscode\extensions\ketho.wow-api-0.22.3\Annotations\`.
 
@@ -71,11 +71,11 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 
 ### Packaging / Release
-- Release package command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1`. It writes `dist/<toc-name>-<version>.zip` and runs `tools/verify-package.ps1`.
+- Release package command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`. It writes `dist/<toc-name>-<version>.zip` and runs `internal_dev/tests_tools/packaging/verify-package.ps1`.
 
-- Packaging docs and policy live in `tools/package_me.md` and `tools/package-policy.json`.
+- Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
 
-- Packaging is data-driven. Update `tools/package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
+- Packaging is data-driven. Update `internal_dev/tests_tools/packaging/package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 
 - README image assets and Sound Levels reference/log files are public-facing and included.
 
@@ -110,9 +110,8 @@ modules/                feature modules; deeper ownership notes live in the modu
 
 libs/                   embedded libraries, documented in sources.md
 media/                  public addon/readme assets
-tools/                  package and verification scripts; package-policy.json owns release include/exclude policy
-internal_docs/          internal docs excluded from release zips
-  tests_tools/          probes, test helpers, diagnostics helpers, logs, and tool notes
+internal_dev/          internal docs excluded from release zips
+  tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, logs, and tool notes
   working_docs/         active project docs, scratch notes, review notes, and proj_mem/
   completed_features/   completed-feature notes reviewed on demand
 dist/                   generated package output, ignored
@@ -181,3 +180,4 @@ Violations here can create invisible or unstable controls.
 ## Module Memory
 
 Module-specific memory files are linked in the table of contents above.
+

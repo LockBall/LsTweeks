@@ -1,6 +1,6 @@
 # Scratchpad
 
-Temporary working notes only. Move durable architecture, defaults, API lessons, and completed-feature notes to `proj_mem/project.md`, the relevant `proj_mem/` module file, `README.md`, or `internal_docs/completed_features/` as appropriate.
+Temporary working notes only. Move durable architecture, defaults, API lessons, and completed-feature notes to `proj_mem/project.md`, the relevant `proj_mem/` module file, `README.md`, or `internal_dev/completed_features/` as appropriate.
 
 
 ## Skyriding Vigor Race Timer Probe
@@ -22,3 +22,4 @@ Also probe mirror timers, though they are less likely:
 ```
 
 If world elapsed timer output is stable, add a helper in `sv_main.lua` similar to `is_skyriding_race_timer_active()`. Match by observed timer type/name only after capturing real race output. Blizzard FrameXML references `GetWorldElapsedTimers()` / `GetWorldElapsedTime(timerID)` in the Scenario Objective Tracker and checks `Enum.WorldElapsedTimerTypes.ChallengeMode` / `ProvingGround`; Skyriding may use one of those or another returned value.
+

@@ -28,7 +28,7 @@ Important `aura_frames` keys:
 
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
 
-- Completed Aura Frames feature notes live in `internal_docs/completed_features/`, including aura cancellation, tooltip annotation-gap, and runtime review notes.
+- Completed Aura Frames feature notes live in `internal_dev/completed_features/`, including aura cancellation, tooltip annotation-gap, and runtime review notes.
 
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 
@@ -145,3 +145,4 @@ Important `aura_frames` keys:
 - Riveted panel style: `addon.ApplyRivetedPanelStyle()` / `addon.AddRivetCorners()`.
 
 - `addon.CreateRivetedPanel()` owns default text padding through `addon.RIVETED_PANEL_STYLE.padding`; callers should not clear/reanchor returned text just to avoid rivets.
+

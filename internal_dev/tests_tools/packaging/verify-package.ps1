@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 $policyPath = Join-Path $PSScriptRoot "package-policy.json"
 
 function Get-AddonToc {
@@ -43,8 +43,7 @@ $invariantForbiddenRoots = @(
     ".venv",
     ".vscode",
     "dist",
-    "tools",
-    "internal_docs"
+    "internal_dev"
 )
 
 if (-not (Test-Path -LiteralPath $policyPath)) {
@@ -314,3 +313,4 @@ try {
 } finally {
     $zip.Dispose()
 }
+

@@ -1,7 +1,7 @@
 # Aura Frames CPU Profiles
 
 Long-term capture for Aura Frames in-game profiling runs. Use
-`internal_docs/tests_tools/aura_frames_duration_profile.lua` when collecting comparable
+`internal_dev/tests_tools/aura_frames_duration_profile.lua` when collecting comparable
 data.
 
 ## Current Decision
@@ -17,7 +17,7 @@ DurationObjects resolved during render before falling back to another
 
 ## How To Collect
 
-1. Temporarily load `internal_docs/tests_tools/aura_frames_duration_profile.lua` after
+1. Temporarily load `internal_dev/tests_tools/aura_frames_duration_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
 3. Run `/lstafprofile start`.
@@ -44,3 +44,4 @@ Context: 77.6s normal Aura Frames and CDM use.
 Conclusion: `C_UnitAuras.GetAuraDuration` was not a meaningful hotspot in this
 run. Keep the defensive guards and do not restructure duration handling for CPU
 reasons based on this data.
+

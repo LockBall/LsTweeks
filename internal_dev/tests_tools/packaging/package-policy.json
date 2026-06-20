@@ -15,8 +15,7 @@
   "excludeDirectories": [
     ".git",
     ".github",
-    "tools",
-    "internal_docs"
+    "internal_dev"
   ],
   "excludeFiles": [
     ".gitignore"
@@ -24,7 +23,8 @@
   "notes": [
     "README image assets under media/readme_images and media/svg are public-facing and included.",
     "Sound reference/log files under modules/sound_levels/sounds are public-facing and included.",
-    "Internal docs live under internal_docs and are excluded.",
+    "Internal docs live under internal_dev and are excluded.",
     "The package must contain one top-level folder matching the root .toc filename."
   ]
 }
+

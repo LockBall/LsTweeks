@@ -17,7 +17,7 @@ Important `player_frame` keys:
 
 
 ## Runtime Notes
-- `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `internal_docs/tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
+- `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `internal_dev/tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 
 - Player Frame fade combat/health events are registered only while `fade_out_of_combat` is enabled. When enabling fade, refresh combat state from `InCombatLockdown()` because the module may not have been receiving regen events while disabled.
 
@@ -40,3 +40,4 @@ Important `player_frame` keys:
 - Do not use Lua comparisons/arithmetic/string conversion on current health or curve output. Health events should not stop or restart an active fade; after the base fade is already at target, health events only refresh the gated target alpha.
 
 - Threshold slider changes must route through `M.fade.on_threshold_changed(db)` so the curve cache clears and already-faded alpha is reapplied without waiting for the next health event.
+

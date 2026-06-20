@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..")
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")
 $extensionsRoot = Join-Path $env:USERPROFILE ".vscode\extensions"
 
 $luaServer = Get-ChildItem -Path $extensionsRoot -Recurse -File -ErrorAction SilentlyContinue |
@@ -37,7 +37,8 @@ if (-not (Test-Path -LiteralPath $annotationsFrameXML)) {
     throw "Missing Ketho FrameXML annotations: $annotationsFrameXML"
 }
 
-$outputRoot = Join-Path $repoRoot ".lua-language-server"
+$luaChecksRoot = Join-Path $repoRoot "internal_dev\tests_tools\lua_checks"
+$outputRoot = Join-Path $luaChecksRoot ".lua-language-server"
 $configPath = Join-Path $outputRoot "check-config.lua"
 $logPath = Join-Path $outputRoot "log"
 $metaPath = Join-Path $outputRoot "meta"
@@ -76,8 +77,10 @@ return {
         ignoreDir = {
             ".vscode",
             "libs",
-            ".lua-language-server",
-            ".luals-check",
+            "internal_dev/tests_tools/lua_checks/.lua-language-server",
+            "internal_dev/tests_tools/lua_checks/.luals-check",
+            "internal_dev/tests_tools/lua_checks/.luacheck-logs",
+            "internal_dev/tests_tools/lua_checks/.luacheck-meta",
         },
     },
     diagnostics = {

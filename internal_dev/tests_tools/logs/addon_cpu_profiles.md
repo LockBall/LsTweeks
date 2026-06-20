@@ -1,7 +1,7 @@
 # Whole-Addon CPU Profiles
 
 Long-term capture for broad LsTweeks in-game profiling runs. Use
-`internal_docs/tests_tools/addon_cpu_profile.lua` when looking for true addon hot paths
+`internal_dev/tests_tools/addon_cpu_profile.lua` when looking for true addon hot paths
 across modules.
 
 This profiler wraps addon-owned functions only. Do not wrap Blizzard/global APIs
@@ -10,7 +10,7 @@ that can taint Blizzard unit-frame execution when secret values are involved.
 
 ## How To Collect
 
-1. Temporarily load `internal_docs/tests_tools/addon_cpu_profile.lua` after
+1. Temporarily load `internal_dev/tests_tools/addon_cpu_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
 3. Run `/lstprofile start`.
@@ -371,3 +371,4 @@ Context:
 | `example.metric` | 0 | 0.000 | 0.0000 | 0.000 |
 
 Conclusion:
+
