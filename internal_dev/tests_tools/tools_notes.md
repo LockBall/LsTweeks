@@ -9,7 +9,7 @@ Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS d
 Repo path:
 
 ```text
-G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks
+<repo root>
 ```
 
 Observed working tools:
@@ -33,7 +33,7 @@ sandbox = "unelevated"
 Global config:
 
 ```text
-C:\Users\D00D\.codex\config.toml
+%USERPROFILE%\.codex\config.toml
 ```
 
 Do not use the Codex "setup sandbox" button unless intentionally retesting sandbox setup. It has repeatedly restored:
@@ -66,14 +66,14 @@ sandbox = "unelevated"
 If the config reverts to `elevated`, repair it from the helper workspace:
 
 ```text
-F:\from_git\agent_config
+<local helper workspace>\agent_config
 ```
 
 ```cmd
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File repair_codex_config.ps1
 ```
 
-The script backs up `C:\Users\D00D\.codex\config.toml`, removes any existing `[windows]` block, and appends the working `sandbox = "unelevated"` block.
+The script backs up `%USERPROFILE%\.codex\config.toml`, removes any existing `[windows]` block, and appends the working `sandbox = "unelevated"` block.
 
 ## Shell Verification
 
@@ -124,13 +124,13 @@ $env:VIRTUAL_ENV
 Expected paths point at:
 
 ```text
-G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\.venv
+<repo root>\.venv
 ```
 
 Known stale old path:
 
 ```text
-G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\Ls_Tweeks
+<old repo root>\Ls_Tweeks
 ```
 
 The old failure was caused by `.venv` metadata and generated `pip*.exe` launchers embedding the renamed `Ls_Tweeks` path. `python.exe` still worked, but `pip.exe` tried to launch an interpreter at the old path and failed.
@@ -189,7 +189,7 @@ Package verification passed.
 The LuaLS CLI may not be on `PATH`. On this machine the working binary is installed by the Sumneko VS Code extension:
 
 ```text
-C:\Users\D00D\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe
+%USERPROFILE%\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe
 ```
 
 Check tool locations:
@@ -236,8 +236,8 @@ return {
     },
     workspace = {
         library = {
-            "C:\\Users\\D00D\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core",
-            "C:\\Users\\D00D\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\FrameXML",
+            "<USERPROFILE>\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core",
+            "<USERPROFILE>\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\FrameXML",
         },
         ignoreDir = {
             ".vscode",

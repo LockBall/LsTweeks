@@ -3,9 +3,9 @@ Status: success
 Generated: 2026-06-01T21:58:07
 
 Settings:
-Source: F:\from_git\AudioFix\media\levelup2\levelup2_declip_high_-0.7.wav
+Source: AudioFix media source, levelup2_declip_high_-0.7.wav
 Source channels: stereo
-Output folder: F:\from_git\AudioFix\media\levelup2\levelup2_out
+Output folder: AudioFix generated output, levelup2_out
 Minimum dB: -28.000
 Interval dB: 1.474
 Peak/headroom gain: disabled

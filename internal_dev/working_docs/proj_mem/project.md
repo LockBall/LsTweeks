@@ -65,7 +65,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Preferred shell helper: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1`.
 
-- Direct annotation root: `C:\Users\D00D\.vscode\extensions\ketho.wow-api-0.22.3\Annotations\`.
+- Direct annotation root: `%USERPROFILE%\.vscode\extensions\ketho.wow-api-<version>\Annotations\`.
 
 - For APIs, grep annotations by name and cross-check call sites before changing code.
 

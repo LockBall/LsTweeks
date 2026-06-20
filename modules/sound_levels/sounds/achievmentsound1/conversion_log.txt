@@ -3,9 +3,9 @@ Status: success
 Generated: 2026-06-01T21:35:12
 
 Settings:
-Source: F:\from_git\AudioFix\media\achievmentsound1\achievmentsound1_declip_high_-2_2ch_8msR.wav
+Source: AudioFix media source, achievmentsound1_declip_high_-2_2ch_8msR.wav
 Source channels: stereo
-Output folder: F:\from_git\AudioFix\media\achievmentsound1\achievmentsound1_out
+Output folder: AudioFix generated output, achievmentsound1_out
 Minimum dB: -28.000
 Interval dB: 1.474
 Peak/headroom gain: disabled
