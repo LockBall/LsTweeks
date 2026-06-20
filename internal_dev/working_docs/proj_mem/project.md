@@ -26,7 +26,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
   - [Key WoW APIs And Lessons](#key-wow-apis-and-lessons)
 
-- [Directives And Philosophy](directives.md)
+- [Agent Start](agent_start.md)
 
 - [Module Memory](#module-memory)
 
@@ -47,7 +47,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Update this file or the relevant module file when architecture, defaults, APIs, or debugging lessons change.
 
-- Read `directives.md` for collaboration, documentation, cleanup, and engineering philosophy.
+- Read `agent_start.md` first when starting a new coding-agent session; it routes to this file, the public README, and relevant module memory without duplicating their contents.
 
 - Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/`, `ToDo.md`, `scratchpad.md`, and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 
