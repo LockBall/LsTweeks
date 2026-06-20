@@ -1,7 +1,3 @@
-# Aura Frames Review - 2026 Jun
-
-Rating format: `Priority` is review order, `Impact` is expected addon/user impact if the issue is real, and `Change Risk` is the risk of making changes in that area.
-
 1. Priority: High | Impact: High | Change Risk: High - Review Cooldown Manager mirroring before adding more CDM behavior. Check whether public `C_CooldownViewer` APIs can replace any `af_scan.lua` Blizzard CooldownViewer child-frame reads or `CooldownViewerItemDataMixin` hooks.
 
 2. Priority: High | Impact: High | Change Risk: High - Confirm Blizzard buff/debuff frame restoration on Retail 12.0.7. If the current `af_core.lua` best-effort restore is incomplete, record Blizzard's current event/script ownership before changing the toggle implementation.
