@@ -1,8 +1,8 @@
-# Environment Tools Recovery Notes
+# Tools Notes
 
 Date: 2026-06-02
 
-Durable notes for fixing Codex shell execution and the local Python venv in this repo.
+Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS diagnostics, and the local Python venv in this repo.
 
 ## Known Good State
 
@@ -182,3 +182,106 @@ Expected package result:
 ```text
 Package verification passed.
 ```
+
+
+## LuaLS / Ketho Shell Diagnostics
+
+The LuaLS CLI may not be on `PATH`. On this machine the working binary is installed by the Sumneko VS Code extension:
+
+```text
+C:\Users\D00D\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe
+```
+
+Check tool locations:
+
+```powershell
+Get-Command lua-language-server, lua-language-server.exe -ErrorAction SilentlyContinue
+Get-ChildItem -Path "$env:USERPROFILE\.vscode\extensions" -Directory | Where-Object { $_.Name -match 'lua|sumneko|ketho|wow-api' }
+Get-ChildItem -Path "$env:USERPROFILE\.vscode\extensions" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'lua-language-server(\.exe)?$' } | Select-Object -First 10 FullName
+```
+
+Do not rely on LuaLS automatically loading `.vscode/settings.json` during `--check`. A plain `--check` run ignored the Ketho libraries and produced hundreds of false undefined-global warnings. Use an explicit config file with absolute Ketho library paths.
+
+Preferred helper script:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_docs\tests_tools\kethos\run_luals_ketho.ps1
+```
+
+The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `.lua-language-server/`.
+
+Working local config path:
+
+```text
+.lua-language-server\check-config.lua
+```
+
+That folder is ignored by git. If the file is missing, recreate it from `.vscode/settings.json` with explicit absolute libraries:
+
+```lua
+return {
+    runtime = {
+        version = "Lua 5.1",
+        builtin = {
+            basic = "disable",
+            debug = "disable",
+            io = "disable",
+            math = "disable",
+            os = "disable",
+            package = "disable",
+            string = "disable",
+            table = "disable",
+            utf8 = "disable",
+        },
+    },
+    workspace = {
+        library = {
+            "C:\\Users\\D00D\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core",
+            "C:\\Users\\D00D\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\FrameXML",
+        },
+        ignoreDir = {
+            ".vscode",
+            "libs",
+            ".lua-language-server",
+            ".luals-check",
+        },
+    },
+    diagnostics = {
+        ignoredFiles = "Disable",
+        globals = {
+            "SlashCmdList",
+            "ColorPickerFrame",
+            "SOUNDKIT",
+            "AddonCompartmentFrame",
+            "BuffFrame",
+            "DebuffFrame",
+            "PanelTemplates_SetNumTabs",
+            "PanelTemplates_UpdateTabs",
+            "PanelTemplates_TabResize",
+            "StaticPopupDialogs",
+            "StaticPopup_Show",
+            "PanelTemplates_SelectTab",
+            "PanelTemplates_DeselectTab",
+            "Settings",
+            "STANDARD_TEXT_FONT",
+            "PlayerFrame",
+            "MinimalSliderWithSteppersMixin",
+            "CreateMinimalSliderFormatter",
+        },
+        disable = {
+            "assign-type-mismatch",
+        },
+    },
+    type = {
+        weakUnionCheck = true,
+    },
+}
+```
+
+Manual diagnostics command from the repo root:
+
+```powershell
+& "$env:USERPROFILE\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe" --check="$PWD" --configpath="$PWD\.lua-language-server\check-config.lua" --check_format=pretty --checklevel=Warning --logpath="$PWD\.lua-language-server\log" --metapath="$PWD\.lua-language-server\meta"
+```
+
+Expected known result as of 2026-06-20: three Sound Levels warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.

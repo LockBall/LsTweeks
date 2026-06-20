@@ -2,6 +2,7 @@
 
 Date: 2026-05-30
 
+
 ## LuaLS/Ketho Finding
 
 `modules/aura_frames/af_main.lua` uses `GameTooltip:SetUnitAuraByAuraInstanceID(...)`.
@@ -10,6 +11,7 @@ Ketho/LuaLS does not expose `GameTooltip.SetUnitAuraByAuraInstanceID` on the cor
 `GameTooltip:SetUnitAuraByAuraInstanceID(...)` in BuffFrame, CooldownViewer, and
 NamePlate aura code. FrameXML also maps the tooltip handler to
 `GetUnitAuraByAuraInstanceID`.
+
 
 ## Decision
 
@@ -22,6 +24,7 @@ if not GameTooltip.SetUnitAuraByAuraInstanceID then return false end
 ```
 
 Keep the existing spell tooltip fallback path.
+
 
 ## Test Notes
 

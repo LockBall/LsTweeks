@@ -39,6 +39,7 @@ luac.out
 # LuaLS check output
 .luacheck-logs/
 .luacheck-meta/
+.luals-check/
 .lua-language-server/
 .luarc.json
 .luarc.jsonc

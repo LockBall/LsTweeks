@@ -2,6 +2,7 @@
 
 Date: 2026-06-06
 
+
 ## Per-Frame Aura Event Ownership
 
 Aura Frames currently creates one runtime frame per preset/custom aura frame. Each
@@ -11,11 +12,14 @@ cooldown update events.
 The current maximum normal shape is small:
 
 - 8 preset runtime frames.
+
 - Up to 4 custom runtime frames.
+
 - Disabled frames return from `handle_aura_frame_event()` before aura-info merging,
   dirty/cache work, or deferred callbacks.
 - Enabled frames still schedule their own deferred refresh, but the shared scan
   prevents repeated full aura scans in the same dirty batch.
+
 
 ## Decision
 

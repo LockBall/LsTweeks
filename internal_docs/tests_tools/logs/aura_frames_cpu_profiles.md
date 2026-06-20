@@ -1,7 +1,7 @@
 # Aura Frames CPU Profiles
 
 Long-term capture for Aura Frames in-game profiling runs. Use
-`internal_docs/tests/aura_frames_duration_profile.lua` when collecting comparable
+`internal_docs/tests_tools/aura_frames_duration_profile.lua` when collecting comparable
 data.
 
 ## Current Decision
@@ -17,7 +17,7 @@ DurationObjects resolved during render before falling back to another
 
 ## How To Collect
 
-1. Temporarily load `internal_docs/tests/aura_frames_duration_profile.lua` after
+1. Temporarily load `internal_docs/tests_tools/aura_frames_duration_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
 3. Run `/lstafprofile start`.
