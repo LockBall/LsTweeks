@@ -140,7 +140,7 @@ Every Lua file starts with a short responsibility header before `local addon_nam
 
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
 
-- Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_tick` as profiling/test adjustment points instead of changing generic buckets directly.
+- Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
 
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
 

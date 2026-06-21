@@ -10,7 +10,6 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
-local C_Timer_NewTicker = C_Timer and C_Timer.NewTicker
 local CreateFrame = CreateFrame
 local GetTime = GetTime
 local floor = math.floor
@@ -19,7 +18,6 @@ local min = math.min
 local ipairs = ipairs
 local tonumber = tonumber
 
-local TICK_SECONDS = addon.UPDATE_INTERVALS.skyriding_vigor_tick or addon.UPDATE_INTERVALS.fifth_sec
 local FILL_TEST_NODE_SECONDS = 2.0
 local RUNTIME_EVENTS = {
     "PLAYER_ENTERING_WORLD",
@@ -40,6 +38,8 @@ M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
 
 local loader = CreateFrame("Frame")
+local progress_driver = CreateFrame("Frame")
+progress_driver:Hide()
 
 -- ============================================================================
 -- DATABASE
@@ -61,6 +61,7 @@ local function normalize_db(db)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
     db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_SPECS.fade_length)
     db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
+    db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
     if type(db.spark_color) ~= "table" then
         local color = DEFAULTS.spark_color or { r = 1, g = 1, b = 1, a = 1 }
         db.spark_color = { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
@@ -127,11 +128,15 @@ M.get_db = get_db
 -- RUNTIME LIFECYCLE
 -- ============================================================================
 
-local function stop_ticker()
-    if M.ticker then
-        M.ticker:Cancel()
-        M.ticker = nil
-    end
+local function stop_progress_driver()
+    progress_driver:SetScript("OnUpdate", nil)
+    progress_driver:Hide()
+    M._progress_slot_index = nil
+    M._progress_start_time = nil
+    M._progress_duration = nil
+    M._progress_refresh_only = nil
+    M._progress_elapsed = nil
+    M._progress_update_seconds = nil
 end
 
 local function sync_runtime_events(enabled)
@@ -150,7 +155,7 @@ local function sync_runtime_events(enabled)
 end
 
 local function disable_runtime()
-    stop_ticker()
+    stop_progress_driver()
     M._fill_test_enabled = false
     M._fill_test_started_at = nil
     if M.sync_fill_test_button then
@@ -165,7 +170,7 @@ local function disable_runtime()
 end
 
 -- ============================================================================
--- FILL TEST AND TICKING
+-- FILL TEST AND PROGRESS UPDATES
 -- ============================================================================
 
 local function get_fill_test_charge_info()
@@ -178,20 +183,62 @@ local function get_fill_test_charge_info()
     return full_count, max_slots, GetTime() - (progress * FILL_TEST_NODE_SECONDS), FILL_TEST_NODE_SECONDS
 end
 
-local function should_tick(db, needs_progress_updates)
-    return db and db.enabled and needs_progress_updates
+local function get_progress_update_seconds(db)
+    local hz = clamp_number(db and db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
+    return 1 / hz
 end
 
-local function update_ticker(db, needs_progress_updates)
-    if should_tick(db, needs_progress_updates) then
-        if not M.ticker then
-            M.ticker = C_Timer_NewTicker(TICK_SECONDS, function()
-                M.refresh()
-            end)
-        end
-    else
-        stop_ticker()
+local function update_progress_driver(db, needs_progress_updates, slot_index, start_time, duration)
+    local refresh_only = not slot_index and M._fill_test_enabled
+    if not db or not db.enabled or not needs_progress_updates or (not slot_index and not refresh_only)
+        or not start_time or not duration or duration <= 0
+    then
+        stop_progress_driver()
+        return
     end
+
+    M._progress_slot_index = slot_index
+    M._progress_start_time = start_time
+    M._progress_duration = duration
+    M._progress_refresh_only = refresh_only
+    M._progress_update_seconds = get_progress_update_seconds(db)
+    M._progress_elapsed = M._progress_update_seconds
+
+    if progress_driver:GetScript("OnUpdate") then
+        return
+    end
+
+    progress_driver:SetScript("OnUpdate", function(_, elapsed)
+        local active_slot = M._progress_slot_index
+        local active_start = M._progress_start_time
+        local active_duration = M._progress_duration
+        local refresh_only_update = M._progress_refresh_only
+        if (not active_slot and not refresh_only_update) or not active_start
+            or not active_duration or active_duration <= 0
+        then
+            stop_progress_driver()
+            return
+        end
+
+        M._progress_elapsed = (M._progress_elapsed or 0) + (elapsed or 0)
+        local progress_update_seconds = M._progress_update_seconds or get_progress_update_seconds(get_db())
+        if M._progress_elapsed < progress_update_seconds then
+            return
+        end
+        M._progress_elapsed = 0
+
+        local progress = min(max((GetTime() - active_start) / active_duration, 0), 1)
+        if progress >= 1 then
+            stop_progress_driver()
+            M.refresh()
+            return
+        end
+
+        if active_slot then
+            M.update_filling_slot_progress(active_slot, progress)
+        end
+    end)
+    progress_driver:Show()
 end
 
 -- ============================================================================
@@ -249,7 +296,7 @@ function M.refresh()
     if not should_show then
         M.restore_frame_alpha(frame)
         frame:Hide()
-        update_ticker(db, false)
+        stop_progress_driver()
         return
     end
     current = current or 0
@@ -259,9 +306,14 @@ function M.refresh()
     if duration and duration > 0 and start_time and start_time > 0 then
         progress = min(max((GetTime() - start_time) / duration, 0), 1)
     end
+    local filling_slot_index
     local needs_progress_updates = M._fill_test_enabled or (not db.move_mode
         and (current < max_charges and duration and duration > 0 and start_time and start_time > 0)
     )
+    local visible_max_charges = min(max_charges, max_slots)
+    if needs_progress_updates and current < visible_max_charges then
+        filling_slot_index = current + 1
+    end
 
     for i = 1, max_slots do
         if i <= max_charges then
@@ -285,7 +337,7 @@ function M.refresh()
     if not frame:IsShown() then
         frame:Show()
     end
-    update_ticker(db, needs_progress_updates)
+    update_progress_driver(db, needs_progress_updates, filling_slot_index, start_time, duration)
 end
 
 -- ============================================================================
@@ -319,7 +371,7 @@ function M.set_fill_test_enabled(enabled)
     end
 
     if enabled then
-        stop_ticker()
+        stop_progress_driver()
         M._fill_test_started_at = GetTime()
         M.refresh()
     else
@@ -360,6 +412,8 @@ function M.set_db_value(key, value)
         value = value and true or false
     elseif key == "spark_size" then
         value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
+    elseif key == "progress_update_hz" then
+        value = clamp_number(value, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
     elseif key == "style" and M.get_valid_bar_style_key then
         value = M.get_valid_bar_style_key(value)
     elseif key == "scale" and M.set_style_scale then

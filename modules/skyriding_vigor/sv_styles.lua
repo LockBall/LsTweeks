@@ -124,6 +124,7 @@ local DECOR_STYLE_ORDER = { "default", "storm_race" }
 local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
 local FILL_ADD_ALPHA_RANGE = { min = 0, max = 1, step = 0.01 }
 local SPARK_SIZE_RANGE = { min = 0.50, max = 10.00, step = 0.5 }
+local PROGRESS_UPDATE_HZ_RANGE = { min = 5, max = 60, step = 1 }
 local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
@@ -167,6 +168,7 @@ M.SETTING_SPECS = {
     fade_alpha = FADE_ALPHA_RANGE,
     fade_length = FADE_LENGTH_RANGE,
     fill_add_alpha = FILL_ADD_ALPHA_RANGE,
+    progress_update_hz = PROGRESS_UPDATE_HZ_RANGE,
     spark_size = SPARK_SIZE_RANGE,
     scale = SCALE_RANGE,
     spacing = SPACING_RANGE,
@@ -176,7 +178,7 @@ M.SETTING_SPECS = {
     x_position = POSITION_RANGE,
     y_position = POSITION_RANGE,
 }
-M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale", "fill_add_alpha", "spark_size" }
+M.SLIDER_KEYS = { "fade_alpha", "fade_length", "spacing", "scale", "fill_add_alpha", "spark_size", "progress_update_hz" }
 M.LAYOUT_SETTING_KEYS = {
     scale = true,
     spacing = true,

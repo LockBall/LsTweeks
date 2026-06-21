@@ -317,6 +317,18 @@ local function set_spark_atlas(slot, atlas)
     slot._spark_atlas = atlas
 end
 
+local function set_slot_spark_clip_bounds(slot)
+    if not slot or not slot.spark_frame then return end
+    if slot._spark_clip_bounds_set then return end
+
+    local fill_width, fill_height = get_fill_size()
+    local frame_width = get_frame_size()
+    slot.spark_frame:ClearAllPoints()
+    slot.spark_frame:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.spark_frame:SetSize(min(fill_width, get_frame_edge_width(frame_width)), fill_height)
+    slot._spark_clip_bounds_set = true
+end
+
 local function update_slot_spark(slot, state, progress, style_key, style)
     if not slot or not slot.spark then return end
 
@@ -330,6 +342,7 @@ local function update_slot_spark(slot, state, progress, style_key, style)
         return
     end
 
+    set_slot_spark_clip_bounds(slot)
     if slot._spark_atlas ~= spark_atlas or not slot._spark_bounds_set then
         set_spark_atlas(slot, spark_atlas)
         slot._spark_bounds_set = true
@@ -339,11 +352,11 @@ local function update_slot_spark(slot, state, progress, style_key, style)
     end
 
     local _, fill_height = get_fill_size()
-    local spark_x = FILL_LAYOUT.offset_x + (style.spark_offset_x or SPARK_LAYOUT.offset_x)
+    local spark_x = style.spark_offset_x or SPARK_LAYOUT.offset_x
     local spark_y = FILL_LAYOUT.offset_y - (fill_height / 2) + (fill_height * progress)
         + (style.spark_offset_y or SPARK_LAYOUT.offset_y)
     slot.spark:ClearAllPoints()
-    slot.spark:SetPoint("CENTER", slot, "CENTER", spark_x, spark_y)
+    slot.spark:SetPoint("CENTER", slot.spark_frame, "CENTER", spark_x, spark_y - FILL_LAYOUT.offset_y)
     slot.spark:Show()
     slot._spark_shown = true
 end
@@ -377,6 +390,31 @@ function M.apply_fill_color()
     end
 end
 
+function M.update_filling_slot_progress(index, progress)
+    local slot = M.slots[index]
+    if not slot then return end
+
+    progress = max(0, min(progress or 0, 1))
+    if slot._state ~= "filling" then
+        M.set_slot_state(index, "filling", progress)
+        return
+    end
+
+    if abs((slot._progress or -1) - progress) < 0.0001 then
+        return
+    end
+
+    slot.bar:SetValue(progress)
+    if slot.fill_boost then
+        slot.fill_boost:SetValue(progress)
+    end
+
+    local db = get_db()
+    local style_key, style = M.get_bar_style(db)
+    update_slot_spark(slot, "filling", progress, style_key, style)
+    slot._progress = progress
+end
+
 local function set_slot_progress(slot, progress)
     progress = max(0, min(progress or 0, 1))
 
@@ -407,6 +445,7 @@ local function set_slot_fill_bounds(slot)
     end
     if slot.spark then
         slot._spark_bounds_set = false
+        slot._spark_clip_bounds_set = false
     end
     slot._fill_bounds_set = true
 end
@@ -418,9 +457,10 @@ local function create_slot(parent, index)
     slot:SetSize(width, height)
 
     local base_level = slot:GetFrameLevel()
-    local frame_level = base_level + 3
     local background_level = base_level + 1
     local fill_level = base_level + 2
+    local spark_level = base_level + 3
+    local frame_level = base_level + 4
 
     slot.background_frame = CreateFrame("Frame", nil, slot)
     slot.background_frame:ClearAllPoints()
@@ -455,12 +495,16 @@ local function create_slot(parent, index)
 
     slot.spark_frame = CreateFrame("Frame", nil, slot)
     slot.spark_frame:ClearAllPoints()
-    slot.spark_frame:SetAllPoints(slot)
-    slot.spark_frame:SetFrameLevel(fill_level + 1)
+    slot.spark_frame:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.spark_frame:SetSize(fill_width, fill_height)
+    slot.spark_frame:SetFrameLevel(spark_level)
+    if slot.spark_frame.SetClipsChildren then
+        slot.spark_frame:SetClipsChildren(true)
+    end
 
     slot.spark = slot.spark_frame:CreateTexture(nil, "OVERLAY", nil, 2)
     slot.spark:ClearAllPoints()
-    slot.spark:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
+    slot.spark:SetPoint("CENTER", slot.spark_frame, "CENTER", 0, 0)
     slot.spark:Hide()
 
     slot.cover_frame = CreateFrame("Frame", nil, slot)
@@ -502,7 +546,7 @@ function M.set_slot_state(index, state, progress)
         and effective_progress < 1 and spark_atlas
     if slot._state == state and slot._static_style == style and slot._frame_atlas == frame_atlas
         and slot._spark_enabled == show_spark and (not show_spark or slot._spark_atlas == spark_atlas)
-        and abs((slot._progress or -1) - effective_progress) < 0.001
+        and abs((slot._progress or -1) - effective_progress) < 0.0001
     then
         update_slot_spark(slot, state, effective_progress, style_key, style)
         return
@@ -513,6 +557,7 @@ function M.set_slot_state(index, state, progress)
         slot._bar_texture = nil
         slot._fill_bounds_set = false
         slot._spark_bounds_set = false
+        slot._spark_clip_bounds_set = false
     end
 
     set_slot_fill_bounds(slot)

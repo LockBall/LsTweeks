@@ -8,6 +8,7 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 }
 
 local defs = {}
+local default_progress_interval = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.skyriding_vigor_progress or 0.05
 
 defs.defaults = {
     skyriding_vigor = {
@@ -24,6 +25,7 @@ defs.defaults = {
         decor_style = "default",
         spacing = 5,
         scale = 1.0,
+        progress_update_hz = 1 / default_progress_interval,
         style_layouts = {
             default = {
                 fill_color = { r = 1, g = 1, b = 1, a = 1 },

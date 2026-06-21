@@ -9,9 +9,11 @@ Important `skyriding_vigor` keys:
 
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
 
+- `progress_update_hz`: Fill FPS slider value for the active filling-node progress driver. Defaults from `addon.UPDATE_INTERVALS.skyriding_vigor_progress` in `core/init.lua`, currently `20`.
+
 - `show_spark`: optional Blizzard spark atlas overlay on the actively filling vigor node. Defaults off.
 
-- `spark_color` and `spark_size`: global spark tint/alpha and height multiplier for the optional spark overlay. `spark_size` defaults to `5.00`; range is `0.50-10.00` in `0.5` steps.
+- `spark_color` and `spark_size`: global spark tint/alpha and thickness multiplier for the optional spark overlay. The UI labels `spark_size` as Spark Thickness. It defaults to `5.00`; range is `0.50-10.00` in `0.5` steps.
 
 - `move_mode`: shows the frame and enables left-drag positioning.
 
@@ -77,7 +79,7 @@ Important `skyriding_vigor` keys:
 
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES` in `sv_styles.lua`.
 
-- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Default-style spark placement still needs style-specific tuning: a global height cap/clamp attempt made the spark behave strangely and was reverted, so future work should inspect each style's atlas dimensions, offsets, and fill-edge math instead of adding a broad clamp.
+- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Runtime draws the spark above the fill layer but below the frame cover, with a slot-local clipped spark frame sized to the fill box so texture overflow is hidden without rescaling the spark. `spark_size` remains a thickness multiplier. Default-style spark placement still needs style-specific in-game tuning for offsets, color strength, and slider max, but avoid broad height clamps that ignore atlas dimensions and fill-edge math.
 
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.
 
@@ -87,12 +89,12 @@ Important `skyriding_vigor` keys:
 
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
 
-- Fill Test uses simulated charge data through the normal `M.refresh()` path and the normal Skyriding Vigor ticker cadence. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Do not reintroduce a separate faster fill-test render ticker unless the behavior intentionally diverges from runtime display.
+- Fill Test uses simulated charge data through the normal `M.refresh()` path and the active-only progress driver. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Do not reintroduce a separate fill-test render path unless the behavior intentionally diverges from runtime display.
 
-- Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can restart a ticker.
+- Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can start the progress driver.
 
 - The Skyriding Talents button must guard `InCombatLockdown()` before opening `GenericTraitFrame`; in combat, print the addon-owned yellow message instead of allowing Blizzard's generic blocked-action warning.
 
-- Avoid always-running `OnUpdate`; use a `C_Timer.NewTicker()` only while enabled and relevant to display/recharge progress. Runtime refresh should not redo stable layout, reset slot visuals, or normalize DB on each tick.
+- Avoid always-running `OnUpdate`; `sv_main.lua` uses an active-only progress driver while a node is visibly filling and stops it when hidden, disabled, full, or in move mode. The driver is capped by the DB-backed `progress_update_hz` Fill FPS slider and calls `M.update_filling_slot_progress()` so progress animation does not redo stable layout, reset slot visuals, or normalize DB on each update. The default cap comes from `addon.UPDATE_INTERVALS.skyriding_vigor_progress`, currently 20Hz.
 
-- When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop tickers, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
+- When Skyriding Vigor `enabled` is false, `sv_main.lua` must stop progress updates, hide any existing frame, disable frame mouse input, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.

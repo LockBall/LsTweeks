@@ -36,9 +36,10 @@ local STRINGS = {
     fade_when_full = "Fade When Full",
     fade_alpha = "Fade Alpha",
     fade_length = "Fade Length",
+    progress_update_hz = "Fill FPS",
     show_spark = "Show Spark",
     spark_color = "Spark Color",
-    spark_size = "Spark Size",
+    spark_size = "Spark Thickness",
     move_mode = "Move Mode",
     snap_to_grid = "Snap to Grid",
     style = "Style",
@@ -297,6 +298,7 @@ function M.BuildSettings(parent)
     local decor_y_spec = get_spec("decor_y_position")
     local fade_alpha_spec = get_spec("fade_alpha")
     local fade_length_spec = get_spec("fade_length")
+    local progress_update_hz_spec = get_spec("progress_update_hz")
     local spark_size_spec = get_spec("spark_size")
     local col_step_x = cfg.slider_width + cfg.slider_gap_x
 
@@ -666,6 +668,21 @@ function M.BuildSettings(parent)
     )
     M.controls.fade_length = fade_length_slider
     fade_length_slider:SetPoint("TOPLEFT", fade_alpha_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
+
+    local progress_update_hz_slider = addon.CreateSliderWithBox(
+        addon_name .. "SkyridingVigorProgressUpdateHz",
+        parent,
+        STRINGS.progress_update_hz,
+        progress_update_hz_spec.min,
+        progress_update_hz_spec.max,
+        progress_update_hz_spec.step,
+        db,
+        "progress_update_hz",
+        defaults,
+        set_setting_from_slider("progress_update_hz")
+    )
+    M.controls.progress_update_hz = progress_update_hz_slider
+    progress_update_hz_slider:SetPoint("TOPLEFT", fade_length_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
 
     local talents_row_y = -((cfg.slider_row_height + cfg.slider_row_gap_y) * 3)
     add_row_separator(parent, move_container, talents_row_y + math.floor(cfg.grid_row_gap / 2))

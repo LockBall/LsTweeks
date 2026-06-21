@@ -1,4 +1,5 @@
 # Agent Start
+read and follow internal_dev\working_docs\proj_mem\agent_start
 
 Start here for a new coding-agent session. This file is the lead-in, not the project memory itself; follow the links instead of copying their contents here.
 
