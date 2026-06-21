@@ -20,6 +20,7 @@ local tonumber = tonumber
 local MAX_SLOTS = 6
 local DEFAULT_STYLE_KEY = "default"
 local DEFAULT_NODE_COLOR_KEY = "default"
+local DEFAULT_VIGOR_FILL_COLOR = { r = 0.00, g = 0.80, b = 1.00, a = 1 }
 local NODE_COLORS = {
     default = {
         label = "Default",
@@ -41,83 +42,100 @@ local NODE_COLOR_ORDER = { "bronze", "dark", "gold", "silver" }
 local DEFAULT_DECOR_COLOR_KEY = "default"
 local DECOR_COLORS = NODE_COLORS
 local DECOR_COLOR_ORDER = NODE_COLOR_ORDER
+
+-- Default vigor art ----------------------------------------------------------
+
+local DEFAULT_BAR_STYLE = {
+    label = "Default",
+    frame = "dragonriding_vigor_frame",
+    frame_colors = {
+        default = "dragonriding_vigor_frame",
+    },
+    background = "dragonriding_vigor_background",
+    fill = "dragonriding_vigor_fillfull",
+    fill_full = "dragonriding_vigor_fillfull",
+    spark = "dragonriding_vigor_spark",
+    visible_edge_inset_x = 11.00,
+    spark_clip_inset_x = 1.50,
+    spark_clip_inset_y = 1.50,
+    spacing_offset = 0.00,
+    background_scale_x = 0.50,
+    background_scale_y = 0.50,
+    background_offset_x = 0.00,
+    background_offset_y = 0.00,
+    background_above_frame = false,
+    fill_color = DEFAULT_VIGOR_FILL_COLOR,
+    fill_add_alpha = 0.18,
+}
+
+local DEFAULT_DECOR_STYLE = {
+    label = "Default",
+    atlas = "dragonriding_vigor_decor",
+    atlas_colors = {
+        default = "dragonriding_vigor_decor",
+    },
+    scale = 1,
+    scale_x = 1,
+    scale_y = 1,
+    decor_node_gap_x = -18.0,
+    offset_y = -15.0,
+}
+
+-- Storm Race vigor art -------------------------------------------------------
+
+local STORM_RACE_BAR_STYLE = {
+    label = "Storm Race",
+    frame = "dragonriding_sgvigor_frame_bronze",
+    default_node_color = "bronze",
+    frame_colors = {
+        bronze = "dragonriding_sgvigor_frame_bronze",
+        dark = "dragonriding_sgvigor_frame_dark",
+        gold = "dragonriding_sgvigor_frame_gold",
+        silver = "dragonriding_sgvigor_frame_silver",
+    },
+    background = "dragonriding_sgvigor_background",
+    fill = "dragonriding_sgvigor_fillfull",
+    fill_full = "dragonriding_sgvigor_fillfull",
+    spark = "dragonriding_sgvigor_spark",
+    visible_edge_inset_x = 0.00,
+    spark_clip_inset_x = 0.00,
+    spark_clip_inset_y = 0.00,
+    spacing_offset = 0.00,
+    background_scale_x = 0.75,
+    background_scale_y = 0.75,
+    background_offset_x = 0.00,
+    background_offset_y = 0.00,
+    background_above_frame = false,
+    fill_color = { r = 1, g = 1, b = 1, a = 1 },
+    fill_add_alpha = 0.18,
+}
+
+local STORM_RACE_DECOR_STYLE = {
+    label = "Storm Race",
+    atlas = "dragonriding_sgvigor_decor_bronze",
+    default_decor_color = "bronze",
+    atlas_colors = {
+        bronze = "dragonriding_sgvigor_decor_bronze",
+        dark = "dragonriding_sgvigor_decor_dark",
+        gold = "dragonriding_sgvigor_decor_gold",
+        silver = "dragonriding_sgvigor_decor_silver",
+    },
+    scale = 1,
+    scale_x = 1,
+    scale_y = 1,
+    decor_node_gap_x = -20.0,
+    offset_y = 5.0,
+}
+
 local BAR_STYLES = {
-    default = {
-        label = "Default",
-        frame = "dragonriding_vigor_frame",
-        frame_colors = {
-            default = "dragonriding_vigor_frame",
-        },
-        background = "dragonriding_vigor_background",
-        fill = "dragonriding_vigor_fill",
-        fill_full = "dragonriding_vigor_fillfull",
-        spark = "dragonriding_vigor_spark",
-        visible_edge_inset_x = 11.00,
-        spacing_offset = 0.00,
-        background_scale_x = 0.50,
-        background_scale_y = 0.50,
-        background_offset_x = 0.00,
-        background_offset_y = 0.00,
-        background_above_frame = false,
-        fill_color = { r = 1, g = 1, b = 1, a = 1 },
-        fill_add_alpha = 0.18,
-    },
-    storm_race = {
-        label = "Storm Race",
-        frame = "dragonriding_sgvigor_frame_bronze",
-        default_node_color = "bronze",
-        frame_colors = {
-            bronze = "dragonriding_sgvigor_frame_bronze",
-            dark = "dragonriding_sgvigor_frame_dark",
-            gold = "dragonriding_sgvigor_frame_gold",
-            silver = "dragonriding_sgvigor_frame_silver",
-        },
-        background = "dragonriding_sgvigor_background",
-        fill = "dragonriding_sgvigor_fillfull",
-        fill_full = "dragonriding_sgvigor_fillfull",
-        spark = "dragonriding_sgvigor_spark",
-        visible_edge_inset_x = 0.00,
-        spacing_offset = 0.00,
-        background_scale_x = 0.75,
-        background_scale_y = 0.75,
-        background_offset_x = 0.00,
-        background_offset_y = 0.00,
-        background_above_frame = false,
-        fill_color = { r = 1, g = 1, b = 1, a = 1 },
-        fill_add_alpha = 0.18,
-    },
+    default = DEFAULT_BAR_STYLE,
+    storm_race = STORM_RACE_BAR_STYLE,
 }
 local BAR_STYLE_ORDER = { "default", "storm_race" }
 local DEFAULT_DECOR_STYLE_KEY = "default"
 local DECOR_STYLES = {
-    default = {
-        label = "Default",
-        atlas = "dragonriding_vigor_decor",
-        atlas_colors = {
-            default = "dragonriding_vigor_decor",
-        },
-        scale = 1,
-        scale_x = 1,
-        scale_y = 1,
-        decor_node_gap_x = -18.0,
-        offset_y = -15.0,
-    },
-    storm_race = {
-        label = "Storm Race",
-        atlas = "dragonriding_sgvigor_decor_bronze",
-        default_decor_color = "bronze",
-        atlas_colors = {
-            bronze = "dragonriding_sgvigor_decor_bronze",
-            dark = "dragonriding_sgvigor_decor_dark",
-            gold = "dragonriding_sgvigor_decor_gold",
-            silver = "dragonriding_sgvigor_decor_silver",
-        },
-        scale = 1,
-        scale_x = 1,
-        scale_y = 1,
-        decor_node_gap_x = -20.0,
-        offset_y = 5.0,
-    },
+    default = DEFAULT_DECOR_STYLE,
+    storm_race = STORM_RACE_DECOR_STYLE,
 }
 local DECOR_STYLE_ORDER = { "default", "storm_race" }
 

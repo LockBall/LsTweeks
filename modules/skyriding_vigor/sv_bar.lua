@@ -322,10 +322,16 @@ local function set_slot_spark_clip_bounds(slot)
     if slot._spark_clip_bounds_set then return end
 
     local fill_width, fill_height = get_fill_size()
+    local _, style = M.get_bar_style(get_db())
     local frame_width = get_frame_size()
+    local inset_x = max(0, style.spark_clip_inset_x or 0)
+    local inset_y = max(0, style.spark_clip_inset_y or 0)
     slot.spark_frame:ClearAllPoints()
     slot.spark_frame:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
-    slot.spark_frame:SetSize(min(fill_width, get_frame_edge_width(frame_width)), fill_height)
+    slot.spark_frame:SetSize(
+        max(1, min(fill_width, get_frame_edge_width(frame_width)) - (inset_x * 2)),
+        max(1, fill_height - (inset_y * 2))
+    )
     slot._spark_clip_bounds_set = true
 end
 
@@ -496,7 +502,14 @@ local function create_slot(parent, index)
     slot.spark_frame = CreateFrame("Frame", nil, slot)
     slot.spark_frame:ClearAllPoints()
     slot.spark_frame:SetPoint("CENTER", slot, "CENTER", FILL_LAYOUT.offset_x, FILL_LAYOUT.offset_y)
-    slot.spark_frame:SetSize(fill_width, fill_height)
+    local _, style = M.get_bar_style(get_db())
+    local frame_width = get_frame_size()
+    local inset_x = max(0, style.spark_clip_inset_x or 0)
+    local inset_y = max(0, style.spark_clip_inset_y or 0)
+    slot.spark_frame:SetSize(
+        max(1, min(fill_width, get_frame_edge_width(frame_width)) - (inset_x * 2)),
+        max(1, fill_height - (inset_y * 2))
+    )
     slot.spark_frame:SetFrameLevel(spark_level)
     if slot.spark_frame.SetClipsChildren then
         slot.spark_frame:SetClipsChildren(true)
@@ -672,6 +685,7 @@ function M.ensure_frame()
     for i = 1, MAX_SLOTS do
         M.slots[i] = create_slot(visual_frame, i)
     end
+    M.apply_fill_color()
 
     M.apply_position()
     return frame

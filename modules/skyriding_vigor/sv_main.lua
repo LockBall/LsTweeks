@@ -53,6 +53,11 @@ local function clamp_number(value, fallback, spec)
     return value
 end
 
+local function color_matches(color, r, g, b, a)
+    if type(color) ~= "table" then return false end
+    return color.r == r and color.g == g and color.b == b and (color.a or 1) == (a or 1)
+end
+
 local function normalize_db(db)
     if not db then return end
 
@@ -76,6 +81,14 @@ local function normalize_db(db)
         db.style = db.style or DEFAULTS.style or "default"
     end
     if M.get_style_layout_table then
+        local default_style_layout = M.get_style_layout_table(db, M.BAR_STYLE_DEFAULT or "default", true)
+        if default_style_layout and (
+            color_matches(default_style_layout.fill_color, 1, 1, 1, 1)
+            or color_matches(default_style_layout.fill_color, 0.20, 0.82, 1.00, 1)
+        ) then
+            default_style_layout.fill_color = M.get_style_layout_default(M.BAR_STYLE_DEFAULT or "default", "fill_color")
+        end
+
         local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
         if style_layout then
             style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_SPECS.scale)
@@ -398,6 +411,9 @@ function M.on_reset_complete()
 
     if M.sync_settings_controls then
         M.sync_settings_controls(db)
+    end
+    if M.apply_fill_color then
+        M.apply_fill_color()
     end
     M.apply_position()
     M.refresh()

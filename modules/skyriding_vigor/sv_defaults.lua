@@ -28,7 +28,7 @@ defs.defaults = {
         progress_update_hz = 1 / default_progress_interval,
         style_layouts = {
             default = {
-                fill_color = { r = 1, g = 1, b = 1, a = 1 },
+                fill_color = { r = 0.00, g = 0.80, b = 1.00, a = 1 },
                 fill_add_alpha = 0.18,
             },
             storm_race = {
