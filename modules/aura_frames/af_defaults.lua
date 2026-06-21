@@ -7,6 +7,12 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+M.MODULE_KEY = "aura_frames"
+
+function M.is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+end
+
 -- Single source for built-in Aura Frame categories. Derived tables below keep
 -- older call sites stable while preventing separate category lists from drifting.
 M.FRAME_DEFS = {

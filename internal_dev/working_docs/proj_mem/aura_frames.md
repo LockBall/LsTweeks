@@ -43,6 +43,8 @@ Important `aura_frames` keys:
 
 ## Runtime Gates And Refresh
 
+- Runtime module gating is centralized through `M.MODULE_KEY`, `M.is_runtime_enabled()`, and `M.stop_runtime()`. Keep Settings Module Enabler checks routed through those helpers instead of repeating direct `addon.is_module_enabled("aura_frames")` checks across runtime files.
+
 - Frame processing is enabled-rooted. Disabled frames must not do move-shell work, previews, scans, render, layout, or CDM viewer prep.
 
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.

@@ -338,7 +338,7 @@ end
 -- Shared ticker update path for all visible aura icon objects.
 -- Started on demand and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
-    if addon.is_module_enabled and not addon.is_module_enabled("aura_frames") then
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
         if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
         return
     end
@@ -568,7 +568,7 @@ end
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
 function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter, info)
-    if addon.is_module_enabled and not addon.is_module_enabled("aura_frames") then return end
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if not self or not self.icons then return end
 
     local db       = M.db

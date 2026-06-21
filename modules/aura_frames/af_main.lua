@@ -176,7 +176,7 @@ function M.apply_number_font_to_all()
 end
 
 local function run_wow_cooldown_refresh(refresh_config)
-    if addon.is_module_enabled and not addon.is_module_enabled("aura_frames") then return end
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if not M.frames then return end
 
     if refresh_config.mark_scan_dirty and M.mark_aura_scan_dirty then
@@ -871,7 +871,7 @@ end
 local function register_aura_frame_settings()
     if addon.register_category and M.BuildSettings then
         addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
-            module_key = "aura_frames",
+            module_key = M.MODULE_KEY,
         })
     end
 end
@@ -927,6 +927,10 @@ local function stop_aura_frame_runtime_services()
     end
 end
 
+function M.stop_runtime()
+    stop_aura_frame_runtime_services()
+end
+
 local function rebind_existing_aura_frames()
     for _, frame in ipairs(M.frames_list or {}) do
         if frame and frame.update_params then
@@ -950,7 +954,7 @@ function M.set_module_enabled(enabled)
         return
     end
 
-    stop_aura_frame_runtime_services()
+    M.stop_runtime()
 end
 
 -- Startup conductor: keep addon-loaded work in order while each step
@@ -960,11 +964,13 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
         register_aura_frame_settings()
-        if not addon.is_module_enabled or addon.is_module_enabled("aura_frames") then
+        if M.is_runtime_enabled and M.is_runtime_enabled() then
             prepare_aura_frame_db()
             create_startup_aura_frames()
             M._module_started = true
             start_aura_frame_runtime_services()
+        else
+            M.stop_runtime()
         end
         self:UnregisterEvent("ADDON_LOADED")
     end
