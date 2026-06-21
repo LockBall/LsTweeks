@@ -2,6 +2,8 @@
 
 Sound Levels module-specific notes live in `internal_dev/completed_features/sound_levels.md`. Check that file for saved-variable shape, ownership, Fishing Focus behavior, runtime notes, Ketho findings, and performance guidance.
 
+- Sound Levels registers its settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Sound mutes, replacement playback, previews, event registration, and Fishing Focus runtime route through `M.is_runtime_enabled()` and `M.stop_runtime()`.
+
 
 ## Ketho / LuaLS
 

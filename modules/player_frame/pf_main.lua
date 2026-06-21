@@ -10,6 +10,11 @@ local M = addon.player_frame
 
 local math_min = math.min
 local math_max = math.max
+local MODULE_KEY = "player_frame"
+
+-- -------------------------------------------------------------------------- --
+-- Settings and defaults
+-- -------------------------------------------------------------------------- --
 
 local FADE_DEFAULTS = {
     fade_alpha = 0.5,
@@ -32,6 +37,10 @@ local defaults = {
         health_release_speed = FADE_DEFAULTS.health_release_speed,
     },
 }
+
+-- -------------------------------------------------------------------------- --
+-- GUI configuration
+-- -------------------------------------------------------------------------- --
 
 local UI_CONFIG = {
     checkbox_offset_x = 20,
@@ -66,12 +75,6 @@ local STRINGS = {
     health_release_speed_help =
         "How quickly visibility drops above Low Health %.",
 }
-
-local hitIndicatorFrame = nil
-local hookApplied = false
-local hidePortraitText = false
-local fadeEventsRegistered = false
-local loader = nil
 
 local FADE_SLIDER_DEFS = {
     {
@@ -126,10 +129,37 @@ local FADE_SLIDER_DEFS = {
     },
 }
 
+-- -------------------------------------------------------------------------- --
+-- Runtime state
+-- -------------------------------------------------------------------------- --
+
+local hitIndicatorFrame = nil
+local hookApplied = false
+local hidePortraitText = false
+local fadeEventsRegistered = false
+local loader = nil
+
+-- -------------------------------------------------------------------------- --
+-- Database helpers
+-- -------------------------------------------------------------------------- --
+
 local function get_player_frame_db()
     if not Ls_Tweeks_DB then return nil end
     Ls_Tweeks_DB.player_frame = Ls_Tweeks_DB.player_frame or {}
     return Ls_Tweeks_DB.player_frame
+end
+
+function M.get_clamped_fade_value(db, key, min_value, max_value)
+    local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
+    return math_max(min_value, math_min(max_value, value))
+end
+
+-- -------------------------------------------------------------------------- --
+-- Runtime logic
+-- -------------------------------------------------------------------------- --
+
+local function is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(MODULE_KEY)
 end
 
 local function get_hit_indicator()
@@ -154,11 +184,6 @@ local function setup_on_show_hook(frame)
         self:SetAlpha(hidePortraitText and 0 or 1)
     end)
     hookApplied = true
-end
-
-function M.get_clamped_fade_value(db, key, min_value, max_value)
-    local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
-    return math_max(min_value, math_min(max_value, value))
 end
 
 local function sync_fade_events(db)
@@ -200,21 +225,55 @@ local function set_player_frame_setting(key, value)
     local db = get_player_frame_db()
     if not db then return end
     db[key] = value
-    if key == "fade_out_of_combat" then
-        sync_fade_events(db)
-    end
-    if key == "health_visible_threshold" then
+    if key == "health_visible_threshold" and is_runtime_enabled() then
         M.fade.on_threshold_changed(db)
     end
     M.update_player_frame()
 end
 
 local function on_fade_slider_changed(key)
-    if key == "health_visible_threshold" then
+    if key == "health_visible_threshold" and is_runtime_enabled() then
         M.fade.on_threshold_changed(get_player_frame_db())
     end
     M.update_player_frame()
 end
+
+local function stop_runtime()
+    sync_fade_events(nil)
+    set_portrait_combat_text_hidden(false)
+    if M.fade and M.fade.stop_transition then
+        M.fade.stop_transition()
+    end
+    if PlayerFrame then
+        PlayerFrame:SetAlpha(1)
+    end
+end
+
+local function start_runtime(db)
+    if not db then return end
+    sync_fade_events(db)
+    set_portrait_combat_text_hidden(db.hide_portrait_combat_text)
+    M.fade.apply(db)
+end
+
+local function handle_runtime_event(event)
+    if not is_runtime_enabled() then
+        stop_runtime()
+        return
+    end
+
+    if event == "PLAYER_REGEN_DISABLED" then
+        M.fade.on_enter_combat()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        M.fade.on_leave_combat(get_player_frame_db())
+    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
+        M.fade.queue_health_update(get_player_frame_db)
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+-- GUI
+-- -------------------------------------------------------------------------- --
 
 local function attach_help_tooltip(target, title, body)
     if not target then return end
@@ -235,13 +294,87 @@ local function attach_help_tooltip(target, title, body)
     end)
 end
 
-function M.update_player_frame()
-    if addon.is_module_enabled and not addon.is_module_enabled("player_frame") then return end
+local function build_options_panel(parent)
+    local cfg = UI_CONFIG
     local db = get_player_frame_db()
-    if not db then return end
-    sync_fade_events(db)
-    set_portrait_combat_text_hidden(db.hide_portrait_combat_text)
-    M.fade.apply(db)
+    local row1 = CreateFrame("Frame", nil, parent)
+    row1:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
+    row1:SetSize(1, 1)
+
+    local row2 = CreateFrame("Frame", nil, parent)
+    row2:SetSize(1, 1)
+
+    local cb_container, cb, cb_label = addon.CreateCheckbox(
+        row1,
+        STRINGS.checkbox_label,
+        db and db.hide_portrait_combat_text,
+        function(is_checked)
+            set_player_frame_setting("hide_portrait_combat_text", is_checked)
+        end
+    )
+    M.controls.hide_portrait_combat_text_checkbox = cb
+    cb_container:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
+
+    attach_help_tooltip(cb_label, nil, STRINGS.combat_text_help)
+
+    row2:SetPoint("TOPLEFT", cb_container, "BOTTOMLEFT", 0, -cfg.row_gap_y)
+
+    local fade_container, fade_cb, fade_label = addon.CreateCheckbox(
+        row2,
+        STRINGS.fade_checkbox_label,
+        db and db.fade_out_of_combat,
+        function(is_checked)
+            set_player_frame_setting("fade_out_of_combat", is_checked)
+        end
+    )
+    M.controls.fade_out_of_combat_checkbox = fade_cb
+    fade_container:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
+
+    attach_help_tooltip(fade_label, nil, STRINGS.fade_help)
+
+    local previous_slider = nil
+    for index, def in ipairs(FADE_SLIDER_DEFS) do
+        local slider_key = def.key
+        local slider = addon.CreateSliderWithBox(
+            addon_name .. "PlayerFrame" .. def.name_suffix,
+            row2,
+            STRINGS[def.label_key],
+            def.min,
+            def.max,
+            def.step,
+            db,
+            def.key,
+            FADE_DEFAULTS,
+            function()
+                on_fade_slider_changed(slider_key)
+            end
+        )
+        M.controls[def.control_key] = slider
+        if def.help_key then
+            attach_help_tooltip(slider, nil, STRINGS[def.help_key])
+        end
+
+        if index == 1 then
+            slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
+        else
+            slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
+        end
+        previous_slider = slider
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+-- Public module hooks
+-- -------------------------------------------------------------------------- --
+
+function M.update_player_frame()
+    if not is_runtime_enabled() then
+        stop_runtime()
+        return
+    end
+
+    local db = get_player_frame_db()
+    start_runtime(db)
 end
 
 function M.on_reset_complete()
@@ -273,15 +406,12 @@ function M.set_module_enabled(enabled)
         return
     end
 
-    sync_fade_events(nil)
-    set_portrait_combat_text_hidden(false)
-    if M.fade and M.fade.stop_transition then
-        M.fade.stop_transition()
-    end
-    if PlayerFrame then
-        PlayerFrame:SetAlpha(1)
-    end
+    stop_runtime()
 end
+
+-- -------------------------------------------------------------------------- --
+-- Event routing
+-- -------------------------------------------------------------------------- --
 
 loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
@@ -300,85 +430,16 @@ loader:SetScript("OnEvent", function(self, event, name)
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
 
         if addon.register_category then
-            addon.register_category(STRINGS.category_name, function(parent)
-                local cfg = UI_CONFIG
-                local db = get_player_frame_db()
-                local row1 = CreateFrame("Frame", nil, parent)
-                row1:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
-                row1:SetSize(1, 1)
-
-                local row2 = CreateFrame("Frame", nil, parent)
-                row2:SetSize(1, 1)
-
-                local cb_container, cb, cb_label = addon.CreateCheckbox(
-                    row1,
-                    STRINGS.checkbox_label,
-                    db and db.hide_portrait_combat_text,
-                    function(is_checked)
-                        set_player_frame_setting("hide_portrait_combat_text", is_checked)
-                    end
-                )
-                M.controls.hide_portrait_combat_text_checkbox = cb
-                cb_container:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
-
-                attach_help_tooltip(cb_label, nil, STRINGS.combat_text_help)
-
-                row2:SetPoint("TOPLEFT", cb_container, "BOTTOMLEFT", 0, -cfg.row_gap_y)
-
-                local fade_container, fade_cb, fade_label = addon.CreateCheckbox(
-                    row2,
-                    STRINGS.fade_checkbox_label,
-                    db and db.fade_out_of_combat,
-                    function(is_checked)
-                        set_player_frame_setting("fade_out_of_combat", is_checked)
-                    end
-                )
-                M.controls.fade_out_of_combat_checkbox = fade_cb
-                fade_container:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
-
-                attach_help_tooltip(fade_label, nil, STRINGS.fade_help)
-
-                local previous_slider = nil
-                for index, def in ipairs(FADE_SLIDER_DEFS) do
-                    local slider_key = def.key
-                    local slider = addon.CreateSliderWithBox(
-                        addon_name .. "PlayerFrame" .. def.name_suffix,
-                        row2,
-                        STRINGS[def.label_key],
-                        def.min,
-                        def.max,
-                        def.step,
-                        db,
-                        def.key,
-                        FADE_DEFAULTS,
-                        function()
-                            on_fade_slider_changed(slider_key)
-                        end
-                    )
-                    M.controls[def.control_key] = slider
-                    if def.help_key then
-                        attach_help_tooltip(slider, nil, STRINGS[def.help_key])
-                    end
-
-                    if index == 1 then
-                        slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
-                    else
-                        slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
-                    end
-                    previous_slider = slider
-                end
-            end, { module_key = "player_frame" })
+            addon.register_category(STRINGS.category_name, build_options_panel, { module_key = MODULE_KEY })
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
-        if not addon.is_module_enabled or addon.is_module_enabled("player_frame") then
-            M.update_player_frame()
-        end
+        M.update_player_frame()
         init_complete(self)
-    elseif event == "PLAYER_REGEN_DISABLED" then
-        M.fade.on_enter_combat()
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        M.fade.on_leave_combat(get_player_frame_db())
-    elseif event == "UNIT_HEALTH" or event == "UNIT_MAXHEALTH" then
-        M.fade.queue_health_update(get_player_frame_db)
+    elseif event == "PLAYER_REGEN_DISABLED"
+        or event == "PLAYER_REGEN_ENABLED"
+        or event == "UNIT_HEALTH"
+        or event == "UNIT_MAXHEALTH"
+    then
+        handle_runtime_event(event)
     end
 end)

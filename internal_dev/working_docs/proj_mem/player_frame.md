@@ -19,6 +19,8 @@ Important `player_frame` keys:
 ## Runtime Notes
 - `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `internal_dev/tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 
+- `pf_main.lua` registers the Player Frame settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Runtime side effects route through `M.update_player_frame()` / `M.set_module_enabled()` and stop at the module gate.
+
 - Player Frame fade combat/health events are registered only while `fade_out_of_combat` is enabled. When enabling fade, refresh combat state from `InCombatLockdown()` because the module may not have been receiving regen events while disabled.
 
 - Player Frame fade should not install its `PlayerFrame:HookScript("OnShow", ...)` hook until `fade_out_of_combat` is enabled.

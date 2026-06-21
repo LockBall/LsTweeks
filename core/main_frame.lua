@@ -166,13 +166,39 @@ function addon.init_main_frame()
     frame.tabs = {}     -- Cache for tab frames
     frame.buttons = {}  -- Cache for sidebar buttons
 
+    local function is_category_locked(cat)
+        return cat
+            and cat.module_key
+            and addon.is_module_enabled
+            and not addon.is_module_enabled(cat.module_key)
+    end
+
+    local function sync_tab_lock(tab, locked)
+        if not tab then return end
+
+        tab:SetAlpha(locked and 0.55 or 1)
+        if not tab._module_lock_overlay then
+            local overlay = CreateFrame("Frame", nil, tab)
+            overlay:SetAllPoints()
+            overlay:SetFrameLevel(tab:GetFrameLevel() + 50)
+            overlay:EnableMouse(true)
+            if overlay.EnableMouseWheel then
+                overlay:EnableMouseWheel(true)
+                overlay:SetScript("OnMouseWheel", function() end)
+            end
+            tab._module_lock_overlay = overlay
+        end
+        tab._module_lock_overlay:SetShown(locked)
+    end
+
     -- TAB SELECTION LOGIC
-    local function select_tab(name, builder, btn)
+    local function select_tab(cat, btn)
+        if not cat then return end
         if selected_button then selected_button:UnlockHighlight() end
         btn:LockHighlight()
         selected_button = btn
-        selected_category_name = name
-        if Ls_Tweeks_DB then Ls_Tweeks_DB.last_open_module = name end
+        selected_category_name = cat.name
+        if Ls_Tweeks_DB then Ls_Tweeks_DB.last_open_module = cat.name end
 
         -- Hide all current tabs
         for _, tab in pairs(frame.tabs) do
@@ -180,21 +206,24 @@ function addon.init_main_frame()
         end
 
         -- Rebuild tab if it doesn't exist (or was cleared by reset)
-        if not frame.tabs[name] then
+        if not frame.tabs[cat.name] then
             local new_tab = CreateFrame("Frame", nil, frame.content_area)
             new_tab:SetAllPoints()
             new_tab:SetFrameLevel(frame.content_area:GetFrameLevel() + 2)
-            builder(new_tab) 
-            frame.tabs[name] = new_tab
+            cat.builder(new_tab)
+            frame.tabs[cat.name] = new_tab
         end
 
-        frame.tabs[name]:Show()
+        local tab = frame.tabs[cat.name]
+        sync_tab_lock(tab, is_category_locked(cat))
+        tab:Show()
     end
 
     -- SIDEBAR REFRESH LOGIC
     local function RefreshSidebar()
         local previous_category_name = selected_category_name
         selected_button = nil
+        local previous_category = nil
 
         -- Hide and clear existing category buttons
         for _, btn in ipairs(frame.buttons) do btn:Hide() end
@@ -211,26 +240,27 @@ function addon.init_main_frame()
 
         -- Build Category Buttons from registered modules (includes About module)
         for _, cat in ipairs(addon.categories) do
-            local category_enabled = not cat.module_key or not addon.is_module_enabled or addon.is_module_enabled(cat.module_key)
+            local category_locked = is_category_locked(cat)
             local btn = CreateFrame("Button", nil, frame.sidebar, "UIPanelButtonTemplate")
             btn:SetSize(120, 22)
             btn:SetPoint("TOPLEFT", frame.sidebar, "TOPLEFT", 10, y)
             btn:SetText(cat.name)
-            btn:SetEnabled(category_enabled)
-            if category_enabled then
-                btn:SetScript("OnClick", function()
-                    select_tab(cat.name, cat.builder, btn)
-                end)
-            else
-                btn:SetScript("OnClick", nil)
-                local text = btn:GetFontString()
-                if text and text.SetTextColor then
+            btn:SetEnabled(true)
+            btn:SetScript("OnClick", function()
+                select_tab(cat, btn)
+            end)
+            local text = btn:GetFontString()
+            if text and text.SetTextColor then
+                if category_locked then
                     text:SetTextColor(0.45, 0.45, 0.45, 1)
+                else
+                    text:SetTextColor(1, 0.82, 0, 1)
                 end
             end
-            if category_enabled and cat.name == previous_category_name then
+            if cat.name == previous_category_name then
                 btn:LockHighlight()
                 selected_button = btn
+                previous_category = cat
             end
             table.insert(frame.buttons, btn)
             y = y - 26
@@ -239,8 +269,7 @@ function addon.init_main_frame()
         local selected_still_visible = false
         if selected_category_name then
             for _, cat in ipairs(addon.categories) do
-                local category_enabled = not cat.module_key or not addon.is_module_enabled or addon.is_module_enabled(cat.module_key)
-                if category_enabled and cat.name == selected_category_name then
+                if cat.name == selected_category_name then
                     selected_still_visible = true
                     break
                 end
@@ -257,22 +286,16 @@ function addon.init_main_frame()
             local saved = Ls_Tweeks_DB and Ls_Tweeks_DB.last_open_module
             if saved then
                 for i, cat in ipairs(addon.categories) do
-                    local category_enabled = not cat.module_key or not addon.is_module_enabled or addon.is_module_enabled(cat.module_key)
-                    if category_enabled and cat.name == saved then target_idx = i; break end
+                    if cat.name == saved then target_idx = i; break end
                 end
             end
             local cat = addon.categories[target_idx]
             local button = frame.buttons[target_idx]
-            if cat and button and (not cat.module_key or not addon.is_module_enabled or addon.is_module_enabled(cat.module_key)) then
-                select_tab(cat.name, cat.builder, button)
-            else
-                for i, enabled_cat in ipairs(addon.categories) do
-                    if not enabled_cat.module_key or not addon.is_module_enabled or addon.is_module_enabled(enabled_cat.module_key) then
-                        select_tab(enabled_cat.name, enabled_cat.builder, frame.buttons[i])
-                        break
-                    end
-                end
+            if cat and button then
+                select_tab(cat, button)
             end
+        elseif selected_button and previous_category then
+            select_tab(previous_category, selected_button)
         end
     end
     frame.RefreshSidebar = RefreshSidebar

@@ -11,7 +11,24 @@ local _StopSound       = (C_Sound and C_Sound.StopSound)       or StopSound
 local _MuteSoundFile   = (C_Sound and C_Sound.MuteSoundFile)   or MuteSoundFile
 local _UnmuteSoundFile = (C_Sound and C_Sound.UnmuteSoundFile) or UnmuteSoundFile
 
+function M.stop_runtime()
+    if M.stop_all_previews then
+        M.stop_all_previews()
+    end
+    if M.restore_fishing_focus then
+        M.restore_fishing_focus()
+    end
+    M.unmute_all_sound_files()
+    M._event_cache = {}
+    M.sync_registered_events()
+    if M.sync_fishing_focus_events then
+        M.sync_fishing_focus_events()
+    end
+end
+
 local function play_preview_soundkit(target)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return false end
+
     local soundkit_id = M.resolve_soundkit_id(target and target.preview_soundkit)
     if not soundkit_id then return false end
 
@@ -57,6 +74,11 @@ function M.unmute_all_sound_files()
 end
 
 function M.apply_sound_levels()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.stop_runtime()
+        return
+    end
+
     M.get_db()
     for target_key, target in pairs(M.SOUND_TARGETS or {}) do
         local target_db = M.get_target_db(target_key)
@@ -74,6 +96,11 @@ function M.apply_sound_levels()
 end
 
 function M.play_replacement(target_key)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.stop_all_previews()
+        return false
+    end
+
     local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
     if not target then return false end
 
@@ -122,6 +149,11 @@ function M.stop_all_previews()
 end
 
 function M.queue_adjust_preview(target_key)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.stop_all_previews()
+        return
+    end
+
     M.cancel_adjust_preview()
     M.stop_preview_sound()
     M._adjust_preview_timer = C_Timer.NewTimer(0.12, function()
@@ -131,6 +163,11 @@ function M.queue_adjust_preview(target_key)
 end
 
 local function handle_event(_, event)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.stop_runtime()
+        return
+    end
+
     local slots = M._event_cache and M._event_cache[event]
     if not slots then return end
     for i = 1, #slots do
@@ -152,7 +189,7 @@ end
 function M.sync_registered_events()
     local registered = M._registered_events or {}
     M._registered_events = registered
-    local desired = M._event_cache or {}
+    local desired = (M.is_runtime_enabled and not M.is_runtime_enabled()) and {} or (M._event_cache or {})
 
     if not M.event_frame and next(desired) == nil then
         return

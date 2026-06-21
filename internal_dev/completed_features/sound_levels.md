@@ -55,6 +55,8 @@ Durable module-specific notes for `modules/sound_levels/`.
 
 - WoW sound APIs are resolved to upvalue locals at file load in `sl_core.lua` (`_PlaySoundFile`, `_PlaySound`, `_StopSound`, `_MuteSoundFile`, `_UnmuteSoundFile`). Call them directly; do not re-check `C_Sound` at call sites.
 
+- The Settings Module Enabler locks the Sound Levels settings page and gates runtime. `sl_main.lua` registers the category with `module_key`, so the sidebar button remains visible but greyed out/locked while disabled; `M.is_runtime_enabled()` gates runtime side effects and `M.stop_runtime()` stops previews, restores Fishing Focus, unmutes original files, clears event cache, and unregisters sound events.
+
 
 ## Event Cache And Performance
 

@@ -120,6 +120,11 @@ function M.stop_fishing_bobber_preview()
 end
 
 function M.play_fishing_bobber_preview(profile_key)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        restore_bobber_preview_profile()
+        return false
+    end
+
     restore_bobber_preview_profile()
 
     if profile_key ~= "fishing" then
@@ -144,6 +149,11 @@ function M.play_fishing_bobber_preview(profile_key)
 end
 
 function M.apply_fishing_focus()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.restore_fishing_focus()
+        return
+    end
+
     local focus_db = M.get_fishing_focus_db()
     if focus_db.enabled ~= true then return end
 
@@ -174,12 +184,22 @@ function M.restore_fishing_focus()
 end
 
 function M.resync_fishing_focus()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.restore_fishing_focus()
+        return
+    end
+
     if M._fishing_focus_active then
         M.apply_fishing_focus()
     end
 end
 
 local function handle_fishing_focus_event(_, event, _, _, spell_id)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.sync_fishing_focus_events()
+        return
+    end
+
     if spell_id ~= FISHING_CHANNEL_SPELL_ID then return end
     if event == "UNIT_SPELLCAST_CHANNEL_START" then
         M.apply_fishing_focus()
@@ -189,6 +209,16 @@ local function handle_fishing_focus_event(_, event, _, _, spell_id)
 end
 
 function M.sync_fishing_focus_events()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.restore_fishing_focus()
+        if M._fishing_focus_events_registered and M.fishing_focus_frame then
+            M.fishing_focus_frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+            M.fishing_focus_frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+            M._fishing_focus_events_registered = false
+        end
+        return
+    end
+
     local db = M.get_db()
     local raw_focus_db = db and db.fishing_focus
     if not (raw_focus_db and raw_focus_db.enabled == true) then

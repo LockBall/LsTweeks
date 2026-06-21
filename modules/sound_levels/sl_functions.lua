@@ -5,7 +5,12 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
+M.MODULE_KEY = "sound_levels"
 M.controls = M.controls or {}
+
+function M.is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+end
 
 function M.get_db()
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}

@@ -132,7 +132,7 @@ Every Lua file starts with a short responsibility header before `local addon_nam
 
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
 
-- Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible in the sidebar but greys them out and disables selection.
+- Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
 
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 
