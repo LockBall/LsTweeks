@@ -1,5 +1,4 @@
 # Agent Start
-read and follow internal_dev\working_docs\proj_mem\agent_start
 
 Start here for a new coding-agent session. This file is the lead-in, not the project memory itself; follow the links instead of copying their contents here.
 
@@ -10,12 +9,14 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 2. Read `internal_dev/working_docs/proj_mem/project.md` for the internal source of truth: architecture, file map, workflow, packaging, LuaLS/Ketho notes, and links to module memory.
 
-3. Read only the relevant module memory file before touching a module:
+3. Read `internal_dev/working_docs/proj_mem/code_map.md` for a compact file ownership map and common verification commands.
+
+4. Read only the relevant module memory file before touching a module:
    `player_frame.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
 
-4. Check `internal_dev/working_docs/scratchpad.md` only for active transient notes. Do not promote scratch notes into durable docs unless they are still true after code review.
+5. Check `internal_dev/working_docs/scratchpad.md` only for active transient notes. Do not promote scratch notes into durable docs unless they are still true after code review.
 
-5. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
+6. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
 
 
 ## First Checks
@@ -23,6 +24,10 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
 
 - Use `rg` / `rg --files` for repo searches.
+
+- Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1` for routine Lua syntax and whitespace validation.
+
+- Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package` when packaging behavior or release contents matter.
 
 - If a request touches public behavior, compare against `README.md` wording before changing settings names, feature names, slash commands, or user-facing docs.
 
@@ -49,6 +54,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - `agent_start.md` is the single entry point for future agents.
 
 - `project.md` owns project-wide architecture, workflow, file maps, packaging, LuaLS/Ketho notes, and durable cross-module lessons.
+
+- `code_map.md` owns compact file ownership, command routing, and token-saving context shortcuts.
 
 - Module memory files own module-specific settings, runtime lessons, regressions, and ownership details.
 

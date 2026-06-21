@@ -28,6 +28,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - [Agent Start](agent_start.md)
 
+- [Code Map](code_map.md)
+
 - [Module Memory](#module-memory)
 
   - [Player Frame](player_frame.md)
@@ -54,6 +56,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Tool recovery and diagnostics notes live in `internal_dev/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
 
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
+
+- Fast local validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`. Add `-Package` to also build and verify the release zip.
 
 
 ### Ketho / LuaLS
@@ -117,7 +121,7 @@ internal_dev/          internal docs excluded from release zips
 dist/                   generated package output, ignored
 ```
 
-Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Keep detailed per-file ownership notes in the relevant module memory file instead of expanding this map.
+Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Use `code_map.md` for compact file ownership and common commands; keep detailed per-file ownership notes in the relevant module memory file instead of expanding this map.
 
 
 ## Shared Architecture

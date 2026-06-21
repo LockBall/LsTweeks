@@ -3,5 +3,3 @@
 2. Priority: High | Impact: High | Change Risk: High - Confirm Blizzard buff/debuff frame restoration on Retail 12.0.7. If the current `af_core.lua` best-effort restore is incomplete, record Blizzard's current event/script ownership before changing the toggle implementation.
 
 3. Priority: Medium | Impact: Medium | Change Risk: Medium - Test profile load/reset behavior with saved profiles that include deleted or renamed custom frames. Verify orphan custom frames and stale controls are removed before touching profile storage.
-
-4. Priority: Medium | Impact: Medium | Change Risk: Medium - Test Aura Frames module disable while OOC frame fade is active. Confirm hover restoration and fade timers stop cleanly.

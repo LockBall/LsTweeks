@@ -173,13 +173,16 @@ If activation reports the wrong `$env:VIRTUAL_ENV`, check:
 After shell and venv checks pass, validate the addon:
 
 ```powershell
-luac -p modules/player_frame/pf_main.lua modules/player_frame/pf_fade.lua
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\packaging\package.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_fast.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_fast.ps1 -Package
 ```
 
-Expected package result:
+The first command runs Lua 5.1 syntax checks for addon-owned Lua files plus `git diff --check`. The `-Package` form also builds and verifies the release zip.
+
+Expected package result includes:
 
 ```text
+Fast checks passed.
 Package verification passed.
 ```
 
