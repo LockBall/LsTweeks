@@ -10,8 +10,7 @@ local math_max = math.max
 local math_min = math.min
 local GetTime = GetTime
 
--- ============================================================================
--- TEST AURA CONFIG
+--#region TEST AURA CONFIG =====================================================
 -- Tune preview appearance and animation behavior here.
 
 local CFG = {
@@ -85,3 +84,5 @@ function M.update_test_preview_state(obj, show_key, short_threshold, now)
     obj.aura_expiration = now + remaining
     obj.aura_scan_time = now
 end
+
+--#endregion TEST AURA CONFIG ==================================================

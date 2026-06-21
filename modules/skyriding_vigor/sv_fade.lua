@@ -11,9 +11,7 @@ local M = addon.skyriding_vigor
 local GetTime = GetTime
 local tonumber = tonumber
 
--- ============================================================================
--- ALPHA PRIMITIVES
--- ============================================================================
+--#region ALPHA PRIMITIVES =====================================================
 
 local function set_frame_alpha(frame, alpha)
     if frame._sv_alpha == alpha then return end
@@ -34,9 +32,9 @@ function M.cancel_frame_fade(frame)
     end
 end
 
--- ============================================================================
--- FADE ANIMATION
--- ============================================================================
+--#endregion ALPHA PRIMITIVES ==================================================
+
+--#region FADE ANIMATION =======================================================
 
 function M.fade_frame_alpha(frame, target_alpha, duration)
     if not frame then return end
@@ -83,9 +81,9 @@ function M.restore_frame_alpha(frame)
     M.set_frame_alpha(frame, 1)
 end
 
--- ============================================================================
--- FULL-CHARGE POLICY
--- ============================================================================
+--#endregion FADE ANIMATION ====================================================
+
+--#region FULL-CHARGE POLICY ===================================================
 
 function M.apply_full_charge_fade(frame, db, charges_full, is_active_flight)
     local defaults = M.DEFAULTS or {}
@@ -95,3 +93,5 @@ function M.apply_full_charge_fade(frame, db, charges_full, is_active_flight)
         M.restore_frame_alpha(frame)
     end
 end
+
+--#endregion FULL-CHARGE POLICY ================================================

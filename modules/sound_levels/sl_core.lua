@@ -11,6 +11,8 @@ local _StopSound       = (C_Sound and C_Sound.StopSound)       or StopSound
 local _MuteSoundFile   = (C_Sound and C_Sound.MuteSoundFile)   or MuteSoundFile
 local _UnmuteSoundFile = (C_Sound and C_Sound.UnmuteSoundFile) or UnmuteSoundFile
 
+--#region RUNTIME LIFECYCLE ====================================================
+
 function M.stop_runtime()
     if M.stop_all_previews then
         M.stop_all_previews()
@@ -25,6 +27,10 @@ function M.stop_runtime()
         M.sync_fishing_focus_events()
     end
 end
+
+--#endregion RUNTIME LIFECYCLE =================================================
+
+--#region PLAYBACK HELPERS =====================================================
 
 local function play_preview_soundkit(target)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return false end
@@ -65,6 +71,10 @@ local function play_original_file(target)
     return true
 end
 
+--#endregion PLAYBACK HELPERS ==================================================
+
+--#region MUTES AND RUNTIME APPLY ==============================================
+
 function M.unmute_all_sound_files()
     for _, target in pairs(M.SOUND_TARGETS or {}) do
         for _, file_id in ipairs(target.original_file_ids or {}) do
@@ -94,6 +104,10 @@ function M.apply_sound_levels()
     M.rebuild_event_cache()
     M.sync_registered_events()
 end
+
+--#endregion MUTES AND RUNTIME APPLY ===========================================
+
+--#region PREVIEWS =============================================================
 
 function M.play_replacement(target_key)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
@@ -162,6 +176,10 @@ function M.queue_adjust_preview(target_key)
     end)
 end
 
+--#endregion PREVIEWS ==========================================================
+
+--#region EVENT ROUTING ========================================================
+
 local function handle_event(_, event)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M.stop_runtime()
@@ -214,3 +232,5 @@ function M.sync_registered_events()
         end
     end
 end
+
+--#endregion EVENT ROUTING =====================================================

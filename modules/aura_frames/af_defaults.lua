@@ -453,8 +453,7 @@ M.defaults = {
     }
 }
 
--- ============================================================================
--- CUSTOM FRAME TEMPLATE
+--#region CUSTOM FRAME TEMPLATE ================================================
 -- Default values for a newly created custom filtered frame.
 -- Each entry in M.db.custom_frames is a copy of this template with a unique id/name.
 M.CUSTOM_FRAME_TEMPLATE = {
@@ -500,3 +499,5 @@ M.CUSTOM_FRAME_TEMPLATE = {
 
 -- Max number of custom frames the user can create.
 M.MAX_CUSTOM_FRAMES = 4
+
+--#endregion CUSTOM FRAME TEMPLATE =============================================

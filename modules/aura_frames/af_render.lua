@@ -36,8 +36,7 @@ function M.clear_sorted_aura_ids_cache()
     wipe(_sorted_aura_ids_cache)
 end
 
--- ============================================================================
--- TIME FORMATTING
+--#region TIME FORMATTING ======================================================
 
 -- Logic for converting seconds into readable text strings
 local function format_time(s)
@@ -47,8 +46,9 @@ local function format_time(s)
     return format("%.1f s", s)
 end
 
--- ============================================================================
--- SORT HELPERS
+--#endregion TIME FORMATTING ===================================================
+
+--#region SORT HELPERS =========================================================
 
 local function get_entry_sort_id(entry)
     if type(entry.instance_id) == "number" then
@@ -57,8 +57,9 @@ local function get_entry_sort_id(entry)
     return entry.preview_sort_id or 0
 end
 
--- ============================================================================
--- TIMER TEXT
+--#endregion SORT HELPERS ======================================================
+
+--#region TIMER TEXT ===========================================================
 
 -- Single timer text renderer for all aura timers (live + test).
 -- Keep behavior changes here so all timer displays stay consistent.
@@ -660,8 +661,9 @@ local function hide_unused_icons(icons, first_unused_index)
     end
 end
 
--- ============================================================================
--- AURA INFO MERGING
+--#endregion TIMER TEXT ========================================================
+
+--#region AURA INFO MERGING ====================================================
 
 -- Merge UNIT_AURA payloads while a deferred scan is pending.
 -- Blizzard can fire multiple UNIT_AURA events inside the shared aura bucket window;
@@ -708,8 +710,9 @@ function M.merge_aura_info(dst, src)
     return dst
 end
 
--- ============================================================================
--- AURA MAP RENDERER
+--#endregion AURA INFO MERGING =================================================
+
+--#region AURA MAP RENDERER ====================================================
 
 -- Main render orchestrator for one aura frame.
 -- Order is intentional: build/sort the display list, resolve per-entry live timing,
@@ -778,3 +781,5 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
     return display_count
 end
+
+--#endregion AURA MAP RENDERER =================================================

@@ -13,9 +13,7 @@ local M = addon.skyriding_vigor
 local CreateFrame = CreateFrame
 local InCombatLockdown = InCombatLockdown
 
--- ============================================================================
--- CONFIGURATION
--- ============================================================================
+--#region CONFIGURATION ========================================================
 
 local UI_CONFIG = {
     title_offset_x = 20,
@@ -60,9 +58,9 @@ local STRINGS = {
     skyriding_talents = "Skyriding Talents",
 }
 
--- ============================================================================
--- SHARED HELPERS
--- ============================================================================
+--#endregion CONFIGURATION =====================================================
+
+--#region SHARED HELPERS =======================================================
 
 local function get_spec(key)
     return M.SETTING_SPECS[key]
@@ -110,9 +108,9 @@ local function open_skyriding_talents()
     print("|cFFFFFF00LsTweaks:|r Skyriding Talents UI is not available.")
 end
 
--- ============================================================================
--- CONTROL SYNCHRONIZATION
--- ============================================================================
+--#endregion SHARED HELPERS ====================================================
+
+--#region CONTROL SYNCHRONIZATION ==============================================
 
 function M.sync_fill_test_button()
     local button = M.controls and M.controls.fill_test_button
@@ -280,9 +278,9 @@ function M.sync_settings_controls(db)
     M.sync_fill_test_button()
 end
 
--- ============================================================================
--- SETTINGS CONSTRUCTION
--- ============================================================================
+--#endregion CONTROL SYNCHRONIZATION ===========================================
+
+--#region SETTINGS CONSTRUCTION ================================================
 
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
@@ -736,3 +734,5 @@ function M.BuildSettings(parent)
         M.controls.reset_panel = reset_panel
     end
 end
+
+--#endregion SETTINGS CONSTRUCTION =============================================

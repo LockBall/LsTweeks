@@ -12,9 +12,7 @@ local math_min = math.min
 local math_max = math.max
 local MODULE_KEY = "player_frame"
 
--- -------------------------------------------------------------------------- --
--- Settings and defaults
--- -------------------------------------------------------------------------- --
+--#region SETTINGS AND DEFAULTS ================================================
 
 local FADE_DEFAULTS = {
     fade_alpha = 0.5,
@@ -38,9 +36,9 @@ local defaults = {
     },
 }
 
--- -------------------------------------------------------------------------- --
--- GUI configuration
--- -------------------------------------------------------------------------- --
+--#endregion SETTINGS AND DEFAULTS =============================================
+
+--#region GUI CONFIGURATION ====================================================
 
 local UI_CONFIG = {
     checkbox_offset_x = 20,
@@ -129,9 +127,9 @@ local FADE_SLIDER_DEFS = {
     },
 }
 
--- -------------------------------------------------------------------------- --
--- Runtime state
--- -------------------------------------------------------------------------- --
+--#endregion GUI CONFIGURATION =================================================
+
+--#region RUNTIME STATE ========================================================
 
 local hitIndicatorFrame = nil
 local hookApplied = false
@@ -139,9 +137,9 @@ local hidePortraitText = false
 local fadeEventsRegistered = false
 local loader = nil
 
--- -------------------------------------------------------------------------- --
--- Database helpers
--- -------------------------------------------------------------------------- --
+--#endregion RUNTIME STATE =====================================================
+
+--#region DATABASE HELPERS =====================================================
 
 local function get_player_frame_db()
     if not Ls_Tweeks_DB then return nil end
@@ -154,9 +152,9 @@ function M.get_clamped_fade_value(db, key, min_value, max_value)
     return math_max(min_value, math_min(max_value, value))
 end
 
--- -------------------------------------------------------------------------- --
--- Runtime logic
--- -------------------------------------------------------------------------- --
+--#endregion DATABASE HELPERS ==================================================
+
+--#region RUNTIME LOGIC ========================================================
 
 local function is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(MODULE_KEY)
@@ -271,9 +269,9 @@ local function handle_runtime_event(event)
     end
 end
 
--- -------------------------------------------------------------------------- --
--- GUI
--- -------------------------------------------------------------------------- --
+--#endregion RUNTIME LOGIC =====================================================
+
+--#region GUI ==================================================================
 
 local function attach_help_tooltip(target, title, body)
     if not target then return end
@@ -363,9 +361,9 @@ local function build_options_panel(parent)
     end
 end
 
--- -------------------------------------------------------------------------- --
--- Public module hooks
--- -------------------------------------------------------------------------- --
+--#endregion GUI ===============================================================
+
+--#region PUBLIC MODULE HOOKS ==================================================
 
 function M.update_player_frame()
     if not is_runtime_enabled() then
@@ -409,9 +407,9 @@ function M.set_module_enabled(enabled)
     stop_runtime()
 end
 
--- -------------------------------------------------------------------------- --
--- Event routing
--- -------------------------------------------------------------------------- --
+--#endregion PUBLIC MODULE HOOKS ===============================================
+
+--#region EVENT ROUTING ========================================================
 
 loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
@@ -443,3 +441,5 @@ loader:SetScript("OnEvent", function(self, event, name)
         handle_runtime_event(event)
     end
 end)
+
+--#endregion EVENT ROUTING =====================================================

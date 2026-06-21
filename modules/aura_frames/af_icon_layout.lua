@@ -42,8 +42,7 @@ local GROWTH_LAYOUT = {
 
 local DEFAULT_GROWTH_LAYOUT = GROWTH_LAYOUT.DOWN
 
--- ============================================================================
--- BAR LAYOUT PARAMS
+--#region BAR LAYOUT PARAMS ====================================================
 
 function M.get_bar_layout_params(timer_font_size)
     timer_font_size = tonumber(timer_font_size) or 10
@@ -78,8 +77,9 @@ function M.get_bar_layout_params(timer_font_size)
     }
 end
 
--- ============================================================================
--- FRAME HEIGHT RESIZE (preserves anchor point)
+--#endregion BAR LAYOUT PARAMS =================================================
+
+--#region FRAME HEIGHT RESIZE (PRESERVES ANCHOR POINT) =========================
 
 -- Resize self to new_height while keeping the stable edge anchored.
 -- DOWN keeps top edge fixed; UP keeps bottom edge fixed.
@@ -123,8 +123,9 @@ function M.set_height_for_growth(self, new_height, growth)
     self:SetPoint(point, relative_to or UIParent, relative_point, x, y)
 end
 
--- ============================================================================
--- LAYOUT ENGINE
+--#endregion FRAME HEIGHT RESIZE (PRESERVES ANCHOR POINT) ======================
+
+--#region LAYOUT ENGINE ========================================================
 
 local function get_growth_layout(growth)
     return GROWTH_LAYOUT[growth] or DEFAULT_GROWTH_LAYOUT
@@ -300,3 +301,5 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
         icon_size       = 32,
     }
 end
+
+--#endregion LAYOUT ENGINE =====================================================

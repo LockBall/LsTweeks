@@ -5,12 +5,18 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
+--#region MODULE STATE =========================================================
+
 M.MODULE_KEY = "sound_levels"
 M.controls = M.controls or {}
 
 function M.is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
 end
+
+--#endregion MODULE STATE ======================================================
+
+--#region DATABASE =============================================================
 
 function M.get_db()
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}
@@ -47,6 +53,10 @@ function M.get_target_db(target_key)
     end
     return db.targets[target_key]
 end
+
+--#endregion DATABASE ==========================================================
+
+--#region PRESET AND TARGET HELPERS ============================================
 
 function M.get_preset_by_value(value)
     local option = M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value]
@@ -106,6 +116,10 @@ function M.get_ordered_sound_targets()
     return targets
 end
 
+--#endregion PRESET AND TARGET HELPERS =========================================
+
+--#region EVENT CACHE ==========================================================
+
 -- Builds a flat, pre-resolved cache of event -> slot list used by handle_event.
 -- Called once after apply_sound_levels(); each slot contains only what the hot
 -- path needs, so the event handler touches no DB or defaults machinery at all.
@@ -147,3 +161,5 @@ function M.rebuild_event_cache()
     end
     M._event_cache = cache
 end
+
+--#endregion EVENT CACHE =======================================================

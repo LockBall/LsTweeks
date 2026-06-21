@@ -21,9 +21,7 @@ local min = math.min
 local error = error
 local tostring = tostring
 
--- ============================================================================
--- BAR LAYOUT DEFINITIONS
--- ============================================================================
+--#region BAR LAYOUT DEFINITIONS ===============================================
 
 local MAX_SLOTS = M.MAX_SLOTS or 6
 local GRID_SIZE = 20
@@ -64,9 +62,9 @@ local WING_LAYOUT = {
     scale_y = 1,
 }
 
--- ============================================================================
--- SHARED ACCESSORS
--- ============================================================================
+--#endregion BAR LAYOUT DEFINITIONS ============================================
+
+--#region SHARED ACCESSORS =====================================================
 
 local function get_db()
     return M.get_db and M.get_db()
@@ -76,9 +74,9 @@ local function get_defaults()
     return M.DEFAULTS or {}
 end
 
--- ============================================================================
--- POSITION HELPERS
--- ============================================================================
+--#endregion SHARED ACCESSORS ==================================================
+
+--#region POSITION HELPERS =====================================================
 
 local function snap_value(value)
     return floor(((value or 0) / GRID_SIZE) + 0.5) * GRID_SIZE
@@ -103,9 +101,9 @@ local function get_saved_center(db)
     return pos.x or 0, pos.y or 0
 end
 
--- ============================================================================
--- ATLAS SIZE HELPERS
--- ============================================================================
+--#endregion POSITION HELPERS ==================================================
+
+--#region ATLAS SIZE HELPERS ===================================================
 
 local function get_atlas_size(atlas)
     if C_Texture_GetAtlasInfo then
@@ -183,9 +181,9 @@ local function get_spacing_pixels(db)
     return spacing_setting + (style.spacing_offset or 0)
 end
 
--- ============================================================================
--- DRAG HELPERS
--- ============================================================================
+--#endregion ATLAS SIZE HELPERS ================================================
+
+--#region DRAG HELPERS =========================================================
 
 local function get_cursor_position()
     local scale = UIParent:GetEffectiveScale() or 1
@@ -239,9 +237,9 @@ function M.apply_position()
     set_center_position(frame, xOfs, yOfs)
 end
 
--- ============================================================================
--- SLOT RENDERING
--- ============================================================================
+--#endregion DRAG HELPERS ======================================================
+
+--#region SLOT RENDERING =======================================================
 
 local function set_atlas_sized(texture, atlas, width, height)
     if not texture then return end
@@ -597,9 +595,9 @@ function M.set_slot_state(index, state, progress)
     slot._spark_enabled = show_spark
 end
 
--- ============================================================================
--- FRAME AND SLOT API
--- ============================================================================
+--#endregion SLOT RENDERING ====================================================
+
+--#region FRAME AND SLOT API ===================================================
 
 function M.set_slot_visible(index, visible)
     local slot = M.slots[index]
@@ -691,9 +689,9 @@ function M.ensure_frame()
     return frame
 end
 
--- ============================================================================
--- LAYOUT
--- ============================================================================
+--#endregion FRAME AND SLOT API ================================================
+
+--#region LAYOUT ===============================================================
 
 function M.set_wing_layout(values)
     if not values then return end
@@ -821,9 +819,9 @@ function M.apply_layout()
     end
 end
 
--- ============================================================================
--- INTERACTION STATE
--- ============================================================================
+--#endregion LAYOUT ============================================================
+
+--#region INTERACTION STATE ====================================================
 
 function M.set_move_mode(enabled)
     local frame = M.ensure_frame()
@@ -842,3 +840,5 @@ function M.set_move_mode(enabled)
         end
     end
 end
+
+--#endregion INTERACTION STATE =================================================

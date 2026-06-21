@@ -12,6 +12,8 @@ local FISHING_BOBBER_PREVIEW_RESTORE_DELAY = 2.0
 local _PlaySound = (C_Sound and C_Sound.PlaySound) or PlaySound
 local _StopSound = (C_Sound and C_Sound.StopSound) or StopSound
 
+--#region CONFIGURATION ========================================================
+
 M.FISHING_FOCUS_CHANNELS = {
     { key = "master", label = "Master", cvar = "Sound_MasterVolume" },
     { key = "music", label = "Music", cvar = "Sound_MusicVolume" },
@@ -19,6 +21,10 @@ M.FISHING_FOCUS_CHANNELS = {
     { key = "ambience", label = "Ambience", cvar = "Sound_AmbienceVolume" },
     { key = "dialog", label = "Dialog", cvar = "Sound_DialogVolume" },
 }
+
+--#endregion CONFIGURATION =====================================================
+
+--#region CVAR HELPERS =========================================================
 
 local function get_cvar(cvar_name)
     if C_CVar and C_CVar.GetCVar then
@@ -53,6 +59,10 @@ local function read_channel_percent(channel)
     if not value then return 0 end
     return math.max(0, math.min(100, math.floor((value * 100) + 0.5)))
 end
+
+--#endregion CVAR HELPERS ======================================================
+
+--#region DATABASE =============================================================
 
 function M.get_default_fishing_focus_channel_percent(channel, current_percent)
     current_percent = current_percent or read_channel_percent(channel)
@@ -97,6 +107,10 @@ end
 function M.get_current_sound_channel_percent(channel)
     return read_channel_percent(channel)
 end
+
+--#endregion DATABASE ==========================================================
+
+--#region PREVIEW PLAYBACK =====================================================
 
 local function restore_bobber_preview_profile()
     if M._fishing_bobber_preview_timer then
@@ -148,6 +162,10 @@ function M.play_fishing_bobber_preview(profile_key)
     return did_play ~= false
 end
 
+--#endregion PREVIEW PLAYBACK ==================================================
+
+--#region FISHING FOCUS RUNTIME ================================================
+
 function M.apply_fishing_focus()
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M.restore_fishing_focus()
@@ -193,6 +211,10 @@ function M.resync_fishing_focus()
         M.apply_fishing_focus()
     end
 end
+
+--#endregion FISHING FOCUS RUNTIME =============================================
+
+--#region EVENT ROUTING ========================================================
 
 local function handle_fishing_focus_event(_, event, _, _, spell_id)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
@@ -242,3 +264,5 @@ function M.sync_fishing_focus_events()
         M._fishing_focus_events_registered = true
     end
 end
+
+--#endregion EVENT ROUTING =====================================================

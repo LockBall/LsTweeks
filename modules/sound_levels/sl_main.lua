@@ -7,6 +7,8 @@ local M = addon.sound_levels
 
 local CATEGORY_NAME = "Sound Levels"
 
+--#region RESET AND MODULE HOOKS ===============================================
+
 function M.on_reset_complete()
     if M.stop_all_previews then
         M.stop_all_previews()
@@ -67,6 +69,10 @@ function M.set_module_enabled(enabled)
     M.stop_runtime()
 end
 
+--#endregion RESET AND MODULE HOOKS ============================================
+
+--#region EVENT BOOTSTRAP ======================================================
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_LOGOUT")
@@ -86,3 +92,5 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.stop_runtime()
     end
 end)
+
+--#endregion EVENT BOOTSTRAP ===================================================

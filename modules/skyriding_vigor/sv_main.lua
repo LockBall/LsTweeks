@@ -32,19 +32,27 @@ local RUNTIME_EVENTS = {
     "VEHICLE_UPDATE",
 }
 
+
+--#region SETTINGS AND DEFAULTS ================================================
+-- Module metadata and default values shared by runtime and settings code.
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
 local SETTING_SPECS = M.SETTING_SPECS
+M.MODULE_KEY = "skyriding_vigor"
 M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
+--#endregion SETTINGS AND DEFAULTS =============================================
 
+
+--#region RUNTIME EVENT AND UPDATE FRAMES ======================================
+-- Hidden frames that own event dispatch and active-only progress updates.
 local loader = CreateFrame("Frame")
 local progress_driver = CreateFrame("Frame")
 progress_driver:Hide()
+--#endregion RUNTIME EVENT AND UPDATE FRAMES ===================================
 
--- ============================================================================
--- DATABASE
--- ============================================================================
 
+--#region DATABASE =============================================================
+-- Saved-variable access, normalization, and compatibility cleanup.
 local function clamp_number(value, fallback, spec)
     value = tonumber(value)
     if not value then value = fallback end
@@ -136,10 +144,14 @@ local function get_db()
 end
 
 M.get_db = get_db
+--#endregion DATABASE ==========================================================
 
--- ============================================================================
--- RUNTIME LIFECYCLE
--- ============================================================================
+
+--#region RUNTIME LIFECYCLE ====================================================
+-- Start/stop helpers for module-owned events, frame visibility, and update work.
+function M.is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+end
 
 local function stop_progress_driver()
     progress_driver:SetScript("OnUpdate", nil)
@@ -167,7 +179,7 @@ local function sync_runtime_events(enabled)
     M._runtime_events_registered = enabled
 end
 
-local function disable_runtime()
+function M.stop_runtime()
     stop_progress_driver()
     M._fill_test_enabled = false
     M._fill_test_started_at = nil
@@ -180,12 +192,13 @@ local function disable_runtime()
         M.frame:EnableMouse(false)
         M.frame._mouse_enabled = false
     end
+    sync_runtime_events(false)
 end
+--#endregion RUNTIME LIFECYCLE =================================================
 
--- ============================================================================
--- FILL TEST AND PROGRESS UPDATES
--- ============================================================================
 
+--#region FILL TEST AND PROGRESS UPDATES =======================================
+-- Simulated fill preview and active filling-node OnUpdate cadence.
 local function get_fill_test_charge_info()
     local max_slots = M.MAX_SLOTS
     local elapsed = (GetTime() - (M._fill_test_started_at or GetTime())) / FILL_TEST_NODE_SECONDS
@@ -253,15 +266,14 @@ local function update_progress_driver(db, needs_progress_updates, slot_index, st
     end)
     progress_driver:Show()
 end
+--#endregion FILL TEST AND PROGRESS UPDATES ====================================
 
--- ============================================================================
--- RENDER REFRESH
--- ============================================================================
 
+--#region RENDER REFRESH =======================================================
+-- Main runtime render path: visibility decisions, slot state, alpha, and ticking.
 function M.refresh()
-    if addon.is_module_enabled and not addon.is_module_enabled("skyriding_vigor") then
-        disable_runtime()
-        sync_runtime_events(false)
+    if not M.is_runtime_enabled() then
+        M.stop_runtime()
         return
     end
 
@@ -269,8 +281,7 @@ function M.refresh()
     if not db then return end
 
     if not db.enabled then
-        disable_runtime()
-        sync_runtime_events(false)
+        M.stop_runtime()
         return
     end
 
@@ -352,27 +363,32 @@ function M.refresh()
     end
     update_progress_driver(db, needs_progress_updates, filling_slot_index, start_time, duration)
 end
+--#endregion RENDER REFRESH ====================================================
 
--- ============================================================================
--- PUBLIC RUNTIME CONTROLS
--- ============================================================================
 
+--#region PUBLIC RUNTIME CONTROLS ==============================================
+-- Entry points called by module toggles and user-facing runtime controls.
 function M.set_module_enabled(enabled)
     if enabled then
         M._db_normalized = false
         local db = get_db()
-        sync_runtime_events(db and db.enabled)
         if db and db.enabled then
             M.refresh()
+        else
+            M.stop_runtime()
         end
         return
     end
 
-    disable_runtime()
-    sync_runtime_events(false)
+    M.stop_runtime()
 end
 
 function M.set_fill_test_enabled(enabled)
+    if not M.is_runtime_enabled() then
+        M.stop_runtime()
+        return
+    end
+
     enabled = enabled and true or false
     if M._fill_test_enabled == enabled then return end
     local db = get_db()
@@ -396,11 +412,11 @@ end
 function M.toggle_fill_test()
     M.set_fill_test_enabled(not M._fill_test_enabled)
 end
+--#endregion PUBLIC RUNTIME CONTROLS ===========================================
 
--- ============================================================================
--- SETTINGS MUTATION
--- ============================================================================
 
+--#region SETTINGS MUTATION ====================================================
+-- Settings write paths that normalize values and trigger the correct refresh.
 function M.on_reset_complete()
     M._db_normalized = false
     local db = get_db()
@@ -473,8 +489,7 @@ function M.set_db_value(key, value)
         end
     end
     if key == "enabled" and not value then
-        disable_runtime()
-        sync_runtime_events(false)
+        M.stop_runtime()
         return
     end
     if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
@@ -536,11 +551,11 @@ function M.reset_position()
         M.sync_position_controls(db)
     end
 end
+--#endregion SETTINGS MUTATION =================================================
 
--- ============================================================================
--- EVENT BOOTSTRAP
--- ============================================================================
 
+--#region EVENT BOOTSTRAP ======================================================
+-- Addon-load registration and runtime event dispatch into the refresh path.
 loader:RegisterEvent("ADDON_LOADED")
 
 loader:SetScript("OnEvent", function(self, event, name)
@@ -548,17 +563,17 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         local db = get_db()
-        if not addon.is_module_enabled or addon.is_module_enabled("skyriding_vigor") then
-            sync_runtime_events(db and db.enabled)
-        end
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901, module_key = "skyriding_vigor" })
+            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901, module_key = M.MODULE_KEY })
         end
-        if db and db.enabled and (not addon.is_module_enabled or addon.is_module_enabled("skyriding_vigor")) then
+        if db and db.enabled then
             M.refresh()
+        else
+            M.stop_runtime()
         end
         return
     end
 
     M.refresh()
 end)
+--#endregion EVENT BOOTSTRAP ===================================================

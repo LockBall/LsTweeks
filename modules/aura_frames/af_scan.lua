@@ -29,8 +29,7 @@ local _scratch_viewer_children = {}
 local _custom_aura_scan_cache = {}
 local AURA_SCAN_BUCKET_CATEGORIES = { "static", "short", "long", "debuff" }
 
--- ============================================================================
--- SHARED HELPERS
+--#region SHARED HELPERS =======================================================
 
 local function reset_aura_category_buckets()
     M._aura_maps_by_category = M._aura_maps_by_category or {}
@@ -719,8 +718,9 @@ local function build_added_lookup(info)
     return lookup, count
 end
 
--- ============================================================================
--- HELPFUL AURA CLASSIFICATION
+--#endregion SHARED HELPERS ====================================================
+
+--#region HELPFUL AURA CLASSIFICATION ==========================================
 -- Returns "static" | "short" | "long" for a helpful aura given its remaining time.
 -- Returns nil when classification is deferred to caller (secret fields).
 local function classify_helpful(classify_rem, short_threshold)
@@ -740,8 +740,9 @@ local function get_max_icons_for_frame_defs(db, hint, include_debuff)
     return max_icons
 end
 
--- ============================================================================
--- UNIFIED SCAN
+--#endregion HELPFUL AURA CLASSIFICATION =======================================
+
+--#region UNIFIED SCAN =========================================================
 -- Scans all player buffs and debuffs in one pass.
 -- Populates M._aura_map: iid -> entry with is_helpful and category fields.
 -- Preset frames filter by entry.category; custom frames use C_UnitAuras.GetAuraDataByIndex directly.
@@ -970,3 +971,5 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         if not seen_iids[iid] then cur_map[iid] = nil end
     end
 end
+
+--#endregion UNIFIED SCAN ======================================================

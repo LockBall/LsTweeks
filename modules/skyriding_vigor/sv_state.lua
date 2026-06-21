@@ -34,9 +34,7 @@ local VIGOR_POWER_TYPES = {
     10, -- Enum.PowerType.Alternate
 }
 
--- ============================================================================
--- POWER STATE
--- ============================================================================
+--#region POWER STATE ==========================================================
 
 local function is_secret(value)
     return issecretvalue and issecretvalue(value)
@@ -101,9 +99,9 @@ function M.get_charge_info()
     return nil
 end
 
--- ============================================================================
--- FLIGHT STATE
--- ============================================================================
+--#endregion POWER STATE =======================================================
+
+--#region FLIGHT STATE =========================================================
 
 function M.get_gliding_state()
     if not C_PlayerInfo_GetGlidingInfo then return false, false end
@@ -125,3 +123,5 @@ function M.is_player_ridealong_passenger()
     return UnitInVehicle and UnitInVehicle("player")
         and UnitInVehicleControlSeat and not UnitInVehicleControlSeat("player")
 end
+
+--#endregion FLIGHT STATE ======================================================

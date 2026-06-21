@@ -240,8 +240,7 @@ local function set_bar_minmax_if_changed(bar, min_value, max_value)
     bar:SetMinMaxValues(min_value, max_value)
 end
 
--- ============================================================================
--- TIMER TICKER
+--#region TIMER TICKER =========================================================
 
 
 local function aura_icon_needs_tick(obj, frame, now)
@@ -436,8 +435,9 @@ function M.tick_visible_icons(now)
     end
 end
 
--- ============================================================================
--- BLIZZARD BUFF/DEBUFF FRAME TOGGLES
+--#endregion TIMER TICKER ======================================================
+
+--#region BLIZZARD BUFF/DEBUFF FRAME TOGGLES ===================================
 
 local function set_blizz_frame_state(frame, hide)
     if not frame then return end
@@ -561,8 +561,9 @@ function M.prepare_blizz_cdm_viewer(category)
     M.update_blizz_cdm_visibility(category)
 end
 
--- ============================================================================
--- AURA UPDATE (main per-frame refresh)
+--#endregion BLIZZARD BUFF/DEBUFF FRAME TOGGLES ================================
+
+--#region AURA UPDATE (MAIN PER-FRAME REFRESH) =================================
 -- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
@@ -755,3 +756,5 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
     set_backdrop_state_if_changed(self, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
 end
+
+--#endregion AURA UPDATE (MAIN PER-FRAME REFRESH) ==============================

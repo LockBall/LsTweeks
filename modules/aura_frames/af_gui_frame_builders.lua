@@ -826,7 +826,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:place_at(max_icons_slider, has_timer_controls and 6 or 5, 4)
 end
 
--- ============================================================================
+--#region FRAME PANEL BUILDERS =================================================
 function M.build_preset_frame_panel(p, data)
     local frame_config = make_preset_frame_settings_config(data)
     local cat = frame_config.id
@@ -1002,3 +1002,5 @@ function M.build_custom_child_panel(p, entry)
     })
     modifier_dd:SetPoint("LEFT", pipe, "RIGHT", 10, 0)
 end
+
+--#endregion FRAME PANEL BUILDERS ==============================================

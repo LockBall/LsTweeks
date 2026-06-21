@@ -13,9 +13,7 @@ local C_Texture_GetAtlasInfo = C_Texture and C_Texture.GetAtlasInfo
 local abs = math.abs
 local tonumber = tonumber
 
--- ============================================================================
--- STYLE DEFINITIONS
--- ============================================================================
+--#region STYLE DEFINITIONS ====================================================
 
 local MAX_SLOTS = 6
 local DEFAULT_STYLE_KEY = "default"
@@ -205,9 +203,9 @@ M.LAYOUT_SETTING_KEYS = {
     decor_style = true,
 }
 
--- ============================================================================
--- SHARED ACCESSORS
--- ============================================================================
+--#endregion STYLE DEFINITIONS =================================================
+
+--#region SHARED ACCESSORS =====================================================
 
 local function get_db()
     return M.get_db and M.get_db()
@@ -232,9 +230,9 @@ local function atlas_exists(atlas)
     return info and info.width and info.height and info.width > 0 and info.height > 0
 end
 
--- ============================================================================
--- STYLE DB HELPERS
--- ============================================================================
+--#endregion SHARED ACCESSORS ==================================================
+
+--#region STYLE DB HELPERS =====================================================
 
 local function is_valid_style(style)
     return style and atlas_exists(style.frame) and atlas_exists(style.background)
@@ -742,3 +740,5 @@ local function get_decor_atlas(db, style_key, style)
 end
 
 M.get_decor_atlas = get_decor_atlas
+
+--#endregion STYLE DB HELPERS ==================================================

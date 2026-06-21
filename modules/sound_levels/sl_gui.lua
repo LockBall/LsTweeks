@@ -5,6 +5,8 @@ local addon_name, addon = ...
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
+--#region CONFIGURATION ========================================================
+
 local STRINGS = {
     use_original_label = "Original",
     play_on_adjust_label = "Play on Adjust",
@@ -42,6 +44,10 @@ local UI = {
     fishing_slider_gap = 10,
 }
 
+--#endregion CONFIGURATION =====================================================
+
+--#region SHARED HELPERS =======================================================
+
 local function apply_box_backdrop(frame)
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -52,6 +58,10 @@ local function apply_box_backdrop(frame)
     frame:SetBackdropColor(0, 0, 0, 0.28)
     frame:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.9)
 end
+
+--#endregion SHARED HELPERS ====================================================
+
+--#region SOUND TARGET CONTROLS ================================================
 
 local function create_play_button(parent, target_key)
     local button = CreateFrame("Button", nil, parent)
@@ -259,6 +269,10 @@ local function build_slider_panel(parent, target_key, target)
     return slider_panel
 end
 
+--#endregion SOUND TARGET CONTROLS =============================================
+
+--#region GENERAL TAB ==========================================================
+
 local function build_general_tab(parent)
     local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
     title:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
@@ -286,6 +300,10 @@ local function build_general_tab(parent)
     reset:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -20)
 end
 
+--#endregion GENERAL TAB =======================================================
+
+--#region CONTROL SYNCHRONIZATION ==============================================
+
 function M.sync_fishing_focus_controls()
     local focus_db = M.get_fishing_focus_db()
     local focus_enabled = M.controls.fishing_focus_enabled
@@ -302,6 +320,10 @@ function M.sync_fishing_focus_controls()
         M.controls.fishing_focus_refresh_current()
     end
 end
+
+--#endregion CONTROL SYNCHRONIZATION ===========================================
+
+--#region FISHING TAB ==========================================================
 
 local function create_fishing_header_bar(parent, title_text, play_profile_key)
     local title_bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -468,6 +490,10 @@ local function build_fishing_tab(parent)
     refresh_current_values()
 end
 
+--#endregion FISHING TAB =======================================================
+
+--#region SOUNDS TAB ===========================================================
+
 local function build_sounds_tab(parent)
     local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
@@ -535,6 +561,10 @@ local function build_sounds_tab(parent)
     end
 end
 
+--#endregion SOUNDS TAB ========================================================
+
+--#region SETTINGS CONSTRUCTION ================================================
+
 function M.BuildSettings(parent)
     local db = M.get_db()
     local tabs = {}
@@ -591,3 +621,5 @@ function M.BuildSettings(parent)
     select_tab(selected_index)
     PanelTemplates_UpdateTabs(parent)
 end
+
+--#endregion SETTINGS CONSTRUCTION =============================================

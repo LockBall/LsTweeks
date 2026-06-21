@@ -123,6 +123,8 @@ dist/                   generated package output, ignored
 
 Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Use `code_map.md` for compact file ownership and common commands; keep detailed per-file ownership notes in the relevant module memory file instead of expanding this map.
 
+Lua section headers use VS Code foldable region markers with visual dividers: `--#region SECTION NAME =====` and `--#endregion SECTION NAME =====`. Use uppercase section names and keep region markers paired. Put the explanatory section comment directly under `--#region` with no blank line, put no blank line before `--#endregion`, and leave two blank lines before the next `--#region`.
+
 
 ## Shared Architecture
 
@@ -184,4 +186,3 @@ Violations here can create invisible or unstable controls.
 ## Module Memory
 
 Module-specific memory files are linked in the table of contents above.
-

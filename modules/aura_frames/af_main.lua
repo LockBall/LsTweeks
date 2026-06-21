@@ -242,8 +242,7 @@ function M.queue_wow_cooldown_refresh(profile)
     end
 end
 
--- ============================================================================
--- AURA ICON TOOLTIPS
+--#region AURA ICON TOOLTIPS ===================================================
 
 local function tooltip_has_lines()
     return (not GameTooltip.NumLines) or GameTooltip:NumLines() > 0
@@ -372,8 +371,9 @@ local function handle_frame_mouse_leave(frame)
     end)
 end
 
--- ============================================================================
--- AURA ICON POOL
+--#endregion AURA ICON TOOLTIPS ================================================
+
+--#region AURA ICON POOL =======================================================
 
 -- The icon pool is a fixed set of reusable icon/bar frame objects owned by one
 -- aura frame. It is created up front because WoW combat lockdown makes runtime
@@ -481,8 +481,9 @@ local function create_aura_icon_pool(frame, cfg_db, category)
     end
 end
 
--- ============================================================================
--- AURA FRAME SHELL
+--#endregion AURA ICON POOL ====================================================
+
+--#region AURA FRAME SHELL =====================================================
 
 -- The frame shell is the user-facing container around an aura icon pool. It owns
 -- the drag title bars, resize handle, saved width updates, and resize refresh so
@@ -601,8 +602,9 @@ local function create_aura_frame_resizer(frame, category)
     end)
 end
 
--- ============================================================================
--- AURA FRAME EVENTS
+--#endregion AURA FRAME SHELL ==================================================
+
+--#region AURA FRAME EVENTS ====================================================
 
 local function create_aura_frame_update_params(show_key, move_key, timer_key, bg_key, scale_key, spacing_key, category, aura_filter)
     return {
@@ -699,11 +701,11 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     frame.is_custom = frame_opts.is_custom == true
     frame.custom_entry = frame_opts.custom_entry
     frame._cfg_db = frame_opts.cfg_db
-    
+
     M.apply_tooltip_panel_backdrop(frame)
 
-    frame:SetMovable(true) 
-    frame:SetResizable(true) 
+    frame:SetMovable(true)
+    frame:SetResizable(true)
     frame:EnableMouse(true)
     frame:SetClampedToScreen(true)
     frame:SetScript("OnEnter", handle_frame_mouse_enter)
@@ -739,13 +741,14 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         frame_opts.aura_filter or (is_debuff and "HARMFUL" or "HELPFUL")
     )
     bind_aura_frame_events(frame, category)
-    
+
     register_runtime_frame(show_key, frame)
     return frame
 end
 
--- ============================================================================
--- CUSTOM FRAME LIFECYCLE
+--#endregion AURA FRAME EVENTS =================================================
+
+--#region CUSTOM FRAME LIFECYCLE ===============================================
 
 -- Builds the WoW frame for a custom entry. Called at load (for saved entries)
 -- and at runtime (when user clicks + Custom). The frame is keyed by entry.id.
@@ -828,8 +831,9 @@ function M.destroy_custom_frame(id)
     end
 end
 
--- ============================================================================
--- STARTUP ORCHESTRATION
+--#endregion CUSTOM FRAME LIFECYCLE ============================================
+
+--#region STARTUP ORCHESTRATION ================================================
 
 local function prepare_aura_frame_db()
     if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
@@ -966,8 +970,9 @@ loader:SetScript("OnEvent", function(self, event, name)
     end
 end)
 
--- ============================================================================
--- RESET ORCHESTRATION
+--#endregion STARTUP ORCHESTRATION =============================================
+
+--#region RESET ORCHESTRATION ==================================================
 
 local function apply_reset_runtime_state()
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
@@ -1052,3 +1057,5 @@ function M.on_reset_complete()
     refresh_aura_frames_after_reset()
     refresh_aura_frame_settings_after_reset()
 end
+
+--#endregion RESET ORCHESTRATION ===============================================
