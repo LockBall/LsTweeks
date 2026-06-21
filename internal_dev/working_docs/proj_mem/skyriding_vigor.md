@@ -13,7 +13,7 @@ Important `skyriding_vigor` keys:
 
 - `show_spark`: optional Blizzard spark atlas overlay on the actively filling vigor node. Defaults off.
 
-- `spark_color` and `spark_size`: global spark tint/alpha and thickness multiplier for the optional spark overlay. The UI labels `spark_size` as Spark Thickness. It defaults to `5.00`; range is `0.50-10.00` in `0.5` steps.
+- `spark_color` and `spark_size`: global spark tint/alpha and thickness multiplier for the optional spark overlay. The UI labels `spark_size` as Spark Thickness. It defaults to `5.00`; range is `0.50-15.00` in `0.5` steps.
 
 - `move_mode`: shows the frame and enables left-drag positioning.
 
