@@ -439,17 +439,38 @@ end
 
 --#region BLIZZARD BUFF/DEBUFF FRAME TOGGLES ===================================
 
+local blizz_aura_frame_state = setmetatable({}, { __mode = "k" })
+
+local function get_blizz_aura_frame_state(frame)
+    local state = blizz_aura_frame_state[frame]
+    if not state then
+        state = {}
+        blizz_aura_frame_state[frame] = state
+    end
+    return state
+end
+
 local function set_blizz_frame_state(frame, hide)
     if not frame then return end
+    local state = get_blizz_aura_frame_state(frame)
+
     if hide then
+        state.forced_hidden = true
+        if not state.on_show_hooked and frame.HookScript then
+            state.on_show_hooked = true
+            frame:HookScript("OnShow", function(self)
+                local current_state = blizz_aura_frame_state[self]
+                if current_state and current_state.forced_hidden then
+                    self:Hide()
+                end
+            end)
+        end
         frame:Hide()
-        frame:UnregisterAllEvents()
-        if frame.SetScript then frame:SetScript("OnShow", nil) end
-    else
-        -- Best-effort restore for Blizzard's default frames after we disabled them.
-        -- If default buff/debuff behavior drifts, verify Blizzard's current event list.
-        frame:RegisterEvent("UNIT_AURA")
-        frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+        return
+    end
+
+    if state.forced_hidden then
+        state.forced_hidden = nil
         frame:Show()
     end
 end

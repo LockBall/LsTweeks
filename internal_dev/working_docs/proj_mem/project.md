@@ -138,7 +138,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 
-- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. If disabled behavior is reworked, start with diagnostics such as a `/lst status` report, then consider lazy construction or LoadOnDemand-style boundaries for modules where the resource savings are worth the complexity.
+- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` is the in-game diagnostic for this boundary: it reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. In-game all-disabled testing passed on 2026-06-21; see `internal_dev/completed_features/core_settings_module_status.md`. Do not revisit lazy construction or LoadOnDemand child addons unless there is an explicit memory-footprint target.
 
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 

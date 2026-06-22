@@ -69,6 +69,29 @@ function M.set_module_enabled(enabled)
     M.stop_runtime()
 end
 
+local function count_pairs(t)
+    local count = 0
+    for _ in pairs(t or {}) do
+        count = count + 1
+    end
+    return count
+end
+
+if addon.register_module_status then
+    addon.register_module_status(M.MODULE_KEY, function()
+        return {
+            "registered_events=" .. tostring(count_pairs(M._registered_events)),
+            "event_cache=" .. tostring(count_pairs(M._event_cache)),
+            "preview_handle=" .. tostring(M._preview_sound_handle ~= nil),
+            "adjust_preview_timer=" .. tostring(M._adjust_preview_timer ~= nil),
+            "fishing_events=" .. tostring(M._fishing_focus_events_registered == true),
+            "fishing_active=" .. tostring(M._fishing_focus_active == true),
+            "bobber_preview_timer=" .. tostring(M._fishing_bobber_preview_timer ~= nil),
+            "bobber_preview_handle=" .. tostring(M._fishing_bobber_preview_handle ~= nil),
+        }
+    end)
+end
+
 --#endregion RESET AND MODULE HOOKS ============================================
 
 --#region EVENT BOOTSTRAP ======================================================

@@ -306,3 +306,14 @@ function F.queue_health_update(get_db)
         F.on_health_update(get_db and get_db())
     end)
 end
+
+function F.get_runtime_status()
+    return {
+        state = state,
+        player_in_combat = playerInCombat == true,
+        fade_delay_timer = fadeDelayTimer ~= nil,
+        fade_ticker = fadeTicker ~= nil,
+        queued_health_timer = queuedHealthTimer ~= nil,
+        queued_apply = queuedApply == true,
+    }
+end

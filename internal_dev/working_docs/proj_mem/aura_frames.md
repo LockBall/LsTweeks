@@ -47,6 +47,10 @@ Important `aura_frames` keys:
 
 - Frame processing is enabled-rooted. Disabled frames must not do move-shell work, previews, scans, render, layout, or CDM viewer prep.
 
+- Re-enabling the Aura Frames module must mark the aura scan dirty, restart runtime services, then refresh/rebind all existing frames. Do not rely on individual frame enable checkboxes to recover icon contents; that masked a stale/empty shared-scan state where frame shells/title bars appeared without icons after module re-enable.
+
+- Blizzard `BuffFrame` / `DebuffFrame` suppression must preserve Blizzard-owned events and scripts. Use addon-owned hide state plus a one-time `OnShow` hook; restore by clearing LsTweeks' forced-hidden state and showing only frames LsTweeks hid. Do not call `UnregisterAllEvents()`, register guessed restore events, or replace scripts on those frames.
+
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
 
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
@@ -65,11 +69,13 @@ Important `aura_frames` keys:
 
 - Do not write addon metadata directly onto Blizzard CooldownViewer frames or child item frames. Store CDM hook/read state in addon-owned weak tables keyed by the Blizzard frames; direct `_lstweeks_*` fields on CDM internals are a taint risk during combat refresh.
 
+- Public `C_CooldownViewer` APIs do not expose enough live rendered state to replace CDM viewer child reads/hooks. They provide category cooldown IDs/static metadata/layout/availability/alert types, but not active aura instance IDs, rendered child order, per-item active state, or cooldown widget timing. Prefer Blizzard child mixin methods such as `GetAuraSpellInstanceID()`, `GetCooldownID()`, `GetCooldownInfo()`, and `GetSpellID()` before fallback field reads.
+
 - CDM Blizzard-viewer hide settings must be applied for every CDM category on startup/reload, independent of whether the matching addon CDM frame is enabled.
 
 - CDM cooldown icon grey state is based on real spell cooldown data and intentionally ignores the global cooldown.
 
-- CDM cooldown-mode entries must transition from active aura display to grey/cooldown display while already in combat. Divine Protection on Utility is the regression test: cast out of combat, enter combat, let the active aura expire, and verify the cooldown appears without waiting for combat exit. Do not gate cooldown fallback only on `not child.auraInstanceID`; Blizzard children can retain a stale `auraInstanceID` after the active aura is gone.
+- CDM cooldown-mode entries must transition from active aura display to grey/cooldown display while already in combat. Divine Protection on Utility is the regression test: cast out of combat, enter combat, let the active aura expire, and verify the cooldown appears without waiting for combat exit. Do not gate cooldown fallback only on a missing child aura instance ID; Blizzard children can retain stale aura instance state after the active aura is gone.
 
 - CDM viewer child frames are reused by Blizzard across categories/spells. When cached child identity changes (`cooldownID` or spell ID), clear the addon-owned child-state name/icon before refilling them. Do not revert this: stale child display caches caused Utility to render active/cooldown states with mismatched Essential spell identity.
 
@@ -119,6 +125,8 @@ Important `aura_frames` keys:
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
+
+- There is no legacy saved-profile corpus for Aura Frames as of 2026-06-21. Do not revisit deleted/renamed custom-frame profile compatibility unless real saved variables are found or profile storage is intentionally changed; for storage changes, create synthetic profiles specific to that change.
 
 
 ## GUI

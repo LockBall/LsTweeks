@@ -374,6 +374,58 @@ local function get_cd_child_state(child)
     return state
 end
 
+local function get_child_cooldown_id(child)
+    if not child then return nil end
+    if child.GetCooldownID then
+        local ok, cooldown_id = pcall(child.GetCooldownID, child)
+        if ok and cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+            return cooldown_id
+        end
+    end
+
+    local cooldown_id = child.cooldownID
+    if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+        return cooldown_id
+    end
+    return nil
+end
+
+local function get_child_cooldown_info(child)
+    if not child then return nil end
+    if child.GetCooldownInfo then
+        local ok, info = pcall(child.GetCooldownInfo, child)
+        if ok and info then return info end
+    end
+    return child.cooldownInfo
+end
+
+local function get_child_spell_id(child)
+    if not child then return nil end
+    if child.GetSpellID then
+        local ok, spell_id = pcall(child.GetSpellID, child)
+        if ok and spell_id ~= nil and not issecretvalue(spell_id) then
+            return spell_id
+        end
+    end
+
+    local info = get_child_cooldown_info(child)
+    if not info then return nil end
+    local spell_id = info.overrideSpellID or info.spellID
+    if spell_id ~= nil and not issecretvalue(spell_id) then
+        return spell_id
+    end
+    return nil
+end
+
+local function get_child_aura_instance_id(child)
+    if not child then return nil end
+    if child.GetAuraSpellInstanceID then
+        local ok, aura_instance_id = pcall(child.GetAuraSpellInstanceID, child)
+        if ok and aura_instance_id then return aura_instance_id end
+    end
+    return child.auraInstanceID
+end
+
 function M.clear_cooldown_viewer_child_cache(category)
     local viewer = M.get_cdm_viewer_frame(category)
     if not viewer then return end
@@ -433,14 +485,14 @@ local function hook_cd_item_frame(child)
 
     local function refresh_child_identity()
         local state = get_cd_child_state(child)
-        local cooldown_id = child.cooldownID
+        local cooldown_id = get_child_cooldown_id(child)
         set_child_cooldown_id(child, cooldown_id)
 
-        local info = child.cooldownInfo
+        local info = get_child_cooldown_info(child)
         if info then
             local cid = info.cooldownID or info.cooldownId
             set_child_cooldown_id(child, cid)
-            local sid = info.overrideSpellID or info.spellID
+            local sid = get_child_spell_id(child)
             set_child_spell_id(child, sid)
         end
 
@@ -541,9 +593,9 @@ end
 
 -- Populates target_map by walking the Blizzard CooldownViewer frame for this category.
 -- Aura mode:
---   Reads child.auraInstanceID and maps directly to M._aura_map entries.
+--   Reads the child mixin's aura instance ID and maps directly to M._aura_map entries.
 -- Cooldown mode:
---   1. Active phase: prefer child.auraInstanceID from the live Blizzard CDM viewer.
+--   1. Active phase: prefer the child mixin's live aura instance ID from the Blizzard CDM viewer.
 --   2. Cooldown phase: use the hooked DurationObject/cache, with spell cooldown
 --      duration as fallback for the overlay.
 --   3. Grey state: use C_Spell.GetSpellCooldown(spellID), explicitly ignoring GCD.
@@ -568,7 +620,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             hook_cd_item_frame(child)
             local state = get_cd_child_state(child)
 
-            local iid = child.auraInstanceID
+            local iid = get_child_aura_instance_id(child)
             local has_active_aura_entry = false
             if iid then
                 local aura_entry = M._aura_map[iid]
@@ -586,9 +638,8 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             end
 
             -- Prefer readable cooldownID, fall back to the per-child cached ID set by hooks.
-            local cooldown_id = child.cooldownID
-            if cooldown_id ~= nil and issecretvalue(cooldown_id) then cooldown_id = nil end
-            local info = child.cooldownInfo
+            local cooldown_id = get_child_cooldown_id(child)
+            local info = get_child_cooldown_info(child)
             local saw_identity = false
             if info then
                 local cid = info.cooldownID or info.cooldownId
@@ -601,7 +652,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                     cooldown_id = cid
                     saw_identity = true
                 end
-                local sid = info.overrideSpellID or info.spellID
+                local sid = get_child_spell_id(child)
                 if sid and not issecretvalue(sid) then
                     if state.spell_id ~= sid then
                         state.spell_id = sid
@@ -640,8 +691,9 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
                 spell_id = spell_id or cached.spell_id
             end
 
-            -- Blizzard can retain child.auraInstanceID after the active aura expires
-            -- in combat. Fall back to cooldown display unless we mapped a live aura.
+            -- Blizzard can retain a child aura instance ID after the active aura
+            -- expires in combat. Fall back to cooldown display unless we mapped
+            -- a live aura.
             if not has_active_aura_entry and cooldown_id and icon then
                 local expiration = cached and cached.expiration or 0
                 local duration = cached and cached.duration or 0
@@ -673,7 +725,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
     else
         local children = copy_viewer_children(viewer)
         for _, child in ipairs(children) do
-            local iid = child.auraInstanceID
+            local iid = get_child_aura_instance_id(child)
             if iid then
                 local entry = M._aura_map[iid]
                 if not entry then

@@ -383,6 +383,20 @@ function M.set_module_enabled(enabled)
     M.stop_runtime()
 end
 
+if addon.register_module_status then
+    addon.register_module_status(M.MODULE_KEY, function()
+        return {
+            "runtime_events=" .. tostring(M._runtime_events_registered == true),
+            "frame_shown=" .. tostring(M.frame and M.frame:IsShown() == true),
+            "mouse_enabled=" .. tostring(M.frame and M.frame._mouse_enabled == true),
+            "progress_onupdate=" .. tostring(progress_driver and progress_driver:GetScript("OnUpdate") ~= nil),
+            "progress_driver_shown=" .. tostring(progress_driver and progress_driver:IsShown() == true),
+            "fill_test=" .. tostring(M._fill_test_enabled == true),
+            "progress_slot=" .. tostring(M._progress_slot_index ~= nil),
+        }
+    end)
+end
+
 function M.set_fill_test_enabled(enabled)
     if not M.is_runtime_enabled() then
         M.stop_runtime()

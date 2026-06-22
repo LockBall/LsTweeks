@@ -1,8 +1,10 @@
-1. Priority: High | Impact: High | Change Risk: Medium - Verify passenger/ridealong state, its the remaining runtime case for the `sv_state.lua` visibility path.
+# Skyriding Vigor Review
 
-2. Priority: Medium | Impact: Medium | Change Risk: Medium - Tune spark visuals in game for Default and Storm Race styles. Confirm the spark sits on the fill edge without clipping or overpowering custom fill colors, and decide whether Spark Size max `10.00` should stay broad or be narrowed.
+Active review items only. Move completed outcomes to `internal_dev/completed_features/` or `internal_dev/working_docs/proj_mem/skyriding_vigor.md`, then remove them from this file.
 
-3. Priority: Medium | Impact: Medium | Change Risk: Medium - Probe Skyriding race timer state before wiring race-specific behavior. Local Ketho annotations do not show a dedicated `C_SkyridingRace.IsActive()` style API; race POI APIs such as `C_AreaPoiInfo.GetDragonridingRacesForMap(uiMapID)` only describe map pins.
+1. Priority: High | Impact: High | Change Risk: Medium - Verify passenger/ridealong state. This is the remaining runtime case for the `sv_state.lua` visibility path.
+
+2. Priority: Medium | Impact: Medium | Change Risk: Medium - Probe Skyriding race timer state before wiring race-specific behavior. Local Ketho annotations do not show a dedicated `C_SkyridingRace.IsActive()` style API; race POI APIs such as `C_AreaPoiInfo.GetDragonridingRacesForMap(uiMapID)` only describe map pins.
 
    Likely runtime signals are world elapsed timers and/or scenario header timer widgets. Probe during a Skyriding race:
 

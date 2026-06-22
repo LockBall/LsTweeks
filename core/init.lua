@@ -85,6 +85,47 @@ function addon.set_module_enabled(module_key, enabled)
     end
 end
 
+addon.module_status_builders = addon.module_status_builders or {}
+
+function addon.register_module_status(module_key, builder)
+    if not module_key or type(builder) ~= "function" then return end
+    addon.module_status_builders[module_key] = builder
+end
+
+local function join_status_fields(fields)
+    if type(fields) == "table" then
+        return table.concat(fields, ", ")
+    end
+    if fields ~= nil then
+        return tostring(fields)
+    end
+    return "no runtime status registered"
+end
+
+function addon.print_module_status()
+    ensure_module_flags()
+    print("|cff33ff99LsTweeks module status|r")
+    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+        local key = module_def.key
+        local fields = { "enabled=" .. tostring(addon.is_module_enabled(key)) }
+        local builder = addon.module_status_builders and addon.module_status_builders[key]
+        if builder then
+            local ok, result = pcall(builder)
+            if ok then
+                local detail = join_status_fields(result)
+                if detail and detail ~= "" then
+                    fields[#fields + 1] = detail
+                end
+            else
+                fields[#fields + 1] = "status_error=" .. tostring(result)
+            end
+        else
+            fields[#fields + 1] = "no runtime status registered"
+        end
+        print((module_def.label or key) .. ": " .. table.concat(fields, ", "))
+    end
+end
+
 
 function addon.get_version()
     if not addon.version and C_AddOns and C_AddOns.GetAddOnMetadata then
@@ -155,6 +196,10 @@ end)
 SLASH_LSTWEEKS1 = "/lst"
 SlashCmdList["LSTWEEKS"] = function(msg)
     msg = (msg or ""):match("^%s*(.-)%s*$")
+    if msg:lower() == "status" then
+        addon.print_module_status()
+        return
+    end
     if addon.main_frame then
         if addon.main_frame:IsShown() then
             addon.main_frame:Hide()

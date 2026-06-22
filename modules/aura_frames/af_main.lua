@@ -943,18 +943,75 @@ end
 
 function M.set_module_enabled(enabled)
     if enabled then
+        if M.mark_aura_scan_dirty then
+            M.mark_aura_scan_dirty()
+        else
+            M._aura_scan_dirty = true
+        end
+
         if not M._module_started then
             prepare_aura_frame_db()
             create_startup_aura_frames()
             M._module_started = true
-        else
-            rebind_existing_aura_frames()
         end
         start_aura_frame_runtime_services()
+        rebind_existing_aura_frames()
         return
     end
 
     M.stop_runtime()
+end
+
+local function count_aura_runtime_status()
+    local frame_count = 0
+    local shown_count = 0
+    local event_script_count = 0
+    local scan_pending_count = 0
+    local hover_ticker_count = 0
+    for _, frame in ipairs(M.frames_list or {}) do
+        if frame then
+            frame_count = frame_count + 1
+            if frame.IsShown and frame:IsShown() then
+                shown_count = shown_count + 1
+            end
+            if frame.GetScript and frame:GetScript("OnEvent") then
+                event_script_count = event_script_count + 1
+            end
+            if frame._scan_pending then
+                scan_pending_count = scan_pending_count + 1
+            end
+            if frame._hover_check_ticker then
+                hover_ticker_count = hover_ticker_count + 1
+            end
+        end
+    end
+
+    local cdm_forced_hidden_count = 0
+    for _, state in pairs(M._cd_viewer_state or {}) do
+        if state and state.forced_hidden then
+            cdm_forced_hidden_count = cdm_forced_hidden_count + 1
+        end
+    end
+
+    return frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count
+end
+
+if addon.register_module_status then
+    addon.register_module_status(M.MODULE_KEY, function()
+        local frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count =
+            count_aura_runtime_status()
+        return {
+            "runtime=" .. tostring(M._module_runtime_enabled == true),
+            "frames=" .. tostring(frame_count),
+            "shown=" .. tostring(shown_count),
+            "event_scripts=" .. tostring(event_script_count),
+            "visible_icon_ticker=" .. tostring(M._visible_icon_ticker ~= nil),
+            "scan_pending=" .. tostring(scan_pending_count),
+            "hover_tickers=" .. tostring(hover_ticker_count),
+            "cdm_forced_hidden=" .. tostring(cdm_forced_hidden_count),
+            "grid=" .. tostring(M.grid_frame and M.grid_frame:IsShown() == true),
+        }
+    end)
 end
 
 -- Startup conductor: keep addon-loaded work in order while each step
