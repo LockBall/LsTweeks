@@ -27,6 +27,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1` for routine Lua syntax and whitespace validation.
 
+- Use `git diff --check` before handing off code/doc edits to catch whitespace errors across the current diff.
+
 - Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package` when packaging behavior or release contents matter.
 
 - If a request touches public behavior, compare against `README.md` wording before changing settings names, feature names, slash commands, or user-facing docs.

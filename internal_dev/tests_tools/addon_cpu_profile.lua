@@ -7,6 +7,24 @@
 local addon_name, addon = ...
 if not addon then return end
 
+--#region PROFILE TARGET SWITCHES ==============================================
+
+-- Top-level target switches. Edit these before /reload to profile specific
+-- modules without changing the wrapper code below.
+local PROFILE_TARGETS = {
+    core = false,
+    settings = false,
+    player_frame = false,
+    sound_levels = false,
+    skyriding_vigor = false,
+    aura_frames = true,
+}
+
+--#endregion PROFILE TARGET SWITCHES ===========================================
+
+
+--#region PROFILER STATE AND HELPERS ===========================================
+
 local P = addon.cpu_profile or {}
 addon.cpu_profile = P
 
@@ -88,16 +106,91 @@ local function wrap_table_functions(tbl, prefix)
     end
 end
 
+--#endregion PROFILER STATE AND HELPERS ========================================
+
+
+--#region MODULE WRAPPER SECTIONS ==============================================
+
+local PROFILE_SECTIONS = {
+    -- Core/shared addon helpers and status/debug commands.
+    {
+        key = "core",
+        label = "Core/Shared",
+        install = function()
+            wrap_table_functions(addon, "addon")
+        end,
+    },
+    -- General Settings module.
+    {
+        key = "settings",
+        label = "Settings",
+        install = function()
+            wrap_table_functions(addon.st, "settings")
+        end,
+    },
+    -- Player Frame module, including OOC fade helpers.
+    {
+        key = "player_frame",
+        label = "Player Frame",
+        install = function()
+            wrap_table_functions(addon.player_frame, "player_frame")
+            wrap_table_functions(addon.player_frame and addon.player_frame.fade, "player_frame.fade")
+        end,
+    },
+    -- Sound Levels module, including Fishing Focus helpers.
+    {
+        key = "sound_levels",
+        label = "Sound Levels",
+        install = function()
+            wrap_table_functions(addon.sound_levels, "sound_levels")
+        end,
+    },
+    -- Skyriding Vigor module.
+    {
+        key = "skyriding_vigor",
+        label = "Skyriding Vigor",
+        install = function()
+            wrap_table_functions(addon.skyriding_vigor, "skyriding_vigor")
+        end,
+    },
+    -- Aura Frames module, including scan/render/CDM/profile helpers.
+    {
+        key = "aura_frames",
+        label = "Aura Frames",
+        install = function()
+            wrap_table_functions(addon.aura_frames, "aura_frames")
+        end,
+    },
+}
+
+local function is_target_enabled(key)
+    return PROFILE_TARGETS[key] == true
+end
+
+local function get_enabled_target_names()
+    local names = {}
+    for _, section in ipairs(PROFILE_SECTIONS) do
+        if is_target_enabled(section.key) then
+            names[#names + 1] = section.label
+        end
+    end
+    if #names == 0 then return "none" end
+    return table.concat(names, ", ")
+end
+
+--#endregion MODULE WRAPPER SECTIONS ===========================================
+
+
+--#region PROFILE LIFECYCLE ====================================================
+
 local function install_wrappers()
     restore_wrappers()
 
-    wrap_table_functions(addon, "addon")
-    wrap_table_functions(addon.st, "settings")
-    wrap_table_functions(addon.player_frame, "player_frame")
-    wrap_table_functions(addon.player_frame and addon.player_frame.fade, "player_frame.fade")
-    wrap_table_functions(addon.sound_levels, "sound_levels")
-    wrap_table_functions(addon.skyriding_vigor, "skyriding_vigor")
-    wrap_table_functions(addon.aura_frames, "aura_frames")
+    for _, section in ipairs(PROFILE_SECTIONS) do
+        if is_target_enabled(section.key) and section.install then
+            section.install()
+        end
+    end
 end
 
 local function reset_profile()
@@ -110,6 +203,7 @@ local function start_profile()
     reset_profile()
     P.enabled = true
     print("|cff33ff99LsTweeks CPU Profile:|r started")
+    print("|cff33ff99LsTweeks CPU Profile:|r targets: " .. get_enabled_target_names())
 end
 
 local function stop_profile()
@@ -155,6 +249,11 @@ local function report_profile(limit)
     end
 end
 
+--#endregion PROFILE LIFECYCLE =================================================
+
+
+--#region SLASH COMMAND ========================================================
+
 SLASH_LSTWEEKS_CPU_PROFILE1 = "/lstprofile"
 SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
     local command, arg = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
@@ -169,9 +268,12 @@ SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
         print("|cff33ff99LsTweeks CPU Profile:|r reset")
     elseif command == "status" then
         print("|cff33ff99LsTweeks CPU Profile:|r " .. (P.enabled and "running" or "stopped"))
+        print("|cff33ff99LsTweeks CPU Profile:|r targets: " .. get_enabled_target_names())
     elseif command == "report" or command == "" then
         report_profile(arg)
     else
         print("|cff33ff99LsTweeks CPU Profile:|r start | stop | reset | status | report [limit]")
     end
 end
+
+--#endregion SLASH COMMAND =====================================================

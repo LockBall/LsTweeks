@@ -28,7 +28,7 @@ Important `aura_frames` keys:
 
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
 
-- Completed Aura Frames feature notes live in `internal_dev/completed_features/`, including aura cancellation, tooltip annotation-gap, and runtime review notes.
+- Completed Aura Frames feature notes are consolidated in `internal_dev/completed_features/aura_frames.md`.
 
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 

@@ -59,7 +59,7 @@ Important `skyriding_vigor` keys:
 
 - Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, or mounted/flying state gated by `GetGlidingInfo()`'s `can_glide` result. Do not show only because `IsFlying()` or `IsMounted()` + `IsAdvancedFlyableArea()` is true; that also matches normal non-skyriding mounts in advanced-flyable zones. Grounded skyriding-mounted visibility is allowed when `can_glide` is true; `fade_when_full` handles idle/full states.
 
-- Ridealong passengers can inherit enough skyriding state to look eligible for the bar. Normal runtime visibility must suppress the bar when `UnitInVehicle("player")` is true and `UnitInVehicleControlSeat("player")` is false. Keep move mode/fill test usable for configuration.
+- Ridealong passengers can inherit enough skyriding state to look eligible for the bar. Normal runtime visibility must suppress the bar when `UnitInVehicle("player")` is true and `UnitInVehicleControlSeat("player")` is false. Keep move mode/fill test usable for configuration. In-game ridealong/passenger vigor-bar behavior was verified correct on 2026-06-21.
 
 - `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` gated by `can_glide` restores full alpha even when charges are full; plain ground movement and normal flying mounts must not.
 

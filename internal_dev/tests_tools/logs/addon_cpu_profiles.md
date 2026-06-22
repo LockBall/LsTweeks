@@ -18,7 +18,7 @@ that can taint Blizzard unit-frame execution when secret values are involved.
    aura updates, CDM updates, Skyriding Vigor visibility, Sound Levels previews,
    Fishing Focus if relevant, and opening/changing addon settings.
 5. Run `/lstprofile report 40`, copy the output here, then run `/lstprofile stop`.
-6. Remove the temporary TOC line and `/reload`.
+6. Remove the temporary TOC line, run `check_fast.ps1` and `git diff --check`, then `/reload`.
 
 ## Runs
 
@@ -361,6 +361,91 @@ this run. No safe high-value cleanup was identified. The remaining cost is mainl
 the necessary live walk of Blizzard CDM child state, plus cooldown identity/timing
 fallbacks. Keep the current read-only approach unless a future profile shows a
 material regression or a specific CDM behavior issue gives a narrower change target.
+
+### 2026-06-22
+
+Context: 181.8s broad addon run with all profiler targets enabled after recent
+runtime/status/Aura Frames changes. Profiler wrapped addon-owned functions only.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1769 | 799.555 | 0.4520 | 2.458 |
+| `aura_frames.tick_visible_icons` | 1666 | 408.563 | 0.2452 | 0.798 |
+| `skyriding_vigor.refresh` | 788 | 349.067 | 0.4430 | 6.016 |
+| `aura_frames.render_aura_map` | 1769 | 309.617 | 0.1750 | 1.071 |
+| `skyriding_vigor.set_slot_state` | 1597 | 262.585 | 0.1644 | 4.466 |
+| `skyriding_vigor.get_bar_style` | 3993 | 208.223 | 0.0521 | 1.419 |
+| `skyriding_vigor.update_filling_slot_progress` | 1137 | 203.285 | 0.1788 | 1.363 |
+| `skyriding_vigor.get_frame_atlas` | 1597 | 109.091 | 0.0683 | 4.027 |
+| `aura_frames.unified_scan` | 158 | 98.745 | 0.6250 | 1.760 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 1084 | 98.301 | 0.0907 | 0.447 |
+| `aura_frames.set_timer_text` | 16192 | 92.648 | 0.0057 | 0.198 |
+| `skyriding_vigor.get_style_layout_table` | 1597 | 83.790 | 0.0525 | 1.515 |
+| `aura_frames.scan_custom_aura_map` | 137 | 63.411 | 0.4629 | 1.542 |
+| `skyriding_vigor.get_valid_bar_style_key` | 1597 | 62.467 | 0.0391 | 1.493 |
+| `aura_frames.get_frame_activity_state` | 6396 | 49.863 | 0.0078 | 0.191 |
+| `skyriding_vigor.get_spark_atlas` | 4236 | 49.285 | 0.0116 | 2.221 |
+| `aura_frames.is_runtime_enabled` | 3479 | 40.884 | 0.0118 | 0.215 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 1666 | 39.794 | 0.0239 | 0.109 |
+| `aura_frames.refresh_frame_ooc_fade` | 1769 | 37.196 | 0.0210 | 0.407 |
+| `aura_frames.get_setting` | 16871 | 35.551 | 0.0021 | 0.105 |
+| `aura_frames.get_timer_behavior` | 6513 | 31.993 | 0.0049 | 0.358 |
+| `addon.is_module_enabled` | 4313 | 29.337 | 0.0068 | 0.054 |
+| `aura_frames.frame_needs_visible_icon_tick` | 4202 | 28.557 | 0.0068 | 0.098 |
+| `skyriding_vigor.get_charge_info` | 788 | 23.684 | 0.0301 | 0.167 |
+| `aura_frames.is_timer_text_enabled` | 1769 | 21.341 | 0.0121 | 0.275 |
+
+Conclusion: Aura Frames remains the largest broad runtime cost, with the inclusive
+`update_auras` path around 4.4ms/s and visible-icon ticking around 2.2ms/s in this
+run. Skyriding Vigor is now a meaningful secondary target: `refresh` averaged
+0.443ms/call with visible nested costs in style/atlas lookup and filling-slot
+updates. Because the profiler wraps nested addon functions, do not sum the rows as
+exclusive module totals; use them to choose the next focused profile. Recommended
+follow-up: run an Aura-only profile to confirm the current Aura hot path, then a
+Skyriding-only profile while a node is filling to assess style lookup caching and
+`set_slot_state` / progress update behavior.
+
+### 2026-06-22, Aura Frames Only
+
+Context: 90.6s run with only `PROFILE_TARGETS.aura_frames = true`.
+Profiler wrapped Aura Frames addon-owned functions only.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1509 | 674.741 | 0.4471 | 3.580 |
+| `aura_frames.render_aura_map` | 1509 | 268.251 | 0.1778 | 1.287 |
+| `aura_frames.tick_visible_icons` | 836 | 247.537 | 0.2961 | 1.273 |
+| `aura_frames.unified_scan` | 138 | 85.381 | 0.6187 | 2.910 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 944 | 85.081 | 0.0901 | 0.517 |
+| `aura_frames.set_timer_text` | 13780 | 80.167 | 0.0058 | 0.616 |
+| `aura_frames.scan_custom_aura_map` | 113 | 56.953 | 0.5040 | 1.256 |
+| `aura_frames.get_frame_activity_state` | 5422 | 43.579 | 0.0080 | 0.129 |
+| `aura_frames.refresh_frame_ooc_fade` | 1509 | 30.160 | 0.0200 | 0.256 |
+| `aura_frames.get_setting` | 14402 | 29.670 | 0.0021 | 0.210 |
+| `aura_frames.get_timer_behavior` | 5328 | 26.794 | 0.0050 | 0.066 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 836 | 17.870 | 0.0214 | 0.274 |
+| `aura_frames.is_timer_text_enabled` | 1509 | 17.843 | 0.0118 | 0.072 |
+| `aura_frames.is_runtime_enabled` | 2389 | 17.245 | 0.0072 | 0.109 |
+| `aura_frames.normalize_timer_category` | 6837 | 14.939 | 0.0022 | 0.063 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1697 | 12.824 | 0.0076 | 0.262 |
+| `aura_frames.get_bar_bg_color` | 1509 | 9.990 | 0.0066 | 0.071 |
+| `aura_frames.get_frame_config_db` | 5422 | 9.966 | 0.0018 | 0.124 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 944 | 9.851 | 0.0104 | 0.339 |
+| `aura_frames.mark_aura_scan_dirty` | 1323 | 9.554 | 0.0072 | 0.126 |
+| `aura_frames.merge_aura_info` | 1197 | 6.928 | 0.0058 | 0.041 |
+| `aura_frames.update_blizz_cdm_visibility` | 456 | 5.516 | 0.0121 | 0.039 |
+| `aura_frames.get_cdm_viewer_frame` | 1960 | 4.383 | 0.0022 | 0.313 |
+| `aura_frames.cdm_category_needs_viewer` | 176 | 3.310 | 0.0188 | 0.060 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1509 | 2.903 | 0.0019 | 0.028 |
+
+Conclusion: Aura-only profiling confirms the broad-run hot path. `update_auras`
+is still the main inclusive path, followed by rendering and visible-icon ticking.
+`unified_scan`, CDM entry reads, timer text, and custom aura scans are secondary
+contributors. Per-call costs are stable versus the broad run; the next practical
+Aura performance review should inspect whether `update_auras()` can skip stable
+work per frame, whether `render_aura_map()` can avoid redundant visual setters,
+and whether custom scans can be extended/reused more cheaply for unchanged
+filters.
 
 ### Template
 

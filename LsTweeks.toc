@@ -68,3 +68,6 @@ modules\aura_frames\af_debug_outlines.lua
 modules\aura_frames\af_screen_grid.lua
 
 modules\aura_frames\af_main.lua
+
+# --- Temporary Test Tools ---
+internal_dev\tests_tools\addon_cpu_profile.lua

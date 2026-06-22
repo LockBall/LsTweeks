@@ -59,6 +59,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Fast local validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`. Add `-Package` to also build and verify the release zip.
 
+- Diff whitespace validation: `git diff --check`.
+
 
 ### Ketho / LuaLS
 - Use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`) for Blizzard API reviews. Enable `wowAPI.luals.frameXML` for FrameXML/CDM/widget work.
