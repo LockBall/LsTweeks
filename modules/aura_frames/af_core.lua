@@ -151,6 +151,13 @@ function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
 
     local category = frame.category
     local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
+    if not fade_ooc
+        and not frame._ooc_fade_timer
+        and not frame._ooc_fade_state
+        and (frame._lstweeks_applied_alpha == nil or frame._lstweeks_applied_alpha == 1) then
+        return
+    end
+
     apply_ooc_fade(
         frame,
         fade_ooc,
@@ -600,6 +607,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- For custom frames, keys are stored inside the entry table, not in the flat DB.
     local cfg_db = is_custom and custom_entry or db
     if not cfg_db then return end
+
     local activity = M.get_frame_activity_state(self, show_key, move_key)
     local is_moving = activity.moving == true
     local preview_enabled = activity.test_aura == true
@@ -680,6 +688,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     end
 
     set_shown_if_changed(self, true)
+
     if activity.needs_cdm_viewer and M.prepare_blizz_cdm_viewer then
         M.prepare_blizz_cdm_viewer(category)
     end
@@ -728,6 +737,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local display_count = M.render_aura_map(
         self, self._aura_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
+
     if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
 
     local lc = self._layout_cache

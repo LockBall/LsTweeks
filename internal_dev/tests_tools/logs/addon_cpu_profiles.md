@@ -447,6 +447,132 @@ work per frame, whether `render_aura_map()` can avoid redundant visual setters,
 and whether custom scans can be extended/reused more cheaply for unchanged
 filters.
 
+### 2026-06-22, Aura Frames Only, Post-OOC Fast Path
+
+Context: 90.1s run with only `PROFILE_TARGETS.aura_frames = true`, after adding
+the low-risk OOC fade early return for disabled/no-active-fade frames. Profiler
+wrapped Aura Frames addon-owned functions only.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1309 | 590.951 | 0.4515 | 2.645 |
+| `aura_frames.render_aura_map` | 1309 | 231.311 | 0.1767 | 1.463 |
+| `aura_frames.tick_visible_icons` | 833 | 216.191 | 0.2595 | 1.181 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 824 | 79.223 | 0.0961 | 0.528 |
+| `aura_frames.unified_scan` | 111 | 66.405 | 0.5982 | 1.508 |
+| `aura_frames.set_timer_text` | 10583 | 62.127 | 0.0059 | 0.939 |
+| `aura_frames.scan_custom_aura_map` | 97 | 48.777 | 0.5029 | 1.460 |
+| `aura_frames.get_frame_activity_state` | 4858 | 38.211 | 0.0079 | 0.077 |
+| `aura_frames.get_setting` | 12218 | 27.166 | 0.0022 | 0.237 |
+| `aura_frames.refresh_frame_ooc_fade` | 1311 | 26.106 | 0.0199 | 0.090 |
+| `aura_frames.get_timer_behavior` | 4414 | 22.734 | 0.0052 | 0.229 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 833 | 17.850 | 0.0214 | 0.141 |
+| `aura_frames.is_runtime_enabled` | 2170 | 16.669 | 0.0077 | 0.193 |
+| `aura_frames.is_timer_text_enabled` | 1309 | 16.506 | 0.0126 | 0.105 |
+| `aura_frames.normalize_timer_category` | 5723 | 12.734 | 0.0022 | 0.055 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1784 | 12.164 | 0.0068 | 0.042 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 824 | 10.595 | 0.0129 | 0.201 |
+| `aura_frames.get_bar_bg_color` | 1309 | 9.005 | 0.0069 | 0.033 |
+| `aura_frames.get_frame_config_db` | 4865 | 8.770 | 0.0018 | 0.071 |
+| `aura_frames.mark_aura_scan_dirty` | 1146 | 7.854 | 0.0069 | 0.274 |
+| `aura_frames.merge_aura_info` | 1062 | 6.217 | 0.0059 | 0.113 |
+| `aura_frames.update_blizz_cdm_visibility` | 396 | 5.050 | 0.0128 | 0.048 |
+| `aura_frames.get_cdm_viewer_frame` | 1788 | 3.809 | 0.0021 | 0.037 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1309 | 2.626 | 0.0020 | 0.028 |
+| `aura_frames.cdm_category_needs_viewer` | 112 | 2.271 | 0.0203 | 0.056 |
+
+Conclusion: Compared with the prior 90.6s Aura-only baseline, total ms/sec fell
+mostly because `update_auras` and render calls/sec were lower in this run
+(`update_auras` about 7.45ms/s -> 6.56ms/s). Per-call costs stayed broadly
+stable: `update_auras` 0.4471ms -> 0.4515ms and `render_aura_map` 0.1778ms ->
+0.1767ms. `tick_visible_icons` improved on both total rate and average cost
+(`0.2961ms` -> `0.2595ms`), but workload differences still make attribution
+uncertain. Use this as the current comparison baseline before adding temporary
+`update_auras` sub-step profiler labels.
+
+### 2026-06-22, Aura Frames Only, Update Sub-Steps
+
+Context: 77.2s run with only `PROFILE_TARGETS.aura_frames = true`, plus temporary
+sub-step labels inside `M.update_auras()` to split inclusive update cost. Profiler
+wrapped Aura Frames addon-owned functions only. Sub-step labels were removed after
+the run.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1498 | 748.218 | 0.4995 | 3.484 |
+| `aura_frames.update_auras.render` | 1498 | 311.485 | 0.2079 | 1.355 |
+| `aura_frames.render_aura_map` | 1498 | 306.921 | 0.2049 | 1.350 |
+| `aura_frames.update_auras.scan_map` | 1498 | 259.106 | 0.1730 | 2.844 |
+| `aura_frames.tick_visible_icons` | 709 | 254.530 | 0.3590 | 1.710 |
+| `aura_frames.unified_scan` | 149 | 101.481 | 0.6811 | 1.948 |
+| `aura_frames.set_timer_text` | 17000 | 81.092 | 0.0048 | 1.251 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 828 | 76.121 | 0.0919 | 0.481 |
+| `aura_frames.scan_custom_aura_map` | 134 | 74.637 | 0.5570 | 2.834 |
+| `aura_frames.update_auras.config` | 1498 | 72.361 | 0.0483 | 0.184 |
+| `aura_frames.get_frame_activity_state` | 6229 | 49.904 | 0.0080 | 0.068 |
+| `aura_frames.get_timer_behavior` | 6014 | 30.396 | 0.0051 | 0.216 |
+| `aura_frames.get_setting` | 13835 | 29.154 | 0.0021 | 0.338 |
+| `aura_frames.update_auras.ooc_fade` | 1498 | 28.310 | 0.0189 | 0.354 |
+| `aura_frames.refresh_frame_ooc_fade` | 1498 | 25.031 | 0.0167 | 0.353 |
+| `aura_frames.is_timer_text_enabled` | 1498 | 17.772 | 0.0119 | 0.071 |
+| `aura_frames.update_auras.activity` | 1498 | 16.649 | 0.0111 | 0.069 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 709 | 16.427 | 0.0232 | 0.278 |
+| `aura_frames.is_runtime_enabled` | 2210 | 16.284 | 0.0074 | 0.036 |
+| `aura_frames.normalize_timer_category` | 7512 | 16.178 | 0.0022 | 0.056 |
+| `aura_frames.update_auras.layout_shell` | 1498 | 12.198 | 0.0081 | 0.149 |
+| `aura_frames.get_frame_config_db` | 6229 | 11.829 | 0.0019 | 0.055 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1464 | 11.642 | 0.0080 | 0.120 |
+| `aura_frames.mark_aura_scan_dirty` | 1614 | 11.610 | 0.0072 | 0.260 |
+| `aura_frames.get_bar_bg_color` | 1498 | 10.129 | 0.0068 | 0.041 |
+
+Conclusion: The split shows the next best Aura Frames CPU target is not generic
+settings resolution. Render dominates the inclusive update path, followed by
+scan/map fill. `update_auras.config` is visible but much smaller, about 0.94ms/s
+versus about 4.03ms/s for render and 3.36ms/s for scan/map fill in this run.
+Next implementation pass should focus on render skipping/redundant render work
+and scan-map narrowing before adding a broader runtime config cache.
+
+### 2026-06-22, Aura Frames Only, Render Timer Behavior Cache
+
+Context: 78.7s run with only `PROFILE_TARGETS.aura_frames = true`, after changing
+`render_aura_map()` to reuse one timer behavior for preset frames and cache timer
+behaviors by category for custom frames during each render pass.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1457 | 712.382 | 0.4889 | 2.505 |
+| `aura_frames.render_aura_map` | 1457 | 284.441 | 0.1952 | 1.125 |
+| `aura_frames.tick_visible_icons` | 728 | 252.601 | 0.3470 | 0.920 |
+| `aura_frames.unified_scan` | 141 | 102.302 | 0.7255 | 1.641 |
+| `aura_frames.set_timer_text` | 15294 | 78.261 | 0.0051 | 0.180 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 812 | 77.623 | 0.0956 | 0.516 |
+| `aura_frames.scan_custom_aura_map` | 129 | 74.680 | 0.5789 | 1.438 |
+| `aura_frames.get_frame_activity_state` | 5865 | 51.673 | 0.0088 | 0.180 |
+| `aura_frames.get_setting` | 13464 | 30.194 | 0.0022 | 0.084 |
+| `aura_frames.refresh_frame_ooc_fade` | 1457 | 26.691 | 0.0183 | 0.151 |
+| `aura_frames.is_timer_text_enabled` | 1457 | 19.566 | 0.0134 | 0.687 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 728 | 17.470 | 0.0240 | 0.095 |
+| `aura_frames.is_runtime_enabled` | 2190 | 17.144 | 0.0078 | 0.052 |
+| `aura_frames.get_timer_behavior` | 3042 | 16.480 | 0.0054 | 0.069 |
+| `aura_frames.mark_aura_scan_dirty` | 1551 | 12.537 | 0.0081 | 0.221 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1502 | 12.475 | 0.0083 | 0.052 |
+| `aura_frames.get_frame_config_db` | 5865 | 12.020 | 0.0020 | 0.168 |
+| `aura_frames.normalize_timer_category` | 4499 | 11.610 | 0.0026 | 0.606 |
+| `aura_frames.get_bar_bg_color` | 1457 | 10.810 | 0.0074 | 0.053 |
+| `aura_frames.merge_aura_info` | 1530 | 10.182 | 0.0067 | 0.141 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1457 | 3.083 | 0.0021 | 0.024 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1692 | 3.012 | 0.0018 | 0.120 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 812 | 2.958 | 0.0036 | 0.222 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1551 | 2.448 | 0.0016 | 0.085 |
+| `aura_frames.get_cdm_viewer_frame` | 928 | 2.413 | 0.0026 | 0.091 |
+
+Conclusion: The targeted helper change worked: compared with the update sub-step
+run, `get_timer_behavior` fell from 6014 calls / 30.396ms to 3042 calls /
+16.480ms despite similar render/update volume. `render_aura_map` average also
+fell from 0.2049ms to 0.1952ms in this run. The main render path remains a large
+cost, so the next render review should look for broader display-signature or
+redundant-work skips, then reprofile.
+
 ### Template
 
 Context:

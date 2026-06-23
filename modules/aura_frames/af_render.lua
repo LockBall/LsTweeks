@@ -30,6 +30,7 @@ local set_shown_if_changed = M.set_shown_if_changed
 local _scratch_list      = {}
 local _scratch_seen      = {}
 local _scratch_seen_keys = {}
+local _scratch_timer_behaviors = {}
 local _sorted_aura_ids_cache = {}
 
 function M.clear_sorted_aura_ids_cache()
@@ -728,12 +729,28 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local show_render_timer_text = show_timer_text and not show_cooldown_overlay
     local show_timer_swipe = self._show_timer_swipe ~= false
     local tooltip_enabled = self._show_tooltip ~= false
+    local frame_timer_category = self.category
+    local frame_timer_behavior = (not self.is_custom) and M.get_timer_behavior(frame_timer_category) or nil
+    local timer_behaviors = nil
+
+    if self.is_custom then
+        timer_behaviors = _scratch_timer_behaviors
+        wipe(timer_behaviors)
+    end
 
     for i = 1, display_count do
         local obj   = self.icons[i]
         local entry = list[i]
-        local timer_category = get_timer_category(self, entry)
-        local timer_behavior = M.get_timer_behavior(timer_category)
+        local timer_category = frame_timer_category
+        local timer_behavior = frame_timer_behavior
+        if timer_behaviors then
+            timer_category = get_timer_category(self, entry)
+            timer_behavior = timer_behaviors[timer_category]
+            if not timer_behavior then
+                timer_behavior = M.get_timer_behavior(timer_category)
+                timer_behaviors[timer_category] = timer_behavior
+            end
+        end
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
         local live_duration, live_remaining, cooldown_duration =

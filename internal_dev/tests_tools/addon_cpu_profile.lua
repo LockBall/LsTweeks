@@ -202,14 +202,14 @@ local function start_profile()
     install_wrappers()
     reset_profile()
     P.enabled = true
-    print("|cff33ff99LsTweeks CPU Profile:|r started")
-    print("|cff33ff99LsTweeks CPU Profile:|r targets: " .. get_enabled_target_names())
+    print("|cff33ff99== LsTweeks CPU Profile started ==|r")
+    print("targets: " .. get_enabled_target_names())
 end
 
 local function stop_profile()
     P.enabled = false
     restore_wrappers()
-    print("|cff33ff99LsTweeks CPU Profile:|r stopped")
+    print("|cff33ff99== LsTweeks CPU Profile stopped ==|r")
 end
 
 local function report_profile(limit)
@@ -235,11 +235,12 @@ local function report_profile(limit)
     end)
 
     limit = tonumber(limit) or 25
-    print("|cff33ff99LsTweeks CPU Profile:|r elapsed " .. format("%.1fs", elapsed))
+    print("|cff33ff99== LsTweeks CPU Profile report ==|r")
+    print("elapsed " .. format("%.1fs", elapsed))
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
         print(format(
-            "|cff33ff99LsTweeks CPU Profile:|r %s calls=%d total=%.3fms avg=%.4fms max=%.3fms",
+            "%s calls=%d total=%.3fms avg=%.4fms max=%.3fms",
             row.name,
             row.calls,
             row.total,
@@ -265,10 +266,11 @@ SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
         stop_profile()
     elseif command == "reset" then
         reset_profile()
-        print("|cff33ff99LsTweeks CPU Profile:|r reset")
+        print("|cff33ff99== LsTweeks CPU Profile reset ==|r")
     elseif command == "status" then
-        print("|cff33ff99LsTweeks CPU Profile:|r " .. (P.enabled and "running" or "stopped"))
-        print("|cff33ff99LsTweeks CPU Profile:|r targets: " .. get_enabled_target_names())
+        print("|cff33ff99== LsTweeks CPU Profile status ==|r")
+        print(P.enabled and "running" or "stopped")
+        print("targets: " .. get_enabled_target_names())
     elseif command == "report" or command == "" then
         report_profile(arg)
     else
