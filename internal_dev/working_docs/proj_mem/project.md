@@ -177,6 +177,10 @@ Violations here can create invisible or unstable controls.
 
 - Factory functions should not place controls externally when the caller owns placement.
 
+- Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
+
+- Shared grid placement helpers live in `functions/utils.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, and `addon.CenterGridControl()`. Use `addon.CenterGridControl()` for dynamically sized custom groups that need to be centered within a settings column after their width is known.
+
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.
 
 

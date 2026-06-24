@@ -41,6 +41,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `functions/checkbox.lua`: shared checkbox factory.
 
+- `functions/button.lua`: shared text-fit button helpers and `addon.ApplyStandardButtonStyle()` for standard gold-normal/white-hover button text.
+
 - `functions/color_picker.lua`: shared color picker plus reset button.
 
 - `functions/dropdown.lua`: shared dropdown factory.
@@ -51,7 +53,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `functions/slider_with_box.lua`: shared slider plus numeric edit box.
 
-- `functions/utils.lua`: `addon.deep_copy_into()` and `addon.apply_defaults()`.
+- `functions/utils.lua`: `addon.deep_copy_into()`, `addon.apply_defaults()`, and shared grid placement helpers `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`.
 
 
 ## Feature Modules

@@ -26,3 +26,28 @@ function addon.apply_defaults(src, dest)
         end
     end
 end
+
+function addon.GetGridOffset(placement, cfg)
+    placement = placement or {}
+    cfg = cfg or {}
+
+    local column_width = cfg.column_width or cfg.slider_width or 0
+    local col_step_x = cfg.col_step_x or (column_width + (cfg.column_gap_x or cfg.slider_gap_x or 0))
+    local row_step_y = cfg.row_step_y or ((cfg.row_height or cfg.slider_row_height or 0) + (cfg.row_gap_y or cfg.slider_row_gap_y or 0))
+    local center_offset = placement.center and placement.width and ((column_width - placement.width) / 2) or 0
+
+    return (cfg.origin_x or cfg.title_offset_x or 0) + ((placement.col or 1) - 1) * col_step_x + center_offset + (placement.x or 0),
+        (cfg.origin_y or cfg.title_offset_y or 0) - ((placement.row or 1) - 1) * row_step_y + (placement.y or 0)
+end
+
+function addon.SetGridPoint(frame, parent, placement, cfg)
+    if not frame or not parent then return end
+    local x, y = addon.GetGridOffset(placement, cfg)
+    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+end
+
+function addon.CenterGridControl(frame, parent, placement, cfg)
+    if not frame or not parent or not placement then return end
+    placement.width = frame:GetWidth()
+    addon.SetGridPoint(frame, parent, placement, cfg)
+end

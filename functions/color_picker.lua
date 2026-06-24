@@ -50,7 +50,9 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     local reset = CreateFrame("Button", nil, group, "UIPanelButtonTemplate")
     reset:SetSize(RESET_W, RESET_H)
     reset:SetText("Reset")
-    reset:SetNormalFontObject("GameFontNormalSmall")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(reset)
+    end
     reset:SetPoint("LEFT", button, "RIGHT", control_gap, 0)
 
     -- Local update helper

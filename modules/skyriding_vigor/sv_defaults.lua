@@ -28,11 +28,11 @@ local function build_profile_defaults()
         style_layouts = {
             default = {
                 fill_color = { r = 0.00, g = 0.80, b = 1.00, a = 1 },
-                fill_add_alpha = 0.18,
+                fill_add_alpha = 0.5,
             },
             storm_race = {
                 fill_color = { r = 1, g = 1, b = 1, a = 1 },
-                fill_add_alpha = 0.18,
+                fill_add_alpha = 0.5,
             },
         },
         position = {

@@ -31,11 +31,11 @@ Important `skyriding_vigor` keys:
 
 - `style_layouts.<style>.fill_color`: per-node-style fill tint color used by the Fill Color picker.
 
-- `style_layouts.<style>.fill_add_alpha`: per-node-style alpha for the additive duplicate fill layer used by the Fill Add slider. Default is `0.18`; range is `0.00-1.00`.
+- `style_layouts.<style>.fill_add_alpha`: per-node-style alpha for the additive duplicate fill layer used by the Fill Brightness slider. Default is `0.5`; range is `0.00-1.00`.
 
 - `sv_defaults.lua` intentionally seeds `style_layouts` sparsely. Treat missing per-style fields as normal; use `sv_styles.lua` layout helpers/normalization and do not assume fully populated style tables in future saved-variable migrations.
 
-- `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
+- `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `disabled` keeps the default decor footprint but sets the decor frame alpha to 0 so node positions stay stationary when toggling end-decor visibility; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
 
 - `decor_layouts.<decor_style>.decor_color`: per-end-decoration-style atlas color override used by the Decor Color dropdown. Storm Race currently supports Blizzard decor atlas colors `bronze`, `dark`, `gold`, and `silver`.
 
@@ -69,6 +69,8 @@ Important `skyriding_vigor` keys:
 
 - `modules/skyriding_vigor/sv_fade.lua` owns Skyriding Vigor alpha transitions and the full-charge fade decision. `sv_main.lua` should call `M.restore_frame_alpha()` / `M.apply_full_charge_fade()` instead of owning frame fade scripts directly.
 
+- Fade settings do not apply while the race profile is active. The settings UI disables Fade When Full, Fade Alpha, and Fade Length during real race detection or Race Profile Test mode through `M.sync_fade_controls_enabled()`.
+
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 
 - Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
@@ -77,7 +79,7 @@ Important `skyriding_vigor` keys:
 
 - Skyriding Vigor Scale and Node Color are style-specific. `M.set_db_value("scale", value)` and `M.set_db_value("node_color", value)` route to the active `style_layouts` entry, and style switching resyncs those controls. Active style scale/node-color/fill-color and decor position helpers live in `sv_styles.lua` with the style definitions.
 
-- Skyriding Vigor Fill Color is style-specific and tints the active fill/full-fill status bar texture via `SetVertexColor`. Non-white fill colors automatically desaturate the fill texture first and show an additive duplicate fill layer to make custom colors read brighter. The Fill Add slider controls that duplicate layer's alpha per style. A Fill Brightness multiplier was tested and discarded because RGB multiplication plus channel clamping shifted selected hues unpredictably. The default node style intentionally uses `dragonriding_vigor_fillfull` for both partial and full fill states; StatusBar clipping handles progress, and the plain `dragonriding_vigor_fill` atlas does not reliably show native color after reload/reset with the default white tint. Default-style fill reset/default is the WoW vigor cyan tint (`r=0.00, g=0.80, b=1.00, a=1`), with a narrow migration from the old exact white default and the temporary `0.20/0.82/1.00` default. Storm Race fill default remains white because its atlas carries the visible color.
+- Skyriding Vigor Fill Color is style-specific and tints the active fill/full-fill status bar texture via `SetVertexColor`. Non-white fill colors automatically desaturate the fill texture first and show an additive duplicate fill layer to make custom colors read brighter. The Fill Brightness slider controls that duplicate layer's alpha per style. A separate RGB brightness multiplier was tested and discarded because RGB multiplication plus channel clamping shifted selected hues unpredictably. The default node style intentionally uses `dragonriding_vigor_fillfull` for both partial and full fill states; StatusBar clipping handles progress, and the plain `dragonriding_vigor_fill` atlas does not reliably show native color after reload/reset with the default white tint. Default-style fill reset/default is the WoW vigor cyan tint (`r=0.00, g=0.80, b=1.00, a=1`), with a narrow migration from the old exact white default and the temporary `0.20/0.82/1.00` default. Storm Race fill default remains white because its atlas carries the visible color.
 
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 

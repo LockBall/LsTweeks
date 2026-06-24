@@ -725,8 +725,9 @@ function M.apply_layout()
     local scale = M.get_style_layout_number(db, style_key, "scale") or defaults.scale or 1
     local width, height = get_node_size()
     local frame_width, frame_height = get_frame_size()
-    local decor_width, decor_height = get_decor_size()
     local decor_style_key, decor_style = M.get_decor_style(db)
+    local decor_disabled = decor_style and decor_style.disabled
+    local decor_width, decor_height = get_decor_size()
     local decor_color = M.get_decor_color()
     local decor_atlas = M.get_decor_atlas(db, decor_style_key, decor_style)
     local decor_scale = M.get_decor_layout_number(db, decor_style_key, "scale") or 1
@@ -790,6 +791,10 @@ function M.apply_layout()
     end
 
     if M.decor_left_frame and M.decor_right_frame and M.slots[1] and M.slots[MAX_SLOTS] then
+        M.decor_left_frame:Show()
+        M.decor_right_frame:Show()
+        M.decor_left_frame:SetAlpha(decor_disabled and 0 or 1)
+        M.decor_right_frame:SetAlpha(decor_disabled and 0 or 1)
         if M.decor_left and M._decor_left_atlas ~= decor_atlas then
             M.decor_left:SetAtlas(decor_atlas, false)
             M._decor_left_atlas = decor_atlas

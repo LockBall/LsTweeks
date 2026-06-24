@@ -402,6 +402,9 @@ function M.build_frames_tab(p, frames_data)
             add_btn:SetSize(TREE_W - PAD * 2, ROW_H)
             add_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, add_y)
             add_btn:SetText("+ Custom")
+            if addon.ApplyStandardButtonStyle then
+                addon.ApplyStandardButtonStyle(add_btn)
+            end
             add_btn:SetEnabled(not max_reached)
             add_btn:SetAlpha(max_reached and 0.4 or 1)
             add_btn:SetScript("OnClick", function()
@@ -466,8 +469,9 @@ function M.build_frames_tab(p, frames_data)
     cooldown_group_title_btn:SetSize(GROUP_TITLE_W, GROUP_TITLE_H)
     cooldown_group_title_btn:Hide()
     cooldown_group_title_btn:SetText("WoW Cooldown")
-    cooldown_group_title_btn:SetNormalFontObject("GameFontNormalSmall")
-    cooldown_group_title_btn:SetHighlightFontObject("GameFontHighlightSmall")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(cooldown_group_title_btn)
+    end
     cooldown_group_title_btn:SetScript("OnClick", function()
         local function hook_cdm_settings_panel(panel)
             if not panel or panel._lstweeks_refresh_hooked then return end
@@ -503,8 +507,9 @@ function M.build_frames_tab(p, frames_data)
     sync_cdm_btn:SetSize(GROUP_TITLE_W, SYNC_CDM_H)
     sync_cdm_btn:Hide()
     sync_cdm_btn:SetText("Sync to CDM")
-    sync_cdm_btn:SetNormalFontObject("GameFontNormalSmall")
-    sync_cdm_btn:SetHighlightFontObject("GameFontHighlightSmall")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(sync_cdm_btn)
+    end
     sync_cdm_btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText("Sync to CDM", 1, 1, 1)

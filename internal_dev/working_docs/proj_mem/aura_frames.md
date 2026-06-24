@@ -49,7 +49,7 @@ Important `aura_frames` keys:
 
 - Re-enabling the Aura Frames module must mark the aura scan dirty, restart runtime services, then refresh/rebind all existing frames. Do not rely on individual frame enable checkboxes to recover icon contents; that masked a stale/empty shared-scan state where frame shells/title bars appeared without icons after module re-enable.
 
-- Blizzard `BuffFrame` / `DebuffFrame` suppression must preserve Blizzard-owned events and scripts. Use addon-owned hide state plus a one-time `OnShow` hook; restore by clearing LsTweeks' forced-hidden state and showing only frames LsTweeks hid. Do not call `UnregisterAllEvents()`, register guessed restore events, or replace scripts on those frames.
+- Blizzard `BuffFrame` / `DebuffFrame` suppression must preserve Blizzard-owned events and scripts. Use addon-owned hide state plus alpha/mouse suppression; the one-time `OnShow` hook may reapply alpha/mouse only, never `Hide()`. Restore by clearing LsTweeks' forced-hidden state and alpha/mouse settings only. Do not call `Hide()`, `Show()`, `UpdateShownState()`, `UpdateAuras()`, `UnregisterAllEvents()`, register guessed restore events, or replace scripts on those frames; direct hidden-state changes tainted Blizzard's secret `expirationTime` arithmetic in `BuffFrame:UpdatePlayerBuffs()`.
 
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
 

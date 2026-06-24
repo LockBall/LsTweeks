@@ -116,7 +116,7 @@ local function normalize_db(db, include_race_controls)
         local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
         if style_layout then
             style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_SPECS.scale)
-            local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.18
+            local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
             style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_SPECS.fill_add_alpha)
         end
     end

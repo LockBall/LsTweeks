@@ -352,6 +352,9 @@ local function create_fishing_header_bar(parent, title_text, play_profile_key)
     play_button:SetSize(54, 20)
     play_button:SetPoint("RIGHT", title_bar, "RIGHT", -8, 0)
     play_button:SetText("Play")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(play_button)
+    end
     play_button:SetScript("OnClick", function()
         M.play_fishing_bobber_preview(play_profile_key)
     end)
@@ -493,6 +496,9 @@ local function build_fishing_tab(parent)
             use_current_button:SetSize(94, 22)
             use_current_button:SetPoint("TOP", slider, "BOTTOM", 0, -8)
             use_current_button:SetText("Use Current")
+            if addon.ApplyStandardButtonStyle then
+                addon.ApplyStandardButtonStyle(use_current_button)
+            end
             use_current_button:SetScript("OnClick", function()
                 M.copy_current_sound_channels_to_fishing_focus()
                 M.sync_fishing_focus_controls()

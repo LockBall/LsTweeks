@@ -82,9 +82,9 @@ Completed: 2026-06-21
 
 Aura Frames' **Enable Blizz Frame** toggles stopped restoring Blizzard `BuffFrame` / `DebuffFrame` after hiding them. The old code called `Hide()`, `UnregisterAllEvents()`, and cleared `OnShow`, then tried to restore with a guessed event list.
 
-Retail 12.0.7 source showed those frames own more event/script state than LsTweeks should recreate. The fix now tracks addon-owned forced-hidden state in a weak table, installs one `OnShow` hook per frame, and restores only by clearing that flag and showing frames LsTweeks hid.
+Retail 12.0.7 source showed those frames own more event/script state than LsTweeks should recreate. The original fix tracked addon-owned forced-hidden state in a weak table and avoided event/script replacement. A later Retail secret-value taint error showed the rule must be stricter: LsTweeks must not call `Hide()` / `Show()` on Blizzard `BuffFrame` / `DebuffFrame` either.
 
-Durable rule: do not call `UnregisterAllEvents()`, register guessed restore events, or replace scripts on Blizzard `BuffFrame` / `DebuffFrame`. Hide through addon-owned forced-hidden state plus a one-time `OnShow` hook.
+Durable rule: do not call `Hide()`, `Show()`, `UpdateShownState()`, `UpdateAuras()`, `UnregisterAllEvents()`, register guessed restore events, or replace scripts on Blizzard `BuffFrame` / `DebuffFrame`. Suppress them with addon-owned forced-hidden state plus alpha/mouse settings only. A one-time `OnShow` hook may reapply alpha/mouse state, but must never call `Hide()`.
 
 Evidence:
 

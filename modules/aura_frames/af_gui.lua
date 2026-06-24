@@ -24,7 +24,7 @@ function M.CreateListDropdown(name, parent, labelText, options, get_value, on_se
         if option.font_path then
             btn_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
         else
-            btn_text:SetFontObject(GameFontHighlightSmall)
+            btn_text:SetFontObject(GameFontNormalSmall)
         end
     end
 
@@ -50,6 +50,9 @@ local function create_profile_button(parent, text, width, on_click)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(width or 100, 22)
     button:SetText(text)
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(button)
+    end
     button:SetScript("OnClick", on_click)
     return button
 end

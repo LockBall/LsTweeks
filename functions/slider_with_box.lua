@@ -29,6 +29,23 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     local slider_width = 120
     local button_size = 24
     local slider_inset = 3
+    local step_button_font = "GameFontNormalLarge"
+    local step_button_highlight_font = "GameFontHighlightLarge"
+    local reset_button_font = "GameFontNormalSmall"
+    local reset_button_highlight_font = "GameFontHighlightSmall"
+
+    local function style_slider_button(button, normal_font, highlight_font)
+        if not button then return end
+        if addon.ApplyStandardButtonStyle then
+            addon.ApplyStandardButtonStyle(button, {
+                normal_font_object = normal_font,
+                highlight_font_object = highlight_font or normal_font,
+            })
+        else
+            button:SetNormalFontObject(normal_font)
+            button:SetHighlightFontObject(highlight_font or normal_font)
+        end
+    end
 
     local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")
     slider:SetSize(slider_width, 16)
@@ -78,20 +95,20 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     local minus_btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     minus_btn:SetSize(button_size, button_size)
     minus_btn:SetText("-")
-    minus_btn:SetNormalFontObject("GameFontNormalLarge")
+    style_slider_button(minus_btn, step_button_font, step_button_highlight_font)
     minus_btn:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", slider_inset, -control_gap)
 
     local plus_btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     plus_btn:SetSize(button_size, button_size)
     plus_btn:SetText("+")
-    plus_btn:SetNormalFontObject("GameFontNormalLarge")
+    style_slider_button(plus_btn, step_button_font, step_button_highlight_font)
     plus_btn:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -slider_inset, -control_gap)
 
     local reset = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     reset:SetSize(reset_width, reset_height)
     reset:SetPoint("TOP", slider, "BOTTOM", 0, -control_gap)
     reset:SetText("Reset")
-    reset:SetNormalFontObject("GameFontNormalSmall")
+    style_slider_button(reset, reset_button_font, reset_button_highlight_font)
 
 
     eb:SetText(format_display_value((db_table and db_table[db_key]) or min_v))
@@ -185,6 +202,15 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
 
     -- Expose inner slider so callers can call SetValue to update the display.
     container.slider = slider
+    container.SetEnabled = function(_, enabled)
+        enabled = enabled and true or false
+        slider:SetEnabled(enabled)
+        eb:SetEnabled(enabled)
+        minus_btn:SetEnabled(enabled)
+        plus_btn:SetEnabled(enabled)
+        reset:SetEnabled(enabled)
+        container:SetAlpha(enabled and 1 or 0.45)
+    end
 
     return container
 end

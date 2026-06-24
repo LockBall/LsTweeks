@@ -561,17 +561,20 @@ local function set_blizz_frame_state(frame, hide)
             frame:HookScript("OnShow", function(self)
                 local current_state = blizz_aura_frame_state[self]
                 if current_state and current_state.forced_hidden then
-                    self:Hide()
+                    if self.SetAlpha then self:SetAlpha(0) end
+                    if self.EnableMouse then self:EnableMouse(false) end
                 end
             end)
         end
-        frame:Hide()
+        if frame.SetAlpha then frame:SetAlpha(0) end
+        if frame.EnableMouse then frame:EnableMouse(false) end
         return
     end
 
     if state.forced_hidden then
         state.forced_hidden = nil
-        frame:Show()
+        if frame.SetAlpha then frame:SetAlpha(1) end
+        if frame.EnableMouse then frame:EnableMouse(true) end
     end
 end
 

@@ -63,7 +63,7 @@ local DEFAULT_BAR_STYLE = {
     background_offset_y = 0.00,
     background_above_frame = false,
     fill_color = DEFAULT_VIGOR_FILL_COLOR,
-    fill_add_alpha = 0.18,
+    fill_add_alpha = 0.5,
 }
 
 local DEFAULT_DECOR_STYLE = {
@@ -77,6 +77,17 @@ local DEFAULT_DECOR_STYLE = {
     scale_y = 1,
     decor_node_gap_x = -18.0,
     offset_y = -15.0,
+}
+
+local DISABLED_DECOR_STYLE = {
+    label = "Disabled",
+    disabled = true,
+    atlas = DEFAULT_DECOR_STYLE.atlas,
+    scale = DEFAULT_DECOR_STYLE.scale,
+    scale_x = DEFAULT_DECOR_STYLE.scale_x,
+    scale_y = DEFAULT_DECOR_STYLE.scale_y,
+    decor_node_gap_x = DEFAULT_DECOR_STYLE.decor_node_gap_x,
+    offset_y = DEFAULT_DECOR_STYLE.offset_y,
 }
 
 -- Storm Race vigor art -------------------------------------------------------
@@ -105,7 +116,7 @@ local STORM_RACE_BAR_STYLE = {
     background_offset_y = 0.00,
     background_above_frame = false,
     fill_color = { r = 1, g = 1, b = 1, a = 1 },
-    fill_add_alpha = 0.18,
+    fill_add_alpha = 0.5,
 }
 
 local STORM_RACE_DECOR_STYLE = {
@@ -121,8 +132,8 @@ local STORM_RACE_DECOR_STYLE = {
     scale = 1,
     scale_x = 1,
     scale_y = 1,
-    decor_node_gap_x = -20.0,
-    offset_y = 5.0,
+    decor_node_gap_x = -15.0,
+    offset_y = 5.5,
 }
 
 local BAR_STYLES = {
@@ -133,9 +144,10 @@ local BAR_STYLE_ORDER = { "default", "storm_race" }
 local DEFAULT_DECOR_STYLE_KEY = "default"
 local DECOR_STYLES = {
     default = DEFAULT_DECOR_STYLE,
+    disabled = DISABLED_DECOR_STYLE,
     storm_race = STORM_RACE_DECOR_STYLE,
 }
-local DECOR_STYLE_ORDER = { "default", "storm_race" }
+local DECOR_STYLE_ORDER = { "default", "storm_race", "disabled" }
 
 local SCALE_RANGE = { min = 0.40, max = 2, step = 0.05 }
 local FILL_ADD_ALPHA_RANGE = { min = 0, max = 1, step = 0.01 }
@@ -145,7 +157,7 @@ local SPACING_RANGE = { min = 0, max = 25, step = 0.5 }
 local FADE_ALPHA_RANGE = { min = 0.05, max = 1, step = 0.05 }
 local FADE_LENGTH_RANGE = { min = 0, max = 10, step = 0.5 }
 local POSITION_RANGE = { min = -1000, max = 1000, step = 1 }
-local FILL_ADD_ALPHA = 0.18
+local FILL_ADD_ALPHA = 0.5
 
 M.MAX_SLOTS = MAX_SLOTS
 M.BAR_STYLE_DEFAULT = DEFAULT_STYLE_KEY
@@ -272,7 +284,7 @@ local function get_valid_decor_color_key(style, key)
 end
 
 local function is_valid_decor_style(style)
-    return style and atlas_exists(style.atlas)
+    return style and (style.disabled or atlas_exists(style.atlas))
 end
 
 local function get_bar_style(db)
@@ -570,7 +582,7 @@ function M.decor_style_supports_color(style_key)
     local defaults = get_defaults()
     style_key = M.get_valid_decor_style_key(style_key or (db and db.decor_style) or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY)
     local style = DECOR_STYLES[style_key]
-    if not style or not style.atlas_colors then return false end
+    if not style or style.disabled or not style.atlas_colors then return false end
 
     for key, atlas in pairs(style.atlas_colors) do
         if key ~= DEFAULT_DECOR_COLOR_KEY and atlas_exists(atlas) then
@@ -589,6 +601,9 @@ function M.get_decor_layout_default(style_key, field)
     elseif field == "scale" then
         return style and (style.scale or style.scale_x) or 1
     elseif field == "decor_color" then
+        if style and style.disabled then
+            return DEFAULT_DECOR_COLOR_KEY
+        end
         return get_valid_decor_color_key(style, style and style.default_decor_color or DEFAULT_DECOR_COLOR_KEY)
     end
     return nil
@@ -610,7 +625,11 @@ function M.get_decor_layout_table(db, style_key, create)
         if layout.scale == nil then
             layout.scale = M.get_decor_layout_default(style_key, "scale")
         end
-        layout.decor_color = get_valid_decor_color_key(DECOR_STYLES[style_key], layout.decor_color or M.get_decor_layout_default(style_key, "decor_color"))
+        if DECOR_STYLES[style_key] and DECOR_STYLES[style_key].disabled then
+            layout.decor_color = DEFAULT_DECOR_COLOR_KEY
+        else
+            layout.decor_color = get_valid_decor_color_key(DECOR_STYLES[style_key], layout.decor_color or M.get_decor_layout_default(style_key, "decor_color"))
+        end
         return layout
     end
     return db.decor_layouts and db.decor_layouts[style_key] or nil
@@ -713,6 +732,7 @@ function M.get_decor_color()
     local defaults = get_defaults()
     local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
     local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
+    if style and style.disabled then return DEFAULT_DECOR_COLOR_KEY end
     local layout = M.get_decor_layout_table(db, style_key, true)
     return get_valid_decor_color_key(style, layout and layout.decor_color or M.get_decor_layout_default(style_key, "decor_color"))
 end
@@ -725,6 +745,14 @@ function M.set_decor_color(value)
     local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end
+
+    if style and style.disabled then
+        layout.decor_color = DEFAULT_DECOR_COLOR_KEY
+        if M.sync_decor_color_controls then
+            M.sync_decor_color_controls()
+        end
+        return
+    end
 
     layout.decor_color = get_valid_decor_color_key(style, value)
     if M.sync_decor_color_controls then

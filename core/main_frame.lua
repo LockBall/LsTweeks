@@ -191,13 +191,30 @@ function addon.init_main_frame()
         tab._module_lock_overlay:SetShown(locked)
     end
 
+    local function sync_sidebar_button_text(btn)
+        if not btn then return end
+        local text = btn:GetFontString()
+        if not text or not text.SetTextColor then return end
+
+        if btn == selected_button then
+            text:SetTextColor(1, 1, 1, 1)
+        elseif is_category_locked(btn._category) then
+            text:SetTextColor(0.45, 0.45, 0.45, 1)
+        else
+            text:SetTextColor(1, 0.82, 0, 1)
+        end
+    end
+
     -- TAB SELECTION LOGIC
     local function select_tab(cat, btn)
         if not cat then return end
-        if selected_button then selected_button:UnlockHighlight() end
+        local previous_button = selected_button
+        if previous_button then previous_button:UnlockHighlight() end
         btn:LockHighlight()
         selected_button = btn
         selected_category_name = cat.name
+        sync_sidebar_button_text(previous_button)
+        sync_sidebar_button_text(selected_button)
         if Ls_Tweeks_DB then Ls_Tweeks_DB.last_open_module = cat.name end
 
         -- Hide all current tabs
@@ -246,22 +263,19 @@ function addon.init_main_frame()
             btn:SetPoint("TOPLEFT", frame.sidebar, "TOPLEFT", 10, y)
             btn:SetText(cat.name)
             btn:SetEnabled(true)
+            if addon.ApplyStandardButtonStyle then
+                addon.ApplyStandardButtonStyle(btn)
+            end
+            btn._category = cat
             btn:SetScript("OnClick", function()
                 select_tab(cat, btn)
             end)
-            local text = btn:GetFontString()
-            if text and text.SetTextColor then
-                if category_locked then
-                    text:SetTextColor(0.45, 0.45, 0.45, 1)
-                else
-                    text:SetTextColor(1, 0.82, 0, 1)
-                end
-            end
             if cat.name == previous_category_name then
                 btn:LockHighlight()
                 selected_button = btn
                 previous_category = cat
             end
+            sync_sidebar_button_text(btn)
             table.insert(frame.buttons, btn)
             y = y - 26
         end
