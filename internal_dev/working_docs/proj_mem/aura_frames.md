@@ -55,6 +55,8 @@ Important `aura_frames` keys:
 
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 
+- General CPU profiling workflow lives in `performance_profiling.md`; this file keeps only Aura Frames-specific profiling conclusions.
+
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
 
 - 2026-06-24 visible-icon tick profiling with combat timing showed the ticker cost scales almost linearly with `aura_visible_icon_tick`: `0.10s` baseline was 9.57 calls/sec and 2.98ms/sec combat-normalized, `0.15s` was 6.54 calls/sec and 2.02ms/sec, and `0.20s` was 4.98 calls/sec and 1.50ms/sec. Treat this as a tick-rate tradeoff: the CPU win is real and expected, visual difference was minor, and the user-facing setting should stay limited to the three measured choices (`0.10s`, `0.15s`, `0.20s`).

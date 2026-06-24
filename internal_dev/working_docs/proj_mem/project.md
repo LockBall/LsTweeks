@@ -30,6 +30,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - [Code Map](code_map.md)
 
+- [Performance Profiling](performance_profiling.md)
+
 - [Module Memory](#module-memory)
 
   - [Player Frame](player_frame.md)
@@ -60,6 +62,10 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Fast local validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`. Add `-Package` to also build and verify the release zip.
 
 - Diff whitespace validation: `git diff --check`.
+
+- Reusable CPU profiling workflow lives in `performance_profiling.md`. Raw profile
+  run logs belong under `internal_dev/tests_tools/logs/`; durable conclusions belong
+  in the relevant module memory file.
 
 
 ### Ketho / LuaLS

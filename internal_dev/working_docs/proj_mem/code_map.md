@@ -75,6 +75,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `internal_dev/working_docs/proj_mem/project.md`: project-wide architecture and durable cross-module rules.
 
+- `internal_dev/working_docs/proj_mem/performance_profiling.md`: reusable in-game CPU profiling workflow and comparison rules.
+
 - `internal_dev/working_docs/proj_mem/*.md`: module memory and this code map.
 
 - `internal_dev/working_docs/review_2026Jun/`: focused review notes; read only when the task touches that area.
