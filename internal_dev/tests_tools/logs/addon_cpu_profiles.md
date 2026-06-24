@@ -13,7 +13,8 @@ that can taint Blizzard unit-frame execution when secret values are involved.
 1. Temporarily load `internal_dev/tests_tools/addon_cpu_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
-3. Run `/lstprofile reset`, then `/lstprofile start aura` for an Aura Frames-only run.
+3. Set `PROFILE_TARGETS` in `addon_cpu_profile.lua`, `/reload`, then run
+   `/lstprofile reset` and `/lstprofile start`.
 4. Exercise normal gameplay and settings flows for 2-3 minutes:
    aura updates, CDM updates, Skyriding Vigor visibility, Sound Levels previews,
    Fishing Focus if relevant, and opening/changing addon settings.
@@ -81,7 +82,7 @@ and Sound Levels only appeared on rare Fishing Focus transitions.
 
 Context: 146.9s broad addon run after setting `aura_event_bucket`,
 `aura_visible_icon_tick`, `aura_hover_check`, `player_frame_fade_tick`, and
-`skyriding_vigor_tick` to `addon.UPDATE_INTERVALS.fifth_sec`.
+`skyriding_vigor_progress` to `addon.UPDATE_INTERVALS.fifth_sec`.
 
 | Metric | Calls | Total ms | Avg ms | Max ms |
 | --- | ---: | ---: | ---: | ---: |

@@ -11,6 +11,10 @@ Important `skyriding_vigor` keys:
 
 - `progress_update_hz`: Fill FPS slider value for the active filling-node progress driver. Defaults from `addon.UPDATE_INTERVALS.skyriding_vigor_progress` in `core/init.lua`, currently `20`.
 
+- `race_profile_enabled`: global Skyriding Vigor flag that enables the alternate race profile and race-detection events. When false, race item checks and race profile event registration stay disabled.
+
+- `race_profile`: nested full Skyriding Vigor configuration used while the race profile is active. It stores the same user-facing presentation/runtime settings as the normal root profile, including `enabled`, position, style, scale, colors, fade, spark, and decor settings. It must not own `race_profile_enabled` or another nested `race_profile` table.
+
 - `show_spark`: optional Blizzard spark atlas overlay on the actively filling vigor node. Defaults off.
 
 - `spark_color` and `spark_size`: global spark tint/alpha and thickness multiplier for the optional spark overlay. The UI labels `spark_size` as Spark Thickness. It defaults to `5.00`; range is `0.50-15.00` in `0.5` steps.
@@ -97,4 +101,6 @@ Important `skyriding_vigor` keys:
 
 - Avoid always-running `OnUpdate`; `sv_main.lua` uses an active-only progress driver while a node is visibly filling and stops it when hidden, disabled, full, or in move mode. The driver is capped by the DB-backed `progress_update_hz` Fill FPS slider and calls `M.update_filling_slot_progress()` so progress animation does not redo stable layout, reset slot visuals, or normalize DB on each update. The default cap comes from `addon.UPDATE_INTERVALS.skyriding_vigor_progress`, currently 20Hz.
 
-- Runtime module gating is centralized in `sv_main.lua` through `M.is_runtime_enabled()` and `M.stop_runtime()`. When the Settings Module Enabler disables Skyriding Vigor or `skyriding_vigor.enabled` is false, `sv_main.lua` must stop progress updates, hide any existing frame, disable frame mouse input, clear fill test state, and unregister runtime events. Disabled refreshes should return before `M.ensure_frame()` so the module does not construct or lay out the bar from event traffic.
+- Runtime module gating is centralized in `sv_main.lua` through `M.is_runtime_enabled()` and `M.stop_runtime()`. When the Settings Module Enabler disables Skyriding Vigor, `sv_main.lua` must stop progress updates, hide any existing frame, disable frame mouse input, clear fill/race test state, and unregister runtime events. If the active profile's `enabled` is false, refresh hides the bar without unregistering race-detection events when `race_profile_enabled` still needs them.
+
+- Race profile activation uses Bronze Timepiece itemID `191140`: `C_Item.GetItemCount(191140) > 0` means an active Skyriding race was detected. Race detection registers `BAG_UPDATE_DELAYED`, `QUEST_ACCEPTED`, `QUEST_LOG_UPDATE`, `QUEST_REMOVED`, and `QUEST_TURNED_IN` only while `race_profile_enabled` is true. Race Profile Test forces the same alternate profile active without requiring a race, so the existing settings controls edit `race_profile`.

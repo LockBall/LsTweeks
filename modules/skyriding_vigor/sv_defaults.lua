@@ -7,11 +7,10 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
     slots = {},
 }
 
-local defs = {}
 local default_progress_interval = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.skyriding_vigor_progress or 0.05
 
-defs.defaults = {
-    skyriding_vigor = {
+local function build_profile_defaults()
+    return {
         enabled = true,
         fade_when_full = true,
         fade_alpha = 0.25,
@@ -42,7 +41,16 @@ defs.defaults = {
             x = 0,
             y = 0,
         },
-    },
+    }
+end
+
+local defs = {}
+local normal_profile = build_profile_defaults()
+normal_profile.race_profile_enabled = false
+normal_profile.race_profile = build_profile_defaults()
+
+defs.defaults = {
+    skyriding_vigor = normal_profile,
 }
 
 addon.module_defaults = addon.module_defaults or {}

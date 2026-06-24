@@ -55,6 +55,9 @@ local STRINGS = {
     y_position = "Y Position",
     fill_test = "Fill Test",
     stop_fill_test = "Stop Test",
+    race_profile_enabled = "Enable Race Profile",
+    race_profile_test = "Race Profile Test",
+    stop_race_profile_test = "Stop Race Test",
     skyriding_talents = "Skyriding Talents",
 }
 
@@ -116,6 +119,28 @@ function M.sync_fill_test_button()
     local button = M.controls and M.controls.fill_test_button
     if button and button.SetText then
         button:SetText(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
+    end
+end
+
+function M.sync_race_profile_controls(root_db)
+    root_db = root_db or (M.get_root_db and M.get_root_db())
+    local checkbox = M.controls and M.controls.race_profile_enabled
+    if checkbox and checkbox.SetChecked then
+        checkbox:SetChecked(root_db and root_db.race_profile_enabled or false)
+    end
+
+    local button = M.controls and M.controls.race_profile_test_button
+    if button and button.SetText then
+        button:SetText(M._race_profile_test_enabled and STRINGS.stop_race_profile_test or STRINGS.race_profile_test)
+    end
+    if button and button.SetEnabled then
+        button:SetEnabled(root_db and root_db.race_profile_enabled or false)
+    elseif button then
+        if root_db and root_db.race_profile_enabled then
+            button:Enable()
+        else
+            button:Disable()
+        end
     end
 end
 
@@ -276,6 +301,7 @@ function M.sync_settings_controls(db)
     M.sync_decor_position_controls(db)
     M.sync_position_controls(db)
     M.sync_fill_test_button()
+    M.sync_race_profile_controls()
 end
 
 --#endregion CONTROL SYNCHRONIZATION ===========================================
@@ -285,6 +311,7 @@ end
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     local db = M.get_db and M.get_db()
+    local root_db = M.get_root_db and M.get_root_db()
     local defaults = M.DEFAULTS or {}
     local x_spec = get_spec("x_position")
     local y_spec = get_spec("y_position")
@@ -299,12 +326,43 @@ function M.BuildSettings(parent)
     local progress_update_hz_spec = get_spec("progress_update_hz")
     local spark_size_spec = get_spec("spark_size")
     local col_step_x = cfg.slider_width + cfg.slider_gap_x
+    local active_profile_proxy = setmetatable({}, {
+        __index = function(_, key)
+            local active_db = M.get_db and M.get_db()
+            return active_db and active_db[key]
+        end,
+        __newindex = function(_, key, value)
+            local active_db = M.get_db and M.get_db()
+            if active_db then
+                active_db[key] = value
+            end
+        end,
+    })
+    local position_proxy = setmetatable({}, {
+        __index = function(_, key)
+            local active_db = M.get_db and M.get_db()
+            return active_db and active_db.position and active_db.position[key]
+        end,
+        __newindex = function(_, key, value)
+            local active_db = M.get_db and M.get_db()
+            if not active_db then return end
+            active_db.position = active_db.position or {}
+            active_db.position[key] = value
+        end,
+    })
 
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
         M.set_db_value("enabled", is_checked)
     end)
     M.controls.enabled = enabled_cb
     enabled_container:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, cfg.title_offset_y)
+
+    local skyriding_talents_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    skyriding_talents_button:SetSize(130, 22)
+    skyriding_talents_button:SetText(STRINGS.skyriding_talents)
+    skyriding_talents_button:SetPoint("TOPLEFT", enabled_container, "BOTTOMLEFT", 0, -8)
+    skyriding_talents_button:SetScript("OnClick", open_skyriding_talents)
+    M.controls.skyriding_talents_button = skyriding_talents_button
 
     local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
         M.set_db_value("move_mode", is_checked)
@@ -450,7 +508,7 @@ function M.BuildSettings(parent)
         x_spec.min,
         x_spec.max,
         x_spec.step,
-        db.position,
+        position_proxy,
         "x",
         default_position
     )
@@ -468,7 +526,7 @@ function M.BuildSettings(parent)
         y_spec.min,
         y_spec.max,
         y_spec.step,
-        db.position,
+        position_proxy,
         "y",
         default_position
     )
@@ -485,7 +543,7 @@ function M.BuildSettings(parent)
         scale_spec.min,
         scale_spec.max,
         scale_spec.step,
-        db,
+        active_profile_proxy,
         "scale",
         defaults,
         set_setting_from_slider("scale"),
@@ -501,7 +559,7 @@ function M.BuildSettings(parent)
         spacing_spec.min,
         spacing_spec.max,
         spacing_spec.step,
-        db,
+        active_profile_proxy,
         "spacing",
         defaults,
         set_setting_from_slider("spacing")
@@ -644,7 +702,7 @@ function M.BuildSettings(parent)
         fade_alpha_spec.min,
         fade_alpha_spec.max,
         fade_alpha_spec.step,
-        db,
+        active_profile_proxy,
         "fade_alpha",
         defaults,
         set_setting_from_slider("fade_alpha")
@@ -659,7 +717,7 @@ function M.BuildSettings(parent)
         fade_length_spec.min,
         fade_length_spec.max,
         fade_length_spec.step,
-        db,
+        active_profile_proxy,
         "fade_length",
         defaults,
         set_setting_from_slider("fade_length")
@@ -674,7 +732,7 @@ function M.BuildSettings(parent)
         progress_update_hz_spec.min,
         progress_update_hz_spec.max,
         progress_update_hz_spec.step,
-        db,
+        active_profile_proxy,
         "progress_update_hz",
         defaults,
         set_setting_from_slider("progress_update_hz")
@@ -685,30 +743,46 @@ function M.BuildSettings(parent)
     local talents_row_y = -((cfg.slider_row_height + cfg.slider_row_gap_y) * 3)
     add_row_separator(parent, move_container, talents_row_y + math.floor(cfg.grid_row_gap / 2))
 
-    local skyriding_talents_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    skyriding_talents_button:SetSize(130, 22)
-    skyriding_talents_button:SetText(STRINGS.skyriding_talents)
-    skyriding_talents_button:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, talents_row_y)
-    skyriding_talents_button:SetScript("OnClick", open_skyriding_talents)
-    M.controls.skyriding_talents_button = skyriding_talents_button
+    local race_profile_container, race_profile_cb = addon.CreateCheckbox(
+        parent,
+        STRINGS.race_profile_enabled,
+        root_db and root_db.race_profile_enabled,
+        function(is_checked)
+            M.set_race_profile_enabled(is_checked)
+        end
+    )
+    M.controls.race_profile_enabled = race_profile_cb
+    race_profile_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 4, talents_row_y)
+
+    local race_profile_test_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    race_profile_test_button:SetSize(130, 22)
+    race_profile_test_button:SetText(M._race_profile_test_enabled and STRINGS.stop_race_profile_test or STRINGS.race_profile_test)
+    race_profile_test_button:SetPoint("TOPLEFT", race_profile_container, "BOTTOMLEFT", 0, -8)
+    race_profile_test_button:SetScript("OnClick", function()
+        if M.toggle_race_profile_test then
+            M.toggle_race_profile_test()
+        end
+    end)
+    M.controls.race_profile_test_button = race_profile_test_button
+    M.sync_race_profile_controls(root_db)
 
     local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
     end)
     M.controls.show_spark = spark_cb
-    spark_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x, talents_row_y)
+    spark_container:SetPoint("TOPLEFT", move_container, "TOPLEFT", 0, talents_row_y)
 
     db.spark_color = db.spark_color or { r = 1, g = 1, b = 1, a = 1 }
     local spark_color_defaults = {
         spark_color = defaults.spark_color or { r = 1, g = 1, b = 1, a = 1 },
     }
-    local spark_color_picker = addon.CreateColorPicker(parent, db, "spark_color", true, STRINGS.spark_color, spark_color_defaults, function()
+    local spark_color_picker = addon.CreateColorPicker(parent, active_profile_proxy, "spark_color", true, STRINGS.spark_color, spark_color_defaults, function()
         if M.apply_spark_settings then
             M.apply_spark_settings()
         end
     end)
     M.controls.spark_color = spark_color_picker
-    spark_color_picker:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, talents_row_y)
+    spark_color_picker:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x, talents_row_y)
 
     local spark_size_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorSparkSize",
@@ -717,17 +791,17 @@ function M.BuildSettings(parent)
         spark_size_spec.min,
         spark_size_spec.max,
         spark_size_spec.step,
-        db,
+        active_profile_proxy,
         "spark_size",
         defaults,
         set_setting_from_slider("spark_size"),
         { display_decimals = 2 }
     )
     M.controls.spark_size = spark_size_slider
-    spark_size_slider:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 3, talents_row_y)
+    spark_size_slider:SetPoint("TOPLEFT", move_container, "TOPLEFT", col_step_x * 2, talents_row_y)
 
-    if addon.CreateModuleReset and db then
-        local reset_panel = addon.CreateModuleReset(parent, db, defaults, {
+    if addon.CreateModuleReset and root_db then
+        local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {
             after_reset = M.on_reset_complete,
         })
         reset_panel:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", cfg.reset_bottom_x, cfg.reset_bottom_y)

@@ -10,6 +10,7 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
+local C_Item_GetItemCount = C_Item and C_Item.GetItemCount
 local CreateFrame = CreateFrame
 local GetTime = GetTime
 local floor = math.floor
@@ -18,8 +19,9 @@ local min = math.min
 local ipairs = ipairs
 local tonumber = tonumber
 
+local BRONZE_TIMEPIECE_ITEM_ID = 191140
 local FILL_TEST_NODE_SECONDS = 2.0
-local RUNTIME_EVENTS = {
+local BASE_RUNTIME_EVENTS = {
     "PLAYER_ENTERING_WORLD",
     "PLAYER_CAN_GLIDE_CHANGED",
     "PLAYER_IS_GLIDING_CHANGED",
@@ -31,11 +33,19 @@ local RUNTIME_EVENTS = {
     "UNIT_EXITED_VEHICLE",
     "VEHICLE_UPDATE",
 }
+local RACE_PROFILE_EVENTS = {
+    "BAG_UPDATE_DELAYED",
+    "QUEST_ACCEPTED",
+    "QUEST_LOG_UPDATE",
+    "QUEST_REMOVED",
+    "QUEST_TURNED_IN",
+}
 
 
 --#region SETTINGS AND DEFAULTS ================================================
 -- Module metadata and default values shared by runtime and settings code.
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
+local PROFILE_DEFAULTS = DEFAULTS.race_profile or DEFAULTS
 local SETTING_SPECS = M.SETTING_SPECS
 M.MODULE_KEY = "skyriding_vigor"
 M.CATEGORY_NAME = "Skyriding Vigor"
@@ -66,9 +76,15 @@ local function color_matches(color, r, g, b, a)
     return color.r == r and color.g == g and color.b == b and (color.a or 1) == (a or 1)
 end
 
-local function normalize_db(db)
+local function normalize_db(db, include_race_controls)
     if not db then return end
 
+    if include_race_controls then
+        db.race_profile_enabled = db.race_profile_enabled and true or false
+    else
+        db.race_profile_enabled = nil
+        db.race_profile = nil
+    end
     db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
@@ -123,7 +139,26 @@ local function normalize_db(db)
     db.position.relativePoint = "CENTER"
 end
 
-local function get_db()
+local function normalize_root_db(root_db)
+    if not root_db then return end
+
+    normalize_db(root_db, true)
+    root_db.race_profile = root_db.race_profile or {}
+    addon.apply_defaults(PROFILE_DEFAULTS, root_db.race_profile)
+    normalize_db(root_db.race_profile)
+end
+
+local function update_race_active_state(root_db)
+    local old_state = M._race_active == true
+    local new_state = false
+    if root_db and root_db.race_profile_enabled and C_Item_GetItemCount then
+        new_state = (C_Item_GetItemCount(BRONZE_TIMEPIECE_ITEM_ID) or 0) > 0
+    end
+    M._race_active = new_state
+    return old_state ~= new_state
+end
+
+local function get_root_db()
     if not Ls_Tweeks_DB then return nil end
     Ls_Tweeks_DB.skyriding_vigor = Ls_Tweeks_DB.skyriding_vigor or {}
     if not M._defaults_applied then
@@ -131,18 +166,41 @@ local function get_db()
         M._defaults_applied = true
         M._db_normalized = false
     end
-    local db = Ls_Tweeks_DB.skyriding_vigor
-    if M._db ~= db then
-        M._db = db
+    local root_db = Ls_Tweeks_DB.skyriding_vigor
+    if M._root_db ~= root_db then
+        M._root_db = root_db
         M._db_normalized = false
     end
     if not M._db_normalized then
-        normalize_db(db)
+        normalize_root_db(root_db)
         M._db_normalized = true
     end
-    return db
+    return root_db
 end
 
+local function is_race_profile_active(root_db)
+    return root_db and root_db.race_profile_enabled
+        and (M._race_profile_test_enabled or M._race_active)
+end
+
+local function get_db()
+    local root_db = get_root_db()
+    if not root_db then return nil end
+
+    local profile_key = is_race_profile_active(root_db) and "race" or "normal"
+    local active_db = profile_key == "race" and root_db.race_profile or root_db
+    if M._active_db ~= active_db then
+        M._active_db = active_db
+        M._active_profile_key = profile_key
+        M._active_profile_changed = true
+        if M.invalidate_layout then
+            M.invalidate_layout()
+        end
+    end
+    return active_db
+end
+
+M.get_root_db = get_root_db
 M.get_db = get_db
 --#endregion DATABASE ==========================================================
 
@@ -167,24 +225,40 @@ end
 local function sync_runtime_events(enabled)
     if not loader then return end
     enabled = enabled and true or false
-    if M._runtime_events_registered == enabled then return end
+    local root_db = get_root_db()
+    local race_events_enabled = enabled and root_db and root_db.race_profile_enabled
+    if M._runtime_events_registered == enabled and M._race_events_registered == race_events_enabled then return end
 
-    for _, event in ipairs(RUNTIME_EVENTS) do
-        if enabled then
+    for _, event in ipairs(BASE_RUNTIME_EVENTS) do
+        loader:UnregisterEvent(event)
+    end
+    for _, event in ipairs(RACE_PROFILE_EVENTS) do
+        loader:UnregisterEvent(event)
+    end
+
+    if enabled then
+        for _, event in ipairs(BASE_RUNTIME_EVENTS) do
             loader:RegisterEvent(event)
-        else
-            loader:UnregisterEvent(event)
         end
     end
+    if race_events_enabled then
+        for _, event in ipairs(RACE_PROFILE_EVENTS) do
+            loader:RegisterEvent(event)
+        end
+    end
+
     M._runtime_events_registered = enabled
+    M._race_events_registered = race_events_enabled
 end
 
-function M.stop_runtime()
+local function hide_runtime_frame(clear_test)
     stop_progress_driver()
-    M._fill_test_enabled = false
-    M._fill_test_started_at = nil
-    if M.sync_fill_test_button then
-        M.sync_fill_test_button()
+    if clear_test then
+        M._fill_test_enabled = false
+        M._fill_test_started_at = nil
+        if M.sync_fill_test_button then
+            M.sync_fill_test_button()
+        end
     end
     if M.frame then
         M.restore_frame_alpha(M.frame)
@@ -192,9 +266,70 @@ function M.stop_runtime()
         M.frame:EnableMouse(false)
         M.frame._mouse_enabled = false
     end
+end
+
+local function refresh_runtime_event_registration()
+    local root_db = get_root_db()
+    local should_listen = root_db and (root_db.enabled or root_db.race_profile_enabled)
+    sync_runtime_events(should_listen)
+end
+
+function M.stop_runtime()
+    M._race_profile_test_enabled = false
+    M._race_active = false
+    hide_runtime_frame(true)
+    if M.sync_race_profile_controls then
+        M.sync_race_profile_controls(get_root_db())
+    end
     sync_runtime_events(false)
 end
 --#endregion RUNTIME LIFECYCLE =================================================
+
+
+--#region RACE PROFILE =========================================================
+-- Full alternate Skyriding Vigor profile activated by race item presence or test mode.
+function M.is_race_profile_active()
+    return is_race_profile_active(get_root_db())
+end
+
+function M.set_race_profile_enabled(enabled)
+    local root_db = get_root_db()
+    if not root_db then return end
+
+    root_db.race_profile_enabled = enabled and true or false
+    if not root_db.race_profile_enabled then
+        M._race_profile_test_enabled = false
+        M._race_active = false
+    else
+        root_db.race_profile = root_db.race_profile or {}
+        addon.apply_defaults(PROFILE_DEFAULTS, root_db.race_profile)
+        normalize_db(root_db.race_profile)
+        update_race_active_state(root_db)
+    end
+
+    M._db_normalized = false
+    refresh_runtime_event_registration()
+    if M.sync_race_profile_controls then
+        M.sync_race_profile_controls(root_db)
+    end
+    M.refresh()
+end
+
+function M.set_race_profile_test_enabled(enabled)
+    local root_db = get_root_db()
+    if not root_db or not root_db.race_profile_enabled then return end
+
+    M._race_profile_test_enabled = enabled and true or false
+    if M.sync_race_profile_controls then
+        M.sync_race_profile_controls(root_db)
+    end
+    M.refresh()
+end
+
+function M.toggle_race_profile_test()
+    M.set_race_profile_test_enabled(not M._race_profile_test_enabled)
+end
+--#endregion RACE PROFILE ======================================================
 
 
 --#region FILL TEST AND PROGRESS UPDATES =======================================
@@ -277,18 +412,33 @@ function M.refresh()
         return
     end
 
+    local root_db = get_root_db()
+    if not root_db then return end
+    update_race_active_state(root_db)
+    refresh_runtime_event_registration()
+
     local db = get_db()
     if not db then return end
 
     if not db.enabled then
-        M.stop_runtime()
+        hide_runtime_frame(true)
         return
     end
 
-    sync_runtime_events(true)
-
     local frame = M.ensure_frame()
     if not frame then return end
+
+    if M._active_profile_changed then
+        M._active_profile_changed = false
+        M.restore_frame_alpha(frame)
+        M.apply_position()
+        if M.apply_fill_color then
+            M.apply_fill_color()
+        end
+        if M.sync_settings_controls then
+            M.sync_settings_controls(db)
+        end
+    end
 
     M.apply_layout()
     M.set_move_mode(db.move_mode)
@@ -371,12 +521,7 @@ end
 function M.set_module_enabled(enabled)
     if enabled then
         M._db_normalized = false
-        local db = get_db()
-        if db and db.enabled then
-            M.refresh()
-        else
-            M.stop_runtime()
-        end
+        M.refresh()
         return
     end
 
@@ -385,6 +530,7 @@ end
 
 if addon.register_module_status then
     addon.register_module_status(M.MODULE_KEY, function()
+        local root_db = M.get_root_db and M.get_root_db()
         return {
             "runtime_events=" .. tostring(M._runtime_events_registered == true),
             "frame_shown=" .. tostring(M.frame and M.frame:IsShown() == true),
@@ -392,6 +538,10 @@ if addon.register_module_status then
             "progress_onupdate=" .. tostring(progress_driver and progress_driver:GetScript("OnUpdate") ~= nil),
             "progress_driver_shown=" .. tostring(progress_driver and progress_driver:IsShown() == true),
             "fill_test=" .. tostring(M._fill_test_enabled == true),
+            "race_profile_enabled=" .. tostring(root_db and root_db.race_profile_enabled == true),
+            "race_profile_test=" .. tostring(M._race_profile_test_enabled == true),
+            "race_active=" .. tostring(M._race_active == true),
+            "active_profile=" .. tostring(M._active_profile_key or "normal"),
             "progress_slot=" .. tostring(M._progress_slot_index ~= nil),
         }
     end)
@@ -502,10 +652,6 @@ function M.set_db_value(key, value)
             M.sync_decor_color_controls()
         end
     end
-    if key == "enabled" and not value then
-        M.stop_runtime()
-        return
-    end
     if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
         M.refresh_layout()
     elseif key == "spark_size" and M.apply_spark_settings then
@@ -576,18 +722,20 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-        local db = get_db()
+        local root_db = get_root_db()
+        update_race_active_state(root_db)
         if addon.register_category then
             addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901, module_key = M.MODULE_KEY })
         end
-        if db and db.enabled then
-            M.refresh()
-        else
-            M.stop_runtime()
-        end
+        M.refresh()
         return
     end
 
+    if event == "BAG_UPDATE_DELAYED" or event == "QUEST_ACCEPTED" or event == "QUEST_LOG_UPDATE"
+        or event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN"
+    then
+        update_race_active_state(get_root_db())
+    end
     M.refresh()
 end)
 --#endregion EVENT BOOTSTRAP ===================================================
