@@ -15,6 +15,12 @@ local UI_CONFIG = {
     title_offset_x = 20,
     title_offset_y = -20,
     section_offset_y = -20,
+    modules_group_offset_y = -28,
+    modules_group_height = 190,
+    modules_group_padding_x = 12,
+    modules_group_title_offset_y = -8,
+    modules_first_checkbox_offset_y = -32,
+    modules_checkbox_step_y = -32,
 }
 
 -- UI Strings and Labels
@@ -98,28 +104,43 @@ local function build_settings_page(parent)
     M.controls["alpha_slider"] = alpha_slider
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
 
-    local modules_title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
-    modules_title:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, -28)
+    local modules_group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    modules_group:SetSize(1, cfg.modules_group_height)
+    modules_group:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, cfg.modules_group_offset_y)
+    modules_group:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    modules_group:SetBackdropBorderColor(1, 0.82, 0, 0.6)
+    modules_group:SetBackdropColor(0, 0, 0, 0)
+
+    local modules_title = modules_group:CreateFontString(nil, "OVERLAY", theme.font_title)
+    modules_title:SetPoint("TOP", modules_group, "TOP", 0, cfg.modules_group_title_offset_y)
     modules_title:SetText(STRINGS.modules_title)
     modules_title:SetTextColor(1, 0.82, 0, 1)
     modules_title:SetFontObject("GameFontNormalLarge")
 
-    local previous_module_row = modules_title
-    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+    local widest_content = modules_title:GetStringWidth() or 0
+    for index, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+        local row_module_def = module_def
         local module_container, module_checkbox = addon.CreateCheckbox(
-            parent,
-            module_def.label,
-            addon.is_module_enabled and addon.is_module_enabled(module_def.key),
+            modules_group,
+            row_module_def.label,
+            addon.is_module_enabled and addon.is_module_enabled(row_module_def.key),
             function(is_checked)
                 if addon.set_module_enabled then
-                    addon.set_module_enabled(module_def.key, is_checked)
+                    addon.set_module_enabled(row_module_def.key, is_checked)
                 end
             end
         )
-        M.controls["module_" .. module_def.key] = module_checkbox
-        module_container:SetPoint("TOPLEFT", previous_module_row, "BOTTOMLEFT", 0, cfg.section_offset_y)
-        previous_module_row = module_container
+        M.controls["module_" .. row_module_def.key] = module_checkbox
+        local offset_y = cfg.modules_first_checkbox_offset_y + ((index - 1) * cfg.modules_checkbox_step_y)
+        module_container:SetPoint("TOPLEFT", modules_group, "TOPLEFT", cfg.modules_group_padding_x, offset_y)
+        widest_content = math.max(widest_content, module_container:GetWidth() or 0)
     end
+
+    modules_group:SetWidth(math.ceil(widest_content + cfg.modules_group_padding_x * 2))
 end
 
 function M.on_reset_complete()

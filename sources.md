@@ -29,6 +29,7 @@ Reference sources used for addon behavior, public release preparation, documenta
 
 - CascView download page: https://www.zezula.net/en/casc/main.html
 - Ketho WoW API VS Code extension: https://marketplace.visualstudio.com/items?itemName=ketho.wow-api
+- Blizzard UI source mirror used by Ketho FrameXML annotations: https://github.com/Gethe/wow-ui-source/tree/live/Interface/AddOns/Blizzard_ObjectiveTracker
 
 ## Embedded Libraries
 

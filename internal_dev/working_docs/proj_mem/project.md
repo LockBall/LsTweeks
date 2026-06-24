@@ -36,6 +36,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
   - [Player Frame](player_frame.md)
 
+  - [Objectives](objectives.md)
+
   - [Sound Levels](sound_levels.md)
 
   - [Skyriding Vigor](skyriding_vigor.md)
@@ -115,6 +117,7 @@ core/                   addon bootstrap, DB init, slash command, shared timing/t
 functions/              shared UI factories and helpers: reset, sliders, dropdowns, color picker, riveted panels
 modules/                feature modules; deeper ownership notes live in the module memory files below
   player_frame/         Player Frame settings, portrait combat text, and OOC fade
+  objectives/           All Objectives tracker behavior tweaks
   sound_levels/         preset sound replacement controls and Fishing Focus
   skyriding_vigor/      restored vigor display, style/layout state, charge detection, fade, and GUI
   settings/             general addon settings
@@ -187,6 +190,8 @@ Violations here can create invisible or unstable controls.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
 
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.
+
+- Objective Tracker APIs: `ObjectiveTrackerFrame`, `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker` expose `SetCollapsed`/`IsCollapsed`. Objective module frames also inherit `ToggleCollapsed` and `MarkDirty`; apply startup/default state with `SetCollapsed`, but do not hook re-collapse behavior when the user must retain normal manual expand/collapse control.
 
 - Lua operator precedence trap: `and` binds tighter than `or`, so `a and b ~= nil or false` parses as `(a and (b ~= nil)) or false`. The trailing `or false` is always a no-op when the left side already evaluates to a boolean. Write `a and b ~= nil` directly.
 

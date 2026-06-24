@@ -60,6 +60,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `player_frame.md`.
 
+- `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `objectives.md`.
+
 - `modules/sound_levels/`: sound replacement presets and Fishing Focus runtime. Memory: `sound_levels.md`.
 
 - `modules/skyriding_vigor/`: restored Skyriding Vigor display, style/layout state, charge detection, fade, and GUI. Memory: `skyriding_vigor.md`.

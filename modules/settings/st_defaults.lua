@@ -10,6 +10,7 @@ M.defaults = {
     interface_alpha = 0.65,
     modules = {
         player_frame = true,
+        objectives = true,
         aura_frames = true,
         sound_levels = true,
         skyriding_vigor = true,

@@ -42,6 +42,7 @@ local UI = {
     slider_frame_height = 22,
     fishing_slider_width = 130,
     fishing_slider_gap = 10,
+    fishing_volumes_panel_height = 180,
 }
 
 --#endregion CONFIGURATION =====================================================
@@ -57,6 +58,16 @@ local function apply_box_backdrop(frame)
     })
     frame:SetBackdropColor(0, 0, 0, 0.28)
     frame:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.9)
+end
+
+local function apply_group_outline(frame)
+    frame:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    frame:SetBackdropBorderColor(1, 0.82, 0, 0.6)
+    frame:SetBackdropColor(0, 0, 0, 0)
 end
 
 --#endregion SHARED HELPERS ====================================================
@@ -417,9 +428,10 @@ local function build_fishing_tab(parent)
     end)
     enable_row:SetScript("OnLeave", hide_enable_tooltip)
 
-    local current_panel = CreateFrame("Frame", nil, parent)
+    local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     current_panel:SetSize(sliders_panel_width, 70)
     current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
+    apply_group_outline(current_panel)
 
     create_fishing_header_bar(current_panel, "Normal Volumes", "current")
 
@@ -437,9 +449,10 @@ local function build_fishing_tab(parent)
     end
     M.controls.fishing_focus_refresh_current = refresh_current_values
 
-    local sliders_panel = CreateFrame("Frame", nil, parent)
-    sliders_panel:SetSize(sliders_panel_width, 230)
+    local sliders_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    sliders_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
     sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -16)
+    apply_group_outline(sliders_panel)
 
     create_fishing_header_bar(sliders_panel, "Fishing Volumes", "fishing")
 

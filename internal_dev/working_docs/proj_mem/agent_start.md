@@ -12,7 +12,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 3. Read `internal_dev/working_docs/proj_mem/code_map.md` for a compact file ownership map and common verification commands.
 
 4. Read only the relevant module memory file before touching a module:
-   `player_frame.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
+   `player_frame.md`, `objectives.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
 
 5. Check `internal_dev/working_docs/scratchpad.md` only for active transient notes. Do not promote scratch notes into durable docs unless they are still true after code review.
 

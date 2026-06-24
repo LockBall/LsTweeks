@@ -47,6 +47,7 @@ addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 
 addon.FEATURE_MODULES = {
     { key = "player_frame", label = "Player Frame" },
+    { key = "objectives", label = "Objectives" },
     { key = "aura_frames", label = "Buffs & Debuffs" },
     { key = "sound_levels", label = "Sound Levels" },
     { key = "skyriding_vigor", label = "Skyriding Vigor" },

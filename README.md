@@ -21,6 +21,10 @@ Slash command: `/lst`
 - Optional hiding of Player Frame portrait combat text.
 - Optional out-of-combat Player Frame fade controls.
 
+### Objectives
+
+- Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
+
 ### Skyriding Vigor
 
 - Restores a compact player vigor display using Blizzard UI assets.
@@ -59,6 +63,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.
+- Open **Objectives** for the **Auto-Collapse** group.
 - Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, node style/color, fill color, end decorations, fade behavior, and optional race profile.
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.

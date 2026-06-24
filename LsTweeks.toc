@@ -37,6 +37,8 @@ modules\settings\st_defaults.lua
 modules\settings\st_main.lua
 modules\player_frame\pf_main.lua
 modules\player_frame\pf_fade.lua
+modules\objectives\ob_defaults.lua
+modules\objectives\ob_main.lua
 modules\sound_levels\sl_defaults.lua
 modules\sound_levels\sl_functions.lua
 modules\sound_levels\sl_core.lua
