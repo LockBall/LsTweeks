@@ -541,7 +541,7 @@ function M.build_general_tab(p)
             tooltip = "How often visible aura timer text and bars update.\nHigher values use less CPU but update less smoothly.",
         }
     )
-    visible_icon_tick:SetPoint("LEFT", threshold, "RIGHT", 20, 0)
+    visible_icon_tick:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
     M.controls.aura_visible_icon_tick_slider = visible_icon_tick
 
     local cancel_modifier = addon.CreateDropdown(addon_name.."CancelModifier", p, "Cancel Modifier", CANCEL_MODIFIER_OPTIONS, {
@@ -553,7 +553,7 @@ function M.build_general_tab(p)
             M.db.cancel_modifier = normalize_cancel_modifier(value)
         end,
     })
-    cancel_modifier:SetPoint("LEFT", visible_icon_tick, "RIGHT", 35, 0)
+    cancel_modifier:SetPoint("LEFT", enable_panel, "RIGHT", 165, 0)
     M.controls.cancel_modifier_dropdown = cancel_modifier
 
     -- Show Bar Section Outlines Checkbox
@@ -565,7 +565,7 @@ function M.build_general_tab(p)
             end
         end
     )
-    outlines_container:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
+    outlines_container:SetPoint("TOPLEFT", visible_icon_tick, "BOTTOMLEFT", 0, -18)
     M.controls.show_bar_section_outlines_checkbox = outlines_btn
 
     -- reset panel

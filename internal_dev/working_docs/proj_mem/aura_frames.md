@@ -55,6 +55,8 @@ Important `aura_frames` keys:
 
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 
+- `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
+
 - 2026-06-24 visible-icon tick profiling with combat timing showed the ticker cost scales almost linearly with `aura_visible_icon_tick`: `0.10s` baseline was 9.57 calls/sec and 2.98ms/sec combat-normalized, `0.15s` was 6.54 calls/sec and 2.02ms/sec, and `0.20s` was 4.98 calls/sec and 1.50ms/sec. Treat this as a tick-rate tradeoff: the CPU win is real and expected, visual difference was minor, and the user-facing setting should stay limited to the three measured choices (`0.10s`, `0.15s`, `0.20s`).
 
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
@@ -86,15 +88,27 @@ Important `aura_frames` keys:
 
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.
 
+- `update_auras()` still owns the necessary scan/render pipeline for enabled frames. Live aura data, CDM child state, custom filter results, test previews, timer/bar metadata, display count, height, and ticker eligibility can change independently, so do not skip the whole update path without a new narrow proof.
+
 - `M._aura_map` remains the master auraInstanceID map. `M.unified_scan()` rebuilds `M._aura_maps_by_category` as derived preset buckets each scan.
 
+- Preset static/short/long/debuff frames can render directly from scan-built category buckets when no test preview mutation is needed. Profiling showed the old preset bucket copy was below the report cutoff, so this is a safe cleanup rather than a major CPU target.
+
 - Sorted aura ID results are shared in `af_render.lua`; invalidate them through `M.clear_sorted_aura_ids_cache()` when aura data is marked dirty or rescanned.
+
+- `render_aura_map()` reuses timer behavior for preset frames and caches timer behavior by category for custom frames during each render. Keep timer behavior resolution centralized; do not reintroduce per-icon timer behavior lookups.
+
+- The render display-signature skip is intentionally conservative. It must be blocked by test previews, secret values, `scan_remaining`, unstable timing, or changed identity/visual/cooldown/stack/order data to avoid stale icon visuals.
+
+- Frame-local runtime config cache is shared between `update_auras()` and layout setup for scalar/layout values, including copied scalar color components. Invalidate it through existing preset/custom settings updates, resize refresh, profile/reset refresh, and module re-enable refresh paths instead of adding a broad global cache.
 
 - Render helpers guard stable visual setters where practical; timer countdown and bar progress must continue updating live.
 
 - Custom frames are AuraFilters-driven, not whitelist-driven. They scan with `C_UnitAuras.GetAuraDataByIndex("player", i, M.get_custom_aura_filter(entry))`.
 
 - Custom scan results are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; aura-affecting events clear the cache.
+
+- Narrowing custom scans from `UNIT_AURA` payloads remains higher risk because custom filters/modifiers, secret values, full updates, and threshold/category changes can invalidate a simple affected-aura path.
 
 - Timer text enable/format behavior is centralized in `af_functions.lua` via `M.get_timer_behavior()` and `M.is_timer_text_enabled()`. Timer alignment remains layout behavior in `af_icon_layout.lua`.
 
