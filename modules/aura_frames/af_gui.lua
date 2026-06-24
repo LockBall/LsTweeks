@@ -396,6 +396,15 @@ function M.sync_general_controls_from_db()
         cancel_modifier:SetValue(value)
     end
 
+    local visible_icon_tick = M.controls.aura_visible_icon_tick_slider
+    if visible_icon_tick and visible_icon_tick.slider then
+        visible_icon_tick._suppress_callback = true
+        visible_icon_tick.slider:SetValue(M.get_visible_icon_tick_interval and M.get_visible_icon_tick_interval()
+            or M.db.aura_visible_icon_tick
+            or M.defaults.aura_visible_icon_tick)
+        visible_icon_tick._suppress_callback = nil
+    end
+
     for _, cat in ipairs(M.CATEGORIES or {}) do
         local keys = {
             "show_" .. cat,

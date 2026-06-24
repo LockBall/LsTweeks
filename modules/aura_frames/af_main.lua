@@ -1136,6 +1136,9 @@ function M.on_reset_complete()
     remove_orphan_custom_frames_after_reset()
     refresh_aura_frames_after_reset()
     refresh_aura_frame_settings_after_reset()
+    if M.restart_visible_icon_ticker then
+        M.restart_visible_icon_ticker()
+    end
 end
 
 --#endregion RESET ORCHESTRATION ===============================================

@@ -11,6 +11,7 @@ local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_debuffs",
     "cancel_modifier",
     "short_threshold",
+    "aura_visible_icon_tick",
     "timer_number_font",
     "timer_number_font_size",
     "timer_number_font_bold",

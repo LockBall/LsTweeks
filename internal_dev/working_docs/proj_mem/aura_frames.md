@@ -55,6 +55,8 @@ Important `aura_frames` keys:
 
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 
+- 2026-06-24 visible-icon tick profiling with combat timing showed the ticker cost scales almost linearly with `aura_visible_icon_tick`: `0.10s` baseline was 9.57 calls/sec and 2.98ms/sec combat-normalized, `0.15s` was 6.54 calls/sec and 2.02ms/sec, and `0.20s` was 4.98 calls/sec and 1.50ms/sec. Treat this as a tick-rate tradeoff: the CPU win is real and expected, visual difference was minor, and the user-facing setting should stay limited to the three measured choices (`0.10s`, `0.15s`, `0.20s`).
+
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
 
 - Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking.

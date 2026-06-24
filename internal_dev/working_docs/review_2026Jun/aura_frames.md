@@ -19,6 +19,9 @@ Source: `internal_dev/tests_tools/logs/addon_cpu_profiles.md`
 - 2026-06-23 Aura-only visible ticker return-state run: removed the redundant post-tick eligibility scan; `any_frame_needs_visible_icon_tick` no longer appeared in the report.
 - 2026-06-23 Aura-only runtime config cache run: config-resolution overhead improved; `is_timer_text_enabled` and `uses_cooldown_icon_overlay` no longer appeared in the report, and `get_setting` calls/sec dropped versus the prior run.
 - 2026-06-23 Aura-only runtime color cache run: color scalar caching improved the remaining config rows; `get_bar_bg_color` no longer appeared in the report.
+- 2026-06-24 Aura-only visible icon tick `0.10s` combat baseline: combat-heavy run showed `tick_visible_icons` at about 9.15 calls/sec elapsed, or 9.57 calls/sec combat-normalized, and ticker CPU at about 2.85ms/sec elapsed, or 2.98ms/sec combat-normalized.
+- 2026-06-24 Aura-only visible icon tick `0.15s` combat test: combat-heavy run showed `tick_visible_icons` at about 6.31 calls/sec elapsed, or 6.54 calls/sec combat-normalized, and ticker CPU at about 1.95ms/sec elapsed, or 2.02ms/sec combat-normalized. This is about a 32% ticker CPU/sec reduction versus the clean `0.10s` combat baseline.
+- 2026-06-24 Aura-only visible icon tick `0.20s` combat test: combat-heavy run showed `tick_visible_icons` at about 4.82 calls/sec elapsed, or 4.98 calls/sec combat-normalized, and ticker CPU at about 1.45ms/sec elapsed, or 1.50ms/sec combat-normalized. This is about a 50% ticker CPU/sec reduction versus the clean `0.10s` combat baseline.
 - Profiling wraps addon-owned functions only. Rows are inclusive when wrapped functions call other wrapped functions, so do not sum rows as exclusive module totals.
 
 Aura-only post-OOC-fast-path run, 90.1s:
@@ -63,9 +66,13 @@ Aura-only post-OOC-fast-path run, 90.1s:
 
 - [x] 14. Priority: Medium | Expected CPU Efficiency Impact: Low | Change Risk: Medium - Review color/runtime value caching separately. Result: color pickers replace color tables and call the same frame update callbacks that invalidate the runtime config cache, so the frame cache now stores copied scalar color components for bar color, bar background color, bar text color, and frame background color. Profiling showed `get_setting` dropped from about 90.7 calls/sec to 51.3 calls/sec versus the prior run, `get_bar_bg_color` no longer appeared in the report, and `update_auras` averaged 0.3910ms versus 0.4533ms. Manual color-picker behavior still needs a quick visible update check before final handoff.
 
-- [ ] 15. Priority: Low | Expected CPU Efficiency Impact: Medium | Change Risk: Medium - Test update-frequency changes only after the structural wins above. `aura_visible_icon_tick` can stay around 0.2s if visual smoothness is acceptable; `aura_event_bucket` should be tested gradually, such as 0.15s then 0.2s, because increasing it reduces scan/render bursts at the cost of visible aura-update latency.
+- [x] 15. Priority: Low | Expected CPU Efficiency Impact: Medium | Change Risk: Low - Review update intervals only. Result: no code change kept. `aura_event_bucket` is already 0.2s and coalesces deferred aura scans outside event dispatch, so further increases risk visible aura-update latency and need isolated testing. `aura_visible_icon_tick` remains 0.1s and drives live countdown/bar/cooldown updates; prior broad profiling at 0.2s showed a direct ticker-path reduction, but that run bundled other interval changes. Test ticker frequency separately before changing defaults.
 
-- [ ] 16. Priority: Low | Expected CPU Efficiency Impact: Low | Change Risk: High - Revisit CDM entry reads only if a narrow safe change is visible. New/public `C_CooldownViewer` APIs still do not appear to expose live rendered child order, active aura instance IDs, per-item active state, or cooldown widget timing. Keep the Blizzard child read/hook path unless Blizzard adds public live-state APIs.
+- [ ] 16. Priority: Low | Expected CPU Efficiency Impact: Medium | Change Risk: Medium - Test `aura_visible_icon_tick` through the main UI slider. Reliable combat-timed results: `0.15s` reduced ticker CPU/sec by about 32% versus the clean `0.10s` baseline; `0.20s` reduced ticker CPU/sec by about 50%. Compared with `0.15s`, `0.20s` was about 26% lower in ticker CPU/sec. Visual difference was minor, so keep this as a user choice with the three measured positions: `0.10s`, `0.15s`, and `0.20s`.
+
+- [ ] 17. Priority: Low | Expected CPU Efficiency Impact: Medium | Change Risk: Medium - Test `aura_event_bucket` only if more scan/render reduction is still needed after ticker testing. Start conservatively and profile scan/render/update rates while watching for visible aura-update latency.
+
+- [ ] 18. Priority: Low | Expected CPU Efficiency Impact: Low | Change Risk: High - Revisit CDM entry reads only if a narrow safe change is visible. New/public `C_CooldownViewer` APIs still do not appear to expose live rendered child order, active aura instance IDs, per-item active state, or cooldown widget timing. Keep the Blizzard child read/hook path unless Blizzard adds public live-state APIs.
 
 ## Guardrails
 

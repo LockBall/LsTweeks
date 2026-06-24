@@ -165,6 +165,24 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         end
     end)
 
+    if opts.tooltip then
+        local tooltip_targets = { container, slider, eb, minus_btn, plus_btn, reset }
+        local function show_tooltip(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(opts.tooltip, 1, 1, 1, 1, true)
+            GameTooltip:Show()
+        end
+        local function hide_tooltip()
+            GameTooltip:Hide()
+        end
+        for i = 1, #tooltip_targets do
+            local target = tooltip_targets[i]
+            target:EnableMouse(true)
+            target:HookScript("OnEnter", show_tooltip)
+            target:HookScript("OnLeave", hide_tooltip)
+        end
+    end
+
     -- Expose inner slider so callers can call SetValue to update the display.
     container.slider = slider
 

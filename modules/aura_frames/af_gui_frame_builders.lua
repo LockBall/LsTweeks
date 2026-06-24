@@ -521,6 +521,29 @@ function M.build_general_tab(p)
     end)
     threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
 
+    local visible_icon_tick = addon.CreateSliderWithBox(
+        addon_name.."AuraVisibleIconTick",
+        p,
+        "Timer Tick Sec",
+        M.MIN_VISIBLE_ICON_TICK or 0.10,
+        M.MAX_VISIBLE_ICON_TICK or 0.20,
+        M.VISIBLE_ICON_TICK_STEP or 0.05,
+        M.db,
+        "aura_visible_icon_tick",
+        M.defaults,
+        function()
+            if M.restart_visible_icon_ticker then
+                M.restart_visible_icon_ticker()
+            end
+        end,
+        {
+            display_decimals = 2,
+            tooltip = "How often visible aura timer text and bars update.\nHigher values use less CPU but update less smoothly.",
+        }
+    )
+    visible_icon_tick:SetPoint("LEFT", threshold, "RIGHT", 20, 0)
+    M.controls.aura_visible_icon_tick_slider = visible_icon_tick
+
     local cancel_modifier = addon.CreateDropdown(addon_name.."CancelModifier", p, "Cancel Modifier", CANCEL_MODIFIER_OPTIONS, {
         width = 120,
         get_value = function()
@@ -530,7 +553,7 @@ function M.build_general_tab(p)
             M.db.cancel_modifier = normalize_cancel_modifier(value)
         end,
     })
-    cancel_modifier:SetPoint("LEFT", threshold, "RIGHT", 35, 0)
+    cancel_modifier:SetPoint("LEFT", visible_icon_tick, "RIGHT", 35, 0)
     M.controls.cancel_modifier_dropdown = cancel_modifier
 
     -- Show Bar Section Outlines Checkbox

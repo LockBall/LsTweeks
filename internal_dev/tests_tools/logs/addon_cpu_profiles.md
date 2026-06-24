@@ -907,6 +907,183 @@ runtime-config cache run, `get_setting` dropped from about 90.7 calls/sec to
 candidate if a manual settings check confirms visible colors update immediately
 after picker changes.
 
+### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.10s Combat Baseline
+
+Context: 75.5s run with only `PROFILE_TARGETS.aura_frames = true`, `Timer Tick
+Sec` set to `0.10`, and combat timing enabled. Combat was active for 72.2s
+(95.7% of elapsed time), one segment, and the report was captured after combat
+ended. Earlier partial/aborted runs in the same pasted block were ignored.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1384 | 520.805 | 0.3763 | 4.146 |
+| `aura_frames.render_aura_map` | 1384 | 236.809 | 0.1711 | 1.396 |
+| `aura_frames.tick_visible_icons` | 691 | 215.380 | 0.3117 | 0.789 |
+| `aura_frames.unified_scan` | 140 | 82.442 | 0.5889 | 2.904 |
+| `aura_frames.set_timer_text` | 15809 | 64.863 | 0.0041 | 0.210 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 744 | 62.111 | 0.0835 | 0.428 |
+| `aura_frames.scan_custom_aura_map` | 128 | 60.112 | 0.4696 | 3.030 |
+| `aura_frames.get_frame_activity_state` | 6079 | 43.141 | 0.0071 | 0.092 |
+| `aura_frames.refresh_frame_ooc_fade` | 1384 | 22.359 | 0.0162 | 0.173 |
+| `aura_frames.is_runtime_enabled` | 2078 | 12.816 | 0.0062 | 0.030 |
+| `aura_frames.mark_aura_scan_dirty` | 1650 | 10.640 | 0.0064 | 0.133 |
+| `aura_frames.get_setting` | 5152 | 10.128 | 0.0020 | 0.072 |
+| `aura_frames.get_frame_config_db` | 6079 | 10.064 | 0.0017 | 0.025 |
+| `aura_frames.merge_aura_info` | 1629 | 8.963 | 0.0055 | 0.048 |
+| `aura_frames.get_timer_behavior` | 1512 | 8.710 | 0.0058 | 0.031 |
+| `aura_frames.normalize_timer_category` | 1512 | 4.147 | 0.0027 | 0.023 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1790 | 2.696 | 0.0015 | 0.126 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1650 | 2.254 | 0.0014 | 0.015 |
+| `aura_frames.refresh_visible_icon_ticker` | 1384 | 2.020 | 0.0015 | 0.015 |
+| `aura_frames.get_cdm_viewer_frame` | 792 | 2.006 | 0.0025 | 0.019 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 744 | 1.527 | 0.0021 | 0.040 |
+| `aura_frames.get_custom_aura_filter` | 128 | 0.888 | 0.0069 | 0.026 |
+| `aura_frames.update_blizz_cdm_visibility` | 24 | 0.367 | 0.0153 | 0.044 |
+| `aura_frames.cdm_category_needs_viewer` | 12 | 0.266 | 0.0222 | 0.040 |
+| `aura_frames.set_height_for_growth` | 5 | 0.265 | 0.0531 | 0.062 |
+
+Conclusion: This is the clean combat-timed baseline for ticker interval
+comparison. `tick_visible_icons` ran about 9.15 calls/sec elapsed, or 9.57
+calls/sec combat-normalized. Ticker CPU was about 2.85ms/sec elapsed, or
+2.98ms/sec combat-normalized.
+
+### 2026-06-24, Aura Frames Only, Visible Icon Tick Provisional Slider Test
+
+Context: 67.3s run with only `PROFILE_TARGETS.aura_frames = true`, after adding
+the temporary main UI slider for `aura_visible_icon_tick` (`0.10` to `0.20`
+seconds, `0.01` increments). The slider value was not captured in the pasted
+report; expected test value was `0.15`. Combat timing was not available for this
+run, so do not use it as the final `0.15` comparison.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1030 | 377.284 | 0.3663 | 3.774 |
+| `aura_frames.render_aura_map` | 1030 | 174.227 | 0.1692 | 1.053 |
+| `aura_frames.tick_visible_icons` | 423 | 116.039 | 0.2743 | 0.782 |
+| `aura_frames.unified_scan` | 91 | 53.085 | 0.5834 | 1.337 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 620 | 49.863 | 0.0804 | 0.712 |
+| `aura_frames.scan_custom_aura_map` | 82 | 40.308 | 0.4916 | 3.191 |
+| `aura_frames.set_timer_text` | 8704 | 34.213 | 0.0039 | 0.046 |
+| `aura_frames.get_frame_activity_state` | 4068 | 28.635 | 0.0070 | 0.085 |
+| `aura_frames.refresh_frame_ooc_fade` | 1030 | 16.506 | 0.0160 | 0.214 |
+| `aura_frames.is_runtime_enabled` | 1456 | 9.277 | 0.0064 | 0.034 |
+| `aura_frames.get_setting` | 3874 | 7.379 | 0.0019 | 0.030 |
+| `aura_frames.get_frame_config_db` | 4068 | 6.639 | 0.0016 | 0.048 |
+| `aura_frames.mark_aura_scan_dirty` | 993 | 6.181 | 0.0062 | 0.026 |
+| `aura_frames.get_timer_behavior` | 1112 | 6.119 | 0.0055 | 0.026 |
+| `aura_frames.merge_aura_info` | 972 | 5.238 | 0.0054 | 0.040 |
+| `aura_frames.normalize_timer_category` | 1112 | 2.920 | 0.0026 | 0.016 |
+| `aura_frames.refresh_visible_icon_ticker` | 1030 | 1.609 | 0.0016 | 0.093 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1084 | 1.539 | 0.0014 | 0.012 |
+| `aura_frames.get_cdm_viewer_frame` | 680 | 1.457 | 0.0021 | 0.010 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 620 | 1.444 | 0.0023 | 0.064 |
+| `aura_frames.clear_custom_aura_scan_cache` | 993 | 1.284 | 0.0013 | 0.016 |
+| `aura_frames.get_custom_aura_filter` | 82 | 0.577 | 0.0070 | 0.012 |
+| `aura_frames.update_blizz_cdm_visibility` | 28 | 0.342 | 0.0122 | 0.023 |
+| `aura_frames.set_height_for_growth` | 6 | 0.308 | 0.0513 | 0.092 |
+| `aura_frames.get_custom_modifier_def` | 82 | 0.180 | 0.0022 | 0.005 |
+
+Conclusion: Provisional only. Ticker frequency reduction appeared to work:
+compared with the prior runtime color-cache run, `tick_visible_icons` dropped
+from about 9.36 calls/sec to 6.29 calls/sec, and ticker CPU dropped from about
+2.59ms/sec to 1.72ms/sec. Because this run lacked combat timing and did not
+capture the exact slider value, replace it with a clean `0.15` combat-timed run
+before comparing `0.15` against `0.20`.
+
+### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.15s Combat Test
+
+Context: 51.0s run with only `PROFILE_TARGETS.aura_frames = true`, `Timer Tick
+Sec` set to `0.15`, and combat timing enabled. Combat was active for 49.2s
+(96.4% of elapsed time), one segment, and the report was captured after combat
+ended.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 894 | 341.620 | 0.3821 | 2.124 |
+| `aura_frames.render_aura_map` | 894 | 156.339 | 0.1749 | 0.815 |
+| `aura_frames.tick_visible_icons` | 322 | 99.484 | 0.3090 | 0.654 |
+| `aura_frames.unified_scan` | 83 | 54.699 | 0.6590 | 1.756 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 529 | 43.252 | 0.0818 | 0.351 |
+| `aura_frames.scan_custom_aura_map` | 73 | 34.652 | 0.4747 | 1.118 |
+| `aura_frames.set_timer_text` | 7695 | 31.616 | 0.0041 | 0.138 |
+| `aura_frames.get_frame_activity_state` | 3544 | 25.627 | 0.0072 | 0.188 |
+| `aura_frames.refresh_frame_ooc_fade` | 895 | 14.759 | 0.0165 | 0.109 |
+| `aura_frames.is_runtime_enabled` | 1220 | 7.770 | 0.0064 | 0.165 |
+| `aura_frames.get_setting` | 3366 | 6.616 | 0.0020 | 0.057 |
+| `aura_frames.get_frame_config_db` | 3553 | 6.095 | 0.0017 | 0.089 |
+| `aura_frames.get_timer_behavior` | 967 | 5.600 | 0.0058 | 0.028 |
+| `aura_frames.mark_aura_scan_dirty` | 903 | 5.479 | 0.0061 | 0.046 |
+| `aura_frames.merge_aura_info` | 882 | 4.696 | 0.0053 | 0.201 |
+| `aura_frames.normalize_timer_category` | 967 | 2.633 | 0.0027 | 0.016 |
+| `aura_frames.get_cdm_viewer_frame` | 560 | 1.406 | 0.0025 | 0.026 |
+| `aura_frames.refresh_visible_icon_ticker` | 894 | 1.393 | 0.0016 | 0.062 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 986 | 1.364 | 0.0014 | 0.025 |
+| `aura_frames.clear_custom_aura_scan_cache` | 903 | 1.177 | 0.0013 | 0.026 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 529 | 0.897 | 0.0017 | 0.033 |
+| `aura_frames.get_custom_aura_filter` | 73 | 0.484 | 0.0066 | 0.013 |
+| `aura_frames.update_blizz_cdm_visibility` | 21 | 0.289 | 0.0138 | 0.034 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 4 | 0.282 | 0.0704 | 0.092 |
+| `aura_frames.cdm_category_needs_viewer` | 13 | 0.244 | 0.0188 | 0.031 |
+
+Conclusion: The clean `0.15` combat-timed run reduced ticker CPU/sec versus
+the clean `0.10` combat baseline, but not as much as `0.20`. `tick_visible_icons`
+ran about 6.31 calls/sec elapsed, or 6.54 calls/sec combat-normalized. Ticker
+CPU was about 1.95ms/sec elapsed, or 2.02ms/sec combat-normalized, about 32%
+lower than the clean `0.10` combat baseline. Compared with `0.15`, the `0.20`
+run was about 24% lower in ticker calls/sec and about 26% lower in ticker CPU/sec.
+
+### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.20s Combat Test
+
+Context: 62.0s run with only `PROFILE_TARGETS.aura_frames = true`, `Timer Tick
+Sec` set to `0.20`, and combat timing enabled. Combat was active for 60.1s
+(96.8% of elapsed time), one segment, and the report was captured while still
+in combat.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1007 | 374.010 | 0.3714 | 1.666 |
+| `aura_frames.render_aura_map` | 1007 | 174.627 | 0.1734 | 0.962 |
+| `aura_frames.tick_visible_icons` | 299 | 90.119 | 0.3014 | 0.697 |
+| `aura_frames.unified_scan` | 96 | 56.815 | 0.5918 | 1.124 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 592 | 47.600 | 0.0804 | 0.309 |
+| `aura_frames.scan_custom_aura_map` | 83 | 37.675 | 0.4539 | 0.829 |
+| `aura_frames.set_timer_text` | 7577 | 30.225 | 0.0040 | 0.138 |
+| `aura_frames.get_frame_activity_state` | 4239 | 29.975 | 0.0071 | 0.047 |
+| `aura_frames.refresh_frame_ooc_fade` | 1007 | 15.950 | 0.0158 | 0.070 |
+| `aura_frames.is_runtime_enabled` | 1309 | 8.105 | 0.0062 | 0.158 |
+| `aura_frames.get_setting` | 3779 | 7.244 | 0.0019 | 0.043 |
+| `aura_frames.mark_aura_scan_dirty` | 1083 | 6.734 | 0.0062 | 0.039 |
+| `aura_frames.get_frame_config_db` | 4239 | 6.589 | 0.0016 | 0.015 |
+| `aura_frames.get_timer_behavior` | 1090 | 6.294 | 0.0058 | 0.076 |
+| `aura_frames.merge_aura_info` | 1071 | 5.368 | 0.0050 | 0.098 |
+| `aura_frames.normalize_timer_category` | 1090 | 2.922 | 0.0027 | 0.027 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1179 | 1.721 | 0.0015 | 0.025 |
+| `aura_frames.get_cdm_viewer_frame` | 604 | 1.497 | 0.0025 | 0.014 |
+| `aura_frames.refresh_visible_icon_ticker` | 1007 | 1.464 | 0.0015 | 0.016 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1083 | 1.307 | 0.0012 | 0.016 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 592 | 0.881 | 0.0015 | 0.015 |
+| `aura_frames.get_custom_aura_filter` | 83 | 0.589 | 0.0071 | 0.021 |
+| `aura_frames.cdm_category_needs_viewer` | 12 | 0.184 | 0.0154 | 0.021 |
+| `aura_frames.get_custom_modifier_def` | 83 | 0.171 | 0.0021 | 0.005 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 3 | 0.150 | 0.0501 | 0.057 |
+
+Conclusion: The `0.20` setting produced the expected ticker reduction in a
+combat-heavy run. `tick_visible_icons` ran about 4.82 calls/sec elapsed, or
+4.98 calls/sec combat-normalized, versus about 9.57 calls/sec in the clean
+`0.10` combat baseline. Ticker CPU dropped from about 2.98ms/sec at `0.10` to
+about 1.45ms/sec elapsed, or 1.50ms/sec combat-normalized, a roughly 50% ticker
+CPU/sec reduction. This is a strong candidate if visual smoothness was acceptable.
+
+### Visible Icon Tick Comparison Scratch
+
+Use only combat-timed runs for final interval selection.
+
+| Tick setting | Combat timed? | Calls/sec | CPU ms/sec | Notes |
+| --- | --- | ---: | ---: | --- |
+| `0.10` | Yes | 9.57 | 2.98 | 72.2s combat out of 75.5s elapsed. |
+| `0.15` | Yes | 6.54 | 2.02 | 49.2s combat out of 51.0s elapsed. |
+| `0.20` | Yes | 4.98 | 1.50 | 60.1s combat out of 62.0s elapsed. |
+
 ### Template
 
 Context:

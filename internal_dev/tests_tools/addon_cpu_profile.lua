@@ -32,10 +32,44 @@ local debugprofilestop = debugprofilestop
 local format = string.format
 local sort = table.sort
 local tonumber = tonumber
+local UnitAffectingCombat = UnitAffectingCombat
 local unpack = unpack
 
 local function now()
     return debugprofilestop and debugprofilestop() or 0
+end
+
+local function is_player_in_combat()
+    return UnitAffectingCombat and UnitAffectingCombat("player") or false
+end
+
+local function reset_combat_timer(start_time)
+    start_time = start_time or now()
+    P.combat_total = 0
+    P.combat_segments = 0
+    P.combat_started_at = nil
+    if is_player_in_combat() then
+        P.combat_started_at = start_time
+        P.combat_segments = 1
+    end
+end
+
+local function current_combat_total(current_time)
+    current_time = current_time or now()
+    local total = P.combat_total or 0
+    if P.combat_started_at then
+        total = total + (current_time - P.combat_started_at)
+    end
+    return total
+end
+
+local function finish_active_combat(current_time)
+    if not P.combat_started_at then return 0 end
+    current_time = current_time or now()
+    local duration = current_time - P.combat_started_at
+    P.combat_total = (P.combat_total or 0) + duration
+    P.combat_started_at = nil
+    return duration
 end
 
 local function pack_returns(...)
@@ -196,6 +230,7 @@ end
 local function reset_profile()
     P.metrics = {}
     P.started_at = now()
+    reset_combat_timer(P.started_at)
 end
 
 local function start_profile()
@@ -207,13 +242,17 @@ local function start_profile()
 end
 
 local function stop_profile()
+    finish_active_combat()
     P.enabled = false
     restore_wrappers()
     print("|cff33ff99== LsTweeks CPU Profile stopped ==|r")
 end
 
 local function report_profile(limit)
-    local elapsed = (now() - (P.started_at or now())) / 1000
+    local report_time = now()
+    local elapsed = (report_time - (P.started_at or report_time)) / 1000
+    local combat_elapsed = current_combat_total(report_time) / 1000
+    local combat_pct = elapsed > 0 and (combat_elapsed / elapsed * 100) or 0
     local rows = {}
 
     for name, metric in pairs(P.metrics or {}) do
@@ -237,6 +276,13 @@ local function report_profile(limit)
     limit = tonumber(limit) or 25
     print("|cff33ff99== LsTweeks CPU Profile report ==|r")
     print("elapsed " .. format("%.1fs", elapsed))
+    print(format(
+        "combat %.1fs %.1f%% segments=%d active=%s",
+        combat_elapsed,
+        combat_pct,
+        P.combat_segments or 0,
+        P.combat_started_at and "yes" or "no"
+    ))
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
         print(format(
@@ -251,6 +297,34 @@ local function report_profile(limit)
 end
 
 --#endregion PROFILE LIFECYCLE =================================================
+
+
+--#region COMBAT TIMER =========================================================
+
+local event_frame = CreateFrame("Frame")
+event_frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+event_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+event_frame:SetScript("OnEvent", function(_, event)
+    if not P.enabled then return end
+    local event_time = now()
+    if event == "PLAYER_REGEN_DISABLED" then
+        if P.combat_started_at then return end
+        P.combat_started_at = event_time
+        P.combat_segments = (P.combat_segments or 0) + 1
+        print("combat started")
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        local duration = finish_active_combat(event_time)
+        if duration > 0 then
+            print(format(
+                "combat ended duration=%.1fs total=%.1fs",
+                duration / 1000,
+                (P.combat_total or 0) / 1000
+            ))
+        end
+    end
+end)
+
+--#endregion COMBAT TIMER ======================================================
 
 
 --#region SLASH COMMAND ========================================================
@@ -271,6 +345,12 @@ SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
         print("|cff33ff99== LsTweeks CPU Profile status ==|r")
         print(P.enabled and "running" or "stopped")
         print("targets: " .. get_enabled_target_names())
+        print(format(
+            "combat %.1fs segments=%d active=%s",
+            current_combat_total() / 1000,
+            P.combat_segments or 0,
+            P.combat_started_at and "yes" or "no"
+        ))
     elseif command == "report" or command == "" then
         report_profile(arg)
     else

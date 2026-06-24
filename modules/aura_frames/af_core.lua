@@ -4,6 +4,7 @@
 local addon_name, addon = ...
 
 local math_max       = math.max
+local math_min       = math.min
 local math_ceil      = math.ceil
 local GetTime        = GetTime
 local issecretvalue  = issecretvalue
@@ -389,12 +390,26 @@ function M.stop_visible_icon_ticker()
     end
 end
 
+function M.get_visible_icon_tick_interval()
+    local default_interval = (M.defaults and M.defaults.aura_visible_icon_tick)
+        or (M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.aura_visible_icon_tick)
+        or (M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.tenth_sec)
+        or 0.1
+    local value = M.db and tonumber(M.db.aura_visible_icon_tick) or default_interval
+    local min_interval = M.MIN_VISIBLE_ICON_TICK or 0.10
+    local max_interval = M.MAX_VISIBLE_ICON_TICK or 0.20
+    local step = M.VISIBLE_ICON_TICK_STEP or 0.05
+    value = math_max(min_interval, math_min(max_interval, value))
+    value = min_interval + math.floor(((value - min_interval) / step) + 0.5) * step
+    return math_max(min_interval, math_min(max_interval, value))
+end
+
 function M.ensure_visible_icon_ticker(needs_tick_known)
     if M._visible_icon_ticker then return end
     if not (C_Timer and C_Timer.NewTicker) then return end
     if not needs_tick_known and not M.any_frame_needs_visible_icon_tick() then return end
 
-    M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_visible_icon_tick or M.UPDATE_INTERVALS.tenth_sec, function()
+    M._visible_icon_ticker = C_Timer.NewTicker(M.get_visible_icon_tick_interval(), function()
         if not M.tick_visible_icons() then
             M.stop_visible_icon_ticker()
         end
@@ -408,6 +423,11 @@ function M.refresh_visible_icon_ticker()
     else
         M.stop_visible_icon_ticker()
     end
+end
+
+function M.restart_visible_icon_ticker()
+    M.stop_visible_icon_ticker()
+    M.refresh_visible_icon_ticker()
 end
 
 -- Shared ticker update path for all visible aura icon objects.

@@ -159,6 +159,9 @@ M.DEFAULT_TIMER_NUMBER_FONT_KEY = "source_code_pro"
 M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
 M.DEFAULT_OOC_FADE_DELAY = 2
 M.DEFAULT_OOC_FADE_LENGTH = 3
+M.MIN_VISIBLE_ICON_TICK = 0.10
+M.MAX_VISIBLE_ICON_TICK = 0.20
+M.VISIBLE_ICON_TICK_STEP = 0.05
 
 M.CUSTOM_AURA_BASE_FILTERS = {
     { value = "HELPFUL", text = "HELPFUL" },
@@ -212,6 +215,7 @@ M.defaults = {
     show_bar_section_outlines = false,
     cancel_modifier = "CTRL",
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
+    aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
     timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size = 10,
     timer_number_font_bold = false,
