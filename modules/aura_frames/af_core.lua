@@ -19,6 +19,75 @@ function M.uses_cooldown_icon_overlay(category, bar_mode, db)
     return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
 end
 
+function M.invalidate_frame_runtime_config(frame)
+    if not frame then return end
+    frame._runtime_config_cache = nil
+    frame._layout_cache = nil
+end
+
+function M.invalidate_all_frame_runtime_config()
+    local frames_list = M.frames_list
+    if not frames_list then return end
+    for i = 1, #frames_list do
+        M.invalidate_frame_runtime_config(frames_list[i])
+    end
+end
+
+local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
+    local cache = frame._runtime_config_cache
+    if cache then return cache end
+
+    local bar_mode_key = frame._bar_mode_key or ("bar_mode_" .. category)
+    frame._bar_mode_key = bar_mode_key
+
+    local bar_mode = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
+    local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
+    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
+    local color = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
+    local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
+    local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
+    local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
+
+    cache = {
+        bar_mode = bar_mode,
+        frame_width = cfg_db["width_" .. category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH,
+        spacing = cfg_db[spacing_key] or cfg_db["spacing"] or 6,
+        show_timer_text = show_timer_text,
+        show_timer_swipe = (not bar_mode) and M.get_setting(cfg_db, category, "timer_swipe", true) ~= false,
+        show_tooltip = M.get_setting(cfg_db, category, "tooltip", true) ~= false,
+        cooldown_icon_overlay = cooldown_icon_overlay,
+        layout_show_timer_text = show_timer_text and not cooldown_icon_overlay,
+        growth = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN",
+        max_limit = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or M.MAX_ICONS_LIMIT,
+        sort_mode = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil,
+        color = {
+            r = color.r or 1,
+            g = color.g or 1,
+            b = color.b or 1,
+            a = color.a or 1,
+        },
+        bar_bg_color = {
+            r = bar_bg_color.r or 1,
+            g = bar_bg_color.g or 1,
+            b = bar_bg_color.b or 1,
+            a = bar_bg_color.a or M.BAR_BG_ALPHA_DEFAULT,
+        },
+        bar_text_color = {
+            r = bar_text_color.r or 1,
+            g = bar_text_color.g or 1,
+            b = bar_text_color.b or 1,
+        },
+        bg_color = {
+            r = bg_color.r or 0,
+            g = bg_color.g or 0,
+            b = bg_color.b or 0,
+            a = bg_color.a or 0.5,
+        },
+    }
+    frame._runtime_config_cache = cache
+    return cache
+end
+
 local set_shown_if_changed = M.set_shown_if_changed
 local clear_timer_text = M.clear_timer_text
 
@@ -627,28 +696,27 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         return
     end
 
-    local bar_mode_key  = self._bar_mode_key or ("bar_mode_" .. category)
-    self._bar_mode_key  = bar_mode_key
-    local bar_mode      = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
-    local frame_width   = cfg_db["width_" .. category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH
-    local spacing       = cfg_db[spacing_key] or cfg_db["spacing"] or 6
-    local color         = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
-    local barBgC        = M.get_bar_bg_color(cfg_db, category, color)
-    local barTextC      = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
-    local bgC           = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
-    local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
-    local show_timer_swipe = (not bar_mode) and M.get_setting(cfg_db, category, "timer_swipe", true) ~= false
-    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
-    local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
+    local runtime_config = resolve_runtime_config(self, cfg_db, category, is_custom, timer_key, spacing_key)
+    local bar_mode      = runtime_config.bar_mode
+    local frame_width   = runtime_config.frame_width
+    local spacing       = runtime_config.spacing
+    local color         = runtime_config.color
+    local barBgC        = runtime_config.bar_bg_color
+    local barTextC      = runtime_config.bar_text_color
+    local bgC           = runtime_config.bg_color
+    local show_timer_text = runtime_config.show_timer_text
+    local show_timer_swipe = runtime_config.show_timer_swipe
+    local cooldown_icon_overlay = runtime_config.cooldown_icon_overlay
+    local layout_show_timer_text = runtime_config.layout_show_timer_text
     self._show_timer_text = show_timer_text
     self._show_timer_swipe = show_timer_swipe
-    self._show_tooltip    = M.get_setting(cfg_db, category, "tooltip", true) ~= false
+    self._show_tooltip    = runtime_config.show_tooltip
     self._show_cooldown_overlay = cooldown_icon_overlay
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD
-    local growth        = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN"
-    local max_limit     = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or M.MAX_ICONS_LIMIT
-    local sort_mode     = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil
+    local growth        = runtime_config.growth
+    local max_limit     = runtime_config.max_limit
+    local sort_mode     = runtime_config.sort_mode
     local in_combat = InCombatLockdown and InCombatLockdown()
     local is_user_positioning = self._is_user_positioning == true
 

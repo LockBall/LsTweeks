@@ -568,6 +568,9 @@ local function update_custom_frame(entry)
     local show_key = "show_" .. entry.id
     local frame = M.frames[show_key]
     if not frame then return end
+    if M.invalidate_frame_runtime_config then
+        M.invalidate_frame_runtime_config(frame)
+    end
     local aura_filter = M.get_custom_aura_filter(entry)
     frame.update_params.aura_filter = aura_filter
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
@@ -834,6 +837,9 @@ function M.build_preset_frame_panel(p, data)
 
     local function update() -- refreshes current category frame preview
         M.mark_aura_scan_dirty()
+        if M.invalidate_frame_runtime_config then
+            M.invalidate_frame_runtime_config(M.frames[data.show_key])
+        end
         M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 

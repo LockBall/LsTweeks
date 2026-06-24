@@ -823,6 +823,90 @@ Conclusion: The intended redundant eligibility scan was removed from the profile
 cost stayed in the same range, as expected, because the live timer/bar update work
 is unchanged.
 
+### 2026-06-23, Aura Frames Only, Runtime Config Cache
+
+Context: 133.4s run with only `PROFILE_TARGETS.aura_frames = true`, after adding
+a frame-local runtime config cache for scalar/layout values and sharing it with
+`setup_layout()`. User exercised normal Aura Frames activity rather than idling.
+Colors remained uncached.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1562 | 708.094 | 0.4533 | 5.125 |
+| `aura_frames.tick_visible_icons` | 1249 | 341.296 | 0.2733 | 0.959 |
+| `aura_frames.render_aura_map` | 1562 | 313.348 | 0.2006 | 5.000 |
+| `aura_frames.unified_scan` | 146 | 95.705 | 0.6555 | 1.292 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 882 | 82.724 | 0.0938 | 0.450 |
+| `aura_frames.set_timer_text` | 16817 | 82.238 | 0.0049 | 0.207 |
+| `aura_frames.scan_custom_aura_map` | 136 | 76.766 | 0.5645 | 2.511 |
+| `aura_frames.get_frame_activity_state` | 6318 | 52.561 | 0.0083 | 0.291 |
+| `aura_frames.refresh_frame_ooc_fade` | 1565 | 28.890 | 0.0185 | 0.107 |
+| `aura_frames.get_setting` | 12100 | 26.087 | 0.0022 | 0.150 |
+| `aura_frames.is_runtime_enabled` | 2816 | 21.999 | 0.0078 | 0.183 |
+| `aura_frames.mark_aura_scan_dirty` | 1587 | 11.821 | 0.0074 | 0.215 |
+| `aura_frames.get_frame_config_db` | 6324 | 11.596 | 0.0018 | 0.036 |
+| `aura_frames.get_timer_behavior` | 1697 | 10.995 | 0.0065 | 0.103 |
+| `aura_frames.get_bar_bg_color` | 1562 | 10.622 | 0.0068 | 0.120 |
+| `aura_frames.merge_aura_info` | 1566 | 9.303 | 0.0059 | 0.041 |
+| `aura_frames.normalize_timer_category` | 1697 | 5.357 | 0.0032 | 0.100 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 882 | 3.698 | 0.0042 | 0.069 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1733 | 2.789 | 0.0016 | 0.034 |
+| `aura_frames.get_cdm_viewer_frame` | 1100 | 2.564 | 0.0023 | 0.026 |
+| `aura_frames.refresh_visible_icon_ticker` | 1562 | 2.333 | 0.0015 | 0.017 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1587 | 2.297 | 0.0014 | 0.010 |
+| `aura_frames.update_blizz_cdm_visibility` | 86 | 1.166 | 0.0136 | 0.035 |
+| `aura_frames.get_custom_aura_filter` | 136 | 1.042 | 0.0077 | 0.015 |
+| `aura_frames.set_height_for_growth` | 9 | 0.580 | 0.0644 | 0.078 |
+
+Conclusion: The runtime config cache is a measured win for config-resolution
+overhead. Compared with the prior visible-ticker run, `get_setting` dropped from
+about 142.8 calls/sec to 90.7 calls/sec, and `is_timer_text_enabled` plus
+`uses_cooldown_icon_overlay` no longer appeared in the report. `update_auras`
+averaged 0.4533ms, lower than the prior 0.4968ms run and close to the earlier
+clean comparison point. Keep the cache, with colors still deferred to the
+separate color-cache review.
+
+### 2026-06-23, Aura Frames Only, Runtime Color Cache
+
+Context: 107.1s run with only `PROFILE_TARGETS.aura_frames = true`, after extending
+the frame-local runtime config cache to store copied scalar color components for
+bar color, bar background color, bar text color, and frame background color.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1467 | 573.636 | 0.3910 | 2.016 |
+| `aura_frames.tick_visible_icons` | 1002 | 277.317 | 0.2768 | 0.742 |
+| `aura_frames.render_aura_map` | 1467 | 263.963 | 0.1799 | 1.045 |
+| `aura_frames.unified_scan` | 141 | 88.470 | 0.6274 | 1.368 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 837 | 74.005 | 0.0884 | 0.530 |
+| `aura_frames.set_timer_text` | 15780 | 70.652 | 0.0045 | 0.188 |
+| `aura_frames.scan_custom_aura_map` | 126 | 60.534 | 0.4804 | 1.187 |
+| `aura_frames.get_frame_activity_state` | 6263 | 47.792 | 0.0076 | 0.113 |
+| `aura_frames.refresh_frame_ooc_fade` | 1467 | 24.867 | 0.0170 | 0.216 |
+| `aura_frames.is_runtime_enabled` | 2473 | 16.988 | 0.0069 | 0.186 |
+| `aura_frames.mark_aura_scan_dirty` | 1686 | 11.996 | 0.0071 | 0.208 |
+| `aura_frames.get_frame_config_db` | 6263 | 11.341 | 0.0018 | 0.107 |
+| `aura_frames.get_setting` | 5490 | 11.132 | 0.0020 | 0.032 |
+| `aura_frames.get_timer_behavior` | 1592 | 9.359 | 0.0059 | 0.128 |
+| `aura_frames.merge_aura_info` | 1665 | 9.258 | 0.0056 | 0.033 |
+| `aura_frames.normalize_timer_category` | 1592 | 4.355 | 0.0027 | 0.025 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1827 | 2.849 | 0.0016 | 0.081 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1686 | 2.469 | 0.0015 | 0.025 |
+| `aura_frames.refresh_visible_icon_ticker` | 1467 | 2.195 | 0.0015 | 0.021 |
+| `aura_frames.get_cdm_viewer_frame` | 916 | 2.138 | 0.0023 | 0.049 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 837 | 1.949 | 0.0023 | 0.150 |
+| `aura_frames.get_custom_aura_filter` | 126 | 0.869 | 0.0069 | 0.016 |
+| `aura_frames.update_blizz_cdm_visibility` | 37 | 0.508 | 0.0137 | 0.131 |
+| `aura_frames.get_custom_modifier_def` | 126 | 0.275 | 0.0022 | 0.010 |
+| `aura_frames.cdm_category_needs_viewer` | 13 | 0.265 | 0.0204 | 0.037 |
+
+Conclusion: Color scalar caching is a measured win. Compared with the prior
+runtime-config cache run, `get_setting` dropped from about 90.7 calls/sec to
+51.3 calls/sec, and `get_bar_bg_color` no longer appeared in the report.
+`update_auras` averaged 0.3910ms versus 0.4533ms in the prior run. Keep this
+candidate if a manual settings check confirms visible colors update immediately
+after picker changes.
+
 ### Template
 
 Context:

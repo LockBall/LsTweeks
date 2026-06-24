@@ -162,14 +162,24 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     -- Use frame-specific cfg_db for custom frames; fall back to global M.db for presets.
     local db = (self._cfg_db) or M.db
     local category = show_key:sub(6)
-    local frame_width = db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
-    local spacing = db[spacing_key] or db["spacing"] or 6
-    local growth = db["growth_"..category] or db["growth"] or "DOWN"
+    local runtime_config = self._runtime_config_cache
+    local frame_width = (runtime_config and runtime_config.frame_width) or db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
+    local spacing = (runtime_config and runtime_config.spacing) or db[spacing_key] or db["spacing"] or 6
+    local growth = (runtime_config and runtime_config.growth) or db["growth_"..category] or db["growth"] or "DOWN"
     local growth_layout = get_growth_layout(growth)
 
-    local show_timer_text = M.is_timer_text_enabled(db, category, db["timer"] ~= nil and "timer" or nil)
-    local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, db)
-    local layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
+    local show_timer_text = runtime_config and runtime_config.show_timer_text
+    if show_timer_text == nil then
+        show_timer_text = M.is_timer_text_enabled(db, category, db["timer"] ~= nil and "timer" or nil)
+    end
+    local cooldown_icon_overlay = runtime_config and runtime_config.cooldown_icon_overlay
+    if cooldown_icon_overlay == nil then
+        cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, db)
+    end
+    local layout_show_timer_text = runtime_config and runtime_config.layout_show_timer_text
+    if layout_show_timer_text == nil then
+        layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
+    end
     local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
     local bar_layout = M.get_bar_layout_params(timer_font_size)
     local timer_text_align = get_timer_text_alignment(category, self)

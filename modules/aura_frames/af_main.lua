@@ -554,6 +554,9 @@ end
 local function refresh_aura_frame_after_resize(frame)
     local params = frame.update_params
     if not params then return end
+    if M.invalidate_frame_runtime_config then
+        M.invalidate_frame_runtime_config(frame)
+    end
     M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
         params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
 end
@@ -942,6 +945,9 @@ local function rebind_existing_aura_frames()
         if frame and frame.update_params then
             bind_aura_frame_events(frame, frame.category)
             local p = frame.update_params
+            if M.invalidate_frame_runtime_config then
+                M.invalidate_frame_runtime_config(frame)
+            end
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end
@@ -1084,7 +1090,12 @@ local function refresh_frame_after_reset(frame)
     local p = frame.update_params
     if not p then return end
 
-    frame._layout_cache = nil
+    if M.invalidate_frame_runtime_config then
+        M.invalidate_frame_runtime_config(frame)
+    else
+        frame._layout_cache = nil
+        frame._runtime_config_cache = nil
+    end
 
     -- Re-link custom entry reference in case DB was replaced by reset.
     if frame.is_custom and frame.custom_entry then
