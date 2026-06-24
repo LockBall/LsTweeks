@@ -1,6 +1,6 @@
 -- Temporary whole-addon CPU profiler for in-game hotspot checks.
 -- Load from LsTweeks.toc after all normal addon files, then use:
---   /lstprofile start
+--   /lstprofile start aura
 --   /lstprofile report 30
 --   /lstprofile stop
 

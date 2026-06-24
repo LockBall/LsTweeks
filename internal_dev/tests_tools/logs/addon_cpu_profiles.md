@@ -13,7 +13,7 @@ that can taint Blizzard unit-frame execution when secret values are involved.
 1. Temporarily load `internal_dev/tests_tools/addon_cpu_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
-3. Run `/lstprofile start`.
+3. Run `/lstprofile reset`, then `/lstprofile start aura` for an Aura Frames-only run.
 4. Exercise normal gameplay and settings flows for 2-3 minutes:
    aura updates, CDM updates, Skyriding Vigor visibility, Sound Levels previews,
    Fishing Focus if relevant, and opening/changing addon settings.
@@ -781,6 +781,47 @@ map walk did not improve per call: `add_cooldown_viewer_category_entries`
 averaged 0.1007ms versus 0.0932ms in the clean follow-up, so further CDM work
 needs to target the map walk itself or reduce how often visible CDM frames need a
 full rebuild.
+
+### 2026-06-23, Aura Frames Only, Visible Ticker Return State
+
+Context: 60.3s run with only `PROFILE_TARGETS.aura_frames = true`, after changing
+`tick_visible_icons()` to return whether any visible icon still needs ticking so
+the ticker callback can avoid a second full `any_frame_needs_visible_icon_tick()`
+scan after each tick.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 927 | 460.546 | 0.4968 | 2.913 |
+| `aura_frames.render_aura_map` | 927 | 185.192 | 0.1998 | 1.213 |
+| `aura_frames.tick_visible_icons` | 549 | 184.989 | 0.3370 | 0.858 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 552 | 58.672 | 0.1063 | 0.505 |
+| `aura_frames.unified_scan` | 82 | 57.880 | 0.7059 | 1.880 |
+| `aura_frames.set_timer_text` | 10192 | 51.626 | 0.0051 | 0.196 |
+| `aura_frames.scan_custom_aura_map` | 75 | 44.583 | 0.5944 | 1.878 |
+| `aura_frames.get_frame_activity_state` | 3736 | 33.486 | 0.0090 | 0.292 |
+| `aura_frames.get_setting` | 8609 | 20.423 | 0.0024 | 0.706 |
+| `aura_frames.refresh_frame_ooc_fade` | 928 | 18.188 | 0.0196 | 0.278 |
+| `aura_frames.is_timer_text_enabled` | 927 | 12.426 | 0.0134 | 0.044 |
+| `aura_frames.is_runtime_enabled` | 1479 | 12.360 | 0.0084 | 0.108 |
+| `aura_frames.get_timer_behavior` | 1929 | 11.411 | 0.0059 | 0.046 |
+| `aura_frames.get_frame_config_db` | 3738 | 7.674 | 0.0021 | 0.032 |
+| `aura_frames.normalize_timer_category` | 2856 | 7.183 | 0.0025 | 0.038 |
+| `aura_frames.mark_aura_scan_dirty` | 894 | 7.026 | 0.0079 | 0.082 |
+| `aura_frames.get_bar_bg_color` | 927 | 6.672 | 0.0072 | 0.036 |
+| `aura_frames.merge_aura_info` | 882 | 5.430 | 0.0062 | 0.039 |
+| `aura_frames.uses_cooldown_icon_overlay` | 927 | 2.160 | 0.0023 | 0.104 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 976 | 1.705 | 0.0017 | 0.031 |
+| `aura_frames.get_cdm_viewer_frame` | 564 | 1.627 | 0.0029 | 0.035 |
+| `aura_frames.refresh_visible_icon_ticker` | 927 | 1.516 | 0.0016 | 0.015 |
+| `aura_frames.clear_custom_aura_scan_cache` | 894 | 1.358 | 0.0015 | 0.014 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 552 | 1.092 | 0.0020 | 0.022 |
+| `aura_frames.get_custom_aura_filter` | 75 | 0.596 | 0.0080 | 0.022 |
+
+Conclusion: The intended redundant eligibility scan was removed from the profile:
+`any_frame_needs_visible_icon_tick` no longer appears in the report, while
+`refresh_visible_icon_ticker` is only 1.516ms over 60.3s. The ticker's own per-call
+cost stayed in the same range, as expected, because the live timer/bar update work
+is unchanged.
 
 ### Template
 

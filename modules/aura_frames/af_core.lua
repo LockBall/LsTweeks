@@ -326,8 +326,7 @@ function M.ensure_visible_icon_ticker(needs_tick_known)
     if not needs_tick_known and not M.any_frame_needs_visible_icon_tick() then return end
 
     M._visible_icon_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_visible_icon_tick or M.UPDATE_INTERVALS.tenth_sec, function()
-        M.tick_visible_icons()
-        if not M.any_frame_needs_visible_icon_tick() then
+        if not M.tick_visible_icons() then
             M.stop_visible_icon_ticker()
         end
     end)
@@ -347,7 +346,7 @@ end
 function M.tick_visible_icons(now)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
-        return
+        return false
     end
 
     now = now or GetTime()
@@ -355,7 +354,8 @@ function M.tick_visible_icons(now)
     local short_threshold = (db and db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
     local frames_list = M.frames_list
-    if not frames_list then return end
+    if not frames_list then return false end
+    local needs_tick = false
     for frame_index = 1, #frames_list do
         local frame = frames_list[frame_index]
         if frame:IsVisible() then
@@ -436,10 +436,14 @@ function M.tick_visible_icons(now)
                             end
                         end
                     end
+                    if not needs_tick and aura_icon_needs_tick(obj, frame, now) then
+                        needs_tick = true
+                    end
                 end
             end
         end
     end
+    return needs_tick
 end
 
 --#endregion TIMER TICKER ======================================================
