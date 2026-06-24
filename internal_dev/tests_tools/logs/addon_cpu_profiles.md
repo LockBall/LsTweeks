@@ -573,6 +573,215 @@ fell from 0.2049ms to 0.1952ms in this run. The main render path remains a large
 cost, so the next render review should look for broader display-signature or
 redundant-work skips, then reprofile.
 
+### 2026-06-23, Aura Frames Only, Render Display Signature
+
+Context: 117.3s run with only `PROFILE_TARGETS.aura_frames = true`, after adding
+a conservative display-signature skip to `render_aura_map()`. NumyAddonProfiler
+reported `scriptProfile` enabled, so use this run for relative shape more than
+absolute timing.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 2215 | 1011.583 | 0.4567 | 3.454 |
+| `aura_frames.render_aura_map` | 2215 | 419.992 | 0.1896 | 2.023 |
+| `aura_frames.tick_visible_icons` | 1095 | 372.792 | 0.3404 | 1.253 |
+| `aura_frames.unified_scan` | 214 | 135.244 | 0.6320 | 1.606 |
+| `aura_frames.set_timer_text` | 24921 | 116.204 | 0.0047 | 0.267 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 1240 | 111.338 | 0.0898 | 0.610 |
+| `aura_frames.scan_custom_aura_map` | 195 | 103.253 | 0.5295 | 2.809 |
+| `aura_frames.get_frame_activity_state` | 9134 | 73.025 | 0.0080 | 0.229 |
+| `aura_frames.get_setting` | 20475 | 42.821 | 0.0021 | 0.217 |
+| `aura_frames.refresh_frame_ooc_fade` | 2215 | 37.564 | 0.0170 | 0.242 |
+| `aura_frames.is_timer_text_enabled` | 2215 | 26.305 | 0.0119 | 0.156 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 1095 | 24.128 | 0.0220 | 0.253 |
+| `aura_frames.get_timer_behavior` | 4625 | 23.978 | 0.0052 | 0.149 |
+| `aura_frames.is_runtime_enabled` | 3313 | 23.746 | 0.0072 | 0.443 |
+| `aura_frames.frame_needs_visible_icon_tick` | 2226 | 17.034 | 0.0077 | 0.233 |
+| `aura_frames.get_frame_config_db` | 9134 | 16.631 | 0.0018 | 0.074 |
+| `aura_frames.mark_aura_scan_dirty` | 2334 | 16.514 | 0.0071 | 0.173 |
+| `aura_frames.normalize_timer_category` | 6840 | 15.096 | 0.0022 | 0.068 |
+| `aura_frames.get_bar_bg_color` | 2215 | 14.977 | 0.0068 | 0.057 |
+| `aura_frames.merge_aura_info` | 2322 | 14.254 | 0.0061 | 0.185 |
+| `aura_frames.uses_cooldown_icon_overlay` | 2215 | 4.695 | 0.0021 | 0.118 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 2548 | 4.104 | 0.0016 | 0.080 |
+| `aura_frames.clear_custom_aura_scan_cache` | 2334 | 3.396 | 0.0015 | 0.030 |
+| `aura_frames.refresh_visible_icon_ticker` | 2215 | 3.277 | 0.0015 | 0.074 |
+| `aura_frames.get_cdm_viewer_frame` | 1252 | 2.935 | 0.0023 | 0.029 |
+
+Conclusion: The conservative display-signature skip did not produce a large
+step change. `render_aura_map` average improved modestly versus the previous
+render-cache run, from 0.1952ms to 0.1896ms, but the run also had external
+script profiling enabled and different activity pressure. Treat item 6 as a
+small measured win unless later in-game behavior shows stale icon visuals. The
+next higher-value target remains scan/map fill.
+
+### 2026-06-23, Aura Frames Only, Preset Bucket Direct Render
+
+Context: 84.7s run with only `PROFILE_TARGETS.aura_frames = true`, after changing
+preset static/short/long/debuff frames to render directly from scan-built category
+buckets when no test-preview mutation is needed. NumyAddonProfiler again reported
+`scriptProfile` enabled.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1523 | 728.070 | 0.4781 | 3.433 |
+| `aura_frames.render_aura_map` | 1523 | 310.403 | 0.2038 | 1.765 |
+| `aura_frames.tick_visible_icons` | 787 | 280.501 | 0.3564 | 0.985 |
+| `aura_frames.unified_scan` | 155 | 98.559 | 0.6359 | 1.730 |
+| `aura_frames.set_timer_text` | 18443 | 87.511 | 0.0047 | 0.494 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 828 | 74.643 | 0.0901 | 0.752 |
+| `aura_frames.scan_custom_aura_map` | 139 | 74.114 | 0.5332 | 2.634 |
+| `aura_frames.get_frame_activity_state` | 6427 | 52.192 | 0.0081 | 0.444 |
+| `aura_frames.get_setting` | 14050 | 29.516 | 0.0021 | 0.084 |
+| `aura_frames.refresh_frame_ooc_fade` | 1523 | 26.176 | 0.0172 | 0.113 |
+| `aura_frames.is_timer_text_enabled` | 1523 | 19.549 | 0.0128 | 0.406 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 787 | 18.241 | 0.0232 | 0.246 |
+| `aura_frames.get_timer_behavior` | 3185 | 17.882 | 0.0056 | 0.187 |
+| `aura_frames.is_runtime_enabled` | 2313 | 17.208 | 0.0074 | 0.101 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1638 | 12.737 | 0.0078 | 0.226 |
+| `aura_frames.get_frame_config_db` | 6427 | 11.632 | 0.0018 | 0.046 |
+| `aura_frames.normalize_timer_category` | 4708 | 11.434 | 0.0024 | 0.391 |
+| `aura_frames.mark_aura_scan_dirty` | 1659 | 11.392 | 0.0069 | 0.062 |
+| `aura_frames.get_bar_bg_color` | 1523 | 10.284 | 0.0068 | 0.049 |
+| `aura_frames.merge_aura_info` | 1647 | 9.799 | 0.0059 | 0.292 |
+| `aura_frames.uses_cooldown_icon_overlay` | 1523 | 3.083 | 0.0020 | 0.035 |
+| `aura_frames.refresh_visible_icon_ticker` | 1523 | 2.712 | 0.0018 | 0.202 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1814 | 2.690 | 0.0015 | 0.014 |
+| `aura_frames.clear_custom_aura_scan_cache` | 1659 | 2.320 | 0.0014 | 0.011 |
+| `aura_frames.get_cdm_viewer_frame` | 864 | 2.154 | 0.0025 | 0.031 |
+
+Conclusion: This broad Aura-only profile did not show a clear improvement from
+direct bucket rendering. `update_auras` and `render_aura_map` averages were higher
+than the previous display-signature run, but activity pressure and `scriptProfile`
+make the comparison noisy. The likely issue is that this profile does not isolate
+the scan/map-fill sub-step, and preset test-preview paths may prevent the direct
+bucket fast path for frames with previews enabled. Revisit item 7 with targeted
+sub-step labels or a narrower profile before marking it complete.
+
+### 2026-06-23, Aura Frames Only, Scan/Map Sub-Steps
+
+Context: 64.9s run with only `PROFILE_TARGETS.aura_frames = true`, plus temporary
+sub-step labels around Aura Frames scan/map fill branches. No test auras were
+enabled. NumyAddonProfiler again reported `scriptProfile` enabled.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1117 | 512.267 | 0.4586 | 6.247 |
+| `aura_frames.render_aura_map` | 1117 | 208.738 | 0.1869 | 1.098 |
+| `aura_frames.tick_visible_icons` | 607 | 189.438 | 0.3121 | 0.810 |
+| `aura_frames.update_auras.scan_shared` | 106 | 66.846 | 0.6306 | 5.180 |
+| `aura_frames.unified_scan` | 106 | 66.280 | 0.6253 | 5.169 |
+| `aura_frames.update_auras.map_cdm` | 632 | 61.866 | 0.0979 | 0.615 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 632 | 59.387 | 0.0940 | 0.606 |
+| `aura_frames.set_timer_text` | 11599 | 55.397 | 0.0048 | 0.198 |
+| `aura_frames.update_auras.map_custom` | 97 | 49.982 | 0.5153 | 1.366 |
+| `aura_frames.scan_custom_aura_map` | 97 | 49.357 | 0.5088 | 1.354 |
+| `aura_frames.get_frame_activity_state` | 4648 | 39.909 | 0.0086 | 1.231 |
+| `aura_frames.get_setting` | 10333 | 21.758 | 0.0021 | 0.082 |
+| `aura_frames.refresh_frame_ooc_fade` | 1117 | 19.512 | 0.0175 | 0.206 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 607 | 14.530 | 0.0239 | 0.107 |
+| `aura_frames.is_timer_text_enabled` | 1117 | 13.790 | 0.0123 | 0.067 |
+| `aura_frames.is_runtime_enabled` | 1727 | 13.302 | 0.0077 | 0.104 |
+| `aura_frames.get_timer_behavior` | 2331 | 12.801 | 0.0055 | 0.062 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1296 | 10.430 | 0.0080 | 0.076 |
+| `aura_frames.get_frame_config_db` | 4648 | 8.721 | 0.0019 | 0.034 |
+| `aura_frames.mark_aura_scan_dirty` | 1146 | 8.156 | 0.0071 | 0.106 |
+| `aura_frames.normalize_timer_category` | 3448 | 7.894 | 0.0023 | 0.035 |
+| `aura_frames.get_bar_bg_color` | 1117 | 7.525 | 0.0067 | 0.076 |
+| `aura_frames.merge_aura_info` | 1134 | 7.201 | 0.0064 | 0.442 |
+
+Conclusion: The direct preset-bucket path is not the meaningful scan/map cost:
+`map_preset_bucket`, `map_preset_copy`, `preview_copy`, and `preview_append` were
+below the report cutoff. Scan/map cost is dominated by `unified_scan`,
+`add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`. Keep the
+direct-bucket cleanup because it is safe and removes avoidable work, but future
+CPU work should target custom scan reuse or CDM/custom routing rather than preset
+bucket copying.
+
+### 2026-06-23, Aura Frames Only, Clean Follow-Up
+
+Context: 88.1s run with only `PROFILE_TARGETS.aura_frames = true`, after removing
+the external addon condition that caused the NumyAddonProfiler `scriptProfile`
+warning. No temporary scan/map sub-step labels were active in this run.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 1250 | 566.765 | 0.4534 | 2.912 |
+| `aura_frames.tick_visible_icons` | 821 | 224.691 | 0.2737 | 1.329 |
+| `aura_frames.render_aura_map` | 1250 | 221.207 | 0.1770 | 1.407 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 840 | 78.268 | 0.0932 | 0.675 |
+| `aura_frames.unified_scan` | 104 | 65.535 | 0.6301 | 1.768 |
+| `aura_frames.set_timer_text` | 9882 | 63.937 | 0.0065 | 1.133 |
+| `aura_frames.scan_custom_aura_map` | 82 | 35.919 | 0.4380 | 1.103 |
+| `aura_frames.get_frame_activity_state` | 4169 | 33.741 | 0.0081 | 0.162 |
+| `aura_frames.refresh_frame_ooc_fade` | 1250 | 26.945 | 0.0216 | 0.238 |
+| `aura_frames.get_setting` | 11716 | 25.863 | 0.0022 | 0.459 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 821 | 19.501 | 0.0238 | 0.284 |
+| `aura_frames.is_runtime_enabled` | 2129 | 16.836 | 0.0079 | 0.216 |
+| `aura_frames.is_timer_text_enabled` | 1250 | 16.506 | 0.0132 | 0.692 |
+| `aura_frames.get_timer_behavior` | 2576 | 14.914 | 0.0058 | 0.679 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 840 | 14.877 | 0.0177 | 2.187 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1938 | 13.456 | 0.0069 | 0.148 |
+| `aura_frames.update_blizz_cdm_visibility` | 608 | 9.887 | 0.0163 | 2.152 |
+| `aura_frames.normalize_timer_category` | 3826 | 8.948 | 0.0023 | 0.080 |
+| `aura_frames.get_bar_bg_color` | 1250 | 8.928 | 0.0071 | 0.466 |
+| `aura_frames.get_frame_config_db` | 4169 | 7.722 | 0.0019 | 0.156 |
+| `aura_frames.mark_aura_scan_dirty` | 978 | 7.137 | 0.0073 | 0.107 |
+| `aura_frames.merge_aura_info` | 873 | 5.044 | 0.0058 | 0.024 |
+| `aura_frames.get_cdm_viewer_frame` | 2200 | 4.575 | 0.0021 | 0.160 |
+| `aura_frames.cdm_category_needs_viewer` | 232 | 4.373 | 0.0188 | 0.044 |
+| `aura_frames.update_all_blizz_cdm_visibility` | 58 | 3.784 | 0.0652 | 0.116 |
+
+Conclusion: This is the cleaner post-item-7 comparison point. `render_aura_map`
+averaged 0.1770ms, lower than the prior render-cache and display-signature runs,
+while `update_auras` averaged 0.4534ms. The direct preset-bucket change still
+does not show as an isolated CPU win; the next meaningful review target should be
+CDM/custom scan-map work or trigger-specific refresh routing.
+
+### 2026-06-23, Aura Frames Only, Category-Scoped CDM Hook Refresh
+
+Context: 61.1s run with only `PROFILE_TARGETS.aura_frames = true`, after changing
+hook-driven CDM refreshes to carry the child viewer category and refresh only that
+category when known. Startup, settings, and combat-entry refreshes still use the
+broad pass.
+
+| Metric | Calls | Total ms | Avg ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| `aura_frames.update_auras` | 998 | 495.116 | 0.4961 | 4.651 |
+| `aura_frames.render_aura_map` | 998 | 198.474 | 0.1989 | 1.674 |
+| `aura_frames.tick_visible_icons` | 555 | 182.413 | 0.3287 | 1.733 |
+| `aura_frames.unified_scan` | 92 | 65.234 | 0.7091 | 1.226 |
+| `aura_frames.add_cooldown_viewer_category_entries` | 593 | 59.733 | 0.1007 | 0.474 |
+| `aura_frames.set_timer_text` | 10226 | 52.584 | 0.0051 | 0.226 |
+| `aura_frames.scan_custom_aura_map` | 81 | 45.905 | 0.5667 | 1.169 |
+| `aura_frames.get_frame_activity_state` | 3969 | 35.259 | 0.0089 | 0.210 |
+| `aura_frames.get_setting` | 9265 | 20.872 | 0.0023 | 0.057 |
+| `aura_frames.refresh_frame_ooc_fade` | 998 | 19.611 | 0.0196 | 0.201 |
+| `aura_frames.is_timer_text_enabled` | 998 | 15.944 | 0.0160 | 2.626 |
+| `aura_frames.is_runtime_enabled` | 1557 | 13.577 | 0.0087 | 1.392 |
+| `aura_frames.any_frame_needs_visible_icon_tick` | 555 | 13.042 | 0.0235 | 0.211 |
+| `aura_frames.get_timer_behavior` | 2077 | 12.182 | 0.0059 | 0.104 |
+| `aura_frames.normalize_timer_category` | 3075 | 10.075 | 0.0033 | 2.593 |
+| `aura_frames.frame_needs_visible_icon_tick` | 1110 | 9.396 | 0.0085 | 0.188 |
+| `aura_frames.get_frame_config_db` | 3969 | 8.047 | 0.0020 | 0.100 |
+| `aura_frames.get_bar_bg_color` | 998 | 7.961 | 0.0080 | 0.281 |
+| `aura_frames.mark_aura_scan_dirty` | 993 | 7.914 | 0.0080 | 0.306 |
+| `aura_frames.merge_aura_info` | 972 | 6.287 | 0.0065 | 0.231 |
+| `aura_frames.prepare_blizz_cdm_viewer` | 593 | 2.521 | 0.0043 | 0.204 |
+| `aura_frames.uses_cooldown_icon_overlay` | 998 | 2.230 | 0.0022 | 0.020 |
+| `aura_frames.clear_sorted_aura_ids_cache` | 1085 | 1.817 | 0.0017 | 0.016 |
+| `aura_frames.get_cdm_viewer_frame` | 744 | 1.767 | 0.0024 | 0.026 |
+| `aura_frames.clear_custom_aura_scan_cache` | 993 | 1.580 | 0.0016 | 0.012 |
+
+Conclusion: Category-scoped hook refresh is a low-risk routing cleanup with a
+small measured support-cost win. Compared with the clean follow-up run,
+`prepare_blizz_cdm_viewer` dropped from 14.877ms over 88.1s to 2.521ms over
+61.1s, and `get_cdm_viewer_frame` dropped from 4.575ms to 1.767ms. The core CDM
+map walk did not improve per call: `add_cooldown_viewer_category_entries`
+averaged 0.1007ms versus 0.0932ms in the clean follow-up, so further CDM work
+needs to target the map walk itself or reduce how often visible CDM frames need a
+full rebuild.
+
 ### Template
 
 Context:

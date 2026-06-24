@@ -175,7 +175,7 @@ function M.apply_number_font_to_all()
     end
 end
 
-local function run_wow_cooldown_refresh(refresh_config)
+local function run_wow_cooldown_refresh(refresh_config, category_filter)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if not M.frames then return end
 
@@ -191,25 +191,27 @@ local function run_wow_cooldown_refresh(refresh_config)
     local should_clear_child_cache = refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache
 
     for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
-        local needs_viewer = M.cdm_category_needs_viewer(category)
-        if should_prepare_viewers and needs_viewer then
-            M.prepare_blizz_cdm_viewer(category)
-        end
+        if not category_filter or category == category_filter then
+            local needs_viewer = M.cdm_category_needs_viewer(category)
+            if should_prepare_viewers and needs_viewer then
+                M.prepare_blizz_cdm_viewer(category)
+            end
 
-        if should_clear_child_cache and needs_viewer then
-            M.clear_cooldown_viewer_child_cache(category)
-        end
+            if should_clear_child_cache and needs_viewer then
+                M.clear_cooldown_viewer_child_cache(category)
+            end
 
-        local show_key = M.get_preset_keys(category).show_key
-        local frame = M.frames[show_key]
-        local p = frame and frame.update_params
-        if p and (needs_viewer or frame:IsShown()) then
-            M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+            local show_key = M.get_preset_keys(category).show_key
+            local frame = M.frames[show_key]
+            local p = frame and frame.update_params
+            if p and (needs_viewer or frame:IsShown()) then
+                M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
+            end
         end
     end
 end
 
-local function schedule_wow_cooldown_refresh(delay, refresh_config)
+local function schedule_wow_cooldown_refresh(delay, refresh_config, category_filter)
     delay = delay or 0
     M._cdm_refresh_pending = M._cdm_refresh_pending or {}
     local key = tostring(delay)
@@ -217,11 +219,12 @@ local function schedule_wow_cooldown_refresh(delay, refresh_config)
         .. "|" .. tostring(refresh_config.clear_child_cache == true)
         .. "|" .. tostring(refresh_config.defer_zero == true)
         .. "|" .. tostring(refresh_config.mark_scan_dirty == true)
+        .. "|" .. tostring(category_filter or "")
     if M._cdm_refresh_pending[key] then return end
 
     local function refresh()
         M._cdm_refresh_pending[key] = nil
-        run_wow_cooldown_refresh(refresh_config)
+        run_wow_cooldown_refresh(refresh_config, category_filter)
     end
 
     M._cdm_refresh_pending[key] = true
@@ -232,13 +235,16 @@ local function schedule_wow_cooldown_refresh(delay, refresh_config)
     end
 end
 
-function M.queue_wow_cooldown_refresh(profile)
+function M.queue_wow_cooldown_refresh(profile, category_filter)
     local refresh_config = type(profile) == "table" and profile
         or WOW_COOLDOWN_REFRESH_PROFILES[profile or "immediate"]
         or WOW_COOLDOWN_REFRESH_PROFILES.immediate
+    if category_filter and not (M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category_filter]) then
+        category_filter = nil
+    end
     local delays = refresh_config.delays or { refresh_config.delay or 0 }
     for _, delay in ipairs(delays) do
-        schedule_wow_cooldown_refresh(delay, refresh_config)
+        schedule_wow_cooldown_refresh(delay, refresh_config, category_filter)
     end
 end
 

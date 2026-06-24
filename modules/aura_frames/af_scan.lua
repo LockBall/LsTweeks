@@ -439,8 +439,8 @@ function M.clear_cooldown_viewer_child_cache(category)
     end
 end
 
-local function queue_cooldown_viewer_refresh()
-    M.queue_wow_cooldown_refresh("hook")
+local function queue_cooldown_viewer_refresh(category)
+    M.queue_wow_cooldown_refresh("hook", category)
 end
 
 -- Lazily attaches hooks to a CooldownViewer child frame on first encounter.
@@ -527,7 +527,7 @@ local function hook_cd_item_frame(child)
             name = state.name,
             icon = state.icon,
         }
-        queue_cooldown_viewer_refresh()
+        queue_cooldown_viewer_refresh(get_cd_child_state(child).category)
     end
 
     -- Standard cooldown path: arguments are passed by Blizzard code, so read
@@ -575,7 +575,7 @@ local function install_cooldown_viewer_item_hooks()
             state.icon = nil
         end
         hook_cd_item_frame(child)
-        queue_cooldown_viewer_refresh()
+        queue_cooldown_viewer_refresh(state.category)
     end
 
     if CooldownViewerItemDataMixin.SetCooldownID then
@@ -586,7 +586,7 @@ local function install_cooldown_viewer_item_hooks()
         pcall(hooksecurefunc, CooldownViewerItemDataMixin, "ClearCooldownID", function(child)
             local state = get_cd_child_state(child)
             state.cooldown_id = nil
-            queue_cooldown_viewer_refresh()
+            queue_cooldown_viewer_refresh(state.category)
         end)
     end
 end
@@ -617,8 +617,9 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             if left and top and not issecretvalue(left) and not issecretvalue(top) then
                 cdm_order = (top * -10000) + left
             end
-            hook_cd_item_frame(child)
             local state = get_cd_child_state(child)
+            state.category = category
+            hook_cd_item_frame(child)
 
             local iid = get_child_aura_instance_id(child)
             local has_active_aura_entry = false
@@ -725,6 +726,8 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
     else
         local children = copy_viewer_children(viewer)
         for _, child in ipairs(children) do
+            local state = get_cd_child_state(child)
+            state.category = category
             local iid = get_child_aura_instance_id(child)
             if iid then
                 local entry = M._aura_map[iid]

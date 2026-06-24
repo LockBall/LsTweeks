@@ -693,8 +693,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         M.prepare_blizz_cdm_viewer(category)
     end
 
-    if not self._aura_map then self._aura_map = {} end
-
     -- Run the unified scan once per dirty event batch, then let the other
     -- preset frames in the same deferred batch reuse M._aura_map.
     if activity.needs_shared_scan and M._aura_scan_dirty then
@@ -702,24 +700,36 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         M._aura_scan_dirty = false
     end
 
-    -- Filter the shared map into this frame's per-frame map.
-    wipe(self._aura_map)
+    local render_map
     if activity.needs_custom_scan then
+        if not self._aura_map then self._aura_map = {} end
+        wipe(self._aura_map)
         M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
+        render_map = self._aura_map
     else
         if activity.needs_cdm_scan then
+            if not self._aura_map then self._aura_map = {} end
+            wipe(self._aura_map)
             M.add_cooldown_viewer_category_entries(self._aura_map, category)
+            render_map = self._aura_map
         else
             -- Preset frame: use the scan-built bucket when available.
             local category_bucket = M._aura_maps_by_category and M._aura_maps_by_category[category]
-            if category_bucket then
-                for iid, entry in pairs(category_bucket) do
-                    self._aura_map[iid] = entry
-                end
+            if category_bucket and not preview_enabled then
+                render_map = category_bucket
             else
-                for iid, entry in pairs(M._aura_map) do
-                    if entry.category == category then
+                if not self._aura_map then self._aura_map = {} end
+                wipe(self._aura_map)
+                render_map = self._aura_map
+                if category_bucket then
+                    for iid, entry in pairs(category_bucket) do
                         self._aura_map[iid] = entry
+                    end
+                else
+                    for iid, entry in pairs(M._aura_map) do
+                        if entry.category == category then
+                            self._aura_map[iid] = entry
+                        end
                     end
                 end
             end
@@ -729,13 +739,23 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     M.refresh_frame_ooc_fade(self, activity, cfg_db)
 
     if preview_enabled then
-        M.append_test_aura(self._aura_map, show_key, aura_filter, short_threshold)
-    else
+        if render_map ~= self._aura_map then
+            if not self._aura_map then self._aura_map = {} end
+            wipe(self._aura_map)
+            if render_map then
+                for iid, entry in pairs(render_map) do
+                    self._aura_map[iid] = entry
+                end
+            end
+            render_map = self._aura_map
+        end
+        M.append_test_aura(render_map, show_key, aura_filter, short_threshold)
+    elseif render_map == self._aura_map then
         self._aura_map["__test_preview__"] = nil
     end
 
     local display_count = M.render_aura_map(
-        self, self._aura_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
+        self, render_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
 
     if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end

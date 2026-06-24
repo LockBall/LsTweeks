@@ -14,6 +14,7 @@ local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local format        = format
 local table_sort    = table.sort
+local table_concat  = table.concat
 local wipe          = wipe
 local SORT_RULE_DEFAULT    = Enum.UnitAuraSortRule.Default
 local SORT_RULE_EXPIRATION = Enum.UnitAuraSortRule.ExpirationOnly
@@ -31,6 +32,7 @@ local _scratch_list      = {}
 local _scratch_seen      = {}
 local _scratch_seen_keys = {}
 local _scratch_timer_behaviors = {}
+local _scratch_render_signature = {}
 local _sorted_aura_ids_cache = {}
 
 function M.clear_sorted_aura_ids_cache()
@@ -339,6 +341,86 @@ local function resolve_stack_text(entry, live_count)
     -- Secret live_count is safe to display, but we cannot compare it.
     -- Preserve combat behavior by showing it only when no safe fallback exists.
     return live_count
+end
+
+local function append_signature_value(parts, value)
+    if value ~= nil and issecretvalue(value) then
+        return false
+    end
+    parts[#parts + 1] = tostring(value or "")
+    return true
+end
+
+local function build_display_signature(
+    frame,
+    list,
+    display_count,
+    bar_mode,
+    color,
+    bar_bg_color,
+    bar_text_color,
+    max_limit,
+    sort_mode,
+    show_render_timer_text,
+    show_timer_swipe,
+    show_cooldown_overlay,
+    tooltip_enabled
+)
+    local parts = _scratch_render_signature
+    wipe(parts)
+
+    parts[#parts + 1] = frame.category or ""
+    parts[#parts + 1] = frame.is_custom and "custom" or "preset"
+    parts[#parts + 1] = bar_mode and "bar" or "icon"
+    parts[#parts + 1] = show_render_timer_text and "timer" or "notimer"
+    parts[#parts + 1] = show_timer_swipe and "swipe" or "noswipe"
+    parts[#parts + 1] = show_cooldown_overlay and "overlay" or "nooverlay"
+    parts[#parts + 1] = tooltip_enabled and "tooltip" or "notooltip"
+    parts[#parts + 1] = tostring(max_limit or "")
+    parts[#parts + 1] = sort_mode or ""
+    parts[#parts + 1] = tostring(display_count)
+
+    if not append_signature_value(parts, color and color.r) then return nil end
+    if not append_signature_value(parts, color and color.g) then return nil end
+    if not append_signature_value(parts, color and color.b) then return nil end
+    if not append_signature_value(parts, color and color.a) then return nil end
+    if not append_signature_value(parts, bar_bg_color and bar_bg_color.r) then return nil end
+    if not append_signature_value(parts, bar_bg_color and bar_bg_color.g) then return nil end
+    if not append_signature_value(parts, bar_bg_color and bar_bg_color.b) then return nil end
+    if not append_signature_value(parts, bar_bg_color and bar_bg_color.a) then return nil end
+    if not append_signature_value(parts, bar_text_color and bar_text_color.r) then return nil end
+    if not append_signature_value(parts, bar_text_color and bar_text_color.g) then return nil end
+    if not append_signature_value(parts, bar_text_color and bar_text_color.b) then return nil end
+
+    for i = 1, display_count do
+        local entry = list[i]
+        if not entry or entry.is_test_preview or entry.scan_remaining ~= nil then return nil end
+
+        local is_spell_cooldown = entry.is_spell_cooldown == true
+        local has_stable_timing = is_spell_cooldown
+            or frame.category == "static"
+            or (entry.expiration ~= nil and not issecretvalue(entry.expiration))
+        if not has_stable_timing then return nil end
+
+        parts[#parts + 1] = "#"
+        if not append_signature_value(parts, entry.instance_id) then return nil end
+        if not append_signature_value(parts, entry.category) then return nil end
+        if not append_signature_value(parts, entry.spell_id) then return nil end
+        if not append_signature_value(parts, entry.name) then return nil end
+        if not append_signature_value(parts, entry.icon) then return nil end
+        if not append_signature_value(parts, entry.count) then return nil end
+        if not append_signature_value(parts, entry.live_count) then return nil end
+        if not append_signature_value(parts, entry.duration) then return nil end
+        if not append_signature_value(parts, entry.expiration) then return nil end
+        if not append_signature_value(parts, entry.cdm_order) then return nil end
+        if not append_signature_value(parts, entry.custom_order) then return nil end
+        if not append_signature_value(parts, entry.order_key) then return nil end
+        if not append_signature_value(parts, entry.grey_cooldown) then return nil end
+        if not append_signature_value(parts, entry.duration_object) then return nil end
+        parts[#parts + 1] = is_spell_cooldown and "spellcd" or "aura"
+    end
+
+    return table_concat(parts, "|")
 end
 
 local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, timer_behavior, tooltip_enabled)
@@ -732,6 +814,26 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local frame_timer_category = self.category
     local frame_timer_behavior = (not self.is_custom) and M.get_timer_behavior(frame_timer_category) or nil
     local timer_behaviors = nil
+    local display_signature = build_display_signature(
+        self,
+        list,
+        display_count,
+        bar_mode,
+        color,
+        bar_bg_color,
+        bar_text_color,
+        max_limit,
+        sort_mode,
+        show_render_timer_text,
+        show_timer_swipe,
+        show_cooldown_overlay,
+        tooltip_enabled
+    )
+    if display_signature and self._render_display_signature == display_signature then
+        self._display_count = display_count
+        return display_count
+    end
+    self._render_display_signature = display_signature
 
     if self.is_custom then
         timer_behaviors = _scratch_timer_behaviors
