@@ -29,6 +29,8 @@ Important `skyriding_vigor` keys:
 
 - `style_layouts.<style>.node_color`: per-node-style frame color override used by the Node Color dropdown. Storm Race currently supports Blizzard frame atlas colors `bronze`, `dark`, `gold`, and `silver`; fill remains shared/tinted separately.
 
+- The Node Color dropdown intentionally omits a selectable `default` option. When the selected node style is `default`, the dropdown is disabled and may display the first visible option, `Bronze (Default)`, while `sv_styles.lua` still resolves the actual `default` atlas key.
+
 - `style_layouts.<style>.fill_color`: per-node-style fill tint color used by the Fill Color picker.
 
 - `style_layouts.<style>.fill_add_alpha`: per-node-style alpha for the additive duplicate fill layer used by the Fill Brightness slider. Default is `0.5`; range is `0.00-1.00`.
@@ -38,6 +40,8 @@ Important `skyriding_vigor` keys:
 - `decor_style`: separate atlas style key for the end decorations. Defaults to `default`; `disabled` keeps the default decor footprint but sets the decor frame alpha to 0 so node positions stay stationary when toggling end-decor visibility; `storm_race` uses `dragonriding_sgvigor_decor_bronze`.
 
 - `decor_layouts.<decor_style>.decor_color`: per-end-decoration-style atlas color override used by the Decor Color dropdown. Storm Race currently supports Blizzard decor atlas colors `bronze`, `dark`, `gold`, and `silver`.
+
+- The Decor Color dropdown intentionally omits a selectable `default` option. When the selected end decor style is `default`, the dropdown is disabled and may display `Bronze (Default)`, while `sv_styles.lua` still resolves the actual `default` atlas key.
 
 - `decor_layouts.<decor_style>.decor_node_gap_x`, `.offset_y`, and `.scale`: per-end-decoration-style X/Y/scale UI overrides. Missing values initialize from `DECOR_STYLES`.
 
@@ -52,6 +56,8 @@ Important `skyriding_vigor` keys:
 - The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
 
 - `sv_settings.lua` is old/gone. The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns both control construction and `M.sync_settings_controls()` / related control-sync helpers.
+
+- `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
 
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
 
@@ -85,11 +91,13 @@ Important `skyriding_vigor` keys:
 
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES` in `sv_styles.lua`.
 
-- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Runtime draws the spark above the fill layer but below the frame cover, with a slot-local clipped spark frame sized to the fill box plus per-style `spark_clip_inset_x/y` so texture overflow is hidden without rescaling the spark. `spark_size` remains a thickness multiplier. Default-style spark placement still needs style-specific in-game tuning for offsets, color strength, clip insets, and slider max, but avoid broad height clamps that ignore atlas dimensions and fill-edge math.
+- Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Runtime draws the spark above the fill layer but below the frame cover, with a slot-local clipped spark frame sized to the fill box plus per-style `spark_clip_inset_x/y` so texture overflow is hidden without rescaling the spark. `spark_size` remains a thickness multiplier. In-game use on 2026-06-25 found current spark placement working well; avoid broad height clamps that ignore atlas dimensions and fill-edge math unless a new concrete visual issue appears.
 
 - For visual tuning, `BAR_STYLES.<style>.background_above_frame = true` draws that style's background above the node frame so background size/offset are easier to inspect. Keep it `false` for normal presentation.
 
 - Skyriding Vigor end-decoration placement uses per-style defaults in `DECOR_STYLES` in `sv_styles.lua` (`decor_node_gap_x`, `offset_y`, `scale`, `scale_x`, `scale_y`, `decor_color`), with saved user X/Y/scale/color overrides under `db.decor_layouts`. X/Y no longer use shared `WING_LAYOUT` fallback values.
+
+- End Decor `disabled` is intentionally implemented as a decor style that preserves the default decor footprint and hides via alpha. In-game behavior was reviewed on 2026-06-25 and appeared correct; do not replace it with a separate visibility flag without a concrete layout mismatch.
 
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
 

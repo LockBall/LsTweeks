@@ -136,8 +136,6 @@ local function create_control_panel(parent)
     return addon.CreateControlPanel(parent)
 end
 
-local center_grid_control
-
 local function size_panel_to_controls(panel, cfg, ...)
     local max_width = 0
     local total_height = 0
@@ -165,49 +163,15 @@ local function sync_race_profile_panel_size()
         controls.race_profile_container,
         controls.race_profile_test_button
     )
-    center_grid_control(controls.race_profile_panel, M.controls_parent, CONTROL_GRID.race_profile_panel)
+    if M.settings_grid then
+        M.settings_grid:center(controls.race_profile_panel, CONTROL_GRID.race_profile_panel)
+    end
 end
 
-local function set_grid_point(frame, parent, placement, col_step_x, row_step_y, cfg)
+local function place_grid_control(frame, placement)
     if M.settings_grid then
-        local place_opts = {
-            align = placement.center and "center" or placement.align,
-            y_offset = placement.y,
-            width = placement.width,
-        }
-        M.settings_grid:place_at(frame, placement.row, placement.col, nil, place_opts)
-        return
+        M.settings_grid:place(frame, placement)
     end
-
-    addon.SetGridPoint(frame, parent, placement, {
-        origin_x = cfg.title_offset_x,
-        origin_y = cfg.title_offset_y,
-        column_width = cfg.slider_width,
-        col_step_x = col_step_x,
-        row_step_y = row_step_y,
-    })
-end
-
-center_grid_control = function(frame, parent, placement)
-    if not frame or not parent or not placement then return end
-    if M.settings_grid then
-        placement.width = frame:GetWidth()
-        M.settings_grid:place_at(frame, placement.row, placement.col, nil, {
-            align = placement.center and "center" or placement.align,
-            y_offset = placement.y,
-            width = placement.width,
-        })
-        return
-    end
-
-    addon.CenterGridControl(frame, parent, placement, {
-        origin_x = UI_CONFIG.title_offset_x,
-        origin_y = UI_CONFIG.title_offset_y,
-        column_width = UI_CONFIG.slider_width,
-        column_gap_x = UI_CONFIG.slider_gap_x,
-        row_height = UI_CONFIG.slider_row_height,
-        row_gap_y = UI_CONFIG.slider_row_gap_y,
-    })
 end
 
 local function get_separator_y(row, cfg)
@@ -256,14 +220,7 @@ function M.sync_fill_test_button()
     if button and button.SetTextToFit then
         CONTROL_GRID.fill_test.width = button:SetTextToFit(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
         if M.controls_parent then
-            set_grid_point(
-                button,
-                M.controls_parent,
-                CONTROL_GRID.fill_test,
-                UI_CONFIG.slider_width + UI_CONFIG.slider_gap_x,
-                UI_CONFIG.slider_row_height + UI_CONFIG.slider_row_gap_y,
-                UI_CONFIG
-            )
+            place_grid_control(button, CONTROL_GRID.fill_test)
         end
     end
 end
@@ -532,8 +489,6 @@ function M.BuildSettings(parent)
     local fade_length_spec = get_spec("fade_length")
     local progress_update_hz_spec = get_spec("progress_update_hz")
     local spark_size_spec = get_spec("spark_size")
-    local col_step_x = cfg.slider_width + cfg.slider_gap_x
-    local row_step_y = cfg.slider_row_height + cfg.slider_row_gap_y
     local active_profile_proxy = setmetatable({}, {
         __index = function(_, key)
             local active_db = M.get_db and M.get_db()
@@ -563,21 +518,21 @@ function M.BuildSettings(parent)
         M.set_db_value("enabled", is_checked)
     end)
     M.controls.enabled = enabled_cb
-    set_grid_point(enabled_container, parent, CONTROL_GRID.enabled, col_step_x, row_step_y, cfg)
+    place_grid_control(enabled_container, CONTROL_GRID.enabled)
 
     local skyriding_talents_button = addon.CreateTextButton(parent, STRINGS.skyriding_talents, open_skyriding_talents, {
         height = cfg.button_height,
         padding_x = cfg.button_padding_x,
     })
     CONTROL_GRID.skyriding_talents.width = skyriding_talents_button:GetWidth()
-    set_grid_point(skyriding_talents_button, parent, CONTROL_GRID.skyriding_talents, col_step_x, row_step_y, cfg)
+    place_grid_control(skyriding_talents_button, CONTROL_GRID.skyriding_talents)
     M.controls.skyriding_talents_button = skyriding_talents_button
 
     local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
         M.set_db_value("move_mode", is_checked)
     end)
     M.controls.move_mode = move_cb
-    set_grid_point(move_container, parent, CONTROL_GRID.move_mode, col_step_x, row_step_y, cfg)
+    place_grid_control(move_container, CONTROL_GRID.move_mode)
 
     local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
         M.set_snap_to_grid(is_checked)
@@ -617,7 +572,7 @@ function M.BuildSettings(parent)
         padding_x = cfg.button_padding_x,
     })
     CONTROL_GRID.fill_test.width = fill_test_button:GetWidth()
-    set_grid_point(fill_test_button, parent, CONTROL_GRID.fill_test, col_step_x, row_step_y, cfg)
+    place_grid_control(fill_test_button, CONTROL_GRID.fill_test)
     M.controls.fill_test_button = fill_test_button
 
     local style_dropdown = addon.CreateDropdown(
@@ -629,7 +584,8 @@ function M.BuildSettings(parent)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                return db and db.style or defaults.style or M.BAR_STYLE_DEFAULT
+                local active_db = M.get_db and M.get_db()
+                return active_db and active_db.style or defaults.style or M.BAR_STYLE_DEFAULT
             end,
             on_select = function(value)
                 M.set_db_value("style", value)
@@ -638,7 +594,7 @@ function M.BuildSettings(parent)
     )
     M.controls.style = style_dropdown
     CONTROL_GRID.style.width = style_dropdown:GetWidth()
-    set_grid_point(style_dropdown, parent, CONTROL_GRID.style, col_step_x, row_step_y, cfg)
+    place_grid_control(style_dropdown, CONTROL_GRID.style)
 
     local node_color_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorNodeColor",
@@ -658,7 +614,7 @@ function M.BuildSettings(parent)
     )
     M.controls.node_color = node_color_dropdown
     CONTROL_GRID.node_color.width = node_color_dropdown:GetWidth()
-    set_grid_point(node_color_dropdown, parent, CONTROL_GRID.node_color, col_step_x, row_step_y, cfg)
+    place_grid_control(node_color_dropdown, CONTROL_GRID.node_color)
     M.sync_node_color_controls()
 
     local fill_color_proxy = setmetatable({}, {
@@ -688,7 +644,7 @@ function M.BuildSettings(parent)
         end
     end)
     M.controls.fill_color = fill_color_picker
-    set_grid_point(fill_color_picker, parent, CONTROL_GRID.fill_color, col_step_x, row_step_y, cfg)
+    place_grid_control(fill_color_picker, CONTROL_GRID.fill_color)
 
     local fill_add_proxy = setmetatable({}, {
         __index = function(_, key)
@@ -727,7 +683,7 @@ function M.BuildSettings(parent)
         { display_decimals = 2 }
     )
     M.controls.fill_add_alpha = fill_add_slider
-    set_grid_point(fill_add_slider, parent, CONTROL_GRID.fill_add, col_step_x, row_step_y, cfg)
+    place_grid_control(fill_add_slider, CONTROL_GRID.fill_add)
 
     db.position = db.position or {}
     local default_position = defaults.position or {}
@@ -747,7 +703,7 @@ function M.BuildSettings(parent)
         M.set_position_axis("x", value)
     end)
     M.controls.x_position = x_slider
-    set_grid_point(x_slider, parent, CONTROL_GRID.x_position, col_step_x, row_step_y, cfg)
+    place_grid_control(x_slider, CONTROL_GRID.x_position)
 
     local y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorYPosition",
@@ -764,7 +720,7 @@ function M.BuildSettings(parent)
         M.set_position_axis("y", value)
     end)
     M.controls.y_position = y_slider
-    set_grid_point(y_slider, parent, CONTROL_GRID.y_position, col_step_x, row_step_y, cfg)
+    place_grid_control(y_slider, CONTROL_GRID.y_position)
 
     local scale_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorScale",
@@ -780,7 +736,7 @@ function M.BuildSettings(parent)
         { display_decimals = 2 }
     )
     M.controls.scale = scale_slider
-    set_grid_point(scale_slider, parent, CONTROL_GRID.scale, col_step_x, row_step_y, cfg)
+    place_grid_control(scale_slider, CONTROL_GRID.scale)
 
     local spacing_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorSpacing",
@@ -795,7 +751,7 @@ function M.BuildSettings(parent)
         set_setting_from_slider("spacing")
     )
     M.controls.spacing = spacing_slider
-    set_grid_point(spacing_slider, parent, CONTROL_GRID.spacing, col_step_x, row_step_y, cfg)
+    place_grid_control(spacing_slider, CONTROL_GRID.spacing)
 
     local decor_position_proxy = setmetatable({}, {
         __index = function(_, key)
@@ -834,7 +790,8 @@ function M.BuildSettings(parent)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                return db and db.decor_style or defaults.decor_style or M.DECOR_STYLE_DEFAULT
+                local active_db = M.get_db and M.get_db()
+                return active_db and active_db.decor_style or defaults.decor_style or M.DECOR_STYLE_DEFAULT
             end,
             on_select = function(value)
                 M.set_db_value("decor_style", value)
@@ -843,7 +800,7 @@ function M.BuildSettings(parent)
     )
     M.controls.decor_style = decor_style_dropdown
     CONTROL_GRID.decor_style.width = decor_style_dropdown:GetWidth()
-    set_grid_point(decor_style_dropdown, parent, CONTROL_GRID.decor_style, col_step_x, row_step_y, cfg)
+    place_grid_control(decor_style_dropdown, CONTROL_GRID.decor_style)
 
     local decor_color_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorDecorColor",
@@ -863,7 +820,7 @@ function M.BuildSettings(parent)
     )
     M.controls.decor_color = decor_color_dropdown
     CONTROL_GRID.decor_color.width = decor_color_dropdown:GetWidth()
-    set_grid_point(decor_color_dropdown, parent, CONTROL_GRID.decor_color, col_step_x, row_step_y, cfg)
+    place_grid_control(decor_color_dropdown, CONTROL_GRID.decor_color)
     M.sync_decor_color_controls()
 
     local decor_x_slider = addon.CreateSliderWithBox(
@@ -881,7 +838,7 @@ function M.BuildSettings(parent)
         end
     )
     M.controls.decor_x_position = decor_x_slider
-    set_grid_point(decor_x_slider, parent, CONTROL_GRID.decor_x_position, col_step_x, row_step_y, cfg)
+    place_grid_control(decor_x_slider, CONTROL_GRID.decor_x_position)
 
     local decor_y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorYPosition",
@@ -898,7 +855,7 @@ function M.BuildSettings(parent)
         end
     )
     M.controls.decor_y_position = decor_y_slider
-    set_grid_point(decor_y_slider, parent, CONTROL_GRID.decor_y_position, col_step_x, row_step_y, cfg)
+    place_grid_control(decor_y_slider, CONTROL_GRID.decor_y_position)
 
     local decor_scale_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorScale",
@@ -916,13 +873,13 @@ function M.BuildSettings(parent)
         { display_decimals = 2 }
     )
     M.controls.decor_scale = decor_scale_slider
-    set_grid_point(decor_scale_slider, parent, CONTROL_GRID.decor_scale, col_step_x, row_step_y, cfg)
+    place_grid_control(decor_scale_slider, CONTROL_GRID.decor_scale)
 
     local fade_container, fade_cb, fade_label = addon.CreateCheckbox(parent, STRINGS.fade_when_full, db and db.fade_when_full, function(is_checked)
         M.set_db_value("fade_when_full", is_checked)
     end)
     M.controls.fade_when_full = fade_cb
-    set_grid_point(fade_container, parent, CONTROL_GRID.fade_when_full, col_step_x, row_step_y, cfg)
+    place_grid_control(fade_container, CONTROL_GRID.fade_when_full)
     addon.AttachTooltipToTargets(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
 
     local fade_alpha_slider = addon.CreateSliderWithBox(
@@ -938,7 +895,7 @@ function M.BuildSettings(parent)
         set_setting_from_slider("fade_alpha")
     )
     M.controls.fade_alpha = fade_alpha_slider
-    set_grid_point(fade_alpha_slider, parent, CONTROL_GRID.fade_alpha, col_step_x, row_step_y, cfg)
+    place_grid_control(fade_alpha_slider, CONTROL_GRID.fade_alpha)
 
     local fade_length_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeLength",
@@ -953,7 +910,7 @@ function M.BuildSettings(parent)
         set_setting_from_slider("fade_length")
     )
     M.controls.fade_length = fade_length_slider
-    set_grid_point(fade_length_slider, parent, CONTROL_GRID.fade_length, col_step_x, row_step_y, cfg)
+    place_grid_control(fade_length_slider, CONTROL_GRID.fade_length)
 
     local progress_update_hz_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorProgressUpdateHz",
@@ -968,7 +925,7 @@ function M.BuildSettings(parent)
         set_setting_from_slider("progress_update_hz")
     )
     M.controls.progress_update_hz = progress_update_hz_slider
-    set_grid_point(progress_update_hz_slider, parent, CONTROL_GRID.progress_update_hz, col_step_x, row_step_y, cfg)
+    place_grid_control(progress_update_hz_slider, CONTROL_GRID.progress_update_hz)
 
     local race_profile_panel = create_control_panel(parent)
     M.controls.race_profile_panel = race_profile_panel
@@ -1009,14 +966,14 @@ function M.BuildSettings(parent)
     )
     M.controls.race_profile_test_button = race_profile_test_button
     size_panel_to_controls(race_profile_panel, cfg, race_profile_container, race_profile_test_button)
-    center_grid_control(race_profile_panel, parent, CONTROL_GRID.race_profile_panel)
+    M.settings_grid:center(race_profile_panel, CONTROL_GRID.race_profile_panel)
     M.sync_race_profile_controls(root_db)
 
     local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
     end)
     M.controls.show_spark = spark_cb
-    set_grid_point(spark_container, parent, CONTROL_GRID.show_spark, col_step_x, row_step_y, cfg)
+    place_grid_control(spark_container, CONTROL_GRID.show_spark)
 
     db.spark_color = db.spark_color or { r = 1, g = 1, b = 1, a = 1 }
     local spark_color_defaults = {
@@ -1032,7 +989,7 @@ function M.BuildSettings(parent)
         end
     end)
     M.controls.spark_color = spark_color_picker
-    set_grid_point(spark_color_picker, parent, CONTROL_GRID.spark_color, col_step_x, row_step_y, cfg)
+    place_grid_control(spark_color_picker, CONTROL_GRID.spark_color)
 
     local spark_size_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorSparkSize",
@@ -1048,7 +1005,7 @@ function M.BuildSettings(parent)
         { display_decimals = 2 }
     )
     M.controls.spark_size = spark_size_slider
-    set_grid_point(spark_size_slider, parent, CONTROL_GRID.spark_size, col_step_x, row_step_y, cfg)
+    place_grid_control(spark_size_slider, CONTROL_GRID.spark_size)
 
     if addon.CreateModuleReset and root_db then
         local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {

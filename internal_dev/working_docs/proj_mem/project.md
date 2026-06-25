@@ -179,9 +179,13 @@ Violations here can create invisible or unstable controls.
 
 - Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 
+- Shared dropdown hover-arrow polish remains unresolved. Do not retry the rejected stand-ins without a new reason: text glyphs rendered as empty boxes, `Interface\Buttons\UI-SortArrow` was too thin, and `Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up` had the wrong visual shape.
+
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.AttachTooltip()` / `addon.AttachTooltipToTargets()` for simple settings help tooltips.
 
-- Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Use `addon.CenterGridControl()` for dynamically sized custom groups that need to be centered within a settings column after their width is known.
+- A 2026-06-25 single-source-of-truth scan found repeated standard control-panel backdrops and simple settings tooltip hooks consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Sound Levels custom panels, and feature-specific list/tree rendering.
+
+- Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Prefer the grid object's `grid:place(control, placement)` and `grid:center(control, placement)` helpers when using module-local placement tables, so modules do not duplicate alignment/y-offset/width option mapping.
 
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.
 

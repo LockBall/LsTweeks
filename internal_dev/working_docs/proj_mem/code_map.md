@@ -51,7 +51,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
 
-- `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`.
+- `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
 
 - `functions/slider_with_box.lua`: shared slider plus numeric edit box.
 

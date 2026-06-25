@@ -70,6 +70,34 @@ local function place_settings_grid_control(grid, control, row, column, slot, pla
     })
 end
 
+local function get_placement_options(placement, place_opts)
+    if not placement then return place_opts end
+
+    place_opts = place_opts or {}
+    if place_opts.align == nil then
+        place_opts.align = placement.center and "center" or placement.align
+    end
+    if place_opts.y_offset == nil then
+        place_opts.y_offset = placement.y
+    end
+    if place_opts.width == nil then
+        place_opts.width = placement.width
+    end
+
+    return place_opts
+end
+
+local function place_settings_grid_placement(grid, control, placement, slot, place_opts)
+    if not placement then return end
+    grid:place_at(control, placement.row, placement.col, slot, get_placement_options(placement, place_opts))
+end
+
+local function center_settings_grid_control(grid, control, placement, slot, place_opts)
+    if not control or not placement then return end
+    placement.width = control:GetWidth()
+    grid:place(control, placement, slot, place_opts)
+end
+
 local function add_settings_grid_row_separator(grid, row)
     local parent = grid.parent
     local line = parent:CreateTexture(nil, "BACKGROUND")
@@ -133,6 +161,8 @@ function addon.CreateSettingsGrid(parent, opts)
     end
 
     grid.place_at = place_settings_grid_control
+    grid.place = place_settings_grid_placement
+    grid.center = center_settings_grid_control
     grid.add_row_separator = add_settings_grid_row_separator
     grid.add_row_separators = add_settings_grid_row_separators
 

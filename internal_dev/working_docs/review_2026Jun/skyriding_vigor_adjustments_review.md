@@ -2,36 +2,59 @@
 
 Started: 2026-06-24
 
+Updated: 2026-06-25
+
 
 ## Context Read
-- Followed `internal_dev/working_docs/proj_mem/agent_start.md`.
+1. [x] Followed `internal_dev/working_docs/proj_mem/agent_start.md`.
 
-- Read public and internal context: `README.md`, `project.md`, `code_map.md`, `skyriding_vigor.md`, and `scratchpad.md`.
+2. [x] Read public and internal context: `README.md`, `project.md`, `code_map.md`, `skyriding_vigor.md`, and `scratchpad.md`.
 
-- Reviewed current Skyriding Vigor implementation files: `sv_defaults.lua`, `sv_styles.lua`, `sv_bar.lua`, `sv_fade.lua`, `sv_state.lua`, `sv_gui.lua`, and `sv_main.lua`.
+3. [x] Reviewed current Skyriding Vigor implementation files: `sv_defaults.lua`, `sv_styles.lua`, `sv_bar.lua`, `sv_fade.lua`, `sv_state.lua`, `sv_gui.lua`, and `sv_main.lua`.
 
 
 ## Current Worktree Notes
-- Existing unrelated modified files before Skyriding Vigor work: `internal_dev/completed_features/aura_frames.md`, `internal_dev/working_docs/proj_mem/aura_frames.md`, and `modules/aura_frames/af_core.lua`.
+1. [ ] Existing unrelated modified files before Skyriding Vigor work: `internal_dev/completed_features/aura_frames.md`, `internal_dev/working_docs/proj_mem/aura_frames.md`, and `modules/aura_frames/af_core.lua`.
 
-- Leave the Aura Frames changes untouched while making Skyriding Vigor edits.
+2. [ ] Leave the Aura Frames changes untouched while making Skyriding Vigor edits.
 
 
 ## Discrepancies And Issues To Revisit
-- The requested Skyriding Vigor "adjustments" were not specified yet, so no code-path-specific change target is confirmed.
 
-- `sv_gui.lua` creates several controls with closures that capture the initial `db` local from `BuildSettings()`. Most mutations route through `M.get_db()`, but dropdown `get_value` closures for `style` and `decor_style` read the captured table. If the Race Profile Test toggles the active profile after the settings page is already built, these dropdowns may report the stale profile unless control sync fully overrides them.
+1. [ ] Dropdown hover indicators now use a small custom gold triangle from line textures in `functions/dropdown.lua`, but it looks worse than the native WoW dropdown arrow. Revisit later with a proper in-game asset. Rejected attempts are recorded in `project.md`: text glyph rendered as an empty box, `Interface\Buttons\UI-SortArrow` was too thin/barely visible, and `Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up` was a different bad arrow shape.
 
-- `M.NODE_COLOR_OPTIONS` and `M.DECOR_COLOR_OPTIONS` omit the `"default"` option even though the default style uses `"default"` as the only valid color key. The controls are disabled when unsupported, but the selected value can still be `"default"` while the dropdown options only list Storm Race colors.
 
-- Spark size memory notes say default-style spark placement still needs style-specific in-game tuning. Treat spark visual changes as empirical tuning work unless backed by a clear runtime observation.
+## GUI Streamlining Review
+1. [ ] `sv_gui.lua` is long enough to justify streamlining. At review time it was 1,062 lines, larger than sibling GUI files checked in the same pass: `modules/sound_levels/sl_gui.lua` at 644 lines and `modules/aura_frames/af_gui.lua` at 453 lines.
 
-- The End Decor `Disabled` option is implemented as a decor style that preserves the default decor footprint and hides via alpha. This keeps nodes stationary when toggling Default <-> Disabled, but Storm Race <-> Disabled can still change layout because Disabled is not a separate visibility flag for the currently selected decor style.
+2. [x] Grid placement-table mapping was moved into the shared `addon.CreateSettingsGrid()` object on 2026-06-25. Skyriding Vigor now routes normal control placement through `grid:place(control, placement)` and dynamic centering through `grid:center(control, placement)`, leaving only module-specific placement data local.
 
-- Dropdown hover indicators now use a small custom gold triangle from line textures in `functions/dropdown.lua`. Revisit this against the official WoW options dropdown hover asset/behavior; earlier attempts with a text glyph rendered as a box and `Interface\Buttons\UI-SortArrow` was too thin/barely visible.
+3. [ ] The main maintainability issue is not total line count alone. The largest concrete issue is that `M.BuildSettings()` is one linear construction function from line 489 to EOF, mixing setup, proxy construction, row layout, control creation, callbacks, runtime button wiring, race profile panel sizing, and reset panel placement.
 
-- Single-source-of-truth scan after the layout-grid work found and consolidated repeated standard control-panel backdrops and simple settings tooltip hooks into `functions/ui_helpers.lua`. Remaining repeated-looking code is mostly specialized UI composition: Aura Frames runtime/tooltips, main-frame chrome, Sound Levels' custom panels, and feature-specific list/tree rendering.
+4. [ ] Recommended first step: keep `sv_gui.lua` as the owner of Skyriding Vigor settings UI construction and control synchronization, but extract local section-builder functions inside the same file before considering a multi-file split.
+
+5. [ ] Suggested local builder seams: `build_top_row(parent, context)`, `build_position_row(parent, context)`, `build_decor_row(parent, context)`, `build_fade_row(parent, context)`, `build_spark_row(parent, context)`, `build_race_profile_panel(parent, context)`, and `build_reset_panel(parent, context)`.
+
+6. [ ] Use a small local `context` table for `cfg`, `db`, `root_db`, `defaults`, `col_step_x`, `row_step_y`, and commonly reused proxies. Keep layout constants and private builders local instead of pushing them onto `M`.
+
+7. [ ] Avoid an immediate multi-file split unless the file keeps growing after local builders are extracted. The `.toc` currently loads `sv_gui.lua` before `sv_main.lua`; GUI callbacks reference runtime functions assigned later but generally call them only after user interaction. Splitting GUI sync/build/layout into separate files would require more careful `.toc` ordering and durable ownership notes.
+
+8. [ ] Most shared GUI data is intentionally local (`UI_CONFIG`, `ROWS`, `CONTROL_GRID`, `STRINGS`). A multi-file split would either duplicate those tables or expose them through `M`, increasing module surface area.
+
+9. [ ] If a later split becomes worthwhile, a plausible shape is `sv_gui_layout.lua` for layout constants and placement helpers, `sv_gui_sync.lua` for exported `M.sync_*` functions, and `sv_gui.lua` for settings construction and section builders. Before doing that, update `LsTweeks.toc` load order and `internal_dev/working_docs/proj_mem/skyriding_vigor.md`, because current memory says `sv_gui.lua` owns both construction and sync helpers.
+
+
+## Additional GUI Issues To Revisit
+1. [ ] `CONTROL_GRID` is both static layout configuration and mutable runtime state. Several button/dropdown widths are written back into the table during construction and sync. This works today but makes the layout table less declarative.
+
+2. [ ] `db.position = db.position or {}` assumes `db` is non-nil inside `M.BuildSettings()`. Other nearby reads guard `db and ...`, so this is a small consistency issue. The current load path probably guarantees a DB, but the function is not locally defensive.
+
+3. [ ] Slider specs are read through `get_spec()` and then dereferenced directly. That is consistent with the module's load-order expectations because `sv_styles.lua` loads before `sv_gui.lua`, but missing specs would fail at build time with a nil-index error.
+
+4. [ ] `sync_race_profile_controls()` calls `sync_race_profile_panel_size()` and then `M.sync_fade_controls_enabled()`. `M.sync_settings_controls()` later calls `M.sync_fade_controls_enabled()` again, so a full settings sync currently does redundant fade-control enablement work.
+
+5. [ ] `sync_fill_test_button()` and `sync_race_profile_panel_size()` can relayout dynamically sized controls after label changes. This is necessary, but mutating `CONTROL_GRID.*.width` during sync makes it harder to reason about whether a placement value is a source constant or derived state.
 
 
 ## Pending Questions
-- None currently.
+1. [x] None currently.
