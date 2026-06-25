@@ -23,7 +23,9 @@ core\main_frame.lua
 core\minimap_button.lua
 
 # --- Shared Functions ---
-functions\utils.lua
+functions\table_utils.lua
+functions\ui_helpers.lua
+functions\layout_grid.lua
 functions\button.lua
 functions\checkbox.lua
 functions\slider_with_box.lua

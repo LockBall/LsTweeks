@@ -43,9 +43,18 @@ local defaults = {
 local UI_CONFIG = {
     checkbox_offset_x = 20,
     checkbox_offset_y = -20,
+    checkbox_height = 24,
     row_gap_y = 18,
     slider_gap_x = 18,
+    slider_width = 130,
     slider_offset_y = -8,
+    fade_row_padding_top = 8,
+    fade_row_padding_bottom = 8,
+}
+
+local ROWS = {
+    combat_text = 1,
+    fade_controls = 2,
 }
 
 local STRINGS = {
@@ -273,37 +282,27 @@ end
 
 --#region GUI ==================================================================
 
-local function attach_help_tooltip(target, title, body)
-    if not target then return end
-
-    target:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if title and title ~= "" then
-            GameTooltip:SetText(title, 1, 0.82, 0)
-        else
-            GameTooltip:ClearLines()
-        end
-        GameTooltip:AddLine(body or "", 0.95, 0.95, 0.95, true)
-        GameTooltip:Show()
-    end)
-
-    target:HookScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-end
-
 local function build_options_panel(parent)
     local cfg = UI_CONFIG
     local db = get_player_frame_db()
-    local row1 = CreateFrame("Frame", nil, parent)
-    row1:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.checkbox_offset_x, cfg.checkbox_offset_y)
-    row1:SetSize(1, 1)
-
-    local row2 = CreateFrame("Frame", nil, parent)
-    row2:SetSize(1, 1)
+    local grid = addon.CreateSettingsGrid(parent, {
+        column_count = #FADE_SLIDER_DEFS,
+        col_gap = cfg.slider_width + cfg.slider_gap_x,
+        col_width = cfg.slider_width,
+        col_offset = cfg.checkbox_offset_x,
+        row_start = cfg.checkbox_offset_y,
+        row_gap = 0,
+        row_heights = {
+            cfg.checkbox_height + cfg.row_gap_y,
+            cfg.fade_row_padding_top + cfg.checkbox_height + math.abs(cfg.slider_offset_y) + 95 + cfg.fade_row_padding_bottom,
+        },
+        col_align = { "left", "left", "left", "left", "left" },
+        offsets = { default = 0 },
+        row_separators = { ROWS.combat_text, ROWS.fade_controls },
+    })
 
     local cb_container, cb, cb_label = addon.CreateCheckbox(
-        row1,
+        parent,
         STRINGS.checkbox_label,
         db and db.hide_portrait_combat_text,
         function(is_checked)
@@ -311,14 +310,12 @@ local function build_options_panel(parent)
         end
     )
     M.controls.hide_portrait_combat_text_checkbox = cb
-    cb_container:SetPoint("TOPLEFT", row1, "TOPLEFT", 0, 0)
+    grid:place_at(cb_container, ROWS.combat_text, 1)
 
-    attach_help_tooltip(cb_label, nil, STRINGS.combat_text_help)
-
-    row2:SetPoint("TOPLEFT", cb_container, "BOTTOMLEFT", 0, -cfg.row_gap_y)
+    addon.AttachTooltip(cb_label, nil, STRINGS.combat_text_help)
 
     local fade_container, fade_cb, fade_label = addon.CreateCheckbox(
-        row2,
+        parent,
         STRINGS.fade_checkbox_label,
         db and db.fade_out_of_combat,
         function(is_checked)
@@ -326,16 +323,17 @@ local function build_options_panel(parent)
         end
     )
     M.controls.fade_out_of_combat_checkbox = fade_cb
-    fade_container:SetPoint("TOPLEFT", row2, "TOPLEFT", 0, 0)
+    grid:place_at(fade_container, ROWS.fade_controls, 1, nil, {
+        y_offset = -cfg.fade_row_padding_top,
+    })
 
-    attach_help_tooltip(fade_label, nil, STRINGS.fade_help)
+    addon.AttachTooltip(fade_label, nil, STRINGS.fade_help)
 
-    local previous_slider = nil
     for index, def in ipairs(FADE_SLIDER_DEFS) do
         local slider_key = def.key
         local slider = addon.CreateSliderWithBox(
             addon_name .. "PlayerFrame" .. def.name_suffix,
-            row2,
+            parent,
             STRINGS[def.label_key],
             def.min,
             def.max,
@@ -349,15 +347,12 @@ local function build_options_panel(parent)
         )
         M.controls[def.control_key] = slider
         if def.help_key then
-            attach_help_tooltip(slider, nil, STRINGS[def.help_key])
+            addon.AttachTooltip(slider, nil, STRINGS[def.help_key])
         end
 
-        if index == 1 then
-            slider:SetPoint("TOPLEFT", fade_container, "BOTTOMLEFT", 0, cfg.slider_offset_y)
-        else
-            slider:SetPoint("TOPLEFT", previous_slider, "TOPRIGHT", cfg.slider_gap_x, 0)
-        end
-        previous_slider = slider
+        grid:place_at(slider, ROWS.fade_controls, index, nil, {
+            y_offset = -(cfg.fade_row_padding_top + cfg.checkbox_height + math.abs(cfg.slider_offset_y)),
+        })
     end
 end
 

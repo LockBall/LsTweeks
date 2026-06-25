@@ -30,6 +30,8 @@ Started: 2026-06-24
 
 - Dropdown hover indicators now use a small custom gold triangle from line textures in `functions/dropdown.lua`. Revisit this against the official WoW options dropdown hover asset/behavior; earlier attempts with a text glyph rendered as a box and `Interface\Buttons\UI-SortArrow` was too thin/barely visible.
 
+- Single-source-of-truth scan after the layout-grid work found and consolidated repeated standard control-panel backdrops and simple settings tooltip hooks into `functions/ui_helpers.lua`. Remaining repeated-looking code is mostly specialized UI composition: Aura Frames runtime/tooltips, main-frame chrome, Sound Levels' custom panels, and feature-specific list/tree rendering.
+
 
 ## Pending Questions
 - None currently.

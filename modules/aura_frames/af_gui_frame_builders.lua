@@ -666,7 +666,10 @@ end
 local function build_frame_settings_panel(parent, frame_config, opts)
     opts = opts or {}
     local update = opts.update
-    local grid = M.create_settings_grid(parent)
+    local has_timer_controls = opts.show_timer_controls ~= false
+    local grid = M.create_settings_grid(parent, {
+        row_separators = has_timer_controls and { 1, 2, 3, 4, 5 } or { 1, 2, 3, 4 },
+    })
     local value_table = frame_config.value_table
 
     local function control_key(logical_key)
@@ -778,9 +781,6 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         })
     end
 
-    grid:add_row_separator(1)
-    grid:add_row_separator(2)
-
     local fade_ooc_container, _, fade_ooc_label = bound_cb("Fade OOC", "fade_ooc", 4, 1)
     add_label_tooltip(fade_ooc_container, fade_ooc_label, "Fade Out Of Combat")
     local ooc_alpha_slider = create_frame_slider(parent, frame_config, "OOCAlpha", "Fade Alpha", 0.1, 1, 0.05, "ooc_alpha", update)
@@ -792,10 +792,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", 0, 10, 0.1, "fade_length", update)
     grid:place_at(fade_length_slider, 4, 4)
 
-    grid:add_row_separator(3)
-
     local timer_swipe_container, timer_swipe_checkbox
-    local has_timer_controls = opts.show_timer_controls ~= false
     local function refresh_timer_swipe_control()
         if not timer_swipe_checkbox then return end
         local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
@@ -841,11 +838,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     bar_bg_color_picker:ClearAllPoints()
     bar_bg_color_picker:SetPoint("TOPLEFT", bar_color_picker, "TOPLEFT", grid[3] - grid[1], 0)
 
-    grid:add_row_separator(4)
-
     if has_timer_controls then
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
-        grid:add_row_separator(5)
     end
 
     local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons", opts.on_max_icons_changed)

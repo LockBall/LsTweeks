@@ -31,6 +31,7 @@ local UI_CONFIG = {
     slider_row_gap_y = 0,
     grid_row_gap = 20,
     reset_bottom_x = 20,
+    reset_panel_padding_top = 8,
     reset_row_height = 150,
 }
 
@@ -131,46 +132,8 @@ local function set_setting_from_slider(key)
     end
 end
 
-local function add_row_separator(parent, y_offset, cfg)
-    local line = parent:CreateTexture(nil, "BACKGROUND")
-    line:SetColorTexture(1, 1, 1, 0.08)
-    line:SetHeight(2)
-    line:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, y_offset or 0)
-    line:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -20, y_offset or 0)
-    return line
-end
-
 local function create_control_panel(parent)
-    local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    panel:SetSize(1, 1)
-    panel:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    panel:SetBackdropColor(0, 0, 0, 0.3)
-    panel:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
-    return panel
-end
-
-local function attach_help_tooltip(body, ...)
-    if not body or body == "" then return end
-
-    for i = 1, select("#", ...) do
-        local target = select(i, ...)
-        if target then
-            target:HookScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:ClearLines()
-                GameTooltip:AddLine(body, 0.95, 0.95, 0.95, true)
-                GameTooltip:Show()
-            end)
-            target:HookScript("OnLeave", function()
-                GameTooltip:Hide()
-            end)
-        end
-    end
+    return addon.CreateControlPanel(parent)
 end
 
 local center_grid_control
@@ -205,39 +168,46 @@ local function sync_race_profile_panel_size()
     center_grid_control(controls.race_profile_panel, M.controls_parent, CONTROL_GRID.race_profile_panel)
 end
 
-local function get_grid_offset(placement, col_step_x, row_step_y, cfg)
-    local center_offset = placement.center and placement.width and ((cfg.slider_width - placement.width) / 2) or 0
-    return cfg.title_offset_x + ((placement.col or 1) - 1) * col_step_x + center_offset + (placement.x or 0),
-        cfg.title_offset_y - ((placement.row or 1) - 1) * row_step_y + (placement.y or 0)
-end
-
 local function set_grid_point(frame, parent, placement, col_step_x, row_step_y, cfg)
-    local x, y = get_grid_offset(placement, col_step_x, row_step_y, cfg)
-    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    if M.settings_grid then
+        local place_opts = {
+            align = placement.center and "center" or placement.align,
+            y_offset = placement.y,
+            width = placement.width,
+        }
+        M.settings_grid:place_at(frame, placement.row, placement.col, nil, place_opts)
+        return
+    end
+
+    addon.SetGridPoint(frame, parent, placement, {
+        origin_x = cfg.title_offset_x,
+        origin_y = cfg.title_offset_y,
+        column_width = cfg.slider_width,
+        col_step_x = col_step_x,
+        row_step_y = row_step_y,
+    })
 end
 
 center_grid_control = function(frame, parent, placement)
     if not frame or not parent or not placement then return end
-    if addon.CenterGridControl then
-        addon.CenterGridControl(frame, parent, placement, {
-            origin_x = UI_CONFIG.title_offset_x,
-            origin_y = UI_CONFIG.title_offset_y,
-            column_width = UI_CONFIG.slider_width,
-            column_gap_x = UI_CONFIG.slider_gap_x,
-            row_height = UI_CONFIG.slider_row_height,
-            row_gap_y = UI_CONFIG.slider_row_gap_y,
-        })
-    else
+    if M.settings_grid then
         placement.width = frame:GetWidth()
-        set_grid_point(
-            frame,
-            parent,
-            placement,
-            UI_CONFIG.slider_width + UI_CONFIG.slider_gap_x,
-            UI_CONFIG.slider_row_height + UI_CONFIG.slider_row_gap_y,
-            UI_CONFIG
-        )
+        M.settings_grid:place_at(frame, placement.row, placement.col, nil, {
+            align = placement.center and "center" or placement.align,
+            y_offset = placement.y,
+            width = placement.width,
+        })
+        return
     end
+
+    addon.CenterGridControl(frame, parent, placement, {
+        origin_x = UI_CONFIG.title_offset_x,
+        origin_y = UI_CONFIG.title_offset_y,
+        column_width = UI_CONFIG.slider_width,
+        column_gap_x = UI_CONFIG.slider_gap_x,
+        row_height = UI_CONFIG.slider_row_height,
+        row_gap_y = UI_CONFIG.slider_row_gap_y,
+    })
 end
 
 local function get_separator_y(row, cfg)
@@ -248,7 +218,7 @@ end
 local function get_reset_panel_y(reset_panel, cfg)
     local reset_row_top_y = get_separator_y(ROWS.spark + 1, cfg)
     local reset_panel_height = reset_panel and reset_panel:GetHeight() or cfg.reset_row_height
-    return reset_row_top_y - ((cfg.reset_row_height - reset_panel_height) / 2)
+    return reset_row_top_y - cfg.reset_panel_padding_top - ((cfg.reset_row_height - reset_panel_height) / 2)
 end
 
 local function open_skyriding_talents()
@@ -519,6 +489,34 @@ end
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     M.controls_parent = parent
+    M.settings_grid = addon.CreateSettingsGrid(parent, {
+        column_count = 5,
+        col_gap = cfg.slider_width + cfg.slider_gap_x,
+        col_width = cfg.slider_width,
+        col_offset = cfg.title_offset_x,
+        row_start = cfg.title_offset_y,
+        row_gap = cfg.grid_row_gap,
+        row_heights = {
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.reset_row_height,
+        },
+        col_align = { "left", "left", "left", "left", "left" },
+        offsets = { default = 0 },
+        separator_left = cfg.title_offset_x,
+        separator_right_pad = 20,
+        separator_stretch = true,
+        row_separators = {
+            ROWS.top,
+            ROWS.position,
+            ROWS.decor,
+            ROWS.fade,
+            ROWS.spark,
+        },
+    })
     local db = M.get_db and M.get_db()
     local root_db = M.get_root_db and M.get_root_db()
     local defaults = M.DEFAULTS or {}
@@ -750,7 +748,6 @@ function M.BuildSettings(parent)
     end)
     M.controls.x_position = x_slider
     set_grid_point(x_slider, parent, CONTROL_GRID.x_position, col_step_x, row_step_y, cfg)
-    add_row_separator(parent, get_separator_y(ROWS.position, cfg), cfg)
 
     local y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorYPosition",
@@ -847,7 +844,6 @@ function M.BuildSettings(parent)
     M.controls.decor_style = decor_style_dropdown
     CONTROL_GRID.decor_style.width = decor_style_dropdown:GetWidth()
     set_grid_point(decor_style_dropdown, parent, CONTROL_GRID.decor_style, col_step_x, row_step_y, cfg)
-    add_row_separator(parent, get_separator_y(ROWS.decor, cfg), cfg)
 
     local decor_color_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorDecorColor",
@@ -927,8 +923,7 @@ function M.BuildSettings(parent)
     end)
     M.controls.fade_when_full = fade_cb
     set_grid_point(fade_container, parent, CONTROL_GRID.fade_when_full, col_step_x, row_step_y, cfg)
-    attach_help_tooltip(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
-    add_row_separator(parent, get_separator_y(ROWS.fade, cfg), cfg)
+    addon.AttachTooltipToTargets(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
 
     local fade_alpha_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeAlpha",
@@ -974,8 +969,6 @@ function M.BuildSettings(parent)
     )
     M.controls.progress_update_hz = progress_update_hz_slider
     set_grid_point(progress_update_hz_slider, parent, CONTROL_GRID.progress_update_hz, col_step_x, row_step_y, cfg)
-
-    add_row_separator(parent, get_separator_y(ROWS.spark, cfg), cfg)
 
     local race_profile_panel = create_control_panel(parent)
     M.controls.race_profile_panel = race_profile_panel
@@ -1056,7 +1049,6 @@ function M.BuildSettings(parent)
     )
     M.controls.spark_size = spark_size_slider
     set_grid_point(spark_size_slider, parent, CONTROL_GRID.spark_size, col_step_x, row_step_y, cfg)
-    add_row_separator(parent, get_separator_y(ROWS.spark + 1, cfg), cfg)
 
     if addon.CreateModuleReset and root_db then
         local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {

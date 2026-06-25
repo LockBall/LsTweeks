@@ -190,25 +190,6 @@ end
 
 --#region GUI ==================================================================
 
-local function attach_help_tooltip(target, title, body)
-    if not target then return end
-
-    target:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if title and title ~= "" then
-            GameTooltip:SetText(title, 1, 0.82, 0)
-        else
-            GameTooltip:ClearLines()
-        end
-        GameTooltip:AddLine(body or "", 0.95, 0.95, 0.95, true)
-        GameTooltip:Show()
-    end)
-
-    target:HookScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-end
-
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     local db = get_db()
@@ -244,7 +225,7 @@ function M.BuildSettings(parent)
         local indent_x = row_def.key == "all" and 0 or cfg.child_indent_x
         local offset_y = cfg.first_checkbox_offset_y + ((index - 1) * cfg.checkbox_step_y)
         collapse_container:SetPoint("TOPLEFT", group, "TOPLEFT", cfg.group_padding_x + indent_x, offset_y)
-        attach_help_tooltip(collapse_label, nil, row_def.help)
+        addon.AttachTooltip(collapse_label, nil, row_def.help)
         widest_content = math.max(widest_content, indent_x + (collapse_container:GetWidth() or 0))
     end
 

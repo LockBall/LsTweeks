@@ -12,18 +12,7 @@ local RESET_H      = 16
 local GROUP_W      = BTN_SIZE + control_gap + RESET_W
 
 function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback)
-
-    -- Container
-    local container = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    container:SetSize(CONTAINER_W, CONTAINER_H)
-    container:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    container:SetBackdropColor(0, 0, 0, 0.3)
-    container:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.9)
+    local container = addon.CreateControlPanel(parent, CONTAINER_W, CONTAINER_H)
 
     -- Label
     local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")

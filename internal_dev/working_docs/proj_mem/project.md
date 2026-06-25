@@ -179,7 +179,9 @@ Violations here can create invisible or unstable controls.
 
 - Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 
-- Shared grid placement helpers live in `functions/utils.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, and `addon.CenterGridControl()`. Use `addon.CenterGridControl()` for dynamically sized custom groups that need to be centered within a settings column after their width is known.
+- Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.AttachTooltip()` / `addon.AttachTooltipToTargets()` for simple settings help tooltips.
+
+- Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Use `addon.CenterGridControl()` for dynamically sized custom groups that need to be centered within a settings column after their width is known.
 
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.
 

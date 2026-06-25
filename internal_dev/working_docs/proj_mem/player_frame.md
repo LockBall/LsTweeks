@@ -21,6 +21,8 @@ Important `player_frame` keys:
 
 - `pf_main.lua` registers the Player Frame settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Runtime side effects route through `M.update_player_frame()` / `M.set_module_enabled()` and stop at the module gate.
 
+- Player Frame settings layout uses the shared `addon.CreateSettingsGrid()` helper from `functions/layout_grid.lua`; keep checkbox rows, fade slider columns, and per-row heights parameterized there instead of chaining row frames by hand. The OOC Fade checkbox and fade sliders share one taller grid row.
+
 - Player Frame fade combat/health events are registered only while `fade_out_of_combat` is enabled. When enabling fade, refresh combat state from `InCombatLockdown()` because the module may not have been receiving regen events while disabled.
 
 - Player Frame fade should not install its `PlayerFrame:HookScript("OnShow", ...)` hook until `fade_out_of_combat` is enabled.
