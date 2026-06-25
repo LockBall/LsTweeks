@@ -440,7 +440,6 @@ function M.sync_settings_controls(db)
     M.sync_position_controls(db)
     M.sync_fill_test_button()
     M.sync_race_profile_controls()
-    M.sync_fade_controls_enabled()
 end
 
 --#endregion CONTROL SYNCHRONIZATION ===========================================

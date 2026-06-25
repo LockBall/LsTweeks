@@ -42,11 +42,3 @@ Updated: 2026-06-25
 8. [ ] Most shared GUI data is intentionally local (`UI_CONFIG`, `ROWS`, `CONTROL_GRID`, `STRINGS`). A multi-file split would either duplicate those tables or expose them through `M`, increasing module surface area.
 
 9. [ ] If a later split becomes worthwhile, a plausible shape is `sv_gui_layout.lua` for layout constants and placement helpers, `sv_gui_sync.lua` for exported `M.sync_*` functions, and `sv_gui.lua` for settings construction and section builders. Before doing that, update `LsTweeks.toc` load order and `internal_dev/working_docs/proj_mem/skyriding_vigor.md`, because current memory says `sv_gui.lua` owns both construction and sync helpers.
-
-
-## Additional GUI Issues To Revisit
-1. [ ] `sync_race_profile_controls()` calls `sync_race_profile_panel_size()` and then `M.sync_fade_controls_enabled()`. `M.sync_settings_controls()` later calls `M.sync_fade_controls_enabled()` again, so a full settings sync currently does redundant fade-control enablement work.
-
-
-## Pending Questions
-1. [x] None currently.

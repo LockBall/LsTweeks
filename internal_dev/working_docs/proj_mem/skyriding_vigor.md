@@ -79,6 +79,8 @@ Important `skyriding_vigor` keys:
 
 - Fade settings do not apply while the race profile is active. The settings UI disables Fade When Full, Fade Alpha, and Fade Length during real race detection or Race Profile Test mode through `M.sync_fade_controls_enabled()`.
 
+- `M.sync_fade_controls_enabled()` owns fade-control enabled/disabled state. `M.sync_race_profile_controls()` calls it only because focused race-profile state changes must also refresh dependent fade controls. Do not add a second `M.sync_fade_controls_enabled()` call in `M.sync_settings_controls()`.
+
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 
 - Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
