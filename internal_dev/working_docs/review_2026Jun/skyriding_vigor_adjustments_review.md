@@ -45,15 +45,7 @@ Updated: 2026-06-25
 
 
 ## Additional GUI Issues To Revisit
-1. [ ] `CONTROL_GRID` is both static layout configuration and mutable runtime state. Several button/dropdown widths are written back into the table during construction and sync. This works today but makes the layout table less declarative.
-
-2. [ ] `db.position = db.position or {}` assumes `db` is non-nil inside `M.BuildSettings()`. Other nearby reads guard `db and ...`, so this is a small consistency issue. The current load path probably guarantees a DB, but the function is not locally defensive.
-
-3. [ ] Slider specs are read through `get_spec()` and then dereferenced directly. That is consistent with the module's load-order expectations because `sv_styles.lua` loads before `sv_gui.lua`, but missing specs would fail at build time with a nil-index error.
-
-4. [ ] `sync_race_profile_controls()` calls `sync_race_profile_panel_size()` and then `M.sync_fade_controls_enabled()`. `M.sync_settings_controls()` later calls `M.sync_fade_controls_enabled()` again, so a full settings sync currently does redundant fade-control enablement work.
-
-5. [ ] `sync_fill_test_button()` and `sync_race_profile_panel_size()` can relayout dynamically sized controls after label changes. This is necessary, but mutating `CONTROL_GRID.*.width` during sync makes it harder to reason about whether a placement value is a source constant or derived state.
+1. [ ] `sync_race_profile_controls()` calls `sync_race_profile_panel_size()` and then `M.sync_fade_controls_enabled()`. `M.sync_settings_controls()` later calls `M.sync_fade_controls_enabled()` again, so a full settings sync currently does redundant fade-control enablement work.
 
 
 ## Pending Questions

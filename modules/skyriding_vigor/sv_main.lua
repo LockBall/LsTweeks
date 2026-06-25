@@ -46,7 +46,7 @@ local RACE_PROFILE_EVENTS = {
 -- Module metadata and default values shared by runtime and settings code.
 local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
 local PROFILE_DEFAULTS = DEFAULTS.race_profile or DEFAULTS
-local SETTING_SPECS = M.SETTING_SPECS
+local SETTING_RANGES = M.SETTING_RANGES
 M.MODULE_KEY = "skyriding_vigor"
 M.CATEGORY_NAME = "Skyriding Vigor"
 M.DEFAULTS = DEFAULTS
@@ -63,11 +63,11 @@ progress_driver:Hide()
 
 --#region DATABASE =============================================================
 -- Saved-variable access, normalization, and compatibility cleanup.
-local function clamp_number(value, fallback, spec)
+local function clamp_number(value, fallback, range)
     value = tonumber(value)
     if not value then value = fallback end
-    if spec and value < spec.min then return spec.min end
-    if spec and value > spec.max then return spec.max end
+    if range and value < range.min then return range.min end
+    if range and value > range.max then return range.max end
     return value
 end
 
@@ -85,12 +85,12 @@ local function normalize_db(db, include_race_controls)
         db.race_profile_enabled = nil
         db.race_profile = nil
     end
-    db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
-    db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_SPECS.spacing)
-    db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_SPECS.fade_alpha)
-    db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_SPECS.fade_length)
-    db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
-    db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
+    db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_RANGES.scale)
+    db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_RANGES.spacing)
+    db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_RANGES.fade_alpha)
+    db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_RANGES.fade_length)
+    db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
+    db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
     if type(db.spark_color) ~= "table" then
         local color = DEFAULTS.spark_color or { r = 1, g = 1, b = 1, a = 1 }
         db.spark_color = { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
@@ -115,9 +115,9 @@ local function normalize_db(db, include_race_controls)
 
         local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
         if style_layout then
-            style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_SPECS.scale)
+            style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_RANGES.scale)
             local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
-            style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_SPECS.fill_add_alpha)
+            style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_RANGES.fill_add_alpha)
         end
     end
     if M.get_valid_decor_style_key then
@@ -129,12 +129,12 @@ local function normalize_db(db, include_race_controls)
         local decor_layout = M.get_decor_layout_table(db, db.decor_style, true)
         if decor_layout then
             local decor_scale_default = M.get_decor_layout_default and M.get_decor_layout_default(db.decor_style, "scale") or 1
-            decor_layout.scale = clamp_number(decor_layout.scale, decor_scale_default, SETTING_SPECS.decor_scale)
+            decor_layout.scale = clamp_number(decor_layout.scale, decor_scale_default, SETTING_RANGES.decor_scale)
         end
     end
     db.position = db.position or {}
-    db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_SPECS.x_position)
-    db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_SPECS.y_position)
+    db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_RANGES.x_position)
+    db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_RANGES.y_position)
     db.position.point = "CENTER"
     db.position.relativePoint = "CENTER"
 end
@@ -345,7 +345,7 @@ local function get_fill_test_charge_info()
 end
 
 local function get_progress_update_seconds(db)
-    local hz = clamp_number(db and db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
+    local hz = clamp_number(db and db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
     return 1 / hz
 end
 
@@ -607,9 +607,9 @@ function M.set_db_value(key, value)
     elseif key == "show_spark" then
         value = value and true or false
     elseif key == "spark_size" then
-        value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_SPECS.spark_size)
+        value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
     elseif key == "progress_update_hz" then
-        value = clamp_number(value, DEFAULTS.progress_update_hz or 20, SETTING_SPECS.progress_update_hz)
+        value = clamp_number(value, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
     elseif key == "style" and M.get_valid_bar_style_key then
         value = M.get_valid_bar_style_key(value)
     elseif key == "scale" and M.set_style_scale then
@@ -631,7 +631,7 @@ function M.set_db_value(key, value)
     if key == "style" and M.get_style_layout_table then
         local style_layout = M.get_style_layout_table(db, value, true)
         if style_layout and style_layout.scale ~= nil then
-            db.scale = clamp_number(style_layout.scale, DEFAULTS.scale or 1, SETTING_SPECS.scale)
+            db.scale = clamp_number(style_layout.scale, DEFAULTS.scale or 1, SETTING_RANGES.scale)
         end
         if M.sync_slider_controls then
             M.sync_slider_controls(db)

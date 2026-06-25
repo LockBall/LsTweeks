@@ -22,8 +22,16 @@ end
 
 function addon.CenterGridControl(frame, parent, placement, cfg)
     if not frame or not parent or not placement then return end
-    placement.width = frame:GetWidth()
-    addon.SetGridPoint(frame, parent, placement, cfg)
+    local centered_placement = {
+        row = placement.row,
+        col = placement.col,
+        x = placement.x,
+        y = placement.y,
+        width = frame:GetWidth(),
+        center = placement.center,
+        align = placement.align,
+    }
+    addon.SetGridPoint(frame, parent, centered_placement, cfg)
 end
 
 local function get_settings_grid_y(grid, row)
@@ -73,18 +81,37 @@ end
 local function get_placement_options(placement, place_opts)
     if not placement then return place_opts end
 
-    place_opts = place_opts or {}
-    if place_opts.align == nil then
-        place_opts.align = placement.center and "center" or placement.align
+    local resolved_opts = {}
+    if place_opts then
+        for key, value in pairs(place_opts) do
+            resolved_opts[key] = value
+        end
     end
-    if place_opts.y_offset == nil then
-        place_opts.y_offset = placement.y
+    if resolved_opts.align == nil then
+        resolved_opts.align = placement.center and "center" or placement.align
     end
-    if place_opts.width == nil then
-        place_opts.width = placement.width
+    if resolved_opts.y_offset == nil then
+        resolved_opts.y_offset = placement.y
+    end
+    if resolved_opts.width == nil then
+        resolved_opts.width = placement.width
     end
 
-    return place_opts
+    return resolved_opts
+end
+
+local function get_center_options(control, place_opts)
+    local resolved_opts = {}
+    if place_opts then
+        for key, value in pairs(place_opts) do
+            resolved_opts[key] = value
+        end
+    end
+    if resolved_opts.width == nil then
+        resolved_opts.width = control:GetWidth()
+    end
+
+    return resolved_opts
 end
 
 local function place_settings_grid_placement(grid, control, placement, slot, place_opts)
@@ -94,8 +121,7 @@ end
 
 local function center_settings_grid_control(grid, control, placement, slot, place_opts)
     if not control or not placement then return end
-    placement.width = control:GetWidth()
-    grid:place(control, placement, slot, place_opts)
+    grid:place(control, placement, slot, get_center_options(control, place_opts))
 end
 
 local function add_settings_grid_row_separator(grid, row)

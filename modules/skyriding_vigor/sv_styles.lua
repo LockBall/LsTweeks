@@ -192,7 +192,7 @@ for _, key in ipairs(DECOR_STYLE_ORDER) do
         text = DECOR_STYLES[key].label,
     }
 end
-M.SETTING_SPECS = {
+M.SETTING_RANGES = {
     fade_alpha = FADE_ALPHA_RANGE,
     fade_length = FADE_LENGTH_RANGE,
     fill_add_alpha = FILL_ADD_ALPHA_RANGE,
@@ -227,11 +227,11 @@ local function get_defaults()
     return M.DEFAULTS or {}
 end
 
-local function clamp_number(value, fallback, spec)
+local function clamp_number(value, fallback, range)
     value = tonumber(value)
     if not value then value = fallback end
-    if spec and value < spec.min then return spec.min end
-    if spec and value > spec.max then return spec.max end
+    if range and value < range.min then return range.min end
+    if range and value > range.max then return range.max end
     return value
 end
 
@@ -456,7 +456,7 @@ function M.get_spark_size(db)
     db = db or get_db()
     local defaults = get_defaults()
     local fallback = defaults.spark_size or 1
-    return clamp_number(db and db.spark_size, fallback, M.SETTING_SPECS and M.SETTING_SPECS.spark_size)
+    return clamp_number(db and db.spark_size, fallback, M.SETTING_RANGES and M.SETTING_RANGES.spark_size)
 end
 
 function M.get_style_scale()
@@ -481,7 +481,7 @@ function M.set_style_scale(value)
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.scale = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS.scale)
+    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES.scale)
     db.scale = layout.scale
     M.refresh_layout()
 end
@@ -532,7 +532,7 @@ function M.get_style_fill_add_alpha()
     if value == nil then
         value = M.get_style_layout_default(style_key, "fill_add_alpha")
     end
-    return clamp_number(value, FILL_ADD_ALPHA, M.SETTING_SPECS and M.SETTING_SPECS.fill_add_alpha)
+    return clamp_number(value, FILL_ADD_ALPHA, M.SETTING_RANGES and M.SETTING_RANGES.fill_add_alpha)
 end
 
 function M.get_style_fill_add_alpha_default()
@@ -550,7 +550,7 @@ function M.set_style_fill_add_alpha(value)
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_SPECS and M.SETTING_SPECS.fill_add_alpha)
+    layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_RANGES and M.SETTING_RANGES.fill_add_alpha)
     if M.apply_fill_color then
         M.apply_fill_color()
     elseif M.refresh then
@@ -680,7 +680,7 @@ function M.get_decor_position_default(axis)
 end
 
 function M.set_decor_position_axis(axis, value)
-    local field, spec_key = get_decor_position_field(axis)
+    local field, range_key = get_decor_position_field(axis)
     if not field then return end
     local db = get_db()
     if not db then return end
@@ -690,7 +690,7 @@ function M.set_decor_position_axis(axis, value)
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout[field] = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS[spec_key])
+    layout[field] = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES[range_key])
     M.refresh_layout()
 end
 
@@ -723,7 +723,7 @@ function M.set_decor_scale(value)
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.scale = clamp_number(value, fallback, M.SETTING_SPECS and M.SETTING_SPECS.decor_scale)
+    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES.decor_scale)
     M.refresh_layout()
 end
 

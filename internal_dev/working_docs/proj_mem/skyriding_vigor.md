@@ -47,6 +47,8 @@ Important `skyriding_vigor` keys:
 
 - `spacing` and `scale`: presentation settings. Slider ranges/steps live in `sv_styles.lua`; DB defaults stay in `sv_defaults.lua`. Scale range is `0.40-2.00` at `0.05` steps and displays two decimals.
 
+- `M.SETTING_RANGES` is a hard module invariant owned by `sv_styles.lua`. `sv_gui.lua` and `sv_main.lua` may fail fast if a required range is missing because runtime normalization and GUI slider construction both depend on those ranges.
+
 - `spacing` is a 0-25px user-facing range at 0.5 steps. Runtime layout applies it directly between visible `FRAME_LAYOUT` frame edges. `FRAME_LAYOUT.visible_edge_inset_x` compensates for transparent atlas padding; node dimensions come only from `dragonriding_vigor_frame` atlas metadata.
 
 - Slider reset buttons must write the DB and run their callback even when the slider already shows the default. Layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache invalidates even when values appear unchanged.

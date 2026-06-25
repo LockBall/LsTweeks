@@ -45,8 +45,8 @@ local ROWS = {
 
 local CONTROL_GRID = {
     enabled = { row = ROWS.top, col = 1 },
-    skyriding_talents = { row = ROWS.spark, col = 5, width = nil, center = true },
-    fill_test = { row = ROWS.top, col = 2, width = nil, center = true },
+    skyriding_talents = { row = ROWS.spark, col = 5, center = true },
+    fill_test = { row = ROWS.top, col = 2, center = true },
     fill_color = {
         row = ROWS.top,
         col = 2,
@@ -55,19 +55,19 @@ local CONTROL_GRID = {
         center = true,
     },
     fill_add = { row = ROWS.top, col = 3 },
-    style = { row = ROWS.top, col = 4, width = nil, center = true },
-    node_color = { row = ROWS.top, col = 5, width = nil, center = true },
+    style = { row = ROWS.top, col = 4, center = true },
+    node_color = { row = ROWS.top, col = 5, center = true },
 
     move_mode = { row = ROWS.position, col = 1 },
     snap_to_grid = { x = 0, y = -8 },
-    reset_position = { x = 0, y = -8, width = nil, center = true },
+    reset_position = { x = 0, y = -8, center = true },
     x_position = { row = ROWS.position, col = 2 },
     y_position = { row = ROWS.position, col = 3 },
     scale = { row = ROWS.position, col = 4 },
     spacing = { row = ROWS.position, col = 5 },
 
-    decor_style = { row = ROWS.decor, col = 1, y = -25, width = nil, center = true },
-    decor_color = { row = ROWS.decor, col = 2, y = -25, width = nil, center = true },
+    decor_style = { row = ROWS.decor, col = 1, y = -25, center = true },
+    decor_color = { row = ROWS.decor, col = 2, y = -25, center = true },
     decor_x_position = { row = ROWS.decor, col = 3 },
     decor_y_position = { row = ROWS.decor, col = 4 },
     decor_scale = { row = ROWS.decor, col = 5 },
@@ -80,7 +80,7 @@ local CONTROL_GRID = {
     show_spark = { row = ROWS.spark, col = 1 },
     spark_color = { row = ROWS.spark, col = 2, width = UI_CONFIG.color_picker_width, center = true },
     spark_size = { row = ROWS.spark, col = 3 },
-    race_profile_panel = { row = ROWS.top, col = 1, y = -32, width = nil, center = true },
+    race_profile_panel = { row = ROWS.top, col = 1, y = -32, center = true },
     race_profile_test = { x = 0, y = -8 },
 }
 
@@ -121,8 +121,12 @@ local STRINGS = {
 
 --#region SHARED HELPERS =======================================================
 
-local function get_spec(key)
-    return M.SETTING_SPECS[key]
+local function get_setting_range(key)
+    local range = M.SETTING_RANGES and M.SETTING_RANGES[key]
+    if not range then
+        error("LsTweaks Skyriding Vigor missing setting range: " .. tostring(key), 2)
+    end
+    return range
 end
 
 local function set_setting_from_slider(key)
@@ -168,9 +172,9 @@ local function sync_race_profile_panel_size()
     end
 end
 
-local function place_grid_control(frame, placement)
+local function place_grid_control(frame, placement, place_opts)
     if M.settings_grid then
-        M.settings_grid:place(frame, placement)
+        M.settings_grid:place(frame, placement, nil, place_opts)
     end
 end
 
@@ -218,9 +222,9 @@ end
 function M.sync_fill_test_button()
     local button = M.controls and M.controls.fill_test_button
     if button and button.SetTextToFit then
-        CONTROL_GRID.fill_test.width = button:SetTextToFit(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
+        local width = button:SetTextToFit(M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test)
         if M.controls_parent then
-            place_grid_control(button, CONTROL_GRID.fill_test)
+            place_grid_control(button, CONTROL_GRID.fill_test, { width = width })
         end
     end
 end
@@ -477,18 +481,18 @@ function M.BuildSettings(parent)
     local db = M.get_db and M.get_db()
     local root_db = M.get_root_db and M.get_root_db()
     local defaults = M.DEFAULTS or {}
-    local x_spec = get_spec("x_position")
-    local y_spec = get_spec("y_position")
-    local scale_spec = get_spec("scale")
-    local spacing_spec = get_spec("spacing")
-    local fill_add_spec = get_spec("fill_add_alpha")
-    local decor_scale_spec = get_spec("decor_scale")
-    local decor_x_spec = get_spec("decor_x_position")
-    local decor_y_spec = get_spec("decor_y_position")
-    local fade_alpha_spec = get_spec("fade_alpha")
-    local fade_length_spec = get_spec("fade_length")
-    local progress_update_hz_spec = get_spec("progress_update_hz")
-    local spark_size_spec = get_spec("spark_size")
+    local x_range = get_setting_range("x_position")
+    local y_range = get_setting_range("y_position")
+    local scale_range = get_setting_range("scale")
+    local spacing_range = get_setting_range("spacing")
+    local fill_add_range = get_setting_range("fill_add_alpha")
+    local decor_scale_range = get_setting_range("decor_scale")
+    local decor_x_range = get_setting_range("decor_x_position")
+    local decor_y_range = get_setting_range("decor_y_position")
+    local fade_alpha_range = get_setting_range("fade_alpha")
+    local fade_length_range = get_setting_range("fade_length")
+    local progress_update_hz_range = get_setting_range("progress_update_hz")
+    local spark_size_range = get_setting_range("spark_size")
     local active_profile_proxy = setmetatable({}, {
         __index = function(_, key)
             local active_db = M.get_db and M.get_db()
@@ -524,7 +528,6 @@ function M.BuildSettings(parent)
         height = cfg.button_height,
         padding_x = cfg.button_padding_x,
     })
-    CONTROL_GRID.skyriding_talents.width = skyriding_talents_button:GetWidth()
     place_grid_control(skyriding_talents_button, CONTROL_GRID.skyriding_talents)
     M.controls.skyriding_talents_button = skyriding_talents_button
 
@@ -552,12 +555,12 @@ function M.BuildSettings(parent)
     if addon.ApplyStandardButtonStyle then
         addon.ApplyStandardButtonStyle(reset_button)
     end
-    CONTROL_GRID.reset_position.width = reset_button:GetWidth()
+    local reset_position_width = reset_button:GetWidth()
     reset_button:SetPoint(
         "TOPLEFT",
         snap_container,
         "BOTTOMLEFT",
-        ((UI_CONFIG.slider_width - CONTROL_GRID.reset_position.width) / 2) + CONTROL_GRID.reset_position.x,
+        ((UI_CONFIG.slider_width - reset_position_width) / 2) + CONTROL_GRID.reset_position.x,
         CONTROL_GRID.reset_position.y
     )
     reset_button:SetScript("OnClick", M.reset_position)
@@ -571,7 +574,6 @@ function M.BuildSettings(parent)
         height = cfg.button_height,
         padding_x = cfg.button_padding_x,
     })
-    CONTROL_GRID.fill_test.width = fill_test_button:GetWidth()
     place_grid_control(fill_test_button, CONTROL_GRID.fill_test)
     M.controls.fill_test_button = fill_test_button
 
@@ -593,7 +595,6 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.style = style_dropdown
-    CONTROL_GRID.style.width = style_dropdown:GetWidth()
     place_grid_control(style_dropdown, CONTROL_GRID.style)
 
     local node_color_dropdown = addon.CreateDropdown(
@@ -613,7 +614,6 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.node_color = node_color_dropdown
-    CONTROL_GRID.node_color.width = node_color_dropdown:GetWidth()
     place_grid_control(node_color_dropdown, CONTROL_GRID.node_color)
     M.sync_node_color_controls()
 
@@ -671,9 +671,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorFillAdd",
         parent,
         STRINGS.fill_add,
-        fill_add_spec.min,
-        fill_add_spec.max,
-        fill_add_spec.step,
+        fill_add_range.min,
+        fill_add_range.max,
+        fill_add_range.step,
         fill_add_proxy,
         "fill_add_alpha",
         fill_add_defaults_proxy,
@@ -685,16 +685,18 @@ function M.BuildSettings(parent)
     M.controls.fill_add_alpha = fill_add_slider
     place_grid_control(fill_add_slider, CONTROL_GRID.fill_add)
 
-    db.position = db.position or {}
+    if db then
+        db.position = db.position or {}
+    end
     local default_position = defaults.position or {}
 
     local x_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorXPosition",
         parent,
         STRINGS.x_position,
-        x_spec.min,
-        x_spec.max,
-        x_spec.step,
+        x_range.min,
+        x_range.max,
+        x_range.step,
         position_proxy,
         "x",
         default_position
@@ -709,9 +711,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorYPosition",
         parent,
         STRINGS.y_position,
-        y_spec.min,
-        y_spec.max,
-        y_spec.step,
+        y_range.min,
+        y_range.max,
+        y_range.step,
         position_proxy,
         "y",
         default_position
@@ -726,9 +728,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorScale",
         parent,
         STRINGS.scale,
-        scale_spec.min,
-        scale_spec.max,
-        scale_spec.step,
+        scale_range.min,
+        scale_range.max,
+        scale_range.step,
         active_profile_proxy,
         "scale",
         defaults,
@@ -742,9 +744,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorSpacing",
         parent,
         STRINGS.spacing,
-        spacing_spec.min,
-        spacing_spec.max,
-        spacing_spec.step,
+        spacing_range.min,
+        spacing_range.max,
+        spacing_range.step,
         active_profile_proxy,
         "spacing",
         defaults,
@@ -799,7 +801,6 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.decor_style = decor_style_dropdown
-    CONTROL_GRID.decor_style.width = decor_style_dropdown:GetWidth()
     place_grid_control(decor_style_dropdown, CONTROL_GRID.decor_style)
 
     local decor_color_dropdown = addon.CreateDropdown(
@@ -819,7 +820,6 @@ function M.BuildSettings(parent)
         }
     )
     M.controls.decor_color = decor_color_dropdown
-    CONTROL_GRID.decor_color.width = decor_color_dropdown:GetWidth()
     place_grid_control(decor_color_dropdown, CONTROL_GRID.decor_color)
     M.sync_decor_color_controls()
 
@@ -827,9 +827,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorDecorXPosition",
         parent,
         STRINGS.decor_x_position,
-        decor_x_spec.min,
-        decor_x_spec.max,
-        decor_x_spec.step,
+        decor_x_range.min,
+        decor_x_range.max,
+        decor_x_range.step,
         decor_position_proxy,
         "x",
         decor_position_defaults_proxy,
@@ -844,9 +844,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorDecorYPosition",
         parent,
         STRINGS.decor_y_position,
-        decor_y_spec.min,
-        decor_y_spec.max,
-        decor_y_spec.step,
+        decor_y_range.min,
+        decor_y_range.max,
+        decor_y_range.step,
         decor_position_proxy,
         "y",
         decor_position_defaults_proxy,
@@ -861,9 +861,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorDecorScale",
         parent,
         STRINGS.decor_scale,
-        decor_scale_spec.min,
-        decor_scale_spec.max,
-        decor_scale_spec.step,
+        decor_scale_range.min,
+        decor_scale_range.max,
+        decor_scale_range.step,
         decor_position_proxy,
         "scale",
         decor_position_defaults_proxy,
@@ -886,9 +886,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorFadeAlpha",
         parent,
         STRINGS.fade_alpha,
-        fade_alpha_spec.min,
-        fade_alpha_spec.max,
-        fade_alpha_spec.step,
+        fade_alpha_range.min,
+        fade_alpha_range.max,
+        fade_alpha_range.step,
         active_profile_proxy,
         "fade_alpha",
         defaults,
@@ -901,9 +901,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorFadeLength",
         parent,
         STRINGS.fade_length,
-        fade_length_spec.min,
-        fade_length_spec.max,
-        fade_length_spec.step,
+        fade_length_range.min,
+        fade_length_range.max,
+        fade_length_range.step,
         active_profile_proxy,
         "fade_length",
         defaults,
@@ -916,9 +916,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorProgressUpdateHz",
         parent,
         STRINGS.progress_update_hz,
-        progress_update_hz_spec.min,
-        progress_update_hz_spec.max,
-        progress_update_hz_spec.step,
+        progress_update_hz_range.min,
+        progress_update_hz_range.max,
+        progress_update_hz_range.step,
         active_profile_proxy,
         "progress_update_hz",
         defaults,
@@ -975,7 +975,9 @@ function M.BuildSettings(parent)
     M.controls.show_spark = spark_cb
     place_grid_control(spark_container, CONTROL_GRID.show_spark)
 
-    db.spark_color = db.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+    if db then
+        db.spark_color = db.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+    end
     local spark_color_defaults = {
         spark_color = defaults.spark_color or { r = 1, g = 1, b = 1, a = 1 },
     }
@@ -995,9 +997,9 @@ function M.BuildSettings(parent)
         addon_name .. "SkyridingVigorSparkSize",
         parent,
         STRINGS.spark_size,
-        spark_size_spec.min,
-        spark_size_spec.max,
-        spark_size_spec.step,
+        spark_size_range.min,
+        spark_size_range.max,
+        spark_size_range.step,
         active_profile_proxy,
         "spark_size",
         defaults,
