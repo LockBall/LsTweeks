@@ -57,7 +57,7 @@ local function create_profile_button(parent, text, width, on_click)
     return button
 end
 
-function M.build_profiles_tab(parent)
+local function build_profiles_tab(parent)
     local selected_name = M.db and M.db.last_profile_name
     local rows = {}
 
@@ -280,16 +280,7 @@ function M.build_profiles_tab(parent)
     rebuild_profile_list()
 end
 
--- tabs settings controls
-function M.BuildSettings(parent)
-    local tabs, panels = {}, {}
-    local main_content_height
-    if addon.main_frame and addon.main_frame.GetContentAreaSize then
-        local _, height = addon.main_frame:GetContentAreaSize()
-        main_content_height = height
-    end
-    local panel_height = math.max(50, (main_content_height or parent:GetHeight() or 0) - 78)
-
+local function build_frames_data()
     -- Category controls are derived from FRAME_DEFS so GUI labels, DB keys,
     -- runtime frame creation, and CDM metadata stay in one place.
     local function make_cat(frame_def)
@@ -318,6 +309,66 @@ function M.BuildSettings(parent)
     for _, frame_def in ipairs(frame_defs_for_tree) do
         frames_data[#frames_data + 1] = make_cat(frame_def)
     end
+    return frames_data
+end
+
+local function build_tab_panel(parent, context, data, index)
+    local tabs = context.tabs
+    local panels = context.panels
+    local tab = CreateFrame("Button", addon_name.."Tab"..index, parent, "PanelTabButtonTemplate")
+    tab:SetText(data.name)
+    tab:SetID(index)
+    tab:SetScript("OnClick", function(self)
+        for j, p in ipairs(panels) do
+            p:SetShown(j == self:GetID())
+            if j == self:GetID() then
+                PanelTemplates_SelectTab(tabs[j])
+            else
+                PanelTemplates_DeselectTab(tabs[j])
+            end
+        end
+        if M.db then M.db.last_tab_index = self:GetID() end
+    end)
+    tab:SetPoint(
+        index == 1 and "TOPLEFT" or "LEFT",
+        index == 1 and parent or tabs[index - 1],
+        index == 1 and "TOPLEFT" or "RIGHT",
+        index == 1 and 10 or 5,
+        index == 1 and -12 or 0
+    )
+    PanelTemplates_TabResize(tab, 0)
+
+    local p = CreateFrame("Frame", nil, parent)
+    p:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -78)
+    p:SetSize(741, context.panel_height) -- width: 925 frame - 12 B.l - 140 sidebar - 12 B.r - 20 margin
+    p:Hide()
+
+    if data.is_general then
+        M.build_general_tab(p)
+    elseif data.is_frames then
+        M.build_frames_tab(p, context.frames_data)
+    elseif data.is_profiles then
+        build_profiles_tab(p)
+    end
+
+    tabs[index], panels[index] = tab, p
+end
+
+-- tabs settings controls
+function M.BuildSettings(parent)
+    local tabs, panels = {}, {}
+    local main_content_height
+    if addon.main_frame and addon.main_frame.GetContentAreaSize then
+        local _, height = addon.main_frame:GetContentAreaSize()
+        main_content_height = height
+    end
+    local panel_height = math.max(50, (main_content_height or parent:GetHeight() or 0) - 78)
+    local context = {
+        tabs = tabs,
+        panels = panels,
+        panel_height = panel_height,
+        frames_data = build_frames_data(),
+    }
 
     local tab_data = {
         { name = "General", is_general  = true },
@@ -325,39 +376,8 @@ function M.BuildSettings(parent)
         { name = "Profiles", is_profiles = true },
     }
 
-
     for i, data in ipairs(tab_data) do
-        local tab = CreateFrame("Button", addon_name.."Tab"..i, parent, "PanelTabButtonTemplate")
-        tab:SetText(data.name)
-        tab:SetID(i)
-        tab:SetScript("OnClick", function(self)
-            for j, p in ipairs(panels) do
-                p:SetShown(j == self:GetID())
-                if j == self:GetID() then
-                    PanelTemplates_SelectTab(tabs[j])
-                else
-                    PanelTemplates_DeselectTab(tabs[j])
-                end
-            end
-            if M.db then M.db.last_tab_index = self:GetID() end
-        end)
-        tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and parent or tabs[i-1], i == 1 and "TOPLEFT" or "RIGHT", i == 1 and 10 or 5, i == 1 and -12 or 0)
-        PanelTemplates_TabResize(tab, 0)
-
-        local p = CreateFrame("Frame", nil, parent)
-        p:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -78)
-        p:SetSize(741, panel_height)  -- width: 925 frame - 12 B.l - 140 sidebar - 12 B.r - 20 margin
-        p:Hide()
-
-        if data.is_general then
-            M.build_general_tab(p)
-        elseif data.is_frames then
-            M.build_frames_tab(p, frames_data)
-        elseif data.is_profiles then
-            M.build_profiles_tab(p)
-        end
-
-        tabs[i], panels[i] = tab, p
+        build_tab_panel(parent, context, data, i)
     end
 
     PanelTemplates_SetNumTabs(parent, #tab_data)
