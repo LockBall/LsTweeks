@@ -446,123 +446,16 @@ end
 
 --#region SETTINGS CONSTRUCTION ================================================
 
-function M.BuildSettings(parent)
-    local cfg = UI_CONFIG
-    M.controls_parent = parent
-    M.settings_grid = addon.CreateSettingsGrid(parent, {
-        column_count = 5,
-        col_gap = cfg.slider_width + cfg.slider_gap_x,
-        col_width = cfg.slider_width,
-        col_offset = cfg.title_offset_x,
-        row_start = cfg.title_offset_y,
-        row_gap = cfg.grid_row_gap,
-        row_heights = {
-            cfg.slider_row_height,
-            cfg.slider_row_height,
-            cfg.slider_row_height,
-            cfg.slider_row_height,
-            cfg.slider_row_height,
-            cfg.reset_row_height,
-        },
-        col_align = { "left", "left", "left", "left", "left" },
-        offsets = { default = 0 },
-        separator_left = cfg.title_offset_x,
-        separator_right_pad = 20,
-        separator_stretch = true,
-        row_separators = {
-            ROWS.top,
-            ROWS.position,
-            ROWS.decor,
-            ROWS.fade,
-            ROWS.spark,
-        },
-    })
-    local db = M.get_db and M.get_db()
-    local root_db = M.get_root_db and M.get_root_db()
-    local defaults = M.DEFAULTS or {}
-    local x_range = get_setting_range("x_position")
-    local y_range = get_setting_range("y_position")
-    local scale_range = get_setting_range("scale")
-    local spacing_range = get_setting_range("spacing")
-    local fill_add_range = get_setting_range("fill_add_alpha")
-    local decor_scale_range = get_setting_range("decor_scale")
-    local decor_x_range = get_setting_range("decor_x_position")
-    local decor_y_range = get_setting_range("decor_y_position")
-    local fade_alpha_range = get_setting_range("fade_alpha")
-    local fade_length_range = get_setting_range("fade_length")
-    local progress_update_hz_range = get_setting_range("progress_update_hz")
-    local spark_size_range = get_setting_range("spark_size")
-    local active_profile_proxy = setmetatable({}, {
-        __index = function(_, key)
-            local active_db = M.get_db and M.get_db()
-            return active_db and active_db[key]
-        end,
-        __newindex = function(_, key, value)
-            local active_db = M.get_db and M.get_db()
-            if active_db then
-                active_db[key] = value
-            end
-        end,
-    })
-    local position_proxy = setmetatable({}, {
-        __index = function(_, key)
-            local active_db = M.get_db and M.get_db()
-            return active_db and active_db.position and active_db.position[key]
-        end,
-        __newindex = function(_, key, value)
-            local active_db = M.get_db and M.get_db()
-            if not active_db then return end
-            active_db.position = active_db.position or {}
-            active_db.position[key] = value
-        end,
-    })
+local function build_top_row(parent, context)
+    local cfg = context.cfg
+    local db = context.db
+    local defaults = context.defaults
 
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
         M.set_db_value("enabled", is_checked)
     end)
     M.controls.enabled = enabled_cb
     place_grid_control(enabled_container, CONTROL_GRID.enabled)
-
-    local skyriding_talents_button = addon.CreateTextButton(parent, STRINGS.skyriding_talents, open_skyriding_talents, {
-        height = cfg.button_height,
-        padding_x = cfg.button_padding_x,
-    })
-    place_grid_control(skyriding_talents_button, CONTROL_GRID.skyriding_talents)
-    M.controls.skyriding_talents_button = skyriding_talents_button
-
-    local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
-        M.set_db_value("move_mode", is_checked)
-    end)
-    M.controls.move_mode = move_cb
-    place_grid_control(move_container, CONTROL_GRID.move_mode)
-
-    local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
-        M.set_snap_to_grid(is_checked)
-    end)
-    M.controls.snap_to_grid = snap_cb
-    snap_container:SetPoint(
-        "TOPLEFT",
-        move_container,
-        "BOTTOMLEFT",
-        CONTROL_GRID.snap_to_grid.x,
-        CONTROL_GRID.snap_to_grid.y
-    )
-
-    local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    reset_button:SetSize(110, 22)
-    reset_button:SetText("Reset Position")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(reset_button)
-    end
-    local reset_position_width = reset_button:GetWidth()
-    reset_button:SetPoint(
-        "TOPLEFT",
-        snap_container,
-        "BOTTOMLEFT",
-        ((UI_CONFIG.slider_width - reset_position_width) / 2) + CONTROL_GRID.reset_position.x,
-        CONTROL_GRID.reset_position.y
-    )
-    reset_button:SetScript("OnClick", M.reset_position)
 
     local fill_test_button = addon.CreateTextButton(parent, M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test, function()
         if M.toggle_fill_test then
@@ -666,6 +559,7 @@ function M.BuildSettings(parent)
             return nil
         end,
     })
+    local fill_add_range = context.fill_add_range
     local fill_add_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFillAdd",
         parent,
@@ -683,12 +577,55 @@ function M.BuildSettings(parent)
     )
     M.controls.fill_add_alpha = fill_add_slider
     place_grid_control(fill_add_slider, CONTROL_GRID.fill_add)
+end
+
+local function build_position_row(parent, context)
+    local cfg = context.cfg
+    local db = context.db
+    local defaults = context.defaults
+    local active_profile_proxy = context.active_profile_proxy
+    local position_proxy = context.position_proxy
+
+    local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
+        M.set_db_value("move_mode", is_checked)
+    end)
+    M.controls.move_mode = move_cb
+    place_grid_control(move_container, CONTROL_GRID.move_mode)
+
+    local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
+        M.set_snap_to_grid(is_checked)
+    end)
+    M.controls.snap_to_grid = snap_cb
+    snap_container:SetPoint(
+        "TOPLEFT",
+        move_container,
+        "BOTTOMLEFT",
+        CONTROL_GRID.snap_to_grid.x,
+        CONTROL_GRID.snap_to_grid.y
+    )
+
+    local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    reset_button:SetSize(110, 22)
+    reset_button:SetText("Reset Position")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(reset_button)
+    end
+    local reset_position_width = reset_button:GetWidth()
+    reset_button:SetPoint(
+        "TOPLEFT",
+        snap_container,
+        "BOTTOMLEFT",
+        ((cfg.slider_width - reset_position_width) / 2) + CONTROL_GRID.reset_position.x,
+        CONTROL_GRID.reset_position.y
+    )
+    reset_button:SetScript("OnClick", M.reset_position)
 
     if db then
         db.position = db.position or {}
     end
     local default_position = defaults.position or {}
 
+    local x_range = context.x_range
     local x_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorXPosition",
         parent,
@@ -706,6 +643,7 @@ function M.BuildSettings(parent)
     M.controls.x_position = x_slider
     place_grid_control(x_slider, CONTROL_GRID.x_position)
 
+    local y_range = context.y_range
     local y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorYPosition",
         parent,
@@ -723,6 +661,7 @@ function M.BuildSettings(parent)
     M.controls.y_position = y_slider
     place_grid_control(y_slider, CONTROL_GRID.y_position)
 
+    local scale_range = context.scale_range
     local scale_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorScale",
         parent,
@@ -739,6 +678,7 @@ function M.BuildSettings(parent)
     M.controls.scale = scale_slider
     place_grid_control(scale_slider, CONTROL_GRID.scale)
 
+    local spacing_range = context.spacing_range
     local spacing_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorSpacing",
         parent,
@@ -753,6 +693,11 @@ function M.BuildSettings(parent)
     )
     M.controls.spacing = spacing_slider
     place_grid_control(spacing_slider, CONTROL_GRID.spacing)
+end
+
+local function build_decor_row(parent, context)
+    local cfg = context.cfg
+    local defaults = context.defaults
 
     local decor_position_proxy = setmetatable({}, {
         __index = function(_, key)
@@ -822,6 +767,7 @@ function M.BuildSettings(parent)
     place_grid_control(decor_color_dropdown, CONTROL_GRID.decor_color)
     M.sync_decor_color_controls()
 
+    local decor_x_range = context.decor_x_range
     local decor_x_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorXPosition",
         parent,
@@ -839,6 +785,7 @@ function M.BuildSettings(parent)
     M.controls.decor_x_position = decor_x_slider
     place_grid_control(decor_x_slider, CONTROL_GRID.decor_x_position)
 
+    local decor_y_range = context.decor_y_range
     local decor_y_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorYPosition",
         parent,
@@ -856,6 +803,7 @@ function M.BuildSettings(parent)
     M.controls.decor_y_position = decor_y_slider
     place_grid_control(decor_y_slider, CONTROL_GRID.decor_y_position)
 
+    local decor_scale_range = context.decor_scale_range
     local decor_scale_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorDecorScale",
         parent,
@@ -873,6 +821,12 @@ function M.BuildSettings(parent)
     )
     M.controls.decor_scale = decor_scale_slider
     place_grid_control(decor_scale_slider, CONTROL_GRID.decor_scale)
+end
+
+local function build_fade_row(parent, context)
+    local db = context.db
+    local defaults = context.defaults
+    local active_profile_proxy = context.active_profile_proxy
 
     local fade_container, fade_cb, fade_label = addon.CreateCheckbox(parent, STRINGS.fade_when_full, db and db.fade_when_full, function(is_checked)
         M.set_db_value("fade_when_full", is_checked)
@@ -881,6 +835,7 @@ function M.BuildSettings(parent)
     place_grid_control(fade_container, CONTROL_GRID.fade_when_full)
     addon.AttachTooltipToTargets(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
 
+    local fade_alpha_range = context.fade_alpha_range
     local fade_alpha_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeAlpha",
         parent,
@@ -896,6 +851,7 @@ function M.BuildSettings(parent)
     M.controls.fade_alpha = fade_alpha_slider
     place_grid_control(fade_alpha_slider, CONTROL_GRID.fade_alpha)
 
+    local fade_length_range = context.fade_length_range
     local fade_length_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorFadeLength",
         parent,
@@ -911,6 +867,7 @@ function M.BuildSettings(parent)
     M.controls.fade_length = fade_length_slider
     place_grid_control(fade_length_slider, CONTROL_GRID.fade_length)
 
+    local progress_update_hz_range = context.progress_update_hz_range
     local progress_update_hz_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorProgressUpdateHz",
         parent,
@@ -925,6 +882,11 @@ function M.BuildSettings(parent)
     )
     M.controls.progress_update_hz = progress_update_hz_slider
     place_grid_control(progress_update_hz_slider, CONTROL_GRID.progress_update_hz)
+end
+
+local function build_race_profile_panel(parent, context)
+    local cfg = context.cfg
+    local root_db = context.root_db
 
     local race_profile_panel = create_control_panel(parent)
     M.controls.race_profile_panel = race_profile_panel
@@ -967,6 +929,20 @@ function M.BuildSettings(parent)
     size_panel_to_controls(race_profile_panel, cfg, race_profile_container, race_profile_test_button)
     M.settings_grid:center(race_profile_panel, CONTROL_GRID.race_profile_panel)
     M.sync_race_profile_controls(root_db)
+end
+
+local function build_spark_row(parent, context)
+    local cfg = context.cfg
+    local db = context.db
+    local defaults = context.defaults
+    local active_profile_proxy = context.active_profile_proxy
+
+    local skyriding_talents_button = addon.CreateTextButton(parent, STRINGS.skyriding_talents, open_skyriding_talents, {
+        height = cfg.button_height,
+        padding_x = cfg.button_padding_x,
+    })
+    place_grid_control(skyriding_talents_button, CONTROL_GRID.skyriding_talents)
+    M.controls.skyriding_talents_button = skyriding_talents_button
 
     local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
@@ -992,6 +968,7 @@ function M.BuildSettings(parent)
     M.controls.spark_color = spark_color_picker
     place_grid_control(spark_color_picker, CONTROL_GRID.spark_color)
 
+    local spark_size_range = context.spark_size_range
     local spark_size_slider = addon.CreateSliderWithBox(
         addon_name .. "SkyridingVigorSparkSize",
         parent,
@@ -1007,6 +984,12 @@ function M.BuildSettings(parent)
     )
     M.controls.spark_size = spark_size_slider
     place_grid_control(spark_size_slider, CONTROL_GRID.spark_size)
+end
+
+local function build_reset_panel(parent, context)
+    local cfg = context.cfg
+    local root_db = context.root_db
+    local defaults = context.defaults
 
     if addon.CreateModuleReset and root_db then
         local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {
@@ -1015,6 +998,112 @@ function M.BuildSettings(parent)
         reset_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.reset_bottom_x, get_reset_panel_y(reset_panel, cfg))
         M.controls.reset_panel = reset_panel
     end
+end
+
+function M.BuildSettings(parent)
+    local cfg = UI_CONFIG
+    M.controls_parent = parent
+    M.settings_grid = addon.CreateSettingsGrid(parent, {
+        column_count = 5,
+        col_gap = cfg.slider_width + cfg.slider_gap_x,
+        col_width = cfg.slider_width,
+        col_offset = cfg.title_offset_x,
+        row_start = cfg.title_offset_y,
+        row_gap = cfg.grid_row_gap,
+        row_heights = {
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.slider_row_height,
+            cfg.reset_row_height,
+        },
+        col_align = { "left", "left", "left", "left", "left" },
+        offsets = { default = 0 },
+        separator_left = cfg.title_offset_x,
+        separator_right_pad = 20,
+        separator_stretch = true,
+        row_separators = {
+            ROWS.top,
+            ROWS.position,
+            ROWS.decor,
+            ROWS.fade,
+            ROWS.spark,
+        },
+    })
+    local db = M.get_db and M.get_db()
+    local root_db = M.get_root_db and M.get_root_db()
+    local defaults = M.DEFAULTS or {}
+    local x_range = get_setting_range("x_position")
+    local y_range = get_setting_range("y_position")
+    local scale_range = get_setting_range("scale")
+    local spacing_range = get_setting_range("spacing")
+    local fill_add_range = get_setting_range("fill_add_alpha")
+    local decor_scale_range = get_setting_range("decor_scale")
+    local decor_x_range = get_setting_range("decor_x_position")
+    local decor_y_range = get_setting_range("decor_y_position")
+    local fade_alpha_range = get_setting_range("fade_alpha")
+    local fade_length_range = get_setting_range("fade_length")
+    local progress_update_hz_range = get_setting_range("progress_update_hz")
+    local spark_size_range = get_setting_range("spark_size")
+    local active_profile_proxy = setmetatable({}, {
+        __index = function(_, key)
+            local active_db = M.get_db and M.get_db()
+            return active_db and active_db[key]
+        end,
+        __newindex = function(_, key, value)
+            local active_db = M.get_db and M.get_db()
+            if active_db then
+                active_db[key] = value
+            end
+        end,
+    })
+    local position_proxy = setmetatable({}, {
+        __index = function(_, key)
+            local active_db = M.get_db and M.get_db()
+            return active_db and active_db.position and active_db.position[key]
+        end,
+        __newindex = function(_, key, value)
+            local active_db = M.get_db and M.get_db()
+            if not active_db then return end
+            active_db.position = active_db.position or {}
+            active_db.position[key] = value
+        end,
+    })
+    local context = {
+        cfg = cfg,
+        db = db,
+        root_db = root_db,
+        defaults = defaults,
+        x_range = x_range,
+        y_range = y_range,
+        scale_range = scale_range,
+        spacing_range = spacing_range,
+        fill_add_range = fill_add_range,
+        decor_scale_range = decor_scale_range,
+        decor_x_range = decor_x_range,
+        decor_y_range = decor_y_range,
+        fade_alpha_range = fade_alpha_range,
+        fade_length_range = fade_length_range,
+        progress_update_hz_range = progress_update_hz_range,
+        spark_size_range = spark_size_range,
+        active_profile_proxy = active_profile_proxy,
+        position_proxy = position_proxy,
+    }
+
+    build_top_row(parent, context)
+
+    build_position_row(parent, context)
+
+    build_decor_row(parent, context)
+
+    build_fade_row(parent, context)
+
+    build_race_profile_panel(parent, context)
+
+    build_spark_row(parent, context)
+
+    build_reset_panel(parent, context)
 end
 
 --#endregion SETTINGS CONSTRUCTION =============================================
