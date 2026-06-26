@@ -62,7 +62,6 @@ try {
         "modules/aura_frames/af_render.lua",
         "modules/aura_frames/af_icon_layout.lua",
         "modules/aura_frames/af_core.lua",
-        "modules/aura_frames/af_gui_grid.lua",
         "modules/aura_frames/af_gui_tree.lua",
         "modules/aura_frames/af_gui_frame_builders.lua",
         "modules/aura_frames/af_gui.lua",

@@ -21,6 +21,38 @@ local function get_timer_font_options()
     return options
 end
 
+local function create_list_dropdown(name, parent, labelText, options, get_value, on_select, width)
+    local function get_option_text(option)
+        return option.text or tostring(option.value or "")
+    end
+
+    local function apply_button_style(btn_text, option)
+        if not btn_text then return end
+        if option.font_path then
+            btn_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
+        else
+            btn_text:SetFontObject(GameFontNormalSmall)
+        end
+    end
+
+    local function apply_row_style(row_text, option)
+        if option.font_path then
+            row_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
+        end
+    end
+
+    return addon.CreateDropdown(name, parent, labelText, options, {
+        width = width or 180,
+        get_value = get_value,
+        on_select = function(value)
+            if on_select then on_select(value) end
+        end,
+        get_option_text = get_option_text,
+        apply_button_style = apply_button_style,
+        apply_row_style = apply_row_style,
+    })
+end
+
 local CANCEL_MODIFIER_OPTIONS = {
     { value = "OFF", text = "OFF" },
     { value = "CTRL", text = "CTRL" },
@@ -259,7 +291,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     )
     grid:stack_below(timer_bold_container, timer_text_container, { y = -4 })
 
-    local timer_font = M.CreateListDropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
+    local timer_font = create_list_dropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
         function()
             return frame_config.value_table[timer_font_key] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
         end,
@@ -666,7 +698,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     opts = opts or {}
     local update = opts.update
     local has_timer_controls = opts.show_timer_controls ~= false
-    local grid = M.create_settings_grid(parent, {
+    local grid = addon.CreateSettingsGrid(parent, {
         row_separators = has_timer_controls and { 1, 2, 3, 4, 5 } or { 1, 2, 3, 4 },
     })
     local value_table = frame_config.value_table

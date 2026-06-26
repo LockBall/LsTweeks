@@ -57,9 +57,11 @@ Important `skyriding_vigor` keys:
 
 - The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
 
-- `sv_settings.lua` is old/gone. The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns both control construction and `M.sync_settings_controls()` / related control-sync helpers.
+- `sv_settings.lua` is old/gone. The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns control construction and control synchronization. Avoid a one-off `sv_gui_sync.lua` split unless a broader cross-module GUI-sync file pattern is introduced.
 
-- As of the 2026-06-25 settings refactor, `M.BuildSettings()` coordinates local builder functions (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, `build_spark_row`, and `build_reset_panel`) while `ROWS` / `CONTROL_GRID` remain local static placement data. A future `sv_gui.lua` split is reasonable if paired with the cross-module settings-grid consolidation review, so Skyriding does not split around module-local grid patterns that should become addon-wide. Any split needs `.toc` load-order review because `sv_gui.lua` currently loads before `sv_main.lua`, and it should avoid exposing local GUI constants through `M` solely to share implementation details.
+- 2026-06-25 modularization review kept `sv_gui.lua` intact. Aura Frames has GUI helper subfiles for frame builders and the Frames tree, but Skyriding's current single-page GUI does not have an equivalent split boundary that avoids moving local layout constants or creating a tiny wrapper.
+
+- `M.BuildSettings()` coordinates local builder functions (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, `build_spark_row`, and `build_reset_panel`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
 
 - Skyriding's Move Mode cell is a three-control stack: Move Mode, Snap to Grid, and Reset Position. The first control is grid-placed and the secondary controls use `grid:stack_below()` so the row/column cell owns the repeated vertical-stack math. In-game visual check passed on 2026-06-25.
 

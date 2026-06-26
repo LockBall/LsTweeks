@@ -10,42 +10,6 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- GUI COMPONENT BUILDERS
-
--- Shared dropdown mechanics live in functions/dropdown.lua via addon.CreateDropdown.
-
-function M.CreateListDropdown(name, parent, labelText, options, get_value, on_select, width)
-    local function get_option_text(option)
-        return option.text or tostring(option.value or "")
-    end
-
-    local function apply_button_style(btn_text, option)
-        if not btn_text then return end
-        if option.font_path then
-            btn_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
-        else
-            btn_text:SetFontObject(GameFontNormalSmall)
-        end
-    end
-
-    local function apply_row_style(row_text, option)
-        if option.font_path then
-            row_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
-        end
-    end
-
-    return addon.CreateDropdown(name, parent, labelText, options, {
-        width = width or 180,
-        get_value = get_value,
-        on_select = function(value)
-            if on_select then on_select(value) end
-        end,
-        get_option_text = get_option_text,
-        apply_button_style = apply_button_style,
-        apply_row_style = apply_row_style,
-    })
-end
-
 local function create_profile_button(parent, text, width, on_click)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(width or 100, 22)

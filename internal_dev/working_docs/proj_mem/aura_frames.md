@@ -153,13 +153,13 @@ Important `aura_frames` keys:
 
 - `M.BuildSettings()` stays as the tab-shell coordinator and routes through local helpers plus a small `context` table.
 
-- `af_gui.lua` keeps the Profiles tab builder local. `M.build_general_tab` and `M.build_frames_tab` remain exported because they live in separate Aura Frames GUI files and are called by the shell.
+- `af_gui.lua` keeps the Profiles tab builder local. Timer-font dropdown construction is local to `af_gui_frame_builders.lua`. `M.build_general_tab` and `M.build_frames_tab` remain exported because they live in separate Aura Frames GUI files and are called by the shell.
 
 - `af_gui_tree.lua` owns the Frames sidebar groups: **Buffs**, **WoW Cooldown**, **Filters**.
 
 - `af_gui_frame_builders.lua` owns General, preset/CDM, custom settings, and custom filter panels.
 
-- `M.create_settings_grid()` in `af_gui_grid.lua` is a compatibility wrapper around the shared `addon.CreateSettingsGrid()` helper in `functions/layout_grid.lua`. Use the shared helper for new row/column settings grids instead of duplicating grid math inside modules.
+- Aura Frames settings grids call the shared `addon.CreateSettingsGrid()` helper directly.
 
 - Aura Frames frame settings use `grid:stack_below()` for repeated in-cell stacks. Keep color pickers grid-placed in their own columns so centering comes from `CreateSettingsGrid()`, not manual offsets. In-game visual check passed on 2026-06-25.
 
