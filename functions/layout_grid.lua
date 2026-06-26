@@ -124,6 +124,23 @@ local function center_settings_grid_control(grid, control, placement, slot, plac
     grid:place(control, placement, slot, get_center_options(control, place_opts))
 end
 
+local function stack_settings_grid_control_below(grid, control, anchor, opts)
+    if not control or not anchor then return end
+
+    opts = opts or {}
+    local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
+    local align = opts.align or (opts.center and "center") or "left"
+    local x = opts.x_offset or opts.x or 0
+    if align == "center" then
+        x = x + ((opts.column_width or grid.col_width or 0) - width) / 2
+    elseif align == "right" then
+        x = x + (opts.column_width or grid.col_width or 0) - width
+    end
+
+    control:ClearAllPoints()
+    control:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, opts.y_offset or opts.y or 0)
+end
+
 local function add_settings_grid_row_separator(grid, row)
     local parent = grid.parent
     local line = parent:CreateTexture(nil, "BACKGROUND")
@@ -189,6 +206,7 @@ function addon.CreateSettingsGrid(parent, opts)
     grid.place_at = place_settings_grid_control
     grid.place = place_settings_grid_placement
     grid.center = center_settings_grid_control
+    grid.stack_below = stack_settings_grid_control_below
     grid.add_row_separator = add_settings_grid_row_separator
     grid.add_row_separators = add_settings_grid_row_separators
 

@@ -580,7 +580,6 @@ local function build_top_row(parent, context)
 end
 
 local function build_position_row(parent, context)
-    local cfg = context.cfg
     local db = context.db
     local defaults = context.defaults
     local active_profile_proxy = context.active_profile_proxy
@@ -596,13 +595,7 @@ local function build_position_row(parent, context)
         M.set_snap_to_grid(is_checked)
     end)
     M.controls.snap_to_grid = snap_cb
-    snap_container:SetPoint(
-        "TOPLEFT",
-        move_container,
-        "BOTTOMLEFT",
-        CONTROL_GRID.snap_to_grid.x,
-        CONTROL_GRID.snap_to_grid.y
-    )
+    M.settings_grid:stack_below(snap_container, move_container, CONTROL_GRID.snap_to_grid)
 
     local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     reset_button:SetSize(110, 22)
@@ -610,14 +603,12 @@ local function build_position_row(parent, context)
     if addon.ApplyStandardButtonStyle then
         addon.ApplyStandardButtonStyle(reset_button)
     end
-    local reset_position_width = reset_button:GetWidth()
-    reset_button:SetPoint(
-        "TOPLEFT",
-        snap_container,
-        "BOTTOMLEFT",
-        ((cfg.slider_width - reset_position_width) / 2) + CONTROL_GRID.reset_position.x,
-        CONTROL_GRID.reset_position.y
-    )
+    M.settings_grid:stack_below(reset_button, snap_container, {
+        x = CONTROL_GRID.reset_position.x,
+        y = CONTROL_GRID.reset_position.y,
+        width = reset_button:GetWidth(),
+        center = true,
+    })
     reset_button:SetScript("OnClick", M.reset_position)
 
     if db then

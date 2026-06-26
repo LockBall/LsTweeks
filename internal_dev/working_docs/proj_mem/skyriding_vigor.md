@@ -61,6 +61,8 @@ Important `skyriding_vigor` keys:
 
 - As of the 2026-06-25 settings refactor, `M.BuildSettings()` coordinates local builder functions (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, `build_spark_row`, and `build_reset_panel`) while `ROWS` / `CONTROL_GRID` remain local static placement data. A future `sv_gui.lua` split is reasonable if paired with the cross-module settings-grid consolidation review, so Skyriding does not split around module-local grid patterns that should become addon-wide. Any split needs `.toc` load-order review because `sv_gui.lua` currently loads before `sv_main.lua`, and it should avoid exposing local GUI constants through `M` solely to share implementation details.
 
+- Skyriding's Move Mode cell is a three-control stack: Move Mode, Snap to Grid, and Reset Position. The first control is grid-placed and the secondary controls use `grid:stack_below()` so the row/column cell owns the repeated vertical-stack math. In-game visual check passed on 2026-06-25.
+
 - `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
 
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.

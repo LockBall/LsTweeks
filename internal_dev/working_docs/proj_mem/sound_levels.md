@@ -4,6 +4,8 @@ Sound Levels module-specific notes live in `internal_dev/completed_features/soun
 
 - Sound Levels registers its settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Sound mutes, replacement playback, previews, event registration, and Fishing Focus runtime route through `M.is_runtime_enabled()` and `M.stop_runtime()`.
 
+- Sound Levels settings are not currently a normal `CreateSettingsGrid()` consumer. The Sounds tab is a list/detail selector, General is riveted help plus reset, and Fishing uses custom channel-column panels. Fishing has repeated column stride math that could use a future opt-in shared helper, but do not force the whole module into the row/column settings grid.
+
 
 ## Ketho / LuaLS
 

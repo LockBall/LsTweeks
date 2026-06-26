@@ -157,6 +157,8 @@ Important `aura_frames` keys:
 
 - `M.create_settings_grid()` in `af_gui_grid.lua` is a compatibility wrapper around the shared `addon.CreateSettingsGrid()` helper in `functions/layout_grid.lua`. Use the shared helper for new row/column settings grids instead of duplicating grid math inside modules.
 
+- Aura Frames frame settings use `grid:stack_below()` for repeated in-cell stacks. Keep color pickers grid-placed in their own columns so centering comes from `CreateSettingsGrid()`, not manual offsets. In-game visual check passed on 2026-06-25.
+
 - Aura Frames tab and tree heights derive from `addon.main_frame:GetContentAreaSize()`, so the main settings window height in `core/main_frame.lua` is the single height knob.
 
 - CDM controls are source-specific additions layered through `opts.build_source_controls`.

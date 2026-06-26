@@ -191,6 +191,10 @@ Violations here can create invisible or unstable controls.
 
 - Treat module-local grid placement tables as static source data. Pass dynamic widths or centering details through grid placement options instead of writing derived runtime values back into placement tables.
 
+- Keep `CreateSettingsGrid()` changes additive unless current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.
+
+- Settings grid cells may contain a small vertical stack of related controls. Use `grid:stack_below()` for secondary controls in the same cell instead of hand-anchoring repeated checkbox/button stacks; keep the first control placed through `grid:place()` or `grid:place_at()`.
+
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
 
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.

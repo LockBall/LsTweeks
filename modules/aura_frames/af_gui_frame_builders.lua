@@ -257,8 +257,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         refresh_fonts,
         update
     )
-    timer_bold_container:ClearAllPoints()
-    timer_bold_container:SetPoint("TOPLEFT", timer_text_container, "BOTTOMLEFT", 0, -4)
+    grid:stack_below(timer_bold_container, timer_text_container, { y = -4 })
 
     local timer_font = M.CreateListDropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
         function()
@@ -751,16 +750,13 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
         update()
     end)
-    test_aura_container:ClearAllPoints()
-    test_aura_container:SetPoint("TOPLEFT", enable_container, "BOTTOMLEFT", 0, 0)
+    grid:stack_below(test_aura_container, enable_container)
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
-    tooltip_container:ClearAllPoints()
-    tooltip_container:SetPoint("TOPLEFT", test_aura_container, "BOTTOMLEFT", 0, 0)
+    grid:stack_below(tooltip_container, test_aura_container)
 
     local frame_bg_container = bound_cb("Frame BG", "bg", 1, 2)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)
-    frame_bg_color_picker:ClearAllPoints()
-    frame_bg_color_picker:SetPoint("TOPLEFT", frame_bg_container, "BOTTOMLEFT", 0, -4)
+    grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
 
     local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
     grid:place_at(scale_slider, 1, 3)
@@ -815,28 +811,21 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end)
     if has_timer_controls then
         timer_swipe_container, timer_swipe_checkbox = bound_cb("Timer Swipe", "timer_swipe", 3, 1)
-        timer_swipe_container:ClearAllPoints()
-        timer_swipe_container:SetPoint("TOPLEFT", bar_mode_container, "BOTTOMLEFT", 0, 0)
+        grid:stack_below(timer_swipe_container, bar_mode_container)
         M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
         refresh_timer_swipe_control()
     end
 
     local growth_dropdown = create_growth_dropdown(parent, frame_config, update)
-    growth_dropdown:ClearAllPoints()
-    growth_dropdown:SetPoint("TOPLEFT", timer_swipe_container or bar_mode_container, "BOTTOMLEFT", 0, -25)
+    grid:stack_below(growth_dropdown, timer_swipe_container or bar_mode_container, { y = -25 })
 
     local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
-    bar_color_picker:SetPoint("TOPLEFT", bar_mode_container, "TOPLEFT", grid[2] - grid[1], 0)
+    grid:place_at(bar_color_picker, 3, 2, "picker")
     if opts.bar_color_control_key then
         M.controls[opts.bar_color_control_key] = bar_color_picker
     end
     local bar_text_color_picker = bound_picker("bar_text_color", false, "Bar Text Color", 3, 3)
-    bar_text_color_picker:ClearAllPoints()
-    bar_text_color_picker:SetPoint("TOPLEFT", bar_color_picker, "TOPLEFT", grid[2] - grid[1], 0)
-
     local bar_bg_color_picker = bound_picker("bar_bg_color", true, "Bar BG Color", 3, 4)
-    bar_bg_color_picker:ClearAllPoints()
-    bar_bg_color_picker:SetPoint("TOPLEFT", bar_color_picker, "TOPLEFT", grid[3] - grid[1], 0)
 
     if has_timer_controls then
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
@@ -913,8 +902,7 @@ function M.build_preset_frame_panel(p, data)
                     M.update_blizz_cdm_visibility(cat)
                     update()
                 end)
-                hide_blizz_cdm_container:ClearAllPoints()
-                hide_blizz_cdm_container:SetPoint("TOPLEFT", ctx.tooltip_container, "BOTTOMLEFT", 0, 0)
+                ctx.grid:stack_below(hide_blizz_cdm_container, ctx.tooltip_container)
             end
 
             if cat == "essential" or cat == "utility" then
