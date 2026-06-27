@@ -23,3 +23,5 @@ Important `objectives` keys:
 - Unchecking an Auto-Collapse option calls that tracker frame's `SetCollapsed(false)` once so the section reopens immediately. Disabling the Objectives module does not force-expand sections; later tracker state is left to Blizzard/user actions.
 
 - Initialization can race `ObjectiveTrackerManager:Init()`, which runs after both `PLAYER_ENTERING_WORLD` and `VARIABLES_LOADED`. Keep the `ADDON_LOADED` and delayed `PLAYER_ENTERING_WORLD` apply paths unless in-game testing proves they are redundant.
+
+- In-game verification passed after the Auto-Collapse group work: checked All Objectives, Campaign, Quests, and Achievements sections start collapsed after reload/login with tracked entries, remain manually expandable/collapsible through Blizzard tracker controls, and reopen once when their option is unchecked. No blocked-action/taint dialogs were observed during the verification pass.

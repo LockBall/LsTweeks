@@ -104,9 +104,8 @@ Comparison: `sv.set_slot_state` improved sharply, from 2.149ms/sec active to
 `sv.get_bar_style` calls dropped from 50.54/sec to 18.40/sec and CPU dropped from
 2.374ms/sec to 1.553ms/sec. However, `sv.get_render_context` is now the dominant
 inclusive row because it resolves style, frame atlas, and spark atlas on every
-active progress update. The next pass should avoid rebuilding full render context
-for every `sv.update_filling_slot_progress()` tick when the slot/style/atlas state
-has not changed.
+active progress update. This identified the issue later resolved by slot-local
+render context reuse in the following recorded run.
 
 ### 2026-06-26, Skyriding Vigor Only, After Progress Context Reuse
 

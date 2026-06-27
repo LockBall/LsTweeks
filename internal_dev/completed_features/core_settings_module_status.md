@@ -19,6 +19,8 @@ User in-game test after disabling all modules reported:
 
 Player Frame `loader_event_script=true` is expected. The bootstrap/dispatcher frame keeps its `OnEvent` script, but its runtime fade events are unregistered when disabled.
 
-## Follow-Up Policy
+## Boundary Policy
 
-Do not revisit lazy construction or LoadOnDemand child addons unless there is an explicit memory-footprint target. The disabled-runtime state is clean for current behavior.
+Do not reopen lazy construction or LoadOnDemand child addon architecture unless
+there is an explicit memory-footprint target in the review folder. The
+disabled-runtime state is clean for current behavior.

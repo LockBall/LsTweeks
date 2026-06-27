@@ -56,11 +56,11 @@ Runs in this series:
   `get_timer_behavior`, and `normalize_timer_category` all improved enough to
   keep the render cleanup.
 
-- **Render/CDM follow-up baselines, 69.9s and 101.6s:** Average call costs stayed
-  stable after render cleanup. `add_cooldown_viewer_category_entries` remained
-  the next Aura/CDM review target, but follow-up review found no safe high-value
-  rewrite; the remaining cost was mostly necessary live reads of Blizzard CDM
-  child state.
+- **Render/CDM comparison baselines, 69.9s and 101.6s:** Average call costs stayed
+  stable after render cleanup. Follow-up review found no safe high-value rewrite
+  for `add_cooldown_viewer_category_entries`; the remaining cost was mostly
+  necessary live reads of Blizzard CDM child state. Aura performance target notes
+  live in `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
 
 Conclusion: The June 6 broad series established Aura Frames as the primary addon
 runtime target and led to focused Aura profiling. It also established the

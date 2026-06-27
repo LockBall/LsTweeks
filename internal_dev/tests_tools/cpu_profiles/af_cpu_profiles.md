@@ -45,7 +45,7 @@ is still the main inclusive path, followed by rendering and visible-icon ticking
 contributors. Per-call costs are stable versus the broad run. Durable Aura
 performance conclusions live in `internal_dev/working_docs/proj_mem/aura_frames.md`;
 use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
-only if Aura performance work is reopened.
+for Aura performance target notes.
 
 ### 2026-06-22, Aura Frames Only, Post-OOC Fast Path
 
@@ -170,8 +170,9 @@ Conclusion: The targeted helper change worked: compared with the update sub-step
 run, `get_timer_behavior` fell from 6014 calls / 30.396ms to 3042 calls /
 16.480ms despite similar render/update volume. `render_aura_map` average also
 fell from 0.2049ms to 0.1952ms in this run. The main render path remains a large
-cost, so the next render review should look for broader display-signature or
-redundant-work skips, then reprofile.
+cost. The broader render-signature and redundant-work review is tracked through
+`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md` if
+Aura performance work resumes.
 
 ### 2026-06-23, Aura Frames Only, Render Display Signature
 
@@ -297,9 +298,9 @@ below the report cutoff. Scan/map cost is dominated by `unified_scan`,
 direct-bucket cleanup because it is safe and removes avoidable work. Durable Aura
 performance conclusions live in `internal_dev/working_docs/proj_mem/aura_frames.md`;
 use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
-only if Aura performance work is reopened.
+for Aura performance target notes.
 
-### 2026-06-23, Aura Frames Only, Clean Follow-Up
+### 2026-06-23, Aura Frames Only, Clean Comparison
 
 Context: 88.1s run with only `PROFILE_TARGETS.aura_frames = true`, after removing
 the external addon condition that caused the NumyAddonProfiler `scriptProfile`
@@ -336,8 +337,9 @@ warning. No temporary scan/map sub-step labels were active in this run.
 Conclusion: This is the cleaner post-item-7 comparison point. `render_aura_map`
 averaged 0.1770ms, lower than the prior render-cache and display-signature runs,
 while `update_auras` averaged 0.4534ms. The direct preset-bucket change still
-does not show as an isolated CPU win; the next meaningful review target should be
-CDM/custom scan-map work or trigger-specific refresh routing.
+does not show as an isolated CPU win. CDM/custom scan-map work and
+trigger-specific refresh routing are recorded as Aura performance targets in
+`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
 
 ### 2026-06-23, Aura Frames Only, Category-Scoped CDM Hook Refresh
 
@@ -375,13 +377,13 @@ broad pass.
 | `aura_frames.clear_custom_aura_scan_cache` | 993 | 1.580 | 0.0016 | 0.012 |
 
 Conclusion: Category-scoped hook refresh is a low-risk routing cleanup with a
-small measured support-cost win. Compared with the clean follow-up run,
+small measured support-cost win. Compared with the clean comparison run,
 `prepare_blizz_cdm_viewer` dropped from 14.877ms over 88.1s to 2.521ms over
 61.1s, and `get_cdm_viewer_frame` dropped from 4.575ms to 1.767ms. The core CDM
 map walk did not improve per call: `add_cooldown_viewer_category_entries`
-averaged 0.1007ms versus 0.0932ms in the clean follow-up, so further CDM work
-needs to target the map walk itself or reduce how often visible CDM frames need a
-full rebuild.
+averaged 0.1007ms versus 0.0932ms in the clean comparison. The Aura performance
+review owns the CDM map-walk target; the target would need to reduce map-walk
+work itself or reduce how often visible CDM frames need a full rebuild.
 
 ### 2026-06-23, Aura Frames Only, Visible Ticker Return State
 

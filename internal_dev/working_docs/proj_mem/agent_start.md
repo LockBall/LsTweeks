@@ -67,6 +67,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - Focused review notes under `review_2026Jun/` own temporary active review context only.
 
+- Active or dormant TODO/follow-up items belong in the appropriate `review_2026Jun/` file. Durable `proj_mem` files may point to those review notes, but should not become the only owner of future work.
+
 - Root markdown is public-facing release documentation.
 
 - Do not store secrets, personal data, machine-local scratch notes, or session logs.

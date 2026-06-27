@@ -34,7 +34,7 @@ Source findings:
 - `SecureAuraButtonTemplate` uses right-click `type2 = cancelaura`.
 - The `CANCELABLE` aura filter is the reliable way to identify buffs that can be cancelled.
 
-Useful references if this is revisited:
+Useful references for historical context:
 
 - https://warcraft.wiki.gg/wiki/SecureActionButtonTemplate
 - https://warcraft.wiki.gg/wiki/API_CancelUnitBuff
