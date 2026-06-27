@@ -16,8 +16,8 @@ local PROFILE_TARGETS = {
     settings = false,
     player_frame = false,
     sound_levels = false,
-    skyriding_vigor = true,
-    aura_frames = false,
+    skyriding_vigor = false,
+    aura_frames = true,
 }
 
 --#endregion PROFILE TARGET SWITCHES ===========================================
@@ -262,7 +262,7 @@ local PROFILE_SECTIONS = {
         key = "aura_frames",
         label = "Aura Frames",
         install = function()
-            wrap_table_functions(addon.aura_frames, "aura_frames")
+            wrap_table_functions(addon.aura_frames, "af")
         end,
     },
 }
@@ -280,6 +280,18 @@ local function get_enabled_target_names()
     end
     if #names == 0 then return "none" end
     return table.concat(names, ", ")
+end
+
+local function print_target_settings()
+    if is_target_enabled("aura_frames") then
+        local M = addon.aura_frames
+        local timer_tick = M and M.db and M.db.aura_visible_icon_tick
+        timer_tick = tonumber(timer_tick) or (M and M.defaults and M.defaults.aura_visible_icon_tick)
+            or (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.aura_visible_icon_tick)
+        if timer_tick then
+            print(format("aura_timer_tick %.2fs", timer_tick))
+        end
+    end
 end
 
 --#endregion MODULE WRAPPER SECTIONS ===========================================
@@ -310,6 +322,7 @@ local function start_profile()
     P.enabled = true
     print("|cff33ff99== LsTweeks CPU Profile started ==|r")
     print("targets: " .. get_enabled_target_names())
+    print_target_settings()
 end
 
 local function stop_profile()
@@ -350,6 +363,7 @@ local function report_profile(limit)
     limit = tonumber(limit) or 25
     print("|cff33ff99== LsTweeks CPU Profile report ==|r")
     print("elapsed " .. format("%.1fs", elapsed))
+    print_target_settings()
     print(format(
         "combat %.1fs %.1f%% segments=%d active=%s",
         combat_elapsed,
@@ -447,6 +461,7 @@ SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
         print("|cff33ff99== LsTweeks CPU Profile status ==|r")
         print(P.enabled and "running" or "stopped")
         print("targets: " .. get_enabled_target_names())
+        print_target_settings()
         print(format(
             "combat %.1fs segments=%d active=%s",
             current_combat_total() / 1000,

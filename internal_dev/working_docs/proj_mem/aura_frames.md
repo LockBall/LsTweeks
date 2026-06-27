@@ -30,7 +30,7 @@ Important `aura_frames` keys:
 
 - Completed Aura Frames feature notes are consolidated in `internal_dev/completed_features/aura_frames.md`.
 
-- The rounded/chamfered background investigation remains in `internal_dev/working_docs/review_2026Jun/aura_frames_background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
+- The rounded/chamfered background investigation remains in `internal_dev/working_docs/review_2026Jun/graphics/aura_frames_background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
 
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 
@@ -58,6 +58,10 @@ Important `aura_frames` keys:
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 
 - General CPU profiling workflow lives in `performance_profiling.md`; this file keeps only Aura Frames-specific profiling conclusions.
+
+- Focused Aura profile history and generated comparisons live in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`; regenerate the normalized comparison with `internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1`.
+
+- 2026-06-27 normalized Aura profile review found no active performance target. Versus the oldest Aura-only baseline, `update_auras` and `get_setting` show sustained improvement, while `tick_visible_icons` raw CPU/sec is lower mainly because the ticker cadence is slower. Ticker-normalized cost is roughly flat/slightly higher, so do not treat visible-icon ticking as a per-tick optimization win without a narrower profile.
 
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
 
@@ -94,6 +98,8 @@ Important `aura_frames` keys:
 
 - `update_auras()` still owns the necessary scan/render pipeline for enabled frames. Live aura data, CDM child state, custom filter results, test previews, timer/bar metadata, display count, height, and ticker eligibility can change independently, so do not skip the whole update path without a new narrow proof.
 
+- If Aura performance work reopens, start with a focused profile around the regressed row. For render cost, profile `render_aura_map()` and the conservative display-signature skip. For scan/map cost, focus on `unified_scan`, `add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`; preset bucket copying was below the focused-profile report cutoff and should not be treated as the next meaningful CPU target.
+
 - `M._aura_map` remains the master auraInstanceID map. `M.unified_scan()` rebuilds `M._aura_maps_by_category` as derived preset buckets each scan.
 
 - Preset static/short/long/debuff frames can render directly from scan-built category buckets when no test preview mutation is needed. Profiling showed the old preset bucket copy was below the report cutoff, so this is a safe cleanup rather than a major CPU target.
@@ -113,6 +119,8 @@ Important `aura_frames` keys:
 - Custom scan results are cached by `aura_filter` plus threshold and lazily extended for larger frame limits; aura-affecting events clear the cache.
 
 - Narrowing custom scans from `UNIT_AURA` payloads remains higher risk because custom filters/modifiers, secret values, full updates, and threshold/category changes can invalidate a simple affected-aura path.
+
+- Avoid central Aura dispatcher or invasive CDM rewrites unless a focused profile shows a material regression or a concrete behavior issue gives a narrower target.
 
 - Timer text enable/format behavior is centralized in `af_functions.lua` via `M.get_timer_behavior()` and `M.is_timer_text_enabled()`. Timer alignment remains layout behavior in `af_icon_layout.lua`.
 

@@ -10,26 +10,43 @@ Long-term capture for LsTweeks in-game CPU profiling runs. Keep new runs in the 
 
 - `sv_cpu_profiles.md`: Skyriding Vigor focused profiles and before/after render-path comparisons.
 
-## In-Game Commands
+## Analysis Scripts
 
-Whole-addon profiler, from `internal_dev/tests_tools/addon_cpu_profile.lua`:
+- `analyze_af_cpu_profiles.ps1`: parses `af_cpu_profiles.md`, normalizes metrics
+  by elapsed time, and normalizes `af.tick_visible_icons` to a reference ticker
+  cadence so runs with different Timer Tick settings can be compared.
 
-- `/lstprofile status`: print whether profiling is running, enabled targets, combat time, and Skyriding active time.
+Aura Frames whole-addon runs should keep a metadata comment immediately below
+the run heading:
 
-- `/lstprofile reset`: clear captured timings and segment counters.
+```text
+<!-- cpu-profile-run: elapsed=98.6 combat=97.5 timer_tick=0.15 -->
+```
 
-- `/lstprofile start`: reset and start profiling.
+Use `timer_tick=unknown` when the value was not captured.
 
-- `/lstprofile report [limit]`: print the current report. `limit` is optional and controls how many rows are shown.
+## In-Game Commands for `/lstprofile <option>`
 
-- `/lstprofile stop`: stop profiling and print the final report.
+Whole-addon profiler, from `internal_dev/tests_tools/addon_cpu_profile.lua`
+
+Where option is one of the following:
+
+- `status` print whether profiling is running, enabled targets, combat time, and Skyriding active time.
+
+- `reset`: clear captured timings and segment counters.
+
+- `start`: reset captured timings and start profiling.
+
+- `report [limit]`: print the current report. `limit` is optional and controls
+  how many rows are shown.
+
+- `stop`: stop profiling and print the final report.
 
 Typical flow:
 
 ```text
 /reload
 /lstprofile status
-/lstprofile reset
 /lstprofile start
 /lstprofile report 40
 /lstprofile stop

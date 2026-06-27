@@ -43,6 +43,7 @@ local UI = {
     fishing_slider_width = 130,
     fishing_slider_gap = 10,
     fishing_volumes_panel_height = 180,
+    fishing_group_border_inset = 3,
 }
 
 --#endregion CONFIGURATION =====================================================
@@ -338,9 +339,9 @@ end
 
 local function create_fishing_header_bar(parent, title_text, play_profile_key)
     local title_bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    title_bar:SetHeight(26)
-    title_bar:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-    title_bar:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+    title_bar:SetHeight(23)
+    title_bar:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.fishing_group_border_inset, -UI.fishing_group_border_inset)
+    title_bar:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -UI.fishing_group_border_inset, -UI.fishing_group_border_inset)
     title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
     title_bar:SetBackdropColor(0.14, 0.14, 0.14, 0.65)
 
