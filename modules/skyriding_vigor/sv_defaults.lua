@@ -1,5 +1,9 @@
 -- Default DB values for the Skyriding Vigor module.
 -- Consumed by addon.apply_defaults() on first load and after reset.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 addon.skyriding_vigor = addon.skyriding_vigor or {
@@ -57,3 +61,5 @@ addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.sv = defs.defaults
 
 return defs
+
+--#endregion FILE CONTENTS ===================================================

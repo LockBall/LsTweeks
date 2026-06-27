@@ -1,6 +1,11 @@
 # Skyriding Vigor Completed Notes
 
 
+## Table of Contents
+- [Race Profile](#race-profile)
+- [Validation](#validation)
+
+
 ## Race Profile
 
 Completed 2026-06-24.

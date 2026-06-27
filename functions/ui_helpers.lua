@@ -1,4 +1,8 @@
 -- Shared UI helpers for common settings-panel chrome and simple tooltips.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 function addon.ApplyControlPanelBackdrop(frame, opts)
@@ -54,3 +58,5 @@ function addon.AttachTooltipToTargets(body, ...)
         addon.AttachTooltip(select(i, ...), nil, body)
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

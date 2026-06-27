@@ -1,6 +1,10 @@
 -- Minimap button via LibDataBroker and LibDBIcon.
 -- Left-click toggles the LsTweeks settings window; visibility is controlled by the minimap.hide DB key.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 
 local LDB = LibStub("LibDataBroker-1.1")
@@ -57,7 +61,7 @@ addon.data_object = LDB:NewDataObject(CONFIG.name, {
 function addon.toggle_minimap_button(show)
     Ls_Tweeks_DB.minimap = Ls_Tweeks_DB.minimap or {}
     Ls_Tweeks_DB.minimap.hide = not show
-    
+
     if show then
         LDBIcon:Show(CONFIG.name)
     else
@@ -82,3 +86,5 @@ function addon.init_minimap_button()
         LDBIcon:Show(CONFIG.name)
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

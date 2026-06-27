@@ -1,4 +1,8 @@
 -- Shared table/default-copy utilities used across all modules.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 -- Use after table.wipe(dest) to restore a DB table from defaults.
@@ -33,3 +37,5 @@ function addon.clamp_number(value, fallback, range)
     if range and value > range.max then return range.max end
     return value
 end
+
+--#endregion FILE CONTENTS ===================================================

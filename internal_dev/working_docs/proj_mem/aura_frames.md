@@ -24,6 +24,16 @@ Important `aura_frames` keys:
 - Profiles: complete Aura Frames snapshots excluding editor/session state such as selected tabs/nodes, grid visibility, and debug outlines
 
 
+## Table of Contents
+- [Ownership](#ownership)
+- [Runtime Gates And Refresh](#runtime-gates-and-refresh)
+- [Scanning, Rendering, Timers](#scanning-rendering-timers)
+- [Position, Drag, Resize](#position-drag-resize)
+- [Profiles And Reset](#profiles-and-reset)
+- [GUI](#gui)
+- [Debug, Grid, Style](#debug-grid-style)
+
+
 ## Ownership
 
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.

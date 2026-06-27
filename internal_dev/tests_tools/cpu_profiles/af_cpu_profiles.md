@@ -6,6 +6,16 @@ Whole-addon run sections include `cpu-profile-run` metadata comments so
 `internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1` can rebuild
 time-normalized and ticker-normalized comparisons from the saved data.
 
+
+## Table of Contents
+- [Improvement Summary](#improvement-summary)
+- [Whole-Addon Profiler Runs](#whole-addon-profiler-runs)
+- [Aura Frames Duration Probe](#aura-frames-duration-probe)
+- [Current Decision](#current-decision)
+- [How To Collect](#how-to-collect)
+- [Runs](#runs)
+
+
 ## Improvement Summary
 
 Generated with `analyze_af_cpu_profiles.ps1`. Baseline is

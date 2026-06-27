@@ -1,6 +1,10 @@
 -- Shared helper functions for the aura frames module.
 -- Defines small cross-file utilities for CDM viewer lookup, frame positioning,
 -- custom frame setup, and frame/category setting fallback resolution.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -620,3 +624,5 @@ function M.apply_thin_border_backdrop(frame, bg_color, border_color)
         frame:SetBackdropBorderColor(border_color.r or 1, border_color.g or 1, border_color.b or 1, border_color.a or 1)
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

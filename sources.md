@@ -2,6 +2,16 @@
 
 Reference sources used for addon behavior, public release preparation, documentation, tools, and embedded third-party libraries.
 
+
+## Table of Contents
+- [CurseForge](#curseforge)
+- [Warcraft Wiki](#warcraft-wiki)
+- [Addon References](#addon-references)
+- [Tools](#tools)
+- [Blizzard UI Source](#blizzard-ui-source)
+- [Embedded Libraries](#embedded-libraries)
+
+
 ## CurseForge
 
 - Creating and submitting a project: https://support.curseforge.com/support/solutions/articles/9000197241

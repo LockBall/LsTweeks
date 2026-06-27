@@ -2,6 +2,16 @@
 
 Manual in-game test for WoW Cooldown Manager backed Aura Frames.
 
+
+## Table of Contents
+- [Purpose](#purpose)
+- [Setup](#setup)
+- [Core Matrix](#core-matrix)
+- [Prior Regression Case](#prior-regression-case)
+- [First In-Combat Cast Case](#first-in-combat-cast-case)
+- [Pass Criteria](#pass-criteria)
+
+
 ## Purpose
 
 Verify CDM-backed frames display active aura duration first, then cooldown, and that

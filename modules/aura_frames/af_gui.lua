@@ -4,6 +4,10 @@
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
 -- 3) Profiles (save/load complete Aura Frames setups across characters).
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 
 -- Ensure the unified module table is used
@@ -435,3 +439,5 @@ function M.sync_general_controls_from_db()
     set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
 
 end
+
+--#endregion FILE CONTENTS ===================================================

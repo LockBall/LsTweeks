@@ -2,6 +2,10 @@
 -- Uses a shared click-blocker frame to close the open popup when the user clicks outside it
 -- one blocker instance is reused by all dropdowns on the page.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 
 local CreateFrame = CreateFrame
@@ -236,3 +240,5 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     set_button_text(selected)
     return container
 end
+
+--#endregion FILE CONTENTS ===================================================

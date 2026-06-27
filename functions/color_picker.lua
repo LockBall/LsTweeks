@@ -1,6 +1,10 @@
 -- Color picker widget that wraps the system ColorPickerFrame with an integrated reset button.
 -- addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb) returns a 95×45 container;
 -- the reset button restores the default color from the defaults table.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 local control_gap = 5
@@ -57,9 +61,9 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     -- Reset Logic with Type Check
     reset:SetScript("OnClick", function()
         -- Defensive check to ensure defaults_table is actually a table
-        if type(defaults_table) ~= "table" then 
+        if type(defaults_table) ~= "table" then
             print("|cFFFF0000LsTweaks Error:|r Invalid defaults table in ColorPicker.")
-            return 
+            return
         end
 
         local dc = defaults_table[db_key]
@@ -111,3 +115,5 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
 
     return container
 end
+
+--#endregion FILE CONTENTS ===================================================

@@ -2,6 +2,13 @@
 
 Completed: 2026-06-21
 
+
+## Table of Contents
+- [Summary](#summary)
+- [Verified Disabled State](#verified-disabled-state)
+- [Boundary Policy](#boundary-policy)
+
+
 ## Summary
 
 `/lst status` was added as the in-game diagnostic for feature-module soft-disable behavior. It reports every `addon.FEATURE_MODULES` entry with the saved enabled flag plus module-owned runtime signals.

@@ -1,6 +1,10 @@
 -- The "About" settings page: displays the addon name, version, author, and a brief description.
 -- Registered as the first sidebar category so it appears when the settings window is opened for the first time.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 
 -- Initialize module table
@@ -81,7 +85,7 @@ local function build_about_page(parent)
     credits:SetJustifyH("LEFT")
     credits:SetWordWrap(true)
     credits:SetText(STRINGS.credits)
-    
+
 end
 
 -- Module initializer
@@ -90,13 +94,15 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
-        
+
         -- Register the GUI Category
         if addon.register_category then
             addon.register_category(STRINGS.category_name, build_about_page)
         end
-        
+
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)
     end
 end)
+
+--#endregion FILE CONTENTS ===================================================

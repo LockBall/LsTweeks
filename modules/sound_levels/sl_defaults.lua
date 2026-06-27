@@ -1,6 +1,10 @@
 -- Sound Levels module defaults and target metadata.
 -- Defines known sound targets and preset replacement paths; runtime code mutes originals
 -- and optionally plays addon-owned quieter files when they exist.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 addon.sound_levels = addon.sound_levels or {}
@@ -131,3 +135,5 @@ M.defaults = {
 
 addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.sound_levels = M.defaults
+
+--#endregion FILE CONTENTS ===================================================

@@ -6,7 +6,7 @@
 ## Category: User Interface
 ## Category-enUS: User Interface
 ## Interface: 120007
-## Version: 0.10.0
+## Version: 00.20.00
 
 ## IconTexture: Interface\AddOns\LsTweeks\media\icon.blp
 ## SavedVariables: Ls_Tweeks_DB

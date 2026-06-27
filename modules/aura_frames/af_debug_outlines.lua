@@ -1,5 +1,9 @@
 -- Debug helper that draws 1px border outlines on aura icon slot frames to visualize layout boundaries.
 -- refresh_section_outlines() reads M.db.show_bar_section_outlines and adds or removes outlines accordingly; outlines are tagged ._is_outline for safe cleanup.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 local M = addon.aura_frames
 
@@ -70,3 +74,5 @@ function M.refresh_section_outlines()
 
     M._debug_outlines_active = enabled == true
 end
+
+--#endregion FILE CONTENTS ===================================================

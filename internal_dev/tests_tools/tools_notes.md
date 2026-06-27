@@ -4,6 +4,17 @@ Date: 2026-06-02
 
 Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS diagnostics, and the local Python venv in this repo.
 
+
+## Table of Contents
+- [Known Good State](#known-good-state)
+- [Codex Shell Fix](#codex-shell-fix)
+- [Shell Verification](#shell-verification)
+- [Project Venv Check](#project-venv-check)
+- [Project Venv Repair](#project-venv-repair)
+- [Project Validation](#project-validation)
+- [LuaLS / Ketho Shell Diagnostics](#luals-ketho-shell-diagnostics)
+
+
 ## Known Good State
 
 Repo path:
@@ -177,7 +188,16 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_fast.ps1 -Package
 ```
 
-The first command runs Lua 5.1 syntax checks for addon-owned Lua files plus `git diff --check`. The `-Package` form also builds and verifies the release zip.
+The first command runs Lua 5.1 syntax checks for addon-owned Lua files, Lua region validation, and `git diff --check`. The `-Package` form also builds and verifies the release zip.
+
+Lua region helper:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
+```
+
+PowerShell newline/write rules live in `internal_dev/working_docs/proj_mem/powershell.md`.
 
 Expected package result includes:
 
@@ -290,4 +310,3 @@ Manual diagnostics command from the repo root:
 ```
 
 Expected known result as of 2026-06-20: three Sound Levels warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.
-

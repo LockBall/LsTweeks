@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+
+[{README.md,sources.md,LsTweeks.toc}]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[{core,functions,modules,internal_dev}/**]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[media/**]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[media/**/*.md]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[media/svg/**]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true

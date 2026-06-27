@@ -1,6 +1,10 @@
 -- Frames tree/sidebar for Aura Frames settings.
 -- Owns the Buffs, WoW Cooldown, and Filters tree groups and routes selections to panel builders.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 
 local GetTime = GetTime
@@ -688,3 +692,5 @@ function M.build_frames_tab(p, frames_data)
         end
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

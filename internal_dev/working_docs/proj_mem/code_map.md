@@ -3,13 +3,30 @@
 Compact routing map for coding agents. Start at `agent_start.md`; use this file to avoid rediscovering file ownership and routine validation commands.
 
 
+## Table of Contents
+- [Fast Commands](#fast-commands)
+- [Read-In Shortcuts](#read-in-shortcuts)
+- [Public Surface](#public-surface)
+- [Core And Shared Helpers](#core-and-shared-helpers)
+- [Feature Modules](#feature-modules)
+- [Internal Docs And Tools](#internal-docs-and-tools)
+- [Release Package](#release-package)
+- [Edit Boundaries](#edit-boundaries)
+
+
 ## Fast Commands
+
+These are repo-local or project-specific commands. Platform-provided agent tools are session context, not project read-in.
 
 - Worktree check: `git status --short`
 
 - Repo search: `rg <pattern>` or `rg --files`
 
+- Line-ending and PowerShell write rules: `powershell.md`.
+
 - Fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
+
+- Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
 
 - Diff whitespace check: `git diff --check`
 
@@ -32,7 +49,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
 
-- `skyriding_vigor.md` large-section routing: top summary plus `## Runtime Notes`; use source outlines for deeper `sv_*` ownership.
+- `skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
 
 - `player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
 
@@ -40,9 +57,15 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
 
-- Source outline command: `rg -n "^--#region|^-- [A-Za-z].*" <target paths>`. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
+- Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 
-- Do not split module memory files or other internal docs for token savings. Keep read-in efficient through this TOC, markdown heading searches, and Lua responsibility headers/regions.
+- Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
+
+- Markdown docs use one `#` title. Multi-section docs use `## Table of Contents` plus stable `##` headings to support section-first read-in.
+
+- Do not split project/module memory files or other internal docs for token savings. Keep read-in efficient through this TOC, markdown heading searches, and Lua responsibility headers/regions.
+
+- Read-in token measurements come from the GUI's reported agent-token usage. Do not add rough character-count or file-size estimates to project docs.
 
 - Avoid reading `README.md`, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes unless the request directly routes there.
 
@@ -112,6 +135,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `internal_dev/working_docs/proj_mem/performance_profiling.md`: reusable in-game CPU profiling workflow and comparison rules.
 
+- `internal_dev/working_docs/proj_mem/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
+
 - `internal_dev/working_docs/proj_mem/*.md`: module memory and this code map.
 
 - `internal_dev/working_docs/review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
@@ -121,6 +146,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 
 - `internal_dev/tests_tools/check_fast.ps1`: quick local verification wrapper.
+
+- `internal_dev/tests_tools/check_regions.ps1`: validates Lua region markers and prints live source outlines.
 
 - `internal_dev/tests_tools/packaging/`: release package builder, policy, and verifier.
 

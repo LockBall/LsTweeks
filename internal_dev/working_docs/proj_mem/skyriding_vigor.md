@@ -1,5 +1,19 @@
 # Skyriding Vigor Memory
 
+
+## Table of Contents
+- [Settings And Defaults](#settings-and-defaults)
+- [Position And GUI](#position-and-gui)
+- [Assets And Credits](#assets-and-credits)
+- [Runtime Visibility And Fade](#runtime-visibility-and-fade)
+- [Charge State](#charge-state)
+- [Styles And Rendering](#styles-and-rendering)
+- [Fill Test And Progress](#fill-test-and-progress)
+- [Module Gating And Race Profile](#module-gating-and-race-profile)
+
+
+## Settings And Defaults
+
 Important `skyriding_vigor` keys:
 - `enabled`: toggles the restored vigor display.
 
@@ -53,6 +67,9 @@ Important `skyriding_vigor` keys:
 
 - Slider reset buttons must write the DB and run their callback even when the slider already shows the default. Layout-affecting sliders such as `spacing` and `scale` must call `M.refresh_layout()` so the signature cache invalidates even when values appear unchanged.
 
+
+## Position And GUI
+
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
 
 - The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
@@ -78,10 +95,14 @@ Important `skyriding_vigor` keys:
 - `sync_slider_controls()` intentionally uses both the module-level `_syncing_slider_controls` guard and per-control `_suppress_callback` flags. The module guard prevents Skyriding's local setting writes during programmatic sync, while `CreateSliderWithBox()` consumes `_suppress_callback` before debouncing the supplied callback. Decor sliders use the generic slider callback path and need `_suppress_callback`; X/Y position sliders use `_syncing_position_controls` because they attach direct `OnValueChanged` hooks.
 
 
-## Runtime Notes
+## Assets And Credits
+
 - The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
 
 - Credit DragonRider in public docs for the restored vigor-display concept and prior local performance-assessment reference.
+
+
+## Runtime Visibility And Fade
 
 - Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, or mounted/flying state gated by `GetGlidingInfo()`'s `can_glide` result. Do not show only because `IsFlying()` or `IsMounted()` + `IsAdvancedFlyableArea()` is true; that also matches normal non-skyriding mounts in advanced-flyable zones. Grounded skyriding-mounted visibility is allowed when `can_glide` is true; `fade_when_full` handles idle/full states.
 
@@ -95,7 +116,13 @@ Important `skyriding_vigor` keys:
 
 - `M.sync_settings_controls_enabled()` owns the broad settings lock during real active flight. It disables settings controls and then calls `M.sync_fade_controls_enabled()` so the flight lock composes with the narrower race-profile fade lock. Fill Test remains editable while it is the active simulated state, but starting real flight stops Fill Test and re-locks settings.
 
+
+## Charge State
+
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
+
+
+## Styles And Rendering
 
 - Vigor node and end-decoration dimensions come from the selected style's Blizzard atlas metadata. Do not use live texture `GetWidth()`/`GetHeight()` reads for layout.
 
@@ -123,6 +150,9 @@ Important `skyriding_vigor` keys:
 
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
 
+
+## Fill Test And Progress
+
 - Fill Test uses simulated charge data through the normal `M.refresh()` path and the active-only progress driver. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Starting real active flight stops Fill Test before normal flight rendering continues, so Fill Test never masks real in-flight state. Do not reintroduce a separate fill-test render path unless the behavior intentionally diverges from runtime display.
 
 - Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can start the progress driver.
@@ -130,6 +160,9 @@ Important `skyriding_vigor` keys:
 - The Skyriding Talents button must guard `InCombatLockdown()` before opening `GenericTraitFrame`; in combat, print the addon-owned yellow message instead of allowing Blizzard's generic blocked-action warning.
 
 - Avoid always-running `OnUpdate`; `sv_main.lua` uses an active-only progress driver while a node is visibly filling and stops it when hidden, disabled, full, or in move mode. The driver is capped by the DB-backed `progress_update_hz` Fill FPS slider and calls `M.update_filling_slot_progress()` so progress animation does not redo stable layout, reset slot visuals, or normalize DB on each update. The default cap comes from `addon.UPDATE_INTERVALS.skyriding_vigor_progress`, currently 20Hz.
+
+
+## Module Gating And Race Profile
 
 - Runtime module gating is centralized in `sv_main.lua` through `M.is_runtime_enabled()` and `M.stop_runtime()`. When the Settings Module Enabler disables Skyriding Vigor, `sv_main.lua` must stop progress updates, hide any existing frame, disable frame mouse input, clear fill/race test state, and unregister runtime events. If the active profile's `enabled` is false, refresh hides the bar without unregistering race-detection events when `race_profile_enabled` still needs them.
 

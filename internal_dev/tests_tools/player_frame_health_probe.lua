@@ -1,5 +1,9 @@
 -- Archived Player Frame health diagnostics.
 -- Not loaded by LsTweeks.toc; copy into the addon module list temporarily if this probe is needed again.
+
+
+--#region FILE CONTENTS ======================================================
+
 local _, addon = ...
 addon.player_frame = addon.player_frame or { controls = {}, frames = {} }
 
@@ -258,3 +262,5 @@ function P.run(db)
         print("|cff33ff99LsTweeks Probe:|r " .. line)
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

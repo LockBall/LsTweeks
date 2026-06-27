@@ -2,6 +2,12 @@
 
 Long-term capture for Skyriding Vigor focused in-game profiling runs.
 
+
+## Table of Contents
+- [How To Collect](#how-to-collect)
+- [Runs](#runs)
+
+
 ## How To Collect
 
 1. Use `internal_dev/tests_tools/addon_cpu_profile.lua` with only `PROFILE_TARGETS.skyriding_vigor = true`.

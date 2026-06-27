@@ -1,4 +1,8 @@
 -- Shared row/column layout helpers for settings panels.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 function addon.GetGridOffset(placement, cfg)
@@ -216,3 +220,5 @@ function addon.CreateSettingsGrid(parent, opts)
 
     return grid
 end
+
+--#endregion FILE CONTENTS ===================================================

@@ -1,8 +1,21 @@
-## L's Tweeks
+# L's Tweeks
 
 L's Tweeks is a modular World of Warcraft Retail UI addon for configurable player aura frames, player frame adjustments, small interface adjustments, and quieter replacement sounds.
 
 Slash command: `/lst`
+
+
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Use Notes](#use-notes)
+- [Aura Frames](#aura-frames)
+- [Sound Levels](#sound-levels)
+- [Embedded Libraries](#embedded-libraries)
+- [License](#license)
+- [Credits](#credits)
+- [Sources](#sources)
+
 
 ## Features
 

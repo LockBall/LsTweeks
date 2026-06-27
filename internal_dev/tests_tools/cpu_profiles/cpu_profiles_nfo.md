@@ -2,6 +2,14 @@
 
 Long-term capture for LsTweeks in-game CPU profiling runs. Keep new runs in the most specific file available.
 
+
+## Table of Contents
+- [Files](#files)
+- [Analysis Scripts](#analysis-scripts)
+- [In-Game Commands for `/lstprofile <option>`](#in-game-commands-for-lstprofile-option)
+- [Generic Report Template](#generic-report-template)
+
+
 ## Files
 
 - `addon_cpu_profiles.md`: broad profiles with multiple profiler targets enabled.

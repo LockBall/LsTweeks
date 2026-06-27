@@ -2,6 +2,13 @@
 
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
+
+## Table of Contents
+- [Replacement Path](#replacement-path)
+- [Sounds, Available](#sounds-available)
+- [Sounds, Future](#sounds-future)
+
+
 ## Replacement Path
 
 Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`.
@@ -58,7 +65,7 @@ Related events that are not replacement triggers:
 
 ---
 
-## Sounds , Future
+## Sounds, Future
 
 ### LevelUp
 - UI Label:     `Level Up`

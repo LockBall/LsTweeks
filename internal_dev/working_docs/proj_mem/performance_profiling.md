@@ -5,6 +5,13 @@ Use this file for reusable in-game CPU profiling workflow. Keep raw run output i
 in that module's `proj_mem/*.md` file.
 
 
+## Table of Contents
+- [Whole-Addon Profiler](#whole-addon-profiler)
+- [Optimization Lessons](#optimization-lessons)
+- [Performance Review Checklist](#performance-review-checklist)
+- [Validation After Profiling Changes](#validation-after-profiling-changes)
+
+
 ## Whole-Addon Profiler
 
 - Main probe: `internal_dev/tests_tools/addon_cpu_profile.lua`.

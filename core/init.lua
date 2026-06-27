@@ -2,6 +2,10 @@
 -- sets up SavedVariables (Ls_Tweeks_DB), and registers the /lst slash command.
 -- Loads first; every other file reads addon.UI_THEME and writes into Ls_Tweeks_DB through the patterns established here.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local addon_name, addon = ...
 addon.name = addon_name
 
@@ -40,7 +44,7 @@ addon.UPDATE_INTERVALS.aura_hover_check = addon.UPDATE_INTERVALS.fifth_sec
 
 -- CPU profile hotness: low; active only during Player Frame fade.
 addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.tenth_sec
--- fifth_sec looks jittery 
+-- fifth_sec looks jittery
 
 -- CPU profile hotness: moderate; active only while a Skyriding Vigor node is filling.
 addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
@@ -139,7 +143,7 @@ end
 local function init_db()
     -- Ensure the global DB exists with the Tweeks spelling
     _G.Ls_Tweeks_DB = _G.Ls_Tweeks_DB or {}
-    
+
     -- Core Minimap defaults
     if not Ls_Tweeks_DB.minimap then
         Ls_Tweeks_DB.minimap = { hide = false }
@@ -171,7 +175,7 @@ local function on_event(self, event, name)
     if addon.init_minimap_button then
         addon.init_minimap_button()
     end
-    
+
     -- Note: Aura Frames will initialize themselves in af_main.lua
     -- using the Ls_Tweeks_DB.aura_frames table we ensured exists above.
 end
@@ -209,3 +213,5 @@ SlashCmdList["LSTWEEKS"] = function(msg)
         end
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

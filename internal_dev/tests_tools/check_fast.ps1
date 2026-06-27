@@ -79,6 +79,10 @@ try {
         & $luac -p @luaFiles
     }
 
+    Invoke-Step "Lua regions" {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "internal_dev/tests_tools/check_regions.ps1"
+    }
+
     Invoke-Step "Whitespace diff check" {
         git diff --check
     }

@@ -1,4 +1,8 @@
 -- Default DB values for the Objectives module.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 local M = addon.objectives or {}
@@ -19,3 +23,5 @@ addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.ob = M.defaults
 
 return M
+
+--#endregion FILE CONTENTS ===================================================

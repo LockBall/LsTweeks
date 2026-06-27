@@ -32,6 +32,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - [Performance Profiling](performance_profiling.md)
 
+- [PowerShell Memory](powershell.md)
+
 - [Module Memory](#module-memory)
 
   - [Player Frame](player_frame.md)
@@ -55,9 +57,21 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Read `agent_start.md` first when starting a new coding-agent session; it runs the worktree check and routes through `code_map.md` before any broader docs. `code_map.md` owns read-in shortcuts, section-first project/module memory routing, and source-outline commands.
 
+- Project read-in owns repo-local tools and project-specific command rules only. Do not copy platform-provided agent tool availability into project docs unless a repo workflow depends on a concrete local command or failure mode.
+
+- Do not split project or module memory files to reduce read-in size. Keep memory files whole and improve `##` headings, `code_map.md` routing, source responsibility headers, and `--#region` markers instead.
+
+- Documentation structure supports section-first read-in: every markdown doc should have one `#` title, and multi-section docs should have a `## Table of Contents` plus stable `##` headings.
+
+- Token read-in measurements belong in the active review note and must come from the GUI's reported agent-token usage, not character-count or file-size estimates.
+
 - Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/` and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 
 - Tool recovery and diagnostics notes live in `internal_dev/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
+
+- PowerShell newline/write rules and region-helper usage live in `powershell.md`; check it before scripting file rewrites.
+
+- Line-ending policy lives in `powershell.md`: project-owned Lua/docs/tools use LF; vendored libraries keep upstream line endings.
 
 - Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
 
@@ -132,7 +146,7 @@ internal_dev/          internal docs excluded from release zips
 dist/                   generated package output, ignored
 ```
 
-Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Treat those headers and `--#region` markers as the source-code TOC; use the source outline command in `code_map.md` before broad source reads. Keep durable ownership notes in `code_map.md` or the relevant module memory file instead of expanding this map.
+Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Treat those headers and `--#region` markers as the source-code TOC; use the region helper/source outline command in `code_map.md` before broad source reads. Use the memory heading command in `code_map.md` before broad memory-file reads. Keep durable ownership notes in `code_map.md` or the relevant module memory file instead of expanding this map.
 
 Lua section headers use VS Code foldable region markers with visual dividers: `--#region SECTION NAME =====` and `--#endregion SECTION NAME =====`. Use uppercase section names and keep region markers paired. Put the explanatory section comment directly under `--#region` with no blank line, put no blank line before `--#endregion`, and leave two blank lines before the next `--#region`.
 

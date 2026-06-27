@@ -18,6 +18,8 @@
     "internal_dev"
   ],
   "excludeFiles": [
+    ".editorconfig",
+    ".gitattributes",
     ".gitignore"
   ],
   "notes": [

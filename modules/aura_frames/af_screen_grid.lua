@@ -1,6 +1,10 @@
 -- Screen snap-grid system for aura frame positioning.
 -- Draws the optional screen overlay and snaps frame coordinates to grid lines or flush screen edges.
 
+
+--#region FILE CONTENTS ======================================================
+
+
 local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -146,3 +150,5 @@ function M.snap_frame_position(pos, frame)
     local y = snap_edge_or_grid(pos.y or 0, bottom_edge, top_edge, true)
     return x, y
 end
+
+--#endregion FILE CONTENTS ===================================================

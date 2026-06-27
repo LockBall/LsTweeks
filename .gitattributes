@@ -1,0 +1,28 @@
+# Project-owned text uses LF. Vendored libs keep upstream line endings.
+
+/README.md text eol=lf
+/sources.md text eol=lf
+/LsTweeks.toc text eol=lf
+
+/core/** text eol=lf
+/functions/** text eol=lf
+/modules/** text eol=lf
+/internal_dev/** text eol=lf
+
+*.md text eol=lf
+*.ps1 text eol=lf
+*.lua text eol=lf
+*.toc text eol=lf
+*.json text eol=lf
+*.svg text eol=lf
+
+# Keep shipped media and generated archives binary.
+*.blp binary
+*.tga binary
+*.ttf binary
+*.otf binary
+*.ogg binary
+*.zip binary
+
+# Vendored libraries keep upstream line endings unless intentionally updated.
+/libs/** -text -eol

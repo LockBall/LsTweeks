@@ -1,4 +1,8 @@
 -- Shared button helpers for text-fit sizing and simple UIPanel buttons.
+
+
+--#region FILE CONTENTS ======================================================
+
 local _, addon = ...
 
 local DEFAULT_TEXT_PADDING_X = 24
@@ -108,3 +112,5 @@ function addon.CreateTextButton(parent, text, on_click, opts)
 
     return button
 end
+
+--#endregion FILE CONTENTS ===================================================

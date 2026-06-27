@@ -2,6 +2,13 @@
 
 Completed: 2026-05-31
 
+
+## Table of Contents
+- [Summary](#summary)
+- [Final Behavior](#final-behavior)
+- [Durable Rules](#durable-rules)
+
+
 ## Summary
 
 Player Frame fade behavior is split between:

@@ -1,4 +1,8 @@
 -- Player Frame OOC fade runtime: time-based fade with pass-through health curve gating.
+
+
+--#region FILE CONTENTS ======================================================
+
 local _, addon = ...
 addon.player_frame = addon.player_frame or { controls = {}, frames = {} }
 
@@ -317,3 +321,5 @@ function F.get_runtime_status()
         queued_apply = queuedApply == true,
     }
 end
+
+--#endregion FILE CONTENTS ===================================================

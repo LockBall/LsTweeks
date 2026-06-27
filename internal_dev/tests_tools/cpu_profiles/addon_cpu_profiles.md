@@ -8,6 +8,13 @@ This profiler wraps addon-owned functions only. Do not wrap Blizzard/global APIs
 such as `UnitPower`, `UnitHealthPercent`, or `C_UnitAuras` from this broad probe;
 that can taint Blizzard unit-frame execution when secret values are involved.
 
+
+## Table of Contents
+- [How To Collect](#how-to-collect)
+- [Archived Broad Run Summary](#archived-broad-run-summary)
+- [Runs](#runs)
+
+
 ## How To Collect
 
 1. Temporarily load `internal_dev/tests_tools/addon_cpu_profile.lua` after the

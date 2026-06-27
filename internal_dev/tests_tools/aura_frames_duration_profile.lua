@@ -6,6 +6,10 @@
 --   /lstafprofile reset
 --   /lstafprofile status
 --   /lstafprofile report
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 local M = addon and addon.aura_frames
@@ -157,3 +161,5 @@ SlashCmdList.LSTWEEKS_AURA_FRAMES_PROFILE = function(msg)
         print("|cff33ff99LsTweeks AF Profile:|r start | stop | reset | status | report")
     end
 end
+
+--#endregion FILE CONTENTS ===================================================

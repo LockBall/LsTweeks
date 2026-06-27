@@ -1,6 +1,10 @@
 -- Aura frame profile save/load support.
 -- Exports a complete Aura Frames setup for reuse across characters while
 -- excluding editor-only state such as selected tabs, grid visibility, and debug outlines.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
@@ -275,3 +279,5 @@ function M.load_aura_frame_profile(name)
     end
     return false, message
 end
+
+--#endregion FILE CONTENTS ===================================================

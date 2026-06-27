@@ -2,6 +2,14 @@
 
 Tools in this folder build the public CurseForge/manual release zip.
 
+
+## Table of Contents
+- [Files](#files)
+- [Build](#build)
+- [Package Rules](#package-rules)
+- [Verify](#verify)
+
+
 ## Files
 
 - `package.ps1`: builds the release zip.

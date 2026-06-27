@@ -1,5 +1,9 @@
 -- Shared decorative panel style used throughout LsTweeks: marble background, ornate dialog-frame borders, and corner rivet textures.
 -- ApplyRivetedPanelStyle() and AddRivetCorners() dress an existing frame; CreateRivetedPanel() builds a fully styled panel from scratch.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
@@ -136,3 +140,5 @@ function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
     PaintRivet("BOTTOMLEFT",   inset + ox,  inset + oy)
     PaintRivet("BOTTOMRIGHT", -inset + ox,  inset + oy)
 end
+
+--#endregion FILE CONTENTS ===================================================

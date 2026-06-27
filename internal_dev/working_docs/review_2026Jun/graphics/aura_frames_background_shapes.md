@@ -3,6 +3,16 @@
 Working notes from the Aura Frames rounded/chamfered background discussion.
 
 
+## Table of Contents
+- [Summary](#summary)
+- [What Was Tried](#what-was-tried)
+- [Practical Constraints](#practical-constraints)
+- [Better Future Paths](#better-future-paths)
+- [NineSlice Explanation](#nineslice-explanation)
+- [Internet Findings](#internet-findings)
+- [Current Recommendation](#current-recommendation)
+
+
 ## Summary
 
 - Aura Frames currently use ordinary rectangular `BackdropTemplate` frame backgrounds.

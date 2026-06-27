@@ -3,6 +3,15 @@
 Start here for a new coding-agent session. This file is the lead-in, not the project memory itself; follow the links instead of copying their contents here.
 
 
+## Table of Contents
+- [Session Start](#session-start)
+- [First Checks](#first-checks)
+- [Collaboration Rules](#collaboration-rules)
+- [Documentation Rules](#documentation-rules)
+- [Engineering Rules](#engineering-rules)
+- [Asset And Reference Rules](#asset-and-reference-rules)
+
+
 ## Session Start
 
 1. Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
@@ -11,7 +20,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 3. Read targeted sections of `internal_dev/working_docs/proj_mem/project.md` when the request touches architecture, workflow, packaging, LuaLS/Ketho, shared GUI rules, cross-module behavior, or durable project docs.
 
-4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>` before opening the whole file:
+4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>`, then open only the matching section instead of the whole file:
    `player_frame.md`, `objectives.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
 
 5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
@@ -20,12 +29,14 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
 
+8. For PowerShell file-writing or newline issues, check `internal_dev/working_docs/proj_mem/powershell.md` before scripting rewrites.
+
 
 ## First Checks
 
 - Use `rg` / `rg --files` for repo searches.
 
-- For source read-in, start with `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` to inspect file responsibility headers and region outlines before opening whole large Lua files.
+- For source read-in, start with `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>` to inspect region line ranges before opening whole large Lua files. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` as the quick fallback.
 
 - Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1` for routine Lua syntax and whitespace validation.
 
@@ -65,7 +76,13 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - Module memory files own module-specific settings, runtime lessons, regressions, and ownership details.
 
+- Do not document platform-provided agent tools in project memory just because they are available in a session. Project read-in should document repo-local tools, validation commands, known failure modes, and project-specific command rules.
+
 - Do not split module memory or other internal documentation files to reduce read-in size. Use markdown headings, source responsibility headers, and `--#region` markers as the TOC instead.
+
+- Markdown docs should have one `#` title. Multi-section docs should include a `## Table of Contents` and stable `##` headings so agents can route by outline before reading body sections.
+
+- When tracking read-in token usage, use the GUI's reported agent-token measurements. Do not add rough token estimates from character counts or file sizes.
 
 - `internal_dev/completed_features/` owns completed feature investigations.
 

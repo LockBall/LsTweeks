@@ -9,6 +9,10 @@
 -- 3. Run /lstfishprobe
 -- 4. Cast fishing and wait for a fish to hook.
 -- 5. Copy chat lines around the bobber splash, then remove this file from TOC.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 local enabled = false
@@ -441,3 +445,5 @@ SlashCmdList.LSTWEEKS_FISHING_WIDE_PROBE = function()
     wide_enabled = not wide_enabled
     print("|cff66ccffFishProbe|r focused polling", wide_enabled and "enabled" or "disabled")
 end
+
+--#endregion FILE CONTENTS ===================================================

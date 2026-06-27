@@ -1,5 +1,9 @@
 -- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb, opts).
 -- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
+
+
+--#region FILE CONTENTS ======================================================
+
 local addon_name, addon = ...
 
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
@@ -13,7 +17,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     local eb_font_size = 12
     local eb_width = 35
     local eb_height = 12
-    
+
     local reset_width = 42
     local reset_height = 20
 
@@ -79,7 +83,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     eb:SetAutoFocus(false)
     eb:SetJustifyH("CENTER")
     eb:SetTextInsets(-4, 0, 0, 0)
-    local font, _, flags = eb:GetFont() 
+    local font, _, flags = eb:GetFont()
     eb:SetFont(font, eb_font_size, flags)
 
     -- Minus and plus buttons under the slider, left and right
@@ -196,3 +200,5 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
 
     return container
 end
+
+--#endregion FILE CONTENTS ===================================================

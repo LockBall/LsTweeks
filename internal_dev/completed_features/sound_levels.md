@@ -2,6 +2,17 @@
 
 Durable module-specific notes for `modules/sound_levels/`.
 
+
+## Table of Contents
+- [Saved Variables](#saved-variables)
+- [Ownership](#ownership)
+- [Runtime Rules](#runtime-rules)
+- [Event Cache And Performance](#event-cache-and-performance)
+- [Fishing Focus](#fishing-focus)
+- [LuaLS/Ketho Notes](#lualsketho-notes)
+- [Validation](#validation)
+
+
 ## Saved Variables
 
 - `sound_levels.targets.<target>.preset`: file-level string `"0"` through `"19"`; UI maps this to `100%` through `5%`, with slider `0%` setting `sound_off`.
