@@ -74,6 +74,12 @@ M.controls = M.controls or {}
 local collapse_queued = {}
 local collapse_attempts = {}
 local last_apply_reason = {}
+local background_hooks_installed = false
+local background_sync_queued = false
+local background_adjustments = 0
+local background_last_reason = "none"
+local background_last_state = "unavailable"
+local background_hooked_modules = setmetatable({}, { __mode = "k" })
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -114,6 +120,107 @@ local function mark_tracker_dirty(tracker)
     elseif ObjectiveTrackerManager and ObjectiveTrackerManager.UpdateAll then
         ObjectiveTrackerManager:UpdateAll()
     end
+end
+
+local function get_objective_tracker()
+    local tracker = ObjectiveTrackerFrame
+    if tracker and tracker.NineSlice then
+        return tracker
+    end
+    return nil
+end
+
+local function show_background_to_header(tracker, background, state)
+    local header = tracker and tracker.Header
+    if header and header.IsShown and header:IsShown() then
+        background:SetPoint("BOTTOM", header, "BOTTOM", 0, -(tracker.bottomModulePadding or 10))
+        background:Show()
+        background_last_state = state or "shown_header_only"
+    else
+        background:Hide()
+        background_last_state = "hidden_no_visible_header"
+    end
+
+    background_adjustments = background_adjustments + 1
+end
+
+local function sync_objective_background(reason)
+    background_sync_queued = false
+    background_last_reason = reason or "unknown"
+
+    local tracker = get_objective_tracker()
+    local background = tracker and tracker.NineSlice
+    if not tracker or not background then
+        background_last_state = "unavailable"
+        return
+    end
+
+    if not is_runtime_enabled() then
+        background_last_state = "module_disabled"
+        return
+    end
+
+    if tracker.IsCollapsed and tracker:IsCollapsed() then
+        show_background_to_header(tracker, background, "shown_container_collapsed")
+        return
+    end
+
+    local last_visible_module
+    for _, module in ipairs(tracker.modules or {}) do
+        if module.IsShown and module:IsShown() and module.GetHeight and module:GetHeight() > 0 then
+            last_visible_module = module
+        end
+    end
+
+    if last_visible_module then
+        background:SetPoint("BOTTOM", last_visible_module, "BOTTOM", 0, -(tracker.bottomModulePadding or 10))
+        background:Show()
+        background_last_state = "shown_to_visible_modules"
+    else
+        show_background_to_header(tracker, background, "shown_no_visible_modules")
+        return
+    end
+
+    background_adjustments = background_adjustments + 1
+end
+
+local function queue_background_sync(reason)
+    if background_sync_queued then return end
+    background_sync_queued = true
+    local delay = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.next_frame or 0
+    C_Timer.After(delay, function()
+        sync_objective_background(reason)
+    end)
+end
+
+local function hook_background_modules(tracker)
+    for _, module in ipairs(tracker.modules or {}) do
+        if module.SetCollapsed and not background_hooked_modules[module] then
+            background_hooked_modules[module] = true
+            hooksecurefunc(module, "SetCollapsed", function()
+                queue_background_sync("module collapsed")
+            end)
+        end
+    end
+end
+
+local function ensure_background_hooks()
+    if background_hooks_installed then return end
+
+    local tracker = get_objective_tracker()
+    if not tracker then return end
+
+    hooksecurefunc(tracker, "Update", function()
+        hook_background_modules(tracker)
+        queue_background_sync("tracker update")
+    end)
+    hooksecurefunc(tracker, "SetCollapsed", function()
+        queue_background_sync("tracker collapsed")
+    end)
+
+    hook_background_modules(tracker)
+    background_hooks_installed = true
+    queue_background_sync("hooks installed")
 end
 
 local function collapse_tracker(def, reason)
@@ -162,6 +269,7 @@ local function queue_collapse(def, reason)
 end
 
 function M.apply_objectives()
+    ensure_background_hooks()
     for _, def in ipairs(TRACKER_DEFS) do
         if should_auto_collapse(def) then
             queue_collapse(def, "apply")
@@ -240,6 +348,11 @@ end
 function M.set_module_enabled(enabled)
     if enabled then
         M.apply_objectives()
+    else
+        local tracker = get_objective_tracker()
+        if tracker and tracker.Update then
+            tracker:Update()
+        end
     end
 end
 
@@ -256,6 +369,10 @@ if addon.register_module_status then
             fields[#fields + 1] = prefix .. "attempts=" .. tostring(collapse_attempts[def.key] or 0)
             fields[#fields + 1] = prefix .. "last_reason=" .. tostring(last_apply_reason[def.key] or "none")
         end
+        fields[#fields + 1] = "background_hooks=" .. tostring(background_hooks_installed)
+        fields[#fields + 1] = "background_state=" .. tostring(background_last_state)
+        fields[#fields + 1] = "background_adjustments=" .. tostring(background_adjustments)
+        fields[#fields + 1] = "background_last_reason=" .. tostring(background_last_reason)
         return fields
     end)
 end

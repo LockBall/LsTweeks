@@ -34,6 +34,7 @@ Slash command: `/lst`
 
 ### Objectives
 - Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
+- Keeps the All Objectives background sized to the visible tracker sections when Objectives module behavior is active.
 
 
 ### Skyriding Vigor
