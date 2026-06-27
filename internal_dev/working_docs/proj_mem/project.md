@@ -1,5 +1,5 @@
 # LsTweeks Project Memory
-Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives next to this file in `proj_mem/`.
+Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives in `proj_mem/modules/`.
 
 
 ## Table of Contents
@@ -19,16 +19,16 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - [Performance Profiling](performance_profiling.md)
 - [PowerShell Memory](powershell.md)
 - [Module Memory](#module-memory)
-  - [Player Frame](player_frame.md)
-  - [Objectives](objectives.md)
-  - [Sound Levels](sound_levels.md)
-  - [Skyriding Vigor](skyriding_vigor.md)
-  - [Aura Frames](aura_frames.md)
+  - [Player Frame](modules/player_frame.md)
+  - [Objectives](modules/objectives.md)
+  - [Sound Levels](modules/sound_levels.md)
+  - [Skyriding Vigor](modules/skyriding_vigor.md)
+  - [Aura Frames](modules/aura_frames.md)
 
 
 ## Project Operations
 ### Workflow
-- Source of truth: this file plus module files under `proj_mem/`.
+- Source of truth: this file plus module files under `proj_mem/modules/`.
 - Durable changes: update this file or the relevant module file for architecture, defaults, APIs, or debugging lessons.
 - Session start: read `agent_start.md` first; `code_map.md` owns read-in shortcuts, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.

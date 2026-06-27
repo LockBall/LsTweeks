@@ -32,11 +32,11 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `project.md` workflow, docs ownership, or validation commands: `## Project Operations`.
 - `project.md` addon identity, slash command, SavedVariables, or load-order map: `## Project Overview`.
 - `project.md` module lifecycle, DB defaults, timing buckets, combat guards, or shared GUI rules: `## Shared Architecture`.
-- `aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
-- `skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
-- `player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
-- `objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults and `ob_main.lua` runtime/settings.
-- `sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
+- `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
+- `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
+- `modules/player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
+- `modules/objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults and `ob_main.lua` runtime/settings.
+- `modules/sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
@@ -68,11 +68,11 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 ## Feature Modules
 - `modules/settings/`: general addon settings and module toggles.
-- `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `player_frame.md`.
-- `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `objectives.md`.
-- `modules/sound_levels/`: sound replacement presets and Fishing Focus runtime. Memory: `sound_levels.md`.
-- `modules/skyriding_vigor/`: restored Skyriding Vigor display, style/layout state, charge detection, fade, and GUI. Memory: `skyriding_vigor.md`.
-- `modules/aura_frames/`: aura scanning/rendering, CDM integration, frame settings, profiles, and GUI. Memory: `aura_frames.md`.
+- `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `proj_mem/modules/player_frame.md`.
+- `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `proj_mem/modules/objectives.md`.
+- `modules/sound_levels/`: sound replacement presets and Fishing Focus runtime. Memory: `proj_mem/modules/sound_levels.md`.
+- `modules/skyriding_vigor/`: restored Skyriding Vigor display, style/layout state, charge detection, fade, and GUI. Memory: `proj_mem/modules/skyriding_vigor.md`.
+- `modules/aura_frames/`: aura scanning/rendering, CDM integration, frame settings, profiles, and GUI. Memory: `proj_mem/modules/aura_frames.md`.
 - `modules/about.lua`: about/public credits page.
 
 
@@ -81,7 +81,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `project.md`: project-wide architecture and durable cross-module rules.
 - `performance_profiling.md`: reusable in-game CPU profiling workflow and comparison rules.
 - `powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
-- `proj_mem/*.md`: module memory and this code map.
+- `proj_mem/modules/*.md`: module memory files.
 - `review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
 - `completed_features/`: completed investigations; review on demand.
 - `tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
@@ -94,7 +94,6 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 ## Release Package
 The package policy includes only public addon roots/files and excludes all `internal_dev/` content. The verifier also treats `internal_dev` as an invariant forbidden root.
-
 Included roots/files are controlled by `package-policy.json`. Do not infer release contents from `rg --files`; run the package verifier when packaging behavior matters.
 
 

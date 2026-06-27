@@ -1,7 +1,7 @@
 # Performance Profiling Memory
 Use this file for reusable in-game CPU profiling workflow. Keep raw run output in
 `tests_tools/cpu_profiles/` and keep module-specific conclusions
-in that module's `proj_mem/*.md` file.
+in that module's `proj_mem/modules/*.md` file.
 
 
 ## Table of Contents

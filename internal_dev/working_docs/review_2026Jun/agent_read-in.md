@@ -13,6 +13,7 @@ Goal: manage and reduce agent read-in token usage while preserving enough projec
 kiloTokens  
 modularization pass
 
+- 3: 16,683
 - 2: 16,209
 - 1: 15.786 kT
 - 0 Baseline: 19-20 kT
