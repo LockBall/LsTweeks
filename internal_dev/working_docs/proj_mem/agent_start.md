@@ -63,7 +63,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - After significant changes, provide a concise git commit message.
 
-- When suggesting a commit message, provide one combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives.
+- When suggesting a commit message, provide one complete combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives. Do not show both a short and long option.
 
 
 ## Documentation Rules
