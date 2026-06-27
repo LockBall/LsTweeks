@@ -188,7 +188,7 @@ Violations here can create invisible or unstable controls.
 
 - Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 
-- Shared dropdown hover-arrow polish remains unresolved and is tracked in `internal_dev/working_docs/review_2026Jun/graphics/dropdown_hover_arrow.md`. Do not retry the rejected stand-ins without a new reason: text glyphs rendered as empty boxes, `Interface\Buttons\UI-SortArrow` was too thin, and `Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up` had the wrong visual shape.
+- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media/media_notes.md`; completed investigation notes live in `internal_dev/completed_features/dropdown_hover_arrow.md`.
 
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.AttachTooltip()` / `addon.AttachTooltipToTargets()` for simple settings help tooltips.
 

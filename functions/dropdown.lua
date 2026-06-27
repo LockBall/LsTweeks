@@ -4,6 +4,14 @@
 
 local addon_name, addon = ...
 
+local CreateFrame = CreateFrame
+local UIParent = UIParent
+
+local DROPDOWN_ICON_TEXTURE = "Interface\\ChatFrame\\ChatFrameExpandArrow"
+local DROPDOWN_ICON_SIZE = 15
+local DROPDOWN_ICON_TEX_COORDS = { 0, 0, 1, 0, 0, 1, 1, 1 }
+local DROPDOWN_ICON_OFFSET_Y = 0
+
 local _dropdown_blocker = CreateFrame("Frame", nil, UIParent)
 _dropdown_blocker:SetAllPoints(UIParent)
 _dropdown_blocker:SetFrameStrata("FULLSCREEN")
@@ -36,22 +44,37 @@ local function _hide_dropdown(popup)
     end
 end
 
-local function create_hover_arrow(container, cfg)
-    local arrow = CreateFrame("Frame", nil, container)
-    local width = cfg.hover_arrow_width or 7
-    local height = cfg.hover_arrow_height or 4
-    arrow:SetSize(width, height)
-    arrow:SetPoint("TOP", container, "BOTTOM", 0, cfg.hover_arrow_offset_y or -2)
-    arrow:Hide()
+local function create_dropdown_icon(container, cfg)
+    if cfg.show_dropdown_icon == false then return nil end
 
-    for i = 1, height do
-        local line = arrow:CreateTexture(nil, "OVERLAY")
-        line:SetColorTexture(1, 0.82, 0, 0.95)
-        line:SetSize(width - ((i - 1) * 2), 1)
-        line:SetPoint("TOP", arrow, "TOP", 0, -(i - 1))
+    local icon = container:CreateTexture(nil, "OVERLAY")
+    local size = cfg.dropdown_icon_size or DROPDOWN_ICON_SIZE
+    icon:SetSize(size, size)
+    icon:SetPoint("TOP", container, "BOTTOM", cfg.dropdown_icon_offset_x or 0, cfg.dropdown_icon_offset_y or DROPDOWN_ICON_OFFSET_Y)
+    icon:SetAlpha(cfg.dropdown_icon_alpha or 0.95)
+    icon:Hide()
+
+    local texture_path = cfg.dropdown_icon_texture or DROPDOWN_ICON_TEXTURE
+    if texture_path then
+        icon:SetTexture(texture_path)
+        if cfg.dropdown_icon_tex_coords then
+            local tex_coords = cfg.dropdown_icon_tex_coords
+            icon:SetTexCoord(tex_coords.left, tex_coords.right, tex_coords.top, tex_coords.bottom)
+        else
+            icon:SetTexCoord(
+                DROPDOWN_ICON_TEX_COORDS[1],
+                DROPDOWN_ICON_TEX_COORDS[2],
+                DROPDOWN_ICON_TEX_COORDS[3],
+                DROPDOWN_ICON_TEX_COORDS[4],
+                DROPDOWN_ICON_TEX_COORDS[5],
+                DROPDOWN_ICON_TEX_COORDS[6],
+                DROPDOWN_ICON_TEX_COORDS[7],
+                DROPDOWN_ICON_TEX_COORDS[8]
+            )
+        end
     end
 
-    return arrow
+    return icon
 end
 
 -- Shared dropdown constructor used by module UIs.
@@ -97,7 +120,7 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         addon.ApplyStandardButtonStyle(btn)
     end
     local btn_text = btn:GetFontString()
-    local hover_arrow = cfg.show_hover_arrow == false and nil or create_hover_arrow(container, cfg)
+    local dropdown_icon = create_dropdown_icon(container, cfg)
 
     local popup = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     popup:SetSize(width, #options * row_h + 4)
@@ -173,19 +196,19 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         else
             _show_dropdown(popup, btn)
         end
-        if hover_arrow then
-            hover_arrow:Hide()
+        if dropdown_icon then
+            dropdown_icon:Hide()
         end
     end)
 
-    if hover_arrow then
+    if dropdown_icon then
         btn:HookScript("OnEnter", function()
             if btn:IsEnabled() and not popup:IsShown() then
-                hover_arrow:Show()
+                dropdown_icon:Show()
             end
         end)
         btn:HookScript("OnLeave", function()
-            hover_arrow:Hide()
+            dropdown_icon:Hide()
         end)
     end
 
@@ -203,8 +226,8 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         btn:SetEnabled(enabled)
         container:SetAlpha(enabled and 1 or 0.45)
         if not enabled then
-            if hover_arrow then
-                hover_arrow:Hide()
+            if dropdown_icon then
+                dropdown_icon:Hide()
             end
             _hide_dropdown(popup)
         end

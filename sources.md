@@ -31,6 +31,12 @@ Reference sources used for addon behavior, public release preparation, documenta
 - Ketho WoW API VS Code extension: https://marketplace.visualstudio.com/items?itemName=ketho.wow-api
 - Blizzard UI source mirror used by Ketho FrameXML annotations: https://github.com/Gethe/wow-ui-source/tree/live/Interface/AddOns/Blizzard_ObjectiveTracker
 
+## Blizzard UI Source
+
+- WoW UI source mirror: https://github.com/Gethe/wow-ui-source
+- Shared UI panel templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml
+- UIDropDownMenu templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/UIDropDownMenuTemplates.xml
+
 ## Embedded Libraries
 
 ### LibStub
