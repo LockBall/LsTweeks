@@ -20,6 +20,31 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 
 
+## Read-In Shortcuts
+
+- Default session read-in is `agent_start.md`, `git status --short`, then this file. Defer everything else until the request routes there.
+
+- `project.md` workflow, docs ownership, or validation commands: `## Project Operations`.
+
+- `project.md` addon identity, slash command, SavedVariables, or load-order map: `## Project Overview`.
+
+- `project.md` module lifecycle, DB defaults, timing buckets, combat guards, or shared GUI rules: `## Shared Architecture`.
+
+- `aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
+
+- `skyriding_vigor.md` large-section routing: top summary plus `## Runtime Notes`; use source outlines for deeper `sv_*` ownership.
+
+- `player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
+
+- `objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults and `ob_main.lua` runtime/settings.
+
+- `sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
+
+- Source outline command: `rg -n "^--#region|^-- [A-Za-z].*" <target paths>`. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
+
+- Avoid reading `README.md`, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes unless the request directly routes there.
+
+
 ## Public Surface
 
 - `README.md`: public feature names, install/use wording, release-facing behavior.
@@ -87,9 +112,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `internal_dev/working_docs/proj_mem/*.md`: module memory and this code map.
 
-- `internal_dev/working_docs/review_2026Jun/`: focused review notes; read only when the task touches that area.
-
-- `internal_dev/working_docs/review_2026Jun/`: temporary active review notes only.
+- `internal_dev/working_docs/review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
 
 - `internal_dev/completed_features/`: completed investigations; review on demand.
 

@@ -53,7 +53,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Update this file or the relevant module file when architecture, defaults, APIs, or debugging lessons change.
 
-- Read `agent_start.md` first when starting a new coding-agent session; it routes to this file, the public README, and relevant module memory without duplicating their contents.
+- Read `agent_start.md` first when starting a new coding-agent session; it runs the worktree check and routes through `code_map.md` before any broader docs. `code_map.md` owns read-in shortcuts, section-first project/module memory routing, and source-outline commands.
 
 - Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/` and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 
@@ -132,7 +132,7 @@ internal_dev/          internal docs excluded from release zips
 dist/                   generated package output, ignored
 ```
 
-Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Use `code_map.md` for compact file ownership and common commands; keep detailed per-file ownership notes in the relevant module memory file instead of expanding this map.
+Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Treat those headers and `--#region` markers as the source-code TOC; use the source outline command in `code_map.md` before broad source reads. Keep durable ownership notes in `code_map.md` or the relevant module memory file instead of expanding this map.
 
 Lua section headers use VS Code foldable region markers with visual dividers: `--#region SECTION NAME =====` and `--#endregion SECTION NAME =====`. Use uppercase section names and keep region markers paired. Put the explanatory section comment directly under `--#region` with no blank line, put no blank line before `--#endregion`, and leave two blank lines before the next `--#region`.
 

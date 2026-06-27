@@ -5,25 +5,27 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 ## Session Start
 
-1. Read `README.md` for the public addon overview, feature surface, user-facing terminology, and install/use expectations.
+1. Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
 
-2. Read `internal_dev/working_docs/proj_mem/project.md` for the internal source of truth: architecture, file map, workflow, packaging, LuaLS/Ketho notes, and links to module memory.
+2. Read `internal_dev/working_docs/proj_mem/code_map.md` first for compact file ownership, routing, and verification commands.
 
-3. Read `internal_dev/working_docs/proj_mem/code_map.md` for a compact file ownership map and common verification commands.
+3. Read targeted sections of `internal_dev/working_docs/proj_mem/project.md` when the request touches architecture, workflow, packaging, LuaLS/Ketho, shared GUI rules, cross-module behavior, or durable project docs.
 
-4. Read only the relevant module memory file before touching a module:
+4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>` before opening the whole file:
    `player_frame.md`, `objectives.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
 
-5. Check focused review notes under `internal_dev/working_docs/review_2026Jun/` only when the task touches that area. Do not promote transient review notes into durable docs unless they are still true after code review.
+5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
 
-6. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
+6. Check focused review notes under `internal_dev/working_docs/review_2026Jun/` only when the task touches that area. Do not promote transient review notes into durable docs unless they are still true after code review.
+
+7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
 
 
 ## First Checks
 
-- Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
-
 - Use `rg` / `rg --files` for repo searches.
+
+- For source read-in, start with `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` to inspect file responsibility headers and region outlines before opening whole large Lua files.
 
 - Use `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1` for routine Lua syntax and whitespace validation.
 
