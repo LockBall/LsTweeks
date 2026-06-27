@@ -1,8 +1,8 @@
 # Performance Profiling Memory
 
 Use this file for reusable in-game CPU profiling workflow. Keep raw run output in
-`internal_dev/tests_tools/logs/` and keep module-specific conclusions in that
-module's `proj_mem/*.md` file.
+`internal_dev/tests_tools/cpu_profiles/` and keep module-specific conclusions
+in that module's `proj_mem/*.md` file.
 
 
 ## Whole-Addon Profiler
@@ -40,8 +40,40 @@ module's `proj_mem/*.md` file.
   value under test, similar combat/activity duration, and the same profiler/tooling
   state. If a run has a false start or wrong setting, mark it noisy or discard it.
 
-- Raw broad/focused run history lives in
-  `internal_dev/tests_tools/logs/addon_cpu_profiles.md`.
+- Raw CPU run history is split by scope under
+  `internal_dev/tests_tools/cpu_profiles/`: use `addon_cpu_profiles.md` for
+  broad multi-module runs, and module-prefixed files such as
+  `af_cpu_profiles.md` or `sv_cpu_profiles.md` for focused runs.
+
+
+## Optimization Lessons
+
+- Separate high-frequency runtime paths from setup/configuration work. If a path
+  runs every frame, every tick, or many times per second, it should reuse values
+  prepared by a lower-frequency refresh path where the module's behavior allows
+  it.
+
+- Do not assume a helper is harmless just because each call is cheap. Repeated
+  style lookup, validation, layout-table lookup, atlas resolution, DB access, and
+  similar setup work can become visible when multiplied by progress/ticker/event
+  cadence.
+
+- Prefer a single authoritative setup path over duplicated cheap lookups. Resolve
+  style/config/state once in a refresh/render pass, then pass the resolved values
+  or stamp them onto the object that the hot path already owns.
+
+- Make mutability boundaries explicit before caching or reusing state. Skyriding
+  Vigor improved safely only after real in-flight settings edits were rejected
+  while Fill Test stayed editable. Other modules should identify their equivalent
+  "state is stable during this hot loop" boundary before adding reuse.
+
+- Use profiling to verify the intended shape, not just total time. The Skyriding
+  Vigor win was confirmed because `get_render_context` and style/atlas helpers
+  dropped from progress-tick cadence to refresh cadence.
+
+- Avoid broad persistent caches until there is a concrete invalidation contract.
+  Pass-local context or object-local render state is often enough and has a
+  smaller correctness surface.
 
 
 ## Validation After Profiling Changes

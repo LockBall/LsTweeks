@@ -63,6 +63,12 @@ Important `skyriding_vigor` keys:
 
 - `M.BuildSettings()` coordinates local builder functions (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, `build_spark_row`, and `build_reset_panel`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
 
+- Settings controls that must disable during real active flight are registered in
+  `sv_gui.lua` through the module-local `register_flight_locked_control()` helper.
+  Use that registry for new Skyriding setting controls instead of extending a
+  manual list. Controls with narrower enabled rules can pass a predicate so those
+  rules compose with the flight lock.
+
 - Skyriding's Move Mode cell is a three-control stack: Move Mode, Snap to Grid, and Reset Position. The first control is grid-placed and the secondary controls use `grid:stack_below()` so the row/column cell owns the repeated vertical-stack math. In-game visual check passed on 2026-06-25.
 
 - `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
@@ -85,7 +91,7 @@ Important `skyriding_vigor` keys:
 
 - Fade settings do not apply while the race profile is active. The settings UI disables Fade When Full, Fade Alpha, and Fade Length during real race detection or Race Profile Test mode through `M.sync_fade_controls_enabled()`.
 
-- `M.sync_fade_controls_enabled()` owns fade-control enabled/disabled state. `M.sync_race_profile_controls()` calls it only because focused race-profile state changes must also refresh dependent fade controls. Do not add a second `M.sync_fade_controls_enabled()` call in `M.sync_settings_controls()`.
+- `M.sync_settings_controls_enabled()` owns the broad settings lock during real active flight. It disables settings controls and then calls `M.sync_fade_controls_enabled()` so the flight lock composes with the narrower race-profile fade lock. Fill Test intentionally remains editable.
 
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 
@@ -100,6 +106,8 @@ Important `skyriding_vigor` keys:
 - When reusing `UIWidgetFillUpFrameTemplate` outside Blizzard's widget manager, force-clear/reanchor the inherited `BG`, `Bar`, and `Frame` regions and hide unused spark/flash/flipbook regions. Do not keep template-provided anchors; they can leave node art detached from the custom slot layout.
 
 - Vigor fill dimensions are driven by the local `FILL_LAYOUT` table in `sv_bar.lua`. Node backgrounds use per-style `background_scale_*` and `background_offset_*` fields in `BAR_STYLES` in `sv_styles.lua`.
+
+- `sv_bar.lua` uses `M.get_render_context(db)` as the pass-local render context for style-dependent slot rendering. It carries the active DB, `style_key`, `style`, `frame_atlas`, and `spark_atlas`, and is passed through `M.refresh()` slot updates to avoid repeated style/atlas resolution without persistent cache invalidation state. `M.set_slot_state()` stamps each slot with the resolved render values, and `M.update_filling_slot_progress()` reuses those slot-local values so active progress ticks do not rebuild style/atlas context.
 
 - Vigor spark rendering is optional and uses per-style `spark` atlas fields in `BAR_STYLES`. It is drawn only on the currently filling node and is controlled by `skyriding_vigor.show_spark`, `spark_color`, and `spark_size`. Runtime draws the spark above the fill layer but below the frame cover, with a slot-local clipped spark frame sized to the fill box plus per-style `spark_clip_inset_x/y` so texture overflow is hidden without rescaling the spark. `spark_size` remains a thickness multiplier. In-game use on 2026-06-25 found current spark placement working well; avoid broad height clamps that ignore atlas dimensions and fill-edge math unless a new concrete visual issue appears.
 

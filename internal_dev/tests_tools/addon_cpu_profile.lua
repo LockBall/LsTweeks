@@ -16,8 +16,8 @@ local PROFILE_TARGETS = {
     settings = false,
     player_frame = false,
     sound_levels = false,
-    skyriding_vigor = false,
-    aura_frames = true,
+    skyriding_vigor = true,
+    aura_frames = false,
 }
 
 --#endregion PROFILE TARGET SWITCHES ===========================================
@@ -34,6 +34,8 @@ local sort = table.sort
 local tonumber = tonumber
 local UnitAffectingCombat = UnitAffectingCombat
 local unpack = unpack
+
+local SKYRIDING_POLL_SECONDS = 0.20
 
 local function now()
     return debugprofilestop and debugprofilestop() or 0
@@ -70,6 +72,74 @@ local function finish_active_combat(current_time)
     P.combat_total = (P.combat_total or 0) + duration
     P.combat_started_at = nil
     return duration
+end
+
+local function is_skyriding_workload_active()
+    if not PROFILE_TARGETS.skyriding_vigor then return false end
+
+    local M = addon.skyriding_vigor
+    if not M then return false end
+    if M._fill_test_enabled then return true end
+
+    local is_gliding, can_glide = false, false
+    if M.get_gliding_state then
+        is_gliding, can_glide = M.get_gliding_state()
+    end
+    if is_gliding then return true end
+    if not can_glide then return false end
+    if M.is_player_flying and M.is_player_flying() then return true end
+    if M.is_mounted_in_advanced_flyable_area and M.is_mounted_in_advanced_flyable_area(can_glide) then return true end
+
+    return false
+end
+
+local function reset_skyriding_timer(start_time)
+    start_time = start_time or now()
+    P.skyriding_total = 0
+    P.skyriding_segments = 0
+    P.skyriding_started_at = nil
+    P.skyriding_poll_elapsed = 0
+    if is_skyriding_workload_active() then
+        P.skyriding_started_at = start_time
+        P.skyriding_segments = 1
+    end
+end
+
+local function current_skyriding_total(current_time)
+    current_time = current_time or now()
+    local total = P.skyriding_total or 0
+    if P.skyriding_started_at then
+        total = total + (current_time - P.skyriding_started_at)
+    end
+    return total
+end
+
+local function finish_active_skyriding(current_time)
+    if not P.skyriding_started_at then return 0 end
+    current_time = current_time or now()
+    local duration = current_time - P.skyriding_started_at
+    P.skyriding_total = (P.skyriding_total or 0) + duration
+    P.skyriding_started_at = nil
+    return duration
+end
+
+local function update_skyriding_timer(current_time)
+    current_time = current_time or now()
+    local active = is_skyriding_workload_active()
+    if active and not P.skyriding_started_at then
+        P.skyriding_started_at = current_time
+        P.skyriding_segments = (P.skyriding_segments or 0) + 1
+        print("skyriding active started")
+    elseif not active and P.skyriding_started_at then
+        local duration = finish_active_skyriding(current_time)
+        if duration > 0 then
+            print(format(
+                "skyriding active ended duration=%.1fs total=%.1fs",
+                duration / 1000,
+                (P.skyriding_total or 0) / 1000
+            ))
+        end
+    end
 end
 
 local function pack_returns(...)
@@ -184,7 +254,7 @@ local PROFILE_SECTIONS = {
         key = "skyriding_vigor",
         label = "Skyriding Vigor",
         install = function()
-            wrap_table_functions(addon.skyriding_vigor, "skyriding_vigor")
+            wrap_table_functions(addon.skyriding_vigor, "sv")
         end,
     },
     -- Aura Frames module, including scan/render/CDM/profile helpers.
@@ -231,6 +301,7 @@ local function reset_profile()
     P.metrics = {}
     P.started_at = now()
     reset_combat_timer(P.started_at)
+    reset_skyriding_timer(P.started_at)
 end
 
 local function start_profile()
@@ -243,6 +314,7 @@ end
 
 local function stop_profile()
     finish_active_combat()
+    finish_active_skyriding()
     P.enabled = false
     restore_wrappers()
     print("|cff33ff99== LsTweeks CPU Profile stopped ==|r")
@@ -253,6 +325,8 @@ local function report_profile(limit)
     local elapsed = (report_time - (P.started_at or report_time)) / 1000
     local combat_elapsed = current_combat_total(report_time) / 1000
     local combat_pct = elapsed > 0 and (combat_elapsed / elapsed * 100) or 0
+    local skyriding_elapsed = current_skyriding_total(report_time) / 1000
+    local skyriding_pct = elapsed > 0 and (skyriding_elapsed / elapsed * 100) or 0
     local rows = {}
 
     for name, metric in pairs(P.metrics or {}) do
@@ -283,15 +357,27 @@ local function report_profile(limit)
         P.combat_segments or 0,
         P.combat_started_at and "yes" or "no"
     ))
+    print(format(
+        "skyriding_active %.1fs %.1f%% segments=%d active=%s",
+        skyriding_elapsed,
+        skyriding_pct,
+        P.skyriding_segments or 0,
+        P.skyriding_started_at and "yes" or "no"
+    ))
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
+        local normalized = ""
+        if skyriding_elapsed > 0 then
+            normalized = format(" sv_msps=%.3f sv_callsps=%.2f", row.total / skyriding_elapsed, row.calls / skyriding_elapsed)
+        end
         print(format(
-            "%s calls=%d total=%.3fms avg=%.4fms max=%.3fms",
+            "%s calls=%d total=%.3fms avg=%.4fms max=%.3fms%s",
             row.name,
             row.calls,
             row.total,
             row.total / row.calls,
-            row.max
+            row.max,
+            normalized
         ))
     end
 end
@@ -304,6 +390,10 @@ end
 local event_frame = CreateFrame("Frame")
 event_frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 event_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+event_frame:RegisterEvent("PLAYER_CAN_GLIDE_CHANGED")
+event_frame:RegisterEvent("PLAYER_IS_GLIDING_CHANGED")
+event_frame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+event_frame:RegisterEvent("MOUNT_JOURNAL_USABILITY_CHANGED")
 event_frame:SetScript("OnEvent", function(_, event)
     if not P.enabled then return end
     local event_time = now()
@@ -321,7 +411,19 @@ event_frame:SetScript("OnEvent", function(_, event)
                 (P.combat_total or 0) / 1000
             ))
         end
+    elseif event == "PLAYER_CAN_GLIDE_CHANGED" or event == "PLAYER_IS_GLIDING_CHANGED"
+        or event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "MOUNT_JOURNAL_USABILITY_CHANGED"
+    then
+        update_skyriding_timer(event_time)
     end
+end)
+
+event_frame:SetScript("OnUpdate", function(_, elapsed)
+    if not P.enabled or not is_target_enabled("skyriding_vigor") then return end
+    P.skyriding_poll_elapsed = (P.skyriding_poll_elapsed or 0) + (elapsed or 0)
+    if P.skyriding_poll_elapsed < SKYRIDING_POLL_SECONDS then return end
+    P.skyriding_poll_elapsed = 0
+    update_skyriding_timer(now())
 end)
 
 --#endregion COMBAT TIMER ======================================================
@@ -350,6 +452,12 @@ SlashCmdList["LSTWEEKS_CPU_PROFILE"] = function(msg)
             current_combat_total() / 1000,
             P.combat_segments or 0,
             P.combat_started_at and "yes" or "no"
+        ))
+        print(format(
+            "skyriding_active %.1fs segments=%d active=%s",
+            current_skyriding_total() / 1000,
+            P.skyriding_segments or 0,
+            P.skyriding_started_at and "yes" or "no"
         ))
     elseif command == "report" or command == "" then
         report_profile(arg)

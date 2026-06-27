@@ -11,7 +11,20 @@ local M = addon.skyriding_vigor
 
 local C_Texture_GetAtlasInfo = C_Texture and C_Texture.GetAtlasInfo
 local abs = math.abs
+local clamp_number = addon.clamp_number
 local tonumber = tonumber
+
+local function settings_locked_by_flight()
+    return M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()
+end
+
+local function reject_settings_change_during_flight()
+    if not settings_locked_by_flight() then return false end
+    if M.sync_settings_controls then
+        M.sync_settings_controls(M.get_db and M.get_db())
+    end
+    return true
+end
 
 --#region STYLE DEFINITIONS ====================================================
 
@@ -227,14 +240,6 @@ local function get_defaults()
     return M.DEFAULTS or {}
 end
 
-local function clamp_number(value, fallback, range)
-    value = tonumber(value)
-    if not value then value = fallback end
-    if range and value < range.min then return range.min end
-    if range and value > range.max then return range.max end
-    return value
-end
-
 local function atlas_exists(atlas)
     if not atlas then return true end
     if not C_Texture_GetAtlasInfo then return false end
@@ -415,6 +420,8 @@ function M.get_node_color()
 end
 
 function M.set_node_color(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
@@ -473,6 +480,8 @@ function M.get_style_scale()
 end
 
 function M.set_style_scale(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
@@ -502,6 +511,8 @@ function M.get_style_fill_color_default()
 end
 
 function M.set_style_fill_color(color)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db or type(color) ~= "table" then return end
     local defaults = get_defaults()
@@ -543,6 +554,8 @@ function M.get_style_fill_add_alpha_default()
 end
 
 function M.set_style_fill_add_alpha(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
@@ -680,6 +693,8 @@ function M.get_decor_position_default(axis)
 end
 
 function M.set_decor_position_axis(axis, value)
+    if reject_settings_change_during_flight() then return end
+
     local field, range_key = get_decor_position_field(axis)
     if not field then return end
     local db = get_db()
@@ -715,6 +730,8 @@ function M.get_decor_scale_default()
 end
 
 function M.set_decor_scale(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
@@ -738,6 +755,8 @@ function M.get_decor_color()
 end
 
 function M.set_decor_color(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()

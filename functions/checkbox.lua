@@ -22,6 +22,14 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     label:SetText(label_text)
     label:SetTextColor(1, 1, 1, 1)
 
+    local function set_label_enabled(enabled)
+        if enabled then
+            label:SetTextColor(1, 1, 1, 1)
+        else
+            label:SetTextColor(0.5, 0.5, 0.5, 1)
+        end
+    end
+
     -- Calculate dynamic width based on label text
     local label_width = label:GetStringWidth()
     local checkbox_width = 24
@@ -35,6 +43,26 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
             on_click_callback(self:GetChecked())
         end
     end)
+
+    local checkbox_set_enabled = checkbox.SetEnabled
+    local checkbox_enable = checkbox.Enable
+    local checkbox_disable = checkbox.Disable
+
+    checkbox.SetEnabled = function(self, enabled)
+        checkbox_set_enabled(self, enabled)
+        set_label_enabled(enabled)
+    end
+    checkbox.Enable = function(self)
+        checkbox_enable(self)
+        set_label_enabled(true)
+    end
+    checkbox.Disable = function(self)
+        checkbox_disable(self)
+        set_label_enabled(false)
+    end
+    container.SetEnabled = function(_, enabled)
+        checkbox:SetEnabled(enabled)
+    end
     
     return container, checkbox, label
 end

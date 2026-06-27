@@ -25,3 +25,11 @@ function addon.apply_defaults(src, dest)
         end
     end
 end
+
+function addon.clamp_number(value, fallback, range)
+    value = tonumber(value)
+    if not value then value = fallback end
+    if range and value < range.min then return range.min end
+    if range and value > range.max then return range.max end
+    return value
+end

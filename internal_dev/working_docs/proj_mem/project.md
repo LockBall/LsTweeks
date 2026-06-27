@@ -65,9 +65,9 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Diff whitespace validation: `git diff --check`.
 
-- Reusable CPU profiling workflow lives in `performance_profiling.md`. Raw profile
-  run logs belong under `internal_dev/tests_tools/logs/`; durable conclusions belong
-  in the relevant module memory file.
+- Reusable CPU profiling workflow lives in `performance_profiling.md`. CPU profile
+  run history belongs under `internal_dev/tests_tools/cpu_profiles/`; durable
+  conclusions belong in the relevant module memory file.
 
 
 ### Ketho / LuaLS
@@ -162,6 +162,13 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
 
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
+
+- Keep high-frequency runtime paths narrow. If code runs every frame/tick or many
+  times per second, avoid repeated DB/style/layout/atlas/config resolution there;
+  do that work in a lower-frequency refresh/setup path and pass or store the
+  resolved state for the hot path. Make the mutability boundary explicit first,
+  such as disabling settings edits during an active runtime state while still
+  allowing controlled test modes.
 
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore events/Show and let Blizzard handlers run.
 

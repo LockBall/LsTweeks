@@ -13,11 +13,11 @@ local M = addon.skyriding_vigor
 local C_Item_GetItemCount = C_Item and C_Item.GetItemCount
 local CreateFrame = CreateFrame
 local GetTime = GetTime
+local clamp_number = addon.clamp_number
 local floor = math.floor
 local max = math.max
 local min = math.min
 local ipairs = ipairs
-local tonumber = tonumber
 
 local BRONZE_TIMEPIECE_ITEM_ID = 191140
 local FILL_TEST_NODE_SECONDS = 2.0
@@ -63,14 +63,6 @@ progress_driver:Hide()
 
 --#region DATABASE =============================================================
 -- Saved-variable access, normalization, and compatibility cleanup.
-local function clamp_number(value, fallback, range)
-    value = tonumber(value)
-    if not value then value = fallback end
-    if range and value < range.min then return range.min end
-    if range and value > range.max then return range.max end
-    return value
-end
-
 local function color_matches(color, r, g, b, a)
     if type(color) ~= "table" then return false end
     return color.r == r and color.g == g and color.b == b and (color.a or 1) == (a or 1)
@@ -293,6 +285,13 @@ function M.is_race_profile_active()
 end
 
 function M.set_race_profile_enabled(enabled)
+    if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+        if M.sync_settings_controls then
+            M.sync_settings_controls(get_db())
+        end
+        return
+    end
+
     local root_db = get_root_db()
     if not root_db then return end
 
@@ -316,6 +315,13 @@ function M.set_race_profile_enabled(enabled)
 end
 
 function M.set_race_profile_test_enabled(enabled)
+    if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+        if M.sync_settings_controls then
+            M.sync_settings_controls(get_db())
+        end
+        return
+    end
+
     local root_db = get_root_db()
     if not root_db or not root_db.race_profile_enabled then return end
 
@@ -444,6 +450,10 @@ function M.refresh()
     M.set_move_mode(db.move_mode)
 
     local is_gliding, can_glide = M.get_gliding_state()
+    if M.sync_settings_controls_enabled then
+        M.sync_settings_controls_enabled()
+    end
+
     local current, max_charges, start_time, duration = M.get_charge_info()
     local max_slots = M.MAX_SLOTS
 
@@ -489,15 +499,16 @@ function M.refresh()
         filling_slot_index = current + 1
     end
 
+    local render_context = M.get_render_context and M.get_render_context(db) or nil
     for i = 1, max_slots do
         if i <= max_charges then
             M.set_slot_visible(i, true)
             if i <= current then
-                M.set_slot_state(i, "full", 1)
+                M.set_slot_state(i, "full", 1, render_context)
             elseif i == current + 1 and progress > 0 and progress < 1 then
-                M.set_slot_state(i, "filling", progress)
+                M.set_slot_state(i, "filling", progress, render_context)
             else
-                M.set_slot_state(i, "empty", 0)
+                M.set_slot_state(i, "empty", 0, render_context)
             end
         else
             M.set_slot_visible(i, false)
@@ -555,6 +566,13 @@ function M.set_fill_test_enabled(enabled)
 
     enabled = enabled and true or false
     if M._fill_test_enabled == enabled then return end
+    if enabled and M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+        if M.sync_fill_test_button then
+            M.sync_fill_test_button()
+        end
+        return
+    end
+
     local db = get_db()
     if enabled and (not db or not db.enabled) then return end
 
@@ -581,7 +599,25 @@ end
 
 --#region SETTINGS MUTATION ====================================================
 -- Settings write paths that normalize values and trigger the correct refresh.
+function M.is_settings_locked_by_flight()
+    if M._fill_test_enabled then return false end
+    if not M.get_gliding_state then return false end
+
+    local is_gliding, can_glide = M.get_gliding_state()
+    return is_gliding or (can_glide and M.is_player_flying and M.is_player_flying()) or false
+end
+
+local function reject_settings_change_during_flight()
+    if not M.is_settings_locked_by_flight() then return false end
+    if M.sync_settings_controls then
+        M.sync_settings_controls(get_db())
+    end
+    return true
+end
+
 function M.on_reset_complete()
+    if reject_settings_change_during_flight() then return end
+
     M._db_normalized = false
     local db = get_db()
     if not db then return end
@@ -600,6 +636,8 @@ function M.on_reset_complete()
 end
 
 function M.set_db_value(key, value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     if key == "enabled" then
@@ -662,6 +700,8 @@ function M.set_db_value(key, value)
 end
 
 function M.refresh_layout()
+    if reject_settings_change_during_flight() then return end
+
     if M.invalidate_layout then
         M.invalidate_layout()
     end
@@ -669,6 +709,8 @@ function M.refresh_layout()
 end
 
 function M.set_snap_to_grid(value)
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     db.snap_to_grid = value and true or false
@@ -681,6 +723,7 @@ end
 
 function M.set_position_axis(axis, value)
     if M._syncing_position_controls then return end
+    if reject_settings_change_during_flight() then return end
     if axis ~= "x" and axis ~= "y" then return end
 
     local db = get_db()
@@ -701,6 +744,8 @@ function M.set_position_axis(axis, value)
 end
 
 function M.reset_position()
+    if reject_settings_change_during_flight() then return end
+
     local db = get_db()
     if not db then return end
     db.position = {}

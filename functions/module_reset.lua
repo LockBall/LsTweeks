@@ -1,7 +1,8 @@
 -- ARM-code safety reset button: addon.CreateModuleReset(parent, db, defaults, opts).
 -- The user must type "arm" into an input box before the reset button activates, preventing accidental wipes.
 -- Blocked entirely during combat via InCombatLockdown(). Optional opts.before_reset
--- lets callers refresh dynamic defaults immediately before the copy. Optional
+-- lets callers refresh dynamic defaults immediately before the copy, or cancel
+-- the reset by returning false. Optional
 -- opts.after_reset lets a module resync only its own runtime/controls.
 
 local addon_name, addon = ...
@@ -221,6 +222,7 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
 
     -- RESET EXECUTION
     btn:SetScript("OnClick", function()
+        if container._disabled then return end
         if InCombatLockdown() then
             print("|cffff4444LsTweaks:|r Cannot reset during combat.")
             return
@@ -239,8 +241,9 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
             end
         end
 
-        if opts.before_reset then
-            opts.before_reset()
+        if opts.before_reset and opts.before_reset() == false then
+            disarm()
+            return
         end
 
         -- Wipe and restore this module's DB from its defaults.
@@ -263,6 +266,14 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
         disarm()
         print("|cff00ff00LsTweaks:|r Module reset complete and synchronized.")
     end)
+
+    container.SetEnabled = function(_, enabled)
+        container._disabled = not enabled
+        eb:SetEnabled(enabled)
+        if not enabled then
+            disarm()
+        end
+    end
 
     return container
 end

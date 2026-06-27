@@ -99,5 +99,15 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         return db_table[db_key]
     end
 
+    container.SetEnabled = function(_, enabled)
+        button:SetEnabled(enabled)
+        reset:SetEnabled(enabled)
+        button:SetAlpha(enabled and 1 or 0.45)
+        reset:SetAlpha(enabled and 1 or 0.65)
+        if label.SetFontObject then
+            label:SetFontObject(enabled and GameFontNormalSmall or GameFontDisableSmall)
+        end
+    end
+
     return container
 end

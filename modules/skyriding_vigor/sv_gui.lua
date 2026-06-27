@@ -140,6 +140,16 @@ local function create_control_panel(parent)
     return addon.CreateControlPanel(parent)
 end
 
+local function register_flight_locked_control(control, is_enabled)
+    if not control then return control end
+    M.flight_locked_controls = M.flight_locked_controls or {}
+    M.flight_locked_controls[#M.flight_locked_controls + 1] = {
+        control = control,
+        is_enabled = is_enabled,
+    }
+    return control
+end
+
 local function size_panel_to_controls(panel, cfg, ...)
     local max_width = 0
     local total_height = 0
@@ -219,6 +229,8 @@ end
 
 --#region CONTROL SYNCHRONIZATION ==============================================
 
+local set_control_enabled
+
 function M.sync_fill_test_button()
     local button = M.controls and M.controls.fill_test_button
     if button and button.SetTextToFit then
@@ -226,6 +238,9 @@ function M.sync_fill_test_button()
         if M.controls_parent then
             place_grid_control(button, CONTROL_GRID.fill_test, { width = width })
         end
+    end
+    if button then
+        set_control_enabled(button, M._fill_test_enabled or not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()))
     end
 end
 
@@ -259,7 +274,8 @@ function M.sync_fade_controls_enabled()
     local controls = M.controls
     if not controls then return end
 
-    local enabled = not (M.is_race_profile_active and M.is_race_profile_active())
+    local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+        and not (M.is_race_profile_active and M.is_race_profile_active())
     local fade_controls = {
         controls.fade_when_full,
         controls.fade_alpha,
@@ -278,6 +294,32 @@ function M.sync_fade_controls_enabled()
             end
         end
     end
+end
+
+set_control_enabled = function(control, enabled)
+    if not control then return end
+    if control.SetEnabled then
+        control:SetEnabled(enabled)
+    elseif enabled and control.Enable then
+        control:Enable()
+    elseif not enabled and control.Disable then
+        control:Disable()
+    end
+end
+
+function M.sync_settings_controls_enabled()
+    local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+    local controls = M.flight_locked_controls
+    for i = 1, #(controls or {}) do
+        local entry = controls[i]
+        local entry_enabled = enabled
+        if entry.is_enabled then
+            entry_enabled = entry_enabled and entry.is_enabled()
+        end
+        set_control_enabled(entry.control, entry_enabled)
+    end
+
+    M.sync_fade_controls_enabled()
 end
 
 function M.sync_position_controls(db)
@@ -440,6 +482,7 @@ function M.sync_settings_controls(db)
     M.sync_position_controls(db)
     M.sync_fill_test_button()
     M.sync_race_profile_controls()
+    M.sync_settings_controls_enabled()
 end
 
 --#endregion CONTROL SYNCHRONIZATION ===========================================
@@ -454,7 +497,7 @@ local function build_top_row(parent, context)
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
         M.set_db_value("enabled", is_checked)
     end)
-    M.controls.enabled = enabled_cb
+    M.controls.enabled = register_flight_locked_control(enabled_cb)
     place_grid_control(enabled_container, CONTROL_GRID.enabled)
 
     local fill_test_button = addon.CreateTextButton(parent, M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test, function()
@@ -467,7 +510,7 @@ local function build_top_row(parent, context)
         padding_x = cfg.button_padding_x,
     })
     place_grid_control(fill_test_button, CONTROL_GRID.fill_test)
-    M.controls.fill_test_button = fill_test_button
+    M.controls.fill_test_button = register_flight_locked_control(fill_test_button)
 
     local style_dropdown = addon.CreateDropdown(
         addon_name .. "SkyridingVigorStyle",
@@ -486,7 +529,7 @@ local function build_top_row(parent, context)
             end,
         }
     )
-    M.controls.style = style_dropdown
+    M.controls.style = register_flight_locked_control(style_dropdown)
     place_grid_control(style_dropdown, CONTROL_GRID.style)
 
     local node_color_dropdown = addon.CreateDropdown(
@@ -505,7 +548,9 @@ local function build_top_row(parent, context)
             end,
         }
     )
-    M.controls.node_color = node_color_dropdown
+    M.controls.node_color = register_flight_locked_control(node_color_dropdown, function()
+        return not M.bar_style_supports_node_color or M.bar_style_supports_node_color()
+    end)
     place_grid_control(node_color_dropdown, CONTROL_GRID.node_color)
     M.sync_node_color_controls()
 
@@ -535,7 +580,7 @@ local function build_top_row(parent, context)
             M.apply_fill_color()
         end
     end)
-    M.controls.fill_color = fill_color_picker
+    M.controls.fill_color = register_flight_locked_control(fill_color_picker)
     place_grid_control(fill_color_picker, CONTROL_GRID.fill_color)
 
     local fill_add_proxy = setmetatable({}, {
@@ -575,7 +620,7 @@ local function build_top_row(parent, context)
         end,
         { display_decimals = 2 }
     )
-    M.controls.fill_add_alpha = fill_add_slider
+    M.controls.fill_add_alpha = register_flight_locked_control(fill_add_slider)
     place_grid_control(fill_add_slider, CONTROL_GRID.fill_add)
 end
 
@@ -588,13 +633,13 @@ local function build_position_row(parent, context)
     local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
         M.set_db_value("move_mode", is_checked)
     end)
-    M.controls.move_mode = move_cb
+    M.controls.move_mode = register_flight_locked_control(move_cb)
     place_grid_control(move_container, CONTROL_GRID.move_mode)
 
     local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
         M.set_snap_to_grid(is_checked)
     end)
-    M.controls.snap_to_grid = snap_cb
+    M.controls.snap_to_grid = register_flight_locked_control(snap_cb)
     M.settings_grid:stack_below(snap_container, move_container, CONTROL_GRID.snap_to_grid)
 
     local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -610,6 +655,7 @@ local function build_position_row(parent, context)
         center = true,
     })
     reset_button:SetScript("OnClick", M.reset_position)
+    M.controls.reset_position = register_flight_locked_control(reset_button)
 
     if db then
         db.position = db.position or {}
@@ -631,7 +677,7 @@ local function build_position_row(parent, context)
     x_slider.slider:HookScript("OnValueChanged", function(_, value)
         M.set_position_axis("x", value)
     end)
-    M.controls.x_position = x_slider
+    M.controls.x_position = register_flight_locked_control(x_slider)
     place_grid_control(x_slider, CONTROL_GRID.x_position)
 
     local y_range = context.y_range
@@ -649,7 +695,7 @@ local function build_position_row(parent, context)
     y_slider.slider:HookScript("OnValueChanged", function(_, value)
         M.set_position_axis("y", value)
     end)
-    M.controls.y_position = y_slider
+    M.controls.y_position = register_flight_locked_control(y_slider)
     place_grid_control(y_slider, CONTROL_GRID.y_position)
 
     local scale_range = context.scale_range
@@ -666,7 +712,7 @@ local function build_position_row(parent, context)
         set_setting_from_slider("scale"),
         { display_decimals = 2 }
     )
-    M.controls.scale = scale_slider
+    M.controls.scale = register_flight_locked_control(scale_slider)
     place_grid_control(scale_slider, CONTROL_GRID.scale)
 
     local spacing_range = context.spacing_range
@@ -682,7 +728,7 @@ local function build_position_row(parent, context)
         defaults,
         set_setting_from_slider("spacing")
     )
-    M.controls.spacing = spacing_slider
+    M.controls.spacing = register_flight_locked_control(spacing_slider)
     place_grid_control(spacing_slider, CONTROL_GRID.spacing)
 end
 
@@ -735,7 +781,7 @@ local function build_decor_row(parent, context)
             end,
         }
     )
-    M.controls.decor_style = decor_style_dropdown
+    M.controls.decor_style = register_flight_locked_control(decor_style_dropdown)
     place_grid_control(decor_style_dropdown, CONTROL_GRID.decor_style)
 
     local decor_color_dropdown = addon.CreateDropdown(
@@ -754,7 +800,12 @@ local function build_decor_row(parent, context)
             end,
         }
     )
-    M.controls.decor_color = decor_color_dropdown
+    M.controls.decor_color = register_flight_locked_control(decor_color_dropdown, function()
+        if not M.decor_style_supports_color then return true end
+        local style_dropdown = M.controls and M.controls.decor_style
+        local style_key = style_dropdown and style_dropdown.GetValue and style_dropdown:GetValue() or nil
+        return M.decor_style_supports_color(style_key)
+    end)
     place_grid_control(decor_color_dropdown, CONTROL_GRID.decor_color)
     M.sync_decor_color_controls()
 
@@ -773,7 +824,7 @@ local function build_decor_row(parent, context)
             M.set_decor_position_axis("x", value)
         end
     )
-    M.controls.decor_x_position = decor_x_slider
+    M.controls.decor_x_position = register_flight_locked_control(decor_x_slider)
     place_grid_control(decor_x_slider, CONTROL_GRID.decor_x_position)
 
     local decor_y_range = context.decor_y_range
@@ -791,7 +842,7 @@ local function build_decor_row(parent, context)
             M.set_decor_position_axis("y", value)
         end
     )
-    M.controls.decor_y_position = decor_y_slider
+    M.controls.decor_y_position = register_flight_locked_control(decor_y_slider)
     place_grid_control(decor_y_slider, CONTROL_GRID.decor_y_position)
 
     local decor_scale_range = context.decor_scale_range
@@ -810,7 +861,7 @@ local function build_decor_row(parent, context)
         end,
         { display_decimals = 2 }
     )
-    M.controls.decor_scale = decor_scale_slider
+    M.controls.decor_scale = register_flight_locked_control(decor_scale_slider)
     place_grid_control(decor_scale_slider, CONTROL_GRID.decor_scale)
 end
 
@@ -822,7 +873,9 @@ local function build_fade_row(parent, context)
     local fade_container, fade_cb, fade_label = addon.CreateCheckbox(parent, STRINGS.fade_when_full, db and db.fade_when_full, function(is_checked)
         M.set_db_value("fade_when_full", is_checked)
     end)
-    M.controls.fade_when_full = fade_cb
+    M.controls.fade_when_full = register_flight_locked_control(fade_cb, function()
+        return not (M.is_race_profile_active and M.is_race_profile_active())
+    end)
     place_grid_control(fade_container, CONTROL_GRID.fade_when_full)
     addon.AttachTooltipToTargets(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
 
@@ -839,7 +892,9 @@ local function build_fade_row(parent, context)
         defaults,
         set_setting_from_slider("fade_alpha")
     )
-    M.controls.fade_alpha = fade_alpha_slider
+    M.controls.fade_alpha = register_flight_locked_control(fade_alpha_slider, function()
+        return not (M.is_race_profile_active and M.is_race_profile_active())
+    end)
     place_grid_control(fade_alpha_slider, CONTROL_GRID.fade_alpha)
 
     local fade_length_range = context.fade_length_range
@@ -855,7 +910,9 @@ local function build_fade_row(parent, context)
         defaults,
         set_setting_from_slider("fade_length")
     )
-    M.controls.fade_length = fade_length_slider
+    M.controls.fade_length = register_flight_locked_control(fade_length_slider, function()
+        return not (M.is_race_profile_active and M.is_race_profile_active())
+    end)
     place_grid_control(fade_length_slider, CONTROL_GRID.fade_length)
 
     local progress_update_hz_range = context.progress_update_hz_range
@@ -871,7 +928,7 @@ local function build_fade_row(parent, context)
         defaults,
         set_setting_from_slider("progress_update_hz")
     )
-    M.controls.progress_update_hz = progress_update_hz_slider
+    M.controls.progress_update_hz = register_flight_locked_control(progress_update_hz_slider)
     place_grid_control(progress_update_hz_slider, CONTROL_GRID.progress_update_hz)
 end
 
@@ -890,7 +947,7 @@ local function build_race_profile_panel(parent, context)
             M.set_race_profile_enabled(is_checked)
         end
     )
-    M.controls.race_profile_enabled = race_profile_cb
+    M.controls.race_profile_enabled = register_flight_locked_control(race_profile_cb)
     M.controls.race_profile_container = race_profile_container
     race_profile_container:SetPoint(
         "TOPLEFT",
@@ -916,7 +973,10 @@ local function build_race_profile_panel(parent, context)
         CONTROL_GRID.race_profile_test.x,
         CONTROL_GRID.race_profile_test.y
     )
-    M.controls.race_profile_test_button = race_profile_test_button
+    M.controls.race_profile_test_button = register_flight_locked_control(race_profile_test_button, function()
+        local active_root_db = M.get_root_db and M.get_root_db()
+        return active_root_db and active_root_db.race_profile_enabled or false
+    end)
     size_panel_to_controls(race_profile_panel, cfg, race_profile_container, race_profile_test_button)
     M.settings_grid:center(race_profile_panel, CONTROL_GRID.race_profile_panel)
     M.sync_race_profile_controls(root_db)
@@ -938,7 +998,7 @@ local function build_spark_row(parent, context)
     local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
     end)
-    M.controls.show_spark = spark_cb
+    M.controls.show_spark = register_flight_locked_control(spark_cb)
     place_grid_control(spark_container, CONTROL_GRID.show_spark)
 
     if db then
@@ -956,7 +1016,7 @@ local function build_spark_row(parent, context)
             M.apply_spark_settings()
         end
     end)
-    M.controls.spark_color = spark_color_picker
+    M.controls.spark_color = register_flight_locked_control(spark_color_picker)
     place_grid_control(spark_color_picker, CONTROL_GRID.spark_color)
 
     local spark_size_range = context.spark_size_range
@@ -973,7 +1033,7 @@ local function build_spark_row(parent, context)
         set_setting_from_slider("spark_size"),
         { display_decimals = 2 }
     )
-    M.controls.spark_size = spark_size_slider
+    M.controls.spark_size = register_flight_locked_control(spark_size_slider)
     place_grid_control(spark_size_slider, CONTROL_GRID.spark_size)
 end
 
@@ -984,16 +1044,26 @@ local function build_reset_panel(parent, context)
 
     if addon.CreateModuleReset and root_db then
         local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {
+            before_reset = function()
+                if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+                    if M.sync_settings_controls then
+                        M.sync_settings_controls(M.get_db and M.get_db())
+                    end
+                    return false
+                end
+                return true
+            end,
             after_reset = M.on_reset_complete,
         })
         reset_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.reset_bottom_x, get_reset_panel_y(reset_panel, cfg))
-        M.controls.reset_panel = reset_panel
+        M.controls.reset_panel = register_flight_locked_control(reset_panel)
     end
 end
 
 function M.BuildSettings(parent)
     local cfg = UI_CONFIG
     M.controls_parent = parent
+    M.flight_locked_controls = {}
     M.settings_grid = addon.CreateSettingsGrid(parent, {
         column_count = 5,
         col_gap = cfg.slider_width + cfg.slider_gap_x,
@@ -1043,6 +1113,12 @@ function M.BuildSettings(parent)
             return active_db and active_db[key]
         end,
         __newindex = function(_, key, value)
+            if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+                if M.sync_settings_controls then
+                    M.sync_settings_controls(M.get_db and M.get_db())
+                end
+                return
+            end
             local active_db = M.get_db and M.get_db()
             if active_db then
                 active_db[key] = value
@@ -1055,6 +1131,12 @@ function M.BuildSettings(parent)
             return active_db and active_db.position and active_db.position[key]
         end,
         __newindex = function(_, key, value)
+            if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
+                if M.sync_settings_controls then
+                    M.sync_settings_controls(M.get_db and M.get_db())
+                end
+                return
+            end
             local active_db = M.get_db and M.get_db()
             if not active_db then return end
             active_db.position = active_db.position or {}

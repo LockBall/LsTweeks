@@ -57,7 +57,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops and simple tooltip hooks.
 
-- `functions/table_utils.lua`: shared table/default-copy helpers: `addon.deep_copy_into()` and `addon.apply_defaults()`.
+- `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 
 
 ## Feature Modules
