@@ -1,5 +1,4 @@
 # Skyriding Vigor CPU Profiles
-
 Long-term capture for Skyriding Vigor focused in-game profiling runs.
 
 
@@ -9,23 +8,16 @@ Long-term capture for Skyriding Vigor focused in-game profiling runs.
 
 
 ## How To Collect
-
-1. Use `internal_dev/tests_tools/addon_cpu_profile.lua` with only `PROFILE_TARGETS.skyriding_vigor = true`.
-
+1. Use `../addon_cpu_profile.lua` with only `PROFILE_TARGETS.skyriding_vigor = true`.
 2. Keep `LsTweeks.toc` temporarily loading `internal_dev\tests_tools\addon_cpu_profile.lua` after normal addon files.
-
 3. `/reload`, then run `/lstprofile reset` and `/lstprofile start`.
-
 4. Exercise Fill Test or real Skyriding for a comparable duration.
-
 5. Run `/lstprofile report 40`, copy the output here, then run `/lstprofile stop`.
-
 6. Compare focused runs with `skyriding_active`, `sv_msps`, and `sv_callsps`.
 
+
 ## Runs
-
 ### 2026-06-26, Skyriding Vigor Only, Fill Test Baseline
-
 Context: 129.7s focused Skyriding Vigor run with only
 `PROFILE_TARGETS.skyriding_vigor = true`. Combat was 0.0s. `skyriding_active`
 was 129.7s, 100.0% of elapsed time, one segment, active at report capture. Run
@@ -68,8 +60,8 @@ nested style-resolution work. This supports a consolidation pass that resolves
 style/style-derived values once per refresh/progress update path where practical,
 without broad persistent cache state.
 
-### 2026-06-26, Skyriding Vigor Only, After Render Context
 
+### 2026-06-26, Skyriding Vigor Only, After Render Context
 Context: 140.8s focused Skyriding Vigor run after adding pass-local render
 context. Combat was 0.0s. `skyriding_active` was 137.6s, 97.7% of elapsed time,
 one segment, active at report capture. Run used Fill Test to keep progress/spark
@@ -113,8 +105,8 @@ inclusive row because it resolves style, frame atlas, and spark atlas on every
 active progress update. This identified the issue later resolved by slot-local
 render context reuse in the following recorded run.
 
-### 2026-06-26, Skyriding Vigor Only, After Progress Context Reuse
 
+### 2026-06-26, Skyriding Vigor Only, After Progress Context Reuse
 Context: 122.6s focused Skyriding Vigor run after locking real in-flight settings
 changes and reusing slot-local render context during active progress ticks. Combat
 was 0.0s. `skyriding_active` was 122.6s, 100.0% of elapsed time, one segment,

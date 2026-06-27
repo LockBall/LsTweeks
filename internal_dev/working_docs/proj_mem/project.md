@@ -1,123 +1,68 @@
 # LsTweeks Project Memory
-
-Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives next to this file in `internal_dev/working_docs/proj_mem/`.
+Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives next to this file in `proj_mem/`.
 
 
 ## Table of Contents
 - [Project Operations](#project-operations)
-
   - [Workflow](#workflow)
-
   - [Ketho / LuaLS](#ketho--luals)
-
   - [Packaging / Release](#packaging--release)
-
 - [Project Overview](#project-overview)
-
   - [AddOn Summary](#addon-summary)
-
   - [File Map](#file-map)
-
 - [Shared Architecture](#shared-architecture)
-
   - [Core Architecture Rules](#core-architecture-rules)
-
   - [GUI/Layout Rules](#guilayout-rules)
-
   - [Key WoW APIs And Lessons](#key-wow-apis-and-lessons)
-
 - [Agent Start](agent_start.md)
-
 - [Code Map](code_map.md)
-
 - [Performance Profiling](performance_profiling.md)
-
 - [PowerShell Memory](powershell.md)
-
 - [Module Memory](#module-memory)
-
   - [Player Frame](player_frame.md)
-
   - [Objectives](objectives.md)
-
   - [Sound Levels](sound_levels.md)
-
   - [Skyriding Vigor](skyriding_vigor.md)
-
   - [Aura Frames](aura_frames.md)
 
 
 ## Project Operations
-
-
 ### Workflow
-- Treat this file and the module files under `internal_dev/working_docs/proj_mem/` as the project source of truth before non-trivial edits.
-
-- Update this file or the relevant module file when architecture, defaults, APIs, or debugging lessons change.
-
-- Read `agent_start.md` first when starting a new coding-agent session; it runs the worktree check and routes through `code_map.md` before any broader docs. `code_map.md` owns read-in shortcuts, section-first project/module memory routing, and source-outline commands.
-
-- Project read-in owns repo-local tools and project-specific command rules only. Do not copy platform-provided agent tool availability into project docs unless a repo workflow depends on a concrete local command or failure mode.
-
-- Do not split project or module memory files to reduce read-in size. Keep memory files whole and improve `##` headings, `code_map.md` routing, source responsibility headers, and `--#region` markers instead.
-
-- Documentation structure supports section-first read-in: every markdown doc should have one `#` title, and multi-section docs should have a `## Table of Contents` plus stable `##` headings.
-
-- Token read-in measurements belong in the active review note and must come from the GUI's reported agent-token usage, not character-count or file-size estimates.
-
-- Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/` and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
-
-- Tool recovery and diagnostics notes live in `internal_dev/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
-
-- PowerShell newline/write rules and region-helper usage live in `powershell.md`; check it before scripting file rewrites.
-
-- Line-ending policy lives in `powershell.md`: project-owned Lua/docs/tools use LF; vendored libraries keep upstream line endings.
-
-- Lua syntax check: `& 'C:\Program Files (x86)\Lua\5.1\luac.exe' -p <files>`.
-
-- Fast local validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`. Add `-Package` to also build and verify the release zip.
-
-- Diff whitespace validation: `git diff --check`.
-
-- Reusable CPU profiling workflow lives in `performance_profiling.md`. CPU profile
-  run history belongs under `internal_dev/tests_tools/cpu_profiles/`; durable
-  conclusions belong in the relevant module memory file.
+- Source of truth: this file plus module files under `proj_mem/`.
+- Durable changes: update this file or the relevant module file for architecture, defaults, APIs, or debugging lessons.
+- Session start: read `agent_start.md` first; `code_map.md` owns read-in shortcuts, validation commands, and source-outline routing.
+- Internal docs: `internal_dev/`.
+- Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused review notes in `review_2026Jun/`.
+- Completed notes: `completed_features/`, reviewed on demand.
+- Public docs: root markdown.
+- Tool recovery: `tools_notes.md`.
+- PowerShell/newlines/line endings/regions: `powershell.md`.
+- Validation commands: `code_map.md` `## Fast Commands`.
+- CPU profiling: workflow in `performance_profiling.md`, run history in `cpu_profiles/`, durable conclusions in module memory.
 
 
 ### Ketho / LuaLS
 - Use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`) for Blizzard API reviews. Enable `wowAPI.luals.frameXML` for FrameXML/CDM/widget work.
-
 - Treat LuaLS diagnostics as review prompts, not automatic change requests.
-
-- Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `internal_dev/tests_tools/lua_checks/`.
-
-- Preferred shell helper: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1`.
-
+- Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `lua_checks/`.
+- Preferred shell helper: Ketho/LuaLS helper in `code_map.md`.
 - Direct annotation root: `%USERPROFILE%\.vscode\extensions\ketho.wow-api-<version>\Annotations\`.
-
 - For APIs, grep annotations by name and cross-check call sites before changing code.
 
 
 ### Packaging / Release
-- Release package command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`. It writes `dist/<toc-name>-<version>.zip` and runs `internal_dev/tests_tools/packaging/verify-package.ps1`.
-
-- Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
-
-- Packaging is data-driven. Update `internal_dev/tests_tools/packaging/package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
-
+- Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
+- Packaging docs and policy live in `package_me.md` and `package-policy.json`.
+- Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - README image assets and Sound Levels reference/log files are public-facing and included.
 
 
 ## Project Overview
-
-
 ### AddOn Summary
 **L's Tweeks** is a modular WoW 12.0.5+ UI addon by LockBall. Keep the intentional **Tweeks** spelling.
 
 - Slash command: `/lst` (`SLASH_LSTWEEKS1`)
-
 - SavedVariables: `Ls_Tweeks_DB`
-
 - Version edit point: `LsTweeks.toc` only; verify interface number in-game with `/dump (select(4, GetBuildInfo()))`
 
 
@@ -146,46 +91,31 @@ internal_dev/          internal docs excluded from release zips
 dist/                   generated package output, ignored
 ```
 
-Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. Treat those headers and `--#region` markers as the source-code TOC; use the region helper/source outline command in `code_map.md` before broad source reads. Use the memory heading command in `code_map.md` before broad memory-file reads. Keep durable ownership notes in `code_map.md` or the relevant module memory file instead of expanding this map.
+Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
 
 Lua section headers use VS Code foldable region markers with visual dividers: `--#region SECTION NAME =====` and `--#endregion SECTION NAME =====`. Use uppercase section names and keep region markers paired. Put the explanatory section comment directly under `--#region` with no blank line, put no blank line before `--#endregion`, and leave two blank lines before the next `--#region`.
 
 
 ## Shared Architecture
-
-
 ### Core Architecture Rules
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
-
 - Avoid accidental globals in addon files. Keep helpers, constants, builder functions, and cached API references `local` by default; expose values through `addon` or a module table `M` only when another file genuinely needs that public contract.
-
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
-
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
-
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
-
-- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` is the in-game diagnostic for this boundary: it reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. In-game all-disabled testing passed on 2026-06-21; see `internal_dev/completed_features/core_settings_module_status.md`. Do not reopen lazy construction or LoadOnDemand child addons unless there is an explicit memory-footprint target in the review folder.
-
+- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` is the in-game diagnostic for this boundary: it reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. In-game all-disabled testing passed on 2026-06-21; see `core_settings_module_status.md`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
-
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
-
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
-
 - Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
-
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
-
 - Keep high-frequency runtime paths narrow. If code runs every frame/tick or many
   times per second, avoid repeated DB/style/layout/atlas/config resolution there;
   do that work in a lower-frequency refresh/setup path and pass or store the
   resolved state for the hot path. Make the mutability boundary explicit first,
   such as disabling settings edits during an active runtime state while still
   allowing controlled test modes.
-
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore events/Show and let Blizzard handlers run.
-
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
 
 
@@ -193,50 +123,30 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 Violations here can create invisible or unstable controls.
 
 - Widget internals anchor only to their own container.
-
 - One `SetPoint` per anchor direction per frame; duplicate TOPLEFT/TOPRIGHT constraints can produce undefined layout.
-
 - Do not use `frame:GetWidth()` at build time; it can be 0 before render.
-
 - Factory functions should not place controls externally when the caller owns placement.
-
 - Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
-
-- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media/media_notes.md`; completed investigation notes live in `internal_dev/completed_features/dropdown_hover_arrow.md`.
-
+- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`; completed investigation notes live in `dropdown_hover_arrow.md`.
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.AttachTooltip()` / `addon.AttachTooltipToTargets()` for simple settings help tooltips.
-
 - A 2026-06-25 single-source-of-truth scan found repeated standard control-panel backdrops and simple settings tooltip hooks consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Sound Levels custom panels, and feature-specific list/tree rendering.
-
 - Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Prefer the grid object's `grid:place(control, placement)` and `grid:center(control, placement)` helpers when using module-local placement tables, so modules do not duplicate alignment/y-offset/width option mapping.
-
 - Treat module-local grid placement tables as static source data. Pass dynamic widths or centering details through grid placement options instead of writing derived runtime values back into placement tables.
-
-- Keep `CreateSettingsGrid()` changes additive unless current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.
-
+- Make non-additive `CreateSettingsGrid()` changes only when current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.
 - Settings grid cells may contain a small vertical stack of related controls. Use `grid:stack_below()` for secondary controls in the same cell instead of hand-anchoring repeated checkbox/button stacks; keep the first control placed through `grid:place()` or `grid:place_at()`.
-
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
-
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`.
 
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
-
 - Tooltip APIs: prefer `GameTooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)`, fall back to `GameTooltip:SetSpellByID`.
-
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
-
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
-
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.
-
 - Objective Tracker APIs: `ObjectiveTrackerFrame`, `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker` expose `SetCollapsed`/`IsCollapsed`. Objective module frames also inherit `ToggleCollapsed` and `MarkDirty`; apply startup/default state with `SetCollapsed`, but do not hook re-collapse behavior when the user must retain normal manual expand/collapse control.
-
 - Lua operator precedence trap: `and` binds tighter than `or`, so `a and b ~= nil or false` parses as `(a and (b ~= nil)) or false`. The trailing `or false` is always a no-op when the left side already evaluates to a boolean. Write `a and b ~= nil` directly.
 
 
 ## Module Memory
-
 Module-specific memory files are linked in the table of contents above.

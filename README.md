@@ -1,5 +1,4 @@
 # L's Tweeks
-
 L's Tweeks is a modular World of Warcraft Retail UI addon for configurable player aura frames, player frame adjustments, small interface adjustments, and quieter replacement sounds.
 
 Slash command: `/lst`
@@ -18,9 +17,7 @@ Slash command: `/lst`
 
 
 ## Features
-
 ### Aura Frames
-
 - Configurable player aura frames for buffs, debuffs, and WoW Cooldown Manager groups.
 - Preset frames for static buffs, short buffs, long buffs, debuffs, essential cooldowns, utility cooldowns, tracked buffs, and tracked bars.
 - Custom filtered frames using AuraFilters such as `HELPFUL|IMPORTANT`.
@@ -29,34 +26,34 @@ Slash command: `/lst`
 - Profiles for saving and loading complete aura-frame setups across characters.
 - Optional hiding of Blizzard buff and debuff frames.
 
-### Player Frame
 
+### Player Frame
 - Optional hiding of Player Frame portrait combat text.
 - Optional out-of-combat Player Frame fade controls.
 
-### Objectives
 
+### Objectives
 - Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
 
-### Skyriding Vigor
 
+### Skyriding Vigor
 - Restores a compact player vigor display using Blizzard UI assets.
 - Adjustable position, size, spacing, node style/color, fill color, end-decoration style/color, fade behavior, and optional separate race profile.
 
-### Sound Levels
 
+### Sound Levels
 - Quieter addon replacement sounds for supported targets, currently including Achievement test and Ready Check.
 - Per-target Original behavior and replacement volume controls.
 - Fishing Focus channel controls for temporarily changing game channel volumes while fishing.
 
-### Settings
 
+### Settings
 - Optional minimap button.
 - Open-on-reload setting.
 - Main panel transparency control.
 
-## Installation
 
+## Installation
 1. Download or clone the addon.
 2. Ensure the addon folder is named `LsTweeks`.
 3. Place the folder here:
@@ -70,8 +67,8 @@ World of Warcraft/_retail_/Interface/AddOns/LsTweeks
 
 For CurseForge/manual zip installs, the archive should extract to a single top-level `LsTweeks` folder.
 
-## Use Notes
 
+## Use Notes
 - Open the settings panel with `/lst` or the minimap button.
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
@@ -81,19 +78,19 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
-## Aura Frames
 
+## Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-### Preset Frames
 
+### Preset Frames
 - `Static`: permanent player buffs.
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
 - `Debuffs`: harmful player auras.
 
-### WoW Cooldown Manager Frames
 
+### WoW Cooldown Manager Frames
 Cooldown Manager-backed frames read live Blizzard Cooldown Manager viewer state:
 
 - `Essential`
@@ -103,8 +100,8 @@ Cooldown Manager-backed frames read live Blizzard Cooldown Manager viewer state:
 
 WoW Cooldown Manager must stay enabled for these frames to populate. When an LsTweeks CDM-backed frame is enabled, the matching WoW Edit Mode Cooldown Manager frame is kept set to **Always Visible** so it continues producing live viewer state. If **Hide WoW ...** is checked, LsTweeks hides the Blizzard viewer with alpha and mouse settings, not `Hide()`, because hidden viewers stop providing useful child state. Use **Sync to CDM** after manually reordering icons inside the same CDM group if the addon frame has not refreshed yet.
 
-### Custom Filtered Frames
 
+### Custom Filtered Frames
 Custom frames scan player auras directly with a selected AuraFilters string. Example:
 
 ```lua
@@ -113,14 +110,14 @@ C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL|IMPORTANT")
 
 The `IMPORTANT` AuraFilter was added in WoW 12.0.1 and is described as spells that pass `C_Spell.IsSpellImportant()`.
 
-### Profiles
 
+### Profiles
 Profiles save the full Aura Frames setup, including preset frame settings, Cooldown Manager-backed frame presentation, positions, colors, timer styling, and custom filtered frames. Loading a profile replaces the current Aura Frames setup and recreates missing custom frames. Profile loading is blocked during combat.
 
 The Aura Frames reset panel includes a checked **Keep Profiles** option so saved profiles can survive a module reset.
 
-## Sound Levels
 
+## Sound Levels
 WoW does not expose true per-sound volume control or custom sound channels. This addon mutes known original Blizzard FileDataIDs where configured, then optionally plays addon-owned replacement files at the selected level.
 
 Current sound targets:
@@ -134,8 +131,8 @@ Fishing Focus is available on the **Fishing** tab. It temporarily applies a sepa
 
 Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
 
-## Embedded Libraries
 
+## Embedded Libraries
 Embedded libraries are stored in `libs/` and documented in `sources.md`. They are vendored third-party files and are kept unmodified.
 
 - CallbackHandler-1.0
@@ -143,15 +140,15 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 - LibDataBroker-1.1
 - LibStub
 
-## License
 
+## License
 - This project is released under the MIT License.
 - Embedded libraries retain their original licenses as documented in `sources.md`.
 - See `LICENSE` for full details.
 - Copyright (c) 2026 **LockBall**.
 
-## Credits
 
+## Credits
 - LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge.
 - Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, ArcUI, and Angleur.
 - Fishing Focus was informed by Angleur's Ultra Focus audio-profile approach.
@@ -160,6 +157,6 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 - Special thanks to **DiscoMouse**.
 - Portions of this addon were developed with assistance from generative tools.
 
-## Sources
 
+## Sources
 Project references and embedded library sources are tracked in `sources.md`.

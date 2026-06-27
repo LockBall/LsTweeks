@@ -1,5 +1,4 @@
 # Aura Frames CDM Regression Test
-
 Manual in-game test for WoW Cooldown Manager backed Aura Frames.
 
 
@@ -13,7 +12,6 @@ Manual in-game test for WoW Cooldown Manager backed Aura Frames.
 
 
 ## Purpose
-
 Verify CDM-backed frames display active aura duration first, then cooldown, and that
 Blizzard reused CDM child frames do not carry stale cached spell name/icon identity.
 
@@ -22,15 +20,15 @@ Regression fixed:
 - Root cause was stale addon-owned cached spell name/icon state for reused Blizzard
   CooldownViewer child frames after `cooldownID` or spell ID changed.
 
-## Setup
 
+## Setup
 1. Reload UI after code changes.
 2. Enable the addon CDM frame being tested.
 3. Use WoW's Cooldown Manager UI to move the same tracked spell between CDM groups.
 4. Keep the addon CDM frame in cooldown mode.
 
-## Core Matrix
 
+## Core Matrix
 For each spell and CDM group:
 
 1. Put the spell in the CDM group.
@@ -50,16 +48,16 @@ Test groups:
 - Tracked Buffs, if applicable for the spell
 - Tracked Bars, if applicable for the spell
 
-## Prior Regression Case
 
+## Prior Regression Case
 1. Put Divine Protection in Utility.
 2. Cast Divine Protection out of combat.
 3. Enter combat while the active aura is still running.
 4. Let the active aura expire in combat.
 5. Confirm cooldown appears immediately after active aura expires.
 
-## First In-Combat Cast Case
 
+## First In-Combat Cast Case
 1. Reload UI or start from a fresh session.
 2. Put Divine Protection in Utility.
 3. Enter combat before casting.
@@ -73,8 +71,8 @@ Reload/wait variant:
 3. Enter combat and cast Divine Protection from Utility.
 4. Confirm Utility still shows active aura duration before cooldown, matching Essential.
 
-## Pass Criteria
 
+## Pass Criteria
 Pass:
 - Active aura duration appears before cooldown for each spell/group pairing.
 - The same spell behaves consistently when moved between Essential and Utility.

@@ -1,7 +1,6 @@
 # Whole-Addon CPU Profiles
-
 Long-term capture for broad LsTweeks in-game profiling runs. Use
-`internal_dev/tests_tools/addon_cpu_profile.lua` when looking for true addon hot
+`../addon_cpu_profile.lua` when looking for true addon hot
 paths across modules.
 
 This profiler wraps addon-owned functions only. Do not wrap Blizzard/global APIs
@@ -16,27 +15,20 @@ that can taint Blizzard unit-frame execution when secret values are involved.
 
 
 ## How To Collect
-
-1. Temporarily load `internal_dev/tests_tools/addon_cpu_profile.lua` after the
+1. Temporarily load `../addon_cpu_profile.lua` after the
    normal addon files in `LsTweeks.toc`.
-
 2. Set `PROFILE_TARGETS` in `addon_cpu_profile.lua`, then `/reload`.
-
 3. Run `/lstprofile reset` and `/lstprofile start`.
-
 4. Exercise normal gameplay and settings flows for 2-3 minutes: aura updates,
    CDM updates, Skyriding Vigor visibility, Sound Levels previews, Fishing Focus
    if relevant, and opening/changing addon settings.
-
 5. Run `/lstprofile report 40`, copy the output here, then run `/lstprofile stop`.
-
 6. Remove the temporary TOC line before release cleanup. While an active profiling
    review is still in progress, keeping the temporary load staged is acceptable.
 
+
 ## Archived Broad Run Summary
-
 ### 2026-06-06 Series
-
 The detailed June 6 broad tables were condensed because their useful decisions
 are now captured in focused module profile files and durable project memory. Keep
 this section as the broad profiling trail rather than a full row-by-row archive.
@@ -47,37 +39,32 @@ Runs in this series:
   `aura_frames.update_auras`, visible-icon ticking, `render_aura_map`, timer text,
   and CDM entry reads were the primary hot paths. Skyriding Vigor was visible but
   smaller, and Sound Levels only appeared on rare Fishing Focus transitions.
-
 - **Runtime aliases at 0.2s, 146.9s:** Reducing ticker cadence improved the direct
   visible-icon ticker path. `tick_visible_icons` and `set_timer_text` improved,
   but the broader update/render rates were not comparable enough to generalize
   every alias change.
-
 - **Aura update-path cleanup, 62.1s:** Targeted cleanup reduced repeated
   ticker-maintenance work and helped OOC fade context reuse. The run had higher
   visible-icon ticker pressure, so some rows were intentionally treated as noisy.
-
 - **Aura render-path cleanup, 87.7s:** Precomputed timer behavior reuse, cooldown
   overlay signature guards, guarded bar min/max writes, and count-text anchor
   caching improved the render helper chain. `render_aura_map`, `set_timer_text`,
   `get_timer_behavior`, and `normalize_timer_category` all improved enough to
   keep the render cleanup.
-
 - **Render/CDM comparison baselines, 69.9s and 101.6s:** Average call costs stayed
   stable after render cleanup. Follow-up review found no safe high-value rewrite
   for `add_cooldown_viewer_category_entries`; the remaining cost was mostly
   necessary live reads of Blizzard CDM child state. Aura performance target notes
-  live in `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
+  live in `review_2026Jun/aura_frames_performance_review.md`.
 
 Conclusion: The June 6 broad series established Aura Frames as the primary addon
 runtime target and led to focused Aura profiling. It also established the
 principle of using broad runs to choose modules, then moving detailed helper
 analysis into module-specific files.
 
+
 ## Runs
-
 ### 2026-06-22
-
 Context: 181.8s broad addon run with all profiler targets enabled after recent
 runtime/status/Aura Frames changes. Profiler wrapped addon-owned functions only.
 

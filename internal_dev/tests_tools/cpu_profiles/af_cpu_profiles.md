@@ -1,9 +1,8 @@
 # Aura Frames CPU Profiles
-
 Long-term capture for Aura Frames focused in-game profiling runs.
 
 Whole-addon run sections include `cpu-profile-run` metadata comments so
-`internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1` can rebuild
+`analyze_af_cpu_profiles.ps1` can rebuild
 time-normalized and ticker-normalized comparisons from the saved data.
 
 
@@ -17,7 +16,6 @@ time-normalized and ticker-normalized comparisons from the saved data.
 
 
 ## Improvement Summary
-
 Generated with `analyze_af_cpu_profiles.ps1`. Baseline is
 `2026-06-22, Aura Frames Only`. Raw elapsed `ms/sec` is the measured CPU rate
 for each run; ticker-normalized values estimate what `af.tick_visible_icons`
@@ -48,9 +46,10 @@ Result: `af.update_auras` and `af.get_setting` show real sustained improvement.
 ticker-normalized column shows most of that win comes from the slower ticker
 cadence rather than lower per-tick cost.
 
-## Whole-Addon Profiler Runs
 
-Use `internal_dev/tests_tools/addon_cpu_profile.lua` with only `PROFILE_TARGETS.aura_frames = true` for these runs.
+## Whole-Addon Profiler Runs
+Use `../addon_cpu_profile.lua` with only `PROFILE_TARGETS.aura_frames = true` for these runs.
+
 
 ### 2026-06-27, Aura Frames Only, Current Combat Check
 <!-- cpu-profile-run: elapsed=98.6 combat=97.5 timer_tick=0.15 -->
@@ -93,11 +92,11 @@ target. Compared with the prior clean combat-timed runs, `update_auras` and
 expected secondary costs, and config/helper rows are small. `tick_visible_icons`
 is the largest live ticker row at about 1.94ms/sec combat-normalized, close to
 the prior `0.15s` combat run's 2.02ms/sec and 6.54 calls/sec. This appears
-cadence-driven rather than a new helper hotspot. Do not reopen Aura performance
-work from this run alone.
+cadence-driven rather than a new helper hotspot. Reopen Aura performance work
+only with a stronger signal than this run alone.
+
 
 ### Visible Icon Tick Comparison Scratch
-
 Use only combat-timed runs for final interval selection.
 
 | Tick setting | Combat timed? | Combat calls/sec | Combat CPU ms/sec | Elapsed CPU ms/sec | Tick-normalized ms/sec | Notes |
@@ -105,6 +104,7 @@ Use only combat-timed runs for final interval selection.
 | `0.10` | Yes | 9.57 | 2.98 | 2.85 | 2.85 | 72.2s combat out of 75.5s elapsed. |
 | `0.15` | Yes | 6.54 | 2.02 | 1.95 | 2.93 | 49.2s combat out of 51.0s elapsed. |
 | `0.20` | Yes | 4.98 | 1.50 | 1.45 | 2.91 | 60.1s combat out of 62.0s elapsed. |
+
 
 ### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.20s Combat Test
 <!-- cpu-profile-run: elapsed=62.0 combat=60.1 timer_tick=0.20 -->
@@ -149,6 +149,7 @@ combat-heavy run. `tick_visible_icons` ran about 4.82 calls/sec elapsed, or
 about 1.45ms/sec elapsed, or 1.50ms/sec combat-normalized, a roughly 50% ticker
 CPU/sec reduction. This is a strong candidate if visual smoothness was acceptable.
 
+
 ### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.15s Combat Test
 <!-- cpu-profile-run: elapsed=51.0 combat=49.2 timer_tick=0.15 -->
 
@@ -191,6 +192,7 @@ ran about 6.31 calls/sec elapsed, or 6.54 calls/sec combat-normalized. Ticker
 CPU was about 1.95ms/sec elapsed, or 2.02ms/sec combat-normalized, about 32%
 lower than the clean `0.10` combat baseline. Compared with `0.15`, the `0.20`
 run was about 24% lower in ticker calls/sec and about 26% lower in ticker CPU/sec.
+
 
 ### 2026-06-24, Aura Frames Only, Visible Icon Tick Provisional Slider Test
 <!-- cpu-profile-run: elapsed=67.3 timer_tick=unknown notes=slider_value_not_captured -->
@@ -236,6 +238,7 @@ from about 9.36 calls/sec to 6.29 calls/sec, and ticker CPU dropped from about
 capture the exact slider value, replace it with a clean `0.15` combat-timed run
 before comparing `0.15` against `0.20`.
 
+
 ### 2026-06-24, Aura Frames Only, Visible Icon Tick 0.10s Combat Baseline
 <!-- cpu-profile-run: elapsed=75.5 combat=72.2 timer_tick=0.10 -->
 
@@ -276,6 +279,7 @@ Conclusion: This is the clean combat-timed baseline for ticker interval
 comparison. `tick_visible_icons` ran about 9.15 calls/sec elapsed, or 9.57
 calls/sec combat-normalized. Ticker CPU was about 2.85ms/sec elapsed, or
 2.98ms/sec combat-normalized.
+
 
 ### 2026-06-23, Aura Frames Only, Runtime Color Cache
 <!-- cpu-profile-run: elapsed=107.1 timer_tick=0.10 -->
@@ -318,6 +322,7 @@ runtime-config cache run, `get_setting` dropped from about 90.7 calls/sec to
 `update_auras` averaged 0.3910ms versus 0.4533ms in the prior run. Keep this
 candidate if a manual settings check confirms visible colors update immediately
 after picker changes.
+
 
 ### 2026-06-23, Aura Frames Only, Runtime Config Cache
 <!-- cpu-profile-run: elapsed=133.4 timer_tick=0.10 -->
@@ -363,6 +368,7 @@ averaged 0.4533ms, lower than the prior 0.4968ms run and close to the earlier
 clean comparison point. Keep the cache, with colors still deferred to the
 separate color-cache review.
 
+
 ### 2026-06-23, Aura Frames Only, Visible Ticker Return State
 <!-- cpu-profile-run: elapsed=60.3 timer_tick=0.10 -->
 
@@ -404,6 +410,7 @@ Conclusion: The intended redundant eligibility scan was removed from the profile
 `refresh_visible_icon_ticker` is only 1.516ms over 60.3s. The ticker's own per-call
 cost stayed in the same range, as expected, because the live timer/bar update work
 is unchanged.
+
 
 ### 2026-06-23, Aura Frames Only, Category-Scoped CDM Hook Refresh
 <!-- cpu-profile-run: elapsed=61.1 timer_tick=0.10 -->
@@ -450,6 +457,7 @@ averaged 0.1007ms versus 0.0932ms in the clean comparison. The Aura performance
 review owns the CDM map-walk target; the target would need to reduce map-walk
 work itself or reduce how often visible CDM frames need a full rebuild.
 
+
 ### 2026-06-23, Aura Frames Only, Clean Comparison
 <!-- cpu-profile-run: elapsed=88.1 timer_tick=0.10 -->
 
@@ -490,7 +498,8 @@ averaged 0.1770ms, lower than the prior render-cache and display-signature runs,
 while `update_auras` averaged 0.4534ms. The direct preset-bucket change still
 does not show as an isolated CPU win. CDM/custom scan-map work and
 trigger-specific refresh routing are recorded as Aura performance targets in
-`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
+`review_2026Jun/aura_frames_performance_review.md`.
+
 
 ### 2026-06-23, Aura Frames Only, Scan/Map Sub-Steps
 <!-- cpu-profile-run: elapsed=64.9 timer_tick=0.10 -->
@@ -530,9 +539,10 @@ Conclusion: The direct preset-bucket path is not the meaningful scan/map cost:
 below the report cutoff. Scan/map cost is dominated by `unified_scan`,
 `add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`. Keep the
 direct-bucket cleanup because it is safe and removes avoidable work. Durable Aura
-performance conclusions live in `internal_dev/working_docs/proj_mem/af.md`;
-use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
+performance conclusions live in `aura_frames.md`;
+use `review_2026Jun/aura_frames_performance_review.md`
 for Aura performance target notes.
+
 
 ### 2026-06-23, Aura Frames Only, Preset Bucket Direct Render
 <!-- cpu-profile-run: elapsed=84.7 timer_tick=0.10 -->
@@ -578,6 +588,7 @@ the scan/map-fill sub-step, and preset test-preview paths may prevent the direct
 bucket fast path for frames with previews enabled. Revisit item 7 with targeted
 sub-step labels or a narrower profile before marking it complete.
 
+
 ### 2026-06-23, Aura Frames Only, Render Display Signature
 <!-- cpu-profile-run: elapsed=117.3 timer_tick=0.10 -->
 
@@ -621,6 +632,7 @@ script profiling enabled and different activity pressure. Treat item 6 as a
 small measured win unless later in-game behavior shows stale icon visuals. The
 next higher-value target remains scan/map fill.
 
+
 ### 2026-06-22, Aura Frames Only, Render Timer Behavior Cache
 <!-- cpu-profile-run: elapsed=78.7 timer_tick=0.10 -->
 
@@ -661,8 +673,9 @@ run, `get_timer_behavior` fell from 6014 calls / 30.396ms to 3042 calls /
 16.480ms despite similar render/update volume. `render_aura_map` average also
 fell from 0.2049ms to 0.1952ms in this run. The main render path remains a large
 cost. The broader render-signature and redundant-work review is tracked through
-`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md` if
+`review_2026Jun/aura_frames_performance_review.md` if
 Aura performance work resumes.
+
 
 ### 2026-06-22, Aura Frames Only, Update Sub-Steps
 <!-- cpu-profile-run: elapsed=77.2 timer_tick=0.10 -->
@@ -706,6 +719,7 @@ scan/map fill. `update_auras.config` is visible but much smaller, about 0.94ms/s
 versus about 4.03ms/s for render and 3.36ms/s for scan/map fill in this run.
 Next implementation pass should focus on render skipping/redundant render work
 and scan-map narrowing before adding a broader runtime config cache.
+
 
 ### 2026-06-22, Aura Frames Only, Post-OOC Fast Path
 <!-- cpu-profile-run: elapsed=90.1 timer_tick=0.10 -->
@@ -751,6 +765,7 @@ stable: `update_auras` 0.4471ms -> 0.4515ms and `render_aura_map` 0.1778ms ->
 uncertain. Use this as the current comparison baseline before adding temporary
 `update_auras` sub-step profiler labels.
 
+
 ### 2026-06-22, Aura Frames Only
 <!-- cpu-profile-run: elapsed=90.6 timer_tick=0.10 -->
 
@@ -789,29 +804,29 @@ Conclusion: Aura-only profiling confirms the broad-run hot path. `update_auras`
 is still the main inclusive path, followed by rendering and visible-icon ticking.
 `unified_scan`, CDM entry reads, timer text, and custom aura scans are secondary
 contributors. Per-call costs are stable versus the broad run. Durable Aura
-performance conclusions live in `internal_dev/working_docs/proj_mem/aura_frames.md`;
-use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
+performance conclusions live in `aura_frames.md`;
+use `review_2026Jun/aura_frames_performance_review.md`
 for Aura performance target notes.
 
-## Aura Frames Duration Probe
 
+## Aura Frames Duration Probe
 Long-term capture for Aura Frames in-game profiling runs. Use
-`internal_dev/tests_tools/aura_frames_duration_profile.lua` when collecting comparable
+`../aura_frames_duration_profile.lua` when collecting comparable
 data.
 
-## Current Decision
 
+## Current Decision
 `C_UnitAuras.GetAuraDuration` is not a meaningful hotspot based on the collected
 2026-06-06 data. Keep the defensive `GetAuraDuration` guards in `af_core.lua`,
-`af_render.lua`, and `af_scan.lua`; do not restructure duration handling for CPU
-reasons unless future profiling shows a material regression.
+`af_render.lua`, and `af_scan.lua`; restructure duration handling for CPU
+reasons only if future profiling shows a material regression.
 
 The safe ticker improvement remains: visible-icon updates reuse live
 DurationObjects resolved during render before falling back to another
 `GetAuraDuration` lookup.
 
-## How To Collect
 
+## How To Collect
 1. Temporarily load `internal_dev/tests_tools/aura_frames_duration_profile.lua` after
    `modules/aura_frames/af_main.lua` in `LsTweeks.toc`.
 2. `/reload`.
@@ -820,10 +835,9 @@ DurationObjects resolved during render before falling back to another
 5. Run `/lstafprofile report`, copy the output here, then run `/lstafprofile stop`.
 6. Remove the temporary TOC line and `/reload`.
 
+
 ## Runs
-
 ### 2026-06-06
-
 Context: 77.6s normal Aura Frames and CDM use.
 
 | Metric | Calls | Total ms | Avg ms | Max ms |

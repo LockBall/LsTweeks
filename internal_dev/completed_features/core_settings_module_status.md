@@ -1,5 +1,4 @@
 # Core Settings Module Status Diagnostic
-
 Completed: 2026-06-21
 
 
@@ -10,13 +9,12 @@ Completed: 2026-06-21
 
 
 ## Summary
-
 `/lst status` was added as the in-game diagnostic for feature-module soft-disable behavior. It reports every `addon.FEATURE_MODULES` entry with the saved enabled flag plus module-owned runtime signals.
 
 Use this command before reopening module-disable architecture questions. The current design is intentionally a soft-disable boundary: addon files remain loaded, but module-owned events, timers, tickers, preview handles, forced-hidden Blizzard frames, and visible module frames should stop when a module is disabled.
 
-## Verified Disabled State
 
+## Verified Disabled State
 User in-game test after disabling all modules reported:
 
 - Player Frame: `enabled=false`, `fade_events=false`, no fade timer/ticker/queued health timer, `hide_portrait_text=false`.
@@ -26,8 +24,8 @@ User in-game test after disabling all modules reported:
 
 Player Frame `loader_event_script=true` is expected. The bootstrap/dispatcher frame keeps its `OnEvent` script, but its runtime fade events are unregistered when disabled.
 
-## Boundary Policy
 
-Do not reopen lazy construction or LoadOnDemand child addon architecture unless
-there is an explicit memory-footprint target in the review folder. The
-disabled-runtime state is clean for current behavior.
+## Boundary Policy
+Reopen lazy construction or LoadOnDemand child addon architecture only with an
+explicit memory-footprint target in the review folder. The disabled-runtime
+state is clean for current behavior.

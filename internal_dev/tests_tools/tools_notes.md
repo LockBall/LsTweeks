@@ -1,5 +1,4 @@
 # Tools Notes
-
 Date: 2026-06-02
 
 Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS diagnostics, and the local Python venv in this repo.
@@ -16,7 +15,6 @@ Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS d
 
 
 ## Known Good State
-
 Repo path:
 
 ```text
@@ -32,8 +30,8 @@ powershell  -> $PSVersionTable...   -> PowerShell 7.6.2 in Codex shell mapping; 
 .venv       -> Python 3.13.7, pip 25.2
 ```
 
-## Codex Shell Fix
 
+## Codex Shell Fix
 Codex native shell execution on this machine requires:
 
 ```toml
@@ -47,7 +45,7 @@ Global config:
 %USERPROFILE%\.codex\config.toml
 ```
 
-Do not use the Codex "setup sandbox" button unless intentionally retesting sandbox setup. It has repeatedly restored:
+Use the Codex "setup sandbox" button only when intentionally retesting sandbox setup. It has repeatedly restored:
 
 ```toml
 [windows]
@@ -86,8 +84,8 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File repair_codex_config.ps1
 
 The script backs up `%USERPROFILE%\.codex\config.toml`, removes any existing `[windows]` block, and appends the working `sandbox = "unelevated"` block.
 
-## Shell Verification
 
+## Shell Verification
 In a fresh Codex session or after restarting VS Code, verify native shell access directly:
 
 ```text
@@ -119,8 +117,8 @@ $props.PSObject.Properties | Where-Object {
 
 If standalone `codex sandbox ...` works but native Codex shell execution still fails, the active VS Code/Codex tool host is probably holding stale spawn state. Restart the Codex session or VS Code extension host instead of continuing to probe through nested shells.
 
-## Project Venv Check
 
+## Project Venv Check
 From the repo root:
 
 ```powershell
@@ -146,8 +144,8 @@ Known stale old path:
 
 The old failure was caused by `.venv` metadata and generated `pip*.exe` launchers embedding the renamed `Ls_Tweeks` path. `python.exe` still worked, but `pip.exe` tried to launch an interpreter at the old path and failed.
 
-## Project Venv Repair
 
+## Project Venv Repair
 Refresh venv metadata:
 
 ```powershell
@@ -179,8 +177,8 @@ If activation reports the wrong `$env:VIRTUAL_ENV`, check:
 .venv\Scripts\activate.fish
 ```
 
-## Project Validation
 
+## Project Validation
 After shell and venv checks pass, validate the addon:
 
 ```powershell
@@ -197,7 +195,7 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
 ```
 
-PowerShell newline/write rules live in `internal_dev/working_docs/proj_mem/powershell.md`.
+PowerShell newline/write rules live in `powershell.md`.
 
 Expected package result includes:
 
@@ -208,7 +206,6 @@ Package verification passed.
 
 
 ## LuaLS / Ketho Shell Diagnostics
-
 The LuaLS CLI may not be on `PATH`. On this machine the working binary is installed by the Sumneko VS Code extension:
 
 ```text

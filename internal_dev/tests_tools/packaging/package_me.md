@@ -1,5 +1,4 @@
 # Packaging
-
 Tools in this folder build the public CurseForge/manual release zip.
 
 
@@ -11,13 +10,12 @@ Tools in this folder build the public CurseForge/manual release zip.
 
 
 ## Files
-
 - `package.ps1`: builds the release zip.
 - `package-policy.json`: single source of truth for package include/exclude behavior.
 - `verify-package.ps1`: verifies a generated release zip against `package-policy.json`.
 
-## Build
 
+## Build
 Run from the addon root:
 
 ```powershell
@@ -34,8 +32,8 @@ The addon package name comes from the root `.toc` filename. The version comes fr
 
 `package.ps1` automatically runs `verify-package.ps1` after building.
 
-## Package Rules
 
+## Package Rules
 The zip must contain one top-level folder matching the root `.toc` filename.
 
 Included and excluded paths are defined in `package-policy.json`.
@@ -59,19 +57,16 @@ Currently included public files:
 Currently excluded workspace/private paths:
 
 - `.git/`
-
 - `.github/`
-
 - `internal_dev/`
-
 - `.gitignore`
 
 Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
 
 README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Sound Levels reference/log files under `modules/sound_levels/sounds/` are public-facing and included.
 
-## Verify
 
+## Verify
 Run verification directly with:
 
 ```powershell
@@ -92,4 +87,3 @@ The verifier checks:
 - entries do not use unsafe rooted or parent-traversal paths
 
 After building, inspect `dist/<toc-name>-<version>.zip` externally if desired.
-

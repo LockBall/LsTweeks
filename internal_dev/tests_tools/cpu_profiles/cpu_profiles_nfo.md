@@ -1,5 +1,4 @@
 # CPU Profiles
-
 Long-term capture for LsTweeks in-game CPU profiling runs. Keep new runs in the most specific file available.
 
 
@@ -11,15 +10,12 @@ Long-term capture for LsTweeks in-game CPU profiling runs. Keep new runs in the 
 
 
 ## Files
-
 - `addon_cpu_profiles.md`: broad profiles with multiple profiler targets enabled.
-
 - `af_cpu_profiles.md`: Aura Frames focused profiles, including the whole-addon profiler's Aura-only runs and the Aura duration probe.
-
 - `sv_cpu_profiles.md`: Skyriding Vigor focused profiles and before/after render-path comparisons.
 
-## Analysis Scripts
 
+## Analysis Scripts
 - `analyze_af_cpu_profiles.ps1`: parses `af_cpu_profiles.md`, normalizes metrics
   by elapsed time, and normalizes `af.tick_visible_icons` to a reference ticker
   cadence so runs with different Timer Tick settings can be compared.
@@ -33,21 +29,17 @@ the run heading:
 
 Use `timer_tick=unknown` when the value was not captured.
 
-## In-Game Commands for `/lstprofile <option>`
 
-Whole-addon profiler, from `internal_dev/tests_tools/addon_cpu_profile.lua`
+## In-Game Commands for `/lstprofile <option>`
+Whole-addon profiler, from `../addon_cpu_profile.lua`
 
 Where option is one of the following:
 
 - `status` print whether profiling is running, enabled targets, combat time, and Skyriding active time.
-
 - `reset`: clear captured timings and segment counters.
-
 - `start`: reset captured timings and start profiling.
-
 - `report [limit]`: print the current report. `limit` is optional and controls
   how many rows are shown.
-
 - `stop`: stop profiling and print the final report.
 
 Typical flow:
@@ -60,16 +52,14 @@ Typical flow:
 /lstprofile stop
 ```
 
-Aura duration probe, from `internal_dev/tests_tools/aura_frames_duration_profile.lua`:
+Aura duration probe, from `../aura_frames_duration_profile.lua`:
 
 - `/lstafprofile start`: start the focused Aura Frames duration probe.
-
 - `/lstafprofile report`: print the focused duration report.
-
 - `/lstafprofile stop`: stop the focused duration probe.
 
-## Generic Report Template
 
+## Generic Report Template
 Context:
 
 | Metric | Calls | Total ms | Avg ms | Max ms |

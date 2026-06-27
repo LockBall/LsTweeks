@@ -1,9 +1,8 @@
 # Aura Frames Completed Features
-
 Consolidated completed-feature notes for `modules/aura_frames/`.
 
-## Table Of Contents
 
+## Table Of Contents
 - [Aura Cancellation](#aura-cancellation)
 - [Aura Tooltips](#aura-tooltips)
 - [Runtime Event Ownership](#runtime-event-ownership)
@@ -11,8 +10,8 @@ Consolidated completed-feature notes for `modules/aura_frames/`.
 - [CDM Mirroring Review](#cdm-mirroring-review)
 - [Profile Legacy Review](#profile-legacy-review)
 
-## Aura Cancellation
 
+## Aura Cancellation
 Completed: 2026-05-26
 
 Aura cancellation is supported only out of combat, only for real cancelable player buffs, and only when the configured modifier key is held (`OFF`, `CTRL`, `ALT`, or `SHIFT`). Do not add in-combat cancel support without a secure-button redesign.
@@ -44,8 +43,8 @@ Useful references for historical context:
 
 Non-goals: in-combat cancellation, debuff cancellation, preset short-buff cancellation unless intentionally changed later, CDM/cooldown-viewer cancellation unless backed by a real cancelable player buff, and global keyboard-only cancellation.
 
-## Aura Tooltips
 
+## Aura Tooltips
 Completed: 2026-05-30
 
 Treat `GameTooltip:SetUnitAuraByAuraInstanceID(...)` warnings as a Ketho/Core annotation gap, not a client-version bug.
@@ -62,8 +61,8 @@ Evidence: Ketho/LuaLS does not expose `GameTooltip.SetUnitAuraByAuraInstanceID` 
 
 Test by hovering addon aura icons/bars for active player buffs and debuffs. The test aura should still show a spell tooltip when no live aura tooltip is available.
 
-## Runtime Event Ownership
 
+## Runtime Event Ownership
 Completed: 2026-06-06
 
 Do not centralize Aura Frames event handling into one dispatcher at this time.
@@ -76,8 +75,8 @@ The measured CPU profile did not show event-handler overhead as a hotspot. A cen
 
 Revisit only if future profiling shows event-handler overhead is material or runtime frame count increases significantly.
 
-## Blizzard Frame Restore
 
+## Blizzard Frame Restore
 Completed: 2026-06-21
 
 Aura Frames' **Enable Blizz Frame** toggles stopped restoring Blizzard `BuffFrame` / `DebuffFrame` after hiding them. The old code called `Hide()`, `UnregisterAllEvents()`, and cleared `OnShow`, then tried to restore with a guessed event list.
@@ -92,8 +91,8 @@ Evidence:
 - Validation: `check_fast.ps1` passed on 2026-06-21.
 - In-game: user verified Blizzard buff/debuff frame toggles restored correctly on 2026-06-21.
 
-## CDM Mirroring Review
 
+## CDM Mirroring Review
 Completed: 2026-06-21
 
 Reviewed whether public `C_CooldownViewer` APIs can replace LsTweeks' Blizzard Cooldown Manager viewer child reads and `CooldownViewerItemDataMixin` hooks in `modules/aura_frames/af_scan.lua`.
@@ -108,14 +107,14 @@ Implementation result:
 - `af_scan.lua` now prefers Blizzard child mixin methods before fallback field reads: `GetAuraSpellInstanceID()`, `GetCooldownID()`, `GetCooldownInfo()`, and `GetSpellID()`.
 - `CooldownViewerItemDataMixin` hooks remain necessary to attach cooldown-frame hooks lazily and queue refreshes when Blizzard item identity changes.
 
-Durable rule: do not replace CDM viewer child reads/hooks with public `C_CooldownViewer` APIs unless Blizzard adds APIs for live rendered item state. Prefer child mixin methods over raw fields, and keep addon state in addon-owned weak tables.
+Durable rule: replace CDM viewer child reads/hooks with public `C_CooldownViewer` APIs only if Blizzard adds APIs for live rendered item state. Prefer child mixin methods over raw fields, and keep addon state in addon-owned weak tables.
+
 
 ## Profile Legacy Review
-
 Completed: 2026-06-21
 
 The remaining Aura Frames review item asked for testing profile load/reset behavior against saved profiles containing deleted or renamed custom frames.
 
-Closed as not applicable for current project scope. The addon has a single user/developer workflow and there is no legacy saved-profile corpus to validate against. Do not block Aura Frames cleanup on hypothetical profile migration cases unless real saved variables are found or profile storage is intentionally changed.
+Closed as not applicable for current project scope. The addon has a single user/developer workflow and there is no legacy saved-profile corpus to validate against. Block Aura Frames cleanup on profile migration cases only if real saved variables are found or profile storage is intentionally changed.
 
 The existing implementation rule remains valid: if reset or profile load replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present. Future changes to profile storage should test that path with synthetic profiles created for the change.

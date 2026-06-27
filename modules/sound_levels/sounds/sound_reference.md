@@ -1,5 +1,4 @@
 # Sound Reference
-
 This file tracks the original sounds we target and the module-owned replacement files we use for each sound level.
 
 
@@ -10,7 +9,6 @@ This file tracks the original sounds we target and the module-owned replacement 
 
 
 ## Replacement Path
-
 Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`.
 
 Each sound target references a file set with `replacement_asset`. To add another file-backed sound, add the folder and filename prefix to `M.SOUND_ASSETS`, then add a target in `M.SOUND_TARGETS` that points at that asset key.
@@ -27,8 +25,10 @@ The addon mutes known original Blizzard FileDataIDs when present, then plays the
 
 Original uses the unmodified WoW sound instead of a replacement file. Selecting Original leaves the replacement slider at its current position but dims it until the slider is moved.
 
+
 ## Sounds, Available
 - the file path / name is where, in the extracted from CASC *sound* folder, the file is located'
+
 
 ### Achievement - achievmentsound1
 - UI label:     `Achievement`
@@ -60,13 +60,12 @@ Related events that are not replacement triggers:
 - `READY_CHECK_CONFIRM` - a player confirms ready or not ready.
 - `READY_CHECK_FINISHED` - the ready check completes.
 - `LFG_READY_CHECK_PLAYER_IS_READY` - an LFG ready-check player is ready.
-
 - Warcraft Wiki PlaySound reference: https://warcraft.wiki.gg/wiki/API_PlaySound
 
 ---
 
-## Sounds, Future
 
+## Sounds, Future
 ### LevelUp
 - UI Label:     `Level Up`
 - FileDataID:   `569593`
