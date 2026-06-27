@@ -70,13 +70,17 @@ For Aura Frames, the cleanest version would likely be one neutral/tintable textu
 
 - Warcraft Wiki documents `TextureBase:SetTextureSliceMargins`, added in patch 10.2.0, as the preferred modern way to enable nine-slice texture rendering on a texture:
   https://warcraft.wiki.gg/wiki/API_TextureBase_SetTextureSliceMargins
+
 - Masque is the closest open addon ecosystem found for shaped WoW UI texture assets, but it targets button/icon skins rather than resizable plain panels:
   https://addons.wago.io/addons/masque
+
 - Masque skin examples such as Cirque and Apathy contain shaped texture assets and skin definitions, but their art is sized and authored for buttons:
   https://github.com/SFX-WoW/Masque_Cirque
   https://github.com/SFX-WoW/Masque_Apathy
+
 - The Masque skin list is useful for surveying existing shaped UI approaches:
   https://github-wiki-see.page/m/SFX-WoW/Masque/wiki/Skin-List
+
 - Gethe's WoW UI texture mirror is useful for studying Blizzard texture organization, but those files should be treated as Blizzard assets/reference material, not open-source vendorable assets:
   https://github.com/Gethe/wow-ui-textures
 

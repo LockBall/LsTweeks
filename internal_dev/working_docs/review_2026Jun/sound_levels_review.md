@@ -1,9 +1,9 @@
 # Sound Levels Review
 
-## Open Follow-Ups
+## Dormant Follow-Up
 
-1. [ ] Consider a small opt-in shared helper for repeated Fishing tab
-channel-column stride math.
+- Consider a small opt-in shared helper for repeated Fishing tab channel-column
+  stride math only if the Fishing tab layout gets touched again.
 
 ## Notes
 

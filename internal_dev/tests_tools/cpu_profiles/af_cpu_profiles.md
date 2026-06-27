@@ -42,9 +42,10 @@ Profiler wrapped Aura Frames addon-owned functions only.
 Conclusion: Aura-only profiling confirms the broad-run hot path. `update_auras`
 is still the main inclusive path, followed by rendering and visible-icon ticking.
 `unified_scan`, CDM entry reads, timer text, and custom aura scans are secondary
-contributors. Per-call costs are stable versus the broad run. Open Aura
-performance follow-ups are tracked in
-`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
+contributors. Per-call costs are stable versus the broad run. Durable Aura
+performance conclusions live in `internal_dev/working_docs/proj_mem/aura_frames.md`;
+use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
+only if Aura performance work is reopened.
 
 ### 2026-06-22, Aura Frames Only, Post-OOC Fast Path
 
@@ -293,9 +294,10 @@ Conclusion: The direct preset-bucket path is not the meaningful scan/map cost:
 `map_preset_bucket`, `map_preset_copy`, `preview_copy`, and `preview_append` were
 below the report cutoff. Scan/map cost is dominated by `unified_scan`,
 `add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`. Keep the
-direct-bucket cleanup because it is safe and removes avoidable work. Open Aura
-performance follow-ups are tracked in
-`internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`.
+direct-bucket cleanup because it is safe and removes avoidable work. Durable Aura
+performance conclusions live in `internal_dev/working_docs/proj_mem/aura_frames.md`;
+use `internal_dev/working_docs/review_2026Jun/aura_frames_performance_review.md`
+only if Aura performance work is reopened.
 
 ### 2026-06-23, Aura Frames Only, Clean Follow-Up
 

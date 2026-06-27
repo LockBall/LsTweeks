@@ -77,6 +77,27 @@ in that module's `proj_mem/*.md` file.
   smaller correctness surface.
 
 
+## Performance Review Checklist
+
+- Does the module have an always-running or active-only ticker?
+
+- Does the hot path repeatedly call settings, style, profile, default, or
+  normalization helpers?
+
+- Are GUI/control sync calls happening during runtime refresh when nothing
+  user-facing can change?
+
+- Can a refresh pass compute context once and pass it through child updates?
+
+- Can per-frame, per-slot, or per-button state hold the resolved values the hot
+  path needs?
+
+- Is there a clear rule for when settings or profile edits are allowed while the
+  runtime path is active?
+
+- Did the profile confirm helper calls dropped to the intended cadence?
+
+
 ## Validation After Profiling Changes
 
 - Fast validation:

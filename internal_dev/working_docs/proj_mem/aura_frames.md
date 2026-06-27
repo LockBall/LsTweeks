@@ -30,6 +30,8 @@ Important `aura_frames` keys:
 
 - Completed Aura Frames feature notes are consolidated in `internal_dev/completed_features/aura_frames.md`.
 
+- The rounded/chamfered background investigation is incomplete and remains in `internal_dev/working_docs/review_2026Jun/aura_frames_background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
+
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
