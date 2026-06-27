@@ -412,6 +412,14 @@ end
 
 --#region RENDER REFRESH =======================================================
 -- Main runtime render path: visibility decisions, slot state, alpha, and ticking.
+local function is_real_active_flight(is_gliding, can_glide)
+    if is_gliding == nil or can_glide == nil then
+        if not M.get_gliding_state then return false end
+        is_gliding, can_glide = M.get_gliding_state()
+    end
+    return is_gliding or (can_glide and M.is_player_flying and M.is_player_flying()) or false
+end
+
 function M.refresh()
     if not M.is_runtime_enabled() then
         M.stop_runtime()
@@ -450,6 +458,13 @@ function M.refresh()
     M.set_move_mode(db.move_mode)
 
     local is_gliding, can_glide = M.get_gliding_state()
+    if M._fill_test_enabled and is_real_active_flight(is_gliding, can_glide) then
+        M._fill_test_enabled = false
+        M._fill_test_started_at = nil
+        if M.sync_fill_test_button then
+            M.sync_fill_test_button()
+        end
+    end
     if M.sync_settings_controls_enabled then
         M.sync_settings_controls_enabled()
     end
@@ -601,10 +616,7 @@ end
 -- Settings write paths that normalize values and trigger the correct refresh.
 function M.is_settings_locked_by_flight()
     if M._fill_test_enabled then return false end
-    if not M.get_gliding_state then return false end
-
-    local is_gliding, can_glide = M.get_gliding_state()
-    return is_gliding or (can_glide and M.is_player_flying and M.is_player_flying()) or false
+    return is_real_active_flight()
 end
 
 local function reject_settings_change_during_flight()

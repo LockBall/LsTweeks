@@ -1,4 +1,4 @@
-# Addon-Wide Performance Lessons - 2026-06-26
+# Addon-Wide Performance Lessons
 
 ## Skyriding Vigor Lesson
 
@@ -18,8 +18,9 @@ profile changed materially:
 
 The important design point was not "cache everything." It was identifying the
 mutability boundary first: real in-flight settings changes are rejected, while
-Fill Test remains editable. That made it safe for the hot progress path to reuse
-render state prepared by the normal refresh path.
+Fill Test remains editable only as a controlled simulated state. Starting real
+flight stops Fill Test and re-locks settings. That made it safe for the hot
+progress path to reuse render state prepared by the normal refresh path.
 
 ## Principles For Other Modules
 

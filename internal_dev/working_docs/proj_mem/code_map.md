@@ -89,7 +89,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - `internal_dev/working_docs/review_2026Jun/`: focused review notes; read only when the task touches that area.
 
-- `internal_dev/working_docs/scratchpad.md`: temporary active notes only.
+- `internal_dev/working_docs/review_2026Jun/`: temporary active review notes only.
 
 - `internal_dev/completed_features/`: completed investigations; review on demand.
 

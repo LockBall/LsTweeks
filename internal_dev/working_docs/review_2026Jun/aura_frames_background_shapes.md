@@ -1,4 +1,4 @@
-# Aura Frames Background Shape Notes - June 2026
+# Aura Frames Background Shape Notes
 
 Working notes from the Aura Frames rounded/chamfered background discussion.
 

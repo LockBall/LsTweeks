@@ -1,4 +1,4 @@
-# Skyriding Vigor Module Review — 2026-06-26
+# Skyriding Vigor Module Review
 
 
 ## Open Items
@@ -83,7 +83,7 @@ This is intentionally pass-local. It does not add persistent cache invalidation 
 
 ### 2026-06-26, Flight Settings Lock and Progress Context Reuse
 
-Real active flight now rejects settings mutations through `M.is_settings_locked_by_flight()` and the main settings write paths, while Fill Test remains editable. This makes in-flight render state stable enough for the progress driver to reuse slot-local render data safely.
+Real active flight now rejects settings mutations through `M.is_settings_locked_by_flight()` and the main settings write paths. Fill Test remains editable while it is the active simulated state, but starting real flight stops Fill Test and re-locks settings. This makes in-flight render state stable enough for the progress driver to reuse slot-local render data safely.
 
 `M.set_slot_state()` stamps each slot with the resolved DB, style key, style table, frame atlas, and spark atlas from the full render pass. `M.update_filling_slot_progress()` now reuses those slot-local values and falls back to `M.get_render_context()` only if the slot has not been initialized. The next profile should show whether `sv.get_render_context` and style/atlas helper rows drop out of the per-tick path.
 
@@ -99,57 +99,3 @@ Profiler setup remains staged for a focused Skyriding Vigor before/after run:
 3. `LsTweeks.toc` temporarily loads `internal_dev\tests_tools\addon_cpu_profile.lua` after the normal addon files. Remove this line before release/package cleanup.
 
 Profiler scope note: `addon_cpu_profile.lua` wraps addon-table functions. For this focused run, Skyriding Vigor rows are abbreviated as `sv.*`, such as `sv.get_bar_style`, `sv.refresh`, `sv.set_slot_state`, `sv.update_filling_slot_progress`, and `sv.apply_layout`. Local helpers in `sv_bar.lua`, including `get_fill_size()`, `get_node_size()`, `get_frame_size()`, and `get_background_size()`, must be inferred from parent timings unless a narrower temporary probe is added.
-
----
-
-## Completed Items
-
-
-### 1. Duplicated `clamp_number` helper
-- **sv_main.lua:66-72** and **sv_styles.lua:230-236** defined identical `clamp_number` functions.
-
-- Not a bug (both were local), but a maintenance risk because clamping logic changes would require two edits.
-
-- **Status 2026-06-26:** Resolved by adding `addon.clamp_number(value, fallback, range)` to `functions/table_utils.lua` and replacing both local copies.
-
-
-### 2. `sync_slider_controls` uses `_suppress_callback` alongside `_syncing_slider_controls`
-- **sv_gui.lua:306-327** sets `M._syncing_slider_controls = true` as a re-entrancy guard, and also sets `control._suppress_callback = true` per-control.
-
-- `set_setting_from_slider` only checks `M._syncing_slider_controls`, so `_suppress_callback` looked unused from the module-local callback path.
-
-- **Status 2026-06-26:** Resolved as a false positive. `functions/slider_with_box.lua` reads `container._suppress_callback` before debouncing the supplied callback, so the per-control flag is required for programmatic slider sync.
-
-
-### 3. `sync_decor_position_controls` and `sync_position_controls` guard patterns
-- `sync_position_controls` uses `M._syncing_position_controls` as its re-entrancy guard.
-
-- `sync_decor_position_controls` uses `_suppress_callback` per-control instead.
-
-- **Status 2026-06-26:** Resolved as intentional. X/Y position controls attach `HookScript("OnValueChanged", ...)` and call `M.set_position_axis()`, so they need `M._syncing_position_controls`; decor sliders use the normal `CreateSliderWithBox` callback and should keep `_suppress_callback`.
-
-
-### 4. sv_bar.lua double-locals `_, style` in `create_slot`
-- **sv_bar.lua:503 and 532** called `local _, style = M.get_bar_style(get_db())` twice in the same function scope, with the second declaration shadowing the first.
-
-- **Status 2026-06-26:** Resolved by reusing the existing `style` local for the initial fill atlas setup.
-
-
-### 5. Pass-local style/render consolidation
-- **Status 2026-06-26:** Implemented `M.get_render_context(db)` and threaded it through refresh, slot state updates, progress updates, static atlas setup, fill sizing, frame sizing, spark bounds, and bar/spark atlas setup.
-
-- **Verification:** Targeted Lua syntax check passed for `sv_bar.lua`, `sv_main.lua`, `sv_styles.lua`, `functions/table_utils.lua`, and `internal_dev/tests_tools/addon_cpu_profile.lua`.
-
-
-### 6. Avoid rebuilding full render context on every active progress tick
-- **Status 2026-06-26:** Implemented after confirming real in-flight settings edits should be rejected, while Fill Test edits remain allowed. `M.update_filling_slot_progress()` now reuses the slot render state established by `M.set_slot_state()` instead of rebuilding the full render context on each progress tick.
-
-- **Verification:** Targeted Lua syntax check passed for `sv_bar.lua`, `sv_main.lua`, `sv_styles.lua`, `sv_gui.lua`, `functions/table_utils.lua`, `functions/color_picker.lua`, `functions/module_reset.lua`, and `internal_dev/tests_tools/addon_cpu_profile.lua`.
-
-
-### 7. Reprofile after progress-context adjustment
-- **Status 2026-06-26:** Completed. The focused run showed `sv.update_filling_slot_progress` at 0.735ms/sec active, down from 4.311ms/sec active in the prior render-context run. `sv.get_render_context`, `sv.get_bar_style`, `sv.get_frame_atlas`, and `sv.get_style_layout_table` now run at refresh cadence rather than progress cadence.
-
-
-### 8. Decide whether deeper helper instrumentation is needed
-- **Status 2026-06-26:** Not needed for this pass. The profile no longer leaves an unclear local-helper hotspot; remaining rows are small and attributable to normal refresh/progress work.

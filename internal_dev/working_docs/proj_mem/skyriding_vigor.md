@@ -75,6 +75,8 @@ Important `skyriding_vigor` keys:
 
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
 
+- `sync_slider_controls()` intentionally uses both the module-level `_syncing_slider_controls` guard and per-control `_suppress_callback` flags. The module guard prevents Skyriding's local setting writes during programmatic sync, while `CreateSliderWithBox()` consumes `_suppress_callback` before debouncing the supplied callback. Decor sliders use the generic slider callback path and need `_suppress_callback`; X/Y position sliders use `_syncing_position_controls` because they attach direct `OnValueChanged` hooks.
+
 
 ## Runtime Notes
 - The module uses only Blizzard atlas assets (`dragonriding_vigor_*`) and does not copy DragonRider textures or implementation.
@@ -91,7 +93,7 @@ Important `skyriding_vigor` keys:
 
 - Fade settings do not apply while the race profile is active. The settings UI disables Fade When Full, Fade Alpha, and Fade Length during real race detection or Race Profile Test mode through `M.sync_fade_controls_enabled()`.
 
-- `M.sync_settings_controls_enabled()` owns the broad settings lock during real active flight. It disables settings controls and then calls `M.sync_fade_controls_enabled()` so the flight lock composes with the narrower race-profile fade lock. Fill Test intentionally remains editable.
+- `M.sync_settings_controls_enabled()` owns the broad settings lock during real active flight. It disables settings controls and then calls `M.sync_fade_controls_enabled()` so the flight lock composes with the narrower race-profile fade lock. Fill Test remains editable while it is the active simulated state, but starting real flight stops Fill Test and re-locks settings.
 
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`.
 
@@ -121,7 +123,7 @@ Important `skyriding_vigor` keys:
 
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
 
-- Fill Test uses simulated charge data through the normal `M.refresh()` path and the active-only progress driver. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Do not reintroduce a separate fill-test render path unless the behavior intentionally diverges from runtime display.
+- Fill Test uses simulated charge data through the normal `M.refresh()` path and the active-only progress driver. Current cadence is `2.0` seconds per node so spark color/size/placement are visible during inspection. Starting real active flight stops Fill Test before normal flight rendering continues, so Fill Test never masks real in-flight state. Do not reintroduce a separate fill-test render path unless the behavior intentionally diverges from runtime display.
 
 - Move mode intentionally injects fake charge data for a static preview. `needs_progress_updates` must explicitly exclude move mode, otherwise the fake nonzero duration can start the progress driver.
 

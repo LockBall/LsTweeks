@@ -14,7 +14,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 4. Read only the relevant module memory file before touching a module:
    `player_frame.md`, `objectives.md`, `sound_levels.md`, `skyriding_vigor.md`, or `aura_frames.md`.
 
-5. Check `internal_dev/working_docs/scratchpad.md` only for active transient notes. Do not promote scratch notes into durable docs unless they are still true after code review.
+5. Check focused review notes under `internal_dev/working_docs/review_2026Jun/` only when the task touches that area. Do not promote transient review notes into durable docs unless they are still true after code review.
 
 6. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
 
@@ -50,6 +50,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - After significant changes, provide a concise git commit message.
 
+- When suggesting a commit message, provide one combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives.
+
 
 ## Documentation Rules
 
@@ -63,7 +65,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - `internal_dev/completed_features/` owns completed feature investigations.
 
-- `scratchpad.md` owns temporary notes only.
+- Focused review notes under `review_2026Jun/` own temporary active review context only.
 
 - Root markdown is public-facing release documentation.
 

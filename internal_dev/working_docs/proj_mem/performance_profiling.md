@@ -64,8 +64,9 @@ in that module's `proj_mem/*.md` file.
 
 - Make mutability boundaries explicit before caching or reusing state. Skyriding
   Vigor improved safely only after real in-flight settings edits were rejected
-  while Fill Test stayed editable. Other modules should identify their equivalent
-  "state is stable during this hot loop" boundary before adding reuse.
+  while Fill Test stayed editable only as a controlled simulated state that stops
+  when real flight starts. Other modules should identify their equivalent "state
+  is stable during this hot loop" boundary before adding reuse.
 
 - Use profiling to verify the intended shape, not just total time. The Skyriding
   Vigor win was confirmed because `get_render_context` and style/atlas helpers

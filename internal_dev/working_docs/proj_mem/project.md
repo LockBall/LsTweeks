@@ -55,7 +55,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 - Read `agent_start.md` first when starting a new coding-agent session; it routes to this file, the public README, and relevant module memory without duplicating their contents.
 
-- Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/`, `ToDo.md`, `scratchpad.md`, and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
+- Internal docs live under `internal_dev/`. Active working docs live under `internal_dev/working_docs/`: project/module memory files under `proj_mem/` and focused review notes under `review_2026Jun/`. Completed-feature notes live under `internal_dev/completed_features/` and are reviewed on demand. Root markdown is public-facing release documentation.
 
 - Tool recovery and diagnostics notes live in `internal_dev/tests_tools/tools_notes.md`; check them first if Codex shell execution, Windows sandbox setup, Ketho/LuaLS checks, or the local `.venv` breaks.
 
@@ -126,7 +126,7 @@ modules/                feature modules; deeper ownership notes live in the modu
 libs/                   embedded libraries, documented in sources.md
 media/                  public addon/readme assets
 internal_dev/          internal docs excluded from release zips
-  tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, logs, and tool notes
+  tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, CPU profiles, and tool notes
   working_docs/         active project docs, scratch notes, review notes, and proj_mem/
   completed_features/   completed-feature notes reviewed on demand
 dist/                   generated package output, ignored
@@ -188,7 +188,7 @@ Violations here can create invisible or unstable controls.
 
 - Standard button text styling lives in `functions/button.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 
-- Shared dropdown hover-arrow polish remains unresolved. Do not retry the rejected stand-ins without a new reason: text glyphs rendered as empty boxes, `Interface\Buttons\UI-SortArrow` was too thin, and `Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up` had the wrong visual shape.
+- Shared dropdown hover-arrow polish remains unresolved and is tracked in `internal_dev/working_docs/review_2026Jun/skyriding_vigor_adjustments_review.md`. Do not retry the rejected stand-ins without a new reason: text glyphs rendered as empty boxes, `Interface\Buttons\UI-SortArrow` was too thin, and `Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up` had the wrong visual shape.
 
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.AttachTooltip()` / `addon.AttachTooltipToTargets()` for simple settings help tooltips.
 
