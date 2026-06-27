@@ -42,6 +42,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 - Source outline command: `rg -n "^--#region|^-- [A-Za-z].*" <target paths>`. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 
+- Do not split module memory files or other internal docs for token savings. Keep read-in efficient through this TOC, markdown heading searches, and Lua responsibility headers/regions.
+
 - Avoid reading `README.md`, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes unless the request directly routes there.
 
 

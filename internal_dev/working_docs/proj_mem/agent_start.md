@@ -65,6 +65,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 - Module memory files own module-specific settings, runtime lessons, regressions, and ownership details.
 
+- Do not split module memory or other internal documentation files to reduce read-in size. Use markdown headings, source responsibility headers, and `--#region` markers as the TOC instead.
+
 - `internal_dev/completed_features/` owns completed feature investigations.
 
 - Focused review notes under `review_2026Jun/` own temporary active review context only.

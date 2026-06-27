@@ -4,11 +4,16 @@ Goal: manage and reduce agent read-in token usage while preserving enough projec
 
 
 ## Measurements
+kiloTokens  
+modularization pass
 
-- Baseline read-in: 19-20 kTokens.
+- 2: 16,209
 
-- First modularization pass: 15.786 kTokens.
+- 1: 15.786 kT
 
+- 0 Baseline: 19-20 kT
+
+### estimates
 - Estimated from file character counts on 2026-06-27, using chars / 4 as a rough token proxy.
 
 - `agent_start.md` + `code_map.md`: ~2.7 kTokens.
