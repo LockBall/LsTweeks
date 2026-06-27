@@ -1,30 +1,11 @@
-# Sources
-Reference sources used for addon behavior, public release preparation, documentation, tools, and embedded third-party libraries.
+# Sources And Credits
+Public credits, attribution, and embedded third-party library sources for L's Tweeks.
 
 
 ## Table of Contents
-- [CurseForge](#curseforge)
-- [Warcraft Wiki](#warcraft-wiki)
 - [Addon References](#addon-references)
-- [Tools](#tools)
-- [Blizzard UI Source](#blizzard-ui-source)
 - [Embedded Libraries](#embedded-libraries)
-
-
-## CurseForge
-- Creating and submitting a project: https://support.curseforge.com/support/solutions/articles/9000197241
-- World of Warcraft Multi-TOC guidance: https://support.curseforge.com/support/solutions/articles/9000209856
-- Moderation policies: https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies
-
-
-## Warcraft Wiki
-- TOC format: https://warcraft.wiki.gg/wiki/TOC_format
-- Current interface/build references: https://warcraft.wiki.gg/wiki/Template:Current_builds
-- Getting the current interface number: https://warcraft.wiki.gg/wiki/Getting_the_current_interface_number
-- Cooldown Viewer categories: https://warcraft.wiki.gg/wiki/Enum.CooldownViewerCategory
-- `C_UnitAuras.GetAuraDataByIndex`: https://warcraft.wiki.gg/wiki/API_C_UnitAuras.GetAuraDataByIndex
-- `GameTooltip:SetUnitAura`: https://warcraft.wiki.gg/wiki/API_GameTooltip_SetUnitAura
-- `PlaySound`: https://warcraft.wiki.gg/wiki/API_PlaySound
+- [Tools And Community References](#tools-and-community-references)
 
 
 ## Addon References
@@ -32,18 +13,6 @@ Reference sources used for addon behavior, public release preparation, documenta
   - Referenced for Aura Frames inspiration, especially buff/debuff bar presentation, grouping/bucketing, and configurable aura display behavior.
 - Angleur: https://www.curseforge.com/wow/addons/angleur
   - Referenced for Fishing Focus-style temporary audio profile behavior during fishing.
-
-
-## Tools
-- CascView download page: https://www.zezula.net/en/casc/main.html
-- Ketho WoW API VS Code extension: https://marketplace.visualstudio.com/items?itemName=ketho.wow-api
-- Blizzard UI source mirror used by Ketho FrameXML annotations: https://github.com/Gethe/wow-ui-source/tree/live/Interface/AddOns/Blizzard_ObjectiveTracker
-
-
-## Blizzard UI Source
-- WoW UI source mirror: https://github.com/Gethe/wow-ui-source
-- Shared UI panel templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml
-- UIDropDownMenu templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/UIDropDownMenuTemplates.xml
 
 
 ## Embedded Libraries
@@ -77,3 +46,9 @@ Reference sources used for addon behavior, public release preparation, documenta
 - Alternate source: https://www.curseforge.com/wow/addons/libdbicon-1-0
 - Depends on: LibDataBroker-1.1 and LibStub
 - Required by: LsTweeks
+
+
+## Tools And Community References
+- CurseForge: https://www.curseforge.com/
+- Warcraft Wiki: https://warcraft.wiki.gg/
+- WoW UI source mirror: https://github.com/Gethe/wow-ui-source

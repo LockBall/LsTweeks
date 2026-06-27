@@ -134,7 +134,7 @@ Sound target details are tracked in `modules/sound_levels/sounds/sound_reference
 
 
 ## Embedded Libraries
-Embedded libraries are stored in `libs/` and documented in `sources.md`. They are vendored third-party files and are kept unmodified.
+Embedded libraries are stored in `libs/` and credited in `sources.md`. They are vendored third-party files and are kept unmodified.
 
 - CallbackHandler-1.0
 - LibDBIcon-1.0
@@ -144,7 +144,7 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 
 ## License
 - This project is released under the MIT License.
-- Embedded libraries retain their original licenses as documented in `sources.md`.
+- Embedded libraries retain their original licenses as listed in `sources.md`.
 - See `LICENSE` for full details.
 - Copyright (c) 2026 **LockBall**.
 
@@ -160,4 +160,4 @@ Embedded libraries are stored in `libs/` and documented in `sources.md`. They ar
 
 
 ## Sources
-Project references and embedded library sources are tracked in `sources.md`.
+Public credits and embedded library sources are tracked in `sources.md`.

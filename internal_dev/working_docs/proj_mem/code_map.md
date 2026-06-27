@@ -40,12 +40,12 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
-- Read `README.md`, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
+- Read `README.md`, public `sources.md`, research source references, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
 
 
 ## Public Surface
 - `README.md`: public feature names, install/use wording, release-facing behavior.
-- `sources.md`: source ledger for APIs, release references, tools, and embedded libraries.
+- `sources.md`: public credits and embedded-library attribution.
 - `LsTweeks.toc`: addon metadata, version, interface number, and Lua/XML load order.
 - `LICENSE`: release license.
 
@@ -79,6 +79,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 ## Internal Docs And Tools
 - `agent_start.md`: single beginning point.
 - `project.md`: project-wide architecture and durable cross-module rules.
+- `research_sources.md`: internal API, FrameXML, tool, release, and debugging reference links.
 - `performance_profiling.md`: reusable in-game CPU profiling workflow and comparison rules.
 - `powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.

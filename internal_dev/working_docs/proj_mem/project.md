@@ -16,6 +16,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
   - [Key WoW APIs And Lessons](#key-wow-apis-and-lessons)
 - [Agent Start](agent_start.md)
 - [Code Map](code_map.md)
+- [Research Sources](research_sources.md)
 - [Performance Profiling](performance_profiling.md)
 - [PowerShell Memory](powershell.md)
 - [Module Memory](#module-memory)
@@ -35,6 +36,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused review notes in `review_2026Jun/`.
 - Completed notes: `completed_features/`, reviewed on demand.
 - Public docs: root markdown.
+- Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
 - Tool recovery: `tools_notes.md`.
 - PowerShell/newlines/line endings/regions: `powershell.md`.
 - Validation commands: `code_map.md` `## Fast Commands`.
@@ -69,7 +71,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 ### File Map
 ```
 README.md               public release/readme documentation
-sources.md              source ledger for APIs, release references, tools, and embedded libraries
+sources.md              public source credits and embedded-library attribution
 LsTweeks.toc            addon metadata, interface number, version, and load order
 
 core/                   addon bootstrap, DB init, slash command, shared timing/theme, settings shell
@@ -82,7 +84,7 @@ modules/                feature modules; deeper ownership notes live in the modu
   settings/             general addon settings
   aura_frames/          aura scanning/rendering, CDM integration, frame settings, profiles, and GUI
 
-libs/                   embedded libraries, documented in sources.md
+libs/                   embedded libraries, publicly credited in sources.md
 media/                  public addon/readme assets
 internal_dev/          internal docs excluded from release zips
   tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, CPU profiles, and tool notes
