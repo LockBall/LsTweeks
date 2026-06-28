@@ -10,6 +10,12 @@ Active checklist for final Section Count and Objectives module verification.
 - [ ] **e** Confirm Auto-Collapse still works independently of Section Count.
 - [ ] **f** Confirm Quest and Achievement counts stay visible when enabled and On Hover is off.
 - [ ] **g** Confirm Quest and Achievement counts appear only while hovering their section title bars and restore on leave when On Hover is on.
+- [ ] **h** Collapse All Objectives and confirm the background stays header-sized instead of expanding to stale visible sections. If it expands, capture `/lst status` `background_anchor`.
+- [ ] **i** Trigger a world-event/scenario-style objective while All Objectives is collapsed and confirm priority content force-expands All Objectives after the collapse grace window. Capture `/lst status` `background_force_expand` and `background_force_expand_grace`.
+- [ ] **j** Expand All Objectives and confirm Blizzard-owned background sizing follows visible sections and popup/world-event objectives. Capture `/lst status` `background_anchor`; expected expanded value is `blizzard`.
+- [ ] **k** When the expanded background reserves empty world-event space, capture `/lst status` `background_module_<n>_*` fields to identify which Blizzard module is displayable and claiming content height.
+- [ ] **l** While All Objectives is collapsed, confirm ordinary section background anchors do not reopen All Objectives; `/lst status` should show `background_blocked_anchor=<anchor>` if one was corrected.
+- [ ] **m** While All Objectives is collapsed, confirm a Blizzard priority/world-event background anchor force-expands All Objectives after the grace window; `/lst status` should show `background_force_expand=background:<priority module>`.
 
 
 ## 2. Count Correctness
