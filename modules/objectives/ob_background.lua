@@ -1261,6 +1261,10 @@ function M.BuildBackgroundSettings(parent)
             tooltip = "Controls the actual Blizzard Objective Tracker background alpha.",
         }
     )
+    background_alpha_slider.slider:HookScript("OnValueChanged", function()
+        if background_alpha_slider._suppress_callback then return end
+        apply_configured_background_color(false)
+    end)
     M.controls.background_alpha_slider = background_alpha_slider
     grid:place_at(background_alpha_slider, 1, 4)
 

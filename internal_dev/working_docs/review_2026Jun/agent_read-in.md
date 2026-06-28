@@ -30,10 +30,13 @@ Measurement policy is promoted to `agent_start.md`; this note records GUI-report
 
 
 ## Promoted Policy
-The read-in policy from this review is now owned by `agent_start.md` and `code_map.md`; do not maintain a second copy here.
-
+The read-in policy from this review is owned by `agent_start.md` and `code_map.md`
 
 ## High-Leverage Follow-Ups
+- Compress the mandatory startup path only by keeping `agent_start.md` as a boot contract: status check, `code_map.md`, routing gates, preservation rule, and validation expectation. Move detailed policy to targeted docs.
+- Keep `code_map.md` index-like and front-load fast commands, module memory routing, source outline commands, and compact ownership. Move fuller helper descriptions to `project.md` or targeted docs.
+- Consider a markdown section-read helper, such as `read_section.ps1 <file> <heading>`, so agents can reliably read only sections like `## Shared Architecture` or `## Runtime Visibility And Fade`.
+- Add very short hard-invariant summaries to large module memories only where they avoid deeper reads without duplicating volatile details.
 - Add and maintain enough `##` headings in large module memory files that agents can read the matching section instead of the whole file.
 - Keep review notes focused and temporary. Promote only durable conclusions into `proj_mem`.
 - Keep each Lua file's responsibility header current; those headers are now part of the token-saving read-in path.

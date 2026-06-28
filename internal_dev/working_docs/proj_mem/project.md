@@ -17,8 +17,8 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - [Agent Start](agent_start.md)
 - [Code Map](code_map.md)
 - [Research Sources](research_sources.md)
-- [Performance Profiling](performance_profiling.md)
-- [PowerShell Memory](powershell.md)
+- [Performance Profiling](../../tests_tools/cpu_profiles/profiling_workflow.md)
+- [PowerShell Tool Notes](../../tests_tools/powershell.md)
 - [Module Memory](#module-memory)
   - [Player Frame](modules/player_frame.md)
   - [Objectives](modules/objectives.md)
@@ -38,10 +38,10 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
-- Tool recovery: `tools_notes.md`.
-- PowerShell/newlines/line endings/regions: `powershell.md`.
+- Tool recovery: `internal_dev/tests_tools/tools_notes.md`.
+- PowerShell/newlines/line endings/regions: `internal_dev/tests_tools/powershell.md`.
 - Validation commands: `code_map.md` `## Fast Commands`.
-- CPU profiling: workflow in `performance_profiling.md`, run history in `cpu_profiles/`, durable conclusions in module memory.
+- CPU profiling: workflow in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, run history in `internal_dev/tests_tools/cpu_profiles/`, durable conclusions in module memory.
 
 
 ### Ketho / LuaLS

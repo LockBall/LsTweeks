@@ -1,10 +1,11 @@
-# PowerShell Memory
-PowerShell notes for repo-local scripts and coding-agent shell work.
+# PowerShell Tool Notes
+PowerShell notes for repo-local scripts, validation helpers, and coding-agent shell work.
 
 
 ## Table of Contents
 - [File Writes And Newlines](#file-writes-and-newlines)
 - [Region Helper](#region-helper)
+- [Compatibility](#compatibility)
 - [Validation Commands](#validation-commands)
 
 
@@ -28,6 +29,12 @@ PowerShell notes for repo-local scripts and coding-agent shell work.
   pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline modules/aura_frames/af_render.lua
   ```
 - Treat the live outline as the source-file TOC. Add manual Lua TOCs only if a generated/validated TOC workflow is introduced.
+
+
+## Compatibility
+- Use `pwsh.exe` for project validation and helper scripts unless a command explicitly needs another shell.
+- `check_regions.ps1` currently uses `[System.IO.Path]::GetRelativePath`. Windows PowerShell can fail on this machine when its loaded .NET runtime does not expose that method.
+- If Windows PowerShell compatibility becomes required, add a relative-path fallback to `check_regions.ps1` and verify both `powershell.exe` and `pwsh.exe`.
 
 
 ## Validation Commands

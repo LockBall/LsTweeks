@@ -1,7 +1,7 @@
-# Performance Profiling Memory
+# Performance Profiling Workflow
 Use this file for reusable in-game CPU profiling workflow. Keep raw run output in
-`tests_tools/cpu_profiles/` and keep module-specific conclusions
-in that module's `proj_mem/modules/*.md` file.
+`internal_dev/tests_tools/cpu_profiles/` and keep module-specific conclusions
+in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`.
 
 
 ## Table of Contents
@@ -12,7 +12,7 @@ in that module's `proj_mem/modules/*.md` file.
 
 
 ## Whole-Addon Profiler
-- Main probe: `tests_tools/addon_cpu_profile.lua`.
+- Main probe: `internal_dev/tests_tools/addon_cpu_profile.lua`.
 - Load it from `LsTweeks.toc` after the normal addon files while profiling. Remove
   that temporary TOC line before release/package cleanup, unless the active review
   explicitly still needs more in-game runs.
@@ -38,7 +38,7 @@ in that module's `proj_mem/modules/*.md` file.
   value under test, similar combat/activity duration, and the same profiler/tooling
   state. If a run has a false start or wrong setting, mark it noisy or discard it.
 - Raw CPU run history is split by scope under
-  `tests_tools/cpu_profiles/`: use `addon_cpu_profiles.md` for
+  `internal_dev/tests_tools/cpu_profiles/`: use `addon_cpu_profiles.md` for
   broad multi-module runs, and module-prefixed files such as
   `af_cpu_profiles.md` or `sv_cpu_profiles.md` for focused runs.
 

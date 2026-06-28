@@ -195,7 +195,7 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
 ```
 
-PowerShell newline/write rules live in `powershell.md`.
+PowerShell newline/write rules live in `internal_dev/tests_tools/powershell.md`.
 
 Expected package result includes:
 

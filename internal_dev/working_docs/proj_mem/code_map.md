@@ -19,7 +19,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
-- Line-ending and PowerShell write rules: `powershell.md`.
+- Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
 - Fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
 - Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
 - Diff whitespace check: `git diff --check`
@@ -82,12 +82,12 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `agent_start.md`: single beginning point.
 - `project.md`: project-wide architecture and durable cross-module rules.
 - `research_sources.md`: internal API, FrameXML, tool, release, and debugging reference links.
-- `performance_profiling.md`: reusable in-game CPU profiling workflow and comparison rules.
-- `powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
+- `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`: reusable in-game CPU profiling workflow and comparison rules.
+- `internal_dev/tests_tools/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.
 - `review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
 - `completed_features/`: completed investigations; review on demand.
-- `tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
+- `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines.
 - `packaging/`: release package builder, policy, and verifier.

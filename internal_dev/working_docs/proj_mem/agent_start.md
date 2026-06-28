@@ -19,8 +19,8 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
    `modules/player_frame.md`, `modules/objectives.md`, `modules/sound_levels.md`, `modules/skyriding_vigor.md`, or `modules/aura_frames.md`.
 5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
 6. Check focused review notes under `review_2026Jun/` only when the task touches that area. Promote transient review notes into durable docs only after code review confirms they are still true.
-7. For tool, LuaLS, packaging, or sandbox problems, check `tools_notes.md` before inventing a new recovery path.
-8. For PowerShell file-writing or newline issues, check `powershell.md` before scripting rewrites.
+7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
+8. For PowerShell file-writing or newline issues, check `internal_dev/tests_tools/powershell.md` before scripting rewrites.
 
 
 ## First Checks
@@ -48,7 +48,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - `project.md`: project-wide architecture, workflow, file maps, packaging, LuaLS/Ketho notes, durable cross-module lessons.
 - `code_map.md`: compact file ownership, command routing, token-saving context shortcuts.
 - Module memory files: module-specific settings, runtime lessons, regressions, ownership details.
-- Project read-in docs: repo-local tools, validation commands, known failure modes, project-specific command rules. Exclude platform-provided session tools.
+- Project read-in docs: repo-local tools, validation commands, known failure modes, project-specific command rules. Keep tool-owned notes under `internal_dev/tests_tools/`; exclude platform-provided session tools.
 - Memory/doc size: do not split files for token savings; use markdown headings, source responsibility headers, and `--#region` markers.
 - Path references: use the shortest unambiguous filename/path after the first full path or when section context already scopes the directory.
 - Command references: keep copy/paste command strings in command-owner docs such as `code_map.md`; use command names elsewhere.
