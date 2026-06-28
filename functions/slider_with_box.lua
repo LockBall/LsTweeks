@@ -178,12 +178,8 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end)
 
     if opts.tooltip then
-        local tooltip_targets = { container, slider, eb, minus_btn, plus_btn, reset }
-        for i = 1, #tooltip_targets do
-            local target = tooltip_targets[i]
-            target:EnableMouse(true)
-            addon.AttachTooltip(target, nil, opts.tooltip)
-        end
+        title:EnableMouse(true)
+        addon.AttachTooltip(title, nil, opts.tooltip)
     end
 
     -- Expose inner slider so callers can call SetValue to update the display.

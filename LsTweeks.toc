@@ -43,6 +43,7 @@ modules\player_frame\pf_fade.lua
 modules\objectives\ob_defaults.lua
 modules\objectives\ob_auto_collapse.lua
 modules\objectives\ob_section_count.lua
+modules\objectives\ob_background.lua
 modules\objectives\ob_main.lua
 modules\sound_levels\sl_defaults.lua
 modules\sound_levels\sl_functions.lua

@@ -107,27 +107,44 @@ local function join_status_fields(fields)
     return "no runtime status registered"
 end
 
-function addon.print_module_status()
+local function status_module_matches(module_def, filter)
+    if not filter or filter == "" then return true end
+    filter = filter:lower()
+    local key = module_def and module_def.key and module_def.key:lower() or ""
+    local label = module_def and module_def.label and module_def.label:lower() or ""
+    return key == filter or label == filter
+end
+
+function addon.print_module_status(filter)
     ensure_module_flags()
-    print("|cff33ff99LsTweeks module status|r")
+    filter = (filter or ""):match("^%s*(.-)%s*$")
+    print("|cff33ff99LsTweeks module status|r" .. (filter ~= "" and (" (" .. filter .. ")") or ""))
+    local printed = 0
     for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
-        local key = module_def.key
-        local fields = { "enabled=" .. tostring(addon.is_module_enabled(key)) }
-        local builder = addon.module_status_builders and addon.module_status_builders[key]
-        if builder then
-            local ok, result = pcall(builder)
-            if ok then
-                local detail = join_status_fields(result)
-                if detail and detail ~= "" then
-                    fields[#fields + 1] = detail
+        if status_module_matches(module_def, filter) then
+            local key = module_def.key
+            local fields = { "enabled=" .. tostring(addon.is_module_enabled(key)) }
+            local builder = addon.module_status_builders and addon.module_status_builders[key]
+            if builder then
+                local ok, result = pcall(builder)
+                if ok then
+                    local detail = join_status_fields(result)
+                    if detail and detail ~= "" then
+                        fields[#fields + 1] = detail
+                    end
+                else
+                    fields[#fields + 1] = "status_error=" .. tostring(result)
                 end
             else
-                fields[#fields + 1] = "status_error=" .. tostring(result)
+                fields[#fields + 1] = "no runtime status registered"
             end
-        else
-            fields[#fields + 1] = "no runtime status registered"
+            print((module_def.label or key) .. ": " .. table.concat(fields, ", "))
+            printed = printed + 1
         end
-        print((module_def.label or key) .. ": " .. table.concat(fields, ", "))
+    end
+
+    if printed == 0 then
+        print("No module matched status filter: " .. tostring(filter))
     end
 end
 
@@ -201,8 +218,9 @@ end)
 SLASH_LSTWEEKS1 = "/lst"
 SlashCmdList["LSTWEEKS"] = function(msg)
     msg = (msg or ""):match("^%s*(.-)%s*$")
-    if msg:lower() == "status" then
-        addon.print_module_status()
+    local status_filter = msg:match("^[Ss][Tt][Aa][Tt][Uu][Ss]%s+(.+)$")
+    if msg:lower() == "status" or status_filter then
+        addon.print_module_status(status_filter)
         return
     end
     if addon.main_frame then

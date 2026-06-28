@@ -9,11 +9,10 @@ M.controls = M.controls or {}
 --#region SETTINGS AND DEFAULTS ================================================
 
 local UI_CONFIG = {
-    group_offset_x = 20,
-    group_offset_y = -288,
+    group_offset_x = 210,
+    group_offset_y = -20,
     group_height = 112,
     group_padding_x = 12,
-    group_title_offset_y = -8,
     first_checkbox_offset_y = -32,
     sub_checkbox_offset_y = -24,
     second_column_offset_x = 122,
@@ -378,70 +377,67 @@ end
 
 function M.BuildSectionCountSettings(parent)
     local cfg = UI_CONFIG
-    local count_group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    count_group:SetSize(1, cfg.group_height)
-    count_group:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.group_offset_x, cfg.group_offset_y)
-    count_group:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    count_group:SetBackdropBorderColor(1, 0.82, 0, 0.6)
-    count_group:SetBackdropColor(0, 0, 0, 0)
-
-    local count_title = count_group:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    count_title:SetPoint("TOP", count_group, "TOP", 0, cfg.group_title_offset_y)
-    count_title:SetText("Section Count")
-    count_title:SetTextColor(1, 0.82, 0, 1)
+    local count_group, count_title = addon.CreateSettingsGroup(
+        parent,
+        "Section Count",
+        1,
+        cfg.group_height,
+        cfg.group_offset_x,
+        cfg.group_offset_y
+    )
 
     local show_quest_log, show_tracked_achievements, quest_log_on_hover, tracked_achievements_on_hover = get_count_settings()
-    local quest_log_container, quest_log_cb, quest_log_label = addon.CreateCheckbox(
-        count_group,
+    local function create_count_checkbox(label, checked, db_key, control_key, x, y, tooltip)
+        local container, checkbox, checkbox_label = addon.CreateCheckbox(
+            count_group,
+            label,
+            checked,
+            function(is_checked)
+                set_count_setting(db_key, is_checked)
+            end
+        )
+        M.controls[control_key] = checkbox
+        container:SetPoint("TOPLEFT", count_group, "TOPLEFT", x, y)
+        addon.AttachTooltip(checkbox_label, nil, tooltip)
+        return container
+    end
+
+    local quest_log_container = create_count_checkbox(
         "Quests",
         show_quest_log,
-        function(is_checked)
-            set_count_setting("show_quest_log_count", is_checked)
-        end
+        "show_quest_log_count",
+        "show_quest_log_count_checkbox",
+        cfg.group_padding_x,
+        cfg.first_checkbox_offset_y,
+        "Shows accepted quest log count and capacity in the Quests section title."
     )
-    M.controls.show_quest_log_count_checkbox = quest_log_cb
-    quest_log_container:SetPoint("TOPLEFT", count_group, "TOPLEFT", cfg.group_padding_x, cfg.first_checkbox_offset_y)
-    addon.AttachTooltip(quest_log_label, nil, "Shows accepted quest log count and capacity in the Quests section title.")
-
-    local quest_hover_container, quest_hover_cb, quest_hover_label = addon.CreateCheckbox(
-        count_group,
+    local quest_hover_container = create_count_checkbox(
         "On Hover",
         quest_log_on_hover,
-        function(is_checked)
-            set_count_setting("show_quest_log_count_on_hover", is_checked)
-        end
+        "show_quest_log_count_on_hover",
+        "show_quest_log_count_on_hover_checkbox",
+        cfg.group_padding_x + cfg.sub_checkbox_indent_x,
+        cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y,
+        "Shows the Quests count only while hovering the Quests section title."
     )
-    M.controls.show_quest_log_count_on_hover_checkbox = quest_hover_cb
-    quest_hover_container:SetPoint("TOPLEFT", count_group, "TOPLEFT", cfg.group_padding_x + cfg.sub_checkbox_indent_x, cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y)
-    addon.AttachTooltip(quest_hover_label, nil, "Shows the Quests count only while hovering the Quests section title.")
-
-    local tracked_achievement_container, tracked_achievement_cb, tracked_achievement_label = addon.CreateCheckbox(
-        count_group,
+    local tracked_achievement_container = create_count_checkbox(
         "Achievements",
         show_tracked_achievements,
-        function(is_checked)
-            set_count_setting("show_tracked_achievement_count", is_checked)
-        end
+        "show_tracked_achievement_count",
+        "show_tracked_achievement_count_checkbox",
+        cfg.group_padding_x + cfg.second_column_offset_x,
+        cfg.first_checkbox_offset_y,
+        "Shows tracked achievement count and capacity in the Achievements section title."
     )
-    M.controls.show_tracked_achievement_count_checkbox = tracked_achievement_cb
-    tracked_achievement_container:SetPoint("TOPLEFT", count_group, "TOPLEFT", cfg.group_padding_x + cfg.second_column_offset_x, cfg.first_checkbox_offset_y)
-    addon.AttachTooltip(tracked_achievement_label, nil, "Shows tracked achievement count and capacity in the Achievements section title.")
-
-    local achievement_hover_container, achievement_hover_cb, achievement_hover_label = addon.CreateCheckbox(
-        count_group,
+    local achievement_hover_container = create_count_checkbox(
         "On Hover",
         tracked_achievements_on_hover,
-        function(is_checked)
-            set_count_setting("show_tracked_achievement_count_on_hover", is_checked)
-        end
+        "show_tracked_achievement_count_on_hover",
+        "show_tracked_achievement_count_on_hover_checkbox",
+        cfg.group_padding_x + cfg.second_column_offset_x + cfg.sub_checkbox_indent_x,
+        cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y,
+        "Shows the Achievements count only while hovering the Achievements section title."
     )
-    M.controls.show_tracked_achievement_count_on_hover_checkbox = achievement_hover_cb
-    achievement_hover_container:SetPoint("TOPLEFT", count_group, "TOPLEFT", cfg.group_padding_x + cfg.second_column_offset_x + cfg.sub_checkbox_indent_x, cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y)
-    addon.AttachTooltip(achievement_hover_label, nil, "Shows the Achievements count only while hovering the Achievements section title.")
 
     local count_width = math.max(
         count_title:GetStringWidth() or 0,

@@ -12,12 +12,13 @@ Active checklist for final Section Count and Objectives module verification.
 - [ ] **g** Change the Background color picker and confirm the All Objectives background tint/alpha updates immediately.
 - [ ] **h** Reset the Background color picker and confirm Blizzard's normal background color is restored.
 - [ ] **i** Toggle the Objectives module off and confirm the background color restores to Blizzard's normal color.
-- [ ] **j** Collapse All Objectives and confirm the background stays header-sized instead of expanding to stale visible sections. If it expands, capture `/lst status` `background_anchor`.
-- [ ] **k** Trigger a world-event/scenario-style objective while All Objectives is collapsed and confirm priority content force-expands All Objectives after the collapse grace window. Capture `/lst status` `background_force_expand` and `background_force_expand_grace`.
-- [ ] **l** Expand All Objectives and confirm Blizzard-owned background sizing follows visible sections and popup/world-event objectives. Capture `/lst status` `background_anchor`; expected expanded value is `blizzard`.
-- [ ] **m** When the expanded background reserves empty world-event space, capture `/lst status` `background_module_<n>_*` fields to identify which Blizzard module is displayable and claiming content height.
-- [ ] **n** While All Objectives is collapsed, confirm ordinary section background anchors do not reopen All Objectives; `/lst status` should show `background_blocked_anchor=<anchor>` if one was corrected.
-- [ ] **o** While All Objectives is collapsed, confirm a Blizzard priority/world-event background anchor force-expands All Objectives after the grace window; `/lst status` should show `background_force_expand=background:<priority module>`.
+- [ ] **j** After choosing a non-default Background color, capture `/lst status objectives` `bg_color_state` and `bg_region_<n>_*` fields so the real NineSlice pieces can be identified before RGB tint work continues.
+- [ ] **k** Collapse All Objectives and confirm the background stays header-sized instead of expanding to stale visible sections. If it expands, capture `/lst status objectives` `bg_anchor`.
+- [ ] **l** Trigger a world-event/scenario-style objective while All Objectives is collapsed and confirm priority content force-expands All Objectives after the collapse grace window. Capture `/lst status objectives` `bg_force_expand` and `bg_force_expand_grace`.
+- [ ] **m** Expand All Objectives and confirm Blizzard-owned background sizing follows visible sections and popup/world-event objectives. Capture `/lst status objectives` `bg_anchor`; expected expanded value is `blizzard`.
+- [ ] **n** When the expanded background reserves empty world-event space, capture `/lst status objectives` `bg_module_<n>_*` fields to identify which Blizzard module is displayable and claiming content height.
+- [ ] **o** While All Objectives is collapsed, confirm ordinary section background anchors do not reopen All Objectives; `/lst status objectives` should show `bg_blocked_anchor=<anchor>` if one was corrected.
+- [ ] **p** While All Objectives is collapsed, confirm a Blizzard priority/world-event background anchor force-expands All Objectives after the grace window; `/lst status objectives` should show `bg_force_expand=background:<priority module>`.
 
 
 ## 2. Count Correctness
@@ -27,9 +28,9 @@ Active checklist for final Section Count and Objectives module verification.
 
 ## 3. Runtime And Packaging
 - [ ] **a** Confirm Section Count registers quest events only while Quest count is enabled.
-- [ ] **b** Check `/lst status` for expected quest event, hover-mode, hover, and title state.
+- [ ] **b** Check `/lst status objectives` for expected quest event, hover-mode, hover, and title state.
 - [x] **c** Run package validation before calling the feature done because new Objective Lua files were added to the TOC.
-- [ ] **d** Confirm Objective file load order remains `ob_defaults.lua`, feature files, then `ob_main.lua`.
+- [ ] **d** Confirm Objective file load order remains `ob_defaults.lua`, feature files including `ob_background.lua`, then `ob_main.lua`.
 
 
 ## 4. Final Cleanup

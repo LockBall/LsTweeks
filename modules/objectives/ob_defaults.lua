@@ -30,7 +30,13 @@ M.defaults = {
         show_quest_log_count_on_hover = false,
         show_tracked_achievement_count = false,
         show_tracked_achievement_count_on_hover = false,
-        background_color = { r = 1, g = 1, b = 1, a = 1 },
+        customize_background = false,
+        background_color = { r = 0, g = 0, b = 0, a = 0 },
+        background_alpha = 0.5,
+        objective_tracker_move_mode = false,
+        objective_tracker_snap_to_grid = false,
+        objective_tracker_offset_x = 0,
+        objective_tracker_offset_y = 0,
     },
 }
 

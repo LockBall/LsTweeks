@@ -61,16 +61,6 @@ local function apply_box_backdrop(frame)
     frame:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.9)
 end
 
-local function apply_group_outline(frame)
-    frame:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    frame:SetBackdropBorderColor(1, 0.82, 0, 0.6)
-    frame:SetBackdropColor(0, 0, 0, 0)
-end
-
 --#endregion SHARED HELPERS ====================================================
 
 --#region SOUND TARGET CONTROLS ================================================
@@ -338,16 +328,9 @@ end
 --#region FISHING TAB ==========================================================
 
 local function create_fishing_header_bar(parent, title_text, play_profile_key)
-    local title_bar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    title_bar:SetHeight(23)
-    title_bar:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.fishing_group_border_inset, -UI.fishing_group_border_inset)
-    title_bar:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -UI.fishing_group_border_inset, -UI.fishing_group_border_inset)
-    title_bar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
-    title_bar:SetBackdropColor(0.14, 0.14, 0.14, 0.65)
-
-    local title = title_bar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("CENTER", title_bar, "CENTER", 0, 0)
-    title:SetText(title_text)
+    local title_bar = addon.CreateSettingsGroupTitleBar(parent, title_text, {
+        inset = UI.fishing_group_border_inset,
+    })
 
     local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
     play_button:SetSize(54, 20)
@@ -435,7 +418,7 @@ local function build_fishing_tab(parent)
     local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     current_panel:SetSize(sliders_panel_width, 70)
     current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
-    apply_group_outline(current_panel)
+    addon.ApplySettingsGroupOutline(current_panel)
 
     create_fishing_header_bar(current_panel, "Normal Volumes", "current")
 
@@ -456,7 +439,7 @@ local function build_fishing_tab(parent)
     local sliders_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     sliders_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
     sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -16)
-    apply_group_outline(sliders_panel)
+    addon.ApplySettingsGroupOutline(sliders_panel)
 
     create_fishing_header_bar(sliders_panel, "Fishing Volumes", "fishing")
 

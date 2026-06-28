@@ -13,7 +13,6 @@ local UI_CONFIG = {
     group_offset_y = -20,
     group_height = 158,
     group_padding_x = 12,
-    group_title_offset_y = -8,
     first_checkbox_offset_y = -32,
     checkbox_step_y = -32,
     child_indent_x = 18,
@@ -192,21 +191,14 @@ function M.BuildAutoCollapseSettings(parent)
     local cfg = UI_CONFIG
     local db = M.get_db()
 
-    local group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    group:SetSize(1, cfg.group_height)
-    group:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.group_offset_x, cfg.group_offset_y)
-    group:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    group:SetBackdropBorderColor(1, 0.82, 0, 0.6)
-    group:SetBackdropColor(0, 0, 0, 0)
-
-    local title = group:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", group, "TOP", 0, cfg.group_title_offset_y)
-    title:SetText("Auto-Collapse")
-    title:SetTextColor(1, 0.82, 0, 1)
+    local group, title = addon.CreateSettingsGroup(
+        parent,
+        "Auto-Collapse",
+        1,
+        cfg.group_height,
+        cfg.group_offset_x,
+        cfg.group_offset_y
+    )
 
     local widest_content = title:GetStringWidth() or 0
     for index, def in ipairs(TRACKER_DEFS) do

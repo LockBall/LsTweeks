@@ -72,6 +72,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 
 ## Use Notes
 - Open the settings panel with `/lst` or the minimap button.
+- Use `/lst status` for all module diagnostics, or `/lst status <module>` for one module such as `/lst status objectives`.
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.

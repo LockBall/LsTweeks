@@ -18,6 +18,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
+- In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
 - Line-ending and PowerShell write rules: `powershell.md`.
 - Fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
 - Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
@@ -36,7 +37,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
 - `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
 - `modules/player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
-- `modules/objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, and `ob_main.lua` background/lifecycle/status shell.
+- `modules/objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/position runtime and settings, and `ob_main.lua` lifecycle/status shell.
 - `modules/sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
@@ -63,7 +64,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
 - `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
 - `functions/slider_with_box.lua`: shared slider plus numeric edit box.
-- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops and simple tooltip hooks.
+- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, gold outlined settings groups, and simple tooltip hooks.
 - `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 
 
