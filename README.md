@@ -34,6 +34,7 @@ Slash command: `/lst`
 
 ### Objectives
 - Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
+- Optional **Section Count** checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - Keeps the All Objectives background sized to the visible tracker sections when Objectives module behavior is active.
 
 
@@ -74,7 +75,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.
-- Open **Objectives** for the **Auto-Collapse** group.
+- Open **Objectives** for Auto-Collapse and Section Count options.
 - Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, node style/color, fill color, end decorations, fade behavior, and optional race profile.
 - Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.

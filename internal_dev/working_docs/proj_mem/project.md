@@ -37,6 +37,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Completed notes: `completed_features/`, reviewed on demand.
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
+- Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
 - Tool recovery: `tools_notes.md`.
 - PowerShell/newlines/line endings/regions: `powershell.md`.
 - Validation commands: `code_map.md` `## Fast Commands`.
@@ -106,6 +107,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 - Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` is the in-game diagnostic for this boundary: it reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. In-game all-disabled testing passed on 2026-06-21; see `core_settings_module_status.md`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
+- When adding or changing runtime work in a feature module, audit disabled behavior before finishing: events, hooks, timers, callbacks, tickers, queued `C_Timer` work, frames, and status fields must either stop at disable time or cheaply no-op before doing owned work.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.

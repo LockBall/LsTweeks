@@ -10,12 +10,26 @@ addon.objectives = M
 
 M.MODULE_KEY = "objectives"
 
+function M.get_db()
+    if not Ls_Tweeks_DB then return nil end
+    Ls_Tweeks_DB.objectives = Ls_Tweeks_DB.objectives or {}
+    return Ls_Tweeks_DB.objectives
+end
+
+function M.is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+end
+
 M.defaults = {
     objectives = {
         collapse_all = false,
         collapse_campaign = false,
         collapse_quests = false,
         collapse_achievements = false,
+        show_quest_log_count = false,
+        show_quest_log_count_on_hover = false,
+        show_tracked_achievement_count = false,
+        show_tracked_achievement_count_on_hover = false,
     },
 }
 
