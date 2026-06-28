@@ -30,6 +30,7 @@ M.defaults = {
         show_quest_log_count_on_hover = false,
         show_tracked_achievement_count = false,
         show_tracked_achievement_count_on_hover = false,
+        background_color = { r = 1, g = 1, b = 1, a = 1 },
     },
 }
 

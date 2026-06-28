@@ -11,6 +11,17 @@ local CATEGORY_NAME = "Objectives"
 
 local DEFAULTS = M.defaults
 local FORCE_EXPAND_GRACE_SECONDS = 2
+local DEFAULT_BACKGROUND_COLOR = DEFAULTS.objectives.background_color
+local COLOR_RANGE = { min = 0, max = 1 }
+
+local UI_CONFIG = {
+    background_group_offset_x = 20,
+    background_group_offset_y = -194,
+    background_group_height = 78,
+    background_group_width = 160,
+    background_group_title_offset_y = -8,
+    background_color_offset_y = -4,
+}
 
 --#endregion SETTINGS AND DEFAULTS =============================================
 
@@ -28,6 +39,8 @@ local background_last_blocked_anchor = "none"
 local background_last_container_collapse_time = nil
 local background_hooked_frame
 local background_adjusting = false
+local background_color_last_signature = "none"
+local background_color_state = "unavailable"
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -44,6 +57,74 @@ local function get_objective_tracker()
         return tracker
     end
     return nil
+end
+
+local function get_background_color()
+    local db = M.get_db()
+    local color = db and db.background_color or DEFAULT_BACKGROUND_COLOR
+    if type(color) ~= "table" then
+        color = DEFAULT_BACKGROUND_COLOR
+    end
+
+    return {
+        r = addon.clamp_number(color.r, DEFAULT_BACKGROUND_COLOR.r, COLOR_RANGE),
+        g = addon.clamp_number(color.g, DEFAULT_BACKGROUND_COLOR.g, COLOR_RANGE),
+        b = addon.clamp_number(color.b, DEFAULT_BACKGROUND_COLOR.b, COLOR_RANGE),
+        a = addon.clamp_number(color.a, DEFAULT_BACKGROUND_COLOR.a, COLOR_RANGE),
+    }
+end
+
+local function get_color_signature(color)
+    return table.concat({
+        tostring(color.r),
+        tostring(color.g),
+        tostring(color.b),
+        tostring(color.a),
+    }, ":")
+end
+
+local function apply_color_to_region(region, color)
+    if region and region.SetVertexColor then
+        region:SetVertexColor(color.r, color.g, color.b, color.a)
+        return true
+    end
+    return false
+end
+
+local function apply_background_color(color, force)
+    local tracker = get_objective_tracker()
+    local background = tracker and tracker.NineSlice
+    if not background then
+        background_color_state = "unavailable"
+        return
+    end
+
+    local signature = get_color_signature(color)
+    if not force and background_color_last_signature == signature then
+        return
+    end
+
+    local applied = 0
+    if background.GetRegions then
+        local regions = { background:GetRegions() }
+        for _, region in ipairs(regions) do
+            if apply_color_to_region(region, color) then
+                applied = applied + 1
+            end
+        end
+    end
+
+    background_color_last_signature = signature
+    background_color_state = applied > 0 and ("applied:" .. tostring(applied)) or "no_regions"
+end
+
+local function apply_configured_background_color(force)
+    if not M.is_runtime_enabled() then return end
+    apply_background_color(get_background_color(), force)
+end
+
+local function restore_background_color()
+    apply_background_color(DEFAULT_BACKGROUND_COLOR, true)
 end
 
 local function show_background_to_header(tracker, background, state)
@@ -209,6 +290,8 @@ local function sync_objective_background(reason)
         return
     end
 
+    apply_configured_background_color()
+
     if is_tracker_collapsed(tracker) then
         if not background_points_to_header(tracker, background) and not is_in_force_expand_grace() then
             if force_expand_for_background_anchor(tracker, get_background_bottom_anchor(background)) then
@@ -314,6 +397,7 @@ function M.apply_objectives()
     if not M.is_runtime_enabled() then return end
 
     ensure_background_hooks()
+    apply_configured_background_color()
     if M.apply_auto_collapse then
         M.apply_auto_collapse()
     end
@@ -327,10 +411,50 @@ end
 
 --#region GUI ==================================================================
 
+local function set_background_color()
+    apply_configured_background_color(true)
+end
+
+local function BuildBackgroundSettings(parent)
+    local cfg = UI_CONFIG
+    local db = M.get_db()
+    if not db then return end
+
+    local group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    group:SetSize(cfg.background_group_width, cfg.background_group_height)
+    group:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.background_group_offset_x, cfg.background_group_offset_y)
+    group:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    group:SetBackdropBorderColor(1, 0.82, 0, 0.6)
+    group:SetBackdropColor(0, 0, 0, 0)
+
+    local title = group:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", group, "TOP", 0, cfg.background_group_title_offset_y)
+    title:SetText("Background")
+    title:SetTextColor(1, 0.82, 0, 1)
+
+    local picker = addon.CreateColorPicker(
+        group,
+        db,
+        "background_color",
+        true,
+        "Color",
+        DEFAULTS.objectives,
+        set_background_color
+    )
+    M.controls.background_color_picker = picker
+    picker:SetPoint("TOP", title, "BOTTOM", 0, cfg.background_color_offset_y)
+    addon.AttachTooltip(picker, nil, "Tints the Blizzard All Objectives background. Reset restores Blizzard's normal color.")
+end
+
 function M.BuildSettings(parent)
     if M.BuildAutoCollapseSettings then
         M.BuildAutoCollapseSettings(parent)
     end
+    BuildBackgroundSettings(parent)
     if M.BuildSectionCountSettings then
         M.BuildSectionCountSettings(parent)
     end
@@ -348,6 +472,7 @@ function M.set_module_enabled(enabled)
         if M.set_section_count_module_enabled then
             M.set_section_count_module_enabled(false)
         end
+        restore_background_color()
         local tracker = get_objective_tracker()
         if tracker and tracker.Update then
             tracker:Update()
@@ -370,6 +495,8 @@ if addon.register_module_status then
         fields[#fields + 1] = "background_force_expand=" .. tostring(background_last_force_expand)
         fields[#fields + 1] = "background_blocked_anchor=" .. tostring(background_last_blocked_anchor)
         fields[#fields + 1] = "background_force_expand_grace=" .. tostring(is_in_force_expand_grace())
+        fields[#fields + 1] = "background_color_state=" .. tostring(background_color_state)
+        fields[#fields + 1] = "background_color_signature=" .. tostring(background_color_last_signature)
         fields[#fields + 1] = "background_adjustments=" .. tostring(background_adjustments)
         fields[#fields + 1] = "background_last_reason=" .. tostring(background_last_reason)
         append_background_module_status(fields)

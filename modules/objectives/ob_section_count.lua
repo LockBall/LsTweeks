@@ -10,7 +10,7 @@ M.controls = M.controls or {}
 
 local UI_CONFIG = {
     group_offset_x = 20,
-    group_offset_y = -194,
+    group_offset_y = -288,
     group_height = 112,
     group_padding_x = 12,
     group_title_offset_y = -8,
