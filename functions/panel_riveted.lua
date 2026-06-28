@@ -2,9 +2,9 @@
 -- ApplyRivetedPanelStyle() and AddRivetCorners() dress an existing frame; CreateRivetedPanel() builds a fully styled panel from scratch.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
+
+--#region RIVETED PANEL STYLE =================================================
 
 addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
     -- Backdrop appearance
@@ -36,6 +36,10 @@ addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
     },
 }
 
+--#endregion RIVETED PANEL STYLE ==============================================
+
+--#region BACKDROP APPLICATION ===============================================
+
 function addon.ApplyRivetedPanelStyle(frame, opts)
     local style = addon.RIVETED_PANEL_STYLE
     local options = opts or {}
@@ -64,6 +68,10 @@ function addon.ApplyRivetedPanelStyle(frame, opts)
         )
     end
 end
+
+--#endregion BACKDROP APPLICATION =============================================
+
+--#region PANEL FACTORY =======================================================
 
 -- Create a riveted textured panel and return (panel, textFontString)
 -- parent            : parent frame
@@ -108,6 +116,10 @@ function addon.CreateRivetedPanel(parent, width, height, anchorTo, anchorPoint, 
     return panel, text
 end
 
+--#endregion PANEL FACTORY ====================================================
+
+--#region CORNER RIVETS =======================================================
+
 -- Shared corner-rivet painter. Paints 4 masked screws at the corners of `frame`.
 -- Optional offsets allow shifting all rivets together without changing inset.
 -- Used by both CreateRivetedPanel (above) and module_reset's CreateModuleReset.
@@ -141,4 +153,4 @@ function addon.AddRivetCorners(frame, inset, offsetX, offsetY)
     PaintRivet("BOTTOMRIGHT", -inset + ox,  inset + oy)
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion CORNER RIVETS ====================================================

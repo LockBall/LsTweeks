@@ -2,9 +2,9 @@
 -- Returns a container frame holding the checkbox and its label; container width adjusts to the label text.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
+
+--#region CHECKBOX FACTORY ====================================================
 
 function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     local theme = addon.UI_THEME
@@ -71,4 +71,4 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     return container, checkbox, label
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion CHECKBOX FACTORY =================================================

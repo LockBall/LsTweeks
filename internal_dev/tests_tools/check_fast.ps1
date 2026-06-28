@@ -36,7 +36,7 @@ try {
         "functions/slider_with_box.lua",
         "functions/table_utils.lua",
         "functions/ui_helpers.lua",
-        "functions/button.lua",
+        "functions/buttons.lua",
         "modules/about.lua",
         "modules/settings/st_defaults.lua",
         "modules/settings/st_main.lua",

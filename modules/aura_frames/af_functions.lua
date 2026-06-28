@@ -318,19 +318,7 @@ end
 
 function M.create_move_reset_button(parent, anchor_to, opts)
     opts = opts or {}
-    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    button:SetSize(opts.width or 110, 22)
-    button:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", 0, -6)
-    button:SetText("Move Reset")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(button)
-    end
-    button:SetScript("OnClick", function()
-        if opts.on_click then
-            opts.on_click()
-        end
-    end)
-    return button
+    return addon.CreateMoveResetButton(parent, anchor_to, opts)
 end
 
 function M.read_frame_position(frame)

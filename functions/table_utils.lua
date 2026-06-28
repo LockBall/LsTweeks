@@ -1,9 +1,9 @@
 -- Shared table/default-copy utilities used across all modules.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
+
+--#region TABLE COPYING ======================================================
 
 -- Use after table.wipe(dest) to restore a DB table from defaults.
 function addon.deep_copy_into(src, dest)
@@ -16,6 +16,10 @@ function addon.deep_copy_into(src, dest)
         end
     end
 end
+
+--#endregion TABLE COPYING ===================================================
+
+--#region DEFAULT APPLICATION ================================================
 
 -- Recursive fill-missing copy: only writes keys that are absent in dest.
 -- Use to apply defaults onto an existing DB without overwriting user values.
@@ -30,6 +34,10 @@ function addon.apply_defaults(src, dest)
     end
 end
 
+--#endregion DEFAULT APPLICATION =============================================
+
+--#region NUMBER HELPERS ======================================================
+
 function addon.clamp_number(value, fallback, range)
     value = tonumber(value)
     if not value then value = fallback end
@@ -38,4 +46,4 @@ function addon.clamp_number(value, fallback, range)
     return value
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion NUMBER HELPERS ===================================================

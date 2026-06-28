@@ -26,7 +26,7 @@ core\minimap_button.lua
 functions\table_utils.lua
 functions\ui_helpers.lua
 functions\layout_grid.lua
-functions\button.lua
+functions\buttons.lua
 functions\checkbox.lua
 functions\slider_with_box.lua
 functions\module_reset.lua

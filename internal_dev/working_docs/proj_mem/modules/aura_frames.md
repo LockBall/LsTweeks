@@ -86,7 +86,7 @@ Important `aura_frames` keys:
 - Drag/resize state is centralized through `M.start_frame_drag()` / `M.stop_frame_drag()` and `frame._is_user_positioning`.
 - Runtime refreshes, especially CDM refreshes, must not reapply saved anchors, scale, size, layout, or height while the user is positioning.
 - `update_auras()` guards stable frame-shell setters for scale, position, size, height, alpha, backdrop, and move-shell visibility.
-- Move Reset uses `M.create_move_reset_button()` and `M.reset_frame_move_placement()`. It resets position/width, not Move Mode.
+- Move Reset uses shared `addon.CreateMoveResetButton()` through the Aura Frames wrapper and `M.reset_frame_move_placement()`. It resets position/width, not Move Mode.
 
 
 ## Profiles And Reset

@@ -3,13 +3,12 @@
 -- one blocker instance is reused by all dropdowns on the page.
 
 
---#region FILE CONTENTS ======================================================
-
-
 local addon_name, addon = ...
 
 local CreateFrame = CreateFrame
 local UIParent = UIParent
+
+--#region DROPDOWN STATE ======================================================
 
 local DROPDOWN_ICON_TEXTURE = "Interface\\ChatFrame\\ChatFrameExpandArrow"
 local DROPDOWN_ICON_SIZE = 15
@@ -29,6 +28,10 @@ _dropdown_blocker:SetScript("OnMouseDown", function(self)
     self:Hide()
 end)
 
+--#endregion DROPDOWN STATE ===================================================
+
+--#region POPUP VISIBILITY ====================================================
+
 local function _show_dropdown(popup, btn)
     if _dropdown_blocker._active and _dropdown_blocker._active ~= popup then
         _dropdown_blocker._active:Hide()
@@ -47,6 +50,10 @@ local function _hide_dropdown(popup)
         _dropdown_blocker:Hide()
     end
 end
+
+--#endregion POPUP VISIBILITY =================================================
+
+--#region DROPDOWN ICON =======================================================
 
 local function create_dropdown_icon(container, cfg)
     if cfg.show_dropdown_icon == false then return nil end
@@ -80,6 +87,10 @@ local function create_dropdown_icon(container, cfg)
 
     return icon
 end
+
+--#endregion DROPDOWN ICON ====================================================
+
+--#region DROPDOWN FACTORY ====================================================
 
 -- Shared dropdown constructor used by module UIs.
 function addon.CreateDropdown(name, parent, label_text, options, cfg)
@@ -241,4 +252,4 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     return container
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion DROPDOWN FACTORY =================================================

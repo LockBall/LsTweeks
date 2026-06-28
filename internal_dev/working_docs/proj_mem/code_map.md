@@ -57,7 +57,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior.
 - `core/minimap_button.lua`: LibDataBroker/LibDBIcon minimap launcher.
 - `functions/checkbox.lua`: shared checkbox factory.
-- `functions/button.lua`: shared text-fit button helpers and `addon.ApplyStandardButtonStyle()` for standard gold-normal/white-hover button text.
+- `functions/buttons.lua`: shared text-fit button helpers, `addon.CreateMoveResetButton()`, and `addon.ApplyStandardButtonStyle()` for standard gold-normal/white-hover button text.
 - `functions/color_picker.lua`: shared color picker plus reset button.
 - `functions/dropdown.lua`: shared dropdown factory.
 - `functions/module_reset.lua`: ARM-code module reset panel.

@@ -43,7 +43,6 @@ local UI = {
     fishing_slider_width = 130,
     fishing_slider_gap = 10,
     fishing_volumes_panel_height = 180,
-    fishing_group_border_inset = 3,
 }
 
 --#endregion CONFIGURATION =====================================================
@@ -328,9 +327,7 @@ end
 --#region FISHING TAB ==========================================================
 
 local function create_fishing_header_bar(parent, title_text, play_profile_key)
-    local title_bar = addon.CreateSettingsGroupTitleBar(parent, title_text, {
-        inset = UI.fishing_group_border_inset,
-    })
+    local title_bar = addon.CreateSettingsGroupTitleBar(parent, title_text)
 
     local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
     play_button:SetSize(54, 20)

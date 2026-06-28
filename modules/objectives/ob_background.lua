@@ -20,6 +20,8 @@ local OBJECTIVE_BORDER_PADDING_LEFT = 0
 local OBJECTIVE_BORDER_PADDING_RIGHT = -10
 local OBJECTIVE_BORDER_PADDING_TOP = -8
 local OBJECTIVE_BORDER_PADDING_BOTTOM = -6
+local OBJECTIVE_BORDER_OFFSET_X = -12
+local OBJECTIVE_BORDER_OFFSET_Y = -5
 local OBJECTIVE_BORDER_STYLE = {
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
     tile = true,
@@ -32,10 +34,10 @@ local OBJECTIVE_BORDER_COLOR = { r = 1, g = 1, b = 1, a = 0.9 }
 local UI_CONFIG = {
     background_group_offset_x = 20,
     background_group_offset_y = -194,
-    background_group_height = 140,
+    background_group_height = 150,
     background_group_width = 673,
     background_grid_offset_x = 12,
-    background_grid_offset_y = -32,
+    background_grid_offset_y = -37,
     background_grid_col_width = 130,
     background_grid_col_gap = 133,
 }
@@ -404,6 +406,14 @@ local function sync_objective_border()
     else
         border:Hide()
     end
+end
+
+local function set_objective_border_offsets()
+    local db = M.get_db()
+    if not db then return end
+
+    db.objective_tracker_offset_x = OBJECTIVE_BORDER_OFFSET_X
+    db.objective_tracker_offset_y = OBJECTIVE_BORDER_OFFSET_Y
 end
 
 local function ensure_objective_move_hooks(tracker)
@@ -1046,6 +1056,11 @@ local function set_background_color(reason)
 
     local border_is_enabled = is_objective_border_enabled()
     if border_was_enabled ~= border_is_enabled or border_auto_enabled or reason == "reset" then
+        if border_auto_enabled then
+            set_objective_border_offsets()
+            apply_objective_position()
+            sync_objective_position_sliders()
+        end
         sync_objective_border()
         if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetChecked then
             M.controls.objective_tracker_border_checkbox:SetChecked(border_is_enabled)
@@ -1082,6 +1097,20 @@ local function set_objective_position()
     sync_objective_position_sliders()
 end
 
+local function reset_objective_position()
+    local db = M.get_db()
+    if not db then return end
+
+    if is_objective_border_enabled() then
+        set_objective_border_offsets()
+    else
+        db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x or 0
+        db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y or 0
+    end
+    apply_objective_position()
+    sync_objective_position_sliders()
+end
+
 local function set_objective_move_mode(enabled)
     local db = M.get_db()
     if not db then return end
@@ -1100,6 +1129,11 @@ local function set_objective_border(enabled)
     local db = M.get_db()
     if not db then return end
     db.objective_tracker_border = enabled == true
+    if enabled == true then
+        set_objective_border_offsets()
+        apply_objective_position()
+        sync_objective_position_sliders()
+    end
     sync_objective_border()
 end
 
@@ -1158,6 +1192,12 @@ function M.BuildBackgroundSettings(parent)
     M.controls.objective_tracker_snap_to_grid_checkbox = snap_cb
     grid:stack_below(snap_container, move_mode_container, { y = -2 })
     addon.AttachTooltip(snap_label, nil, "Rounds Objective Tracker offsets to a 20 pixel grid when moving or adjusting position.")
+
+    local reset_move_button = addon.CreateMoveResetButton(group, snap_container, {
+        on_click = reset_objective_position,
+    })
+    M.controls.objective_tracker_reset_move_button = reset_move_button
+    addon.AttachTooltip(reset_move_button, nil, "Restores the All Objectives tracker X/Y offsets to their defaults.")
 
     local x_slider = addon.CreateSliderWithBox(
         addon_name .. "ObjectivesPositionX",

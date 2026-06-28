@@ -6,10 +6,9 @@
 -- opts.after_reset lets a module resync only its own runtime/controls.
 
 
---#region FILE CONTENTS ======================================================
-
-
 local addon_name, addon = ...
+
+--#region MODULE RESET FACTORY ================================================
 
 function addon.CreateModuleReset(parent, db, defaults, opts)
     opts = opts or {}
@@ -282,4 +281,4 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
     return container
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion MODULE RESET FACTORY =============================================

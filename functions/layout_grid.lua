@@ -1,9 +1,9 @@
 -- Shared row/column layout helpers for settings panels.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
+
+--#region LEGACY GRID HELPERS =================================================
 
 function addon.GetGridOffset(placement, cfg)
     placement = placement or {}
@@ -37,6 +37,10 @@ function addon.CenterGridControl(frame, parent, placement, cfg)
     }
     addon.SetGridPoint(frame, parent, centered_placement, cfg)
 end
+
+--#endregion LEGACY GRID HELPERS ==============================================
+
+--#region GRID PLACEMENT HELPERS =============================================
 
 local function get_settings_grid_y(grid, row)
     local y = grid.row_start
@@ -145,6 +149,10 @@ local function stack_settings_grid_control_below(grid, control, anchor, opts)
     control:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, opts.y_offset or opts.y or 0)
 end
 
+--#endregion GRID PLACEMENT HELPERS ===========================================
+
+--#region ROW SEPARATORS ======================================================
+
 local function add_settings_grid_row_separator(grid, row)
     local parent = grid.parent
     local line = parent:CreateTexture(nil, "BACKGROUND")
@@ -177,6 +185,10 @@ local function add_settings_grid_row_separators(grid, rows, mode)
         end
     end
 end
+
+--#endregion ROW SEPARATORS ===================================================
+
+--#region SETTINGS GRID FACTORY ==============================================
 
 function addon.CreateSettingsGrid(parent, opts)
     opts = opts or {}
@@ -221,4 +233,4 @@ function addon.CreateSettingsGrid(parent, opts)
     return grid
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion SETTINGS GRID FACTORY ============================================

@@ -2,11 +2,15 @@
 -- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
 
+--#region SLIDER CONSTANTS ====================================================
+
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
+
+--#endregion SLIDER CONSTANTS =================================================
+
+--#region SLIDER WITH BOX FACTORY ============================================
 
 function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback, opts)
     opts = opts or {}
@@ -197,4 +201,4 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     return container
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion SLIDER WITH BOX FACTORY ==========================================

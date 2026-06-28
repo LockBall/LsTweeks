@@ -1,9 +1,10 @@
 -- Shared button helpers for text-fit sizing and simple UIPanel buttons.
 
 
---#region FILE CONTENTS ======================================================
-
 local _, addon = ...
+
+
+--#region CONSTANTS ============================================================
 
 local DEFAULT_TEXT_PADDING_X = 24
 local DEFAULT_BUTTON_HEIGHT = 22
@@ -13,6 +14,11 @@ local STANDARD_BUTTON_STYLE = {
     highlight_font_object = GameFontHighlightSmall,
     disabled_font_object = GameFontDisableSmall,
 }
+
+--#endregion CONSTANTS =========================================================
+
+
+--#region TEXT MEASUREMENT =====================================================
 
 local function get_measure_string()
     if addon._button_measure_string then
@@ -47,6 +53,11 @@ function addon.GetTextFitWidth(text_or_list, padding_x, min_width, max_width, fo
     return width
 end
 
+--#endregion TEXT MEASUREMENT ==================================================
+
+
+--#region STANDARD STYLE =======================================================
+
 function addon.ApplyStandardButtonStyle(button, opts)
     if not button then return end
 
@@ -65,6 +76,11 @@ function addon.ApplyStandardButtonStyle(button, opts)
         button:SetDisabledFontObject(disabled_font_object)
     end
 end
+
+--#endregion STANDARD STYLE ====================================================
+
+
+--#region TEXT BUTTONS =========================================================
 
 function addon.SizeButtonToText(button, text, opts)
     if not button then return 0 end
@@ -113,4 +129,24 @@ function addon.CreateTextButton(parent, text, on_click, opts)
     return button
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion TEXT BUTTONS ======================================================
+
+
+--#region MOVE RESET BUTTONS ===================================================
+
+function addon.CreateMoveResetButton(parent, anchor_to, opts)
+    opts = opts or {}
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button:SetSize(opts.width or 110, opts.height or DEFAULT_BUTTON_HEIGHT)
+    if anchor_to then
+        button:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", opts.x or 0, opts.y or -6)
+    end
+    button:SetText("Move Reset")
+    addon.ApplyStandardButtonStyle(button)
+    if type(opts.on_click) == "function" then
+        button:SetScript("OnClick", opts.on_click)
+    end
+    return button
+end
+
+--#endregion MOVE RESET BUTTONS ===============================================

@@ -3,9 +3,9 @@
 -- the reset button restores the default color from the defaults table.
 
 
---#region FILE CONTENTS ======================================================
-
 local addon_name, addon = ...
+
+--#region COLOR PICKER CONSTANTS =============================================
 
 local control_gap = 5
 local CONTAINER_W  = 95
@@ -20,6 +20,10 @@ local POPUP_BUTTON_W = 64
 local POPUP_BUTTON_GAP = 8
 local AUTO_VISIBLE_DEFAULT = 0.75
 
+--#endregion COLOR PICKER CONSTANTS ===========================================
+
+--#region COLOR VALUE HELPERS =================================================
+
 local function format_alpha_percent(a)
     if a == nil then a = 1 end
     return tostring(math.floor((a * 100) + 0.5))
@@ -29,6 +33,10 @@ local function color_alpha_or_default(a, default)
     if a == nil then return default end
     return a
 end
+
+--#endregion COLOR VALUE HELPERS ==============================================
+
+--#region POPUP FRAME HELPERS =================================================
 
 local function resize_popup_action_buttons()
     local footer = ColorPickerFrame and ColorPickerFrame["Footer"]
@@ -116,6 +124,10 @@ local function set_color_picker_value_midpoint()
     return false
 end
 
+--#endregion POPUP FRAME HELPERS ==============================================
+
+--#region POPUP ALPHA INPUT ===================================================
+
 local function ensure_popup_alpha_percent()
     if ColorPickerFrame._lstweeks_alpha_percent then
         return ColorPickerFrame._lstweeks_alpha_percent
@@ -191,6 +203,10 @@ local function show_popup_alpha_percent(get_current, set_alpha)
     box:SetScript("OnEditFocusLost", commit_alpha)
     frame:Show()
 end
+
+--#endregion POPUP ALPHA INPUT ================================================
+
+--#region COLOR PICKER FACTORY ===============================================
 
 function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback)
     local container = addon.CreateControlPanel(parent, CONTAINER_W, CONTAINER_H)
@@ -334,4 +350,4 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     return container
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion COLOR PICKER FACTORY =============================================
