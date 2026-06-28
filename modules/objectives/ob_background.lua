@@ -416,6 +416,14 @@ local function set_objective_border_offsets()
     db.objective_tracker_offset_y = OBJECTIVE_BORDER_OFFSET_Y
 end
 
+local function get_objective_position_default(key)
+    if is_objective_border_enabled() then
+        if key == "objective_tracker_offset_x" then return OBJECTIVE_BORDER_OFFSET_X end
+        if key == "objective_tracker_offset_y" then return OBJECTIVE_BORDER_OFFSET_Y end
+    end
+    return DEFAULTS.objectives[key]
+end
+
 local function ensure_objective_move_hooks(tracker)
     if objective_move_hooks_installed or not tracker then return end
 
@@ -1210,7 +1218,10 @@ function M.BuildBackgroundSettings(parent)
         "objective_tracker_offset_x",
         DEFAULTS.objectives,
         set_objective_position,
-        { tooltip = "Moves the All Objectives tracker horizontally from its original anchor." }
+        {
+            get_default_value = get_objective_position_default,
+            tooltip = "Moves the All Objectives tracker horizontally from its original anchor.",
+        }
     )
     M.controls.objective_tracker_offset_x_slider = x_slider
     grid:place_at(x_slider, 1, 2)
@@ -1226,7 +1237,10 @@ function M.BuildBackgroundSettings(parent)
         "objective_tracker_offset_y",
         DEFAULTS.objectives,
         set_objective_position,
-        { tooltip = "Moves the All Objectives tracker vertically from its original anchor." }
+        {
+            get_default_value = get_objective_position_default,
+            tooltip = "Moves the All Objectives tracker vertically from its original anchor.",
+        }
     )
     M.controls.objective_tracker_offset_y_slider = y_slider
     grid:place_at(y_slider, 1, 3)

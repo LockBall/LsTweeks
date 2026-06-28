@@ -163,7 +163,9 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
 
     reset:SetScript("OnClick", function()
         local default_value = nil
-        if defaults_table then
+        if type(opts.get_default_value) == "function" then
+            default_value = opts.get_default_value(db_key)
+        elseif defaults_table then
             -- Accept both table.key and table["key"] for Lua flexibility
             default_value = defaults_table[db_key]
         end
