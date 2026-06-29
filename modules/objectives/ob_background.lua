@@ -1382,13 +1382,13 @@ function M.BuildBackgroundSettings(parent)
     )
 
     local background_grid = addon.CreateSettingsGrid(background_group, {
-        column_count = 4,
+        column_count = 3,
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
         col_width = cfg.grid_col_width,
         column_gap_x = cfg.grid_column_gap_x,
         row_heights = { 100 },
-        col_align = { "left", "left", "left", "center" },
+        col_align = { "left", "left", "left" },
         offsets = { default = 0 },
     })
 
@@ -1404,7 +1404,7 @@ function M.BuildBackgroundSettings(parent)
 
     local color_enabled_container, color_enabled_cb, color_enabled_label = addon.CreateCheckbox(
         background_group,
-        "Color BG",
+        "Custom BG",
         is_background_color_enabled(db),
         set_background_color_enabled
     )
@@ -1440,12 +1440,12 @@ function M.BuildBackgroundSettings(parent)
         db,
         "background_color",
         true,
-        "Color",
+        "Custom Color",
         DEFAULTS.objectives,
         set_background_color
     )
     M.controls.background_color_picker = picker
-    background_grid:place_at(picker, 1, 4, nil, { width = picker:GetWidth(), align = "center" })
+    background_grid:stack_below(picker, color_enabled_container, { y = -2 })
     addon.AttachTooltip(picker, nil, "Tints the center color block. The picker alpha controls only that color block.")
 
     local border_container, border_cb, border_label = addon.CreateCheckbox(
@@ -1455,8 +1455,11 @@ function M.BuildBackgroundSettings(parent)
         set_objective_border
     )
     M.controls.objective_tracker_border_checkbox = border_cb
-    background_grid:stack_below(border_container, color_enabled_container, { y = -2 })
+    background_grid:stack_below(border_container, picker, { y = -2 })
     addon.AttachTooltip(border_label, nil, "Shows the LsTweeks dialog border around the All Objectives tracker.")
+
+    local background_width = background_grid[3] - cfg.grid_offset_x + cfg.grid_col_width
+    background_group:SetWidth(math.ceil(background_width + cfg.group_padding_x * 2))
 
     sync_background_controls()
 end

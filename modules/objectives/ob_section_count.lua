@@ -9,15 +9,15 @@ M.controls = M.controls or {}
 --#region SETTINGS AND DEFAULTS ================================================
 
 local UI_CONFIG = {
-    group_offset_x = 210,
-    group_offset_y = -340,
+    group_offset_x = 20,
+    group_offset_y = -514,
     group_width = 1,
     group_height = 112,
     group_padding_x = 12,
     grid_offset_x = 12,
     grid_offset_y = -37,
-    grid_col_width = 180,
-    grid_col_gap = 220,
+    grid_col_width = 130,
+    grid_column_gap_x = 18,
     sub_checkbox_gap_y = -2,
     sub_checkbox_indent_x = 18,
 }
@@ -394,7 +394,7 @@ function M.BuildSectionCountSettings(parent)
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
         col_width = cfg.grid_col_width,
-        col_gap = cfg.grid_col_gap,
+        column_gap_x = cfg.grid_column_gap_x,
         row_heights = { 64 },
         col_align = { "left", "left" },
         offsets = { default = 0 },
