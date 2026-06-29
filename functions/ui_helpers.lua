@@ -86,24 +86,50 @@ end
 
 --#region TOOLTIPS =============================================================
 
+local owned_tooltip
+
+function addon.CreateOwnedTooltip(name, parent)
+    return CreateFrame("GameTooltip", name or (addon_name .. "Tooltip"), parent or UIParent, "GameTooltipTemplate")
+end
+
+function addon.GetOwnedTooltip()
+    if not owned_tooltip then
+        owned_tooltip = addon.CreateOwnedTooltip()
+    end
+    return owned_tooltip
+end
+
+function addon.HideOwnedTooltip()
+    if owned_tooltip then
+        owned_tooltip:Hide()
+    end
+end
+
+function addon.ShowOwnedTooltip(owner, title, body, anchor)
+    if not owner or ((not title or title == "") and (not body or body == "")) then return end
+
+    local tooltip = addon.GetOwnedTooltip()
+    tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
+    if title and title ~= "" then
+        tooltip:SetText(title, 1, 0.82, 0)
+    else
+        tooltip:ClearLines()
+    end
+    if body and body ~= "" then
+        tooltip:AddLine(body, 0.95, 0.95, 0.95, true)
+    end
+    tooltip:Show()
+end
+
 function addon.AttachTooltip(target, title, body)
     if not target or ((not title or title == "") and (not body or body == "")) then return end
 
     target:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if title and title ~= "" then
-            GameTooltip:SetText(title, 1, 0.82, 0)
-        else
-            GameTooltip:ClearLines()
-        end
-        if body and body ~= "" then
-            GameTooltip:AddLine(body, 0.95, 0.95, 0.95, true)
-        end
-        GameTooltip:Show()
+        addon.ShowOwnedTooltip(self, title, body)
     end)
 
     target:HookScript("OnLeave", function()
-        GameTooltip:Hide()
+        addon.HideOwnedTooltip()
     end)
 end
 

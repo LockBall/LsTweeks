@@ -32,7 +32,7 @@ M.defaults = {
         show_tracked_achievement_count_on_hover = false,
         customize_background = false,
         background_color_enabled = false,
-        background_color = { r = 0, g = 0, b = 0, a = 0 },
+        background_color = { r = 0.25, g = 0.25, b = 0.25, a = 0.75 },
         background_alpha = 0.5,
         objective_tracker_move_mode = false,
         objective_tracker_snap_to_grid = false,

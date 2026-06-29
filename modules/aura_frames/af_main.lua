@@ -250,62 +250,67 @@ end
 
 --#region AURA ICON TOOLTIPS ===================================================
 
-local function tooltip_has_lines()
-    return (not GameTooltip.NumLines) or GameTooltip:NumLines() > 0
+local function get_aura_tooltip()
+    return addon.GetOwnedTooltip()
 end
 
-local function try_set_unit_aura_tooltip(obj)
+local function tooltip_has_lines(tooltip)
+    return (not tooltip.NumLines) or tooltip:NumLines() > 0
+end
+
+local function try_set_unit_aura_tooltip(tooltip, obj)
     if not obj.aura_index then return false end
     ---@diagnostic disable-next-line: undefined-field
-    local set_unit_aura_by_instance_id = GameTooltip.SetUnitAuraByAuraInstanceID
+    local set_unit_aura_by_instance_id = tooltip.SetUnitAuraByAuraInstanceID
     if not set_unit_aura_by_instance_id then return false end
 
     -- Modern API (12.0.5+): stable auraInstanceID lookup, no index fragility.
-    local ok = pcall(set_unit_aura_by_instance_id, GameTooltip, "player", obj.aura_index)
-    return ok and tooltip_has_lines()
+    local ok = pcall(set_unit_aura_by_instance_id, tooltip, "player", obj.aura_index)
+    return ok and tooltip_has_lines(tooltip)
 end
 
-local function try_set_spell_tooltip(obj)
+local function try_set_spell_tooltip(tooltip, obj)
     local spell_id = obj.aura_spell_id
     if not spell_id then return false end
     if issecretvalue and issecretvalue(spell_id) then return false end
-    if not GameTooltip.SetSpellByID then return false end
+    if not tooltip.SetSpellByID then return false end
 
-    local ok = pcall(GameTooltip.SetSpellByID, GameTooltip, spell_id)
+    local ok = pcall(tooltip.SetSpellByID, tooltip, spell_id)
     if not ok then return false end
-    return tooltip_has_lines()
+    return tooltip_has_lines(tooltip)
 end
 
-local function add_basic_aura_tooltip_lines(obj)
-    GameTooltip:AddLine(obj.aura_name, 1, 1, 1)
+local function add_basic_aura_tooltip_lines(tooltip, obj)
+    tooltip:AddLine(obj.aura_name, 1, 1, 1)
     if obj.aura_duration and obj.aura_duration > 0 then
         local remaining_str = obj.aura_remaining and format("%.1f", obj.aura_remaining) or "?"
         local duration_str = format("%.1f", obj.aura_duration)
-        GameTooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
+        tooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
     else
-        GameTooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
+        tooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
     end
 end
 
 local function show_aura_icon_tooltip(obj)
+    local tooltip = get_aura_tooltip()
     if not obj.aura_name then
-        GameTooltip:Hide()
+        tooltip:Hide()
         return
     end
     if obj.tooltip_enabled == false then
-        GameTooltip:Hide()
+        tooltip:Hide()
         return
     end
 
-    GameTooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-    GameTooltip:ClearLines()
+    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    tooltip:ClearLines()
 
-    local updated = try_set_unit_aura_tooltip(obj) or try_set_spell_tooltip(obj)
+    local updated = try_set_unit_aura_tooltip(tooltip, obj) or try_set_spell_tooltip(tooltip, obj)
     if not updated then
-        add_basic_aura_tooltip_lines(obj)
+        add_basic_aura_tooltip_lines(tooltip, obj)
     end
 
-    GameTooltip:Show()
+    tooltip:Show()
 end
 
 local function aura_frame_contains_mouse(frame)
@@ -454,7 +459,7 @@ local function bind_icon_tooltip(obj)
         show_aura_icon_tooltip(self)
     end)
     obj:SetScript("OnLeave", function()
-        GameTooltip:Hide()
+        addon.HideOwnedTooltip()
         handle_frame_mouse_leave(obj:GetParent())
     end)
     obj:SetScript("OnMouseUp", function(self, button)

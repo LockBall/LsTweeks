@@ -205,7 +205,6 @@ end
 local function is_objective_border_enabled()
     local db = M.get_db()
     if not M.is_runtime_enabled() or not db then return false end
-    if not is_background_color_enabled(db) then return false end
     if db.objective_tracker_border ~= nil then
         return db.objective_tracker_border == true
     end
@@ -1152,9 +1151,10 @@ local function set_background_color(reason)
     local border_was_enabled = is_objective_border_enabled()
     local border_auto_enabled = false
     if reason == "reset" and db then
-        db.objective_tracker_border = nil
-        background_color_reset_pending = true
-        background_color_auto_enabled_border = false
+        db.objective_tracker_border = true
+        background_color_reset_pending = false
+        background_color_auto_enabled_border = true
+        border_auto_enabled = true
     elseif reason ~= "cancel" and db and background_color_reset_pending and not is_background_color_default(db.background_color) then
         db.objective_tracker_border = true
         background_color_reset_pending = false
@@ -1193,9 +1193,6 @@ local function sync_background_controls()
     local color_enabled = should_show_background_color()
     if M.controls.background_color_picker and M.controls.background_color_picker.SetEnabled then
         M.controls.background_color_picker:SetEnabled(color_enabled)
-    end
-    if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetEnabled then
-        M.controls.objective_tracker_border_checkbox:SetEnabled(color_enabled)
     end
     if M.controls.background_alpha_slider and M.controls.background_alpha_slider.SetEnabled then
         M.controls.background_alpha_slider:SetEnabled(wow_enabled)
