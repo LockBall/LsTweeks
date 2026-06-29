@@ -809,7 +809,17 @@ local function build_frame_settings_panel(parent, frame_config, opts)
 
     local fade_ooc_container, _, fade_ooc_label = bound_cb("Fade OOC", "fade_ooc", 4, 1)
     add_label_tooltip(fade_ooc_container, fade_ooc_label, "Fade Out Of Combat")
-    local ooc_alpha_slider = create_frame_slider(parent, frame_config, "OOCAlpha", "Fade Alpha", 0.1, 1, 0.05, "ooc_alpha", update)
+    local ooc_alpha_slider = create_frame_slider(
+        parent,
+        frame_config,
+        "OOCAlpha",
+        "Fade Alpha",
+        M.MIN_WOW_COOLDOWN_OOC_ALPHA or 0,
+        M.MAX_WOW_COOLDOWN_OOC_ALPHA or 1,
+        M.WOW_COOLDOWN_OOC_ALPHA_STEP or 0.05,
+        "ooc_alpha",
+        update
+    )
     grid:place_at(ooc_alpha_slider, 4, 2)
 
     local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", 0, 10, 0.1, "fade_delay", update)
