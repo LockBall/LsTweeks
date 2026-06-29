@@ -36,11 +36,11 @@ end
 --#region GUI ==================================================================
 
 function M.BuildSettings(parent)
-    if M.BuildAutoCollapseSettings then
-        M.BuildAutoCollapseSettings(parent)
-    end
     if M.BuildBackgroundSettings then
         M.BuildBackgroundSettings(parent)
+    end
+    if M.BuildAutoCollapseSettings then
+        M.BuildAutoCollapseSettings(parent)
     end
     if M.BuildSectionCountSettings then
         M.BuildSectionCountSettings(parent)
@@ -99,6 +99,9 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name == addon_name then
             Ls_Tweeks_DB = Ls_Tweeks_DB or {}
+            if M.migrate_background_settings then
+                M.migrate_background_settings(Ls_Tweeks_DB.objectives)
+            end
             addon.apply_defaults(DEFAULTS, Ls_Tweeks_DB)
             if addon.register_category then
                 addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 600, module_key = MODULE_KEY })

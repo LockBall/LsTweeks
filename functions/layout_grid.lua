@@ -192,8 +192,8 @@ end
 
 function addon.CreateSettingsGrid(parent, opts)
     opts = opts or {}
-    local col_gap = opts.col_gap or 150
     local col_width = opts.col_width or 190
+    local col_gap = opts.col_gap or (opts.column_gap_x and (col_width + opts.column_gap_x)) or 150
     local col_offset = opts.col_offset or -20
     local row_gap = opts.row_gap or 20
     local column_count = opts.column_count or 4

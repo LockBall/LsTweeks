@@ -33,6 +33,8 @@ Slash command: `/lst`
 
 
 ### Objectives
+- Separate **Position** controls for moving the All Objectives tracker, including snap-to-grid offsets.
+- Separate controls for Blizzard's Objective Tracker background and LsTweeks' custom color background.
 - Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
 - Optional **Section Count** checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - Keeps the All Objectives background sized to the visible tracker sections when Objectives module behavior is active.

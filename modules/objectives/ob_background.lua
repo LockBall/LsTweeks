@@ -32,14 +32,18 @@ local OBJECTIVE_BORDER_STYLE = {
 local OBJECTIVE_BORDER_COLOR = { r = 1, g = 1, b = 1, a = 0.9 }
 
 local UI_CONFIG = {
-    background_group_offset_x = 20,
-    background_group_offset_y = -194,
+    group_width = 673,
+    group_offset_x = 20,
+    group_padding_x = 12,
+    position_group_offset_y = -20,
+    position_group_width = 1,
+    position_group_height = 150,
+    background_group_offset_y = -180,
     background_group_height = 150,
-    background_group_width = 673,
-    background_grid_offset_x = 12,
-    background_grid_offset_y = -37,
-    background_grid_col_width = 130,
-    background_grid_col_gap = 133,
+    grid_offset_x = 12,
+    grid_offset_y = -37,
+    grid_col_width = 130,
+    grid_column_gap_x = 18,
 }
 
 local BACKGROUND_ALPHA_REGION_KEYS = {
@@ -74,6 +78,8 @@ local background_color_last_signature = "none"
 local background_color_state = "unavailable"
 local background_regions_reset = false
 local background_last_applied_alpha = nil
+local background_alpha_applying = false
+local background_edit_mode_state = "unavailable"
 local background_color_overlay_anchor = nil
 local background_color_reset_pending = false
 local background_color_auto_enabled_border = false
@@ -187,9 +193,19 @@ local function is_background_color_default(color)
         and (color.a or DEFAULT_BACKGROUND_COLOR.a or 1) == (DEFAULT_BACKGROUND_COLOR.a or 1)
 end
 
+local function is_background_color_enabled(db)
+    if not db then return false end
+    if db.background_color_enabled ~= nil then
+        return db.background_color_enabled == true
+    end
+
+    return db.customize_background == true and not is_background_color_default(db.background_color)
+end
+
 local function is_objective_border_enabled()
     local db = M.get_db()
     if not M.is_runtime_enabled() or not db then return false end
+    if not is_background_color_enabled(db) then return false end
     if db.objective_tracker_border ~= nil then
         return db.objective_tracker_border == true
     end
@@ -528,6 +544,79 @@ local function get_background_opacity()
     return addon.clamp_number(db and db.background_alpha, DEFAULTS.objectives.background_alpha or 0.5, COLOR_RANGE)
 end
 
+local function get_edit_mode_objective_opacity_setting()
+    return Enum
+        and Enum.EditModeObjectiveTrackerSetting
+        and Enum.EditModeObjectiveTrackerSetting.Opacity
+        or nil
+end
+
+local function set_wow_background_opacity(opacity, update_edit_mode)
+    local alpha = addon.clamp_number(opacity, DEFAULTS.objectives.background_alpha or 0.5, COLOR_RANGE)
+    local percent = math.floor((alpha * 100) + 0.5)
+    local tracker = get_objective_tracker()
+    local setting = get_edit_mode_objective_opacity_setting()
+
+    if update_edit_mode ~= false and tracker and setting ~= nil and tracker.HasSetting and tracker:HasSetting(setting) then
+        local manager = EditModeManagerFrame
+        if manager and manager.OnSystemSettingChange then
+            background_alpha_applying = true
+            local ok = pcall(manager.OnSystemSettingChange, manager, tracker, setting, percent)
+            background_alpha_applying = false
+            if ok then
+                if ObjectiveTrackerManager and ObjectiveTrackerManager.SetOpacity then
+                    background_alpha_applying = true
+                    ObjectiveTrackerManager:SetOpacity(percent)
+                    background_alpha_applying = false
+                end
+                background_edit_mode_state = "edit_mode:" .. tostring(percent)
+                return true
+            end
+        end
+
+        if tracker.UpdateSystemSettingValue then
+            background_alpha_applying = true
+            local ok = pcall(tracker.UpdateSystemSettingValue, tracker, setting, percent)
+            background_alpha_applying = false
+            if ok then
+                if ObjectiveTrackerManager and ObjectiveTrackerManager.SetOpacity then
+                    background_alpha_applying = true
+                    ObjectiveTrackerManager:SetOpacity(percent)
+                    background_alpha_applying = false
+                end
+                background_edit_mode_state = "system_frame:" .. tostring(percent)
+                return true
+            end
+        end
+    end
+
+    if ObjectiveTrackerManager and ObjectiveTrackerManager.SetOpacity then
+        background_alpha_applying = true
+        ObjectiveTrackerManager:SetOpacity(percent)
+        background_alpha_applying = false
+        background_edit_mode_state = "manager:" .. tostring(percent)
+        return true
+    end
+
+    if tracker and tracker.SetBackgroundAlpha then
+        background_alpha_applying = true
+        tracker:SetBackgroundAlpha(alpha)
+        background_alpha_applying = false
+        background_edit_mode_state = "tracker_alpha:" .. tostring(alpha)
+        return true
+    end
+
+    local background = tracker and tracker.NineSlice
+    if background and background.SetAlpha then
+        background:SetAlpha(alpha)
+        background_edit_mode_state = "nineslice_alpha:" .. tostring(alpha)
+        return true
+    end
+
+    background_edit_mode_state = "unavailable"
+    return false
+end
+
 local function ensure_background_color()
     local db = M.get_db()
     if not db then return end
@@ -546,6 +635,19 @@ end
 local function should_customize_background()
     local db = M.get_db()
     return M.is_runtime_enabled() and db and db.customize_background == true
+end
+
+local function should_show_background_color()
+    local db = M.get_db()
+    return M.is_runtime_enabled() and is_background_color_enabled(db)
+end
+
+function M.migrate_background_settings(db)
+    if not db then return end
+    if db.background_color_enabled ~= nil then return end
+    if db.customize_background == true and not is_background_color_default(db.background_color) then
+        db.background_color_enabled = true
+    end
 end
 
 local function get_color_signature(color)
@@ -663,11 +765,10 @@ local function apply_background_color(color, force, opacity_override, show_color
         return
     end
 
-    if background.SetAlpha and (force or background_last_applied_alpha ~= opacity) then
-        background:SetAlpha(opacity)
+    if force or background_last_applied_alpha ~= opacity then
+        set_wow_background_opacity(opacity, opacity_override == nil or opacity == 0)
         background_last_applied_alpha = opacity
     end
-
     local applied = 0
     if force or not background_regions_reset then
         hide_background_color_frame(background)
@@ -688,11 +789,14 @@ end
 
 local function apply_configured_background_color(force)
     if not M.is_runtime_enabled() then return end
-    if should_customize_background() then
-        apply_background_color(get_background_color(), force, nil, true)
-    else
-        apply_background_color(DEFAULT_BACKGROUND_COLOR, force, 0, false)
+    local show_blizzard_background = should_customize_background()
+    local show_color_background = should_show_background_color()
+    local opacity
+    if not show_blizzard_background then
+        opacity = 0
     end
+    local color = show_color_background and get_background_color() or DEFAULT_BACKGROUND_COLOR
+    apply_background_color(color, force, opacity, show_color_background)
 end
 
 local function restore_background_color()
@@ -877,6 +981,7 @@ local function ensure_background_hooks()
     if tracker.SetBackgroundAlpha then
         hooksecurefunc(tracker, "SetBackgroundAlpha", function()
             if not M.is_runtime_enabled() then return end
+            if background_alpha_applying then return end
             apply_configured_background_color(true)
         end)
     end
@@ -987,8 +1092,11 @@ function M.get_background_status()
     fields[#fields + 1] = "bg_force_expand=" .. tostring(background_last_force_expand)
     fields[#fields + 1] = "bg_blocked_anchor=" .. tostring(background_last_blocked_anchor)
     fields[#fields + 1] = "bg_force_expand_grace=" .. tostring(is_in_force_expand_grace())
-    fields[#fields + 1] = "bg_enabled=" .. tostring(should_customize_background() == true)
+    fields[#fields + 1] = "bg_enabled=" .. tostring(should_customize_background() == true or should_show_background_color() == true)
+    fields[#fields + 1] = "bg_wow_enabled=" .. tostring(should_customize_background() == true)
+    fields[#fields + 1] = "bg_color_enabled=" .. tostring(should_show_background_color() == true)
     fields[#fields + 1] = "bg_color_state=" .. tostring(background_color_state)
+    fields[#fields + 1] = "bg_edit_mode_state=" .. tostring(background_edit_mode_state)
     fields[#fields + 1] = "bg_color_signature=" .. tostring(background_color_last_signature)
     fields[#fields + 1] = "bg_alpha=" .. tostring(get_background_opacity())
     fields[#fields + 1] = "bg_color_alpha=" .. tostring(get_background_color_alpha())
@@ -1081,12 +1189,16 @@ local function set_background_alpha()
 end
 
 local function sync_background_controls()
-    local enabled = should_customize_background()
+    local wow_enabled = should_customize_background()
+    local color_enabled = should_show_background_color()
     if M.controls.background_color_picker and M.controls.background_color_picker.SetEnabled then
-        M.controls.background_color_picker:SetEnabled(enabled)
+        M.controls.background_color_picker:SetEnabled(color_enabled)
+    end
+    if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetEnabled then
+        M.controls.objective_tracker_border_checkbox:SetEnabled(color_enabled)
     end
     if M.controls.background_alpha_slider and M.controls.background_alpha_slider.SetEnabled then
-        M.controls.background_alpha_slider:SetEnabled(enabled)
+        M.controls.background_alpha_slider:SetEnabled(wow_enabled)
     end
 end
 
@@ -1096,6 +1208,31 @@ local function set_customize_background(enabled)
     db.customize_background = enabled == true
     sync_background_controls()
     apply_configured_background_color(true)
+    local tracker = get_objective_tracker()
+    if tracker and tracker.Update then
+        tracker:Update()
+    end
+    queue_background_sync("background setting changed")
+end
+
+local function set_background_color_enabled(enabled)
+    local db = M.get_db()
+    if not db then return end
+
+    local border_was_enabled = is_objective_border_enabled()
+    db.background_color_enabled = enabled == true
+    sync_background_controls()
+    apply_configured_background_color(true)
+
+    local border_is_enabled = is_objective_border_enabled()
+    if border_was_enabled ~= border_is_enabled then
+        if border_is_enabled then
+            set_objective_border_offsets()
+            apply_objective_position()
+            sync_objective_position_sliders()
+        end
+        sync_objective_border()
+    end
 end
 
 local function set_objective_position()
@@ -1151,57 +1288,47 @@ function M.BuildBackgroundSettings(parent)
     if not db then return end
     ensure_background_color()
 
-    local group = addon.CreateSettingsGroup(
+    local position_group = addon.CreateSettingsGroup(
         parent,
-        "Background",
-        cfg.background_group_width,
-        cfg.background_group_height,
-        cfg.background_group_offset_x,
-        cfg.background_group_offset_y
+        "Position",
+        cfg.position_group_width,
+        cfg.position_group_height,
+        cfg.group_offset_x,
+        cfg.position_group_offset_y
     )
 
-    local grid = addon.CreateSettingsGrid(group, {
-        column_count = 5,
-        col_offset = cfg.background_grid_offset_x,
-        row_start = cfg.background_grid_offset_y,
-        col_width = cfg.background_grid_col_width,
-        col_gap = cfg.background_grid_col_gap,
+    local position_grid = addon.CreateSettingsGrid(position_group, {
+        column_count = 3,
+        col_offset = cfg.grid_offset_x,
+        row_start = cfg.grid_offset_y,
+        col_width = cfg.grid_col_width,
+        column_gap_x = cfg.grid_column_gap_x,
         row_heights = { 100 },
-        col_align = { "left", "left", "left", "center", "left" },
+        col_align = { "left", "left", "left" },
         offsets = { default = 0 },
     })
 
-    local customize_container, customize_cb, customize_label = addon.CreateCheckbox(
-        group,
-        "Enable",
-        db.customize_background == true,
-        set_customize_background
-    )
-    M.controls.customize_background_checkbox = customize_cb
-    grid:place_at(customize_container, 1, 1)
-    addon.AttachTooltip(customize_label, nil, "Shows the Objective Tracker background and enables color and opacity controls.")
-
     local move_mode_container, move_mode_cb, move_mode_label = addon.CreateCheckbox(
-        group,
+        position_group,
         "Move Mode",
         db.objective_tracker_move_mode == true,
         set_objective_move_mode
     )
     M.controls.objective_tracker_move_mode_checkbox = move_mode_cb
-    grid:stack_below(move_mode_container, customize_container, { y = -2 })
+    position_grid:place_at(move_mode_container, 1, 1)
     addon.AttachTooltip(move_mode_label, nil, "Allows dragging the All Objectives tracker and saves the result to the X/Y offset sliders.")
 
     local snap_container, snap_cb, snap_label = addon.CreateCheckbox(
-        group,
+        position_group,
         "Snap to Grid",
         db.objective_tracker_snap_to_grid == true,
         set_objective_snap_to_grid
     )
     M.controls.objective_tracker_snap_to_grid_checkbox = snap_cb
-    grid:stack_below(snap_container, move_mode_container, { y = -2 })
+    position_grid:stack_below(snap_container, move_mode_container, { y = -2 })
     addon.AttachTooltip(snap_label, nil, "Rounds Objective Tracker offsets to a 20 pixel grid when moving or adjusting position.")
 
-    local reset_move_button = addon.CreateMoveResetButton(group, snap_container, {
+    local reset_move_button = addon.CreateMoveResetButton(position_group, snap_container, {
         on_click = reset_objective_position,
     })
     M.controls.objective_tracker_reset_move_button = reset_move_button
@@ -1209,7 +1336,7 @@ function M.BuildBackgroundSettings(parent)
 
     local x_slider = addon.CreateSliderWithBox(
         addon_name .. "ObjectivesPositionX",
-        group,
+        position_group,
         "X Offset",
         POSITION_RANGE.min,
         POSITION_RANGE.max,
@@ -1224,11 +1351,11 @@ function M.BuildBackgroundSettings(parent)
         }
     )
     M.controls.objective_tracker_offset_x_slider = x_slider
-    grid:place_at(x_slider, 1, 2)
+    position_grid:place_at(x_slider, 1, 2)
 
     local y_slider = addon.CreateSliderWithBox(
         addon_name .. "ObjectivesPositionY",
-        group,
+        position_group,
         "Y Offset",
         POSITION_RANGE.min,
         POSITION_RANGE.max,
@@ -1243,12 +1370,55 @@ function M.BuildBackgroundSettings(parent)
         }
     )
     M.controls.objective_tracker_offset_y_slider = y_slider
-    grid:place_at(y_slider, 1, 3)
+    position_grid:place_at(y_slider, 1, 3)
+
+    local position_width = position_grid[3] - cfg.grid_offset_x + (y_slider:GetWidth() or cfg.grid_col_width)
+    position_group:SetWidth(math.ceil(position_width + cfg.group_padding_x * 2))
+
+    local background_group = addon.CreateSettingsGroup(
+        parent,
+        "Background",
+        cfg.group_width,
+        cfg.background_group_height,
+        cfg.group_offset_x,
+        cfg.background_group_offset_y
+    )
+
+    local background_grid = addon.CreateSettingsGrid(background_group, {
+        column_count = 4,
+        col_offset = cfg.grid_offset_x,
+        row_start = cfg.grid_offset_y,
+        col_width = cfg.grid_col_width,
+        column_gap_x = cfg.grid_column_gap_x,
+        row_heights = { 100 },
+        col_align = { "left", "left", "left", "center" },
+        offsets = { default = 0 },
+    })
+
+    local customize_container, customize_cb, customize_label = addon.CreateCheckbox(
+        background_group,
+        "WoW BG",
+        db.customize_background == true,
+        set_customize_background
+    )
+    M.controls.customize_background_checkbox = customize_cb
+    background_grid:place_at(customize_container, 1, 1)
+    addon.AttachTooltip(customize_label, nil, "Sets Blizzard's Objective Tracker Edit Mode opacity to the saved WoW BG Alpha value, or 0 when unchecked.")
+
+    local color_enabled_container, color_enabled_cb, color_enabled_label = addon.CreateCheckbox(
+        background_group,
+        "Color BG",
+        is_background_color_enabled(db),
+        set_background_color_enabled
+    )
+    M.controls.background_color_enabled_checkbox = color_enabled_cb
+    background_grid:place_at(color_enabled_container, 1, 3)
+    addon.AttachTooltip(color_enabled_label, nil, "Shows the LsTweeks center color block and enables the color picker and border.")
 
     local background_alpha_slider = addon.CreateSliderWithBox(
         addon_name .. "ObjectivesBackgroundAlpha",
-        group,
-        "Alpha",
+        background_group,
+        "WoW BG Alpha",
         0,
         1,
         0.05,
@@ -1258,7 +1428,7 @@ function M.BuildBackgroundSettings(parent)
         set_background_alpha,
         {
             display_decimals = 2,
-            tooltip = "Controls the actual Blizzard Objective Tracker background alpha.",
+            tooltip = "Controls Blizzard's Objective Tracker Edit Mode opacity without opening Edit Mode.",
         }
     )
     background_alpha_slider.slider:HookScript("OnValueChanged", function()
@@ -1266,10 +1436,10 @@ function M.BuildBackgroundSettings(parent)
         apply_configured_background_color(false)
     end)
     M.controls.background_alpha_slider = background_alpha_slider
-    grid:place_at(background_alpha_slider, 1, 4)
+    background_grid:place_at(background_alpha_slider, 1, 2)
 
     local picker = addon.CreateColorPicker(
-        group,
+        background_group,
         db,
         "background_color",
         true,
@@ -1278,17 +1448,17 @@ function M.BuildBackgroundSettings(parent)
         set_background_color
     )
     M.controls.background_color_picker = picker
-    grid:place_at(picker, 1, 5, nil, { width = picker:GetWidth(), align = "center" })
+    background_grid:place_at(picker, 1, 4, nil, { width = picker:GetWidth(), align = "center" })
     addon.AttachTooltip(picker, nil, "Tints the center color block. The picker alpha controls only that color block.")
 
     local border_container, border_cb, border_label = addon.CreateCheckbox(
-        group,
+        background_group,
         "Border",
         is_objective_border_enabled(),
         set_objective_border
     )
     M.controls.objective_tracker_border_checkbox = border_cb
-    grid:stack_below(border_container, picker, { y = -2, align = "center", column_width = cfg.background_grid_col_width })
+    background_grid:stack_below(border_container, color_enabled_container, { y = -2 })
     addon.AttachTooltip(border_label, nil, "Shows the LsTweeks dialog border around the All Objectives tracker.")
 
     sync_background_controls()

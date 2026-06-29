@@ -10,12 +10,15 @@ M.controls = M.controls or {}
 
 local UI_CONFIG = {
     group_offset_x = 210,
-    group_offset_y = -20,
+    group_offset_y = -340,
+    group_width = 1,
     group_height = 112,
     group_padding_x = 12,
-    first_checkbox_offset_y = -32,
-    sub_checkbox_offset_y = -24,
-    second_column_offset_x = 122,
+    grid_offset_x = 12,
+    grid_offset_y = -37,
+    grid_col_width = 180,
+    grid_col_gap = 220,
+    sub_checkbox_gap_y = -2,
     sub_checkbox_indent_x = 18,
 }
 
@@ -377,17 +380,28 @@ end
 
 function M.BuildSectionCountSettings(parent)
     local cfg = UI_CONFIG
-    local count_group, count_title = addon.CreateSettingsGroup(
+    local count_group = addon.CreateSettingsGroup(
         parent,
         "Section Count",
-        1,
+        cfg.group_width,
         cfg.group_height,
         cfg.group_offset_x,
         cfg.group_offset_y
     )
 
+    local grid = addon.CreateSettingsGrid(count_group, {
+        column_count = 2,
+        col_offset = cfg.grid_offset_x,
+        row_start = cfg.grid_offset_y,
+        col_width = cfg.grid_col_width,
+        col_gap = cfg.grid_col_gap,
+        row_heights = { 64 },
+        col_align = { "left", "left" },
+        offsets = { default = 0 },
+    })
+
     local show_quest_log, show_tracked_achievements, quest_log_on_hover, tracked_achievements_on_hover = get_count_settings()
-    local function create_count_checkbox(label, checked, db_key, control_key, x, y, tooltip)
+    local function create_count_checkbox(label, checked, db_key, control_key, tooltip)
         local container, checkbox, checkbox_label = addon.CreateCheckbox(
             count_group,
             label,
@@ -397,7 +411,6 @@ function M.BuildSectionCountSettings(parent)
             end
         )
         M.controls[control_key] = checkbox
-        container:SetPoint("TOPLEFT", count_group, "TOPLEFT", x, y)
         addon.AttachTooltip(checkbox_label, nil, tooltip)
         return container
     end
@@ -407,44 +420,42 @@ function M.BuildSectionCountSettings(parent)
         show_quest_log,
         "show_quest_log_count",
         "show_quest_log_count_checkbox",
-        cfg.group_padding_x,
-        cfg.first_checkbox_offset_y,
         "Shows accepted quest log count and capacity in the Quests section title."
     )
+    grid:place_at(quest_log_container, 1, 1)
+
     local quest_hover_container = create_count_checkbox(
         "On Hover",
         quest_log_on_hover,
         "show_quest_log_count_on_hover",
         "show_quest_log_count_on_hover_checkbox",
-        cfg.group_padding_x + cfg.sub_checkbox_indent_x,
-        cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y,
         "Shows the Quests count only while hovering the Quests section title."
     )
+    grid:stack_below(quest_hover_container, quest_log_container, { x = cfg.sub_checkbox_indent_x, y = cfg.sub_checkbox_gap_y })
+
     local tracked_achievement_container = create_count_checkbox(
         "Achievements",
         show_tracked_achievements,
         "show_tracked_achievement_count",
         "show_tracked_achievement_count_checkbox",
-        cfg.group_padding_x + cfg.second_column_offset_x,
-        cfg.first_checkbox_offset_y,
         "Shows tracked achievement count and capacity in the Achievements section title."
     )
+    grid:place_at(tracked_achievement_container, 1, 2)
+
     local achievement_hover_container = create_count_checkbox(
         "On Hover",
         tracked_achievements_on_hover,
         "show_tracked_achievement_count_on_hover",
         "show_tracked_achievement_count_on_hover_checkbox",
-        cfg.group_padding_x + cfg.second_column_offset_x + cfg.sub_checkbox_indent_x,
-        cfg.first_checkbox_offset_y + cfg.sub_checkbox_offset_y,
         "Shows the Achievements count only while hovering the Achievements section title."
     )
+    grid:stack_below(achievement_hover_container, tracked_achievement_container, { x = cfg.sub_checkbox_indent_x, y = cfg.sub_checkbox_gap_y })
 
     local count_width = math.max(
-        count_title:GetStringWidth() or 0,
-        cfg.second_column_offset_x + (tracked_achievement_container:GetWidth() or 0),
-        cfg.second_column_offset_x + cfg.sub_checkbox_indent_x + (achievement_hover_container:GetWidth() or 0),
-        cfg.sub_checkbox_indent_x + (quest_hover_container:GetWidth() or 0),
-        quest_log_container:GetWidth() or 0
+        grid[2] - cfg.grid_offset_x + (tracked_achievement_container:GetWidth() or 0),
+        grid[2] - cfg.grid_offset_x + cfg.sub_checkbox_indent_x + (achievement_hover_container:GetWidth() or 0),
+        quest_log_container:GetWidth() or 0,
+        cfg.sub_checkbox_indent_x + (quest_hover_container:GetWidth() or 0)
     )
     count_group:SetWidth(math.ceil(count_width + cfg.group_padding_x * 2))
 end

@@ -10,11 +10,15 @@ M.controls = M.controls or {}
 
 local UI_CONFIG = {
     group_offset_x = 20,
-    group_offset_y = -20,
+    group_offset_y = -340,
+    group_width = 1,
     group_height = 158,
     group_padding_x = 12,
-    first_checkbox_offset_y = -32,
-    checkbox_step_y = -32,
+    grid_offset_x = 12,
+    grid_offset_y = -37,
+    grid_col_width = 220,
+    grid_col_gap = 220,
+    child_gap_y = -8,
     child_indent_x = 18,
 }
 
@@ -191,16 +195,29 @@ function M.BuildAutoCollapseSettings(parent)
     local cfg = UI_CONFIG
     local db = M.get_db()
 
-    local group, title = addon.CreateSettingsGroup(
+    local group = addon.CreateSettingsGroup(
         parent,
         "Auto-Collapse",
-        1,
+        cfg.group_width,
         cfg.group_height,
         cfg.group_offset_x,
         cfg.group_offset_y
     )
 
-    local widest_content = title:GetStringWidth() or 0
+    local grid = addon.CreateSettingsGrid(group, {
+        column_count = 1,
+        col_offset = cfg.grid_offset_x,
+        row_start = cfg.grid_offset_y,
+        col_width = cfg.grid_col_width,
+        col_gap = cfg.grid_col_gap,
+        row_heights = { 100 },
+        col_align = { "left" },
+        offsets = { default = 0 },
+    })
+
+    local widest_content = 0
+    local previous_container
+    local previous_indent_x = 0
     for index, def in ipairs(TRACKER_DEFS) do
         local row_def = def
         local collapse_container, collapse_cb, collapse_label = addon.CreateCheckbox(
@@ -213,10 +230,15 @@ function M.BuildAutoCollapseSettings(parent)
         )
         M.controls[row_def.control_key] = collapse_cb
         local indent_x = row_def.key == "all" and 0 or cfg.child_indent_x
-        local offset_y = cfg.first_checkbox_offset_y + ((index - 1) * cfg.checkbox_step_y)
-        collapse_container:SetPoint("TOPLEFT", group, "TOPLEFT", cfg.group_padding_x + indent_x, offset_y)
+        if index == 1 then
+            grid:place_at(collapse_container, 1, 1)
+        else
+            grid:stack_below(collapse_container, previous_container, { x = indent_x - previous_indent_x, y = cfg.child_gap_y })
+        end
         addon.AttachTooltip(collapse_label, nil, row_def.help)
         widest_content = math.max(widest_content, indent_x + (collapse_container:GetWidth() or 0))
+        previous_container = collapse_container
+        previous_indent_x = indent_x
     end
 
     group:SetWidth(math.ceil(widest_content + cfg.group_padding_x * 2))
