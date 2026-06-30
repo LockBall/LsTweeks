@@ -13,8 +13,14 @@ local STRINGS = {
     fishing_help_text =
         "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
         .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored."
-        .. "\n\nCombat Volumes can apply a separate profile while the player is in combat."
         .. "\n\nThe FishingBobber splash sound plays on the Effects channel. Increase that first. You can also reduce other channels to emphasize the difference.",
+    combat_help_text =
+        "Combat Volumes temporarily applies a second sound-channel profile while the player is in combat."
+        .. "\n\nWhen combat ends, the normal channel volumes are restored."
+        .. "\n\nEntering combat exits Fishing Focus so combat has priority over fishing audio.",
+    custom_help_text =
+        "Custom situations store a reusable sound-channel profile."
+        .. "\n\nUse Play to preview the selected custom profile. Automatic triggers and quick-pick controls will be added later.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
@@ -43,8 +49,9 @@ local UI = {
     slider_frame_height = 22,
     fishing_slider_width = 130,
     fishing_slider_gap = 10,
-    fishing_slider_row_start = -37,
-    fishing_volumes_panel_height = 150,
+    fishing_slider_pad_x = 10,
+    fishing_slider_row_start = -32,
+    fishing_volumes_panel_height = 134,
 }
 
 --#endregion CONFIGURATION =====================================================
@@ -276,19 +283,15 @@ end
 
 --#region GENERAL TAB ==========================================================
 
-local function build_general_tab(parent)
-    local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
-    title:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
-    title:SetText("General")
-
+local function create_specifics_help_panel(parent, anchor, anchor_point, offset_x, offset_y)
     local panel, text = addon.CreateRivetedPanel(
         parent,
         UI.panel_width,
         addon.RIVETED_PANEL_STYLE.panel_min_height,
-        title,
-        "TOPLEFT",
-        0,
-        -34
+        anchor,
+        anchor_point,
+        offset_x,
+        offset_y
     )
     text:SetJustifyH("LEFT")
     text:SetJustifyV("TOP")
@@ -296,11 +299,18 @@ local function build_general_tab(parent)
     text:SetText(STRINGS.help_text)
     local panel_padding = addon.RIVETED_PANEL_STYLE.padding
     panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, text:GetHeight() + (panel_padding * 2)))
+    return panel
+end
+
+local function build_general_tab(parent)
+    local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
+    title:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
+    title:SetText("General")
 
     local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.sound_levels, {
         after_reset = M.on_reset_complete,
     })
-    reset:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -20)
+    reset:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -24)
 end
 
 --#endregion GENERAL TAB =======================================================
@@ -328,6 +338,16 @@ function M.sync_temporary_profile_controls()
             combat_slider.slider:SetValue(combat_db[channel.key])
         end
     end
+    local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
+    for situation_id, situation in pairs(custom_situations) do
+        local situation_key = "custom:" .. situation_id
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+            local slider = M.controls["situation_" .. situation_key .. "_" .. channel.key]
+            if slider and slider.slider and slider.slider.SetValue then
+                slider.slider:SetValue(situation[channel.key])
+            end
+        end
+    end
     if M.controls.fishing_focus_refresh_current then
         M.controls.fishing_focus_refresh_current()
     end
@@ -340,8 +360,22 @@ M.sync_combat_volumes_controls = M.sync_temporary_profile_controls
 
 --#region SITUATIONS TAB ========================================================
 
-local function create_situation_header_bar(parent, title_text, play_profile_key, action)
-    local title_bar = addon.CreateSettingsGroupTitleBar(parent, title_text)
+local function create_situation_header_bar(parent, title_text, play_profile_key, action, opts)
+    opts = opts or {}
+    local title_bar, title = addon.CreateSettingsGroupTitleBar(parent, title_text)
+
+    if opts.trigger then
+        local trigger_row, trigger_checkbox = addon.CreateCheckbox(
+            title_bar,
+            opts.trigger.label or "Enable",
+            opts.trigger.checked == true,
+            opts.trigger.on_click
+        )
+        trigger_row:SetPoint("LEFT", title_bar, "LEFT", 6, 0)
+        if opts.trigger.control_key then
+            M.controls[opts.trigger.control_key] = trigger_checkbox
+        end
+    end
 
     local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
     play_button:SetSize(54, 20)
@@ -365,7 +399,7 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
         action_button:SetScript("OnClick", action.on_click)
     end
 
-    return title_bar
+    return title_bar, title
 end
 
 local function build_situations_tab(parent)
@@ -374,87 +408,78 @@ local function build_situations_tab(parent)
     local focus_defaults = {}
     local combat_defaults = {}
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
+    local situation_rows = {}
+    local situation_panels = {}
     local sliders_panel_width = math.max(
         UI.panel_width,
-        28 + (slider_count * UI.fishing_slider_width) + (math.max(slider_count - 1, 0) * UI.fishing_slider_gap)
+        (UI.fishing_slider_pad_x * 2) + (slider_count * UI.fishing_slider_width) + (math.max(slider_count - 1, 0) * UI.fishing_slider_gap)
     )
+    local situation_description_columns = math.max(slider_count - 1, 1)
+    local situation_description_width = (situation_description_columns * UI.fishing_slider_width)
+        + (math.max(situation_description_columns - 1, 0) * UI.fishing_slider_gap)
+    local row_grid = addon.CreateSettingsGrid(parent, {
+        column_count = 1,
+        col_width = sliders_panel_width,
+        col_offset = UI.pad_x,
+        row_start = UI.pad_y,
+        row_heights = {
+            UI.fishing_volumes_panel_height + 16,
+            UI.fishing_volumes_panel_height + 16,
+            UI.fishing_volumes_panel_height,
+        },
+        col_align = { "left" },
+    })
+    local situation_grid = addon.CreateSettingsGrid(parent, {
+        column_count = slider_count,
+        col_width = UI.fishing_slider_width,
+        column_gap_x = UI.fishing_slider_gap,
+        col_offset = UI.pad_x + UI.fishing_slider_pad_x,
+        row_start = UI.pad_y,
+        row_heights = {
+            UI.fishing_volumes_panel_height + 16,
+            UI.fishing_volumes_panel_height + 16,
+            UI.fishing_volumes_panel_height,
+        },
+        col_align = { "left", "left", "left", "left", "left" },
+    })
+
+    local situation_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    situation_list_panel:SetSize(UI.fishing_slider_width, (UI.fishing_volumes_panel_height * 2) + 16)
+    situation_grid:place_at(situation_list_panel, 3, 1)
+    apply_box_backdrop(situation_list_panel)
+
+    local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    current_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
+    row_grid:place_at(current_panel, 1, 1)
+    addon.ApplySettingsGroupOutline(current_panel)
 
     local help_panel, help_text = addon.CreateRivetedPanel(
         parent,
-        sliders_panel_width,
+        situation_description_width,
         addon.RIVETED_PANEL_STYLE.panel_min_height,
         parent,
         "TOPLEFT",
-        UI.pad_x,
-        UI.pad_y
+        0,
+        0
     )
+    help_panel:ClearAllPoints()
+    situation_grid:place_at(help_panel, 3, 2)
     local help_padding = addon.RIVETED_PANEL_STYLE.padding
     help_text:SetFontObject(GameFontHighlight)
     help_text:SetJustifyH("LEFT")
     help_text:SetJustifyV("TOP")
     help_text:SetWordWrap(true)
-    help_text:SetText(STRINGS.fishing_help_text)
-    help_panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, help_text:GetHeight() + (help_padding * 2)))
-
-    local enable_row, enable_checkbox = addon.CreateCheckbox(
-        parent,
-        "Enable Fishing Focus",
-        focus_db.enabled == true,
-        function(is_checked)
-            focus_db.enabled = is_checked == true
-            M.sync_fishing_focus_events()
+    local function set_situation_help_text(entry)
+        local text = STRINGS.custom_help_text
+        if entry and entry.key == "fishing" then
+            text = STRINGS.fishing_help_text
+        elseif entry and entry.key == "combat" then
+            text = STRINGS.combat_help_text
         end
-    )
-    enable_row:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 6, -16)
-    M.controls.fishing_focus_enabled = enable_checkbox
-
-    local combat_enable_row, combat_enable_checkbox = addon.CreateCheckbox(
-        parent,
-        "Enable Combat Volumes",
-        combat_db.enabled == true,
-        function(is_checked)
-            combat_db.enabled = is_checked == true
-            M.sync_combat_volumes_events()
-        end
-    )
-    combat_enable_row:SetPoint("LEFT", enable_row, "RIGHT", 170, 0)
-    M.controls.combat_volumes_enabled = combat_enable_checkbox
-
-    local enable_tooltip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    enable_tooltip:SetFrameStrata("TOOLTIP")
-    enable_tooltip:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    enable_tooltip:SetBackdropColor(0.02, 0.02, 0.02, 0.92)
-    enable_tooltip:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.95)
-    enable_tooltip:Hide()
-
-    local enable_tooltip_text = enable_tooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    enable_tooltip_text:SetPoint("CENTER", enable_tooltip, "CENTER", 0, 0)
-    enable_tooltip_text:SetText("Activate Fishing Volumes While Fishing")
-    enable_tooltip:SetSize(enable_tooltip_text:GetStringWidth() + 24, enable_tooltip_text:GetStringHeight() + 14)
-
-    local function show_enable_tooltip(owner)
-        enable_tooltip:ClearAllPoints()
-        enable_tooltip:SetPoint("LEFT", owner, "RIGHT", 8, 0)
-        enable_tooltip:Show()
+        help_text:SetText(text)
+        help_panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, help_text:GetHeight() + (help_padding * 2)))
     end
-    local function hide_enable_tooltip()
-        enable_tooltip:Hide()
-    end
-    enable_row:EnableMouse(true)
-    enable_row:SetScript("OnEnter", function(self)
-        show_enable_tooltip(self)
-    end)
-    enable_row:SetScript("OnLeave", hide_enable_tooltip)
-
-    local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    current_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
-    current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
-    addon.ApplySettingsGroupOutline(current_panel)
+    set_situation_help_text({ key = "fishing" })
 
     create_situation_header_bar(current_panel, "Normal Volumes", "current")
 
@@ -481,48 +506,16 @@ local function build_situations_tab(parent)
     end
     M.controls.fishing_focus_refresh_current = refresh_current_values
 
-    local sliders_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    sliders_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
-    sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -16)
-    addon.ApplySettingsGroupOutline(sliders_panel)
-
-    create_situation_header_bar(sliders_panel, "Fishing Volumes", "fishing", {
-        label = "Use Normal",
-        width = 86,
-        on_click = function()
-            M.copy_current_sound_channels_to_fishing_focus()
-            M.sync_temporary_profile_controls()
-            M.resync_fishing_focus()
-        end,
-    })
-
-    local combat_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    combat_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
-    combat_panel:SetPoint("TOPLEFT", sliders_panel, "BOTTOMLEFT", 0, -16)
-    addon.ApplySettingsGroupOutline(combat_panel)
-
-    create_situation_header_bar(combat_panel, "Combat Volumes", "combat", {
-        label = "Use Normal",
-        width = 86,
-        on_click = function()
-            M.copy_current_sound_channels_to_combat_volumes()
-            M.sync_temporary_profile_controls()
-            M.resync_combat_volumes()
-        end,
-    })
-
     local channel_grid_opts = {
         column_count = slider_count,
         col_width = UI.fishing_slider_width,
         column_gap_x = UI.fishing_slider_gap,
-        col_offset = 14,
+        col_offset = UI.fishing_slider_pad_x,
         row_start = UI.fishing_slider_row_start,
         row_heights = { 115 },
         col_align = { "left", "left", "left", "left", "left" },
     }
     local current_grid = addon.CreateSettingsGrid(current_panel, channel_grid_opts)
-    local fishing_grid = addon.CreateSettingsGrid(sliders_panel, channel_grid_opts)
-    local combat_grid = addon.CreateSettingsGrid(combat_panel, channel_grid_opts)
 
     for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         current_values[channel.key] = M.get_current_sound_channel_percent(channel)
@@ -549,44 +542,274 @@ local function build_situations_tab(parent)
         current_grid:place_at(current_slider, 1, i)
         current_sliders[channel.key] = current_slider
         M.controls["normal_volume_" .. channel.key] = current_slider
-
-        local slider = addon.CreateSliderWithBox(
-            addon_name .. "_FishingFocus_" .. channel.key,
-            sliders_panel,
-            channel.label,
-            0,
-            100,
-            1,
-            focus_db,
-            channel.key,
-            focus_defaults,
-            function()
-                M.resync_fishing_focus()
-            end
-        )
-        slider:SetSize(UI.fishing_slider_width, 95)
-        fishing_grid:place_at(slider, 1, i)
-        M.controls["fishing_focus_" .. channel.key] = slider
-
-        local combat_slider = addon.CreateSliderWithBox(
-            addon_name .. "_CombatVolumes_" .. channel.key,
-            combat_panel,
-            channel.label,
-            0,
-            100,
-            1,
-            combat_db,
-            channel.key,
-            combat_defaults,
-            function()
-                M.resync_combat_volumes()
-            end
-        )
-        combat_slider:SetSize(UI.fishing_slider_width, 95)
-        combat_grid:place_at(combat_slider, 1, i)
-        M.controls["combat_volumes_" .. channel.key] = combat_slider
-
     end
+
+    local function get_situation_entries()
+        local entries = {
+            { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing" },
+            { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat" },
+        }
+        local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
+        local custom_ids = {}
+        for situation_id in pairs(custom_situations) do
+            custom_ids[#custom_ids + 1] = situation_id
+        end
+        table.sort(custom_ids, function(a, b)
+            return (tonumber(a) or 0) < (tonumber(b) or 0)
+        end)
+        for _, situation_id in ipairs(custom_ids) do
+            local situation = custom_situations[situation_id]
+            entries[#entries + 1] = {
+                key = "custom:" .. situation_id,
+                label = situation.name or ("Custom " .. situation_id),
+                db = situation,
+                profile_key = "custom:" .. situation_id,
+                custom = true,
+            }
+        end
+        return entries
+    end
+
+    local function get_situation_entry(situation_key)
+        for _, entry in ipairs(get_situation_entries()) do
+            if entry.key == situation_key then return entry end
+        end
+        return nil
+    end
+
+    local select_situation
+    local rebuild_situation_list
+
+    local function create_situation_panel(entry)
+        local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+        panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
+        row_grid:place_at(panel, 2, 1)
+        panel:Hide()
+        addon.ApplySettingsGroupOutline(panel)
+
+        local trigger = nil
+        if entry.trigger == "fishing" then
+            trigger = {
+                label = "Enable",
+                checked = entry.db.enabled == true,
+                control_key = "fishing_focus_enabled",
+                on_click = function(is_checked)
+                    entry.db.enabled = is_checked == true
+                    M.sync_fishing_focus_events()
+                end,
+            }
+        elseif entry.trigger == "combat" then
+            trigger = {
+                label = "Enable",
+                checked = entry.db.enabled == true,
+                control_key = "combat_volumes_enabled",
+                on_click = function(is_checked)
+                    entry.db.enabled = is_checked == true
+                    M.sync_combat_volumes_events()
+                end,
+            }
+        end
+
+        local title_bar, title = create_situation_header_bar(panel, entry.label .. " Volumes", entry.profile_key, {
+            label = "Use Normal",
+            width = 86,
+            on_click = function()
+                if M.copy_current_sound_channels_to_situation then
+                    M.copy_current_sound_channels_to_situation(entry.key)
+                end
+                M.sync_temporary_profile_controls()
+                if entry.key == "fishing" then
+                    M.resync_fishing_focus()
+                elseif entry.key == "combat" then
+                    M.resync_combat_volumes()
+                end
+            end,
+        }, { trigger = trigger })
+
+        if entry.custom then
+            local name_box = CreateFrame("EditBox", nil, title_bar, "InputBoxTemplate")
+            name_box:SetSize(145, 18)
+            name_box:SetPoint("LEFT", title_bar, "LEFT", 8, 0)
+            name_box:SetAutoFocus(false)
+            name_box:SetMaxLetters(32)
+            name_box:SetText(entry.label)
+            name_box:SetScript("OnEnterPressed", function(self)
+                if M.rename_custom_situation then
+                    M.rename_custom_situation(entry.key, self:GetText())
+                    entry.label = entry.db.name or entry.label
+                    self:SetText(entry.label)
+                    if title then
+                        title:SetText(entry.label .. " Volumes")
+                    end
+                    rebuild_situation_list()
+                    select_situation(entry.key)
+                end
+                self:ClearFocus()
+            end)
+            name_box:SetScript("OnEscapePressed", function(self)
+                self:SetText(entry.label)
+                self:ClearFocus()
+            end)
+        end
+
+        local situation_grid = addon.CreateSettingsGrid(panel, channel_grid_opts)
+        local slider_name_key = entry.key:gsub("[^%w_]", "_")
+        local slider_defaults = entry.db
+        if entry.key == "fishing" then
+            slider_defaults = focus_defaults
+        elseif entry.key == "combat" then
+            slider_defaults = combat_defaults
+        end
+        for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+            local slider = addon.CreateSliderWithBox(
+                addon_name .. "_Situation_" .. slider_name_key .. "_" .. channel.key,
+                panel,
+                channel.label,
+                0,
+                100,
+                1,
+                entry.db,
+                channel.key,
+                slider_defaults,
+                function()
+                    if entry.key == "fishing" then
+                        M.resync_fishing_focus()
+                    elseif entry.key == "combat" then
+                        M.resync_combat_volumes()
+                    end
+                end
+            )
+            slider:SetSize(UI.fishing_slider_width, 95)
+            situation_grid:place_at(slider, 1, i)
+            M.controls["situation_" .. entry.key .. "_" .. channel.key] = slider
+            if entry.key == "fishing" then
+                M.controls["fishing_focus_" .. channel.key] = slider
+            elseif entry.key == "combat" then
+                M.controls["combat_volumes_" .. channel.key] = slider
+            end
+        end
+
+        return panel
+    end
+
+    local selected_key = (M.get_db().last_situation_key and get_situation_entry(M.get_db().last_situation_key))
+        and M.get_db().last_situation_key
+        or "fishing"
+
+    select_situation = function(situation_key)
+        local entry = get_situation_entry(situation_key)
+        if not entry then return end
+        selected_key = situation_key
+        M.get_db().last_situation_key = situation_key
+        for _, row in ipairs(situation_rows) do
+            local selected = row.situation_key == selected_key
+            row.bg:SetShown(selected)
+            row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
+        end
+        for _, panel in pairs(situation_panels) do
+            panel:Hide()
+        end
+        if not situation_panels[situation_key] then
+            situation_panels[situation_key] = create_situation_panel(entry)
+        end
+        situation_panels[situation_key]:Show()
+        set_situation_help_text(entry)
+    end
+
+    rebuild_situation_list = function()
+        for _, row in ipairs(situation_rows) do
+            row:Hide()
+        end
+        situation_rows = {}
+        local entries = get_situation_entries()
+        for i, entry in ipairs(entries) do
+            local row = CreateFrame("Button", nil, situation_list_panel)
+            row:SetSize(UI.fishing_slider_width - 18, UI.list_row_height)
+            row:SetPoint("TOPLEFT", situation_list_panel, "TOPLEFT", 9, -(10 + ((i - 1) * UI.list_row_height)))
+            row.situation_key = entry.key
+
+            row.bg = row:CreateTexture(nil, "BACKGROUND")
+            row.bg:SetAllPoints()
+            row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
+            row.bg:Hide()
+
+            local row_hover = row:CreateTexture(nil, "HIGHLIGHT")
+            row_hover:SetAllPoints()
+            row_hover:SetColorTexture(1, 1, 1, 0.08)
+
+            row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.text:SetPoint("LEFT", row, "LEFT", 8, 0)
+            row.text:SetPoint("RIGHT", row, "RIGHT", entry.custom and -24 or -8, 0)
+            row.text:SetJustifyH("LEFT")
+            row.text:SetText(entry.label)
+            row:SetScript("OnClick", function()
+                select_situation(entry.key)
+            end)
+            if entry.custom then
+                local delete_button = CreateFrame("Button", nil, row, "UIPanelCloseButton")
+                delete_button:SetSize(16, 16)
+                delete_button:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+                delete_button:SetAlpha(0)
+
+                row:SetScript("OnEnter", function()
+                    delete_button:SetAlpha(1)
+                end)
+                row:SetScript("OnLeave", function()
+                    delete_button:SetAlpha(0)
+                end)
+                delete_button:SetScript("OnEnter", function()
+                    delete_button:SetAlpha(1)
+                end)
+                delete_button:SetScript("OnLeave", function()
+                    delete_button:SetAlpha(0)
+                end)
+
+                local delete_key = entry.key
+                local delete_label = entry.label
+                delete_button:SetScript("OnClick", function()
+                    StaticPopupDialogs["LSTWEEKS_DEL_CUSTOM_SITUATION"] = {
+                        text = 'Delete custom situation "' .. delete_label .. '"?',
+                        button1 = "Delete",
+                        button2 = "Cancel",
+                        OnAccept = function()
+                            if situation_panels[delete_key] then
+                                situation_panels[delete_key]:Hide()
+                                situation_panels[delete_key] = nil
+                            end
+                            if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
+                                selected_key = selected_key == delete_key and "fishing" or selected_key
+                                rebuild_situation_list()
+                                select_situation(get_situation_entry(selected_key) and selected_key or "fishing")
+                            end
+                        end,
+                        timeout = 0,
+                        whileDead = true,
+                        hideOnEscape = true,
+                    }
+                    StaticPopup_Show("LSTWEEKS_DEL_CUSTOM_SITUATION")
+                end)
+            end
+            situation_rows[#situation_rows + 1] = row
+        end
+    end
+
+    local add_custom_button = CreateFrame("Button", nil, situation_list_panel, "UIPanelButtonTemplate")
+    add_custom_button:SetSize(UI.fishing_slider_width - 18, 22)
+    add_custom_button:SetPoint("BOTTOMLEFT", situation_list_panel, "BOTTOMLEFT", 9, 10)
+    add_custom_button:SetText("+ Custom")
+    if addon.ApplyStandardButtonStyle then
+        addon.ApplyStandardButtonStyle(add_custom_button)
+    end
+    add_custom_button:SetScript("OnClick", function()
+        if M.create_custom_situation then
+            local situation_key = M.create_custom_situation()
+            rebuild_situation_list()
+            select_situation(situation_key)
+        end
+    end)
+
+    rebuild_situation_list()
+    select_situation(selected_key)
     refresh_current_values()
 end
 
@@ -601,9 +824,11 @@ local function build_specifics_tab(parent)
     local target_rows = {}
     local slider_panels = {}
 
+    local help_panel = create_specifics_help_panel(parent, parent, "TOPLEFT", UI.pad_x, UI.pad_y)
+
     local target_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     target_list_panel:SetSize(UI.list_width, 260)
-    target_list_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.slider_panel_y)
+    target_list_panel:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 0, -16)
     apply_box_backdrop(target_list_panel)
 
     local function select_sound(target_key)
@@ -624,6 +849,8 @@ local function build_specifics_tab(parent)
         if target then
             if not slider_panels[selected_key] then
                 slider_panels[selected_key] = build_slider_panel(parent, selected_key, target)
+                slider_panels[selected_key]:ClearAllPoints()
+                slider_panels[selected_key]:SetPoint("TOPLEFT", target_list_panel, "TOPRIGHT", 20, 0)
             end
             slider_panels[selected_key]:Show()
         end

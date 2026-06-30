@@ -19,6 +19,9 @@ Durable module-specific notes for `modules/sound_levels/`.
 - `sound_levels.fishing_focus.master`, `sfx`, `music`, `ambience`, `dialog`: 0-100 channel volumes applied only while channeling Fishing. Missing/reset values initialize from the user's current Sound_*Volume CVars; SFX starts 25 percentage points above normal Effects volume, clamped to 100.
 - `sound_levels.combat_volumes.enabled`: toggles the Combat Volumes channel profile.
 - `sound_levels.combat_volumes.master`, `sfx`, `music`, `ambience`, `dialog`: 0-100 channel volumes applied while the player is in combat. Missing/reset values initialize from the user's current Sound_*Volume CVars.
+- `sound_levels.custom_situations.<id>.name`, `.master`, `.sfx`, `.music`, `.ambience`, `.dialog`: user-created manual situations shown in the Situations list. They do not auto-trigger yet.
+- `sound_levels.last_situation_key`: restores the selected Situations list row.
+- `sound_levels.next_custom_situation_id`: monotonic ID source for custom situations.
 - `sound_levels.last_tab_index` and `sound_levels.last_sound_key`: restore Audio Volumes UI tab/selection.
 
 
@@ -55,9 +58,10 @@ Durable module-specific notes for `modules/sound_levels/`.
 - Normal Volumes sliders edit the user's normal Sound_* CVars. If a temporary profile is active, they update the cached normal values restored afterward instead of overwriting the temporary Fishing or Combat Volumes profile.
 - Fishing Focus registers `UNIT_SPELLCAST_CHANNEL_START/STOP` only when enabled, via `RegisterUnitEvent(..., "player")`, and keeps the Fishing spell ID guard.
 - Combat Volumes registers `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` only when enabled. Entering combat exits the Fishing profile, so combat end restores normal volumes instead of returning to Fishing Volumes.
+- Situations tab always shows Normal Volumes plus exactly one selected situation panel. Fishing and Combat are built-in non-custom entries; custom situations are list entries backed by `sound_levels.custom_situations`.
 - Disabled sync should not create the event frame or initialize Fishing Focus DB values.
 - Disabled Combat Volumes sync should not create the combat event frame or initialize Combat Volumes DB values.
-- Preview buttons play FishingBobber SoundKit `3355` on SFX. **Normal Volumes** preview must not write CVars; **Fishing Volumes** and **Combat Volumes** previews temporarily apply and then restore their profiles.
+- Preview buttons play FishingBobber SoundKit `3355` on SFX. **Normal Volumes** preview must not write CVars; situation previews temporarily apply and then restore their profiles.
 
 
 ## LuaLS/Ketho Notes

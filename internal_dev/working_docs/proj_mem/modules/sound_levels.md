@@ -2,8 +2,9 @@
 Audio Volumes completed notes live in `completed_features/sound_levels.md`. Check that file for saved-variable shape, ownership, Fishing Focus behavior, runtime notes, Ketho findings, and performance guidance.
 
 - Audio Volumes registers its settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Sound mutes, replacement playback, previews, event registration, and temporary volume profile runtime route through `M.is_runtime_enabled()` and `M.stop_runtime()`.
-- Audio Volumes settings are not a normal full-panel `CreateSettingsGrid()` consumer. The Specifics tab remains a custom list/detail selector and General is riveted help plus reset. Situations tab channel columns use `CreateSettingsGrid()` for Normal/Fishing/Combat volume slider placement inside custom settings-group panels.
-- Situations tab Normal Volumes sliders edit the user's normal Sound_* CVars. If a temporary profile is active, they update the cached normal values that will be restored when the temporary profile ends instead of overwriting Fishing or Combat Volumes.
+- Audio Volumes settings are not a normal full-panel `CreateSettingsGrid()` consumer. The Specifics tab remains a custom list/detail selector and General is riveted help plus reset. Situations tab uses a left situation list plus settings-group panels; Normal Volumes is always visible and only the selected situation row is shown below it.
+- Situations tab Normal Volumes sliders edit the user's normal Sound_* CVars. If a temporary profile is active, they update the cached normal values that will be restored when the temporary profile ends instead of overwriting Fishing, Combat, or custom situation volumes.
+- Custom situations live under `sound_levels.custom_situations`, are manual/preview-only for now, and are selected from the Situations list alongside built-in Fishing and Combat.
 - Combat Volumes uses `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED`. Entering combat exits the Fishing profile, so combat end restores to normal volumes rather than returning to Fishing Volumes.
 
 

@@ -8,6 +8,7 @@ local FISHING_CHANNEL_SPELL_ID = 131476
 local FISHING_BOBBER_SOUNDKIT_ID = 3355
 local FISHING_BOBBER_SOUND_CHANNEL = "SFX"
 local FISHING_BOBBER_PREVIEW_RESTORE_DELAY = 2.0
+local CUSTOM_SITUATION_PREFIX = "custom:"
 local _PlaySound = (C_Sound and C_Sound.PlaySound) or PlaySound
 local _StopSound = (C_Sound and C_Sound.StopSound) or StopSound
 
@@ -119,12 +120,103 @@ function M.get_combat_volumes_db()
     return db.combat_volumes
 end
 
+function M.get_custom_situations_db()
+    local db = M.get_db()
+    db.custom_situations = db.custom_situations or {}
+    db.next_custom_situation_id = math.max(1, tonumber(db.next_custom_situation_id) or 1)
+    return db.custom_situations
+end
+
+local function get_custom_situation_id(situation_key)
+    if type(situation_key) ~= "string" then return nil end
+    return situation_key:match("^" .. CUSTOM_SITUATION_PREFIX .. "(.+)$")
+end
+
+function M.get_custom_situation_db(situation_key)
+    local situation_id = get_custom_situation_id(situation_key)
+    if not situation_id then return nil end
+    return M.get_custom_situations_db()[situation_id]
+end
+
+local function sanitize_custom_situation_name(name, fallback)
+    name = tostring(name or ""):match("^%s*(.-)%s*$")
+    if name == "" then
+        return fallback or "Custom Situation"
+    end
+    return name
+end
+
+function M.create_custom_situation(name)
+    local db = M.get_db()
+    local situations = M.get_custom_situations_db()
+    local id = tostring(db.next_custom_situation_id or 1)
+    db.next_custom_situation_id = (tonumber(db.next_custom_situation_id) or 1) + 1
+
+    local situation = {
+        name = sanitize_custom_situation_name(name, "Custom " .. id),
+    }
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        situation[channel.key] = read_channel_percent(channel)
+    end
+    situations[id] = situation
+    db.last_situation_key = CUSTOM_SITUATION_PREFIX .. id
+    return db.last_situation_key, situation
+end
+
+function M.delete_custom_situation(situation_key)
+    local situation_id = get_custom_situation_id(situation_key)
+    if not situation_id then return false end
+    local situations = M.get_custom_situations_db()
+    if not situations[situation_id] then return false end
+    situations[situation_id] = nil
+    local db = M.get_db()
+    if db.last_situation_key == situation_key then
+        db.last_situation_key = "fishing"
+    end
+    return true
+end
+
+function M.rename_custom_situation(situation_key, name)
+    local situation = M.get_custom_situation_db(situation_key)
+    if not situation then return false end
+    situation.name = sanitize_custom_situation_name(name, situation.name)
+    return true
+end
+
+function M.get_situation_profile_db(situation_key)
+    if situation_key == "fishing" then
+        return M.get_fishing_focus_db()
+    end
+    if situation_key == "combat" then
+        return M.get_combat_volumes_db()
+    end
+    local situation = M.get_custom_situation_db(situation_key)
+    if not situation then return nil end
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        local value = tonumber(situation[channel.key])
+        if not value then
+            value = read_channel_percent(channel)
+        end
+        situation[channel.key] = math.max(0, math.min(100, value))
+    end
+    return situation
+end
+
 function M.copy_current_sound_channels_to_fishing_focus()
     local focus_db = M.get_fishing_focus_db()
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         focus_db[channel.key] = read_channel_percent(channel)
     end
     return focus_db
+end
+
+function M.copy_current_sound_channels_to_situation(situation_key)
+    local profile_db = M.get_situation_profile_db(situation_key)
+    if not profile_db then return nil end
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        profile_db[channel.key] = read_channel_percent(channel)
+    end
+    return profile_db
 end
 
 function M.copy_current_sound_channels_to_combat_volumes()
@@ -185,11 +277,7 @@ function M.play_fishing_bobber_preview(profile_key)
     restore_bobber_preview_profile()
 
     local profile_db = nil
-    if profile_key == "fishing" then
-        profile_db = M.get_fishing_focus_db()
-    elseif profile_key == "combat" then
-        profile_db = M.get_combat_volumes_db()
-    end
+    profile_db = M.get_situation_profile_db(profile_key)
 
     if not profile_db then
         local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID, FISHING_BOBBER_SOUND_CHANNEL)

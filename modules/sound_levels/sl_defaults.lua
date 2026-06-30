@@ -119,6 +119,9 @@ M.defaults = {
         combat_volumes = {
             enabled = false,
         },
+        custom_situations = {},
+        last_situation_key = "fishing",
+        next_custom_situation_id = 1,
         targets = {
             achievement = {
                 preset = "0",
