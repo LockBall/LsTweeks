@@ -1,4 +1,4 @@
--- Settings UI for the Sound Levels module: General and Sounds tabs,
+-- Settings UI for the Audio Volumes module: General and Specifics tabs,
 -- target list, per-sound level slider, and preview controls.
 local addon_name, addon = ...
 
@@ -13,6 +13,7 @@ local STRINGS = {
     fishing_help_text =
         "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
         .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored."
+        .. "\n\nCombat Volumes can apply a separate profile while the player is in combat."
         .. "\n\nThe FishingBobber splash sound plays on the Effects channel. Increase that first. You can also reduce other channels to emphasize the difference.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
@@ -42,7 +43,8 @@ local UI = {
     slider_frame_height = 22,
     fishing_slider_width = 130,
     fishing_slider_gap = 10,
-    fishing_volumes_panel_height = 180,
+    fishing_slider_row_start = -37,
+    fishing_volumes_panel_height = 150,
 }
 
 --#endregion CONFIGURATION =====================================================
@@ -305,16 +307,25 @@ end
 
 --#region CONTROL SYNCHRONIZATION ==============================================
 
-function M.sync_fishing_focus_controls()
+function M.sync_temporary_profile_controls()
     local focus_db = M.get_fishing_focus_db()
+    local combat_db = M.get_combat_volumes_db()
     local focus_enabled = M.controls.fishing_focus_enabled
     if focus_enabled and focus_enabled.SetChecked then
         focus_enabled:SetChecked(focus_db.enabled == true)
+    end
+    local combat_enabled = M.controls.combat_volumes_enabled
+    if combat_enabled and combat_enabled.SetChecked then
+        combat_enabled:SetChecked(combat_db.enabled == true)
     end
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         local slider = M.controls["fishing_focus_" .. channel.key]
         if slider and slider.slider and slider.slider.SetValue then
             slider.slider:SetValue(focus_db[channel.key])
+        end
+        local combat_slider = M.controls["combat_volumes_" .. channel.key]
+        if combat_slider and combat_slider.slider and combat_slider.slider.SetValue then
+            combat_slider.slider:SetValue(combat_db[channel.key])
         end
     end
     if M.controls.fishing_focus_refresh_current then
@@ -322,11 +333,14 @@ function M.sync_fishing_focus_controls()
     end
 end
 
+M.sync_fishing_focus_controls = M.sync_temporary_profile_controls
+M.sync_combat_volumes_controls = M.sync_temporary_profile_controls
+
 --#endregion CONTROL SYNCHRONIZATION ===========================================
 
---#region FISHING TAB ==========================================================
+--#region SITUATIONS TAB ========================================================
 
-local function create_fishing_header_bar(parent, title_text, play_profile_key)
+local function create_situation_header_bar(parent, title_text, play_profile_key, action)
     local title_bar = addon.CreateSettingsGroupTitleBar(parent, title_text)
 
     local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
@@ -340,12 +354,25 @@ local function create_fishing_header_bar(parent, title_text, play_profile_key)
         M.play_fishing_bobber_preview(play_profile_key)
     end)
 
+    if action then
+        local action_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
+        action_button:SetSize(action.width or 84, 20)
+        action_button:SetPoint("RIGHT", play_button, "LEFT", -6, 0)
+        action_button:SetText(action.label or "")
+        if addon.ApplyStandardButtonStyle then
+            addon.ApplyStandardButtonStyle(action_button)
+        end
+        action_button:SetScript("OnClick", action.on_click)
+    end
+
     return title_bar
 end
 
-local function build_fishing_tab(parent)
+local function build_situations_tab(parent)
     local focus_db = M.get_fishing_focus_db()
+    local combat_db = M.get_combat_volumes_db()
     local focus_defaults = {}
+    local combat_defaults = {}
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
     local sliders_panel_width = math.max(
         UI.panel_width,
@@ -381,6 +408,18 @@ local function build_fishing_tab(parent)
     enable_row:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 6, -16)
     M.controls.fishing_focus_enabled = enable_checkbox
 
+    local combat_enable_row, combat_enable_checkbox = addon.CreateCheckbox(
+        parent,
+        "Enable Combat Volumes",
+        combat_db.enabled == true,
+        function(is_checked)
+            combat_db.enabled = is_checked == true
+            M.sync_combat_volumes_events()
+        end
+    )
+    combat_enable_row:SetPoint("LEFT", enable_row, "RIGHT", 170, 0)
+    M.controls.combat_volumes_enabled = combat_enable_checkbox
+
     local enable_tooltip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     enable_tooltip:SetFrameStrata("TOOLTIP")
     enable_tooltip:SetBackdrop({
@@ -413,21 +452,30 @@ local function build_fishing_tab(parent)
     enable_row:SetScript("OnLeave", hide_enable_tooltip)
 
     local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    current_panel:SetSize(sliders_panel_width, 70)
+    current_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
     current_panel:SetPoint("TOPLEFT", enable_row, "BOTTOMLEFT", -6, -10)
     addon.ApplySettingsGroupOutline(current_panel)
 
-    create_fishing_header_bar(current_panel, "Normal Volumes", "current")
+    create_situation_header_bar(current_panel, "Normal Volumes", "current")
 
-    local current_labels = {}
+    local current_values = {}
+    local current_defaults = {}
+    local current_sliders = {}
 
     local function refresh_current_values()
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local current_percent = M.get_current_sound_channel_percent(channel)
+            current_values[channel.key] = current_percent
             focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, current_percent)
-            local label = current_labels[channel.key]
-            if label then
-                label:SetText(tostring(current_percent) .. "%")
+            combat_defaults[channel.key] = current_percent
+            if current_defaults[channel.key] == nil then
+                current_defaults[channel.key] = current_percent
+            end
+            local slider = current_sliders[channel.key]
+            if slider and slider.slider and slider.slider.SetValue then
+                slider._suppress_callback = true
+                slider.slider:SetValue(current_percent)
+                slider._suppress_callback = false
             end
         end
     end
@@ -438,21 +486,69 @@ local function build_fishing_tab(parent)
     sliders_panel:SetPoint("TOPLEFT", current_panel, "BOTTOMLEFT", 0, -16)
     addon.ApplySettingsGroupOutline(sliders_panel)
 
-    create_fishing_header_bar(sliders_panel, "Fishing Volumes", "fishing")
+    create_situation_header_bar(sliders_panel, "Fishing Volumes", "fishing", {
+        label = "Use Normal",
+        width = 86,
+        on_click = function()
+            M.copy_current_sound_channels_to_fishing_focus()
+            M.sync_temporary_profile_controls()
+            M.resync_fishing_focus()
+        end,
+    })
+
+    local combat_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    combat_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
+    combat_panel:SetPoint("TOPLEFT", sliders_panel, "BOTTOMLEFT", 0, -16)
+    addon.ApplySettingsGroupOutline(combat_panel)
+
+    create_situation_header_bar(combat_panel, "Combat Volumes", "combat", {
+        label = "Use Normal",
+        width = 86,
+        on_click = function()
+            M.copy_current_sound_channels_to_combat_volumes()
+            M.sync_temporary_profile_controls()
+            M.resync_combat_volumes()
+        end,
+    })
+
+    local channel_grid_opts = {
+        column_count = slider_count,
+        col_width = UI.fishing_slider_width,
+        column_gap_x = UI.fishing_slider_gap,
+        col_offset = 14,
+        row_start = UI.fishing_slider_row_start,
+        row_heights = { 115 },
+        col_align = { "left", "left", "left", "left", "left" },
+    }
+    local current_grid = addon.CreateSettingsGrid(current_panel, channel_grid_opts)
+    local fishing_grid = addon.CreateSettingsGrid(sliders_panel, channel_grid_opts)
+    local combat_grid = addon.CreateSettingsGrid(combat_panel, channel_grid_opts)
 
     for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-        local column_x = 14 + ((i - 1) * (UI.fishing_slider_width + UI.fishing_slider_gap))
-        local current_channel_label = current_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        current_channel_label:SetSize(UI.fishing_slider_width, 16)
-        current_channel_label:SetPoint("TOPLEFT", current_panel, "TOPLEFT", column_x, -30)
-        current_channel_label:SetJustifyH("CENTER")
-        current_channel_label:SetText(channel.label)
+        current_values[channel.key] = M.get_current_sound_channel_percent(channel)
+        current_defaults[channel.key] = current_values[channel.key]
+        combat_defaults[channel.key] = current_values[channel.key]
 
-        local current_label = current_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        current_label:SetSize(UI.fishing_slider_width, 16)
-        current_label:SetPoint("TOPLEFT", current_panel, "TOPLEFT", column_x, -48)
-        current_label:SetJustifyH("CENTER")
-        current_labels[channel.key] = current_label
+        local current_slider = addon.CreateSliderWithBox(
+            addon_name .. "_NormalSound_" .. channel.key,
+            current_panel,
+            channel.label,
+            0,
+            100,
+            1,
+            current_values,
+            channel.key,
+            current_defaults,
+            function(value)
+                M.set_current_sound_channel_percent(channel, value)
+                focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, tonumber(value) or 0)
+                combat_defaults[channel.key] = tonumber(value) or 0
+            end
+        )
+        current_slider:SetSize(UI.fishing_slider_width, 95)
+        current_grid:place_at(current_slider, 1, i)
+        current_sliders[channel.key] = current_slider
+        M.controls["normal_volume_" .. channel.key] = current_slider
 
         local slider = addon.CreateSliderWithBox(
             addon_name .. "_FishingFocus_" .. channel.key,
@@ -469,32 +565,36 @@ local function build_fishing_tab(parent)
             end
         )
         slider:SetSize(UI.fishing_slider_width, 95)
-        slider:SetPoint("TOPLEFT", sliders_panel, "TOPLEFT", column_x, -40)
+        fishing_grid:place_at(slider, 1, i)
         M.controls["fishing_focus_" .. channel.key] = slider
 
-        if channel.key == "sfx" then
-            local use_current_button = CreateFrame("Button", nil, sliders_panel, "UIPanelButtonTemplate")
-            use_current_button:SetSize(94, 22)
-            use_current_button:SetPoint("TOP", slider, "BOTTOM", 0, -8)
-            use_current_button:SetText("Use Current")
-            if addon.ApplyStandardButtonStyle then
-                addon.ApplyStandardButtonStyle(use_current_button)
+        local combat_slider = addon.CreateSliderWithBox(
+            addon_name .. "_CombatVolumes_" .. channel.key,
+            combat_panel,
+            channel.label,
+            0,
+            100,
+            1,
+            combat_db,
+            channel.key,
+            combat_defaults,
+            function()
+                M.resync_combat_volumes()
             end
-            use_current_button:SetScript("OnClick", function()
-                M.copy_current_sound_channels_to_fishing_focus()
-                M.sync_fishing_focus_controls()
-                M.resync_fishing_focus()
-            end)
-        end
+        )
+        combat_slider:SetSize(UI.fishing_slider_width, 95)
+        combat_grid:place_at(combat_slider, 1, i)
+        M.controls["combat_volumes_" .. channel.key] = combat_slider
+
     end
     refresh_current_values()
 end
 
---#endregion FISHING TAB =======================================================
+--#endregion SITUATIONS TAB ====================================================
 
---#region SOUNDS TAB ===========================================================
+--#region SPECIFICS TAB =========================================================
 
-local function build_sounds_tab(parent)
+local function build_specifics_tab(parent)
     local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
     local selected_key = (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) and db.last_sound_key or (targets[1] and targets[1].key)
@@ -561,7 +661,7 @@ local function build_sounds_tab(parent)
     end
 end
 
---#endregion SOUNDS TAB ========================================================
+--#endregion SPECIFICS TAB ======================================================
 
 --#region SETTINGS CONSTRUCTION ================================================
 
@@ -572,8 +672,8 @@ function M.BuildSettings(parent)
 
     local tab_defs = {
         { label = "General", builder = build_general_tab },
-        { label = "Sounds", builder = build_sounds_tab },
-        { label = "Fishing", builder = build_fishing_tab },
+        { label = "Specifics", builder = build_specifics_tab },
+        { label = "Situations", builder = build_situations_tab },
     }
     local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 
@@ -587,7 +687,7 @@ function M.BuildSettings(parent)
             if i == selected_index then
                 PanelTemplates_SelectTab(button)
                 tab_panels[i]:Show()
-                if tab_defs[i] and tab_defs[i].label == "Fishing" and M.controls.fishing_focus_refresh_current then
+                if tab_defs[i] and tab_defs[i].builder == build_situations_tab and M.controls.fishing_focus_refresh_current then
                     M.controls.fishing_focus_refresh_current()
                 end
             else

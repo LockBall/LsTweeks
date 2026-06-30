@@ -72,7 +72,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `modules/settings/`: general addon settings and module toggles.
 - `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `proj_mem/modules/player_frame.md`.
 - `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `proj_mem/modules/objectives.md`.
-- `modules/sound_levels/`: sound replacement presets and Fishing Focus runtime. Memory: `proj_mem/modules/sound_levels.md`.
+- `modules/sound_levels/`: Audio Volumes replacement presets and temporary profile runtime. Memory: `proj_mem/modules/sound_levels.md`.
 - `modules/skyriding_vigor/`: restored Skyriding Vigor display, style/layout state, charge detection, fade, and GUI. Memory: `proj_mem/modules/skyriding_vigor.md`.
 - `modules/aura_frames/`: aura scanning/rendering, CDM integration, frame settings, profiles, and GUI. Memory: `proj_mem/modules/aura_frames.md`.
 - `modules/about.lua`: about/public credits page.

@@ -22,7 +22,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - [Module Memory](#module-memory)
   - [Player Frame](modules/player_frame.md)
   - [Objectives](modules/objectives.md)
-  - [Sound Levels](modules/sound_levels.md)
+  - [Audio Volumes](modules/sound_levels.md)
   - [Skyriding Vigor](modules/skyriding_vigor.md)
   - [Aura Frames](modules/aura_frames.md)
 
@@ -57,7 +57,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
 - Packaging docs and policy live in `package_me.md` and `package-policy.json`.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
-- README image assets and Sound Levels reference/log files are public-facing and included.
+- README image assets and Audio Volumes reference/log files are public-facing and included.
 
 
 ## Project Overview
@@ -80,7 +80,7 @@ functions/              shared UI factories and helpers: reset, sliders, dropdow
 modules/                feature modules; deeper ownership notes live in the module memory files below
   player_frame/         Player Frame settings, portrait combat text, and OOC fade
   objectives/           All Objectives tracker behavior tweaks
-  sound_levels/         preset sound replacement controls and Fishing Focus
+  sound_levels/         Audio Volumes preset replacements and temporary profiles
   skyriding_vigor/      restored vigor display, style/layout state, charge detection, fade, and GUI
   settings/             general addon settings
   aura_frames/          aura scanning/rendering, CDM integration, frame settings, profiles, and GUI
@@ -134,8 +134,8 @@ Violations here can create invisible or unstable controls.
 - Standard button text styling lives in `functions/buttons.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, `addon.CreateMoveResetButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 - Shared color controls live in `functions/color_picker.lua` via `addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)`. Use that factory for settings color pickers instead of hand-building ColorPickerFrame wiring.
 - Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`; completed investigation notes live in `dropdown_hover_arrow.md`.
-- Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, `addon.CreateSettingsGroup()` / `addon.ApplySettingsGroupOutline()` / `addon.CreateSettingsGroupTitleBar()` for the gold outlined settings group style with a 24px grey title bar used by Sound Levels and Objectives, and the addon-owned tooltip factory/helpers (`addon.CreateOwnedTooltip()`, `addon.GetOwnedTooltip()`, `addon.ShowOwnedTooltip()`, `addon.HideOwnedTooltip()`, `addon.AttachTooltip()`, `addon.AttachTooltipToTargets()`) instead of direct module use of global `GameTooltip`.
-- A 2026-06-25 single-source-of-truth scan found repeated standard control-panel backdrops and simple settings tooltip hooks consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Sound Levels custom panels, and feature-specific list/tree rendering.
+- Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, `addon.CreateSettingsGroup()` / `addon.ApplySettingsGroupOutline()` / `addon.CreateSettingsGroupTitleBar()` for the gold outlined settings group style with a 24px grey title bar used by Audio Volumes and Objectives, and the addon-owned tooltip factory/helpers (`addon.CreateOwnedTooltip()`, `addon.GetOwnedTooltip()`, `addon.ShowOwnedTooltip()`, `addon.HideOwnedTooltip()`, `addon.AttachTooltip()`, `addon.AttachTooltipToTargets()`) instead of direct module use of global `GameTooltip`.
+- A 2026-06-25 single-source-of-truth scan found repeated standard control-panel backdrops and simple settings tooltip hooks consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Audio Volumes custom panels, and feature-specific list/tree rendering.
 - Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Prefer the grid object's `grid:place(control, placement)` and `grid:center(control, placement)` helpers when using module-local placement tables, so modules do not duplicate alignment/y-offset/width option mapping.
 - Treat module-local grid placement tables as static source data. Pass dynamic widths or centering details through grid placement options instead of writing derived runtime values back into placement tables.
 - Make non-additive `CreateSettingsGrid()` changes only when current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.

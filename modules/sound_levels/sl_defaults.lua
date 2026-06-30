@@ -1,4 +1,4 @@
--- Sound Levels module defaults and target metadata.
+-- Audio Volumes module defaults and target metadata.
 -- Defines known sound targets and preset replacement paths; runtime code mutes originals
 -- and optionally plays addon-owned quieter files when they exist.
 
@@ -114,6 +114,9 @@ M.defaults = {
         last_tab_index = 1,
         last_sound_key = "ready_check",
         fishing_focus = {
+            enabled = false,
+        },
+        combat_volumes = {
             enabled = false,
         },
         targets = {

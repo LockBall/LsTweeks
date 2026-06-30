@@ -133,6 +133,6 @@ Write-Host ""
 $exitCode = $LASTEXITCODE
 
 Write-Host ""
-Write-Host "Known Sound Levels note: Ketho may flag C_Sound.PlaySound(soundKitID, `"SFX`") as a string-channel param-type-mismatch even though in-game testing confirmed it works on this client."
+Write-Host "Known Audio Volumes note: Ketho may flag C_Sound.PlaySound(soundKitID, `"SFX`") as a string-channel param-type-mismatch even though in-game testing confirmed it works on this client."
 
 exit $exitCode

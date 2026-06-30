@@ -1,4 +1,4 @@
--- Runtime behavior for Sound Levels: applies file mutes, plays previews and
+-- Runtime behavior for Audio Volumes: applies file mutes, plays previews and
 -- replacements, and wires WoW events to selected replacement sounds.
 local addon_name, addon = ...
 
@@ -20,11 +20,17 @@ function M.stop_runtime()
     if M.restore_fishing_focus then
         M.restore_fishing_focus()
     end
+    if M.restore_combat_volumes then
+        M.restore_combat_volumes()
+    end
     M.unmute_all_sound_files()
     M._event_cache = {}
     M.sync_registered_events()
     if M.sync_fishing_focus_events then
         M.sync_fishing_focus_events()
+    end
+    if M.sync_combat_volumes_events then
+        M.sync_combat_volumes_events()
     end
 end
 

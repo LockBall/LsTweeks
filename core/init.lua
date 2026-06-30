@@ -53,7 +53,7 @@ addon.FEATURE_MODULES = {
     { key = "player_frame", label = "Player Frame" },
     { key = "objectives", label = "Objectives" },
     { key = "aura_frames", label = "Buffs & Debuffs" },
-    { key = "sound_levels", label = "Sound Levels" },
+    { key = "sound_levels", label = "Audio Volumes" },
     { key = "skyriding_vigor", label = "Skyriding Vigor" },
 }
 

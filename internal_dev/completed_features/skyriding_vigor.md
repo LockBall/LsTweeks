@@ -18,4 +18,4 @@ Completed 2026-06-24.
 
 ## Validation
 - Fast validation passed.
-- Ketho/LuaLS helper reported only the known Sound Levels `C_Sound.PlaySound(soundKitID, "SFX")` warnings.
+- Ketho/LuaLS helper reported only the known Audio Volumes `C_Sound.PlaySound(soundKitID, "SFX")` warnings.

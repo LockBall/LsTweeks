@@ -241,10 +241,10 @@ local PROFILE_SECTIONS = {
             wrap_table_functions(addon.player_frame and addon.player_frame.fade, "player_frame.fade")
         end,
     },
-    -- Sound Levels module, including Fishing Focus helpers.
+    -- Audio Volumes module, including temporary profile helpers.
     {
         key = "sound_levels",
-        label = "Sound Levels",
+        label = "Audio Volumes",
         install = function()
             wrap_table_functions(addon.sound_levels, "sound_levels")
         end,

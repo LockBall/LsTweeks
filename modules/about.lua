@@ -34,7 +34,7 @@ local STRINGS = {
     .. "\n\n• Settings: Addon window, minimap, reload, and reset options."
     .. "\n\n• Player Frame: Portrait combat text and visibility controls."
     .. "\n\n• Buffs & Debuffs: Aura Frames for custom buff, debuff, cooldown, and aura displays."
-    .. "\n\n• Sound Levels: Per-sound replacement and volume controls."
+    .. "\n\n• Audio Volumes: Per-sound replacement and volume controls."
     .. "\n\n\nBuff and DeBuff handling inspired by Elkano's Buff Bars.",
     credits = "Additional inspiration: BetterCooldownManager, ArcUI, and Angleur.",
 }

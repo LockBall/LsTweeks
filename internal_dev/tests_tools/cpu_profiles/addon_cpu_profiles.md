@@ -20,7 +20,7 @@ that can taint Blizzard unit-frame execution when secret values are involved.
 2. Set `PROFILE_TARGETS` in `addon_cpu_profile.lua`, then `/reload`.
 3. Run `/lstprofile reset` and `/lstprofile start`.
 4. Exercise normal gameplay and settings flows for 2-3 minutes: aura updates,
-   CDM updates, Skyriding Vigor visibility, Sound Levels previews, Fishing Focus
+   CDM updates, Skyriding Vigor visibility, Audio Volumes previews, temporary profiles
    if relevant, and opening/changing addon settings.
 5. Run `/lstprofile report 40`, copy the output here, then run `/lstprofile stop`.
 6. Remove the temporary TOC line before release cleanup. While an active profiling
@@ -38,7 +38,7 @@ Runs in this series:
 - **Initial broad baseline, 213.3s:** Aura Frames dominated broad runtime cost.
   `aura_frames.update_auras`, visible-icon ticking, `render_aura_map`, timer text,
   and CDM entry reads were the primary hot paths. Skyriding Vigor was visible but
-  smaller, and Sound Levels only appeared on rare Fishing Focus transitions.
+  smaller, and Audio Volumes only appeared on rare temporary profile transitions.
 - **Runtime aliases at 0.2s, 146.9s:** Reducing ticker cadence improved the direct
   visible-icon ticker path. `tick_visible_icons` and `set_timer_text` improved,
   but the broader update/render rates were not comparable enough to generalize

@@ -9,7 +9,7 @@ Slash command: `/lst`
 - [Installation](#installation)
 - [Use Notes](#use-notes)
 - [Aura Frames](#aura-frames)
-- [Sound Levels](#sound-levels)
+- [Audio Volumes](#audio-volumes)
 - [Embedded Libraries](#embedded-libraries)
 - [License](#license)
 - [Credits](#credits)
@@ -45,10 +45,10 @@ Slash command: `/lst`
 - Adjustable position, size, spacing, node style/color, fill color, end-decoration style/color, fade behavior, and optional separate race profile.
 
 
-### Sound Levels
+### Audio Volumes
 - Quieter addon replacement sounds for supported targets, currently including Achievement test and Ready Check.
 - Per-target Original behavior and replacement volume controls.
-- Fishing Focus channel controls for temporarily changing game channel volumes while fishing.
+- Temporary channel controls for normal game volumes, fishing volumes, and combat volumes.
 
 
 ### Settings
@@ -80,7 +80,7 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.
 - Open **Objectives** for Auto-Collapse and Section Count options.
 - Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, node style/color, fill color, end decorations, fade behavior, and optional race profile.
-- Open **Sound Levels** to configure quieter replacement sounds, keep the original Blizzard sound, or use Fishing Focus while fishing.
+- Open **Audio Volumes** to configure quieter replacement sounds, keep the original Blizzard sound, or use temporary Fishing/Combat sound profiles.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
 
@@ -122,7 +122,7 @@ Profiles save the full Aura Frames setup, including preset frame settings, Coold
 The Aura Frames reset panel includes a checked **Keep Profiles** option so saved profiles can survive a module reset.
 
 
-## Sound Levels
+## Audio Volumes
 WoW does not expose true per-sound volume control or custom sound channels. This addon mutes known original Blizzard FileDataIDs where configured, then optionally plays addon-owned replacement files at the selected level.
 
 Current sound targets:
@@ -132,7 +132,7 @@ Current sound targets:
 
 Replacement volume is shown as `0-100%` in 5% steps. `0%` is off. The **Original** checkbox keeps Blizzard's original sound and dims the replacement slider until the slider is moved.
 
-Fishing Focus is available on the **Fishing** tab. It temporarily applies a separate Master, Music, Effects, Ambience, and Dialog channel profile while the player is channeling Fishing, then restores the normal channel volumes when fishing ends. The Fishing profile initializes from the user's normal channel volumes, with Effects set 25 percentage points higher, clamped to 100%. The tab includes Normal and Fishing profile preview buttons that play the Fishing Bobber splash sound for comparison. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
+The **Volumes** tab includes Normal Volumes sliders for the user's regular Master, Music, Effects, Ambience, and Dialog channel volumes, plus separate Fishing Volumes sliders used while channeling Fishing and Combat Volumes sliders used while in combat. The Fishing profile initializes from the user's normal channel volumes, with Effects set 25 percentage points higher, clamped to 100%. Combat Volumes initializes from the user's normal channel volumes. Combat starts use `PLAYER_REGEN_DISABLED`, combat ends use `PLAYER_REGEN_ENABLED`, and entering combat exits the Fishing profile. The tab includes Normal, Fishing, and Combat profile preview buttons that play the Fishing Bobber splash sound for comparison. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
 Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
 

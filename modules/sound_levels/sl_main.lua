@@ -1,11 +1,11 @@
--- Sound Levels module bootstrap: applies defaults, starts runtime state,
+-- Audio Volumes module bootstrap: applies defaults, starts runtime state,
 -- registers the settings category, and resyncs controls after reset.
 local addon_name, addon = ...
 
 addon.sound_levels = addon.sound_levels or {}
 local M = addon.sound_levels
 
-local CATEGORY_NAME = "Sound Levels"
+local CATEGORY_NAME = "Audio Volumes"
 
 --#region RESET AND MODULE HOOKS ===============================================
 
@@ -13,6 +13,7 @@ function M.on_reset_complete()
     if M.stop_all_previews then
         M.stop_all_previews()
     end
+    M.restore_combat_volumes()
     M.restore_fishing_focus()
     M._defaults_applied = nil
     M._target_defaults_applied = nil
@@ -50,10 +51,11 @@ function M.on_reset_complete()
         end
     end
 
-    if M.sync_fishing_focus_controls then
-        M.sync_fishing_focus_controls()
+    if M.sync_temporary_profile_controls then
+        M.sync_temporary_profile_controls()
     end
     M.sync_fishing_focus_events()
+    M.sync_combat_volumes_events()
 end
 
 function M.set_module_enabled(enabled)
@@ -62,6 +64,9 @@ function M.set_module_enabled(enabled)
         M.apply_sound_levels()
         if M.sync_fishing_focus_events then
             M.sync_fishing_focus_events()
+        end
+        if M.sync_combat_volumes_events then
+            M.sync_combat_volumes_events()
         end
         return
     end
@@ -86,6 +91,8 @@ if addon.register_module_status then
             "adjust_preview_timer=" .. tostring(M._adjust_preview_timer ~= nil),
             "fishing_events=" .. tostring(M._fishing_focus_events_registered == true),
             "fishing_active=" .. tostring(M._fishing_focus_active == true),
+            "combat_volume_events=" .. tostring(M._combat_volumes_events_registered == true),
+            "combat_volume_active=" .. tostring(M._combat_volumes_active == true),
             "bobber_preview_timer=" .. tostring(M._fishing_bobber_preview_timer ~= nil),
             "bobber_preview_handle=" .. tostring(M._fishing_bobber_preview_handle ~= nil),
         }
@@ -106,6 +113,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.apply_sound_levels()
         if M.sync_fishing_focus_events then
             M.sync_fishing_focus_events()
+        end
+        if M.sync_combat_volumes_events then
+            M.sync_combat_volumes_events()
         end
         if addon.register_category and M.BuildSettings then
             addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900, module_key = M.MODULE_KEY })

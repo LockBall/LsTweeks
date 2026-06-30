@@ -306,4 +306,4 @@ Manual diagnostics command from the repo root:
 & "$env:USERPROFILE\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe" --check="$PWD" --configpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua" --check_format=pretty --checklevel=Warning --logpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\log" --metapath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\meta"
 ```
 
-Expected known result as of 2026-06-20: three Sound Levels warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.
+Expected known result as of 2026-06-20: three Audio Volumes warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.

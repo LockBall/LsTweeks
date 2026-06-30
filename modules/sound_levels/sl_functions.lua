@@ -1,4 +1,4 @@
--- Shared helpers for the Sound Levels module: DB access, preset lookup,
+-- Shared helpers for the Audio Volumes module: DB access, preset lookup,
 -- target ordering, and target activity predicates.
 local addon_name, addon = ...
 
