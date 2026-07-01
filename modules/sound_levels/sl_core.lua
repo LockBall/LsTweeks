@@ -23,6 +23,9 @@ function M.stop_runtime()
     if M.restore_combat_volumes then
         M.restore_combat_volumes()
     end
+    if M.restore_manual_situation_profile then
+        M.restore_manual_situation_profile()
+    end
     M.unmute_all_sound_files()
     M._event_cache = {}
     M.sync_registered_events()

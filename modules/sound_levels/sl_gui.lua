@@ -12,15 +12,16 @@ local STRINGS = {
     play_on_adjust_label = "Play on Adjust",
     fishing_help_text =
         "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
-        .. "\n\nWhen the fishing channel ends, the normal channel volumes are restored."
+        .. "\n\nWhen the fishing channeling ends, the normal volumes are restored."
         .. "\n\nThe FishingBobber splash sound plays on the Effects channel. Increase that first. You can also reduce other channels to emphasize the difference.",
     combat_help_text =
         "Combat Volumes temporarily applies a second sound-channel profile while the player is in combat."
         .. "\n\nWhen combat ends, the normal channel volumes are restored."
-        .. "\n\nEntering combat exits Fishing Focus so combat has priority over fishing audio.",
+        .. "\n\nEntering combat exits Fishing Focus so combat has priority over fishing audio."
+        .. "\n\nCombat sounds are played on the Effects channel.",
     custom_help_text =
         "Custom situations store a reusable sound-channel profile."
-        .. "\n\nUse Play to preview the selected custom profile. Automatic triggers and quick-pick controls will be added later.",
+        .. "\n\nEnable turns the selected custom profile on immediately. Use Play to preview it without leaving it on.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
@@ -36,13 +37,13 @@ local UI = {
     tab_gap = 8,
     content_top = -58,
     panel_width = 590,
-    list_width = 190,
+    list_width = 130,
     list_row_height = 26,
     slider_panel_x = 230,
     slider_panel_y = -18,
     slider_panel_width = 370,
     slider_panel_pad_x = 16,
-    slider_panel_height = 70,
+    slider_panel_height = 92,
     slider_width = 275,
     slider_height = 20,
     slider_frame_width = 400,
@@ -132,14 +133,14 @@ local function build_slider_panel(parent, target_key, target)
     apply_box_backdrop(slider_panel)
 
     local target_note = slider_panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    target_note:SetPoint("TOPLEFT", slider_panel, "TOPLEFT", UI.slider_panel_pad_x, -16)
+    target_note:SetPoint("TOPLEFT", slider_panel, "TOPLEFT", UI.slider_panel_pad_x, -12)
     target_note:SetWidth(UI.slider_panel_width - (UI.slider_panel_pad_x * 2))
     target_note:SetJustifyH("LEFT")
     target_note:SetText((target.description ~= "" and target.description) or " ")
 
     local slider_container = CreateFrame("Frame", nil, slider_panel)
     slider_container:SetSize(UI.slider_frame_width, UI.slider_frame_height)
-    slider_container:SetPoint("CENTER", slider_panel, "CENTER", 0, 12)
+    slider_container:SetPoint("TOP", slider_panel, "TOP", 0, -36)
 
     local current_preset = M.get_preset_by_value(target_db.preset)
     local preset_options = M.PRESET_OPTIONS or {}
@@ -252,6 +253,7 @@ local function build_slider_panel(parent, target_key, target)
             sync_original_inactive_state()
             M.stop_preview_sound()
             M.apply_sound_levels()
+            M.play_replacement(target_key)
         end
     )
     sync_original_inactive_state()
@@ -320,6 +322,7 @@ end
 function M.sync_temporary_profile_controls()
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
+    local quiet_custom_db = M.get_quiet_custom_db and M.get_quiet_custom_db() or nil
     local focus_enabled = M.controls.fishing_focus_enabled
     if focus_enabled and focus_enabled.SetChecked then
         focus_enabled:SetChecked(focus_db.enabled == true)
@@ -327,6 +330,10 @@ function M.sync_temporary_profile_controls()
     local combat_enabled = M.controls.combat_volumes_enabled
     if combat_enabled and combat_enabled.SetChecked then
         combat_enabled:SetChecked(combat_db.enabled == true)
+    end
+    local quiet_enabled = M.controls.quiet_custom_enabled
+    if quiet_enabled and quiet_enabled.SetChecked and quiet_custom_db then
+        quiet_enabled:SetChecked(quiet_custom_db.enabled == true)
     end
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         local slider = M.controls["fishing_focus_" .. channel.key]
@@ -337,10 +344,18 @@ function M.sync_temporary_profile_controls()
         if combat_slider and combat_slider.slider and combat_slider.slider.SetValue then
             combat_slider.slider:SetValue(combat_db[channel.key])
         end
+        local quiet_slider = M.controls["situation_quiet_custom_" .. channel.key]
+        if quiet_slider and quiet_slider.slider and quiet_slider.slider.SetValue and quiet_custom_db then
+            quiet_slider.slider:SetValue(quiet_custom_db[channel.key])
+        end
     end
     local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
     for situation_id, situation in pairs(custom_situations) do
         local situation_key = "custom:" .. situation_id
+        local enabled_control = M.controls["situation_" .. situation_key:gsub("[^%w_]", "_") .. "_enabled"]
+        if enabled_control and enabled_control.SetChecked then
+            enabled_control:SetChecked(situation.enabled == true)
+        end
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local slider = M.controls["situation_" .. situation_key .. "_" .. channel.key]
             if slider and slider.slider and slider.slider.SetValue then
@@ -375,6 +390,7 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
         if opts.trigger.control_key then
             M.controls[opts.trigger.control_key] = trigger_checkbox
         end
+        title_bar._lstweeks_trigger_row = trigger_row
     end
 
     local play_button = CreateFrame("Button", nil, title_bar, "UIPanelButtonTemplate")
@@ -385,7 +401,13 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
         addon.ApplyStandardButtonStyle(play_button)
     end
     play_button:SetScript("OnClick", function()
-        M.play_fishing_bobber_preview(play_profile_key)
+        if opts.on_play then
+            opts.on_play()
+        elseif M.play_situation_preview then
+            M.play_situation_preview(play_profile_key)
+        else
+            M.play_fishing_bobber_preview(play_profile_key)
+        end
     end)
 
     if action then
@@ -405,11 +427,15 @@ end
 local function build_situations_tab(parent)
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
+    local quiet_custom_db = M.get_quiet_custom_db()
     local focus_defaults = {}
     local combat_defaults = {}
+    local quiet_custom_defaults = {}
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
     local situation_rows = {}
     local situation_panels = {}
+    local selected_key = nil
+    local get_situation_entry = nil
     local sliders_panel_width = math.max(
         UI.panel_width,
         (UI.fishing_slider_pad_x * 2) + (slider_count * UI.fishing_slider_width) + (math.max(slider_count - 1, 0) * UI.fishing_slider_gap)
@@ -481,7 +507,44 @@ local function build_situations_tab(parent)
     end
     set_situation_help_text({ key = "fishing" })
 
-    create_situation_header_bar(current_panel, "Normal Volumes", "current")
+    local test_sound_dropdown = addon.CreateDropdown(
+        addon_name .. "_SituationTestSound",
+        parent,
+        "Test Sound",
+        M.TEST_SOUND_OPTIONS or {},
+        {
+            width = 190,
+            get_value = function()
+                local entry = selected_key and get_situation_entry and get_situation_entry(selected_key)
+                return (entry and entry.db and entry.db.test_sound) or "bloodlust"
+            end,
+            on_select = function(value)
+                local entry = selected_key and get_situation_entry and get_situation_entry(selected_key)
+                if not (entry and entry.db) then return end
+                entry.db.test_sound = M.get_valid_test_sound_key and M.get_valid_test_sound_key(value, "bloodlust") or value
+            end,
+        }
+    )
+    test_sound_dropdown:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 0, -18)
+    test_sound_dropdown:Hide()
+
+    local function get_selected_test_sound_key()
+        local entry = selected_key and get_situation_entry and get_situation_entry(selected_key)
+        if entry and entry.key ~= "fishing" and entry.db then
+            return entry.db.test_sound
+        end
+        return nil
+    end
+
+    create_situation_header_bar(current_panel, "Normal", "current", nil, {
+        on_play = function()
+            if M.play_situation_preview then
+                M.play_situation_preview("current", get_selected_test_sound_key())
+            else
+                M.play_fishing_bobber_preview("current")
+            end
+        end,
+    })
 
     local current_values = {}
     local current_defaults = {}
@@ -493,6 +556,7 @@ local function build_situations_tab(parent)
             current_values[channel.key] = current_percent
             focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, current_percent)
             combat_defaults[channel.key] = current_percent
+            quiet_custom_defaults[channel.key] = 25
             if current_defaults[channel.key] == nil then
                 current_defaults[channel.key] = current_percent
             end
@@ -521,6 +585,7 @@ local function build_situations_tab(parent)
         current_values[channel.key] = M.get_current_sound_channel_percent(channel)
         current_defaults[channel.key] = current_values[channel.key]
         combat_defaults[channel.key] = current_values[channel.key]
+        quiet_custom_defaults[channel.key] = 25
 
         local current_slider = addon.CreateSliderWithBox(
             addon_name .. "_NormalSound_" .. channel.key,
@@ -548,6 +613,7 @@ local function build_situations_tab(parent)
         local entries = {
             { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing" },
             { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat" },
+            { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true },
         }
         local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
         local custom_ids = {}
@@ -570,7 +636,7 @@ local function build_situations_tab(parent)
         return entries
     end
 
-    local function get_situation_entry(situation_key)
+    get_situation_entry = function(situation_key)
         for _, entry in ipairs(get_situation_entries()) do
             if entry.key == situation_key then return entry end
         end
@@ -608,9 +674,25 @@ local function build_situations_tab(parent)
                     M.sync_combat_volumes_events()
                 end,
             }
+        elseif entry.key ~= "fishing" and entry.key ~= "combat" then
+            trigger = {
+                label = "Enable",
+                checked = entry.db.enabled == true,
+                control_key = entry.key == "quiet_custom"
+                    and "quiet_custom_enabled"
+                    or ("situation_" .. entry.key:gsub("[^%w_]", "_") .. "_enabled"),
+                on_click = function(is_checked)
+                    if M.set_manual_situation_enabled then
+                        M.set_manual_situation_enabled(entry.key, is_checked == true)
+                        M.sync_temporary_profile_controls()
+                    else
+                        entry.db.enabled = is_checked == true
+                    end
+                end,
+            }
         end
 
-        local title_bar, title = create_situation_header_bar(panel, entry.label .. " Volumes", entry.profile_key, {
+        local title_bar, title = create_situation_header_bar(panel, entry.label, entry.profile_key, {
             label = "Use Normal",
             width = 86,
             on_click = function()
@@ -622,24 +704,46 @@ local function build_situations_tab(parent)
                     M.resync_fishing_focus()
                 elseif entry.key == "combat" then
                     M.resync_combat_volumes()
+                elseif M.resync_manual_situation_profile then
+                    M.resync_manual_situation_profile()
                 end
             end,
-        }, { trigger = trigger })
+        }, {
+            trigger = trigger,
+            on_play = function()
+                if M.play_situation_preview then
+                    M.play_situation_preview(entry.profile_key, entry.db and entry.db.test_sound)
+                else
+                    M.play_fishing_bobber_preview(entry.profile_key)
+                end
+            end,
+        })
 
-        if entry.custom then
+        if entry.custom or entry.renameable then
             local name_box = CreateFrame("EditBox", nil, title_bar, "InputBoxTemplate")
-            name_box:SetSize(145, 18)
-            name_box:SetPoint("LEFT", title_bar, "LEFT", 8, 0)
+            name_box:SetSize(180, 18)
+            name_box:SetPoint("CENTER", title_bar, "CENTER", 0, 0)
             name_box:SetAutoFocus(false)
+            name_box:SetJustifyH("CENTER")
             name_box:SetMaxLetters(32)
             name_box:SetText(entry.label)
+            name_box:SetTextColor(1, 0.82, 0, 1)
+            if title then
+                title:Hide()
+            end
+            name_box:SetScript("OnEditFocusGained", function(self)
+                self:SetTextColor(1, 1, 1, 1)
+            end)
+            name_box:SetScript("OnEditFocusLost", function(self)
+                self:SetTextColor(1, 0.82, 0, 1)
+            end)
             name_box:SetScript("OnEnterPressed", function(self)
-                if M.rename_custom_situation then
-                    M.rename_custom_situation(entry.key, self:GetText())
+                if M.rename_situation then
+                    M.rename_situation(entry.key, self:GetText())
                     entry.label = entry.db.name or entry.label
                     self:SetText(entry.label)
                     if title then
-                        title:SetText(entry.label .. " Volumes")
+                        title:SetText(entry.label)
                     end
                     rebuild_situation_list()
                     select_situation(entry.key)
@@ -659,6 +763,8 @@ local function build_situations_tab(parent)
             slider_defaults = focus_defaults
         elseif entry.key == "combat" then
             slider_defaults = combat_defaults
+        elseif entry.key == "quiet_custom" then
+            slider_defaults = quiet_custom_defaults
         end
         for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local slider = addon.CreateSliderWithBox(
@@ -676,6 +782,8 @@ local function build_situations_tab(parent)
                         M.resync_fishing_focus()
                     elseif entry.key == "combat" then
                         M.resync_combat_volumes()
+                    elseif M.resync_manual_situation_profile then
+                        M.resync_manual_situation_profile()
                     end
                 end
             )
@@ -692,7 +800,7 @@ local function build_situations_tab(parent)
         return panel
     end
 
-    local selected_key = (M.get_db().last_situation_key and get_situation_entry(M.get_db().last_situation_key))
+    selected_key = (M.get_db().last_situation_key and get_situation_entry(M.get_db().last_situation_key))
         and M.get_db().last_situation_key
         or "fishing"
 
@@ -714,6 +822,14 @@ local function build_situations_tab(parent)
         end
         situation_panels[situation_key]:Show()
         set_situation_help_text(entry)
+        if entry.key == "fishing" then
+            test_sound_dropdown:Hide()
+        else
+            local fallback = "bloodlust"
+            entry.db.test_sound = M.get_valid_test_sound_key and M.get_valid_test_sound_key(entry.db.test_sound, fallback) or entry.db.test_sound
+            test_sound_dropdown:SetValue(entry.db.test_sound)
+            test_sound_dropdown:Show()
+        end
     end
 
     rebuild_situation_list = function()
@@ -776,7 +892,14 @@ local function build_situations_tab(parent)
                                 situation_panels[delete_key]:Hide()
                                 situation_panels[delete_key] = nil
                             end
+                            local was_enabled = delete_key ~= "quiet_custom"
+                                and M.get_situation_profile_db
+                                and M.get_situation_profile_db(delete_key)
+                                and M.get_situation_profile_db(delete_key).enabled == true
                             if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
+                                if was_enabled and M.sync_manual_situation_profile then
+                                    M.sync_manual_situation_profile()
+                                end
                                 selected_key = selected_key == delete_key and "fishing" or selected_key
                                 rebuild_situation_list()
                                 select_situation(get_situation_entry(selected_key) and selected_key or "fishing")
@@ -824,11 +947,12 @@ local function build_specifics_tab(parent)
     local target_rows = {}
     local slider_panels = {}
 
+    local slider_x = UI.pad_x + UI.list_width + 20
     local help_panel = create_specifics_help_panel(parent, parent, "TOPLEFT", UI.pad_x, UI.pad_y)
 
     local target_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     target_list_panel:SetSize(UI.list_width, 260)
-    target_list_panel:SetPoint("TOPLEFT", help_panel, "BOTTOMLEFT", 0, -16)
+    target_list_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y - help_panel:GetHeight() - 16)
     apply_box_backdrop(target_list_panel)
 
     local function select_sound(target_key)
@@ -850,7 +974,7 @@ local function build_specifics_tab(parent)
             if not slider_panels[selected_key] then
                 slider_panels[selected_key] = build_slider_panel(parent, selected_key, target)
                 slider_panels[selected_key]:ClearAllPoints()
-                slider_panels[selected_key]:SetPoint("TOPLEFT", target_list_panel, "TOPRIGHT", 20, 0)
+                slider_panels[selected_key]:SetPoint("TOPLEFT", parent, "TOPLEFT", slider_x, UI.pad_y - help_panel:GetHeight() - 16)
             end
             slider_panels[selected_key]:Show()
         end

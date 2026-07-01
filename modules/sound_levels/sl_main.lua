@@ -56,6 +56,9 @@ function M.on_reset_complete()
     end
     M.sync_fishing_focus_events()
     M.sync_combat_volumes_events()
+    if M.sync_manual_situation_profile then
+        M.sync_manual_situation_profile()
+    end
 end
 
 function M.set_module_enabled(enabled)
@@ -67,6 +70,9 @@ function M.set_module_enabled(enabled)
         end
         if M.sync_combat_volumes_events then
             M.sync_combat_volumes_events()
+        end
+        if M.sync_manual_situation_profile then
+            M.sync_manual_situation_profile()
         end
         return
     end
@@ -116,6 +122,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
         if M.sync_combat_volumes_events then
             M.sync_combat_volumes_events()
+        end
+        if M.sync_manual_situation_profile then
+            M.sync_manual_situation_profile()
         end
         if addon.register_category and M.BuildSettings then
             addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900, module_key = M.MODULE_KEY })

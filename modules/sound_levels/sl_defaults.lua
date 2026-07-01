@@ -69,7 +69,7 @@ M.SOUND_TARGETS = {
     achievement = {
         label = "Achievement",
         order = 1,
-        description = "Local test sound for previewing replacement levels.",
+        description = "Used as test sound to preview new volume.",
         default_preset = "0",
         channel = "SFX",
         replacement_asset = "achievmentsound1",
@@ -118,6 +118,11 @@ M.defaults = {
         },
         combat_volumes = {
             enabled = false,
+            test_sound = "bloodlust",
+        },
+        quiet_custom = {
+            enabled = false,
+            test_sound = "bloodlust",
         },
         custom_situations = {},
         last_situation_key = "fishing",
