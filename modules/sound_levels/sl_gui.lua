@@ -285,10 +285,10 @@ end
 
 --#region GENERAL TAB ==========================================================
 
-local function create_specifics_help_panel(parent, anchor, anchor_point, offset_x, offset_y)
+local function create_specifics_help_panel(parent, anchor, anchor_point, offset_x, offset_y, width)
     local panel, text = addon.CreateRivetedPanel(
         parent,
-        UI.panel_width,
+        width or UI.panel_width,
         addon.RIVETED_PANEL_STYLE.panel_min_height,
         anchor,
         anchor_point,
@@ -947,12 +947,20 @@ local function build_specifics_tab(parent)
     local target_rows = {}
     local slider_panels = {}
 
-    local slider_x = UI.pad_x + UI.list_width + 20
-    local help_panel = create_specifics_help_panel(parent, parent, "TOPLEFT", UI.pad_x, UI.pad_y)
+    local slider_x = UI.pad_x + UI.fishing_slider_width + UI.fishing_slider_gap
+    local specifics_detail_width = (UI.fishing_slider_width * 4) + (UI.fishing_slider_gap * 3)
+    local help_panel = create_specifics_help_panel(
+        parent,
+        parent,
+        "TOPLEFT",
+        slider_x,
+        UI.pad_y - UI.slider_panel_height - 16,
+        specifics_detail_width
+    )
 
     local target_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     target_list_panel:SetSize(UI.list_width, 260)
-    target_list_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y - help_panel:GetHeight() - 16)
+    target_list_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", UI.pad_x, UI.pad_y)
     apply_box_backdrop(target_list_panel)
 
     local function select_sound(target_key)
@@ -974,7 +982,7 @@ local function build_specifics_tab(parent)
             if not slider_panels[selected_key] then
                 slider_panels[selected_key] = build_slider_panel(parent, selected_key, target)
                 slider_panels[selected_key]:ClearAllPoints()
-                slider_panels[selected_key]:SetPoint("TOPLEFT", parent, "TOPLEFT", slider_x, UI.pad_y - help_panel:GetHeight() - 16)
+                slider_panels[selected_key]:SetPoint("TOPLEFT", parent, "TOPLEFT", slider_x, UI.pad_y)
             end
             slider_panels[selected_key]:Show()
         end
