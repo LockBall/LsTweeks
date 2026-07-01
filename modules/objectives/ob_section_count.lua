@@ -410,7 +410,7 @@ function M.BuildSectionCountSettings(parent)
                 set_count_setting(db_key, is_checked)
             end
         )
-        M.controls[control_key] = checkbox
+        M.controls[control_key] = container
         addon.AttachTooltip(checkbox_label, nil, tooltip)
         return container
     end

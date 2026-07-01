@@ -39,12 +39,12 @@ function M.on_reset_complete()
             end
         end
         local play_on_adjust = M.controls[target_key .. "_play_on_adjust"]
-        if play_on_adjust and play_on_adjust.SetChecked then
-            play_on_adjust:SetChecked(target_db.play_on_adjust == true)
+        if play_on_adjust and play_on_adjust.SetCheckedSilently then
+            play_on_adjust:SetCheckedSilently(target_db.play_on_adjust == true)
         end
         local use_original = M.controls[target_key .. "_use_original"]
-        if use_original and use_original.SetChecked then
-            use_original:SetChecked(target_db.use_original == true)
+        if use_original and use_original.SetCheckedSilently then
+            use_original:SetCheckedSilently(target_db.use_original == true)
         end
         if preset and preset._lstweeks_sync_original_state then
             preset:_lstweeks_sync_original_state()

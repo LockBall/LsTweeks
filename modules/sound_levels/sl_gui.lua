@@ -178,8 +178,8 @@ local function build_slider_panel(parent, target_key, target)
     local function clear_original_from_slider_interaction()
         if target_db.use_original ~= true then return end
         target_db.use_original = false
-        if original_checkbox and original_checkbox.SetChecked then
-            original_checkbox:SetChecked(false)
+        if original_container and original_container.SetCheckedSilently then
+            original_container:SetCheckedSilently(false)
         end
         sync_original_inactive_state()
     end
@@ -259,13 +259,13 @@ local function build_slider_panel(parent, target_key, target)
     sync_original_inactive_state()
     if not has_original_playback(target) then
         target_db.use_original = false
-        original_checkbox:SetChecked(false)
-        original_checkbox:Disable()
+        original_container:SetCheckedSilently(false)
+        original_container:Disable()
         original_label:SetTextColor(0.55, 0.55, 0.55, 1)
         sync_original_inactive_state()
     end
     original_container:SetPoint("RIGHT", slider_options_row, "RIGHT", 0, 0)
-    M.controls[target_key .. "_use_original"] = original_checkbox
+    M.controls[target_key .. "_use_original"] = original_container
 
     local play_on_adjust_frame, play_on_adjust_checkbox = addon.CreateCheckbox(
         slider_panel,
@@ -276,7 +276,7 @@ local function build_slider_panel(parent, target_key, target)
         end
     )
     play_on_adjust_frame:SetPoint("LEFT", slider_options_row, "LEFT", 0, 0)
-    M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_checkbox
+    M.controls[target_key .. "_play_on_adjust"] = play_on_adjust_frame
 
     return slider_panel
 end
@@ -324,16 +324,16 @@ function M.sync_temporary_profile_controls()
     local combat_db = M.get_combat_volumes_db()
     local quiet_custom_db = M.get_quiet_custom_db and M.get_quiet_custom_db() or nil
     local focus_enabled = M.controls.fishing_focus_enabled
-    if focus_enabled and focus_enabled.SetChecked then
-        focus_enabled:SetChecked(focus_db.enabled == true)
+    if focus_enabled and focus_enabled.SetCheckedSilently then
+        focus_enabled:SetCheckedSilently(focus_db.enabled == true)
     end
     local combat_enabled = M.controls.combat_volumes_enabled
-    if combat_enabled and combat_enabled.SetChecked then
-        combat_enabled:SetChecked(combat_db.enabled == true)
+    if combat_enabled and combat_enabled.SetCheckedSilently then
+        combat_enabled:SetCheckedSilently(combat_db.enabled == true)
     end
     local quiet_enabled = M.controls.quiet_custom_enabled
-    if quiet_enabled and quiet_enabled.SetChecked and quiet_custom_db then
-        quiet_enabled:SetChecked(quiet_custom_db.enabled == true)
+    if quiet_enabled and quiet_enabled.SetCheckedSilently and quiet_custom_db then
+        quiet_enabled:SetCheckedSilently(quiet_custom_db.enabled == true)
     end
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         local slider = M.controls["fishing_focus_" .. channel.key]
@@ -353,8 +353,8 @@ function M.sync_temporary_profile_controls()
     for situation_id, situation in pairs(custom_situations) do
         local situation_key = "custom:" .. situation_id
         local enabled_control = M.controls["situation_" .. situation_key:gsub("[^%w_]", "_") .. "_enabled"]
-        if enabled_control and enabled_control.SetChecked then
-            enabled_control:SetChecked(situation.enabled == true)
+        if enabled_control and enabled_control.SetCheckedSilently then
+            enabled_control:SetCheckedSilently(situation.enabled == true)
         end
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local slider = M.controls["situation_" .. situation_key .. "_" .. channel.key]
@@ -388,7 +388,7 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
         )
         trigger_row:SetPoint("LEFT", title_bar, "LEFT", 6, 0)
         if opts.trigger.control_key then
-            M.controls[opts.trigger.control_key] = trigger_checkbox
+            M.controls[opts.trigger.control_key] = trigger_row
         end
         title_bar._lstweeks_trigger_row = trigger_row
     end

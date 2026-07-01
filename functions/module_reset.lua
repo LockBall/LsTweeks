@@ -234,7 +234,7 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 
         local preserved = {}
-        local preserve_checked = preserve_checkbox and preserve_checkbox.GetChecked and preserve_checkbox:GetChecked()
+        local preserve_checked = preserve_container and preserve_container.GetChecked and preserve_container:GetChecked()
         if preserve_checked and opts.preserve_keys then
             for _, key in ipairs(opts.preserve_keys) do
                 if db[key] ~= nil then

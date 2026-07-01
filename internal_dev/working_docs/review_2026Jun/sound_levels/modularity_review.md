@@ -19,6 +19,7 @@
 - Replacement sound event handling stays hot-path friendly: `handle_event()` only reads `_event_cache`, and `rebuild_event_cache()` does DB/default work outside the event handler.
 - Module enable/disable behavior is consistently routed through `M.is_runtime_enabled()` and `M.stop_runtime()` for mutes, previews, event cache, and temporary profile restoration.
 - The public behavior documented in `README.md` lines 125-139 matches current settings tabs and runtime priority: Fishing and Combat are triggered situations, Quick Picks are manual, and Combat overrides Fishing.
+- Follow-up shared GUI cleanup extended the same factory-surface approach to `CreateCheckbox()`, so Audio Volumes and other modules can store checkbox containers and use `SetCheckedSilently()` for reset/sync paths.
 
 
 ## Suggested Cleanup Order

@@ -368,8 +368,8 @@ function M.sync_general_controls_from_db()
 
     local function set_checked(control_key, value)
         local control = M.controls[control_key]
-        if control and control.SetChecked then
-            control:SetChecked(value == true)
+        if control and control.SetCheckedSilently then
+            control:SetCheckedSilently(value == true)
         end
     end
 

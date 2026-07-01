@@ -100,7 +100,7 @@ local function create_bound_checkbox_control(parent, label, value_table, value_k
     )
     grid:place_at(container, row, column)
     if control_key then
-        M.controls[control_key] = checkbox
+        M.controls[control_key] = container
     end
     return container, checkbox, label_text
 end
@@ -112,7 +112,7 @@ local function create_snap_to_grid_checkbox(parent, anchor_to)
         end
     )
     container:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", 0, -4)
-    M.controls.snap_to_grid_checkbox = checkbox
+    M.controls.snap_to_grid_checkbox = container
     return container, checkbox
 end
 
@@ -369,8 +369,8 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         function(is_checked)
             if is_checked then
                 local enable_cb = M.controls and M.controls[options.show_control_key]
-                if enable_cb and enable_cb.SetChecked and not enable_cb:GetChecked() then
-                    enable_cb:SetChecked(true)
+                if enable_cb and enable_cb.SetCheckedSilently and enable_cb.GetChecked and not enable_cb:GetChecked() then
+                    enable_cb:SetCheckedSilently(true)
                     value_table[show_key] = true
                 end
             end
@@ -491,7 +491,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
 
     return {
         move_container = move_container,
-        move_checkbox = move_cb,
+        move_checkbox = move_container,
         x_slider = x_slider,
         y_slider = y_slider,
         width_slider = width_slider,
@@ -520,7 +520,7 @@ function M.build_general_tab(p)
         end
     )
     enable_blizz_buffs_container:SetPoint("CENTER", enable_panel, "CENTER", -40, -5)
-    M.controls["enable_blizz_buffs"] = enable_blizz_buffs_cb
+    M.controls["enable_blizz_buffs"] = enable_blizz_buffs_container
 
     -- Blizzard Debuff Frame Checkbox (checked = enabled)
     local enable_blizz_debuffs_container, enable_blizz_debuffs_cb, _ = addon.CreateCheckbox(
@@ -533,7 +533,7 @@ function M.build_general_tab(p)
         end
     )
     enable_blizz_debuffs_container:SetPoint("CENTER", enable_panel, "CENTER", 35, -5)
-    M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_cb
+    M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_container
 
     -- Short Buff Threshold slider
     local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
@@ -595,7 +595,7 @@ function M.build_general_tab(p)
         end
     )
     outlines_container:SetPoint("TOPLEFT", visible_icon_tick, "BOTTOMLEFT", 0, -18)
-    M.controls.show_bar_section_outlines_checkbox = outlines_btn
+    M.controls.show_bar_section_outlines_checkbox = outlines_container
 
     -- reset panel
     local resetPanel = addon.CreateModuleReset(p, M.db, M.defaults, {
@@ -764,8 +764,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     enable_container, enable_cb = bound_cb("Enable Frame", "show", 1, 1, function(is_checked)
         if not is_checked then
             value_table[frame_setting_key(frame_config, "move")] = false
-            if position_controls.move_checkbox and position_controls.move_checkbox.SetChecked then
-                position_controls.move_checkbox:SetChecked(false)
+            if position_controls.move_checkbox and position_controls.move_checkbox.SetCheckedSilently then
+                position_controls.move_checkbox:SetCheckedSilently(false)
             end
         end
         if opts.on_enable_changed then opts.on_enable_changed(is_checked, position_controls, enable_cb) end
@@ -775,7 +775,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
         if is_checked then
             value_table[frame_setting_key(frame_config, "show")] = true
-            if enable_cb and enable_cb.SetChecked then enable_cb:SetChecked(true) end
+            if enable_container and enable_container.SetCheckedSilently then enable_container:SetCheckedSilently(true) end
         end
         if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
         update()
@@ -833,14 +833,14 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         if not timer_swipe_checkbox then return end
         local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
         if bar_mode_enabled then
-            if timer_swipe_checkbox.SetChecked then timer_swipe_checkbox:SetChecked(false) end
-            if timer_swipe_checkbox.Disable then timer_swipe_checkbox:Disable() end
+            if timer_swipe_container.SetCheckedSilently then timer_swipe_container:SetCheckedSilently(false) end
+            if timer_swipe_container.Disable then timer_swipe_container:Disable() end
             if timer_swipe_container then timer_swipe_container:SetAlpha(0.45) end
         else
-            if timer_swipe_checkbox.SetChecked then
-                timer_swipe_checkbox:SetChecked(value_table[frame_setting_key(frame_config, "timer_swipe")] == true)
+            if timer_swipe_container.SetCheckedSilently then
+                timer_swipe_container:SetCheckedSilently(value_table[frame_setting_key(frame_config, "timer_swipe")] == true)
             end
-            if timer_swipe_checkbox.Enable then timer_swipe_checkbox:Enable() end
+            if timer_swipe_container.Enable then timer_swipe_container:Enable() end
             if timer_swipe_container then timer_swipe_container:SetAlpha(1) end
         end
     end
@@ -930,8 +930,8 @@ function M.build_preset_frame_panel(p, data)
             local hide_key = "hide_blizz_cdm_" .. cat
             M.db[hide_key] = false
             local hide_cb = M.controls and M.controls[hide_key]
-            if hide_cb and hide_cb.SetChecked then
-                hide_cb:SetChecked(false)
+            if hide_cb and hide_cb.SetCheckedSilently then
+                hide_cb:SetCheckedSilently(false)
             end
             M.update_blizz_cdm_visibility(cat)
         end,

@@ -228,7 +228,7 @@ function M.BuildAutoCollapseSettings(parent)
                 set_auto_collapse_setting(row_def.db_key, is_checked)
             end
         )
-        M.controls[row_def.control_key] = collapse_cb
+        M.controls[row_def.control_key] = collapse_container
         local indent_x = row_def.key == "all" and 0 or cfg.child_indent_x
         if index == 1 then
             grid:place_at(collapse_container, 1, 1)

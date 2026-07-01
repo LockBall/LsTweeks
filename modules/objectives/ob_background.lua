@@ -1174,8 +1174,8 @@ local function set_background_color(reason)
             sync_objective_position_sliders()
         end
         sync_objective_border()
-        if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetChecked then
-            M.controls.objective_tracker_border_checkbox:SetChecked(border_is_enabled)
+        if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetCheckedSilently then
+            M.controls.objective_tracker_border_checkbox:SetCheckedSilently(border_is_enabled)
         end
     end
 end
@@ -1307,7 +1307,7 @@ function M.BuildBackgroundSettings(parent)
         db.objective_tracker_move_mode == true,
         set_objective_move_mode
     )
-    M.controls.objective_tracker_move_mode_checkbox = move_mode_cb
+    M.controls.objective_tracker_move_mode_checkbox = move_mode_container
     position_grid:place_at(move_mode_container, 1, 1)
     addon.AttachTooltip(move_mode_label, nil, "Allows dragging the All Objectives tracker and saves the result to the X/Y offset sliders.")
 
@@ -1317,7 +1317,7 @@ function M.BuildBackgroundSettings(parent)
         db.objective_tracker_snap_to_grid == true,
         set_objective_snap_to_grid
     )
-    M.controls.objective_tracker_snap_to_grid_checkbox = snap_cb
+    M.controls.objective_tracker_snap_to_grid_checkbox = snap_container
     position_grid:stack_below(snap_container, move_mode_container, { y = -2 })
     addon.AttachTooltip(snap_label, nil, "Rounds Objective Tracker offsets to a 20 pixel grid when moving or adjusting position.")
 
@@ -1394,7 +1394,7 @@ function M.BuildBackgroundSettings(parent)
         db.customize_background == true,
         set_customize_background
     )
-    M.controls.customize_background_checkbox = customize_cb
+    M.controls.customize_background_checkbox = customize_container
     background_grid:place_at(customize_container, 1, 1)
     addon.AttachTooltip(customize_label, nil, "Sets Blizzard's Objective Tracker Edit Mode opacity to the saved WoW BG Alpha value, or 0 when unchecked.")
 
@@ -1404,7 +1404,7 @@ function M.BuildBackgroundSettings(parent)
         is_background_color_enabled(db),
         set_background_color_enabled
     )
-    M.controls.background_color_enabled_checkbox = color_enabled_cb
+    M.controls.background_color_enabled_checkbox = color_enabled_container
     background_grid:place_at(color_enabled_container, 1, 3)
     addon.AttachTooltip(color_enabled_label, nil, "Shows the LsTweeks center color block and enables the color picker and border.")
 
@@ -1449,7 +1449,7 @@ function M.BuildBackgroundSettings(parent)
         is_objective_border_enabled(),
         set_objective_border
     )
-    M.controls.objective_tracker_border_checkbox = border_cb
+    M.controls.objective_tracker_border_checkbox = border_container
     background_grid:stack_below(border_container, picker, { y = -2 })
     addon.AttachTooltip(border_label, nil, "Shows the LsTweeks dialog border around the All Objectives tracker.")
 

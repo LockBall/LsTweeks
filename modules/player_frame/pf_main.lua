@@ -309,7 +309,7 @@ local function build_options_panel(parent)
             set_player_frame_setting("hide_portrait_combat_text", is_checked)
         end
     )
-    M.controls.hide_portrait_combat_text_checkbox = cb
+    M.controls.hide_portrait_combat_text_checkbox = cb_container
     grid:place_at(cb_container, ROWS.combat_text, 1)
 
     addon.AttachTooltip(cb_label, nil, STRINGS.combat_text_help)
@@ -322,7 +322,7 @@ local function build_options_panel(parent)
             set_player_frame_setting("fade_out_of_combat", is_checked)
         end
     )
-    M.controls.fade_out_of_combat_checkbox = fade_cb
+    M.controls.fade_out_of_combat_checkbox = fade_container
     grid:place_at(fade_container, ROWS.fade_controls, 1, nil, {
         y_offset = -cfg.fade_row_padding_top,
     })
@@ -378,12 +378,12 @@ function M.on_reset_complete()
 
     M.update_player_frame()
     local cb = M.controls.hide_portrait_combat_text_checkbox
-    if cb and cb.SetChecked then
-        cb:SetChecked(db.hide_portrait_combat_text or false)
+    if cb and cb.SetCheckedSilently then
+        cb:SetCheckedSilently(db.hide_portrait_combat_text or false)
     end
     local fade_cb = M.controls.fade_out_of_combat_checkbox
-    if fade_cb and fade_cb.SetChecked then
-        fade_cb:SetChecked(db.fade_out_of_combat or false)
+    if fade_cb and fade_cb.SetCheckedSilently then
+        fade_cb:SetCheckedSilently(db.fade_out_of_combat or false)
     end
     for _, def in ipairs(FADE_SLIDER_DEFS) do
         local slider = M.controls[def.control_key]

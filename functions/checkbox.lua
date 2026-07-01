@@ -1,5 +1,7 @@
 -- Styled checkbox widget factory: addon.CreateCheckbox(parent, label, checked, cb).
 -- Returns a container frame holding the checkbox and its label; container width adjusts to the label text.
+-- Use the container API for routine state handling: GetChecked(), SetChecked(),
+-- SetCheckedSilently(), SetEnabled(), Enable(), Disable(), and HookCheckedChanged().
 
 
 local addon_name, addon = ...
@@ -41,9 +43,11 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     local total_width = checkbox_width + gap + label_width + padding
     container:SetWidth(total_width)
 
+    local suppress_callback = false
+
     -- Click handler
     checkbox:SetScript("OnClick", function(self)
-        if type(on_click_callback) == "function" then
+        if not suppress_callback and type(on_click_callback) == "function" then
             on_click_callback(self:GetChecked())
         end
     end)
@@ -67,6 +71,36 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     container.SetEnabled = function(_, enabled)
         checkbox:SetEnabled(enabled)
     end
+    container.Enable = function()
+        checkbox:Enable()
+    end
+    container.Disable = function()
+        checkbox:Disable()
+    end
+    container.GetChecked = function()
+        return checkbox:GetChecked()
+    end
+    container.SetChecked = function(_, checked)
+        checkbox:SetChecked(checked)
+    end
+    container.SetCheckedSilently = function(_, checked)
+        local was_suppressed = suppress_callback
+        suppress_callback = true
+        checkbox:SetChecked(checked)
+        suppress_callback = was_suppressed
+    end
+    container.HookCheckedChanged = function(_, handler, opts)
+        if type(handler) ~= "function" then return end
+        opts = opts or {}
+        checkbox:HookScript("OnClick", function()
+            if suppress_callback and opts.run_when_silent ~= true then
+                return
+            end
+            handler(container, checkbox:GetChecked())
+        end)
+    end
+    container.checkbox = checkbox
+    container.label = label
 
     return container, checkbox, label
 end

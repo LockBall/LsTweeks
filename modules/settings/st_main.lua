@@ -79,7 +79,7 @@ local function build_settings_page(parent)
             addon.toggle_minimap_button(is_checked)
         end
     )
-    M.controls["minimap_checkbox"] = checkbox_btn
+    M.controls["minimap_checkbox"] = checkbox_container
     checkbox_container:SetPoint("TOPLEFT", title, "BOTTOMLEFT", cfg.title_offset_x, cfg.section_offset_y)
 
     -- Caption to explain /lst command
@@ -97,7 +97,7 @@ local function build_settings_page(parent)
             Ls_Tweeks_DB.open_on_reload = is_checked
         end
     )
-    M.controls["open_on_reload_checkbox"] = reload_btn
+    M.controls["open_on_reload_checkbox"] = reload_container
     reload_container:SetPoint("TOPLEFT", checkbox_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
 
     -- Alpha Slider for Interface Transparency
@@ -138,7 +138,7 @@ local function build_settings_page(parent)
                 end
             end
         )
-        M.controls["module_" .. row_module_def.key] = module_checkbox
+        M.controls["module_" .. row_module_def.key] = module_container
         local offset_y = cfg.modules_first_checkbox_offset_y + ((index - 1) * cfg.modules_checkbox_step_y)
         module_container:SetPoint("TOPLEFT", modules_group, "TOPLEFT", cfg.modules_group_padding_x, offset_y)
         widest_content = math.max(widest_content, module_container:GetWidth() or 0)
@@ -154,12 +154,12 @@ function M.on_reset_complete()
     apply_interface_alpha()
 
     local minimap_cb = M.controls["minimap_checkbox"]
-    if minimap_cb and minimap_cb.SetChecked then
-        minimap_cb:SetChecked(not Ls_Tweeks_DB.minimap.hide)
+    if minimap_cb and minimap_cb.SetCheckedSilently then
+        minimap_cb:SetCheckedSilently(not Ls_Tweeks_DB.minimap.hide)
     end
     local reload_cb = M.controls["open_on_reload_checkbox"]
-    if reload_cb and reload_cb.SetChecked then
-        reload_cb:SetChecked(Ls_Tweeks_DB.open_on_reload or false)
+    if reload_cb and reload_cb.SetCheckedSilently then
+        reload_cb:SetCheckedSilently(Ls_Tweeks_DB.open_on_reload or false)
     end
     local alpha_slider = M.controls["alpha_slider"]
     if alpha_slider and alpha_slider.SetValueSilently then
@@ -167,8 +167,8 @@ function M.on_reset_complete()
     end
     for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
         local module_cb = M.controls["module_" .. module_def.key]
-        if module_cb and module_cb.SetChecked then
-            module_cb:SetChecked(addon.is_module_enabled and addon.is_module_enabled(module_def.key))
+        if module_cb and module_cb.SetCheckedSilently then
+            module_cb:SetCheckedSilently(addon.is_module_enabled and addon.is_module_enabled(module_def.key))
         end
     end
 end

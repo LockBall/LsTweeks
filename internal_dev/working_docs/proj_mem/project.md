@@ -129,7 +129,7 @@ Violations here can create invisible or unstable controls.
 - One `SetPoint` per anchor direction per frame; duplicate TOPLEFT/TOPRIGHT constraints can produce undefined layout.
 - Do not use `frame:GetWidth()` at build time; it can be 0 before render.
 - Factory functions should not place controls externally when the caller owns placement.
-- Before adding settings UI, check `code_map.md` `## Core And Shared Helpers` for an existing shared factory/helper. Use the shared factory when one exists instead of hand-building equivalent controls or rediscovering the owner by broad search.
+- Before adding settings UI, check `code_map.md` `## Core And Shared Helpers` for an existing shared factory/helper. Use the shared factory's public control API when one exists instead of hand-building equivalent controls, reaching into inner widgets, or rediscovering the owner by broad search.
 - Standard button text styling lives in `functions/buttons.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, `addon.CreateMoveResetButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 - Shared color controls live in `functions/color_picker.lua` via `addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)`. Use that factory for settings color pickers instead of hand-building ColorPickerFrame wiring.
 - Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`.
@@ -141,6 +141,7 @@ Violations here can create invisible or unstable controls.
 - Settings grid cells may contain a small vertical stack of related controls. Use `grid:stack_below()` for secondary controls in the same cell instead of hand-anchoring repeated checkbox/button stacks; keep the first control placed through `grid:place()` or `grid:place_at()`.
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`; use its public control API for routine value handling: `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`. Reach into `slider.slider` only for template-specific behavior not exposed by the factory.
+- `CreateCheckbox` exposes container-level state APIs: `checkbox:GetChecked()`, `checkbox:SetChecked(value)`, `checkbox:SetCheckedSilently(value)`, `checkbox:SetEnabled(value)`, and `checkbox:HookCheckedChanged(fn[, opts])`. Store the returned container in module control tables for routine sync; use the raw returned button/label only for specialized layout or tooltip targets.
 
 
 ### Key WoW APIs And Lessons

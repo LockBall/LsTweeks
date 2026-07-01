@@ -247,8 +247,8 @@ end
 function M.sync_race_profile_controls(root_db)
     root_db = root_db or (M.get_root_db and M.get_root_db())
     local checkbox = M.controls and M.controls.race_profile_enabled
-    if checkbox and checkbox.SetChecked then
-        checkbox:SetChecked(root_db and root_db.race_profile_enabled or false)
+    if checkbox and checkbox.SetCheckedSilently then
+        checkbox:SetCheckedSilently(root_db and root_db.race_profile_enabled or false)
     end
 
     local button = M.controls and M.controls.race_profile_test_button
@@ -437,24 +437,24 @@ function M.sync_settings_controls(db)
 
     local defaults = M.DEFAULTS or {}
     local enabled_cb = M.controls.enabled
-    if enabled_cb and enabled_cb.SetChecked then
-        enabled_cb:SetChecked(db.enabled or false)
+    if enabled_cb and enabled_cb.SetCheckedSilently then
+        enabled_cb:SetCheckedSilently(db.enabled or false)
     end
     local fade_cb = M.controls.fade_when_full
-    if fade_cb and fade_cb.SetChecked then
-        fade_cb:SetChecked(db.fade_when_full or false)
+    if fade_cb and fade_cb.SetCheckedSilently then
+        fade_cb:SetCheckedSilently(db.fade_when_full or false)
     end
     local spark_cb = M.controls.show_spark
-    if spark_cb and spark_cb.SetChecked then
-        spark_cb:SetChecked(db.show_spark or false)
+    if spark_cb and spark_cb.SetCheckedSilently then
+        spark_cb:SetCheckedSilently(db.show_spark or false)
     end
     local move_cb = M.controls.move_mode
-    if move_cb and move_cb.SetChecked then
-        move_cb:SetChecked(db.move_mode or false)
+    if move_cb and move_cb.SetCheckedSilently then
+        move_cb:SetCheckedSilently(db.move_mode or false)
     end
     local snap_cb = M.controls.snap_to_grid
-    if snap_cb and snap_cb.SetChecked then
-        snap_cb:SetChecked(db.snap_to_grid or false)
+    if snap_cb and snap_cb.SetCheckedSilently then
+        snap_cb:SetCheckedSilently(db.snap_to_grid or false)
     end
     local style_dropdown = M.controls.style
     if style_dropdown and style_dropdown.SetValue then
@@ -489,7 +489,7 @@ local function build_top_row(parent, context)
     local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
         M.set_db_value("enabled", is_checked)
     end)
-    M.controls.enabled = register_flight_locked_control(enabled_cb)
+    M.controls.enabled = register_flight_locked_control(enabled_container)
     place_grid_control(enabled_container, CONTROL_GRID.enabled)
 
     local fill_test_button = addon.CreateTextButton(parent, M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test, function()
@@ -625,13 +625,13 @@ local function build_position_row(parent, context)
     local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
         M.set_db_value("move_mode", is_checked)
     end)
-    M.controls.move_mode = register_flight_locked_control(move_cb)
+    M.controls.move_mode = register_flight_locked_control(move_container)
     place_grid_control(move_container, CONTROL_GRID.move_mode)
 
     local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
         M.set_snap_to_grid(is_checked)
     end)
-    M.controls.snap_to_grid = register_flight_locked_control(snap_cb)
+    M.controls.snap_to_grid = register_flight_locked_control(snap_container)
     M.settings_grid:stack_below(snap_container, move_container, CONTROL_GRID.snap_to_grid)
 
     local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -865,7 +865,7 @@ local function build_fade_row(parent, context)
     local fade_container, fade_cb, fade_label = addon.CreateCheckbox(parent, STRINGS.fade_when_full, db and db.fade_when_full, function(is_checked)
         M.set_db_value("fade_when_full", is_checked)
     end)
-    M.controls.fade_when_full = register_flight_locked_control(fade_cb, function()
+    M.controls.fade_when_full = register_flight_locked_control(fade_container, function()
         return not (M.is_race_profile_active and M.is_race_profile_active())
     end)
     place_grid_control(fade_container, CONTROL_GRID.fade_when_full)
@@ -939,7 +939,7 @@ local function build_race_profile_panel(parent, context)
             M.set_race_profile_enabled(is_checked)
         end
     )
-    M.controls.race_profile_enabled = register_flight_locked_control(race_profile_cb)
+    M.controls.race_profile_enabled = register_flight_locked_control(race_profile_container)
     M.controls.race_profile_container = race_profile_container
     race_profile_container:SetPoint(
         "TOPLEFT",
@@ -990,7 +990,7 @@ local function build_spark_row(parent, context)
     local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
     end)
-    M.controls.show_spark = register_flight_locked_control(spark_cb)
+    M.controls.show_spark = register_flight_locked_control(spark_container)
     place_grid_control(spark_container, CONTROL_GRID.show_spark)
 
     if db then
@@ -1001,8 +1001,8 @@ local function build_spark_row(parent, context)
     }
     local spark_color_picker = addon.CreateColorPicker(parent, active_profile_proxy, "spark_color", true, STRINGS.spark_color, spark_color_defaults, function()
         M.set_db_value("show_spark", true)
-        if M.controls.show_spark and M.controls.show_spark.SetChecked then
-            M.controls.show_spark:SetChecked(true)
+        if M.controls.show_spark and M.controls.show_spark.SetCheckedSilently then
+            M.controls.show_spark:SetCheckedSilently(true)
         end
         if M.apply_spark_settings then
             M.apply_spark_settings()
