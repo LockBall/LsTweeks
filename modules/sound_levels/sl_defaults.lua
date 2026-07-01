@@ -126,6 +126,7 @@ M.defaults = {
         },
         custom_situations = {},
         last_situation_key = "fishing",
+        last_quick_pick_key = "quiet_custom",
         next_custom_situation_id = 1,
         targets = {
             achievement = {

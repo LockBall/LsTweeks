@@ -19,6 +19,7 @@ local CONFIG = {
     icon = "Interface\\Icons\\Trade_engineering",
     title = "L's Tweeks",
     tooltip_left_click = "Left-click: Open main window",
+    tooltip_right_click = "Right-click: Quick Picks",
 }
 
 -- Private Helper: Toggle main frame visibility
@@ -35,6 +36,72 @@ local function toggle_main_frame()
     end
 end
 
+local function get_audio_volumes_module()
+    return addon.sound_levels
+end
+
+local function is_quick_pick_enabled(quick_pick_key)
+    local M = get_audio_volumes_module()
+    local profile_db = M and M.get_situation_profile_db and M.get_situation_profile_db(quick_pick_key)
+    return profile_db and profile_db.enabled == true
+end
+
+local function apply_quick_pick(quick_pick_key)
+    local M = get_audio_volumes_module()
+    if not (M and M.set_quick_pick_from_menu) then return end
+    M.set_quick_pick_from_menu(quick_pick_key, not is_quick_pick_enabled(quick_pick_key))
+end
+
+local function create_disabled_menu_button(root_description, text)
+    local button = root_description:CreateButton(text)
+    if button and button.SetEnabled then
+        button:SetEnabled(false)
+    end
+end
+
+local function show_menu(owner, module_enabled, entries)
+    if not (MenuUtil and MenuUtil.CreateContextMenu) then
+        print("LsTweeks: MenuUtil.CreateContextMenu is unavailable; Quick Picks menu cannot open.")
+        return
+    end
+
+    MenuUtil.CreateContextMenu(owner, function(_, root_description)
+        root_description:CreateTitle("Quick Picks")
+        if not module_enabled then
+            create_disabled_menu_button(root_description, "Audio Volumes is disabled")
+            return
+        end
+        if #entries == 0 then
+            create_disabled_menu_button(root_description, "No Quick Picks")
+            return
+        end
+        for _, entry in ipairs(entries) do
+            local quick_pick_key = entry.key
+            local quick_pick_label = entry.label
+            root_description:CreateCheckbox(
+                quick_pick_label,
+                function()
+                    return is_quick_pick_enabled(quick_pick_key)
+                end,
+                function()
+                    apply_quick_pick(quick_pick_key)
+                    if MenuResponse and MenuResponse.Refresh then
+                        return MenuResponse.Refresh
+                    end
+                end
+            )
+        end
+    end)
+end
+
+local function build_quick_pick_menu(owner)
+    local M = get_audio_volumes_module()
+    local module_enabled = not (addon.is_module_enabled and M and M.MODULE_KEY)
+        or addon.is_module_enabled(M.MODULE_KEY)
+    local entries = M and M.get_quick_pick_menu_entries and M.get_quick_pick_menu_entries() or {}
+    show_menu(owner, module_enabled, entries)
+end
+
 -- ============================================================================
 -- LDB DATA OBJECT
 -- LibDataBroker: Provides a data source for minimap buttons via LibDBIcon.
@@ -44,15 +111,18 @@ addon.data_object = LDB:NewDataObject(CONFIG.name, {
     type = "launcher",
     icon = CONFIG.icon,
 
-    OnClick = function(_, button)
+    OnClick = function(owner, button)
         if button == "LeftButton" then
             toggle_main_frame()
+        elseif button == "RightButton" then
+            build_quick_pick_menu(owner)
         end
     end,
 
     OnTooltipShow = function(tooltip)
         tooltip:AddLine(CONFIG.title)
         tooltip:AddLine(CONFIG.tooltip_left_click, 1, 1, 1)
+        tooltip:AddLine(CONFIG.tooltip_right_click, 1, 1, 1)
     end,
 })
 

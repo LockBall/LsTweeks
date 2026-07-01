@@ -20,7 +20,7 @@ local STRINGS = {
         .. "\n\nEntering combat exits Fishing Focus so combat has priority over fishing audio."
         .. "\n\nCombat sounds are played on the Effects channel.",
     custom_help_text =
-        "Custom situations store a reusable sound-channel profile."
+        "Quick Picks store reusable sound-channel profiles."
         .. "\n\nEnable turns the selected custom profile on immediately. Use Play to preview it without leaving it on.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
@@ -424,13 +424,18 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
     return title_bar, title
 end
 
-local function build_situations_tab(parent)
+local function build_situations_tab(parent, opts)
+    opts = opts or {}
+    local is_quick_picks = opts.quick_picks == true
+    local selection_db_key = is_quick_picks and "last_quick_pick_key" or "last_situation_key"
+    local fallback_selection_key = is_quick_picks and "quiet_custom" or "fishing"
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
     local quiet_custom_db = M.get_quiet_custom_db()
     local focus_defaults = {}
     local combat_defaults = {}
     local quiet_custom_defaults = {}
+    local control_scope = is_quick_picks and "QuickPick" or "Situation"
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
     local situation_rows = {}
     local situation_panels = {}
@@ -508,7 +513,7 @@ local function build_situations_tab(parent)
     set_situation_help_text({ key = "fishing" })
 
     local test_sound_dropdown = addon.CreateDropdown(
-        addon_name .. "_SituationTestSound",
+        addon_name .. "_" .. control_scope .. "TestSound",
         parent,
         "Test Sound",
         M.TEST_SOUND_OPTIONS or {},
@@ -568,6 +573,7 @@ local function build_situations_tab(parent)
             end
         end
     end
+    parent._lstweeks_refresh_current = refresh_current_values
     M.controls.fishing_focus_refresh_current = refresh_current_values
 
     local channel_grid_opts = {
@@ -588,7 +594,7 @@ local function build_situations_tab(parent)
         quiet_custom_defaults[channel.key] = 25
 
         local current_slider = addon.CreateSliderWithBox(
-            addon_name .. "_NormalSound_" .. channel.key,
+            addon_name .. "_" .. control_scope .. "NormalSound_" .. channel.key,
             current_panel,
             channel.label,
             0,
@@ -610,11 +616,14 @@ local function build_situations_tab(parent)
     end
 
     local function get_situation_entries()
-        local entries = {
-            { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing" },
-            { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat" },
-            { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true },
-        }
+        local entries = {}
+        if is_quick_picks then
+            entries[#entries + 1] = { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true }
+        else
+            entries[#entries + 1] = { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing" }
+            entries[#entries + 1] = { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat" }
+            return entries
+        end
         local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
         local custom_ids = {}
         for situation_id in pairs(custom_situations) do
@@ -800,15 +809,15 @@ local function build_situations_tab(parent)
         return panel
     end
 
-    selected_key = (M.get_db().last_situation_key and get_situation_entry(M.get_db().last_situation_key))
-        and M.get_db().last_situation_key
-        or "fishing"
+    selected_key = (M.get_db()[selection_db_key] and get_situation_entry(M.get_db()[selection_db_key]))
+        and M.get_db()[selection_db_key]
+        or fallback_selection_key
 
     select_situation = function(situation_key)
         local entry = get_situation_entry(situation_key)
         if not entry then return end
         selected_key = situation_key
-        M.get_db().last_situation_key = situation_key
+        M.get_db()[selection_db_key] = situation_key
         for _, row in ipairs(situation_rows) do
             local selected = row.situation_key == selected_key
             row.bg:SetShown(selected)
@@ -900,9 +909,9 @@ local function build_situations_tab(parent)
                                 if was_enabled and M.sync_manual_situation_profile then
                                     M.sync_manual_situation_profile()
                                 end
-                                selected_key = selected_key == delete_key and "fishing" or selected_key
+                                selected_key = selected_key == delete_key and fallback_selection_key or selected_key
                                 rebuild_situation_list()
-                                select_situation(get_situation_entry(selected_key) and selected_key or "fishing")
+                                select_situation(get_situation_entry(selected_key) and selected_key or fallback_selection_key)
                             end
                         end,
                         timeout = 0,
@@ -916,20 +925,23 @@ local function build_situations_tab(parent)
         end
     end
 
-    local add_custom_button = CreateFrame("Button", nil, situation_list_panel, "UIPanelButtonTemplate")
-    add_custom_button:SetSize(UI.fishing_slider_width - 18, 22)
-    add_custom_button:SetPoint("BOTTOMLEFT", situation_list_panel, "BOTTOMLEFT", 9, 10)
-    add_custom_button:SetText("+ Custom")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(add_custom_button)
-    end
-    add_custom_button:SetScript("OnClick", function()
-        if M.create_custom_situation then
-            local situation_key = M.create_custom_situation()
-            rebuild_situation_list()
-            select_situation(situation_key)
+    if is_quick_picks then
+        local add_custom_button = CreateFrame("Button", nil, situation_list_panel, "UIPanelButtonTemplate")
+        add_custom_button:SetSize(UI.fishing_slider_width - 18, 22)
+        add_custom_button:SetPoint("BOTTOMLEFT", situation_list_panel, "BOTTOMLEFT", 9, 10)
+        add_custom_button:SetText("+ Custom")
+        if addon.ApplyStandardButtonStyle then
+            addon.ApplyStandardButtonStyle(add_custom_button)
         end
-    end)
+        add_custom_button:SetScript("OnClick", function()
+            if M.create_custom_situation then
+                local situation_key = M.create_custom_situation()
+                M.get_db()[selection_db_key] = situation_key
+                rebuild_situation_list()
+                select_situation(situation_key)
+            end
+        end)
+    end
 
     rebuild_situation_list()
     select_situation(selected_key)
@@ -937,6 +949,10 @@ local function build_situations_tab(parent)
 end
 
 --#endregion SITUATIONS TAB ====================================================
+
+local function build_quick_picks_tab(parent)
+    build_situations_tab(parent, { quick_picks = true })
+end
 
 --#region SPECIFICS TAB =========================================================
 
@@ -1033,6 +1049,7 @@ function M.BuildSettings(parent)
         { label = "General", builder = build_general_tab },
         { label = "Specifics", builder = build_specifics_tab },
         { label = "Situations", builder = build_situations_tab },
+        { label = "Quick Picks", builder = build_quick_picks_tab },
     }
     local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 
@@ -1046,8 +1063,8 @@ function M.BuildSettings(parent)
             if i == selected_index then
                 PanelTemplates_SelectTab(button)
                 tab_panels[i]:Show()
-                if tab_defs[i] and tab_defs[i].builder == build_situations_tab and M.controls.fishing_focus_refresh_current then
-                    M.controls.fishing_focus_refresh_current()
+                if tab_panels[i] and tab_panels[i]._lstweeks_refresh_current then
+                    tab_panels[i]._lstweeks_refresh_current()
                 end
             else
                 PanelTemplates_DeselectTab(button)

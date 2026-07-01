@@ -322,6 +322,56 @@ function M.set_manual_situation_enabled(situation_key, enabled)
     return true
 end
 
+function M.get_quick_pick_menu_entries()
+    local entries = {}
+    local quiet_custom = M.get_quiet_custom_db()
+    entries[#entries + 1] = {
+        key = "quiet_custom",
+        label = quiet_custom.name or "Quiet Custom",
+        enabled = quiet_custom.enabled == true,
+    }
+
+    local custom_situations = M.get_custom_situations_db()
+    local custom_ids = {}
+    for situation_id in pairs(custom_situations or {}) do
+        custom_ids[#custom_ids + 1] = situation_id
+    end
+    table.sort(custom_ids, function(a, b)
+        return (tonumber(a) or 0) < (tonumber(b) or 0)
+    end)
+    for _, situation_id in ipairs(custom_ids) do
+        local situation_key = CUSTOM_SITUATION_PREFIX .. situation_id
+        local situation = M.get_situation_profile_db(situation_key)
+        if situation then
+            entries[#entries + 1] = {
+                key = situation_key,
+                label = situation.name or ("Custom " .. situation_id),
+                enabled = situation.enabled == true,
+            }
+        end
+    end
+    return entries
+end
+
+function M.set_quick_pick_from_menu(situation_key, enabled)
+    if not M.set_manual_situation_enabled(situation_key, enabled) then
+        return false
+    end
+    local db = M.get_db()
+    db.last_quick_pick_key = situation_key
+    if M.sync_temporary_profile_controls then
+        M.sync_temporary_profile_controls()
+    end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function()
+            if M.sync_temporary_profile_controls then
+                M.sync_temporary_profile_controls()
+            end
+        end)
+    end
+    return true
+end
+
 function M.copy_current_sound_channels_to_fishing_focus()
     local focus_db = M.get_fishing_focus_db()
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
