@@ -17,6 +17,8 @@ Important `aura_frames` keys:
 - [Ownership](#ownership)
 - [Runtime Gates And Refresh](#runtime-gates-and-refresh)
 - [Scanning, Rendering, Timers](#scanning-rendering-timers)
+- [Aura Cancellation](#aura-cancellation)
+- [Aura Tooltips](#aura-tooltips)
 - [Position, Drag, Resize](#position-drag-resize)
 - [Profiles And Reset](#profiles-and-reset)
 - [GUI](#gui)
@@ -25,7 +27,6 @@ Important `aura_frames` keys:
 
 ## Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
-- Completed Aura Frames feature notes are consolidated in `completed_features/aura_frames.md`.
 - The rounded/chamfered background investigation remains in `review_2026Jun/graphics/aura_frames_background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
@@ -44,9 +45,8 @@ Important `aura_frames` keys:
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 - General CPU profiling workflow lives in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`; this file keeps only Aura Frames-specific profiling conclusions.
 - Focused Aura profile history and generated comparisons live in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`; regenerate the normalized comparison with `internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1`.
-- 2026-06-27 normalized Aura profile review found no active performance target. Versus the oldest Aura-only baseline, `update_auras` and `get_setting` show sustained improvement, while `tick_visible_icons` raw CPU/sec is lower mainly because the ticker cadence is slower. Ticker-normalized cost is roughly flat/slightly higher, so do not treat visible-icon ticking as a per-tick optimization win without a narrower profile.
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
-- 2026-06-24 visible-icon tick profiling with combat timing showed the ticker cost scales almost linearly with `aura_visible_icon_tick`: `0.10s` baseline was 9.57 calls/sec and 2.98ms/sec combat-normalized, `0.15s` was 6.54 calls/sec and 2.02ms/sec, and `0.20s` was 4.98 calls/sec and 1.50ms/sec. Treat this as a tick-rate tradeoff: the CPU win is real and expected, visual difference was minor, and the user-facing setting should stay limited to the three measured choices (`0.10s`, `0.15s`, `0.20s`).
+- Visible-icon ticker cost scales with `aura_visible_icon_tick`; treat the three measured choices (`0.10s`, `0.15s`, `0.20s`) as a CPU/visual-cadence tradeoff, not a per-tick optimization win.
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
 - Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking.
 - CDM refresh scheduling is centralized in `M.queue_wow_cooldown_refresh(profile)` (`af_main.lua`). Use profiles `"immediate"`, `"startup"`, `"settings"`, `"hook"` instead of local timer chains.
@@ -79,6 +79,26 @@ Important `aura_frames` keys:
 - Timer text enable/format behavior is centralized in `af_functions.lua` via `M.get_timer_behavior()` and `M.is_timer_text_enabled()`. Timer alignment remains layout behavior in `af_icon_layout.lua`.
 
 
+## Aura Cancellation
+- Aura cancellation is supported only out of combat, only for real cancelable player buffs, and only when the configured modifier key is held (`OFF`, `CTRL`, `ALT`, or `SHIFT`). Do not add in-combat cancel support without a secure-button redesign.
+- Addon aura icons are plain frames, not secure aura buttons.
+- Never pass `obj.aura_index` directly to `CancelUnitBuff`; in LsTweeks it stores `auraInstanceID`, while `CancelUnitBuff("player", index, filter)` requires the current positional buff index.
+- On click, reject cheaply first: feature off, combat lockdown, wrong modifier, nonnumeric aura identity, test preview, spell cooldown, disallowed frame/source.
+- Allowed sources are preset `static` and `long` buff frames, plus custom frames when the clicked icon resolves to a current cancelable player buff.
+- Treat a fresh `C_UnitAuras.GetBuffDataByIndex("player", i, "HELPFUL|CANCELABLE")` scan as authoritative. Cancel only when the scan finds the clicked `auraInstanceID`.
+- Ignore unsupported states silently, then queue a normal aura refresh after a successful cancel attempt.
+- `CancelUnitBuff` is restricted and `#nocombat`; secure templates support modifier attributes and `cancelaura`, but combat-safe support would require secure action buttons and careful out-of-combat attribute updates.
+- Non-goals: in-combat cancellation, debuff cancellation, preset short-buff cancellation unless intentionally changed later, CDM/cooldown-viewer cancellation unless backed by a real cancelable player buff, and global keyboard-only cancellation.
+
+
+## Aura Tooltips
+- Treat `tooltip:SetUnitAuraByAuraInstanceID(...)` warnings as a Ketho/Core annotation gap, not a client-version bug. Aura Frames uses the addon-owned tooltip from `addon.GetOwnedTooltip()`, not global `GameTooltip`, for aura icon tooltips.
+- Keep the runtime guard against a missing `SetUnitAuraByAuraInstanceID` method on the tooltip object.
+- Keep the existing spell tooltip fallback path for test auras or missing live aura tooltip support.
+- Ketho/LuaLS does not expose `GameTooltip.SetUnitAuraByAuraInstanceID` on the core `GameTooltip` type, but Ketho FrameXML annotations show Blizzard using it in BuffFrame, CooldownViewer, and NamePlate aura code. FrameXML maps the tooltip handler to `GetUnitAuraByAuraInstanceID`.
+- Test by hovering addon aura icons/bars for active player buffs and debuffs. The test aura should still show a spell tooltip when no live aura tooltip is available.
+
+
 ## Position, Drag, Resize
 - Aura frame positions are stored as unscaled UIParent-center coordinates.
 - CDM default positions are dynamic: new/missing CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
@@ -95,7 +115,7 @@ Important `aura_frames` keys:
 - Loading a profile is blocked in combat. It replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
-- There is no legacy saved-profile corpus for Aura Frames as of 2026-06-21. Reopen deleted/renamed custom-frame profile compatibility only when real saved variables are found or profile storage is intentionally changed; for storage changes, create synthetic profiles specific to that change.
+- There is no tracked legacy saved-profile corpus for Aura Frames. Reopen deleted/renamed custom-frame profile compatibility only when real saved variables are found or profile storage is intentionally changed; for storage changes, create synthetic profiles specific to that change.
 
 
 ## GUI
@@ -105,7 +125,7 @@ Important `aura_frames` keys:
 - `af_gui_tree.lua` owns the Frames sidebar groups: **Buffs**, **WoW Cooldown**, **Filters**.
 - `af_gui_frame_builders.lua` owns General, preset/CDM, custom settings, and custom filter panels.
 - Aura Frames settings grids call the shared `addon.CreateSettingsGrid()` helper directly.
-- Aura Frames frame settings use `grid:stack_below()` for repeated in-cell stacks. Keep color pickers grid-placed in their own columns so centering comes from `CreateSettingsGrid()`, not manual offsets. In-game visual check passed on 2026-06-25.
+- Aura Frames frame settings use `grid:stack_below()` for repeated in-cell stacks. Keep color pickers grid-placed in their own columns so centering comes from `CreateSettingsGrid()`, not manual offsets.
 - Aura Frames tab and tree heights derive from `addon.main_frame:GetContentAreaSize()`, so the main settings window height in `core/main_frame.lua` is the single height knob.
 - CDM controls are source-specific additions layered through `opts.build_source_controls`.
 - Shared presentation controls stay in the common builder; use hooks only for real source-specific behavior.

@@ -34,15 +34,15 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `project.md` addon identity, slash command, SavedVariables, or load-order map: `## Project Overview`.
 - `project.md` module lifecycle, DB defaults, timing buckets, combat guards, or shared GUI rules: `## Shared Architecture`.
 - Shared factory lookup: check `## Core And Shared Helpers` before searching source or hand-building controls. It maps the common addon factories/helpers for settings controls, layout, panels, tooltips, buttons, checkboxes, sliders, dropdowns, color pickers, reset panels, and table/default utilities to their owning files.
-- `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
+- `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Aura Cancellation`, `## Aura Tooltips`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
 - `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
-- `modules/player_frame.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
-- `modules/objectives.md` routing: top summary plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/position runtime and settings, and `ob_main.lua` lifecycle/status shell.
-- `modules/sound_levels.md` routing: top summary plus `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
+- `modules/player_frame.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
+- `modules/objectives.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/position runtime and settings, and `ob_main.lua` lifecycle/status shell.
+- `modules/sound_levels.md` routing: use targeted sections such as `## Saved Variables`, `## Ownership`, `## Runtime Rules`, `## Event Cache And Performance`, `## Fishing Focus And Profiles`, `## GUI`, and `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
-- Read `README.md`, public `sources.md`, research source references, completed-feature notes, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
+- Read `README.md`, public `sources.md`, research source references, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
 
 
 ## Public Surface
@@ -86,7 +86,6 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `internal_dev/tests_tools/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.
 - `review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
-- `completed_features/`: completed investigations; review on demand.
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines.

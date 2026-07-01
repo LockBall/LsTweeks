@@ -1,4 +1,10 @@
 # Objectives Memory
+## Table of Contents
+- [Settings And Defaults](#settings-and-defaults)
+- [Runtime Notes](#runtime-notes)
+
+
+## Settings And Defaults
 Important `objectives` keys:
 - `collapse_all`: when true, starts Blizzard's All Objectives tracker collapsed.
 - `collapse_campaign`: when true, starts Blizzard's Campaign module in the All Objectives tracker collapsed.
@@ -36,5 +42,3 @@ Important `objectives` keys:
 - Section Count is event-driven and does not hook objective tracker layout/update methods. It registers quest title events only while `show_quest_log_count` is true and achievement title events only while `show_tracked_achievement_count` is true. Count scans happen on owned events for always-visible counters, or only while the matching section header is hovered for hover-only counters; syncs cache the displayed count signature and skip `SetText` when the count text has not changed.
 - Current generated Blizzard docs list the tracked achievement cap as 10. Quest-log capacity is read through `C_QuestLog.GetMaxNumQuestsCanAccept()` instead of hardcoded.
 - Initialization can race `ObjectiveTrackerManager:Init()`, which runs after both `PLAYER_ENTERING_WORLD` and `VARIABLES_LOADED`. Remove the `ADDON_LOADED` or delayed `PLAYER_ENTERING_WORLD` apply paths only after in-game testing proves they are redundant.
-- In-game verification passed after the Auto-Collapse group work: checked All Objectives, Campaign, Quests, and Achievements sections start collapsed after reload/login with tracked entries, remain manually expandable/collapsible through Blizzard tracker controls, and reopen once when their option is unchecked. No blocked-action/taint dialogs were observed during the verification pass.
-- Current Section Count in-game smoke testing passed for always-visible and hover-only display behavior. The feature no longer flickers when its checkbox is off, and title counts update through owned events rather than movement/tracker churn.

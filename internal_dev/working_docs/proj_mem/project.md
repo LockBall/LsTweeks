@@ -34,7 +34,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Session start: read `agent_start.md` first; `code_map.md` owns read-in shortcuts, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused review notes in `review_2026Jun/`.
-- Completed notes: `completed_features/`, reviewed on demand.
+- Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
@@ -90,7 +90,6 @@ media/                  public addon/readme assets
 internal_dev/          internal docs excluded from release zips
   tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, CPU profiles, and tool notes
   working_docs/         active project docs, scratch notes, review notes, and proj_mem/
-  completed_features/   completed-feature notes reviewed on demand
 dist/                   generated package output, ignored
 ```
 
@@ -106,7 +105,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Sidebar categories use `addon.register_category(name, builder, { order = n })`; equal order values preserve registration order. Default order is 100.
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
-- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` is the in-game diagnostic for this boundary: it reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. Use `/lst status <module key or label>` for focused diagnostics, such as `/lst status objectives`. In-game all-disabled testing passed on 2026-06-21; see `core_settings_module_status.md`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
+- Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. Use `/lst status <module key or label>` for focused diagnostics, such as `/lst status objectives`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
 - When adding or changing runtime work in a feature module, audit disabled behavior before finishing: events, hooks, timers, callbacks, tickers, queued `C_Timer` work, frames, and status fields must either stop at disable time or cheaply no-op before doing owned work.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
@@ -119,7 +118,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
   resolved state for the hot path. Make the mutability boundary explicit first,
   such as disabling settings edits during an active runtime state while still
   allowing controlled test modes.
-- Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore events/Show and let Blizzard handlers run.
+- Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore addon-owned suppression state and let Blizzard handlers run; module-specific stricter rules such as Aura Frames' `BuffFrame` / `DebuffFrame` handling take precedence.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
 
 
@@ -133,9 +132,9 @@ Violations here can create invisible or unstable controls.
 - Before adding settings UI, check `code_map.md` `## Core And Shared Helpers` for an existing shared factory/helper. Use the shared factory when one exists instead of hand-building equivalent controls or rediscovering the owner by broad search.
 - Standard button text styling lives in `functions/buttons.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, `addon.CreateMoveResetButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
 - Shared color controls live in `functions/color_picker.lua` via `addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)`. Use that factory for settings color pickers instead of hand-building ColorPickerFrame wiring.
-- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`; completed investigation notes live in `dropdown_hover_arrow.md`.
+- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`.
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, `addon.CreateSettingsGroup()` / `addon.ApplySettingsGroupOutline()` / `addon.CreateSettingsGroupTitleBar()` for the gold outlined settings group style with a 24px grey title bar used by Audio Volumes and Objectives, and the addon-owned tooltip factory/helpers (`addon.CreateOwnedTooltip()`, `addon.GetOwnedTooltip()`, `addon.ShowOwnedTooltip()`, `addon.HideOwnedTooltip()`, `addon.AttachTooltip()`, `addon.AttachTooltipToTargets()`) instead of direct module use of global `GameTooltip`.
-- A 2026-06-25 single-source-of-truth scan found repeated standard control-panel backdrops and simple settings tooltip hooks consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Audio Volumes custom panels, and feature-specific list/tree rendering.
+- Repeated standard control-panel backdrops and simple settings tooltip hooks are consolidated into `functions/ui_helpers.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Audio Volumes custom panels, and feature-specific list/tree rendering.
 - Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Prefer the grid object's `grid:place(control, placement)` and `grid:center(control, placement)` helpers when using module-local placement tables, so modules do not duplicate alignment/y-offset/width option mapping.
 - Treat module-local grid placement tables as static source data. Pass dynamic widths or centering details through grid placement options instead of writing derived runtime values back into placement tables.
 - Make non-additive `CreateSettingsGrid()` changes only when current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.
@@ -146,7 +145,7 @@ Violations here can create invisible or unstable controls.
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
-- Tooltip APIs: prefer `GameTooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)`, fall back to `GameTooltip:SetSpellByID`.
+- Tooltip APIs: prefer `tooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)` on the addon-owned tooltip frame, fall back to `tooltip:SetSpellByID`.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.

@@ -57,7 +57,6 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Markdown structure: one `#` title; multi-section docs include `## Table of Contents` and stable `##` headings.
 - Token measurement: GUI-reported agent-token measurements only; no rough character-count/file-size estimates.
 - Rule phrasing: prefer positive gating (`Only do X when Y`) for conditional guidance; keep direct negative language for hard prohibitions.
-- `completed_features/`: completed feature investigations.
 - `review_2026Jun/`: temporary active review context and TODO/follow-up items.
 - Future work: active/dormant TODOs belong in review notes; durable `proj_mem` can point to them but should not be the only owner.
 - Root-level markdown files such as `README.md` and `sources.md` are public-facing release/user docs, not internal agent memory.

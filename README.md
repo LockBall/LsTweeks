@@ -48,7 +48,7 @@ Slash command: `/lst`
 ### Audio Volumes
 - Quieter addon replacement sounds for supported targets, currently including Achievement test and Ready Check.
 - Per-target Original behavior and replacement volume controls.
-- Temporary channel controls for normal game volumes, fishing volumes, and combat volumes.
+- Temporary channel controls for normal game volumes, fishing volumes, combat volumes, and manual Quick Picks.
 
 
 ### Settings
@@ -132,7 +132,9 @@ Current sound targets:
 
 Replacement volume is shown as `0-100%` in 5% steps. `0%` is off. The **Original** checkbox keeps Blizzard's original sound and dims the replacement slider until the slider is moved.
 
-The **Situations** tab always shows Normal Volumes for the user's regular Master, Music, Effects, Ambience, and Dialog channel volumes. A situation list selects one editable situation row below it, with built-in Fishing and Combat situations plus user-created custom situations. Fishing and Combat have title-bar enable checkboxes for automatic activation; custom situations are manual/preview-only for now. Combat starts use `PLAYER_REGEN_DISABLED`, combat ends use `PLAYER_REGEN_ENABLED`, and entering combat exits the Fishing profile. The Play buttons preview the selected profile with the Fishing Bobber splash sound. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
+The **Situations** tab always shows Normal Volumes for the user's regular Master, Music, Effects, Ambience, and Dialog channel volumes. A situation list selects one editable built-in situation row below it: Fishing or Combat. Fishing and Combat have title-bar enable checkboxes for automatic activation. Combat starts use `PLAYER_REGEN_DISABLED`, combat ends use `PLAYER_REGEN_ENABLED`, and entering combat exits the Fishing profile.
+
+The **Quick Picks** tab stores manual sound-channel profiles, including Quiet Custom and user-created custom Quick Picks. Quick Picks do not auto-trigger because there is no user-facing trigger builder. Fishing and Combat temporarily override an enabled Quick Pick, then the Quick Pick resumes afterward. The Play buttons preview the selected profile with the Fishing Bobber splash sound. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
 Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
 
