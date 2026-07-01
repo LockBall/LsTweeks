@@ -327,16 +327,16 @@ function M.sync_position_controls(db)
     if not position then return end
 
     local x_slider = M.controls.x_position
-    if x_slider and x_slider.slider and position.x ~= nil and x_slider.slider:GetValue() ~= position.x then
+    if x_slider and x_slider.GetValue and x_slider.SetValueSilently and position.x ~= nil and x_slider:GetValue() ~= position.x then
         M._syncing_position_controls = true
-        x_slider.slider:SetValue(position.x)
+        x_slider:SetValueSilently(position.x)
         M._syncing_position_controls = nil
     end
 
     local y_slider = M.controls.y_position
-    if y_slider and y_slider.slider and position.y ~= nil and y_slider.slider:GetValue() ~= position.y then
+    if y_slider and y_slider.GetValue and y_slider.SetValueSilently and position.y ~= nil and y_slider:GetValue() ~= position.y then
         M._syncing_position_controls = true
-        y_slider.slider:SetValue(position.y)
+        y_slider:SetValueSilently(position.y)
         M._syncing_position_controls = nil
     end
 end
@@ -348,7 +348,7 @@ function M.sync_slider_controls(db)
     M._syncing_slider_controls = true
     for _, key in ipairs(M.SLIDER_KEYS or {}) do
         local control = M.controls[key]
-        if control and control.slider then
+        if control and control.GetValue and control.SetValueSilently then
             local value
             if key == "scale" and M.get_style_scale then
                 value = M.get_style_scale()
@@ -358,10 +358,8 @@ function M.sync_slider_controls(db)
                 value = db[key]
             end
             if value == nil then value = defaults[key] end
-            if value ~= nil and control.slider:GetValue() ~= value then
-                control._suppress_callback = true
-                control.slider:SetValue(value)
-                control._suppress_callback = nil
+            if value ~= nil and control:GetValue() ~= value then
+                control:SetValueSilently(value)
             end
         end
     end
@@ -373,32 +371,26 @@ function M.sync_decor_position_controls(db)
     if not db then return end
 
     local x_slider = M.controls.decor_x_position
-    if x_slider and x_slider.slider then
+    if x_slider and x_slider.GetValue and x_slider.SetValueSilently then
         local value = M.get_decor_position_axis and M.get_decor_position_axis("x")
-        if value ~= nil and x_slider.slider:GetValue() ~= value then
-            x_slider._suppress_callback = true
-            x_slider.slider:SetValue(value)
-            x_slider._suppress_callback = nil
+        if value ~= nil and x_slider:GetValue() ~= value then
+            x_slider:SetValueSilently(value)
         end
     end
 
     local y_slider = M.controls.decor_y_position
-    if y_slider and y_slider.slider then
+    if y_slider and y_slider.GetValue and y_slider.SetValueSilently then
         local value = M.get_decor_position_axis and M.get_decor_position_axis("y")
-        if value ~= nil and y_slider.slider:GetValue() ~= value then
-            y_slider._suppress_callback = true
-            y_slider.slider:SetValue(value)
-            y_slider._suppress_callback = nil
+        if value ~= nil and y_slider:GetValue() ~= value then
+            y_slider:SetValueSilently(value)
         end
     end
 
     local scale_slider = M.controls.decor_scale
-    if scale_slider and scale_slider.slider then
+    if scale_slider and scale_slider.GetValue and scale_slider.SetValueSilently then
         local value = M.get_decor_scale and M.get_decor_scale()
-        if value ~= nil and scale_slider.slider:GetValue() ~= value then
-            scale_slider._suppress_callback = true
-            scale_slider.slider:SetValue(value)
-            scale_slider._suppress_callback = nil
+        if value ~= nil and scale_slider:GetValue() ~= value then
+            scale_slider:SetValueSilently(value)
         end
     end
 end
@@ -674,7 +666,7 @@ local function build_position_row(parent, context)
         "x",
         default_position
     )
-    x_slider.slider:HookScript("OnValueChanged", function(_, value)
+    x_slider:HookValueChanged(function(_, value)
         M.set_position_axis("x", value)
     end)
     M.controls.x_position = register_flight_locked_control(x_slider)
@@ -692,7 +684,7 @@ local function build_position_row(parent, context)
         "y",
         default_position
     )
-    y_slider.slider:HookScript("OnValueChanged", function(_, value)
+    y_slider:HookValueChanged(function(_, value)
         M.set_position_axis("y", value)
     end)
     M.controls.y_position = register_flight_locked_control(y_slider)

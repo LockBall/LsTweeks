@@ -301,14 +301,14 @@ function M.reset_frame_move_placement(frame, opts)
     local x_slider = opts.x_slider
     local y_slider = opts.y_slider
     local width_slider = opts.width_slider
-    if x_slider and x_slider.slider and pos and pos.x ~= nil then
-        x_slider.slider:SetValue(pos.x)
+    if x_slider and x_slider.SetValueSilently and pos and pos.x ~= nil then
+        x_slider:SetValueSilently(pos.x)
     end
-    if y_slider and y_slider.slider and pos and pos.y ~= nil then
-        y_slider.slider:SetValue(pos.y)
+    if y_slider and y_slider.SetValueSilently and pos and pos.y ~= nil then
+        y_slider:SetValueSilently(pos.y)
     end
-    if width_slider and width_slider.slider and default_width then
-        width_slider.slider:SetValue(default_width)
+    if width_slider and width_slider.SetValueSilently and default_width then
+        width_slider:SetValueSilently(default_width)
     end
 
     if opts.update then

@@ -337,16 +337,16 @@ function M.sync_temporary_profile_controls()
     end
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         local slider = M.controls["fishing_focus_" .. channel.key]
-        if slider and slider.slider and slider.slider.SetValue then
-            slider.slider:SetValue(focus_db[channel.key])
+        if slider and slider.SetValueSilently then
+            slider:SetValueSilently(focus_db[channel.key])
         end
         local combat_slider = M.controls["combat_volumes_" .. channel.key]
-        if combat_slider and combat_slider.slider and combat_slider.slider.SetValue then
-            combat_slider.slider:SetValue(combat_db[channel.key])
+        if combat_slider and combat_slider.SetValueSilently then
+            combat_slider:SetValueSilently(combat_db[channel.key])
         end
         local quiet_slider = M.controls["situation_quiet_custom_" .. channel.key]
-        if quiet_slider and quiet_slider.slider and quiet_slider.slider.SetValue and quiet_custom_db then
-            quiet_slider.slider:SetValue(quiet_custom_db[channel.key])
+        if quiet_slider and quiet_slider.SetValueSilently and quiet_custom_db then
+            quiet_slider:SetValueSilently(quiet_custom_db[channel.key])
         end
     end
     local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
@@ -358,8 +358,8 @@ function M.sync_temporary_profile_controls()
         end
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local slider = M.controls["situation_" .. situation_key .. "_" .. channel.key]
-            if slider and slider.slider and slider.slider.SetValue then
-                slider.slider:SetValue(situation[channel.key])
+            if slider and slider.SetValueSilently then
+                slider:SetValueSilently(situation[channel.key])
             end
         end
     end
@@ -566,10 +566,8 @@ local function build_situations_tab(parent, opts)
                 current_defaults[channel.key] = current_percent
             end
             local slider = current_sliders[channel.key]
-            if slider and slider.slider and slider.slider.SetValue then
-                slider._suppress_callback = true
-                slider.slider:SetValue(current_percent)
-                slider._suppress_callback = false
+            if slider and slider.SetValueSilently then
+                slider:SetValueSilently(current_percent)
             end
         end
     end

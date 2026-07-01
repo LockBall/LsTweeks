@@ -162,8 +162,8 @@ function M.on_reset_complete()
         reload_cb:SetChecked(Ls_Tweeks_DB.open_on_reload or false)
     end
     local alpha_slider = M.controls["alpha_slider"]
-    if alpha_slider and alpha_slider.slider then
-        alpha_slider.slider:SetValue(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
+    if alpha_slider and alpha_slider.SetValueSilently then
+        alpha_slider:SetValueSilently(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
     end
     for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
         local module_cb = M.controls["module_" .. module_def.key]

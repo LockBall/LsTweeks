@@ -540,6 +540,8 @@ local function restore_cached_normal_profile()
 end
 
 function M.apply_active_sound_channel_profile()
+    restore_bobber_preview_profile()
+
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M._fishing_focus_active = false
         M._combat_volumes_active = false

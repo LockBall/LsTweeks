@@ -234,17 +234,13 @@ end
 
 local function sync_objective_position_sliders()
     local x_slider = M.controls and M.controls.objective_tracker_offset_x_slider
-    if x_slider and x_slider.slider and x_slider.slider.SetValue then
-        x_slider._suppress_callback = true
-        x_slider.slider:SetValue(get_objective_offset("x"))
-        x_slider._suppress_callback = false
+    if x_slider and x_slider.SetValueSilently then
+        x_slider:SetValueSilently(get_objective_offset("x"))
     end
 
     local y_slider = M.controls and M.controls.objective_tracker_offset_y_slider
-    if y_slider and y_slider.slider and y_slider.slider.SetValue then
-        y_slider._suppress_callback = true
-        y_slider.slider:SetValue(get_objective_offset("y"))
-        y_slider._suppress_callback = false
+    if y_slider and y_slider.SetValueSilently then
+        y_slider:SetValueSilently(get_objective_offset("y"))
     end
 end
 
@@ -1428,8 +1424,7 @@ function M.BuildBackgroundSettings(parent)
             tooltip = "Controls Blizzard's Objective Tracker Edit Mode opacity without opening Edit Mode.",
         }
     )
-    background_alpha_slider.slider:HookScript("OnValueChanged", function()
-        if background_alpha_slider._suppress_callback then return end
+    background_alpha_slider:HookValueChanged(function()
         apply_configured_background_color(false)
     end)
     M.controls.background_alpha_slider = background_alpha_slider

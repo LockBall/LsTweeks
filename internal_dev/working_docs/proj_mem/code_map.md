@@ -63,7 +63,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
 - `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
-- `functions/slider_with_box.lua`: shared slider plus numeric edit box.
+- `functions/slider_with_box.lua`: shared slider plus numeric edit box, including `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`.
 - `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, gold outlined settings groups, and simple tooltip hooks.
 - `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 

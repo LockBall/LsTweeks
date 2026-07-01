@@ -1,5 +1,8 @@
 -- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb, opts).
 -- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
+-- Programmatic refresh callers can use container:SetValueSilently(value) to sync display/DB without invoking the callback.
+-- Use container:GetValue(), container:SetValue(value), and container:HookValueChanged(fn, opts)
+-- instead of reaching into container.slider for routine value handling.
 
 
 local addon_name, addon = ...
@@ -120,8 +123,15 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end
 
     local debounce_timer = nil
+    local function cancel_debounce()
+        if debounce_timer then
+            debounce_timer:Cancel()
+            debounce_timer = nil
+        end
+    end
+
     local function debounced_callback(value)
-        if debounce_timer then debounce_timer:Cancel() end
+        cancel_debounce()
         debounce_timer = C_Timer.NewTimer(UPDATE_INTERVALS.tenth_sec, function()
             debounce_timer = nil
             run_callback(value)
@@ -129,7 +139,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end
 
     container:SetScript("OnHide", function()
-        if debounce_timer then debounce_timer:Cancel(); debounce_timer = nil end
+        cancel_debounce()
     end)
 
     slider:SetScript("OnValueChanged", function(self, value)
@@ -188,8 +198,39 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         addon.AttachTooltip(title, nil, opts.tooltip)
     end
 
-    -- Expose inner slider so callers can call SetValue to update the display.
+    -- Expose the inner slider only for template-specific escape hatches.
     container.slider = slider
+    container.GetValue = function()
+        return slider:GetValue()
+    end
+    container.SetValue = function(_, value)
+        if db_table then
+            db_table[db_key] = value
+        end
+        eb:SetText(format_display_value(value))
+        slider:SetValue(value)
+    end
+    container.SetValueSilently = function(_, value)
+        cancel_debounce()
+        local was_suppressed = container._suppress_callback
+        container._suppress_callback = true
+        if db_table then
+            db_table[db_key] = value
+        end
+        eb:SetText(format_display_value(value))
+        slider:SetValue(value)
+        container._suppress_callback = was_suppressed
+    end
+    container.HookValueChanged = function(_, handler, hook_opts)
+        if type(handler) ~= "function" then return end
+        hook_opts = hook_opts or {}
+        slider:HookScript("OnValueChanged", function(_, value)
+            if container._suppress_callback and hook_opts.run_when_silent ~= true then
+                return
+            end
+            handler(container, value)
+        end)
+    end
     container.SetEnabled = function(_, enabled)
         enabled = enabled and true or false
         slider:SetEnabled(enabled)

@@ -388,12 +388,10 @@ function M.sync_general_controls_from_db()
     end
 
     local visible_icon_tick = M.controls.aura_visible_icon_tick_slider
-    if visible_icon_tick and visible_icon_tick.slider then
-        visible_icon_tick._suppress_callback = true
-        visible_icon_tick.slider:SetValue(M.get_visible_icon_tick_interval and M.get_visible_icon_tick_interval()
+    if visible_icon_tick and visible_icon_tick.SetValueSilently then
+        visible_icon_tick:SetValueSilently(M.get_visible_icon_tick_interval and M.get_visible_icon_tick_interval()
             or M.db.aura_visible_icon_tick
             or M.defaults.aura_visible_icon_tick)
-        visible_icon_tick._suppress_callback = nil
     end
 
     for _, cat in ipairs(M.CATEGORIES or {}) do
@@ -427,8 +425,8 @@ function M.sync_general_controls_from_db()
         end
 
         local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
-        if font_size_slider and font_size_slider.slider then
-            font_size_slider.slider:SetValue(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or 10)
+        if font_size_slider and font_size_slider.SetValueSilently then
+            font_size_slider:SetValueSilently(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or 10)
         end
     end
 

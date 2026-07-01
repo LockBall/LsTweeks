@@ -58,6 +58,8 @@
 - Disabled sync should not create profile event frames or initialize profile DB values.
 - Normal Volumes sliders edit the user's normal `Sound_*` CVars. If a temporary profile is active, they update the cached normal values restored afterward instead of overwriting the active temporary profile.
 - Preview buttons play FishingBobber SoundKit `3355` on SFX. Normal Volumes preview must not write CVars; profile previews temporarily apply and then restore their profiles.
+- Active profile application cancels/restores any pending profile preview before writing runtime CVars, so a delayed preview restore cannot overwrite a newly active Fishing, Combat, or Quick Pick profile.
+- Temporary profile GUI refresh uses the shared slider `SetValueSilently()` helper so programmatic display sync does not schedule profile resync callbacks.
 - Situation test sounds may be SoundKit-backed (`soundkit`, played with `PlaySound`) or FileDataID-backed (`file_id`, played with `PlaySoundFile`). Bloodlust `568812` was verified in-game as a FileDataID: `/run PlaySoundFile(568812)` worked while `PlaySound(568812)` did not.
 
 

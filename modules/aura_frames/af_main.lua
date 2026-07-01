@@ -608,8 +608,8 @@ local function create_aura_frame_resizer(frame, category)
         save_aura_frame_width(frame, category, clamped_width)
 
         local width_slider = get_width_slider_control(frame, category)
-        if width_slider and width_slider.slider then
-            width_slider.slider:SetValue(clamped_width)
+        if width_slider and width_slider.SetValueSilently then
+            width_slider:SetValueSilently(clamped_width)
         end
 
         refresh_aura_frame_after_resize(frame)

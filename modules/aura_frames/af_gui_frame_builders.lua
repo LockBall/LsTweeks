@@ -390,7 +390,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         "x",
         default_position
     )
-    x_slider.slider:HookScript("OnValueChanged", function(_, value)
+    x_slider:HookValueChanged(function(_, value)
         update_frame_position("x", value)
     end)
     if options.x_control_key then M.controls[options.x_control_key] = x_slider end
@@ -406,7 +406,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         "y",
         default_position
     )
-    y_slider.slider:HookScript("OnValueChanged", function(_, value)
+    y_slider:HookValueChanged(function(_, value)
         update_frame_position("y", value)
     end)
     if options.y_control_key then M.controls[options.y_control_key] = y_slider end
@@ -421,7 +421,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         1,
         "width"
     )
-    width_slider.slider:HookScript("OnValueChanged", function(_, value)
+    width_slider:HookValueChanged(function(_, value)
         local f = M.frames[frame_show_key]
         if not f then return end
         f:SetWidth(math.floor(value + 0.5))
@@ -462,11 +462,11 @@ local function create_frame_position_controls(parent, frame_config, grid, update
 
     local function sync_xy_sliders_to_frame()
         local f = M.frames[frame_show_key]
-        if not (f and x_slider and y_slider and x_slider.slider and y_slider.slider) then return end
+        if not (f and x_slider and y_slider and x_slider.SetValueSilently and y_slider.SetValueSilently) then return end
         local pos = M.get_frame_position_table(f) or position_table
         if pos and pos.x ~= nil and pos.y ~= nil then
-            x_slider.slider:SetValue(pos.x)
-            y_slider.slider:SetValue(pos.y)
+            x_slider:SetValueSilently(pos.x)
+            y_slider:SetValueSilently(pos.y)
         end
     end
 

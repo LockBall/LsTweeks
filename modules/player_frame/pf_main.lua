@@ -387,8 +387,8 @@ function M.on_reset_complete()
     end
     for _, def in ipairs(FADE_SLIDER_DEFS) do
         local slider = M.controls[def.control_key]
-        if slider and slider.slider then
-            slider.slider:SetValue(M.get_clamped_fade_value(db, def.key, def.min, def.max))
+        if slider and slider.SetValueSilently then
+            slider:SetValueSilently(M.get_clamped_fade_value(db, def.key, def.min, def.max))
         end
     end
 end
