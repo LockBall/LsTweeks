@@ -11,17 +11,17 @@ local STRINGS = {
     use_original_label = "Original",
     play_on_adjust_label = "Play on Adjust",
     fishing_help_text =
-        "Fishing Focus temporarily applies a second sound-channel profile while the player is channeling Fishing."
+        "Fishing Focus temporarily applies a second sound-channel situation while the player is channeling Fishing."
         .. "\n\nWhen the fishing channeling ends, the normal volumes are restored."
         .. "\n\nThe FishingBobber splash sound plays on the Effects channel. Increase that first. You can also reduce other channels to emphasize the difference.",
     combat_help_text =
-        "Combat Volumes temporarily applies a second sound-channel profile while the player is in combat."
+        "Combat Volumes temporarily applies a second sound-channel situation while the player is in combat."
         .. "\n\nWhen combat ends, the normal channel volumes are restored."
         .. "\n\nEntering combat exits Fishing Focus so combat has priority over fishing audio."
         .. "\n\nCombat sounds are played on the Effects channel.",
     custom_help_text =
-        "Quick Picks store reusable sound-channel profiles."
-        .. "\n\nEnable turns the selected custom profile on immediately. Use Play to preview it without leaving it on.",
+        "Quick Picks store reusable sound-channel situations."
+        .. "\n\nEnable turns the selected Quick Pick on immediately. Use Play to preview it without leaving it on.",
     help_text =
         "This module uses premade files at specific volumes because WoW does not support per-sound volume controls."
         .. "\n\nOriginal is the unmodified WoW volume."
@@ -163,7 +163,7 @@ local function build_slider_panel(parent, target_key, target)
     local play_button = create_play_button(slider_panel, target_key)
     play_button:SetPoint("RIGHT", slider_widget, "LEFT", 0, 0)
 
-    local original_checkbox = nil
+    local original_container, original_checkbox, original_label
     local suppress_original_clear = false
 
     local function set_slider_inactive(inactive)
@@ -238,7 +238,6 @@ local function build_slider_panel(parent, target_key, target)
     slider_options_row:SetSize(UI.slider_width, 24)
     slider_options_row:SetPoint("TOP", slider_widget, "BOTTOM", 0, -6)
 
-    local original_container, original_label
     original_container, original_checkbox, original_label = addon.CreateCheckbox(
         slider_panel,
         STRINGS.use_original_label,
@@ -424,23 +423,23 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
     return title_bar, title
 end
 
-local function build_situations_tab(parent, opts)
-    opts = opts or {}
-    local is_quick_picks = opts.quick_picks == true
-    local selection_db_key = is_quick_picks and "last_quick_pick_key" or "last_situation_key"
-    local fallback_selection_key = is_quick_picks and "quiet_custom" or "fishing"
+local function build_situations_tab(parent)
+    local selection_db_key = "last_situation_key"
+    local fallback_selection_key = "fishing"
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
     local quiet_custom_db = M.get_quiet_custom_db()
     local focus_defaults = {}
     local combat_defaults = {}
     local quiet_custom_defaults = {}
-    local control_scope = is_quick_picks and "QuickPick" or "Situation"
+    local control_scope = "Situation"
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
-    local situation_rows = {}
     local situation_panels = {}
     local selected_key = nil
     local get_situation_entry = nil
+    local select_situation
+    local rebuild_situation_list
+    local handle_delete_situation
     local sliders_panel_width = math.max(
         UI.panel_width,
         (UI.fishing_slider_pad_x * 2) + (slider_count * UI.fishing_slider_width) + (math.max(slider_count - 1, 0) * UI.fishing_slider_gap)
@@ -474,10 +473,23 @@ local function build_situations_tab(parent, opts)
         col_align = { "left", "left", "left", "left", "left" },
     })
 
-    local situation_list_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    situation_list_panel:SetSize(UI.fishing_slider_width, (UI.fishing_volumes_panel_height * 2) + 16)
+    local situation_list_panel = addon.CreateGroupColumn(parent, {
+        width = UI.fishing_slider_width,
+        height = (UI.fishing_volumes_panel_height * 2) + 16,
+        row_height = UI.list_row_height,
+        pad = 9,
+        on_select = function(entry)
+            if select_situation then
+                select_situation(entry.key, true)
+            end
+        end,
+        on_delete = function(entry)
+            if handle_delete_situation then
+                handle_delete_situation(entry)
+            end
+        end,
+    })
     situation_grid:place_at(situation_list_panel, 3, 1)
-    apply_box_backdrop(situation_list_panel)
 
     local current_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     current_panel:SetSize(sliders_panel_width, UI.fishing_volumes_panel_height)
@@ -615,13 +627,11 @@ local function build_situations_tab(parent, opts)
 
     local function get_situation_entries()
         local entries = {}
-        if is_quick_picks then
-            entries[#entries + 1] = { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true }
-        else
-            entries[#entries + 1] = { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing" }
-            entries[#entries + 1] = { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat" }
-            return entries
-        end
+        entries[#entries + 1] = { label = "Triggered", header = true, group = "triggered" }
+        entries[#entries + 1] = { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing", group = "triggered" }
+        entries[#entries + 1] = { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat", group = "triggered" }
+        entries[#entries + 1] = { label = "Quick Picks", header = true, group = "quick_picks" }
+        entries[#entries + 1] = { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true, group = "quick_picks" }
         local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
         local custom_ids = {}
         for situation_id in pairs(custom_situations) do
@@ -638,6 +648,8 @@ local function build_situations_tab(parent, opts)
                 db = situation,
                 profile_key = "custom:" .. situation_id,
                 custom = true,
+                deletable = true,
+                group = "quick_picks",
             }
         end
         return entries
@@ -645,13 +657,10 @@ local function build_situations_tab(parent, opts)
 
     get_situation_entry = function(situation_key)
         for _, entry in ipairs(get_situation_entries()) do
-            if entry.key == situation_key then return entry end
+            if not entry.header and entry.key == situation_key then return entry end
         end
         return nil
     end
-
-    local select_situation
-    local rebuild_situation_list
 
     local function create_situation_panel(entry)
         local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -811,15 +820,13 @@ local function build_situations_tab(parent, opts)
         and M.get_db()[selection_db_key]
         or fallback_selection_key
 
-    select_situation = function(situation_key)
+    select_situation = function(situation_key, from_group_column)
         local entry = get_situation_entry(situation_key)
         if not entry then return end
         selected_key = situation_key
         M.get_db()[selection_db_key] = situation_key
-        for _, row in ipairs(situation_rows) do
-            local selected = row.situation_key == selected_key
-            row.bg:SetShown(selected)
-            row.text:SetTextColor(selected and 1 or 0.86, selected and 0.82 or 0.86, selected and 0 or 0.86)
+        if not from_group_column then
+            situation_list_panel:Select(situation_key, true)
         end
         for _, panel in pairs(situation_panels) do
             panel:Hide()
@@ -840,106 +847,55 @@ local function build_situations_tab(parent, opts)
     end
 
     rebuild_situation_list = function()
-        for _, row in ipairs(situation_rows) do
-            row:Hide()
-        end
-        situation_rows = {}
-        local entries = get_situation_entries()
-        for i, entry in ipairs(entries) do
-            local row = CreateFrame("Button", nil, situation_list_panel)
-            row:SetSize(UI.fishing_slider_width - 18, UI.list_row_height)
-            row:SetPoint("TOPLEFT", situation_list_panel, "TOPLEFT", 9, -(10 + ((i - 1) * UI.list_row_height)))
-            row.situation_key = entry.key
-
-            row.bg = row:CreateTexture(nil, "BACKGROUND")
-            row.bg:SetAllPoints()
-            row.bg:SetColorTexture(0.75, 0.63, 0.12, 0.28)
-            row.bg:Hide()
-
-            local row_hover = row:CreateTexture(nil, "HIGHLIGHT")
-            row_hover:SetAllPoints()
-            row_hover:SetColorTexture(1, 1, 1, 0.08)
-
-            row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            row.text:SetPoint("LEFT", row, "LEFT", 8, 0)
-            row.text:SetPoint("RIGHT", row, "RIGHT", entry.custom and -24 or -8, 0)
-            row.text:SetJustifyH("LEFT")
-            row.text:SetText(entry.label)
-            row:SetScript("OnClick", function()
-                select_situation(entry.key)
-            end)
-            if entry.custom then
-                local delete_button = CreateFrame("Button", nil, row, "UIPanelCloseButton")
-                delete_button:SetSize(16, 16)
-                delete_button:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-                delete_button:SetAlpha(0)
-
-                row:SetScript("OnEnter", function()
-                    delete_button:SetAlpha(1)
-                end)
-                row:SetScript("OnLeave", function()
-                    delete_button:SetAlpha(0)
-                end)
-                delete_button:SetScript("OnEnter", function()
-                    delete_button:SetAlpha(1)
-                end)
-                delete_button:SetScript("OnLeave", function()
-                    delete_button:SetAlpha(0)
-                end)
-
-                local delete_key = entry.key
-                local delete_label = entry.label
-                delete_button:SetScript("OnClick", function()
-                    StaticPopupDialogs["LSTWEEKS_DEL_CUSTOM_SITUATION"] = {
-                        text = 'Delete custom situation "' .. delete_label .. '"?',
-                        button1 = "Delete",
-                        button2 = "Cancel",
-                        OnAccept = function()
-                            if situation_panels[delete_key] then
-                                situation_panels[delete_key]:Hide()
-                                situation_panels[delete_key] = nil
-                            end
-                            local was_enabled = delete_key ~= "quiet_custom"
-                                and M.get_situation_profile_db
-                                and M.get_situation_profile_db(delete_key)
-                                and M.get_situation_profile_db(delete_key).enabled == true
-                            if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
-                                if was_enabled and M.sync_manual_situation_profile then
-                                    M.sync_manual_situation_profile()
-                                end
-                                selected_key = selected_key == delete_key and fallback_selection_key or selected_key
-                                rebuild_situation_list()
-                                select_situation(get_situation_entry(selected_key) and selected_key or fallback_selection_key)
-                            end
-                        end,
-                        timeout = 0,
-                        whileDead = true,
-                        hideOnEscape = true,
-                    }
-                    StaticPopup_Show("LSTWEEKS_DEL_CUSTOM_SITUATION")
-                end)
-            end
-            situation_rows[#situation_rows + 1] = row
-        end
+        situation_list_panel:SetEntries(get_situation_entries())
     end
 
-    if is_quick_picks then
-        local add_custom_button = CreateFrame("Button", nil, situation_list_panel, "UIPanelButtonTemplate")
-        add_custom_button:SetSize(UI.fishing_slider_width - 18, 22)
-        add_custom_button:SetPoint("BOTTOMLEFT", situation_list_panel, "BOTTOMLEFT", 9, 10)
-        add_custom_button:SetText("+ Custom")
-        if addon.ApplyStandardButtonStyle then
-            addon.ApplyStandardButtonStyle(add_custom_button)
-        end
-        add_custom_button:SetScript("OnClick", function()
-            if M.create_custom_situation then
-                local situation_key = M.create_custom_situation()
-                M.get_db()[selection_db_key] = situation_key
-                rebuild_situation_list()
-                select_situation(situation_key)
-            end
-        end)
+    handle_delete_situation = function(entry)
+        if not (entry and entry.deletable) then return end
+        local delete_key = entry.key
+        local delete_label = entry.label
+        StaticPopupDialogs["LSTWEEKS_DEL_CUSTOM_SITUATION"] = {
+            text = 'Delete custom situation "' .. delete_label .. '"?',
+            button1 = "Delete",
+            button2 = "Cancel",
+            OnAccept = function()
+                if situation_panels[delete_key] then
+                    situation_panels[delete_key]:Hide()
+                    situation_panels[delete_key] = nil
+                end
+                local was_enabled = delete_key ~= "quiet_custom"
+                    and M.get_situation_profile_db
+                    and M.get_situation_profile_db(delete_key)
+                    and M.get_situation_profile_db(delete_key).enabled == true
+                if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
+                    if was_enabled and M.sync_manual_situation_profile then
+                        M.sync_manual_situation_profile()
+                    end
+                    selected_key = selected_key == delete_key and "quiet_custom" or selected_key
+                    rebuild_situation_list()
+                    select_situation(get_situation_entry(selected_key) and selected_key or fallback_selection_key)
+                end
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+        StaticPopup_Show("LSTWEEKS_DEL_CUSTOM_SITUATION")
     end
+
+    situation_list_panel:SetGroupAction("quick_picks", "+ Custom", function()
+        if M.create_custom_situation then
+            local situation_key = M.create_custom_situation()
+            M.get_db()[selection_db_key] = situation_key
+            rebuild_situation_list()
+            select_situation(situation_key)
+        end
+    end, {
+        width = UI.fishing_slider_width - 18,
+        height = UI.list_row_height,
+        x = 9,
+        position = "bottom",
+    })
 
     rebuild_situation_list()
     select_situation(selected_key)
@@ -947,10 +903,6 @@ local function build_situations_tab(parent, opts)
 end
 
 --#endregion SITUATIONS TAB ====================================================
-
-local function build_quick_picks_tab(parent)
-    build_situations_tab(parent, { quick_picks = true })
-end
 
 --#region SPECIFICS TAB =========================================================
 
@@ -1047,7 +999,6 @@ function M.BuildSettings(parent)
         { label = "General", builder = build_general_tab },
         { label = "Specifics", builder = build_specifics_tab },
         { label = "Situations", builder = build_situations_tab },
-        { label = "Quick Picks", builder = build_quick_picks_tab },
     }
     local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 

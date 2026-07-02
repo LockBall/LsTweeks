@@ -241,7 +241,7 @@ local PROFILE_SECTIONS = {
             wrap_table_functions(addon.player_frame and addon.player_frame.fade, "player_frame.fade")
         end,
     },
-    -- Audio Volumes module, including temporary profile helpers.
+    -- Audio Volumes module, including temporary situation helpers.
     {
         key = "sound_levels",
         label = "Audio Volumes",

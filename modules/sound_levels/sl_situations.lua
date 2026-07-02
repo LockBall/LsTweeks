@@ -1,4 +1,5 @@
--- Temporary Audio Volumes channel profiles for Fishing Focus and Combat Volumes.
+-- Audio Volumes situations: Fishing Focus, Combat Volumes, Quick Picks,
+-- temporary channel CVars, situation previews, and situation event routing.
 local addon_name, addon = ...
 
 addon.sound_levels = addon.sound_levels or {}
@@ -359,6 +360,7 @@ function M.set_quick_pick_from_menu(situation_key, enabled)
     end
     local db = M.get_db()
     db.last_quick_pick_key = situation_key
+    db.last_situation_key = situation_key
     if M.sync_temporary_profile_controls then
         M.sync_temporary_profile_controls()
     end

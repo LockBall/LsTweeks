@@ -1,4 +1,4 @@
--- Audio Volumes module bootstrap: applies defaults, starts runtime state,
+-- Audio Volumes main controller: applies defaults, starts runtime state,
 -- registers the settings category, and resyncs controls after reset.
 local addon_name, addon = ...
 
