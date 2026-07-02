@@ -118,6 +118,14 @@ function addon.CreateGroupColumn(parent, opts)
         return nil
     end
 
+    local function get_group_select_key(group)
+        if not group then return nil end
+        if group.default_key and find_entry(group.default_key) then
+            return group.default_key
+        end
+        return group.entries and group.entries[1] and group.entries[1].key or nil
+    end
+
     local function refresh_selection()
         local selected_entry = find_entry(selected_key)
         selected_row = nil
@@ -165,7 +173,7 @@ function addon.CreateGroupColumn(parent, opts)
         if box then return box end
         box = CreateFrame("Frame", nil, frame, "BackdropTemplate")
         box:SetFrameLevel(frame:GetFrameLevel() + 1)
-        box:EnableMouse(false)
+        box:EnableMouse(true)
         apply_thin_border_backdrop(box, nil, opts.inactive_border or DEFAULTS.inactive_border)
         group_boxes[group_key] = box
         return box
@@ -189,6 +197,7 @@ function addon.CreateGroupColumn(parent, opts)
                 current_group = {
                     key = entry.group or ("group_" .. (#groups + 1)),
                     title = entry.label,
+                    default_key = entry.default_key,
                     entries = {},
                 }
                 groups[#groups + 1] = current_group
@@ -270,6 +279,7 @@ function addon.CreateGroupColumn(parent, opts)
             local group_top_y = y
             local box = acquire_group_box(group_key)
             local title = acquire_group_title(group_key)
+            local group_select_key = get_group_select_key(group)
 
             y = y - group_inner_pad
             title:ClearAllPoints()
@@ -303,6 +313,11 @@ function addon.CreateGroupColumn(parent, opts)
             box:ClearAllPoints()
             box:SetPoint("TOPLEFT", frame, "TOPLEFT", group_box_inset, group_top_y)
             box:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", width - group_box_inset, group_bottom_y - group_inner_pad)
+            box:SetScript("OnMouseUp", function()
+                if group_select_key then
+                    frame:Select(group_select_key)
+                end
+            end)
             box:Show()
 
             y = group_bottom_y - (group_gap + group_inner_pad)

@@ -92,9 +92,27 @@ function addon.CreateOwnedTooltip(name, parent)
     return CreateFrame("GameTooltip", name or (addon_name .. "Tooltip"), parent or UIParent, "GameTooltipTemplate")
 end
 
+function addon.ResetOwnedTooltip(tooltip)
+    tooltip = tooltip or owned_tooltip
+    if not tooltip then return end
+    if tooltip.ItemTooltip and tooltip.ItemTooltip.Hide then
+        tooltip.ItemTooltip:Hide()
+    end
+    if tooltip.ClearLines then
+        tooltip:ClearLines()
+    end
+    if tooltip.ClearHandlerInfo then
+        tooltip:ClearHandlerInfo()
+    end
+    if tooltip.ClearPadding then
+        tooltip:ClearPadding()
+    end
+end
+
 function addon.GetOwnedTooltip()
     if not owned_tooltip then
         owned_tooltip = addon.CreateOwnedTooltip()
+        addon.ResetOwnedTooltip(owned_tooltip)
     end
     return owned_tooltip
 end
@@ -102,6 +120,7 @@ end
 function addon.HideOwnedTooltip()
     if owned_tooltip then
         owned_tooltip:Hide()
+        addon.ResetOwnedTooltip(owned_tooltip)
     end
 end
 
@@ -109,6 +128,7 @@ function addon.ShowOwnedTooltip(owner, title, body, anchor)
     if not owner or ((not title or title == "") and (not body or body == "")) then return end
 
     local tooltip = addon.GetOwnedTooltip()
+    addon.ResetOwnedTooltip(tooltip)
     tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
     if title and title ~= "" then
         tooltip:SetText(title, 1, 0.82, 0)

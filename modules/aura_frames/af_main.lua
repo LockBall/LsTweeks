@@ -294,16 +294,16 @@ end
 local function show_aura_icon_tooltip(obj)
     local tooltip = get_aura_tooltip()
     if not obj.aura_name then
-        tooltip:Hide()
+        addon.HideOwnedTooltip()
         return
     end
     if obj.tooltip_enabled == false then
-        tooltip:Hide()
+        addon.HideOwnedTooltip()
         return
     end
 
+    addon.ResetOwnedTooltip(tooltip)
     tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-    tooltip:ClearLines()
 
     local updated = try_set_unit_aura_tooltip(tooltip, obj) or try_set_spell_tooltip(tooltip, obj)
     if not updated then

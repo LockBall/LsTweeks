@@ -476,7 +476,6 @@ local function build_situations_tab(parent)
     local situation_list_panel = addon.CreateGroupColumn(parent, {
         width = UI.fishing_slider_width,
         height = (UI.fishing_volumes_panel_height * 2) + 16,
-        row_height = UI.list_row_height,
         pad = 9,
         on_select = function(entry)
             if select_situation then
@@ -627,10 +626,10 @@ local function build_situations_tab(parent)
 
     local function get_situation_entries()
         local entries = {}
-        entries[#entries + 1] = { label = "Triggered", header = true, group = "triggered" }
+        entries[#entries + 1] = { label = "Triggered", header = true, group = "triggered", default_key = "fishing" }
         entries[#entries + 1] = { key = "fishing", label = "Fishing", db = focus_db, profile_key = "fishing", trigger = "fishing", group = "triggered" }
         entries[#entries + 1] = { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat", group = "triggered" }
-        entries[#entries + 1] = { label = "Quick Picks", header = true, group = "quick_picks" }
+        entries[#entries + 1] = { label = "Quick Picks", header = true, group = "quick_picks", default_key = "quiet_custom" }
         entries[#entries + 1] = { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true, group = "quick_picks" }
         local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
         local custom_ids = {}
@@ -892,7 +891,6 @@ local function build_situations_tab(parent)
         end
     end, {
         width = UI.fishing_slider_width - 18,
-        height = UI.list_row_height,
         x = 9,
         position = "bottom",
     })
