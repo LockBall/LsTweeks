@@ -72,7 +72,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 
 ## Feature Modules
-- `modules/settings/`: general addon settings and module toggles.
+- `modules/settings/`: general addon settings and module toggles; `st_defaults.lua` owns defaults, `st_gui.lua` owns settings UI, and `st_main.lua` owns alpha runtime/reset/category registration.
 - `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `proj_mem/modules/player_frame.md`.
 - `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `proj_mem/modules/objectives.md`.
 - `modules/audio_volumes/`: Audio Volumes replacement presets and temporary situation runtime. Memory: `proj_mem/modules/audio_volumes.md`.

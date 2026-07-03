@@ -1,4 +1,4 @@
--- General addon settings panel: minimap button toggle, open-on-reload toggle, and interface transparency slider.
+-- General addon settings controller: alpha runtime, reset sync, and category registration.
 -- Registered as the "Settings" sidebar category; on_reset_complete() resyncs controls from DB after settings changes.
 
 
@@ -13,27 +13,8 @@ addon.st = addon.st or {
 }
 
 local M = addon.st
-
--- UI Configuration Constants (module-specific)
-local UI_CONFIG = {
-    title_offset_x = 20,
-    title_offset_y = -20,
-    section_offset_y = -20,
-    modules_group_offset_y = -28,
-    modules_group_height = 190,
-    modules_group_padding_x = 12,
-    modules_group_title_offset_y = -8,
-    modules_first_checkbox_offset_y = -32,
-    modules_checkbox_step_y = -32,
-}
-
--- UI Strings and Labels
-local STRINGS = {
-    category_name = "Settings",
-    title = "Addon Main Interface Settings",
-    minimap_icon_label = "Minimap Icon",
-    modules_title = "Module Enabler",
-}
+M.controls = M.controls or {}
+M.frames = M.frames or {}
 
 -- Apply saved interface transparency to the main frame — called on every Show
 local function apply_interface_alpha()
@@ -54,122 +35,14 @@ local function apply_interface_alpha()
 end
 addon.apply_interface_alpha = apply_interface_alpha
 
--- Build Settings page content
-local function build_settings_page(parent)
-    local cfg = UI_CONFIG
-    local theme = addon.UI_THEME
-    local defaults = addon.module_defaults and addon.module_defaults.st or {}
-
-    -- Title
-    local title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
-    title:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, cfg.title_offset_y)
-    title:SetText(STRINGS.title)
-
-    -- Minimap Icon Checkbox
-    Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-    Ls_Tweeks_DB.minimap = Ls_Tweeks_DB.minimap or {}
-
-    local is_visible = not Ls_Tweeks_DB.minimap.hide
-
-    local checkbox_container, checkbox_btn, checkbox_label = addon.CreateCheckbox(
-        parent,
-        STRINGS.minimap_icon_label,
-        is_visible,
-        function(is_checked)
-            addon.toggle_minimap_button(is_checked)
-        end
-    )
-    M.controls["minimap_checkbox"] = checkbox_container
-    checkbox_container:SetPoint("TOPLEFT", title, "BOTTOMLEFT", cfg.title_offset_x, cfg.section_offset_y)
-
-    -- Caption to explain /lst command
-    local caption = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    caption:SetPoint("LEFT", checkbox_container, "RIGHT", 25, 0)
-    caption:SetText("(Type |cff00ff00/lst|r to access addon when disabled)")
-    caption:SetTextColor(0.8, 0.8, 0.8, 1)
-
-    -- Open on Reload Checkbox
-    local reload_container, reload_btn, _ = addon.CreateCheckbox(
-        parent,
-        "Open on Reload",
-        Ls_Tweeks_DB.open_on_reload or defaults.open_on_reload,
-        function(is_checked)
-            Ls_Tweeks_DB.open_on_reload = is_checked
-        end
-    )
-    M.controls["open_on_reload_checkbox"] = reload_container
-    reload_container:SetPoint("TOPLEFT", checkbox_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
-
-    -- Alpha Slider for Interface Transparency
-    local alpha_slider = addon.CreateSliderWithBox(
-        addon_name.."AlphaSlider", parent, "Interface Transparency", 0.0, 1, 0.05, Ls_Tweeks_DB, "interface_alpha", defaults,
-        apply_interface_alpha
-    )
-    M.controls["alpha_slider"] = alpha_slider
-    alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
-
-    local modules_group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    modules_group:SetSize(1, cfg.modules_group_height)
-    modules_group:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, cfg.modules_group_offset_y)
-    modules_group:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    modules_group:SetBackdropBorderColor(1, 0.82, 0, 0.6)
-    modules_group:SetBackdropColor(0, 0, 0, 0)
-
-    local modules_title = modules_group:CreateFontString(nil, "OVERLAY", theme.font_title)
-    modules_title:SetPoint("TOP", modules_group, "TOP", 0, cfg.modules_group_title_offset_y)
-    modules_title:SetText(STRINGS.modules_title)
-    modules_title:SetTextColor(1, 0.82, 0, 1)
-    modules_title:SetFontObject("GameFontNormalLarge")
-
-    local widest_content = modules_title:GetStringWidth() or 0
-    for index, module_def in ipairs(addon.FEATURE_MODULES or {}) do
-        local row_module_def = module_def
-        local module_container, module_checkbox = addon.CreateCheckbox(
-            modules_group,
-            row_module_def.label,
-            addon.is_module_enabled and addon.is_module_enabled(row_module_def.key),
-            function(is_checked)
-                if addon.set_module_enabled then
-                    addon.set_module_enabled(row_module_def.key, is_checked)
-                end
-            end
-        )
-        M.controls["module_" .. row_module_def.key] = module_container
-        local offset_y = cfg.modules_first_checkbox_offset_y + ((index - 1) * cfg.modules_checkbox_step_y)
-        module_container:SetPoint("TOPLEFT", modules_group, "TOPLEFT", cfg.modules_group_padding_x, offset_y)
-        widest_content = math.max(widest_content, module_container:GetWidth() or 0)
-    end
-
-    modules_group:SetWidth(math.ceil(widest_content + cfg.modules_group_padding_x * 2))
-end
-
 function M.on_reset_complete()
     if not Ls_Tweeks_DB then return end
     local defaults = addon.module_defaults and addon.module_defaults.st or {}
     addon.apply_defaults(defaults, Ls_Tweeks_DB)
     apply_interface_alpha()
 
-    local minimap_cb = M.controls["minimap_checkbox"]
-    if minimap_cb and minimap_cb.SetCheckedSilently then
-        minimap_cb:SetCheckedSilently(not Ls_Tweeks_DB.minimap.hide)
-    end
-    local reload_cb = M.controls["open_on_reload_checkbox"]
-    if reload_cb and reload_cb.SetCheckedSilently then
-        reload_cb:SetCheckedSilently(Ls_Tweeks_DB.open_on_reload or false)
-    end
-    local alpha_slider = M.controls["alpha_slider"]
-    if alpha_slider and alpha_slider.SetValueSilently then
-        alpha_slider:SetValueSilently(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
-    end
-    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
-        local module_cb = M.controls["module_" .. module_def.key]
-        if module_cb and module_cb.SetCheckedSilently then
-            module_cb:SetCheckedSilently(addon.is_module_enabled and addon.is_module_enabled(module_def.key))
-        end
+    if M.sync_settings_controls then
+        M.sync_settings_controls()
     end
 end
 
@@ -182,7 +55,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         local defaults = addon.module_defaults and addon.module_defaults.st or {}
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
         if addon.register_category then
-            addon.register_category(STRINGS.category_name, build_settings_page)
+            addon.register_category(M.CATEGORY_NAME or "Settings", M.build_settings_page)
         end
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)
