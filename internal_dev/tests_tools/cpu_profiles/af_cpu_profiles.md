@@ -817,9 +817,9 @@ data.
 
 ## Current Decision
 `C_UnitAuras.GetAuraDuration` is not a meaningful hotspot based on the collected
-2026-06-06 data. Keep the defensive `GetAuraDuration` guards in `af_core.lua`,
-`af_render.lua`, and `af_scan.lua`; restructure duration handling for CPU
-reasons only if future profiling shows a material regression.
+2026-06-06 data. Keep the defensive `GetAuraDuration` guards in
+`af_logic_ticker.lua`, `af_render.lua`, and `af_scan.lua`; restructure duration
+handling for CPU reasons only if future profiling shows a material regression.
 
 The safe ticker improvement remains: visible-icon updates reuse live
 DurationObjects resolved during render before falling back to another

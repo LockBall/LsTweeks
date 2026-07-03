@@ -33,6 +33,7 @@ Important `aura_frames` keys:
 - First-install visible frames are only `static`, `short`, `long`, `debuff`. CDM defaults keep `show_*`, `move_*`, and `test_aura_*` false.
 - Preset DB keys use `aura_frames.<setting>_<category>`; custom frame entries use flat keys.
 - Preset and custom frame settings share the same presentation model via normalized `frame_config.keys` and `build_frame_settings_panel()` in `af_gui_frame_builders.lua`.
+- Aura update logic is split by runtime responsibility: `af_logic_ticker.lua` owns visible icon timer/bar ticking, `af_logic_native_visibility.lua` owns Blizzard/native BuffFrame, DebuffFrame, and CooldownViewer visibility suppression, and `af_logic_main.lua` owns runtime config cache, OOC fade, and the main per-frame aura refresh pipeline.
 
 
 ## Runtime Gates And Refresh
