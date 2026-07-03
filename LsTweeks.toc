@@ -48,13 +48,13 @@ modules\objectives\ob_background.lua
 modules\objectives\ob_main.lua
 modules\audio_volumes\av_defaults.lua
 modules\audio_volumes\av_functions.lua
-modules\audio_volumes\av_runtime_logic.lua
-modules\audio_volumes\av_situations.lua
+modules\audio_volumes\av_logic_main.lua
+modules\audio_volumes\av_logic_situations.lua
 modules\audio_volumes\av_gui.lua
 modules\audio_volumes\av_gui_general.lua
 modules\audio_volumes\av_gui_specifics.lua
 modules\audio_volumes\av_gui_situations.lua
-modules\audio_volumes\av_main_control.lua
+modules\audio_volumes\av_main.lua
 modules\skyriding_vigor\sv_defaults.lua
 modules\skyriding_vigor\sv_styles.lua
 modules\skyriding_vigor\sv_bar.lua

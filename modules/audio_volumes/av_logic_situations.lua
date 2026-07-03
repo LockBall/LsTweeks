@@ -452,6 +452,7 @@ function M.play_fishing_bobber_preview(profile_key)
     profile_db = M.get_situation_profile_db(profile_key)
 
     if not profile_db then
+        ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
         local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID, FISHING_BOBBER_SOUND_CHANNEL)
         M._fishing_bobber_preview_handle = sound_handle
         return did_play ~= false
@@ -465,6 +466,7 @@ function M.play_fishing_bobber_preview(profile_key)
     end
     M._fishing_bobber_preview_cached = cached
 
+    ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
     local did_play, sound_handle = _PlaySound(FISHING_BOBBER_SOUNDKIT_ID, FISHING_BOBBER_SOUND_CHANNEL)
     M._fishing_bobber_preview_handle = sound_handle
     M._fishing_bobber_preview_timer = C_Timer.NewTimer(FISHING_BOBBER_PREVIEW_RESTORE_DELAY, restore_bobber_preview_profile)
@@ -503,6 +505,7 @@ function M.play_situation_preview(profile_key, test_sound_key)
     if test_sound.file_id then
         did_play, sound_handle = _PlaySoundFile(test_sound.file_id, test_sound.channel or "SFX")
     else
+        ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
         did_play, sound_handle = _PlaySound(test_sound.soundkit, test_sound.channel or "SFX")
     end
     M._fishing_bobber_preview_handle = sound_handle

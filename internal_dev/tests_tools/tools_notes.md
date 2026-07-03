@@ -230,6 +230,15 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_c
 
 The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`.
 
+Targeted helper modes:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1 -Changed
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1 -Files modules\audio_volumes\av_gui_situations.lua
+```
+
+Use `-Files` for exact one-off file checks. Use `-Changed` for iteration after a work pass; if multiple changed Lua files share a module directory, the helper checks that directory once to avoid repeated LuaLS startup cost. Use the full helper before commit-level validation, after load-order changes, or after broad refactors because targeted runs do not replace whole-workspace diagnostics.
+
 Working local config path:
 
 ```text
@@ -306,4 +315,4 @@ Manual diagnostics command from the repo root:
 & "$env:USERPROFILE\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe" --check="$PWD" --configpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua" --check_format=pretty --checklevel=Warning --logpath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\log" --metapath="$PWD\internal_dev\tests_tools\lua_checks\.lua-language-server\meta"
 ```
 
-Expected known result as of 2026-06-20: three Audio Volumes warnings where Ketho annotates `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` as numeric but in-game testing confirmed string channel `"SFX"` works on this client.
+Expected Audio Volumes behavior as of 2026-07-03: verified `C_Sound.PlaySound(soundKitID, "SFX")` string-channel call sites use narrow inline `---@diagnostic disable-next-line: param-type-mismatch` suppressions. If similar warnings reappear, check `audio_volumes.md` `## Ketho / LuaLS` before changing the playback path.

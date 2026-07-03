@@ -22,11 +22,12 @@
 
 ## Ownership
 - Sound target metadata and replacement assets live in `modules/audio_volumes/av_defaults.lua`.
-- Fishing Focus, Combat Volumes, Quick Picks, and temporary channel CVar situation behavior live in `modules/audio_volumes/av_situations.lua`; keep temporary CVar situation logic out of generic replacement-sound runtime.
-- `av_situations.lua` owns Fishing/Combat/Quick Pick data, CRUD, copy-current helpers, minimap/menu-facing helpers, situation previews, and situation-specific temporary CVar/event handling. Keep `av_runtime_logic.lua` as the module-level runtime spine for replacement playback, mutes, previews, event cache, and lifecycle cleanup; do not add a generic second runtime file unless the situation file later needs a more specific split.
-- `av_runtime_logic.lua` is the Audio Volumes runtime file, not a passive utility/core-definition file.
-- `av_main_control.lua` is the Audio Volumes controller/bootstrap file: reset hooks, module enable/disable, status registration, addon-load startup, logout cleanup, and settings category registration.
-- Sound APIs are resolved to local upvalues at file load in `av_runtime_logic.lua`; call those locals instead of re-checking `C_Sound` at call sites.
+- Fishing Focus, Combat Volumes, Quick Picks, and temporary channel CVar situation behavior live in `modules/audio_volumes/av_logic_situations.lua`; keep temporary CVar situation logic out of generic replacement-sound runtime.
+- `av_logic_situations.lua` owns Fishing/Combat/Quick Pick data, CRUD, copy-current helpers, minimap/menu-facing helpers, situation previews, and situation-specific temporary CVar/event handling. Keep `av_logic_main.lua` as the module-level runtime spine for replacement playback, mutes, previews, event cache, and lifecycle cleanup; do not add a generic second runtime file unless the situation file later needs a more specific split.
+- `av_logic_main.lua` is the Audio Volumes main logic file, not a passive utility/core-definition file.
+- `av_main.lua` is the Audio Volumes entrypoint/controller file: reset hooks, module enable/disable, status registration, addon-load startup, logout cleanup, and settings category registration.
+- GUI file naming uses `av_gui.lua` for shared GUI layout/tab host and `av_gui_<tab>.lua` for tab builders. Keep GUI-only helper controls in GUI files; move only broad non-GUI module helpers into `av_functions.lua`.
+- Sound APIs are resolved to local upvalues at file load in `av_logic_main.lua`; call those locals instead of re-checking `C_Sound` at call sites.
 - The `achievmentsound1` / `AchievmentSound1` spelling is inherited from Blizzard's original asset naming and matches the on-disk replacement folder. Change it only when all paths, files, and docs are intentionally migrated together.
 - Sound reference/log files under `modules/audio_volumes/sounds/` are public-facing and included in release zips.
 - Audio Volumes registers its settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Sound mutes, replacement playback, previews, event registration, and temporary situation runtime route through `M.is_runtime_enabled()` and `M.stop_runtime()`.
@@ -69,6 +70,8 @@
 
 ## GUI
 - Audio Volumes settings are not a normal full-panel `CreateSettingsGrid()` consumer. The Specifics tab remains a custom list/detail selector and General is riveted help plus reset. Situations tab uses a left tree/list plus settings-group panels; Normal Volumes is always visible and only the selected situation row is shown below it.
+- `av_gui.lua` owns shared GUI strings/layout, `M.ApplyGUIBoxBackdrop()`, Specifics sound-target slider panel construction, and `M.BuildSettings()`. Do not move these to `av_functions.lua` unless they become non-GUI module helpers.
+- `av_gui_general.lua`, `av_gui_specifics.lua`, and `av_gui_situations.lua` own their tab builders.
 - Situations tab always shows Normal Volumes plus exactly one selected situation panel. The left list has a Triggered group for Fishing/Combat and a Quick Picks group for Quiet Custom plus user-created custom entries backed by `audio_volumes.custom_situations`.
 - The Situations left list uses `addon.CreateGroupColumn()` from `functions/group_column.lua` for shared section outlines and selected-group gold borders. Triggered is the fixed primary group, equivalent to Aura Frames' Buffs section. Quick Picks is the custom-style group. Both groups use the same Aura-style group title/outline presentation.
 - Custom Quick Picks are not triggered Situations because there is no user-facing way to define a trigger. `create_custom_situation()` seeds `last_situation_key` so newly created Quick Picks open in the unified Situations tab immediately.
@@ -77,4 +80,4 @@
 ## Ketho / LuaLS
 - `MinimalSliderWithSteppersTemplate` mixin calls in `av_gui.lua` may produce type warnings. Audio Volumes tab UI is split across `av_gui_general.lua`, `av_gui_specifics.lua`, and `av_gui_situations.lua`; shared tab host/layout and Specifics slider-panel helpers remain in `av_gui.lua`.
 - Sound annotations are split between `Core/Blizzard_APIDocumentationGenerated/SoundDocumentation.lua` (`C_Sound`) and `Core/Data/Wiki.lua` (globals such as `PlaySoundFile`, `MuteSoundFile`, `UnmuteSoundFile`, `StopSound`); sound aliases live in `Core/Type/BlizzardType.lua`.
-- Ketho may report `C_Sound.PlaySound(soundKitID, channel)` string-channel `param-type-mismatch` warnings. Treat these as annotation limitations unless behavior regresses because in-game testing confirmed `"SFX"` works on this client.
+- Ketho may report `C_Sound.PlaySound(soundKitID, channel)` string-channel `param-type-mismatch` warnings. Treat these as annotation limitations unless behavior regresses because in-game testing confirmed `"SFX"` works on this client. Known Audio Volumes call sites use inline `---@diagnostic disable-next-line: param-type-mismatch` comments only on verified `PlaySound` string-channel calls.

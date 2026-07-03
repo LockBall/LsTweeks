@@ -49,6 +49,7 @@ local function play_preview_soundkit(target)
 
     M.stop_preview_sound()
     local channel = target.channel or "Master"
+    ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
     local will_play, sound_handle = _PlaySound(soundkit_id, channel)
     M._preview_sound_handle = sound_handle
     return will_play ~= false

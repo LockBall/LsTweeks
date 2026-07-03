@@ -17,6 +17,46 @@ function Invoke-Step {
     & $Action
 }
 
+function Get-ProjectTextFiles {
+    $extensions = @(".json", ".lua", ".md", ".ps1", ".svg", ".toc")
+    $projectRoots = @("core/", "functions/", "internal_dev/", "media/", "modules/")
+    $rootFiles = @("LsTweeks.toc", "README.md", "sources.md")
+    $gitFiles = @(
+        git ls-files
+        git ls-files --others --exclude-standard
+    )
+
+    foreach ($file in $gitFiles) {
+        if ([string]::IsNullOrWhiteSpace($file)) { continue }
+        $normalized = $file -replace "\\", "/"
+        if (-not (Test-Path -LiteralPath $normalized)) { continue }
+        $extension = [System.IO.Path]::GetExtension($normalized)
+        if ($extensions -notcontains $extension) { continue }
+        if ($rootFiles -contains $normalized) {
+            $normalized
+            continue
+        }
+        foreach ($root in $projectRoots) {
+            if ($normalized.StartsWith($root)) {
+                $normalized
+                break
+            }
+        }
+    }
+}
+
+function Test-HasCrlf {
+    param([string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $Path))
+    for ($i = 0; $i -lt ($bytes.Length - 1); $i++) {
+        if ($bytes[$i] -eq 13 -and $bytes[$i + 1] -eq 10) {
+            return $true
+        }
+    }
+    return $false
+}
+
 if (-not (Test-Path -LiteralPath $luac)) {
     throw "Missing Lua 5.1 compiler: $luac"
 }
@@ -50,13 +90,13 @@ try {
         "modules/objectives/ob_main.lua",
         "modules/audio_volumes/av_defaults.lua",
         "modules/audio_volumes/av_functions.lua",
-        "modules/audio_volumes/av_runtime_logic.lua",
-        "modules/audio_volumes/av_situations.lua",
+        "modules/audio_volumes/av_logic_main.lua",
+        "modules/audio_volumes/av_logic_situations.lua",
         "modules/audio_volumes/av_gui.lua",
         "modules/audio_volumes/av_gui_general.lua",
         "modules/audio_volumes/av_gui_specifics.lua",
         "modules/audio_volumes/av_gui_situations.lua",
-        "modules/audio_volumes/av_main_control.lua",
+        "modules/audio_volumes/av_main.lua",
         "modules/skyriding_vigor/sv_defaults.lua",
         "modules/skyriding_vigor/sv_styles.lua",
         "modules/skyriding_vigor/sv_bar.lua",
@@ -95,6 +135,13 @@ try {
 
     Invoke-Step "Whitespace diff check" {
         git diff --check
+    }
+
+    Invoke-Step "Line endings" {
+        $crlfFiles = @(Get-ProjectTextFiles | Sort-Object -Unique | Where-Object { Test-HasCrlf $_ })
+        if ($crlfFiles.Count -gt 0) {
+            throw "CRLF line endings found; project text files must use LF: $($crlfFiles -join ', ')"
+        }
     }
 
     if ($Package) {

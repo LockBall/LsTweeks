@@ -28,6 +28,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Command strings: `code_map.md` `## Fast Commands`.
 - Source read-in: start with `region validation / source outline` before opening whole large Lua files.
 - Routine validation: `fast validation`.
+- Known diagnostic suppressions: when touching suppressed LuaLS/Ketho lines, read the relevant module memory `## Ketho / LuaLS` section before changing or removing the suppression.
 - Package validation: `fast validation plus package build/verify`.
 - Public behavior: compare against `README.md` wording before changing settings names, feature names, slash commands, or user-facing docs.
 - Durable architecture/defaults/tooling changes: update `project.md`.
