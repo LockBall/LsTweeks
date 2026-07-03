@@ -145,6 +145,7 @@ Violations here can create invisible or unstable controls.
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`; use its public control API for routine value handling: `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`. Reach into `slider.slider` only for template-specific behavior not exposed by the factory.
 - `CreateCheckbox` exposes container-level state APIs: `checkbox:GetChecked()`, `checkbox:SetChecked(value)`, `checkbox:SetCheckedSilently(value)`, `checkbox:SetEnabled(value)`, `checkbox:Enable()`, `checkbox:Disable()`, and `checkbox:HookCheckedChanged(fn[, opts])`. Store the returned container in module control tables for routine sync, use `SetCheckedSilently()` for programmatic reset/profile/reload sync, and use the raw returned button/label only for specialized layout or tooltip targets.
+- Module reset preserve checkboxes also follow the shared checkbox container rule; read preserve state through the container API instead of the raw CheckButton.
 
 
 ### Key WoW APIs And Lessons

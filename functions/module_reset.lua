@@ -117,10 +117,9 @@ function addon.CreateModuleReset(parent, db, defaults, opts)
     eb:SetPoint("RIGHT", btn, "LEFT", -BTN_GAP, 0)
     label:SetPoint("BOTTOM", eb, "TOP", 0, LABEL_GAP)
 
-    local preserve_checkbox
     local preserve_container
     if opts.preserve_label then
-        preserve_container, preserve_checkbox = addon.CreateCheckbox(controlGroup, opts.preserve_label, opts.preserve_default == true)
+        preserve_container = addon.CreateCheckbox(controlGroup, opts.preserve_label, opts.preserve_default == true)
         preserve_container:SetPoint("TOP", eb, "BOTTOM", 0, -OPTION_GAP)
     end
 
