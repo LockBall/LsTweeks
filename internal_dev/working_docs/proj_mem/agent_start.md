@@ -16,7 +16,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 2. Read `code_map.md` first for compact file ownership, routing, and verification commands.
 3. Read targeted sections of `project.md` when the request touches architecture, workflow, packaging, LuaLS/Ketho, shared GUI rules, cross-module behavior, or durable project docs.
 4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>`, then open only the matching section instead of the whole file:
-   `modules/player_frame.md`, `modules/objectives.md`, `modules/sound_levels.md`, `modules/skyriding_vigor.md`, or `modules/aura_frames.md`.
+   `modules/player_frame.md`, `modules/objectives.md`, `modules/audio_volumes.md`, `modules/skyriding_vigor.md`, or `modules/aura_frames.md`.
 5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
 6. Check focused review notes under `review_2026Jun/` only when the task touches that area. Promote transient review notes into durable docs only after code review confirms they are still true.
 7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.

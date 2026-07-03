@@ -10,25 +10,25 @@
 
 
 ## Saved Variables
-- `sound_levels.targets.<target>.preset`: file-level string `"0"` through `"19"`; UI maps this to `100%` through `5%`, with slider `0%` setting `sound_off`.
-- `sound_levels.targets.<target>.use_original`, `.sound_off`, `.play_on_adjust`.
-- `sound_levels.fishing_focus.enabled`: toggles the Fishing Focus channel profile.
-- `sound_levels.fishing_focus.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied only while channeling Fishing. Missing/reset values initialize from the user's current `Sound_*Volume` CVars; SFX starts 25 percentage points above normal Effects volume, clamped to 100.
-- `sound_levels.combat_volumes.enabled`: toggles the Combat Volumes channel profile.
-- `sound_levels.combat_volumes.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied while the player is in combat. Missing/reset values initialize from the user's current `Sound_*Volume` CVars.
-- `sound_levels.custom_situations.<id>.name`, `.enabled`, `.master`, `.sfx`, `.music`, `.ambience`, `.dialog`: legacy storage key for user-created custom Quick Picks. Only one Quick Pick is enabled at a time, and triggered Fishing/Combat situations temporarily take priority.
-- `sound_levels.last_situation_key`, `last_quick_pick_key`, `next_custom_situation_id`, `last_tab_index`, and `last_sound_key`: UI/session restoration and custom ID state. The unified Situations tab uses `last_situation_key` for both triggered situations and Quick Picks; `last_quick_pick_key` remains as legacy/minimap Quick Pick state.
+- `audio_volumes.targets.<target>.preset`: file-level string `"0"` through `"19"`; UI maps this to `100%` through `5%`, with slider `0%` setting `sound_off`.
+- `audio_volumes.targets.<target>.use_original`, `.sound_off`, `.play_on_adjust`.
+- `audio_volumes.fishing_focus.enabled`: toggles the Fishing Focus channel profile.
+- `audio_volumes.fishing_focus.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied only while channeling Fishing. Missing/reset values initialize from the user's current `Sound_*Volume` CVars; SFX starts 25 percentage points above normal Effects volume, clamped to 100.
+- `audio_volumes.combat_volumes.enabled`: toggles the Combat Volumes channel profile.
+- `audio_volumes.combat_volumes.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied while the player is in combat. Missing/reset values initialize from the user's current `Sound_*Volume` CVars.
+- `audio_volumes.custom_situations.<id>.name`, `.enabled`, `.master`, `.sfx`, `.music`, `.ambience`, `.dialog`: legacy storage key for user-created custom Quick Picks. Only one Quick Pick is enabled at a time, and triggered Fishing/Combat situations temporarily take priority.
+- `audio_volumes.last_situation_key`, `last_quick_pick_key`, `next_custom_situation_id`, `last_tab_index`, and `last_sound_key`: UI/session restoration and custom ID state. The unified Situations tab uses `last_situation_key` for both triggered situations and Quick Picks; `last_quick_pick_key` remains as legacy/minimap Quick Pick state.
 
 
 ## Ownership
-- Sound target metadata and replacement assets live in `modules/sound_levels/sl_defaults.lua`.
-- Fishing Focus, Combat Volumes, Quick Picks, and temporary channel CVar situation behavior live in `modules/sound_levels/sl_situations.lua`; keep temporary CVar situation logic out of generic replacement-sound runtime.
-- `sl_situations.lua` owns Fishing/Combat/Quick Pick data, CRUD, copy-current helpers, minimap/menu-facing helpers, situation previews, and situation-specific temporary CVar/event handling. Keep `sl_runtime_logic.lua` as the module-level runtime spine for replacement playback, mutes, previews, event cache, and lifecycle cleanup; do not add a generic second runtime file unless the situation file later needs a more specific split.
-- `sl_runtime_logic.lua` is the Audio Volumes runtime file, not a passive utility/core-definition file.
-- `sl_main_control.lua` is the Audio Volumes controller/bootstrap file: reset hooks, module enable/disable, status registration, addon-load startup, logout cleanup, and settings category registration.
-- Sound APIs are resolved to local upvalues at file load in `sl_runtime_logic.lua`; call those locals instead of re-checking `C_Sound` at call sites.
+- Sound target metadata and replacement assets live in `modules/audio_volumes/av_defaults.lua`.
+- Fishing Focus, Combat Volumes, Quick Picks, and temporary channel CVar situation behavior live in `modules/audio_volumes/av_situations.lua`; keep temporary CVar situation logic out of generic replacement-sound runtime.
+- `av_situations.lua` owns Fishing/Combat/Quick Pick data, CRUD, copy-current helpers, minimap/menu-facing helpers, situation previews, and situation-specific temporary CVar/event handling. Keep `av_runtime_logic.lua` as the module-level runtime spine for replacement playback, mutes, previews, event cache, and lifecycle cleanup; do not add a generic second runtime file unless the situation file later needs a more specific split.
+- `av_runtime_logic.lua` is the Audio Volumes runtime file, not a passive utility/core-definition file.
+- `av_main_control.lua` is the Audio Volumes controller/bootstrap file: reset hooks, module enable/disable, status registration, addon-load startup, logout cleanup, and settings category registration.
+- Sound APIs are resolved to local upvalues at file load in `av_runtime_logic.lua`; call those locals instead of re-checking `C_Sound` at call sites.
 - The `achievmentsound1` / `AchievmentSound1` spelling is inherited from Blizzard's original asset naming and matches the on-disk replacement folder. Change it only when all paths, files, and docs are intentionally migrated together.
-- Sound reference/log files under `modules/sound_levels/sounds/` are public-facing and included in release zips.
+- Sound reference/log files under `modules/audio_volumes/sounds/` are public-facing and included in release zips.
 - Audio Volumes registers its settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Sound mutes, replacement playback, previews, event registration, and temporary situation runtime route through `M.is_runtime_enabled()` and `M.stop_runtime()`.
 
 
@@ -69,12 +69,12 @@
 
 ## GUI
 - Audio Volumes settings are not a normal full-panel `CreateSettingsGrid()` consumer. The Specifics tab remains a custom list/detail selector and General is riveted help plus reset. Situations tab uses a left tree/list plus settings-group panels; Normal Volumes is always visible and only the selected situation row is shown below it.
-- Situations tab always shows Normal Volumes plus exactly one selected situation panel. The left list has a Triggered group for Fishing/Combat and a Quick Picks group for Quiet Custom plus user-created custom entries backed by `sound_levels.custom_situations`.
+- Situations tab always shows Normal Volumes plus exactly one selected situation panel. The left list has a Triggered group for Fishing/Combat and a Quick Picks group for Quiet Custom plus user-created custom entries backed by `audio_volumes.custom_situations`.
 - The Situations left list uses `addon.CreateGroupColumn()` from `functions/group_column.lua` for shared section outlines and selected-group gold borders. Triggered is the fixed primary group, equivalent to Aura Frames' Buffs section. Quick Picks is the custom-style group. Both groups use the same Aura-style group title/outline presentation.
 - Custom Quick Picks are not triggered Situations because there is no user-facing way to define a trigger. `create_custom_situation()` seeds `last_situation_key` so newly created Quick Picks open in the unified Situations tab immediately.
 
 
 ## Ketho / LuaLS
-- `MinimalSliderWithSteppersTemplate` mixin calls in `sl_gui.lua` may produce type warnings.
+- `MinimalSliderWithSteppersTemplate` mixin calls in `av_gui.lua` may produce type warnings. Audio Volumes tab UI is split across `av_gui_general.lua`, `av_gui_specifics.lua`, and `av_gui_situations.lua`; shared tab host/layout and Specifics slider-panel helpers remain in `av_gui.lua`.
 - Sound annotations are split between `Core/Blizzard_APIDocumentationGenerated/SoundDocumentation.lua` (`C_Sound`) and `Core/Data/Wiki.lua` (globals such as `PlaySoundFile`, `MuteSoundFile`, `UnmuteSoundFile`, `StopSound`); sound aliases live in `Core/Type/BlizzardType.lua`.
 - Ketho may report `C_Sound.PlaySound(soundKitID, channel)` string-channel `param-type-mismatch` warnings. Treat these as annotation limitations unless behavior regresses because in-game testing confirmed `"SFX"` works on this client.

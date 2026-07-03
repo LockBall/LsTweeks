@@ -63,7 +63,7 @@ Currently excluded workspace/private paths:
 
 Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
 
-README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Audio Volumes reference/log files under `modules/sound_levels/sounds/` are public-facing and included.
+README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Audio Volumes reference/log files under `modules/audio_volumes/sounds/` are public-facing and included.
 
 
 ## Verify

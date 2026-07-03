@@ -2,12 +2,12 @@
 -- target ordering, and target activity predicates.
 local addon_name, addon = ...
 
-addon.sound_levels = addon.sound_levels or {}
-local M = addon.sound_levels
+addon.audio_volumes = addon.audio_volumes or {}
+local M = addon.audio_volumes
 
 --#region MODULE STATE =========================================================
 
-M.MODULE_KEY = "sound_levels"
+M.MODULE_KEY = "audio_volumes"
 M.controls = M.controls or {}
 
 function M.is_runtime_enabled()
@@ -21,15 +21,15 @@ end
 function M.get_db()
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}
     if not M._defaults_applied then
-        local defaults = addon.module_defaults and addon.module_defaults.sound_levels
+        local defaults = addon.module_defaults and addon.module_defaults.audio_volumes
         if defaults then
             addon.apply_defaults(defaults, Ls_Tweeks_DB)
         end
         M._defaults_applied = true
     end
-    Ls_Tweeks_DB.sound_levels = Ls_Tweeks_DB.sound_levels or {}
-    Ls_Tweeks_DB.sound_levels.targets = Ls_Tweeks_DB.sound_levels.targets or {}
-    return Ls_Tweeks_DB.sound_levels
+    Ls_Tweeks_DB.audio_volumes = Ls_Tweeks_DB.audio_volumes or {}
+    Ls_Tweeks_DB.audio_volumes.targets = Ls_Tweeks_DB.audio_volumes.targets or {}
+    return Ls_Tweeks_DB.audio_volumes
 end
 
 function M.get_target_db(target_key)
@@ -37,9 +37,9 @@ function M.get_target_db(target_key)
     db.targets[target_key] = db.targets[target_key] or {}
     local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
     local defaults = M.defaults
-        and M.defaults.sound_levels
-        and M.defaults.sound_levels.targets
-        and M.defaults.sound_levels.targets[target_key]
+        and M.defaults.audio_volumes
+        and M.defaults.audio_volumes.targets
+        and M.defaults.audio_volumes.targets[target_key]
     M._target_defaults_applied = M._target_defaults_applied or {}
     if defaults and not M._target_defaults_applied[target_key] then
         addon.apply_defaults(defaults, db.targets[target_key])
@@ -121,7 +121,7 @@ end
 --#region EVENT CACHE ==========================================================
 
 -- Builds a flat, pre-resolved cache of event -> slot list used by handle_event.
--- Called once after apply_sound_levels(); each slot contains only what the hot
+-- Called once after apply_audio_volumes(); each slot contains only what the hot
 -- path needs, so the event handler touches no DB or defaults machinery at all.
 function M.rebuild_event_cache()
     local cache = {}

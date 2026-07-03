@@ -2,8 +2,8 @@
 -- registers the settings category, and resyncs controls after reset.
 local addon_name, addon = ...
 
-addon.sound_levels = addon.sound_levels or {}
-local M = addon.sound_levels
+addon.audio_volumes = addon.audio_volumes or {}
+local M = addon.audio_volumes
 
 local CATEGORY_NAME = "Audio Volumes"
 
@@ -19,12 +19,12 @@ function M.on_reset_complete()
     M._target_defaults_applied = nil
     local db = M.get_db()
     if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
-        db.last_sound_key = M.defaults.sound_levels.last_sound_key
+        db.last_sound_key = M.defaults.audio_volumes.last_sound_key
     end
     if type(db.last_tab_index) ~= "number" then
-        db.last_tab_index = M.defaults.sound_levels.last_tab_index
+        db.last_tab_index = M.defaults.audio_volumes.last_tab_index
     end
-    M.apply_sound_levels()
+    M.apply_audio_volumes()
 
     for target_key in pairs(M.SOUND_TARGETS or {}) do
         local target_db = M.get_target_db(target_key)
@@ -64,7 +64,7 @@ end
 function M.set_module_enabled(enabled)
     if enabled then
         M.get_db()
-        M.apply_sound_levels()
+        M.apply_audio_volumes()
         if M.sync_fishing_focus_events then
             M.sync_fishing_focus_events()
         end
@@ -116,7 +116,7 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
         M.get_db()
-        M.apply_sound_levels()
+        M.apply_audio_volumes()
         if M.sync_fishing_focus_events then
             M.sync_fishing_focus_events()
         end

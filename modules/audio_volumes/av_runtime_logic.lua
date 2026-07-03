@@ -2,8 +2,8 @@
 -- replacements, and wires WoW events to selected replacement sounds.
 local addon_name, addon = ...
 
-addon.sound_levels = addon.sound_levels or {}
-local M = addon.sound_levels
+addon.audio_volumes = addon.audio_volumes or {}
+local M = addon.audio_volumes
 
 local _PlaySoundFile   = (C_Sound and C_Sound.PlaySoundFile)   or PlaySoundFile
 local _PlaySound       = (C_Sound and C_Sound.PlaySound)       or PlaySound
@@ -92,7 +92,7 @@ function M.unmute_all_sound_files()
     end
 end
 
-function M.apply_sound_levels()
+function M.apply_audio_volumes()
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M.stop_runtime()
         return

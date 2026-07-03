@@ -1,0 +1,40 @@
+AudioFix conversion log
+Status: success
+Generated: 2026-06-01T21:58:07
+
+Settings:
+Source: AudioFix media source, levelup2_declip_high_-0.7.wav
+Source channels: stereo
+Output folder: AudioFix generated output, levelup2_out
+Minimum dB: -28.000
+Interval dB: 1.474
+Peak/headroom gain: disabled
+Raw peak dB: -0.228
+Headroom dB: unknown
+Raw + Head gain dB: unknown
+Encoder mode: Vorbis Quality
+Vorbis quality: 8
+Overwrite: True
+
+Files:
+index	output_file	gain_db	status	message
+0	levelup2_0.ogg	0.000	success	validated
+1	levelup2_1.ogg	-1.474	success	validated
+2	levelup2_2.ogg	-2.947	success	validated
+3	levelup2_3.ogg	-4.421	success	validated
+4	levelup2_4.ogg	-5.895	success	validated
+5	levelup2_5.ogg	-7.368	success	validated
+6	levelup2_6.ogg	-8.842	success	validated
+7	levelup2_7.ogg	-10.316	success	validated
+8	levelup2_8.ogg	-11.789	success	validated
+9	levelup2_9.ogg	-13.263	success	validated
+10	levelup2_10.ogg	-14.737	success	validated
+11	levelup2_11.ogg	-16.211	success	validated
+12	levelup2_12.ogg	-17.684	success	validated
+13	levelup2_13.ogg	-19.158	success	validated
+14	levelup2_14.ogg	-20.632	success	validated
+15	levelup2_15.ogg	-22.105	success	validated
+16	levelup2_16.ogg	-23.579	success	validated
+17	levelup2_17.ogg	-25.053	success	validated
+18	levelup2_18.ogg	-26.526	success	validated
+19	levelup2_19.ogg	-28.000	success	validated

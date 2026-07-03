@@ -136,7 +136,7 @@ The **Situations** tab always shows Normal Volumes for the user's regular Master
 
 Quick Picks store manual sound-channel situations and do not auto-trigger because there is no user-facing trigger builder. Fishing and Combat temporarily override an enabled Quick Pick, then the Quick Pick resumes afterward. The Play buttons preview the selected situation with the Fishing Bobber splash sound. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
-Sound target details are tracked in `modules/sound_levels/sounds/sound_reference.md`.
+Sound target details are tracked in `modules/audio_volumes/sounds/sound_reference.md`.
 
 
 ## Embedded Libraries

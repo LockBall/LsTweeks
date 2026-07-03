@@ -7,19 +7,19 @@
 
 local addon_name, addon = ...
 
-addon.sound_levels = addon.sound_levels or {}
-local M = addon.sound_levels
+addon.audio_volumes = addon.audio_volumes or {}
+local M = addon.audio_volumes
 
 M.REPLACEMENT_FILE_MIN_LEVEL = 0
 M.REPLACEMENT_FILE_MAX_LEVEL = 19
 
 M.SOUND_ASSETS = {
     achievmentsound1 = {
-        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\achievmentsound1\\",
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\audio_volumes\\sounds\\achievmentsound1\\",
         filename = "achievmentsound1",
     },
     levelup2 = {
-        folder = "Interface\\AddOns\\LsTweeks\\modules\\sound_levels\\sounds\\levelup2\\",
+        folder = "Interface\\AddOns\\LsTweeks\\modules\\audio_volumes\\sounds\\levelup2\\",
         filename = "levelup2",
     },
 }
@@ -110,7 +110,7 @@ for target_key, target in pairs(M.SOUND_TARGETS) do
 end
 
 M.defaults = {
-    sound_levels = {
+    audio_volumes = {
         last_tab_index = 1,
         last_sound_key = "ready_check",
         fishing_focus = {
@@ -146,6 +146,6 @@ M.defaults = {
 }
 
 addon.module_defaults = addon.module_defaults or {}
-addon.module_defaults.sound_levels = M.defaults
+addon.module_defaults.audio_volumes = M.defaults
 
 --#endregion FILE CONTENTS ===================================================

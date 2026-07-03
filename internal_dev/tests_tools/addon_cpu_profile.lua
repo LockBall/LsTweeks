@@ -15,7 +15,7 @@ local PROFILE_TARGETS = {
     core = false,
     settings = false,
     player_frame = false,
-    sound_levels = false,
+    audio_volumes = false,
     skyriding_vigor = false,
     aura_frames = true,
 }
@@ -243,10 +243,10 @@ local PROFILE_SECTIONS = {
     },
     -- Audio Volumes module, including temporary situation helpers.
     {
-        key = "sound_levels",
+        key = "audio_volumes",
         label = "Audio Volumes",
         install = function()
-            wrap_table_functions(addon.sound_levels, "sound_levels")
+            wrap_table_functions(addon.audio_volumes, "audio_volumes")
         end,
     },
     -- Skyriding Vigor module.

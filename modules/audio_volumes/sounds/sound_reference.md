@@ -9,7 +9,7 @@ This file tracks the original sounds we target and the module-owned replacement 
 
 
 ## Replacement Path
-Replacement file sets are configured in `modules/sound_levels/sl_defaults.lua` under `M.SOUND_ASSETS`.
+Replacement file sets are configured in `modules/audio_volumes/av_defaults.lua` under `M.SOUND_ASSETS`.
 
 Each sound target references a file set with `replacement_asset`. To add another file-backed sound, add the folder and filename prefix to `M.SOUND_ASSETS`, then add a target in `M.SOUND_TARGETS` that points at that asset key.
 

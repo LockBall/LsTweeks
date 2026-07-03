@@ -8,9 +8,9 @@
 - Slider callers in modules have already been moved away from direct `.slider:SetValue()`, `.slider:GetValue()`, and `.slider:HookScript("OnValueChanged")` use where they are using the shared factory.
 - `addon.CreateCheckbox()` now exposes a container-level API while preserving its existing return shape: `container, checkbox, label`.
 - Checkbox container API: `GetChecked()`, `SetChecked(value)`, `SetCheckedSilently(value)`, `SetEnabled(value)`, `Enable()`, `Disable()`, and `HookCheckedChanged(fn[, opts])`.
-- Several stored/sync paths already use checkbox containers and `SetCheckedSilently()`: Settings, Player Frame, Objectives Background/Auto-Collapse/Section Count, Sound Levels, Skyriding Vigor, and parts of Aura Frames.
+- Several stored/sync paths already use checkbox containers and `SetCheckedSilently()`: Settings, Player Frame, Objectives Background/Auto-Collapse/Section Count, Audio Volumes, Skyriding Vigor, and parts of Aura Frames.
 - Raw checkbox and label returns are still valid when code needs direct template/layout/tooltip handling. Routine state storage in module control tables should prefer the container.
-- This note exists because the checkbox cleanup is broader and noisier than the Sound Levels review. Finish it module by module instead of mixing every raw checkbox call into one large diff.
+- This note exists because the checkbox cleanup is broader and noisier than the Audio Volumes review. Finish it module by module instead of mixing every raw checkbox call into one large diff.
 
 ## Why This Matters
 - Programmatic GUI sync should not accidentally fire user callbacks.

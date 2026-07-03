@@ -2,8 +2,8 @@
 -- temporary channel CVars, situation previews, and situation event routing.
 local addon_name, addon = ...
 
-addon.sound_levels = addon.sound_levels or {}
-local M = addon.sound_levels
+addon.audio_volumes = addon.audio_volumes or {}
+local M = addon.audio_volumes
 
 local FISHING_CHANNEL_SPELL_ID = 131476
 local FISHING_BOBBER_SOUNDKIT_ID = 3355
@@ -102,7 +102,7 @@ end
 function M.get_fishing_focus_db()
     local db = M.get_db()
     db.fishing_focus = db.fishing_focus or {}
-    local defaults = M.defaults and M.defaults.sound_levels and M.defaults.sound_levels.fishing_focus
+    local defaults = M.defaults and M.defaults.audio_volumes and M.defaults.audio_volumes.fishing_focus
     if defaults then
         addon.apply_defaults(defaults, db.fishing_focus)
     end
@@ -126,7 +126,7 @@ end
 function M.get_combat_volumes_db()
     local db = M.get_db()
     db.combat_volumes = db.combat_volumes or {}
-    local defaults = M.defaults and M.defaults.sound_levels and M.defaults.sound_levels.combat_volumes
+    local defaults = M.defaults and M.defaults.audio_volumes and M.defaults.audio_volumes.combat_volumes
     if defaults then
         addon.apply_defaults(defaults, db.combat_volumes)
     end
@@ -159,7 +159,7 @@ end
 function M.get_quiet_custom_db()
     local db = M.get_db()
     db.quiet_custom = db.quiet_custom or {}
-    local defaults = M.defaults and M.defaults.sound_levels and M.defaults.sound_levels.quiet_custom
+    local defaults = M.defaults and M.defaults.audio_volumes and M.defaults.audio_volumes.quiet_custom
     if defaults then
         addon.apply_defaults(defaults, db.quiet_custom)
     end

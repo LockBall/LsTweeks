@@ -16,7 +16,7 @@ M.defaults = {
         player_frame = true,
         objectives = true,
         aura_frames = true,
-        sound_levels = true,
+        audio_volumes = true,
         skyriding_vigor = true,
     },
 }

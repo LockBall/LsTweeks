@@ -37,7 +37,7 @@ local function toggle_main_frame()
 end
 
 local function get_audio_volumes_module()
-    return addon.sound_levels
+    return addon.audio_volumes
 end
 
 local function is_quick_pick_enabled(quick_pick_key)

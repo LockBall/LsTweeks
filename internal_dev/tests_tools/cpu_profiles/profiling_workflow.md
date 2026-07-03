@@ -20,7 +20,7 @@ in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`
   `addon_cpu_profile.lua`, then `/reload`. Prefer one focused module target when
   comparing before/after changes; use broader targets only to find the next hot
   module.
-- Supported targets are `core`, `settings`, `player_frame`, `sound_levels`,
+- Supported targets are `core`, `settings`, `player_frame`, `audio_volumes`,
   `skyriding_vigor`, and `aura_frames`.
 - In-game command flow:
   1. `/lstprofile reset`

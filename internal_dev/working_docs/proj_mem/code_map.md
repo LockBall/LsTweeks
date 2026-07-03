@@ -38,7 +38,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
 - `modules/player_frame.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `pf_main.lua` settings/combat text and `pf_fade.lua` out-of-combat fade.
 - `modules/objectives.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/position runtime and settings, and `ob_main.lua` lifecycle/status shell.
-- `modules/sound_levels.md` routing: use targeted sections such as `## Saved Variables`, `## Ownership`, `## Runtime Rules`, `## Event Cache And Performance`, `## Situations And Quick Picks`, `## GUI`, and `## Ketho / LuaLS`; use source outlines for `sl_*` ownership and search `modules/sound_levels/sounds/sound_reference.md` only when public sound assets or presets matter.
+- `modules/audio_volumes.md` routing: use targeted sections such as `## Saved Variables`, `## Ownership`, `## Runtime Rules`, `## Event Cache And Performance`, `## Situations And Quick Picks`, `## GUI`, and `## Ketho / LuaLS`; use source outlines for `av_*` ownership and search `modules/audio_volumes/sounds/sound_reference.md` only when public sound assets or presets matter.
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
@@ -73,7 +73,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `modules/settings/`: general addon settings and module toggles.
 - `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `proj_mem/modules/player_frame.md`.
 - `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `proj_mem/modules/objectives.md`.
-- `modules/sound_levels/`: Audio Volumes replacement presets and temporary situation runtime. Memory: `proj_mem/modules/sound_levels.md`.
+- `modules/audio_volumes/`: Audio Volumes replacement presets and temporary situation runtime. Memory: `proj_mem/modules/audio_volumes.md`.
 - `modules/skyriding_vigor/`: restored Skyriding Vigor display, style/layout state, charge detection, fade, and GUI. Memory: `proj_mem/modules/skyriding_vigor.md`.
 - `modules/aura_frames/`: aura scanning/rendering, CDM integration, frame settings, profiles, and GUI. Memory: `proj_mem/modules/aura_frames.md`.
 - `modules/about.lua`: about/public credits page.

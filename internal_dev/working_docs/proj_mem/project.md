@@ -22,7 +22,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - [Module Memory](#module-memory)
   - [Player Frame](modules/player_frame.md)
   - [Objectives](modules/objectives.md)
-  - [Audio Volumes](modules/sound_levels.md)
+  - [Audio Volumes](modules/audio_volumes.md)
   - [Skyriding Vigor](modules/skyriding_vigor.md)
   - [Aura Frames](modules/aura_frames.md)
 
@@ -80,7 +80,7 @@ functions/              shared UI factories and helpers: reset, sliders, dropdow
 modules/                feature modules; deeper ownership notes live in the module memory files below
   player_frame/         Player Frame settings, portrait combat text, and OOC fade
   objectives/           All Objectives tracker behavior tweaks
-  sound_levels/         Audio Volumes preset replacements and temporary situations
+  audio_volumes/         Audio Volumes preset replacements and temporary situations
   skyriding_vigor/      restored vigor display, style/layout state, charge detection, fade, and GUI
   settings/             general addon settings
   aura_frames/          aura scanning/rendering, CDM integration, frame settings, profiles, and GUI
