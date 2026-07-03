@@ -14,6 +14,7 @@ M.controls = M.controls or {}
 -- CACHED GLOBALS AND CONSTANTS
 local format = string.format
 local issecretvalue = issecretvalue
+local issecrettable = issecrettable
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 
@@ -254,34 +255,193 @@ local function get_aura_tooltip()
     return addon.GetOwnedTooltip()
 end
 
-local function tooltip_has_lines(tooltip)
-    return (not tooltip.NumLines) or tooltip:NumLines() > 0
+local function is_usable_tooltip_number(value)
+    return type(value) == "number" and not (issecretvalue and issecretvalue(value))
 end
 
-local function try_set_unit_aura_tooltip(tooltip, obj)
-    if not obj.aura_index then return false end
-    ---@diagnostic disable-next-line: undefined-field
-    local set_unit_aura_by_instance_id = tooltip.SetUnitAuraByAuraInstanceID
-    if not set_unit_aura_by_instance_id then return false end
-
-    -- Modern API (12.0.5+): stable auraInstanceID lookup, no index fragility.
-    local ok = pcall(set_unit_aura_by_instance_id, tooltip, "player", obj.aura_index)
-    return ok and tooltip_has_lines(tooltip)
+local function is_usable_tooltip_text(value)
+    return type(value) == "string" and not (issecretvalue and issecretvalue(value))
 end
 
-local function try_set_spell_tooltip(tooltip, obj)
-    local spell_id = obj.aura_spell_id
-    if not spell_id then return false end
-    if issecretvalue and issecretvalue(spell_id) then return false end
-    if not tooltip.SetSpellByID then return false end
+local function get_aura_tooltip_cache_keys(obj)
+    local keys = {}
+    if is_usable_tooltip_number(obj.aura_index) then
+        keys[#keys + 1] = "aura:" .. tostring(obj.aura_index)
+    end
+    if is_usable_tooltip_number(obj.aura_spell_id) then
+        keys[#keys + 1] = "spell:" .. tostring(obj.aura_spell_id)
+    end
+    return keys
+end
 
-    local ok = pcall(tooltip.SetSpellByID, tooltip, spell_id)
-    if not ok then return false end
-    return tooltip_has_lines(tooltip)
+local function get_safe_basic_aura_name(obj)
+    if is_usable_tooltip_text(obj.aura_name) then
+        return obj.aura_name
+    end
+    if is_usable_tooltip_number(obj.aura_spell_id) then
+        return "Aura " .. tostring(obj.aura_spell_id)
+    end
+    return "Aura"
+end
+
+local function get_safe_color_component(value)
+    if is_usable_tooltip_number(value) then
+        return value
+    end
+    return nil
+end
+
+local function copy_tooltip_color(color)
+    if type(color) ~= "table" then
+        return nil
+    end
+    if issecrettable and issecrettable(color) then
+        return nil
+    end
+    local r = get_safe_color_component(color.r)
+    local g = get_safe_color_component(color.g)
+    local b = get_safe_color_component(color.b)
+    if not (r and g and b) then
+        return nil
+    end
+    return {
+        r = r,
+        g = g,
+        b = b,
+    }
+end
+
+local function copy_tooltip_data_lines(data)
+    local lines = data and data.lines
+    if type(lines) ~= "table" or #lines == 0 then
+        return nil
+    end
+
+    local copied = {}
+    for i = 1, #lines do
+        local line = lines[i]
+        if line and not (issecrettable and issecrettable(line)) then
+            local left_text = line.leftText
+            local right_text = line.rightText
+            if left_text and not is_usable_tooltip_text(left_text) then
+                left_text = nil
+            end
+            if right_text and not is_usable_tooltip_text(right_text) then
+                right_text = nil
+            end
+            if left_text or right_text then
+                local wrap_text = line.wrapText
+                copied[#copied + 1] = {
+                    left_text = left_text,
+                    right_text = right_text,
+                    left_color = copy_tooltip_color(line.leftColor),
+                    right_color = copy_tooltip_color(line.rightColor),
+                    wrap_text = not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true,
+                }
+            end
+        end
+    end
+
+    if #copied == 0 then
+        return nil
+    end
+    return copied
+end
+
+local function get_safe_tooltip_data(obj)
+    if not C_TooltipInfo then return nil end
+
+    if is_usable_tooltip_number(obj.aura_index) and C_TooltipInfo.GetUnitAuraByAuraInstanceID then
+        local ok, data = pcall(C_TooltipInfo.GetUnitAuraByAuraInstanceID, "player", obj.aura_index)
+        if ok and data then
+            return data
+        end
+    end
+
+    if is_usable_tooltip_number(obj.aura_spell_id) and C_TooltipInfo.GetSpellByID then
+        local ok, data = pcall(C_TooltipInfo.GetSpellByID, obj.aura_spell_id)
+        if ok and data then
+            return data
+        end
+    end
+end
+
+local function cache_tooltip_data_lines(obj)
+    local cache_keys = get_aura_tooltip_cache_keys(obj)
+    if #cache_keys == 0 then return nil end
+    M._tooltip_data_lines_cache = M._tooltip_data_lines_cache or {}
+    for i = 1, #cache_keys do
+        local cached = M._tooltip_data_lines_cache[cache_keys[i]]
+        if cached then
+            return cached
+        end
+    end
+
+    if InCombatLockdown and InCombatLockdown() then
+        return nil
+    end
+
+    local lines = copy_tooltip_data_lines(get_safe_tooltip_data(obj))
+    if lines then
+        for i = 1, #cache_keys do
+            M._tooltip_data_lines_cache[cache_keys[i]] = lines
+        end
+    end
+    return lines
+end
+
+function M.prewarm_aura_tooltip_cache(frame)
+    if InCombatLockdown and InCombatLockdown() then return end
+    local icons = frame and frame.icons
+    if not icons then return end
+
+    local display_count = frame._display_count or 0
+    if display_count > #icons then
+        display_count = #icons
+    end
+
+    for i = 1, display_count do
+        local obj = icons[i]
+        if obj and obj.tooltip_enabled ~= false and not obj.is_test_preview then
+            cache_tooltip_data_lines(obj)
+        end
+    end
+end
+
+local function add_cached_tooltip_data_lines(tooltip, lines)
+    if type(lines) ~= "table" or #lines == 0 then return false end
+
+    local added = false
+    for i = 1, #lines do
+        local line = lines[i]
+        local left_text = line and line.left_text
+        local right_text = line and line.right_text
+        if left_text and left_text ~= "" then
+            local left_color = line.left_color or NORMAL_FONT_COLOR
+            if right_text and right_text ~= "" then
+                local right_color = line.right_color or NORMAL_FONT_COLOR
+                tooltip:AddDoubleLine(
+                    left_text,
+                    right_text,
+                    left_color.r or 1,
+                    left_color.g or 1,
+                    left_color.b or 1,
+                    right_color.r or 1,
+                    right_color.g or 1,
+                    right_color.b or 1
+                )
+            else
+                tooltip:AddLine(left_text, left_color.r or 1, left_color.g or 1, left_color.b or 1, line.wrap_text == true)
+            end
+            added = true
+        end
+    end
+
+    return added
 end
 
 local function add_basic_aura_tooltip_lines(tooltip, obj)
-    tooltip:AddLine(obj.aura_name, 1, 1, 1)
+    tooltip:AddLine(get_safe_basic_aura_name(obj), 1, 1, 1)
     if obj.aura_duration and obj.aura_duration > 0 then
         local remaining_str = obj.aura_remaining and format("%.1f", obj.aura_remaining) or "?"
         local duration_str = format("%.1f", obj.aura_duration)
@@ -289,6 +449,32 @@ local function add_basic_aura_tooltip_lines(tooltip, obj)
     else
         tooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
     end
+end
+
+local function try_show_rich_aura_tooltip(tooltip, obj)
+    if InCombatLockdown and InCombatLockdown() then
+        return false
+    end
+
+    if is_usable_tooltip_number(obj.aura_index) and tooltip.SetUnitAuraByAuraInstanceID then
+        local ok = pcall(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
+        if ok and tooltip.NumLines and tooltip:NumLines() > 0 then
+            return true
+        end
+        addon.ResetOwnedTooltip(tooltip)
+        tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    end
+
+    if is_usable_tooltip_number(obj.aura_spell_id) and tooltip.SetSpellByID then
+        local ok = pcall(tooltip.SetSpellByID, tooltip, obj.aura_spell_id)
+        if ok and tooltip.NumLines and tooltip:NumLines() > 0 then
+            return true
+        end
+        addon.ResetOwnedTooltip(tooltip)
+        tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    end
+
+    return false
 end
 
 local function show_aura_icon_tooltip(obj)
@@ -305,11 +491,12 @@ local function show_aura_icon_tooltip(obj)
     addon.ResetOwnedTooltip(tooltip)
     tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
 
-    local updated = try_set_unit_aura_tooltip(tooltip, obj) or try_set_spell_tooltip(tooltip, obj)
-    if not updated then
-        add_basic_aura_tooltip_lines(tooltip, obj)
+    local cached_lines = cache_tooltip_data_lines(obj)
+    if not try_show_rich_aura_tooltip(tooltip, obj) then
+        if not add_cached_tooltip_data_lines(tooltip, cached_lines) then
+            add_basic_aura_tooltip_lines(tooltip, obj)
+        end
     end
-
     tooltip:Show()
 end
 

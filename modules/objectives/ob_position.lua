@@ -320,9 +320,9 @@ local function reset_objective_position()
     local db = M.get_db()
     if not db then return end
 
-    if M.is_objective_border_enabled and M.is_objective_border_enabled() then
-        if M.set_objective_border_offsets then
-            M.set_objective_border_offsets()
+    if M.is_background_border_enabled and M.is_background_border_enabled() then
+        if M.set_background_border_position_offsets then
+            M.set_background_border_position_offsets()
         end
     else
         db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x or 0
@@ -347,8 +347,8 @@ local function set_objective_snap_to_grid(enabled)
 end
 
 local function get_objective_position_default(key)
-    if M.get_objective_position_default then
-        return M.get_objective_position_default(key)
+    if M.get_background_aware_position_default then
+        return M.get_background_aware_position_default(key)
     end
     return DEFAULTS.objectives[key]
 end

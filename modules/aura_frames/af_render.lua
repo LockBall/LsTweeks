@@ -831,6 +831,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     )
     if display_signature and self._render_display_signature == display_signature then
         self._display_count = display_count
+        if tooltip_enabled and M.prewarm_aura_tooltip_cache then
+            M.prewarm_aura_tooltip_cache(self)
+        end
         return display_count
     end
     self._render_display_signature = display_signature
@@ -897,6 +900,9 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
     hide_unused_icons(self.icons, display_count + 1)
     self._display_count = display_count
+    if tooltip_enabled and M.prewarm_aura_tooltip_cache then
+        M.prewarm_aura_tooltip_cache(self)
+    end
 
     return display_count
 end

@@ -175,7 +175,7 @@ local function is_background_color_enabled(db)
     return db.customize_background == true and not is_background_color_default(db.background_color)
 end
 
-local function is_objective_border_enabled()
+local function is_background_border_enabled()
     local db = M.get_db()
     if not M.is_runtime_enabled() or not db then return false end
     if db.objective_tracker_border ~= nil then
@@ -185,7 +185,7 @@ local function is_objective_border_enabled()
     local color = db.background_color
     return not is_background_color_default(color)
 end
-M.is_objective_border_enabled = is_objective_border_enabled
+M.is_background_border_enabled = is_background_border_enabled
 
 local function anchor_to_objective_background(tracker, frame, left, right, top, bottom)
     if not tracker or not frame then return end
@@ -237,30 +237,30 @@ local function sync_objective_border()
         OBJECTIVE_BORDER_PADDING_BOTTOM
     )
 
-    if is_objective_border_enabled() then
+    if is_background_border_enabled() then
         border:Show()
     else
         border:Hide()
     end
 end
 
-local function set_objective_border_offsets()
+local function set_background_border_position_offsets()
     local db = M.get_db()
     if not db then return end
 
     db.objective_tracker_offset_x = OBJECTIVE_BORDER_OFFSET_X
     db.objective_tracker_offset_y = OBJECTIVE_BORDER_OFFSET_Y
 end
-M.set_objective_border_offsets = set_objective_border_offsets
+M.set_background_border_position_offsets = set_background_border_position_offsets
 
-local function get_objective_position_default(key)
-    if is_objective_border_enabled() then
+local function get_background_aware_position_default(key)
+    if is_background_border_enabled() then
         if key == "objective_tracker_offset_x" then return OBJECTIVE_BORDER_OFFSET_X end
         if key == "objective_tracker_offset_y" then return OBJECTIVE_BORDER_OFFSET_Y end
     end
     return DEFAULTS.objectives[key]
 end
-M.get_objective_position_default = get_objective_position_default
+M.get_background_aware_position_default = get_background_aware_position_default
 
 --#endregion BACKGROUND STATE HELPERS ==========================================
 
@@ -850,7 +850,7 @@ function M.get_background_status()
     fields[#fields + 1] = "bg_alpha=" .. tostring(get_background_opacity())
     fields[#fields + 1] = "bg_color_alpha=" .. tostring(get_background_color_alpha())
     fields[#fields + 1] = "bg_nineslice_alpha=" .. tostring(get_objective_tracker() and get_objective_tracker().NineSlice and get_objective_tracker().NineSlice:GetAlpha() or nil)
-    fields[#fields + 1] = "objective_border=" .. tostring(is_objective_border_enabled() == true)
+    fields[#fields + 1] = "objective_border=" .. tostring(is_background_border_enabled() == true)
     fields[#fields + 1] = "objective_border_shown=" .. tostring(objective_border_frame and objective_border_frame.IsShown and objective_border_frame:IsShown() or false)
     if M.append_objective_position_status then
         M.append_objective_position_status(fields)
@@ -903,7 +903,7 @@ end
 
 local function set_background_color(reason)
     local db = M.get_db()
-    local border_was_enabled = is_objective_border_enabled()
+    local border_was_enabled = is_background_border_enabled()
     local border_auto_enabled = false
     if reason == "reset" and db then
         db.objective_tracker_border = true
@@ -925,10 +925,10 @@ local function set_background_color(reason)
 
     apply_configured_background_color(false)
 
-    local border_is_enabled = is_objective_border_enabled()
+    local border_is_enabled = is_background_border_enabled()
     if border_was_enabled ~= border_is_enabled or border_auto_enabled or reason == "reset" then
         if border_auto_enabled then
-            set_objective_border_offsets()
+            set_background_border_position_offsets()
             if M.apply_objective_position then
                 M.apply_objective_position()
             end
@@ -975,15 +975,15 @@ local function set_background_color_enabled(enabled)
     local db = M.get_db()
     if not db then return end
 
-    local border_was_enabled = is_objective_border_enabled()
+    local border_was_enabled = is_background_border_enabled()
     db.background_color_enabled = enabled == true
     sync_background_controls()
     apply_configured_background_color(true)
 
-    local border_is_enabled = is_objective_border_enabled()
+    local border_is_enabled = is_background_border_enabled()
     if border_was_enabled ~= border_is_enabled then
         if border_is_enabled then
-            set_objective_border_offsets()
+            set_background_border_position_offsets()
             if M.apply_objective_position then
                 M.apply_objective_position()
             end
@@ -1000,7 +1000,7 @@ local function set_objective_border(enabled)
     if not db then return end
     db.objective_tracker_border = enabled == true
     if enabled == true then
-        set_objective_border_offsets()
+        set_background_border_position_offsets()
         if M.apply_objective_position then
             M.apply_objective_position()
         end
@@ -1095,7 +1095,7 @@ function M.BuildBackgroundSettings(parent)
     local border_container, border_cb, border_label = addon.CreateCheckbox(
         background_group,
         "Border",
-        is_objective_border_enabled(),
+        is_background_border_enabled(),
         set_objective_border
     )
     M.controls.objective_tracker_border_checkbox = border_container
