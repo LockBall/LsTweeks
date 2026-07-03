@@ -36,6 +36,9 @@ end
 --#region GUI ==================================================================
 
 function M.BuildSettings(parent)
+    if M.BuildPositionSettings then
+        M.BuildPositionSettings(parent)
+    end
     if M.BuildBackgroundSettings then
         M.BuildBackgroundSettings(parent)
     end

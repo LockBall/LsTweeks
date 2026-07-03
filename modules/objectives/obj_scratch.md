@@ -30,7 +30,7 @@ Active checklist for final Section Count and Objectives module verification.
 - [ ] **a** Confirm Section Count registers quest events only while Quest count is enabled.
 - [ ] **b** Check `/lst status objectives` for expected quest event, hover-mode, hover, and title state.
 - [x] **c** Run package validation before calling the feature done because new Objective Lua files were added to the TOC.
-- [ ] **d** Confirm Objective file load order remains `ob_defaults.lua`, feature files including `ob_background.lua`, then `ob_main.lua`.
+- [x] **d** Confirm Objective file load order remains `ob_defaults.lua`, feature files including `ob_position.lua` and `ob_background.lua`, then `ob_main.lua`.
 
 
 ## 4. Final Cleanup

@@ -84,6 +84,7 @@ try {
         "modules/player_frame/pf_fade.lua",
         "modules/player_frame/pf_main.lua",
         "modules/objectives/ob_defaults.lua",
+        "modules/objectives/ob_position.lua",
         "modules/objectives/ob_auto_collapse.lua",
         "modules/objectives/ob_section_count.lua",
         "modules/objectives/ob_background.lua",
