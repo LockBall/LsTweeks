@@ -513,7 +513,7 @@ function M.build_general_tab(p)
     panel_title:SetPoint("TOP", enable_panel, "TOP", 0, -5)
 
     -- Blizzard Buff Frame Checkbox (checked = enabled)
-    local enable_blizz_buffs_container, enable_blizz_buffs_cb, _ = addon.CreateCheckbox(enable_panel, "Buff", M.db.enable_blizz_buffs,
+    local enable_blizz_buffs_container = addon.CreateCheckbox(enable_panel, "Buff", M.db.enable_blizz_buffs,
         function(is_checked)
             M.db.enable_blizz_buffs = is_checked
             M.toggle_blizz_buffs(not is_checked)
@@ -523,7 +523,7 @@ function M.build_general_tab(p)
     M.controls["enable_blizz_buffs"] = enable_blizz_buffs_container
 
     -- Blizzard Debuff Frame Checkbox (checked = enabled)
-    local enable_blizz_debuffs_container, enable_blizz_debuffs_cb, _ = addon.CreateCheckbox(
+    local enable_blizz_debuffs_container = addon.CreateCheckbox(
         enable_panel,
         "Debuff",
         M.db.enable_blizz_debuffs,
@@ -586,7 +586,7 @@ function M.build_general_tab(p)
     M.controls.cancel_modifier_dropdown = cancel_modifier
 
     -- Show Bar Section Outlines Checkbox
-    local outlines_container, outlines_btn, _ = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,
+    local outlines_container = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,
         function(is_checked)
             M.db.show_bar_section_outlines = is_checked
             if addon.aura_frames and addon.aura_frames.refresh_section_outlines then
@@ -828,9 +828,9 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", 0, 10, 0.1, "fade_length", update)
     grid:place_at(fade_length_slider, 4, 4)
 
-    local timer_swipe_container, timer_swipe_checkbox
+    local timer_swipe_container
     local function refresh_timer_swipe_control()
-        if not timer_swipe_checkbox then return end
+        if not timer_swipe_container then return end
         local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
         if bar_mode_enabled then
             if timer_swipe_container.SetCheckedSilently then timer_swipe_container:SetCheckedSilently(false) end
@@ -850,7 +850,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         update()
     end)
     if has_timer_controls then
-        timer_swipe_container, timer_swipe_checkbox = bound_cb("Timer Swipe", "timer_swipe", 3, 1)
+        timer_swipe_container = bound_cb("Timer Swipe", "timer_swipe", 3, 1)
         grid:stack_below(timer_swipe_container, bar_mode_container)
         M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
         refresh_timer_swipe_control()

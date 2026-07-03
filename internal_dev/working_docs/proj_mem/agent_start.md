@@ -18,7 +18,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>`, then open only the matching section instead of the whole file:
    `modules/player_frame.md`, `modules/objectives.md`, `modules/audio_volumes.md`, `modules/skyriding_vigor.md`, or `modules/aura_frames.md`.
 5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
-6. Check focused review notes under `review_2026Jun/` only when the task touches that area. Promote transient review notes into durable docs only after code review confirms they are still true.
+6. Check focused TODO/review notes under `ToDo/` only when the task touches that area. Promote transient notes into durable docs only after code review confirms they are still true.
 7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
 8. For PowerShell file-writing or newline issues, check `internal_dev/tests_tools/powershell.md` before scripting rewrites.
 
@@ -59,7 +59,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Markdown structure: one `#` title; multi-section docs include `## Table of Contents` and stable `##` headings.
 - Token measurement: GUI-reported agent-token measurements only; no rough character-count/file-size estimates.
 - Rule phrasing: prefer positive gating (`Only do X when Y`) for conditional guidance; keep direct negative language for hard prohibitions.
-- `review_2026Jun/`: temporary active review context and TODO/follow-up items.
+- `ToDo/`: temporary active review context and TODO/follow-up items.
 - Future work: active/dormant TODOs belong in review notes; durable `proj_mem` can point to them but should not be the only owner.
 - Root-level markdown files such as `README.md` and `sources.md` are public-facing release/user docs, not internal agent memory.
 - Forbidden doc content: secrets, personal data, machine-local scratch notes, session logs.

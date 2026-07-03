@@ -27,7 +27,7 @@ Important `aura_frames` keys:
 
 ## Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
-- The rounded/chamfered background investigation remains in `review_2026Jun/graphics/aura_frames_background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
+- The rounded/chamfered background investigation remains in `ToDo/background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
 - Preset categories: `static`, `debuff`, `short`, `long`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - First-install visible frames are only `static`, `short`, `long`, `debuff`. CDM defaults keep `show_*`, `move_*`, and `test_aura_*` false.

@@ -33,7 +33,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Durable changes: update this file or the relevant module file for architecture, defaults, APIs, or debugging lessons.
 - Session start: read `agent_start.md` first; `code_map.md` owns read-in shortcuts, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
-- Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused review notes in `review_2026Jun/`.
+- Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
@@ -106,7 +106,9 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 - Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. Use `/lst status <module key or label>` for focused diagnostics, such as `/lst status objectives`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
+- Before adding a small feature with runtime side effects, define its runtime contract: owned events, hooks, timers, queued work, off-state behavior, module-disable behavior, and restore path.
 - When adding or changing runtime work in a feature module, audit disabled behavior before finishing: events, hooks, timers, callbacks, tickers, queued `C_Timer` work, frames, and status fields must either stop at disable time or cheaply no-op before doing owned work.
+- Before handoff, do a focused cleanup pass for duplicated helpers, stale fallbacks, dead status fields, repeated formatting, and broad API fallbacks.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
@@ -142,7 +144,7 @@ Violations here can create invisible or unstable controls.
 - Settings grid cells may contain a small vertical stack of related controls. Use `grid:stack_below()` for secondary controls in the same cell instead of hand-anchoring repeated checkbox/button stacks; keep the first control placed through `grid:place()` or `grid:place_at()`.
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
 - `CreateSliderWithBox` already debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec`; use its public control API for routine value handling: `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`. Reach into `slider.slider` only for template-specific behavior not exposed by the factory.
-- `CreateCheckbox` exposes container-level state APIs: `checkbox:GetChecked()`, `checkbox:SetChecked(value)`, `checkbox:SetCheckedSilently(value)`, `checkbox:SetEnabled(value)`, and `checkbox:HookCheckedChanged(fn[, opts])`. Store the returned container in module control tables for routine sync; use the raw returned button/label only for specialized layout or tooltip targets.
+- `CreateCheckbox` exposes container-level state APIs: `checkbox:GetChecked()`, `checkbox:SetChecked(value)`, `checkbox:SetCheckedSilently(value)`, `checkbox:SetEnabled(value)`, `checkbox:Enable()`, `checkbox:Disable()`, and `checkbox:HookCheckedChanged(fn[, opts])`. Store the returned container in module control tables for routine sync, use `SetCheckedSilently()` for programmatic reset/profile/reload sync, and use the raw returned button/label only for specialized layout or tooltip targets.
 
 
 ### Key WoW APIs And Lessons

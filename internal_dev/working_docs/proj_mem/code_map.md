@@ -88,7 +88,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`: reusable in-game CPU profiling workflow and comparison rules.
 - `internal_dev/tests_tools/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.
-- `review_2026Jun/`: temporary focused review notes; read only when the task touches that area.
+- `ToDo/`: temporary focused TODO/review notes; read only when the task touches that area.
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines.
