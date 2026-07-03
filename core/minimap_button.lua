@@ -59,7 +59,7 @@ local function create_disabled_menu_button(root_description, text)
     end
 end
 
-local function show_menu(owner, module_enabled, entries)
+local function show_menu(owner, module_enabled, get_entries)
     if not (MenuUtil and MenuUtil.CreateContextMenu) then
         print("LsTweeks: MenuUtil.CreateContextMenu is unavailable; Quick Picks menu cannot open.")
         return
@@ -71,6 +71,7 @@ local function show_menu(owner, module_enabled, entries)
             create_disabled_menu_button(root_description, "Audio Volumes is disabled")
             return
         end
+        local entries = get_entries and get_entries() or {}
         if #entries == 0 then
             create_disabled_menu_button(root_description, "No Quick Picks")
             return
@@ -98,8 +99,9 @@ local function build_quick_pick_menu(owner)
     local M = get_audio_volumes_module()
     local module_enabled = not (addon.is_module_enabled and M and M.MODULE_KEY)
         or addon.is_module_enabled(M.MODULE_KEY)
-    local entries = M and M.get_quick_pick_menu_entries and M.get_quick_pick_menu_entries() or {}
-    show_menu(owner, module_enabled, entries)
+    show_menu(owner, module_enabled, function()
+        return M and M.get_quick_pick_menu_entries and M.get_quick_pick_menu_entries() or {}
+    end)
 end
 
 -- ============================================================================

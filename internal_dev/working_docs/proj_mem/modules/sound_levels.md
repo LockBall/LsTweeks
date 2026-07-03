@@ -58,6 +58,7 @@
 - Combat Volumes registers `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` only when enabled. Entering combat exits the Fishing situation, so combat end restores normal volumes instead of returning to Fishing Volumes.
 - Quick Picks are manual situation toggles. Fishing/Combat triggered situations temporarily override the enabled Quick Pick, and the enabled Quick Pick resumes afterward.
 - The addon minimap icon right-click menu lists Quick Picks and toggles the selected Quick Pick through the same manual situation path as the Situations tab. It uses Blizzard's current `MenuUtil.CreateContextMenu` API only; do not add legacy `EasyMenu` or `UIDropDownMenu_*` fallbacks.
+- The minimap Quick Picks disabled branch must not call `M.get_quick_pick_menu_entries()` or other situation DB initializers. Keep menu entry lookup lazy and only request entries after confirming Audio Volumes is enabled.
 - Disabled sync should not create situation event frames or initialize situation DB values.
 - Normal Volumes sliders edit the user's normal `Sound_*` CVars. If a temporary situation is active, they update the cached normal values restored afterward instead of overwriting the active temporary situation.
 - Preview buttons play FishingBobber SoundKit `3355` on SFX. Normal Volumes preview must not write CVars; situation previews temporarily apply and then restore their CVar values.

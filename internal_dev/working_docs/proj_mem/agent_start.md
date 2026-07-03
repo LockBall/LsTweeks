@@ -41,6 +41,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Preserve user changes. Do not revert unrelated edits while cleaning, refactoring, or packaging.
 - After significant changes, provide a concise git commit message.
 - When suggesting a commit message, provide one complete combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives. Do not show both a short and long option.
+- Do not use apostrophes in suggested commit messages; they break the user's commit command quoting.
 
 
 ## Documentation Rules
