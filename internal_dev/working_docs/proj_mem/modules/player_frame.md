@@ -16,7 +16,7 @@ Important `player_frame` keys:
 
 
 ## Runtime Notes
-- `modules/player_frame/pf_main.lua` owns Player Frame settings, GUI, portrait combat text hiding, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
+- `modules/player_frame/pf_defaults.lua` owns Player Frame defaults. `modules/player_frame/pf_gui.lua` owns the settings panel. `modules/player_frame/pf_main.lua` owns portrait combat text hiding, controller hooks, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 - `pf_main.lua` registers the Player Frame settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Runtime side effects route through `M.update_player_frame()` / `M.set_module_enabled()` and stop at the module gate.
 - Player Frame settings layout uses the shared `addon.CreateSettingsGrid()` helper from `functions/layout_grid.lua`; keep checkbox rows, fade slider columns, and per-row heights parameterized there instead of chaining row frames by hand. The OOC Fade checkbox and fade sliders share one taller grid row.
 - PlayerFrame remains clickable while faded.

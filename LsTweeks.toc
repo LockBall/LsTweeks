@@ -39,6 +39,8 @@ functions\group_column.lua
 modules\about.lua
 modules\settings\st_defaults.lua
 modules\settings\st_main.lua
+modules\player_frame\pf_defaults.lua
+modules\player_frame\pf_gui.lua
 modules\player_frame\pf_main.lua
 modules\player_frame\pf_fade.lua
 modules\objectives\ob_defaults.lua

@@ -12,6 +12,8 @@ M.fade = F
 
 local math_min = math.min
 local math_max = math.max
+local pcall = pcall
+local C_Timer = C_Timer
 
 local ALPHA_EPSILON       = 0.001
 local FADE_TICK_INTERVAL  = (addon.UPDATE_INTERVALS and (addon.UPDATE_INTERVALS.player_frame_fade_tick or addon.UPDATE_INTERVALS.tenth_sec)) or 0.1
