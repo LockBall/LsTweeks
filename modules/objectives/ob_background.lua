@@ -223,6 +223,13 @@ local function ensure_objective_border(tracker)
 end
 
 local function sync_objective_border()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local tracker = get_objective_tracker()
     if not tracker then return end
 
@@ -538,6 +545,14 @@ end
 
 local function apply_configured_background_color(force)
     if not M.is_runtime_enabled() then return end
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_color_state = "combat_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local show_blizzard_background = should_customize_background()
     local show_color_background = should_show_background_color()
     local opacity
@@ -549,6 +564,14 @@ local function apply_configured_background_color(force)
 end
 
 local function restore_background_color()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_color_state = "combat_restore_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     background_regions_reset = false
     apply_background_color(DEFAULT_BACKGROUND_COLOR, true, 1, false)
 end
@@ -636,6 +659,13 @@ local function check_collapsed_background_anchor(reason)
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
     if not tracker or not background or not M.is_runtime_enabled() then return end
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_last_state = "combat_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
     if not is_tracker_collapsed(tracker) then return end
 
     local anchor = get_background_bottom_anchor(background)
@@ -654,6 +684,14 @@ end
 local function sync_objective_background(reason)
     background_sync_queued = false
     background_last_reason = reason or "unknown"
+
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_last_state = "combat_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
 
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
@@ -869,6 +907,14 @@ end
 
 function M.apply_background()
     ensure_background_hooks()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_last_state = "combat_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     if M.apply_objective_position then
         M.apply_objective_position()
     end
@@ -880,6 +926,21 @@ function M.apply_background()
 end
 
 function M.restore_background()
+    local tracker = get_objective_tracker()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        background_last_state = "combat_restore_deferred"
+        if M.restore_objective_move_mode then
+            M.restore_objective_move_mode()
+        end
+        if M.restore_objective_position then
+            M.restore_objective_position()
+        end
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     if M.restore_objective_move_mode then
         M.restore_objective_move_mode()
     end
@@ -890,7 +951,6 @@ function M.restore_background()
         objective_border_frame:Hide()
     end
     restore_background_color()
-    local tracker = get_objective_tracker()
     if tracker and tracker.Update then
         tracker:Update()
     end
@@ -965,7 +1025,11 @@ local function set_customize_background(enabled)
     sync_background_controls()
     apply_configured_background_color(true)
     local tracker = get_objective_tracker()
-    if tracker and tracker.Update then
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+    elseif tracker and tracker.Update then
         tracker:Update()
     end
     queue_background_sync("background setting changed")

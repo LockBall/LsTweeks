@@ -131,6 +131,14 @@ local function set_objective_center_position(tracker, offset_x, offset_y)
 end
 
 local function apply_objective_position()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        objective_position_state = "combat_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local tracker = get_objective_tracker()
     if not tracker then
         objective_position_state = "unavailable"
@@ -152,6 +160,14 @@ end
 M.apply_objective_position = apply_objective_position
 
 local function restore_objective_position()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        objective_position_state = "combat_restore_deferred"
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local tracker = get_objective_tracker()
     local base = objective_position_base
     if not tracker or not base then return end
@@ -254,6 +270,11 @@ local function ensure_objective_move_hooks(tracker)
     tracker:HookScript("OnUpdate", function(self)
         local state = objective_drag_state[self]
         if not state or not state.dragging then return end
+        if InCombatLockdown() then
+            objective_drag_state[self] = nil
+            return
+        end
+
         local current_x, current_y = get_cursor_position()
         save_objective_offset("x", state.start_offset_x + current_x - state.start_cursor_x)
         save_objective_offset("y", state.start_offset_y + current_y - state.start_cursor_y)
@@ -271,6 +292,13 @@ local function ensure_objective_move_hooks(tracker)
 end
 
 local function apply_objective_move_mode()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local tracker = get_objective_tracker()
     if not tracker then return end
 
@@ -284,6 +312,13 @@ end
 M.apply_objective_move_mode = apply_objective_move_mode
 
 local function restore_objective_move_mode()
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        if M.defer_objectives_combat_update then
+            M.defer_objectives_combat_update()
+        end
+        return
+    end
+
     local tracker = get_objective_tracker()
     if not tracker then return end
 

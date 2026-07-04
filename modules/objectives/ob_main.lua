@@ -6,6 +6,8 @@ local M = addon.objectives
 
 local MODULE_KEY = M.MODULE_KEY or "objectives"
 local CATEGORY_NAME = "Objectives"
+local objectives_combat_update_pending = false
+local loader
 
 --#region SETTINGS AND DEFAULTS ================================================
 
@@ -15,6 +17,17 @@ local DEFAULTS = M.defaults
 
 
 --#region OBJECTIVE TRACKER RUNTIME ============================================
+
+function M.is_objectives_combat_locked()
+    return InCombatLockdown and InCombatLockdown()
+end
+
+function M.defer_objectives_combat_update()
+    objectives_combat_update_pending = true
+    if loader then
+        loader:RegisterEvent("PLAYER_REGEN_ENABLED")
+    end
+end
 
 function M.apply_objectives()
     if not M.is_runtime_enabled() then return end
@@ -95,7 +108,7 @@ end
 
 --#region EVENT BOOTSTRAP ======================================================
 
-local loader = CreateFrame("Frame")
+loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
 loader:SetScript("OnEvent", function(self, event, name)
@@ -118,6 +131,16 @@ loader:SetScript("OnEvent", function(self, event, name)
             M.apply_objectives()
         end)
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+        if not objectives_combat_update_pending then return end
+
+        objectives_combat_update_pending = false
+        if M.is_runtime_enabled() then
+            M.apply_objectives()
+        elseif M.restore_background then
+            M.restore_background()
+        end
     end
 end)
 
