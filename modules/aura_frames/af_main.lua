@@ -15,6 +15,7 @@ M.controls = M.controls or {}
 local format = string.format
 local issecretvalue = issecretvalue
 local issecrettable = issecrettable
+local securecallfunction = securecallfunction
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 
@@ -274,6 +275,10 @@ local function get_aura_tooltip_cache_keys(obj)
     return keys
 end
 
+local function has_cacheable_tooltip_identity(obj)
+    return is_usable_tooltip_number(obj.aura_index) or is_usable_tooltip_number(obj.aura_spell_id)
+end
+
 local function get_safe_basic_aura_name(obj)
     if is_usable_tooltip_text(obj.aura_name) then
         return obj.aura_name
@@ -400,12 +405,36 @@ function M.prewarm_aura_tooltip_cache(frame)
         display_count = #icons
     end
 
+    local missed = false
     for i = 1, display_count do
         local obj = icons[i]
-        if obj and obj.tooltip_enabled ~= false and not obj.is_test_preview then
-            cache_tooltip_data_lines(obj)
+        if obj
+            and obj.tooltip_enabled ~= false
+            and not obj.is_test_preview
+            and has_cacheable_tooltip_identity(obj)
+        then
+            if not cache_tooltip_data_lines(obj) then
+                missed = true
+            end
         end
     end
+
+    if not missed then
+        frame._tooltip_cache_retry_count = 0
+        return
+    end
+    if frame._tooltip_cache_retry_pending then return end
+    if (frame._tooltip_cache_retry_count or 0) >= 2 then return end
+
+    frame._tooltip_cache_retry_count = (frame._tooltip_cache_retry_count or 0) + 1
+    frame._tooltip_cache_retry_pending = true
+    local retry_frame = frame
+    C_Timer.After(UPDATE_INTERVALS.fifth_sec or 0.2, function()
+        retry_frame._tooltip_cache_retry_pending = false
+        if not (InCombatLockdown and InCombatLockdown()) and M.prewarm_aura_tooltip_cache then
+            M.prewarm_aura_tooltip_cache(retry_frame)
+        end
+    end)
 end
 
 local function add_cached_tooltip_data_lines(tooltip, lines)
@@ -442,8 +471,8 @@ end
 
 local function add_basic_aura_tooltip_lines(tooltip, obj)
     tooltip:AddLine(get_safe_basic_aura_name(obj), 1, 1, 1)
-    if obj.aura_duration and obj.aura_duration > 0 then
-        local remaining_str = obj.aura_remaining and format("%.1f", obj.aura_remaining) or "?"
+    if is_usable_tooltip_number(obj.aura_duration) and obj.aura_duration > 0 then
+        local remaining_str = is_usable_tooltip_number(obj.aura_remaining) and format("%.1f", obj.aura_remaining) or "?"
         local duration_str = format("%.1f", obj.aura_duration)
         tooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
     else
@@ -451,28 +480,38 @@ local function add_basic_aura_tooltip_lines(tooltip, obj)
     end
 end
 
+local function rich_tooltip_secure_call(method, tooltip, ...)
+    method(tooltip, ...)
+    return tooltip.NumLines and tooltip:NumLines() > 0
+end
+
+local function try_secure_rich_tooltip_call(method, tooltip, ...)
+    if not (securecallfunction and method and tooltip) then
+        return false
+    end
+    return securecallfunction(rich_tooltip_secure_call, method, tooltip, ...) == true
+end
+
 local function try_show_rich_aura_tooltip(tooltip, obj)
     if InCombatLockdown and InCombatLockdown() then
         return false
     end
 
-    if is_usable_tooltip_number(obj.aura_index) and tooltip.SetUnitAuraByAuraInstanceID then
-        local ok = pcall(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
-        if ok and tooltip.NumLines and tooltip:NumLines() > 0 then
-            return true
-        end
-        addon.ResetOwnedTooltip(tooltip)
-        tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    if is_usable_tooltip_number(obj.aura_index)
+        and try_secure_rich_tooltip_call(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
+    then
+        return true
     end
+    addon.ResetOwnedTooltip(tooltip)
+    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
 
-    if is_usable_tooltip_number(obj.aura_spell_id) and tooltip.SetSpellByID then
-        local ok = pcall(tooltip.SetSpellByID, tooltip, obj.aura_spell_id)
-        if ok and tooltip.NumLines and tooltip:NumLines() > 0 then
-            return true
-        end
-        addon.ResetOwnedTooltip(tooltip)
-        tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
+    if is_usable_tooltip_number(obj.aura_spell_id)
+        and try_secure_rich_tooltip_call(tooltip.SetSpellByID, tooltip, obj.aura_spell_id)
+    then
+        return true
     end
+    addon.ResetOwnedTooltip(tooltip)
+    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
 
     return false
 end
@@ -870,6 +909,10 @@ local function handle_aura_frame_event(frame, event, unit, info)
         return
     end
 
+    if event == "PLAYER_REGEN_DISABLED" and M.prewarm_aura_tooltip_cache then
+        M.prewarm_aura_tooltip_cache(frame)
+    end
+
     -- Do not scan inside the event handler. C_UnitAuras calls made directly
     -- during event dispatch can return secret values in combat, so every frame
     -- update is deferred through the short aura bucket below.
@@ -1037,8 +1080,10 @@ end
 --#region STARTUP ORCHESTRATION ================================================
 
 local function prepare_aura_frame_db()
-    if not Ls_Tweeks_DB.aura_frames then Ls_Tweeks_DB.aura_frames = {} end
-    M.db = Ls_Tweeks_DB.aura_frames
+    ---@diagnostic disable-next-line: undefined-global
+    local saved_db = Ls_Tweeks_DB
+    if not saved_db.aura_frames then saved_db.aura_frames = {} end
+    M.db = saved_db.aura_frames
     M._aura_scan_dirty = true
 
     if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end

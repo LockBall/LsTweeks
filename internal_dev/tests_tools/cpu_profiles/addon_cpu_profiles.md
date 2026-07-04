@@ -55,7 +55,7 @@ Runs in this series:
   stable after render cleanup. Follow-up review found no safe high-value rewrite
   for `add_cooldown_viewer_category_entries`; the remaining cost was mostly
   necessary live reads of Blizzard CDM child state. Aura performance target notes
-  live in `review_2026Jun/aura_frames_performance_review.md`.
+  live in `internal_dev/working_docs/proj_mem/modules/aura_frames.md`.
 
 Conclusion: The June 6 broad series established Aura Frames as the primary addon
 runtime target and led to focused Aura profiling. It also established the

@@ -151,7 +151,7 @@ Violations here can create invisible or unstable controls.
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
-- Tooltip APIs: prefer `tooltip:SetUnitAuraByAuraInstanceID("player", auraInstanceID)` on the addon-owned tooltip frame, fall back to `tooltip:SetSpellByID`.
+- Tooltip APIs: use addon-owned tooltips. Rich renderers such as `SetUnitAuraByAuraInstanceID()` or `SetSpellByID()` must run through `securecallfunction` wrappers with a `C_TooltipInfo` line-cache fallback.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.

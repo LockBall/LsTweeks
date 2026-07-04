@@ -837,6 +837,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         return display_count
     end
     self._render_display_signature = display_signature
+    self._tooltip_cache_retry_count = 0
 
     if self.is_custom then
         timer_behaviors = _scratch_timer_behaviors

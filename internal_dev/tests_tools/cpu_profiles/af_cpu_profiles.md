@@ -498,7 +498,7 @@ averaged 0.1770ms, lower than the prior render-cache and display-signature runs,
 while `update_auras` averaged 0.4534ms. The direct preset-bucket change still
 does not show as an isolated CPU win. CDM/custom scan-map work and
 trigger-specific refresh routing are recorded as Aura performance targets in
-`review_2026Jun/aura_frames_performance_review.md`.
+`internal_dev/working_docs/proj_mem/modules/aura_frames.md`.
 
 
 ### 2026-06-23, Aura Frames Only, Scan/Map Sub-Steps
@@ -539,9 +539,7 @@ Conclusion: The direct preset-bucket path is not the meaningful scan/map cost:
 below the report cutoff. Scan/map cost is dominated by `unified_scan`,
 `add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`. Keep the
 direct-bucket cleanup because it is safe and removes avoidable work. Durable Aura
-performance conclusions live in `aura_frames.md`;
-use `review_2026Jun/aura_frames_performance_review.md`
-for Aura performance target notes.
+performance conclusions live in `internal_dev/working_docs/proj_mem/modules/aura_frames.md`.
 
 
 ### 2026-06-23, Aura Frames Only, Preset Bucket Direct Render
@@ -673,7 +671,7 @@ run, `get_timer_behavior` fell from 6014 calls / 30.396ms to 3042 calls /
 16.480ms despite similar render/update volume. `render_aura_map` average also
 fell from 0.2049ms to 0.1952ms in this run. The main render path remains a large
 cost. The broader render-signature and redundant-work review is tracked through
-`review_2026Jun/aura_frames_performance_review.md` if
+`internal_dev/working_docs/proj_mem/modules/aura_frames.md` if
 Aura performance work resumes.
 
 
@@ -804,9 +802,7 @@ Conclusion: Aura-only profiling confirms the broad-run hot path. `update_auras`
 is still the main inclusive path, followed by rendering and visible-icon ticking.
 `unified_scan`, CDM entry reads, timer text, and custom aura scans are secondary
 contributors. Per-call costs are stable versus the broad run. Durable Aura
-performance conclusions live in `aura_frames.md`;
-use `review_2026Jun/aura_frames_performance_review.md`
-for Aura performance target notes.
+performance conclusions live in `internal_dev/working_docs/proj_mem/modules/aura_frames.md`.
 
 
 ## Aura Frames Duration Probe
