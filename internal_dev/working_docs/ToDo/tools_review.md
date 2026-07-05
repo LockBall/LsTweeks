@@ -27,7 +27,7 @@ Token-usage and agent-efficiency review of the repo-local tooling. Full reads: `
 
 ## Minor Improvements
 1. [x] Resolved: `check_fast.ps1 -Changed` narrows only the Lua syntax step to changed Lua files; region validation, whitespace diff, and line-ending checks still run normally.
-2. check_fast.ps1 spawns a child `pwsh.exe` for the region check (`check_fast.ps1:135-137`); running it in-process or dot-sourcing saves about one second of shell startup per validation run. Time, not tokens.
+2. [x] Resolved: `check_fast.ps1` now invokes `check_regions.ps1` in the current PowerShell process with `&`, avoiding the extra `pwsh.exe` startup without dot-sourcing helper variables.
 
 
 ## Considered And Rejected
