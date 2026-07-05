@@ -15,9 +15,9 @@ Token-usage and agent-efficiency review of the repo-local tooling. Full reads: `
 
 
 ## Token Savers
-1. Single-source the LuaLS check config; three copies exist today. The config with its 18-entry globals list lives in the here-string at `run_luals_ketho.ps1:119-179`, duplicated in full at `tools_notes.md:250-310`, plus the generated file. Every agent read of tools_notes.md pays roughly 1.5K tokens for the embedded copy, and adding a global requires editing two sources. Fix: check in a `check-config-template.lua` with `<CORE>`/`<FRAMEXML>` placeholders that the script fills at run time; replace the tools_notes.md copy with a one-line pointer to the template. Removes the drift risk and shrinks a frequently-routed doc by about a third.
+1. [x] Resolved: LuaLS check config is single-sourced in `internal_dev/tests_tools/lua_checks/kethos/check-config-template.lua`; `run_luals_ketho.ps1` renders the ignored generated config with machine-local Ketho paths, and `tools_notes.md` now points to the template instead of duplicating the full config.
 
-2. One-step markdown section reader. Reading a named `##` section of a memory file is currently two steps: `rg -n "^##" <file>` then a Read with offset/limit and manual line math. A `doc_section.ps1 <file> <heading>` that prints only that section makes it one step and removes offset mistakes. Modest saving per use but it is the most repeated read pattern in the workflow; `modules/aura_frames.md` alone is 21.6 KB (~6K tokens) if read whole.
+2. [x] Resolved: `internal_dev/tests_tools/doc_section.ps1` prints a named `##` markdown section or lists available `##` headings, and `code_map.md` routes it from the read-in shortcuts.
 
 
 ## New Tool Candidates

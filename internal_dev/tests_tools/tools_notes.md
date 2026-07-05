@@ -195,6 +195,13 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
 ```
 
+Markdown section helper:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\doc_section.ps1 internal_dev\working_docs\proj_mem\modules\aura_frames.md "Runtime Gates And Refresh"
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\doc_section.ps1 internal_dev\working_docs\proj_mem\modules\aura_frames.md -List
+```
+
 PowerShell newline/write rules live in `internal_dev/tests_tools/powershell.md`.
 
 Expected package result includes:
@@ -245,69 +252,7 @@ Working local config path:
 internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua
 ```
 
-That folder is ignored by git. If the file is missing, recreate it from `.vscode/settings.json` with explicit absolute libraries:
-
-```lua
-return {
-    runtime = {
-        version = "Lua 5.1",
-        builtin = {
-            basic = "disable",
-            debug = "disable",
-            io = "disable",
-            math = "disable",
-            os = "disable",
-            package = "disable",
-            string = "disable",
-            table = "disable",
-            utf8 = "disable",
-        },
-    },
-    workspace = {
-        library = {
-            "<USERPROFILE>\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core",
-            "<USERPROFILE>\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\FrameXML",
-        },
-        ignoreDir = {
-            ".vscode",
-            "libs",
-            "internal_dev/tests_tools/lua_checks/.lua-language-server",
-            "internal_dev/tests_tools/lua_checks/.luals-check",
-            "internal_dev/tests_tools/lua_checks/.luacheck-logs",
-            "internal_dev/tests_tools/lua_checks/.luacheck-meta",
-        },
-    },
-    diagnostics = {
-        ignoredFiles = "Disable",
-        globals = {
-            "SlashCmdList",
-            "ColorPickerFrame",
-            "SOUNDKIT",
-            "AddonCompartmentFrame",
-            "BuffFrame",
-            "DebuffFrame",
-            "PanelTemplates_SetNumTabs",
-            "PanelTemplates_UpdateTabs",
-            "PanelTemplates_TabResize",
-            "StaticPopupDialogs",
-            "StaticPopup_Show",
-            "PanelTemplates_SelectTab",
-            "PanelTemplates_DeselectTab",
-            "Settings",
-            "STANDARD_TEXT_FONT",
-            "PlayerFrame",
-            "MinimalSliderWithSteppersMixin",
-            "CreateMinimalSliderFormatter",
-        },
-        disable = {
-            "assign-type-mismatch",
-        },
-    },
-    type = {
-        weakUnionCheck = true,
-    },
-}
-```
+That folder is ignored by git. If the generated file is missing or stale, rerun the helper; it renders `internal_dev/tests_tools/lua_checks/kethos/check-config-template.lua` with machine-local Ketho annotation paths.
 
 Manual diagnostics command from the repo root:
 
