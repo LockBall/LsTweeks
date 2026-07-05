@@ -188,7 +188,9 @@ local function classify_custom_for_timer(is_helpful, iid, remaining, duration, s
     if remaining == nil then
         local expires = custom_aura_expires(iid)
         if expires == false then return "static" end
-        if fallback_category then return fallback_category end
+        if fallback_category then
+            return fallback_category
+        end
         return "short"
     end
     if remaining <= 0 then return "static" end
@@ -214,7 +216,8 @@ local function build_custom_aura_entry(aura, aura_filter, short_threshold, custo
 
     local stacks, live_count = get_aura_stack_counts(aura, iid)
     local is_helpful = aura_filter:find("HELPFUL", 1, true) ~= nil
-    local category = classify_custom_for_timer(is_helpful, iid, remaining, duration, short_threshold, old_entry and old_entry.category)
+    local fallback_category = old_entry and old_entry.category
+    local category = classify_custom_for_timer(is_helpful, iid, remaining, duration, short_threshold, fallback_category)
     local safe_duration, safe_expiration, safe_remaining =
         resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, old_entry)
 
@@ -292,15 +295,19 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
     max_limit = max_limit or custom_entry.max_icons or M.MAX_ICONS_LIMIT
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
-    local old_map = _scratch_custom_old_map
-    wipe(old_map)
-    for iid, entry in pairs(target_map) do
-        old_map[iid] = entry
+    local cache_key = aura_filter .. "|" .. tostring(short_threshold)
+    local cached = _custom_aura_scan_cache[cache_key]
+    local needs_old_map = not cached or ((not cached.complete) and #cached.entries < max_limit)
+    local old_map
+    if needs_old_map then
+        old_map = _scratch_custom_old_map
+        wipe(old_map)
+        for iid, entry in pairs(target_map) do
+            old_map[iid] = entry
+        end
     end
     wipe(target_map)
 
-    local cache_key = aura_filter .. "|" .. tostring(short_threshold)
-    local cached = _custom_aura_scan_cache[cache_key]
     if not cached then
         cached = { entries = {}, next_index = 1, complete = false }
         _custom_aura_scan_cache[cache_key] = cached
@@ -315,7 +322,8 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
             break
         end
         local iid = aura.auraInstanceID
-        local entry = build_custom_aura_entry(aura, aura_filter, short_threshold, #entries + 1, iid and old_map[iid])
+        local old_entry = old_map and iid and old_map[iid]
+        local entry = build_custom_aura_entry(aura, aura_filter, short_threshold, #entries + 1, old_entry)
         if entry then
             entries[#entries + 1] = entry
         end
