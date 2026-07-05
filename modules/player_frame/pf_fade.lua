@@ -48,6 +48,10 @@ local curveReleaseSpeed = nil
 
 local DEFAULTS = M.FADE_DEFAULTS or {}
 
+local function is_runtime_enabled()
+    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+end
+
 local function get_clamped_db(db, key, lo, hi)
     if M.get_clamped_fade_value then
         return M.get_clamped_fade_value(db, key, lo, hi)
@@ -190,7 +194,7 @@ local function begin_fade(db, force_visible_start)
 end
 
 local function on_delay_expired(db, force_visible_start)
-    if playerInCombat or not (db and db.fade_out_of_combat) then
+    if playerInCombat or not is_runtime_enabled() or not (db and db.fade_out_of_combat) then
         state = playerInCombat and STATE_COMBAT or STATE_IDLE
         set_base_alpha(db, 1, false)
         return

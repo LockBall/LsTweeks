@@ -23,6 +23,7 @@ Important `player_frame` keys:
 - Player Frame fade combat/health events are registered only while `fade_out_of_combat` is enabled. When enabling fade, refresh combat state from `InCombatLockdown()` because the module may not have been receiving regen events while disabled.
 - Player Frame fade should not install its `PlayerFrame:HookScript("OnShow", ...)` hook until `fade_out_of_combat` is enabled.
 - OOC fade is delay plus fade length. Combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`.
+- Queued OOC fade apply work must recheck the Player Frame module-enabled gate before starting a fade; `C_Timer.After(0)` cannot be cancelled after module disable.
 - Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` fallback. Do not use `UnitAffectingCombat("player")`; it can remain sticky after regen and block post-combat refade.
 - On `PLAYER_REGEN_ENABLED`, schedule the delay and set visible alpha, but do not immediately call the combat-gated full update while the delay is active; transient combat state can cancel the new delay timer.
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
