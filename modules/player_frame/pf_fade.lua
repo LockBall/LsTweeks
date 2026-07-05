@@ -306,6 +306,21 @@ function F.on_threshold_changed(db)
     end
 end
 
+function F.on_fade_setting_changed(db, key)
+    if key == "health_visible_threshold" then
+        F.on_threshold_changed(db)
+        return
+    end
+
+    if state == STATE_FADING then
+        stop_animation()
+        state = STATE_IDLE
+        if db and db.fade_out_of_combat and not playerInCombat then
+            queue_apply(db)
+        end
+    end
+end
+
 function F.queue_health_update(get_db)
     local db = get_db and get_db()
     if playerInCombat or not (db and db.fade_out_of_combat) then return end

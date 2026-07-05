@@ -126,8 +126,8 @@ end
 M.set_player_frame_setting = set_player_frame_setting
 
 local function on_fade_slider_changed(key)
-    if key == "health_visible_threshold" and is_runtime_enabled() then
-        M.fade.on_threshold_changed(get_player_frame_db())
+    if is_runtime_enabled() and M.fade.on_fade_setting_changed then
+        M.fade.on_fade_setting_changed(get_player_frame_db(), key)
     end
     M.update_player_frame()
 end
