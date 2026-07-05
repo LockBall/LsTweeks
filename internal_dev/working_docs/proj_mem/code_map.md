@@ -28,6 +28,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Full LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1`
 - Targeted LuaLS/Ketho check for changed Lua files: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
+- Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 
 
@@ -45,7 +46,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `modules/audio_volumes.md` routing: use targeted sections such as `## Saved Variables`, `## Ownership`, `## Runtime Rules`, `## Event Cache And Performance`, `## Situations And Quick Picks`, `## GUI`, and `## Ketho / LuaLS`; use source outlines for `av_*` ownership and search `modules/audio_volumes/sounds/sound_reference.md` only when public sound assets or presets matter.
 - Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
 - Markdown section read: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 <markdown-file> "<heading>"`; use `-List` to list `##` headings.
-- Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
+- Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Outlines include region ranges plus named function declarations inside each region. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
 - Read `README.md`, public `sources.md`, research source references, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
 
@@ -94,8 +95,9 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `proj_mem/modules/*.md`: module memory files.
 - `ToDo/`: temporary focused TODO/review notes; read only when the task touches that area.
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
+- `api_lookup.ps1`: prints exact Ketho annotation blocks for WoW API functions.
 - `check_fast.ps1`: quick local verification wrapper.
-- `check_regions.ps1`: validates Lua region markers and prints live source outlines.
+- `check_regions.ps1`: validates Lua region markers and prints live source outlines with named functions.
 - `doc_section.ps1`: prints one named `##` markdown section or lists `##` headings.
 - `packaging/`: release package builder, policy, and verifier.
 - `lua_checks/`: LuaLS/Ketho helper and ignored generated diagnostics.

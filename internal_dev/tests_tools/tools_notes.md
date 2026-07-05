@@ -196,6 +196,8 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
 ```
 
+The `-Outline` form prints region ranges plus named function declarations inside each region.
+
 Markdown section helper:
 
 ```powershell
@@ -246,6 +248,14 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_c
 ```
 
 Use `-Files` for exact one-off file checks. Use `-Changed` for iteration after a work pass; if multiple changed Lua files share a module directory, the helper checks that directory once to avoid repeated LuaLS startup cost. Use the full helper before commit-level validation, after load-order changes, or after broad refactors because targeted runs do not replace whole-workspace diagnostics.
+
+Ketho API lookup:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\api_lookup.ps1 C_Spell.GetSpellInfo
+```
+
+Use this before changing WoW API call sites when the signature or return type matters. It prints exact function annotation blocks from the installed Ketho Core and FrameXML annotation folders.
 
 Working local config path:
 

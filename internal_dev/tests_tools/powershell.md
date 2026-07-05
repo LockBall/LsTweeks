@@ -24,7 +24,7 @@ PowerShell notes for repo-local scripts, validation helpers, and coding-agent sh
   ```powershell
   pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1
   ```
-- Print live region line ranges for targeted source read-in:
+- Print live region line ranges and named function declarations for targeted source read-in:
   ```powershell
   pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline modules/aura_frames/af_render.lua
   ```

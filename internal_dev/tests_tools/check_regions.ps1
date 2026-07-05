@@ -50,12 +50,32 @@ function Get-RegionName {
     return $name.Trim()
 }
 
+function Get-FunctionName {
+    param([string]$Line)
+
+    $patterns = @(
+        "^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+        "^\s*function\s+([A-Za-z_][A-Za-z0-9_]*(?:[.:][A-Za-z_][A-Za-z0-9_]*)*)\s*\(",
+        "^\s*local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\s*\(",
+        "^\s*([A-Za-z_][A-Za-z0-9_]*(?:[.:][A-Za-z_][A-Za-z0-9_]*)*)\s*=\s*function\s*\("
+    )
+
+    foreach ($pattern in $patterns) {
+        if ($Line -match $pattern) {
+            return $Matches[1]
+        }
+    }
+
+    return $null
+}
+
 function Read-Regions {
     param([System.IO.FileInfo]$File)
 
     $lines = [System.IO.File]::ReadAllLines($File.FullName)
     $stack = New-Object System.Collections.Generic.List[object]
     $regions = New-Object System.Collections.Generic.List[object]
+    $functions = New-Object System.Collections.Generic.List[object]
     $errors = New-Object System.Collections.Generic.List[string]
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -93,6 +113,14 @@ function Read-Regions {
                 EndLine = $line_number
             })
         }
+
+        $function_name = Get-FunctionName $line
+        if ($function_name) {
+            $functions.Add([pscustomobject]@{
+                Name = $function_name
+                Line = $line_number
+            })
+        }
     }
 
     for ($i = $stack.Count - 1; $i -ge 0; $i--) {
@@ -106,6 +134,7 @@ function Read-Regions {
 
     return [pscustomobject]@{
         Regions = @($regions | Sort-Object StartLine)
+        Functions = @($functions | Sort-Object Line)
         Errors = @($errors)
     }
 }
@@ -126,6 +155,9 @@ try {
             Write-Host $relative
             foreach ($region in $result.Regions) {
                 "{0,6}-{1,-6} {2}" -f $region.StartLine, $region.EndLine, $region.Name
+                foreach ($function in @($result.Functions | Where-Object { $_.Line -gt $region.StartLine -and $_.Line -lt $region.EndLine })) {
+                    "    {0,6} {1}" -f $function.Line, $function.Name
+                }
             }
         }
 
