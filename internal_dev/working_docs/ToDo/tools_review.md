@@ -26,7 +26,7 @@ Token-usage and agent-efficiency review of the repo-local tooling. Full reads: `
 
 
 ## Minor Improvements
-1. `-Changed` mode for check_fast.ps1: run luac only on changed Lua files during iteration, mirroring `run_luals_ketho.ps1 -Changed` (its `Get-ChangedLuaFiles` at lines 66-80 is reusable). Minor since luac is fast; also shortens output.
+1. [x] Resolved: `check_fast.ps1 -Changed` narrows only the Lua syntax step to changed Lua files; region validation, whitespace diff, and line-ending checks still run normally.
 2. check_fast.ps1 spawns a child `pwsh.exe` for the region check (`check_fast.ps1:135-137`); running it in-process or dot-sourcing saves about one second of shell startup per validation run. Time, not tokens.
 
 

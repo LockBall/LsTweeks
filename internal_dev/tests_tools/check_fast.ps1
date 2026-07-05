@@ -1,5 +1,6 @@
 param(
-    [switch]$Package
+    [switch]$Package,
+    [switch]$Changed
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,13 +74,33 @@ function Get-AddonLuaFilesFromToc {
     }
 }
 
+function Get-ChangedLuaFiles {
+    $paths = @(
+        git diff --name-only --diff-filter=ACMRTUXB
+        git diff --cached --name-only --diff-filter=ACMRTUXB
+        git ls-files --others --exclude-standard
+    )
+
+    foreach ($path in $paths) {
+        if ([string]::IsNullOrWhiteSpace($path)) { continue }
+        $normalized = $path -replace "\\", "/"
+        if ([System.IO.Path]::GetExtension($normalized) -ne ".lua") { continue }
+        if (-not (Test-Path -LiteralPath $normalized)) { continue }
+        $normalized
+    }
+}
+
 if (-not (Test-Path -LiteralPath $luac)) {
     throw "Missing Lua 5.1 compiler: $luac"
 }
 
 Push-Location $repoRoot
 try {
-    $luaFiles = @(Get-AddonLuaFilesFromToc "LsTweeks.toc")
+    $luaFiles = if ($Changed) {
+        @(Get-ChangedLuaFiles | Sort-Object -Unique)
+    } else {
+        @(Get-AddonLuaFilesFromToc "LsTweeks.toc")
+    }
 
     $missing = @($luaFiles | Where-Object { -not (Test-Path -LiteralPath $_) })
     if ($missing.Count -gt 0) {
@@ -87,7 +108,11 @@ try {
     }
 
     Invoke-Step "Lua syntax" {
-        & $luac -p @luaFiles
+        if ($luaFiles.Count -eq 0) {
+            Write-Host "No changed Lua files."
+        } else {
+            & $luac -p @luaFiles
+        }
     }
 
     Invoke-Step "Lua regions" {
