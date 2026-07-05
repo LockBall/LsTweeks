@@ -171,12 +171,12 @@ function M.build_options_panel(parent)
             M.FADE_DEFAULTS,
             function()
                 M.on_fade_slider_changed(slider_key)
-            end
+            end,
+            {
+                tooltip = STRINGS[def.help_key],
+            }
         )
         M.controls[def.control_key] = slider
-        if def.help_key then
-            addon.AttachTooltip(slider, nil, STRINGS[def.help_key])
-        end
 
         grid:place_at(slider, ROWS.fade_controls, index, nil, {
             y_offset = -(cfg.fade_row_padding_top + cfg.checkbox_height + math_abs(cfg.slider_offset_y)),
