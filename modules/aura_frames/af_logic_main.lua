@@ -417,7 +417,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local render_map
     if activity.needs_custom_scan then
         if not self._aura_map then self._aura_map = {} end
-        wipe(self._aura_map)
         M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
         render_map = self._aura_map
     else

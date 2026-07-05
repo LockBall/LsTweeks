@@ -423,7 +423,7 @@ local function build_display_signature(
     return table_concat(parts, "|")
 end
 
-local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, timer_behavior, tooltip_enabled)
+local function assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, is_static_entry, now, timer_category, timer_behavior, tooltip_enabled)
     obj.aura_index      = (not is_spell_cooldown and type(entry.instance_id) == "number") and entry.instance_id or nil
     obj.aura_name       = entry.name
     obj.aura_duration   = entry.duration
@@ -439,6 +439,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, live_dura
     obj.tooltip_enabled = tooltip_enabled
     obj.is_test_preview = entry.is_test_preview or false
     obj.is_spell_cooldown = is_spell_cooldown
+    obj.aura_is_static = is_static_entry == true
     obj.grey_cooldown = entry.grey_cooldown == true
 end
 
@@ -859,10 +860,11 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         end
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
+        local is_static_entry = is_static_frame or (self.is_custom and entry.category == "static")
         local live_duration, live_remaining, cooldown_duration =
-            resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
+            resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_entry, is_spell_cooldown)
 
-        assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, now, timer_category, timer_behavior, tooltip_enabled)
+        assign_aura_object_metadata(obj, entry, live_remaining, live_duration, is_spell_cooldown, is_static_entry, now, timer_category, timer_behavior, tooltip_enabled)
 
         local cooldown_is_active = is_spell_cooldown and obj.grey_cooldown
         local stack_text = resolve_stack_text(entry, live_count)
@@ -889,7 +891,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             bar_mode,
             show_render_timer_text,
             show_timer_swipe,
-            is_static_frame,
+            is_static_entry,
             live_remaining,
             live_duration,
             cooldown_duration,

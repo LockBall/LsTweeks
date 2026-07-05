@@ -30,8 +30,8 @@ local function aura_icon_needs_tick(obj, frame, now)
     if obj.is_test_preview then return true end
     if obj.is_spell_cooldown then return true end
 
-    local is_static_frame = frame and frame.category == "static"
-    if is_static_frame then return false end
+    local is_static_entry = (frame and frame.category == "static") or obj.aura_is_static == true
+    if is_static_entry then return false end
 
     local show_timer_text = frame and frame._show_timer_text
     local show_cooldown_overlay = frame and frame._show_cooldown_overlay == true
@@ -168,8 +168,13 @@ function M.tick_visible_icons(now)
                     if obj.is_test_preview and M.update_test_preview_state then
                         M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
                     end
-                    if is_static_frame then
+                    local is_static_entry = is_static_frame or obj.aura_is_static == true
+                    if is_static_entry then
                         clear_timer_text(obj.time_text)
+                        if obj.bar and obj.bar:IsShown() then
+                            set_bar_minmax_if_changed(obj.bar, 0, 1)
+                            obj.bar:SetValue(1)
+                        end
                     elseif (type(obj.aura_index) == "number") or obj.is_spell_cooldown or obj.is_test_preview then
                         if show_timer_text then
                             if show_cooldown_overlay then

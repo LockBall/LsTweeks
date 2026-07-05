@@ -26,6 +26,7 @@ local _scratch_seen_iids    = {}
 local _scratch_added_by_key = {}
 local _scratch_added_lookup = {}
 local _scratch_viewer_children = {}
+local _scratch_custom_old_map = {}
 local _custom_aura_scan_cache = {}
 local AURA_SCAN_BUCKET_CATEGORIES = { "static", "short", "long", "debuff" }
 
@@ -173,16 +174,30 @@ local function get_aura_spell_id(aura, fallback_entry)
     return get_safe_spell_id(nil, fallback_entry)
 end
 
-local function classify_custom_for_timer(is_helpful, remaining, duration, short_threshold)
+local function custom_aura_expires(iid)
+    if not (iid and C_UnitAuras.DoesAuraHaveExpirationTime) then return nil end
+    local ok, expires = pcall(C_UnitAuras.DoesAuraHaveExpirationTime, "player", iid)
+    if ok and type(expires) == "boolean" and not issecretvalue(expires) then
+        return expires
+    end
+    return nil
+end
+
+local function classify_custom_for_timer(is_helpful, iid, remaining, duration, short_threshold, fallback_category)
     if not is_helpful then return "debuff" end
-    if remaining == nil then return "short" end
+    if remaining == nil then
+        local expires = custom_aura_expires(iid)
+        if expires == false then return "static" end
+        if fallback_category then return fallback_category end
+        return "short"
+    end
     if remaining <= 0 then return "static" end
     if duration ~= nil and not issecretvalue(duration) and duration == 0 then return "static" end
     if remaining <= short_threshold then return "short" end
     return "long"
 end
 
-local function build_custom_aura_entry(aura, aura_filter, short_threshold, custom_order)
+local function build_custom_aura_entry(aura, aura_filter, short_threshold, custom_order, old_entry)
     if not aura then return nil end
     local iid = aura.auraInstanceID
     if not iid then return nil end
@@ -199,13 +214,13 @@ local function build_custom_aura_entry(aura, aura_filter, short_threshold, custo
 
     local stacks, live_count = get_aura_stack_counts(aura, iid)
     local is_helpful = aura_filter:find("HELPFUL", 1, true) ~= nil
-    local category = classify_custom_for_timer(is_helpful, remaining, duration, short_threshold)
+    local category = classify_custom_for_timer(is_helpful, iid, remaining, duration, short_threshold, old_entry and old_entry.category)
     local safe_duration, safe_expiration, safe_remaining =
-        resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, nil)
+        resolve_safe_timing(duration, expiration, remaining, live_remaining, live_expiration, old_entry)
 
     return {
         instance_id = iid,
-        spell_id = get_aura_spell_id(aura),
+        spell_id = get_aura_spell_id(aura, old_entry),
         name = aura.name,
         icon = aura.icon,
         duration = safe_duration,
@@ -219,7 +234,7 @@ local function build_custom_aura_entry(aura, aura_filter, short_threshold, custo
         category = category,
         order_key = aura.auraInstanceID,
         custom_order = custom_order,
-        added_at = GetTime(),
+        added_at = (old_entry and old_entry.added_at) or GetTime(),
     }
 end
 
@@ -277,6 +292,13 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
     max_limit = max_limit or custom_entry.max_icons or M.MAX_ICONS_LIMIT
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
+    local old_map = _scratch_custom_old_map
+    wipe(old_map)
+    for iid, entry in pairs(target_map) do
+        old_map[iid] = entry
+    end
+    wipe(target_map)
+
     local cache_key = aura_filter .. "|" .. tostring(short_threshold)
     local cached = _custom_aura_scan_cache[cache_key]
     if not cached then
@@ -292,7 +314,8 @@ function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, shor
             cached.complete = true
             break
         end
-        local entry = build_custom_aura_entry(aura, aura_filter, short_threshold, #entries + 1)
+        local iid = aura.auraInstanceID
+        local entry = build_custom_aura_entry(aura, aura_filter, short_threshold, #entries + 1, iid and old_map[iid])
         if entry then
             entries[#entries + 1] = entry
         end
