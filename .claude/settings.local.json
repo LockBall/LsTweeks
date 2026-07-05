@@ -1,0 +1,13 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "PowerShell",
+      "Bash"
+    ]
+  }
+}

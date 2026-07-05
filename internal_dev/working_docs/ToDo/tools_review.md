@@ -11,11 +11,12 @@ Token-usage and agent-efficiency review of the repo-local tooling. Full reads: `
 
 
 ## Confirmed Bug
-1. check_fast.ps1 Lua list has drifted; three loaded files are silently unchecked. `check_fast.ps1:66-124` hardcodes 57 Lua files while `LsTweeks.toc` loads 60 addon-owned files. Missing from the syntax check: `modules/settings/st_gui.lua`, `modules/player_frame/pf_defaults.lua`, `modules/player_frame/pf_gui.lua`. Fix by parsing `LsTweeks.toc` for `.lua` entries (excluding `libs/`) so the toc is the single owner of the file list; new files can then never be silently skipped and the missing-file throw at `check_fast.ps1:126-129` still catches toc/disk mismatches.
+1. [x] Resolved: `check_fast.ps1` now parses `LsTweeks.toc` for `.lua` entries excluding `libs/`, so `modules/settings/st_gui.lua`, `modules/player_frame/pf_defaults.lua`, and `modules/player_frame/pf_gui.lua` are covered by the Lua syntax check and future loaded addon Lua files cannot be silently skipped.
 
 
 ## Token Savers
 1. Single-source the LuaLS check config; three copies exist today. The config with its 18-entry globals list lives in the here-string at `run_luals_ketho.ps1:119-179`, duplicated in full at `tools_notes.md:250-310`, plus the generated file. Every agent read of tools_notes.md pays roughly 1.5K tokens for the embedded copy, and adding a global requires editing two sources. Fix: check in a `check-config-template.lua` with `<CORE>`/`<FRAMEXML>` placeholders that the script fills at run time; replace the tools_notes.md copy with a one-line pointer to the template. Removes the drift risk and shrinks a frequently-routed doc by about a third.
+
 2. One-step markdown section reader. Reading a named `##` section of a memory file is currently two steps: `rg -n "^##" <file>` then a Read with offset/limit and manual line math. A `doc_section.ps1 <file> <heading>` that prints only that section makes it one step and removes offset mistakes. Modest saving per use but it is the most repeated read pattern in the workflow; `modules/aura_frames.md` alone is 21.6 KB (~6K tokens) if read whole.
 
 

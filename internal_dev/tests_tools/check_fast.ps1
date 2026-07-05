@@ -57,71 +57,29 @@ function Test-HasCrlf {
     return $false
 }
 
+function Get-AddonLuaFilesFromToc {
+    param([string]$TocPath)
+
+    foreach ($line in Get-Content -LiteralPath $TocPath) {
+        $entry = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($entry)) { continue }
+        if ($entry.StartsWith("#")) { continue }
+
+        $normalized = $entry -replace "\\", "/"
+        if ($normalized -notmatch "(?i)\.lua$") { continue }
+        if ($normalized -match "(?i)^libs/") { continue }
+
+        $normalized
+    }
+}
+
 if (-not (Test-Path -LiteralPath $luac)) {
     throw "Missing Lua 5.1 compiler: $luac"
 }
 
 Push-Location $repoRoot
 try {
-    $luaFiles = @(
-        "core/init.lua",
-        "core/main_frame.lua",
-        "core/minimap_button.lua",
-        "functions/checkbox.lua",
-        "functions/color_picker.lua",
-        "functions/dropdown.lua",
-        "functions/group_column.lua",
-        "functions/layout_grid.lua",
-        "functions/module_reset.lua",
-        "functions/panel_riveted.lua",
-        "functions/slider_with_box.lua",
-        "functions/table_utils.lua",
-        "functions/ui_helpers.lua",
-        "functions/buttons.lua",
-        "modules/about.lua",
-        "modules/settings/st_defaults.lua",
-        "modules/settings/st_main.lua",
-        "modules/player_frame/pf_fade.lua",
-        "modules/player_frame/pf_main.lua",
-        "modules/objectives/ob_defaults.lua",
-        "modules/objectives/ob_position.lua",
-        "modules/objectives/ob_auto_collapse.lua",
-        "modules/objectives/ob_section_count.lua",
-        "modules/objectives/ob_background.lua",
-        "modules/objectives/ob_main.lua",
-        "modules/audio_volumes/av_defaults.lua",
-        "modules/audio_volumes/av_functions.lua",
-        "modules/audio_volumes/av_logic_main.lua",
-        "modules/audio_volumes/av_logic_situations.lua",
-        "modules/audio_volumes/av_gui.lua",
-        "modules/audio_volumes/av_gui_general.lua",
-        "modules/audio_volumes/av_gui_specifics.lua",
-        "modules/audio_volumes/av_gui_situations.lua",
-        "modules/audio_volumes/av_main.lua",
-        "modules/skyriding_vigor/sv_defaults.lua",
-        "modules/skyriding_vigor/sv_styles.lua",
-        "modules/skyriding_vigor/sv_bar.lua",
-        "modules/skyriding_vigor/sv_fade.lua",
-        "modules/skyriding_vigor/sv_state.lua",
-        "modules/skyriding_vigor/sv_gui.lua",
-        "modules/skyriding_vigor/sv_main.lua",
-        "modules/aura_frames/af_defaults.lua",
-        "modules/aura_frames/af_functions.lua",
-        "modules/aura_frames/af_debug_outlines.lua",
-        "modules/aura_frames/af_screen_grid.lua",
-        "modules/aura_frames/af_scan.lua",
-        "modules/aura_frames/af_render.lua",
-        "modules/aura_frames/af_icon_layout.lua",
-        "modules/aura_frames/af_logic_ticker.lua",
-        "modules/aura_frames/af_logic_native_visibility.lua",
-        "modules/aura_frames/af_logic_main.lua",
-        "modules/aura_frames/af_gui_tree.lua",
-        "modules/aura_frames/af_gui_frame_builders.lua",
-        "modules/aura_frames/af_gui.lua",
-        "modules/aura_frames/af_profiles.lua",
-        "modules/aura_frames/af_test_aura.lua",
-        "modules/aura_frames/af_main.lua"
-    )
+    $luaFiles = @(Get-AddonLuaFilesFromToc "LsTweeks.toc")
 
     $missing = @($luaFiles | Where-Object { -not (Test-Path -LiteralPath $_) })
     if ($missing.Count -gt 0) {

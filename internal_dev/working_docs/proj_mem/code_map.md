@@ -37,6 +37,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `project.md` module lifecycle, DB defaults, timing buckets, combat guards, or shared GUI rules: `## Shared Architecture`.
 - Shared factory lookup: check `## Core And Shared Helpers` before searching source or hand-building controls. It maps the common addon factories/helpers for settings controls, layout, panels, tooltips, buttons, checkboxes, sliders, dropdowns, color pickers, reset panels, and table/default utilities to their owning files.
 - `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Aura Cancellation`, `## Aura Tooltips`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
+- Aura Frames CDM manual regression route: `internal_dev/tests_tools/aura_frames_cdm_regression.md`.
 - `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
 - `modules/player_frame.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `pf_defaults.lua` defaults, `pf_gui.lua` settings panel, `pf_main.lua` combat text/controller, and `pf_fade.lua` out-of-combat fade.
 - `modules/objectives.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_position.lua` All Objectives position/move controls, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/border runtime and settings, and `ob_main.lua` lifecycle/status shell.
@@ -86,6 +87,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `project.md`: project-wide architecture and durable cross-module rules.
 - `research_sources.md`: internal API, FrameXML, tool, release, and debugging reference links.
 - `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`: reusable in-game CPU profiling workflow and comparison rules.
+- `internal_dev/tests_tools/aura_frames_cdm_regression.md`: manual in-game CDM regression matrix for Aura Frames.
 - `internal_dev/tests_tools/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.
 - `ToDo/`: temporary focused TODO/review notes; read only when the task touches that area.
@@ -94,7 +96,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines.
 - `packaging/`: release package builder, policy, and verifier.
 - `lua_checks/`: LuaLS/Ketho helper and ignored generated diagnostics.
-- `SoundKitConstants.lua`: large searchable sound reference; search only when sound IDs are needed.
+- `internal_dev/working_docs/SoundKitConstants.lua`: large searchable sound reference; search only when sound IDs are needed.
 
 
 ## Release Package

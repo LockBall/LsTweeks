@@ -186,7 +186,7 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_fast.ps1 -Package
 ```
 
-The first command runs Lua 5.1 syntax checks for addon-owned Lua files, Lua region validation, and `git diff --check`. The `-Package` form also builds and verifies the release zip.
+The first command runs Lua 5.1 syntax checks for addon-owned Lua files loaded by `LsTweeks.toc` excluding `libs/`, Lua region validation, and `git diff --check`. The `-Package` form also builds and verifies the release zip.
 
 Lua region helper:
 
