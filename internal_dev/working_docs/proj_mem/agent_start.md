@@ -74,6 +74,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache hot globals, batch noisy events, skip disabled frames early, and avoid frame churn.
 - Use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
 - Vendored libraries under `libs/` are third-party dependencies. Do not edit them for style or type warnings unless intentionally updating the dependency.
+- Runtime-logic bugs: reproduce as a failing headless Lua test (`internal_dev/tests_tools/lua_tests/`) before fixing when the bug is testable there (timers, events, state machines, DB handling); taint/visual/event-order bugs stay in-game-only. The fix then keeps the test as permanent regression coverage.
 
 
 ## Asset And Reference Rules

@@ -1,5 +1,7 @@
 -- Tests for the shared table/default utilities in functions/table_utils.lua: deep copy,
 -- fill-missing default application, and numeric clamping used by every module's DB handling.
+-- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
+---@diagnostic disable: undefined-global, lowercase-global
 
 
 --#region FILE CONTENTS ======================================================

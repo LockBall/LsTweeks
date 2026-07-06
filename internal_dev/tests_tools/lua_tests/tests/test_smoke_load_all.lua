@@ -1,5 +1,7 @@
 -- Smoke test: loads every addon file from the TOC into the stub environment, boots the
 -- simulated client, and pokes the shared runtime paths to prove no file errors at load.
+-- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
+---@diagnostic disable: undefined-global, lowercase-global
 
 
 --#region FILE CONTENTS ======================================================

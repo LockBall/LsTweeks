@@ -1,6 +1,7 @@
 param(
     [switch]$Package,
-    [switch]$Changed
+    [switch]$Changed,
+    [switch]$SkipTests
 )
 
 $ErrorActionPreference = "Stop"
@@ -127,6 +128,15 @@ try {
         $crlfFiles = @(Get-ProjectTextFiles | Sort-Object -Unique | Where-Object { Test-HasCrlf $_ })
         if ($crlfFiles.Count -gt 0) {
             throw "CRLF line endings found; project text files must use LF: $($crlfFiles -join ', ')"
+        }
+    }
+
+    if (-not $SkipTests) {
+        Invoke-Step "Headless Lua tests" {
+            pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "internal_dev/tests_tools/lua_tests/run_tests.ps1"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Headless Lua tests failed."
+            }
         }
     }
 

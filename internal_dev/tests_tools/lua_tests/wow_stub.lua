@@ -1,5 +1,8 @@
 -- Headless WoW API stub for out-of-game tests: fakes frames, C_Timer, events, and common globals
 -- with a manually advanced clock so runtime logic can be exercised deterministically under desktop Lua 5.1.
+-- Runs under desktop Lua, not the WoW client; the workspace LuaLS profile is the WoW environment,
+-- so desktop globals and intentional stub patterns are suppressed file-wide here.
+---@diagnostic disable: undefined-global, unused-local, unused-vararg, duplicate-set-field, lowercase-global, missing-return
 
 
 --#region FILE CONTENTS ======================================================
@@ -11,7 +14,7 @@ stub.timers = {}
 stub.frames = {}
 stub.strict_missing = false
 
---#region clock and C_Timer --------------------------------------------------
+--#region clock and C_Timer
 
 local timer_seq = 0
 
@@ -68,6 +71,14 @@ function stub.Advance(dt)
     for i = #stub.timers, 1, -1 do
         if stub.timers[i].cancelled then table.remove(stub.timers, i) end
     end
+    -- pump OnUpdate once per advance for visible frames (elapsed = full dt),
+    -- matching addon fades that compute progress from GetTime()
+    for _, f in ipairs(stub.frames) do
+        local on_update = f.__scripts and f.__scripts.OnUpdate
+        if on_update and f:IsVisible() then
+            on_update(f, dt)
+        end
+    end
 end
 
 function stub.ActiveTimerCount()
@@ -90,10 +101,10 @@ function GetTime() return stub.now end
 function GetTimePreciseSec() return stub.now end
 function debugprofilestop() return stub.now * 1000 end
 
---#endregion clock and C_Timer -----------------------------------------------
+--#endregion clock and C_Timer
 
 
---#region frame and region mocks ----------------------------------------------
+--#region frame and region mocks
 
 local frame_methods = {}
 local frame_meta = { __index = frame_methods }
@@ -458,7 +469,7 @@ local METHOD_VERB_PREFIXES = {
     "Set", "Get", "Is", "Has", "Can", "Enable", "Disable", "Register", "Unregister",
     "Create", "Add", "Clear", "Show", "Hide", "Start", "Stop", "Play", "Pause",
     "Apply", "Update", "Refresh", "Lock", "Unlock", "Raise", "Lower", "Fade",
-    "Anchor", "Adjust", "Reset", "Select", "Toggle",
+    "Anchor", "Adjust", "Reset", "Select", "Toggle", "Init",
 }
 
 local function looks_like_method(key)
@@ -493,6 +504,11 @@ function CreateFrame(kind, name, parent, template)
     if template and template:find("UIPanelScrollFrameTemplate") then
         f.ScrollBar = new_region("Slider", name and (name .. "ScrollBar") or nil, f)
     end
+    if template and template:find("MinimalSliderWithSteppersTemplate") then
+        f.Slider = new_region("Slider", nil, f)
+        f.Back = new_region("Button", nil, f)
+        f.Forward = new_region("Button", nil, f)
+    end
     if kind == "GameTooltip" or (template and template:find("GameTooltipTemplate")) then
         f.TextLeft1 = new_region("FontString", name and (name .. "TextLeft1") or nil, f)
     end
@@ -511,10 +527,10 @@ function stub.FireEvent(event, ...)
     end
 end
 
---#endregion frame and region mocks --------------------------------------------
+--#endregion frame and region mocks
 
 
---#region common globals -------------------------------------------------------
+--#region common globals
 
 -- Lua library aliases WoW exposes
 strmatch, strfind, strsub, strlower, strupper, strrep, strlen = string.match, string.find, string.sub, string.lower, string.upper, string.rep, string.len
@@ -632,6 +648,17 @@ GRAY_FONT_COLOR = CreateColor(0.5, 0.5, 0.5)
 WHITE_FONT_COLOR = CreateColor(1, 1, 1)
 
 SlashCmdList = {}
+MinimalSliderWithSteppersMixin = {
+    Label = { Left = 1, Right = 2, Top = 3, Min = 4, Max = 5 },
+    Event = { OnValueChanged = "OnValueChanged" },
+}
+function CreateMinimalSliderFormatter() return {} end
+function PanelTemplates_TabResize() end
+function PanelTemplates_SetTab() end
+function PanelTemplates_SelectTab() end
+function PanelTemplates_DeselectTab() end
+function PanelTemplates_SetNumTabs() end
+function PanelTemplates_UpdateTabs() end
 SOUNDKIT = setmetatable({}, { __index = function() return 0 end })
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall =
@@ -653,10 +680,10 @@ ObjectiveTrackerFrame.Header = CreateFrame("Frame", nil, ObjectiveTrackerFrame)
 ObjectiveTrackerFrame.Header.Text = ObjectiveTrackerFrame.Header:CreateFontString()
 ObjectiveTrackerFrame.Header.MinimizeButton = CreateFrame("Button", nil, ObjectiveTrackerFrame.Header)
 
---#endregion common globals ------------------------------------------------------
+--#endregion common globals
 
 
---#region C_* namespaces and unit API ---------------------------------------------
+--#region C_* namespaces and unit API
 
 C_AddOns = {
     GetAddOnMetadata = function(name, field)
@@ -673,6 +700,10 @@ C_Spell = {
     end,
     GetSpellTexture = function() return 134400 end,
     GetSpellName = function(spell_id) return "TestSpell" .. tostring(spell_id) end,
+    -- reads stub.spell_charges[spell_id] = { currentCharges, maxCharges, cooldownStartTime, cooldownDuration }
+    GetSpellCharges = function(spell_id)
+        return stub.spell_charges and stub.spell_charges[spell_id] or nil
+    end,
 }
 
 -- Aura scans read from stub.auras[unit].buffs / .debuffs (arrays of aura-data tables).
@@ -821,9 +852,19 @@ function issecretvalue() return false end
 function MuteSoundFile() end
 function UnmuteSoundFile() end
 function StopSound() end
-function UnitPower() return 100 end
-function UnitPowerMax() return 100 end
-function UnitPowerDisplayMod() return 1 end
+-- Unit power reads from stub.power[power_type] = { current = n, max = n };
+-- unset power types report 0/0 like a character without that resource.
+stub.power = {}
+stub.power_display_mod = 1
+function UnitPower(unit, power_type)
+    local p = stub.power[power_type]
+    return p and p.current or 0
+end
+function UnitPowerMax(unit, power_type)
+    local p = stub.power[power_type]
+    return p and p.max or 0
+end
+function UnitPowerDisplayMod() return stub.power_display_mod end
 function UnitInVehicle() return false end
 function UnitInVehicleControlSeat() return false end
 function IsAdvancedFlyableArea() return false end
@@ -842,10 +883,10 @@ C_Texture = {
 C_Item = {}
 C_PlayerInfo = { GetGlidingInfo = function() return false, false, 0 end }
 
---#endregion C_* namespaces and unit API --------------------------------------------
+--#endregion C_* namespaces and unit API
 
 
---#region missing-global tracking -----------------------------------------------
+--#region missing-global tracking
 
 -- Unknown global reads return nil (matching a missing API in-game) but are
 -- logged so tests can surface stub gaps. Set stub.strict_missing = true to
@@ -863,7 +904,7 @@ setmetatable(_G, {
     end,
 })
 
---#endregion missing-global tracking ----------------------------------------------
+--#endregion missing-global tracking
 
 return stub
 

@@ -1,5 +1,7 @@
 -- Headless test harness: loads addon Lua files in TOC order into the wow_stub environment
 -- and provides assertion/event/clock helpers so tests drive addon logic like the game client would.
+-- Runs under desktop Lua 5.1 (io/os/require/loadfile), which the WoW-profile LuaLS does not know.
+---@diagnostic disable: undefined-global, undefined-field
 
 
 --#region FILE CONTENTS ======================================================
@@ -23,7 +25,7 @@ local harness = {
 }
 
 
---#region file loading -------------------------------------------------------
+--#region file loading
 
 -- Load one addon Lua file with the WoW vararg convention (addonName, addonTable).
 function harness.load_file(rel_path)
@@ -78,10 +80,10 @@ function harness.boot(saved_variables)
     stub.FireEvent("PLAYER_ENTERING_WORLD", true, false)
 end
 
---#endregion file loading -----------------------------------------------------
+--#endregion file loading
 
 
---#region gameplay helpers ------------------------------------------------------
+--#region gameplay helpers
 
 function harness.enter_combat()
     stub.in_combat = true
@@ -101,13 +103,12 @@ end
 harness.advance = stub.Advance
 harness.fire_event = stub.FireEvent
 
---#endregion gameplay helpers -----------------------------------------------------
+--#endregion gameplay helpers
 
 
---#region test registry and asserts ------------------------------------------------
+--#region test registry and asserts
 
 local tests = {}
-local current_test = nil
 
 function harness.test(name, fn)
     tests[#tests + 1] = { name = name, fn = fn }
@@ -144,7 +145,6 @@ end
 function harness.run(suite_name)
     local failures = 0
     for _, t in ipairs(tests) do
-        current_test = t.name
         local ok, err = pcall(t.fn)
         if ok then
             print(string.format("  PASS  %s", t.name))
@@ -157,7 +157,7 @@ function harness.run(suite_name)
     if failures > 0 then os.exit(1) end
 end
 
---#endregion test registry and asserts ----------------------------------------------
+--#endregion test registry and asserts
 
 return harness
 

@@ -20,7 +20,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
 - Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
-- Fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
+- Fast validation (includes headless Lua tests; add `-SkipTests` to skip them): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
 - Changed-file fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
 - Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
 - Diff whitespace check: `git diff --check`

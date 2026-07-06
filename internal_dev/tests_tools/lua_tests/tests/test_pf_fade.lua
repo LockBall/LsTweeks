@@ -1,5 +1,7 @@
 -- Behavioral tests for the Player Frame out-of-combat fade state machine, replaying the
 -- combat/delay/fade/health-gate sequences that previously required manual in-game checks.
+-- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
+---@diagnostic disable: undefined-global, lowercase-global
 
 
 --#region FILE CONTENTS ======================================================

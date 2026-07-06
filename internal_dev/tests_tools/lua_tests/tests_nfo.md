@@ -13,6 +13,8 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - [Writing A Test](#writing-a-test)
 - [Simulating Game State](#simulating-game-state)
 - [Extending The Stub](#extending-the-stub)
+- [File Conventions In This Folder](#file-conventions-in-this-folder)
+- [Workflow Integration](#workflow-integration)
 - [Design Decisions And Pitfalls](#design-decisions-and-pitfalls)
 
 
@@ -43,6 +45,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 ## Running
 - All suites: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - One suite by substring: append the filter, e.g. `run_tests.ps1 pf_fade`.
+- `check_fast.ps1` runs all suites as its "Headless Lua tests" step by default; pass `-SkipTests` to opt out.
 - Requires a Lua 5.1 interpreter; the runner checks `C:\Program Files (x86)\Lua\5.1\lua.exe` first, then PATH (`lua5.1`, `lua51`, `lua`, `luajit`).
 - Each `tests/test_*.lua` file runs in its own Lua process so addon global state never leaks between suites. Exit code 0 = all passed, 1 = at least one suite failed, 2 = runner setup problem.
 
@@ -53,6 +56,8 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `run_tests.ps1`: process-per-suite runner with substring filtering.
 - `tests/test_smoke_load_all.lua`: loads every TOC file, boots, exercises module toggles, `/lst status`, and 30s of simulated time.
 - `tests/test_pf_fade.lua`: Player Frame fade state machine scenarios (delay/fade/faded, combat interrupts, health gate, slider retargeting, timer-leak check).
+- `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
+- `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
 - `tests/test_table_utils.lua`: shared table/default utilities.
 
 
@@ -63,6 +68,7 @@ Clock and C_Timer:
 - `stub.now` is the fake time; `GetTime()` returns it.
 - `C_Timer.After/NewTimer/NewTicker` schedule onto a queue; nothing fires until `stub.Advance(dt)` runs. Advance fires due timers in chronological order, honoring timers scheduled by fired callbacks within the same advance, and reschedules tickers.
 - `stub.ActiveTimerCount()` supports leak assertions: capture a baseline, run a scenario, assert the count returns to baseline.
+- After firing due timers, each `Advance(dt)` pumps `OnUpdate` once (elapsed = full dt) on every visible frame with an OnUpdate script, so GetTime-based OnUpdate fades (sv_fade) progress correctly; advance in small steps when a test needs multiple OnUpdate fires.
 
 Frames:
 - `CreateFrame(kind, name, parent, template)` returns a table with a shared method set: geometry, points, visibility (Show/Hide fire OnShow/OnHide on transitions), alpha, scripts (`SetScript`, `HookScript` chains like the client), event registration, child/region creation, and widget-specific methods for FontString, Texture, Slider/StatusBar, EditBox, Button/CheckButton, Cooldown, and GameTooltip.
@@ -76,6 +82,8 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 - `stub.player_health_percent` (0–1): read by `UnitHealthPercent` / `UnitHealth`.
 - `stub.auras[unit] = { buffs = {...}, debuffs = {...} }`: backs all `C_UnitAuras` getters, including a working `GetAuraDuration` handle (remaining time computed against `stub.now`).
 - `stub.cvars`: backed by `Get/SetCVar`.
+- `stub.power[power_type] = { current = n, max = n }` plus `stub.power_display_mod`: back `UnitPower`/`UnitPowerMax`/`UnitPowerDisplayMod`; unset power types report 0/0.
+- `stub.spell_charges[spell_id] = { currentCharges, maxCharges, cooldownStartTime, cooldownDuration }`: backs `C_Spell.GetSpellCharges`. Set knobs like this before `load_addon` when the module caches the API as a load-time upvalue.
 - `stub.missing_globals`: name→count of every unknown global read; `stub.strict_missing = true` turns those reads into errors for tight suites.
 - `C_CurveUtil.CreateCurve()` returns a real linear-interpolating curve, so curve-gated math (pf_fade health gate) computes genuine values, not placeholders.
 
@@ -115,10 +123,25 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 - Keep fakes deterministic: no randomness, no wall-clock reads; everything derives from `stub.now` and explicit knobs.
 
 
+## File Conventions In This Folder
+- LuaLS header: every Lua file here starts with the standard 2-sentence file comment plus a `---@diagnostic disable:` line. The workspace LuaLS profile is the WoW environment, so desktop-Lua globals (`debug`, `io`, `os`, `arg`, `require`, `loadfile`) squiggle without it. Test files use `undefined-global, lowercase-global`; copy the header from an existing test.
+- Region markers: `check_fast.ps1` validates regions in these files too, and region/endregion label text must match exactly. Use plain labels (`--#region clock and C_Timer`) with no trailing dash padding; only the outer `FILE CONTENTS` pair uses the addon-standard `=` padding.
+- Line endings: LF only, like all project text files. PowerShell rewrites default to CRLF — follow `internal_dev/tests_tools/powershell.md` when scripting edits here.
+- Suite naming: `tests/test_<area>.lua`, one module or shared-helper area per file; the runner's substring filter and process isolation both key off the filename.
+
+
+## Workflow Integration
+- `check_fast.ps1` runs all suites by default (`-SkipTests` to opt out), so routine validation exercises them without a separate command.
+- Bug workflow (owned by `agent_start.md` Engineering Rules): reproduce a runtime-logic bug as a failing test here before fixing it when the bug is timer/event/state-machine/DB shaped; the fix keeps the test as permanent regression coverage.
+- Review notes under `ToDo/` may tag items `[headless-testable: <assertion sketch>]` or `[not headless-testable: <reason>]`; use the sketch as the starting point when picking an item up.
+- New suites are cheap once a module's stub surface exists; grow coverage when a module bites, not speculatively.
+
+
 ## Design Decisions And Pitfalls
 - Verb-prefix method rule: unknown frame keys become recorded no-op methods only when they start with a method verb (Set/Get/Is/Has/Register/Create/...). All other unknown keys read as nil, exactly like an unset field in game. This matters: a naive catch-all fallback turned data-field reads like `frame.NineSlice` or `button.minimapPos` into functions and broke guard clauses. If a legitimate method falls outside the prefix list, add the prefix or define the method explicitly.
 - Internal stub state lives in `__`-prefixed keys (`__alpha`, `__points`, `__calls`); the method fallback ignores them. Never name addon-visible fields with a `__` prefix in tests.
 - Process-per-suite is the isolation model: within one file, module-local state (upvalues like the fade state machine's `state`) persists across `h.test` blocks. Either order tests to tolerate that or reset explicitly at the top of each test.
 - Vendored `Libs/` load for real (they are plain Lua); their in-game behavior is not under test and should not be asserted on.
+- Load-time upvalue captures: many module files cache API functions as locals at load (`local UnitPower = UnitPower`). Patching a global or C_* field after `load_addon` does nothing for those callers — the stub must own the function (backed by a knob) before the addon loads. This is why `GetSpellCharges` reads `stub.spell_charges` instead of being replaced per test.
 - `h.near` over `h.eq` for alpha/positions: fade math accumulates float error across ticks; the pf_fade suite uses tolerance 0.011 for one-tick slack.
 - A green run here does not replace the final in-game pass — it replaces the mechanical portion of it. Taint, visuals, and real event order still get verified in the client.
