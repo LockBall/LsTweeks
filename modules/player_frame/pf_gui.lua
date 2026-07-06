@@ -184,23 +184,6 @@ function M.build_options_panel(parent)
     end
 end
 
-function M.sync_options_controls(db)
-    local cb = M.controls.hide_portrait_combat_text_checkbox
-    if cb and cb.SetCheckedSilently then
-        cb:SetCheckedSilently(db.hide_portrait_combat_text or false)
-    end
-    local fade_cb = M.controls.fade_out_of_combat_checkbox
-    if fade_cb and fade_cb.SetCheckedSilently then
-        fade_cb:SetCheckedSilently(db.fade_out_of_combat or false)
-    end
-    for _, def in ipairs(FADE_SLIDER_DEFS) do
-        local slider = M.controls[def.control_key]
-        if slider and slider.SetValueSilently then
-            slider:SetValueSilently(M.get_clamped_fade_value(db, def.key, def.min, def.max))
-        end
-    end
-end
-
 return M
 
 --#endregion FILE CONTENTS ===================================================

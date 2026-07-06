@@ -183,18 +183,6 @@ function M.update_player_frame()
     start_runtime(db)
 end
 
-function M.on_reset_complete()
-    if not Ls_Tweeks_DB then return end
-    addon.apply_defaults(defaults, Ls_Tweeks_DB)
-    local db = get_player_frame_db()
-    if not db then return end
-
-    M.update_player_frame()
-    if M.sync_options_controls then
-        M.sync_options_controls(db)
-    end
-end
-
 function M.set_module_enabled(enabled)
     if enabled then
         M.update_player_frame()

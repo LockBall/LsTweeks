@@ -52,6 +52,13 @@ local function is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
 end
 
+local function refresh_combat_state()
+    if InCombatLockdown then
+        playerInCombat = InCombatLockdown() or false
+    end
+    return playerInCombat
+end
+
 local function get_clamped_db(db, key, lo, hi)
     if M.get_clamped_fade_value then
         return M.get_clamped_fade_value(db, key, lo, hi)
@@ -152,6 +159,14 @@ local function cancel_health_update()
         queuedHealthTimer:Cancel()
         queuedHealthTimer = nil
     end
+end
+
+local function restore_combat_state(db)
+    cancel_delay()
+    stop_animation()
+    cancel_health_update()
+    state = STATE_COMBAT
+    set_base_alpha(db, 1, false)
 end
 
 local function begin_fade(db, force_visible_start)
@@ -263,7 +278,7 @@ end
 function F.apply(db)
     if not PlayerFrame then return end
 
-    playerInCombat = (InCombatLockdown and InCombatLockdown()) or false
+    refresh_combat_state()
 
     if not (db and db.fade_out_of_combat) then
         cancel_delay()
@@ -297,6 +312,12 @@ end
 
 function F.on_threshold_changed(db)
     clear_health_curve_cache()
+
+    if refresh_combat_state() then
+        restore_combat_state(db)
+        return
+    end
+
     stop_animation()
     if state ~= STATE_DELAY then
         state = STATE_IDLE
@@ -313,6 +334,11 @@ function F.on_fade_setting_changed(db, key)
     end
 
     if state == STATE_FADING then
+        if refresh_combat_state() then
+            restore_combat_state(db)
+            return
+        end
+
         stop_animation()
         state = STATE_IDLE
         if db and db.fade_out_of_combat and not playerInCombat then
