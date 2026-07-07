@@ -1,7 +1,7 @@
 -- Player Frame settings panel.
 
 
---#region FILE CONTENTS ======================================================
+--#region MODULE SETUP =========================================================
 
 local addon_name, addon = ...
 
@@ -12,6 +12,10 @@ M.controls = M.controls or {}
 
 local math_abs = math.abs
 local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
+
+--#endregion MODULE SETUP ======================================================
+
+--#region CONFIGURATION ========================================================
 
 local UI_CONFIG = {
     checkbox_offset_x = 20,
@@ -95,6 +99,10 @@ local FADE_SLIDER_DEFS = {
 
 M.CATEGORY_NAME = STRINGS.category_name
 
+--#endregion CONFIGURATION =====================================================
+
+--#region PANEL CONSTRUCTION ===================================================
+
 function M.build_options_panel(parent)
     local cfg = UI_CONFIG
     local db = M.get_db and M.get_db()
@@ -170,6 +178,6 @@ function M.build_options_panel(parent)
     end
 end
 
-return M
+--#endregion PANEL CONSTRUCTION ================================================
 
---#endregion FILE CONTENTS ===================================================
+return M
