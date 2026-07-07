@@ -15,8 +15,10 @@ return {
     },
     workspace = {
         library = {
-            __KETHO_CORE__,
-            __KETHO_FRAMEXML__,
+            -- quoted placeholder tokens; run_luals_ketho.ps1 replaces each whole
+            -- string (quotes included) with the real annotation path as a Lua string
+            "__KETHO_CORE__",
+            "__KETHO_FRAMEXML__",
         },
         ignoreDir = {
             ".vscode",
@@ -51,6 +53,9 @@ return {
         },
         disable = {
             "assign-type-mismatch",
+        },
+        unusedLocalExclude = {
+            "_*",
         },
     },
     type = {

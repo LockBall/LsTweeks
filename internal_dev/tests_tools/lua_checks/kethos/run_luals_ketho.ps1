@@ -122,8 +122,8 @@ $coreLua = Convert-ToLuaString $annotationsCore
 $frameLua = Convert-ToLuaString $annotationsFrameXML
 
 $config = (Get-Content -LiteralPath $configTemplatePath -Raw).
-    Replace("__KETHO_CORE__", $coreLua).
-    Replace("__KETHO_FRAMEXML__", $frameLua)
+    Replace('"__KETHO_CORE__"', $coreLua).
+    Replace('"__KETHO_FRAMEXML__"', $frameLua)
 
 Set-Content -LiteralPath $configPath -Value $config -Encoding UTF8
 

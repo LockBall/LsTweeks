@@ -124,7 +124,7 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 
 
 ## File Conventions In This Folder
-- LuaLS header: every Lua file here starts with the standard 2-sentence file comment plus a `---@diagnostic disable:` line. The workspace LuaLS profile is the WoW environment, so desktop-Lua globals (`debug`, `io`, `os`, `arg`, `require`, `loadfile`) squiggle without it. Test files use `undefined-global, lowercase-global`; copy the header from an existing test.
+- LuaLS header: every Lua file here starts with the standard 2-sentence file comment plus `---@diagnostic disable: undefined-global` — and only that code. The workspace LuaLS profile is the WoW environment, so desktop-Lua globals (`debug`, `io`, `os`, `arg`, `require`, `loadfile`) squiggle without it; that runtime mismatch is the one legitimate suppression. Fix everything else in code: prefix intentionally unused params with `_` (the workspace `unusedLocalExclude` setting recognizes `_*`), and do not widen the disable list.
 - Region markers: `check_fast.ps1` validates regions in these files too, and region/endregion label text must match exactly. Use plain labels (`--#region clock and C_Timer`) with no trailing dash padding; only the outer `FILE CONTENTS` pair uses the addon-standard `=` padding.
 - Line endings: LF only, like all project text files. PowerShell rewrites default to CRLF — follow `internal_dev/tests_tools/powershell.md` when scripting edits here.
 - Suite naming: `tests/test_<area>.lua`, one module or shared-helper area per file; the runner's substring filter and process isolation both key off the filename.

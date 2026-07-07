@@ -1,7 +1,7 @@
 -- Headless test harness: loads addon Lua files in TOC order into the wow_stub environment
 -- and provides assertion/event/clock helpers so tests drive addon logic like the game client would.
 -- Runs under desktop Lua 5.1 (io/os/require/loadfile), which the WoW-profile LuaLS does not know.
----@diagnostic disable: undefined-global, undefined-field
+---@diagnostic disable: undefined-global
 
 
 --#region FILE CONTENTS ======================================================

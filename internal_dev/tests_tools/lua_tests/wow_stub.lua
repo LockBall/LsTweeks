@@ -2,7 +2,7 @@
 -- with a manually advanced clock so runtime logic can be exercised deterministically under desktop Lua 5.1.
 -- Runs under desktop Lua, not the WoW client; the workspace LuaLS profile is the WoW environment,
 -- so desktop globals and intentional stub patterns are suppressed file-wide here.
----@diagnostic disable: undefined-global, unused-local, unused-vararg, duplicate-set-field, lowercase-global, missing-return
+---@diagnostic disable: undefined-global
 
 
 --#region FILE CONTENTS ======================================================
@@ -242,13 +242,13 @@ function frame_methods:UnregisterEvent(event) self.__events[event] = nil end
 function frame_methods:UnregisterAllEvents() self.__events = {} end
 function frame_methods:IsEventRegistered(event) return self.__events[event] == true end
 
-function frame_methods:CreateTexture(name, layer)
+function frame_methods:CreateTexture(name, _layer)
     local t = new_region("Texture", name, self)
     self.__regions[#self.__regions + 1] = t
     return t
 end
 
-function frame_methods:CreateFontString(name, layer, template)
+function frame_methods:CreateFontString(name, _layer, _template)
     local fs = new_region("FontString", name, self)
     self.__regions[#self.__regions + 1] = fs
     return fs
@@ -544,7 +544,7 @@ floor, ceil, abs, min, max, sqrt = math.floor, math.ceil, math.abs, math.min, ma
 mod = math.fmod
 math.huge = math.huge
 
-function strsplit(sep, str, ...)
+function strsplit(sep, str)
     if not str then return end
     local results = {}
     local pattern = "([^" .. sep .. "]+)"
@@ -601,7 +601,7 @@ function GetBuildInfo() return "12.0.7", "99999", "Jan 1 2026", 120007 end
 function IsLoggedIn() return true end
 function IsAddOnLoaded() return false end
 function InCombatLockdown() return stub.in_combat == true end
-function UnitAffectingCombat(unit) return stub.in_combat == true end
+function UnitAffectingCombat(_unit) return stub.in_combat == true end
 
 stub.in_combat = false
 stub.hooked_functions = {}
@@ -686,7 +686,7 @@ ObjectiveTrackerFrame.Header.MinimizeButton = CreateFrame("Button", nil, Objecti
 --#region C_* namespaces and unit API
 
 C_AddOns = {
-    GetAddOnMetadata = function(name, field)
+    GetAddOnMetadata = function(_name, field)
         if field == "Version" then return "00.00.test" end
         return nil
     end,
@@ -811,7 +811,7 @@ Enum = setmetatable({}, {
 
 stub.player_health_percent = 1
 
-function UnitHealthPercent(unit, use_curve, curve)
+function UnitHealthPercent(_unit, _use_curve, curve)
     local pct = stub.player_health_percent
     if curve and curve.Evaluate then return curve:Evaluate(pct) end
     return pct * 100
@@ -856,11 +856,11 @@ function StopSound() end
 -- unset power types report 0/0 like a character without that resource.
 stub.power = {}
 stub.power_display_mod = 1
-function UnitPower(unit, power_type)
+function UnitPower(_unit, power_type)
     local p = stub.power[power_type]
     return p and p.current or 0
 end
-function UnitPowerMax(unit, power_type)
+function UnitPowerMax(_unit, power_type)
     local p = stub.power[power_type]
     return p and p.max or 0
 end

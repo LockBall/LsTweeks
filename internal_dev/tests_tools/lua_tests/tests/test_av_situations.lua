@@ -1,7 +1,7 @@
 -- Behavioral tests for Audio Volumes temporary situations: combat volumes and fishing focus
 -- must cache the normal CVar profile, apply the override, and restore exactly on exit.
 -- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
----@diagnostic disable: undefined-global, lowercase-global
+---@diagnostic disable: undefined-global
 
 
 --#region FILE CONTENTS ======================================================

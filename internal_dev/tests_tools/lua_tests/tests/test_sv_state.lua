@@ -1,7 +1,7 @@
 -- Behavioral tests for Skyriding Vigor charge detection (power normalization plus spell-charge
 -- fallback) and the frame fade primitives with the full-charge fade policy.
 -- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
----@diagnostic disable: undefined-global, lowercase-global
+---@diagnostic disable: undefined-global
 
 
 --#region FILE CONTENTS ======================================================
