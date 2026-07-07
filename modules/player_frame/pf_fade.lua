@@ -14,6 +14,7 @@ local math_min = math.min
 local math_max = math.max
 local pcall = pcall
 local C_Timer = C_Timer
+local GetTime = GetTime
 
 local ALPHA_EPSILON       = 0.001
 local FADE_TICK_INTERVAL  = (addon.UPDATE_INTERVALS and (addon.UPDATE_INTERVALS.player_frame_fade_tick or addon.UPDATE_INTERVALS.tenth_sec)) or 0.1
@@ -188,7 +189,7 @@ local function begin_fade(db, force_visible_start)
 
     set_base_alpha(db, start_alpha, not force_visible_start)
 
-    local elapsed = 0
+    local start_time = GetTime()
     fadeTicker = C_Timer.NewTicker(FADE_TICK_INTERVAL, function()
         if not PlayerFrame or playerInCombat then
             stop_animation()
@@ -197,7 +198,7 @@ local function begin_fade(db, force_visible_start)
             return
         end
 
-        elapsed = math_min(length, elapsed + FADE_TICK_INTERVAL)
+        local elapsed = math_min(length, GetTime() - start_time)
         local progress = elapsed / length
         local base_alpha = start_alpha + ((target - start_alpha) * progress)
         set_base_alpha(db, base_alpha, true)

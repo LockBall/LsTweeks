@@ -29,7 +29,7 @@ Unprompted-mistake and optimization review of `modules/player_frame/`. Full read
 
 4. [x] Strict-boolean event gate vs truthy checks elsewhere. `sync_fade_events()` uses `db.fade_out_of_combat == true` (`pf_main.lua:82`) while pf_fade gates on truthiness (`pf_fade.lua:193,233,251,264,307`). A truthy non-boolean value (old DB shape, manual SavedVariables edit) would leave the fade logic active with no events registered. Align on truthy. Resolved 2026-07-07: `sync_fade_events()` now uses the same truthy gate as the fade runtime, with a headless regression covering `fade_out_of_combat = 1`.
 
-5. [not headless-testable: stub tickers never drop fires; verify in-game if pursued] Fade duration drifts under low framerate. `begin_fade`'s ticker accumulates the nominal `FADE_TICK_INTERVAL` per fire (`pf_fade.lua:179`) instead of measuring real elapsed time, so dropped ticker fires stretch the fade beyond `fade_length`. Cosmetic only; use a `GetTime()` start timestamp if it ever matters.
+5. [x] Fade duration drifts under low framerate. `begin_fade`'s ticker accumulates the nominal `FADE_TICK_INTERVAL` per fire (`pf_fade.lua:179`) instead of measuring real elapsed time, so dropped ticker fires stretch the fade beyond `fade_length`. Cosmetic only; use a `GetTime()` start timestamp if it ever matters. Resolved 2026-07-07: `begin_fade()` now caches `GetTime` as a file-local upvalue and computes ticker progress from real elapsed time since fade start.
 
 
 ## Optimization Candidates
