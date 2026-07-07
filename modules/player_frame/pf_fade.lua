@@ -360,6 +360,8 @@ end
 function F.queue_health_update(get_db)
     local db = get_db and get_db()
     if playerInCombat or not (db and db.fade_out_of_combat) then return end
+    if state ~= STATE_FADED then return end
+    if get_threshold(db) <= 0 then return end
 
     cancel_health_update()
     queuedHealthTimer = C_Timer.NewTimer(HEALTH_DEBOUNCE_DELAY, function()

@@ -169,6 +169,31 @@ h.test("health updates are debounced through queue_health_update", function()
     h.near(PlayerFrame:GetAlpha(), 1, 0.001, "debounced health update applied")
 end)
 
+h.test("health update debounce only queues while faded with health gate enabled", function()
+    local db = fresh_db({ health_visible_threshold = 80 })
+    reset_runtime()
+
+    F.on_leave_combat(db)
+    h.eq(F.get_runtime_status().state, "delay", "delay state")
+    F.queue_health_update(function() return db end)
+    h.eq(F.get_runtime_status().queued_health_timer, false, "no debounce while delayed")
+
+    h.advance(3.0)
+    h.eq(F.get_runtime_status().state, "fading", "fading state")
+    F.queue_health_update(function() return db end)
+    h.eq(F.get_runtime_status().queued_health_timer, false, "no debounce while fading")
+
+    h.advance(5.0)
+    h.eq(F.get_runtime_status().state, "faded", "faded state")
+    F.queue_health_update(function() return db end)
+    h.ok(F.get_runtime_status().queued_health_timer, "debounce while faded")
+    h.advance(0.2)
+
+    db.health_visible_threshold = 0
+    F.queue_health_update(function() return db end)
+    h.eq(F.get_runtime_status().queued_health_timer, false, "no debounce when health gate disabled")
+end)
+
 h.test("refresh while faded skips no-op fade ticker", function()
     local db = fresh_db({ fade_delay = 0, fade_length = 5 })
     reset_runtime()
