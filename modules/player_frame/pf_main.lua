@@ -141,9 +141,7 @@ M.on_fade_slider_changed = on_fade_slider_changed
 local function stop_runtime()
     sync_fade_events(nil)
     set_portrait_combat_text_hidden(false)
-    if M.fade and M.fade.stop_transition then
-        M.fade.stop_transition()
-    end
+    M.fade.stop_transition()
     if PlayerFrame then
         PlayerFrame:SetAlpha(1)
     end
@@ -153,9 +151,7 @@ local function start_runtime(db)
     if not db then return end
     sync_fade_events(db)
     set_portrait_combat_text_hidden(db.hide_portrait_combat_text)
-    if M.fade and M.fade.apply then
-        M.fade.apply(db)
-    end
+    M.fade.apply(db)
 end
 
 local function handle_runtime_event(event)

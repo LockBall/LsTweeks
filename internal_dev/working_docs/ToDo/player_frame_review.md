@@ -49,7 +49,7 @@ Unprompted-mistake and optimization review of `modules/player_frame/`. Full read
 
 4. [x] `UI_CONFIG.slider_width = 130` (`pf_gui.lua:21`) and the bare `95` in the fade row height (`pf_gui.lua:125`) duplicate the slider factory's hardcoded container footprint (`slider_with_box.lua:20`); expose the factory's size instead of re-owning it in the panel. Resolved 2026-07-07: `CreateSliderWithBox` now exposes `addon.SLIDER_WITH_BOX_SIZE`, and Player Frame grid width/height math reads that shared footprint.
 
-5. Inconsistent `M.fade` guards in pf_main: `stop_runtime`/`start_runtime` guard with `if M.fade and ...` (`pf_main.lua:140,152`) while `set_player_frame_setting`, `on_fade_slider_changed`, and `handle_runtime_event` call `M.fade` unguarded (`pf_main.lua:121,130,164-168`). Load order makes all the guards dead; pick one style.
+5. [x] Inconsistent `M.fade` guards in pf_main: `stop_runtime`/`start_runtime` guard with `if M.fade and ...` (`pf_main.lua:140,152`) while `set_player_frame_setting`, `on_fade_slider_changed`, and `handle_runtime_event` call `M.fade` unguarded (`pf_main.lua:121,130,164-168`). Load order makes all the guards dead; pick one style. Resolved 2026-07-07: runtime behavior now calls `M.fade` directly so the required runtime dependency fails visibly; only `/lst status` keeps a defensive partial-load guard.
 
 6. `stop_runtime` always calls `set_portrait_combat_text_hidden(false)` (`pf_main.lua:139`), doing the hit-indicator lookup plus a `SetAlpha(1)` on the Blizzard frame even when the feature was never on; guard on `hidePortraitText` for a free no-op.
 
