@@ -2,6 +2,8 @@
 
 Read and follow internal_dev/working_docs/proj_mem/agent_start.md
 
+- if we should check for similiar patterns throughout then make a note
+
 What are you least confident about right now ?
 
 What is the most important thing I am missing about what we're doing right now ?

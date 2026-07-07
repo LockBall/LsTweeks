@@ -48,8 +48,8 @@ local curveBaseAlpha    = nil
 local curveThreshold    = nil
 local curveReleaseSpeed = nil
 
-local DEFAULTS = M.FADE_DEFAULTS or {}
-local RANGES = M.FADE_SETTING_RANGES or {}
+local DEFAULTS = M.FADE_DEFAULTS
+local RANGES = M.FADE_SETTING_RANGES
 
 local function is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)

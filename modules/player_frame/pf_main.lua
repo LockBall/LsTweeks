@@ -10,13 +10,13 @@ local M = addon.player_frame
 
 local math_min = math.min
 local math_max = math.max
-local MODULE_KEY = M.MODULE_KEY or "player_frame"
+local MODULE_KEY = M.MODULE_KEY
 
 --#region SETTINGS AND DEFAULTS ================================================
 
-local defaults = M.defaults or {}
-local FADE_DEFAULTS = M.FADE_DEFAULTS or {}
-local FADE_SETTING_RANGES = M.FADE_SETTING_RANGES or {}
+local defaults = M.defaults
+local FADE_DEFAULTS = M.FADE_DEFAULTS
+local FADE_SETTING_RANGES = M.FADE_SETTING_RANGES
 
 --#endregion SETTINGS AND DEFAULTS =============================================
 
@@ -235,7 +235,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
 
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME or "Player Frame", M.build_options_panel, { module_key = MODULE_KEY })
+            addon.register_category(M.CATEGORY_NAME, M.build_options_panel, { module_key = MODULE_KEY })
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         M.update_player_frame()
