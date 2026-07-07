@@ -13,6 +13,7 @@ Important `player_frame` keys:
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `5.0`.
 - `health_visible_threshold`: health curve release point for OOC fade, default `80`. Below this point the pass-through curve keeps PlayerFrame fully visible; above it the curve eases toward the normal time-fade alpha instead of snapping.
 - `health_release_speed`: 0-100 health curve tuning for how quickly visibility drops above `health_visible_threshold`, default `75`.
+- `pf_defaults.lua` owns fade numeric min/max/step metadata in `M.FADE_SETTING_RANGES`; runtime clamps and GUI sliders read from that table.
 
 
 ## Runtime Notes
@@ -29,6 +30,7 @@ Important `player_frame` keys:
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
 - Retail 12.x health APIs can return Secret Values from tainted addon paths. Player Frame health fade is strictly OOC: combat cancels fade and sets plain alpha `1`.
 - In-game testing showed `UnitHealth`, `UnitHealthPercent`, `CurveConstants.ScaleTo100`, custom `UnitHealthPercent` curves, and PlayerFrame health bars all return secret current-health values OOC. The usable pattern is pass-through only: compute a normal time-based base alpha, build a `C_CurveUtil` curve where low health maps to `1` and health above the threshold eases toward the base alpha, then pass `UnitHealthPercent("player", true, curve)` directly to `PlayerFrame:SetAlpha()`.
+- Health-gate API fallback is intentionally fail-visible: latest Retail is the supported target and `UnitHealthPercent` / `C_CurveUtil` are expected to exist; if the gate cannot be evaluated, keep `PlayerFrame` visible rather than applying an unsafe faded alpha.
 - The health curve cache signature must include current base alpha, `health_visible_threshold`, and `health_release_speed`. Base alpha changes during the fade animation, so caching only by DB settings gives stale curve geometry.
 - Do not use Lua comparisons/arithmetic/string conversion on current health or curve output. Health events should not stop or restart an active fade; after the base fade is already at target, health events only refresh the gated target alpha.
 - Do not use Blizzard PlayerFrame health bar internals or hidden status bars for the health gate.

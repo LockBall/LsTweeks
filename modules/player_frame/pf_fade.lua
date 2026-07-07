@@ -47,6 +47,7 @@ local curveThreshold    = nil
 local curveReleaseSpeed = nil
 
 local DEFAULTS = M.FADE_DEFAULTS or {}
+local RANGES = M.FADE_SETTING_RANGES or {}
 
 local function is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
@@ -59,20 +60,21 @@ local function refresh_combat_state()
     return playerInCombat
 end
 
-local function get_clamped_db(db, key, lo, hi)
+local function get_clamped_db(db, key)
+    local range = RANGES[key]
     if M.get_clamped_fade_value then
-        return M.get_clamped_fade_value(db, key, lo, hi)
+        return M.get_clamped_fade_value(db, key, range.min, range.max)
     end
 
     local v = tonumber(db and db[key]) or DEFAULTS[key]
-    return math_max(lo, math_min(hi, v))
+    return math_max(range.min, math_min(range.max, v))
 end
 
-local function get_fade_delay(db)  return get_clamped_db(db, "fade_delay",              0,  5) end
-local function get_fade_length(db) return get_clamped_db(db, "fade_length",             0, 10) end
-local function get_fade_alpha(db)  return get_clamped_db(db, "fade_alpha",            0.1, 1.0) end
-local function get_threshold(db)   return get_clamped_db(db, "health_visible_threshold", 0, 100) end
-local function get_release_speed(db) return get_clamped_db(db, "health_release_speed",   0, 100) / 100 end
+local function get_fade_delay(db)  return get_clamped_db(db, "fade_delay") end
+local function get_fade_length(db) return get_clamped_db(db, "fade_length") end
+local function get_fade_alpha(db)  return get_clamped_db(db, "fade_alpha") end
+local function get_threshold(db)   return get_clamped_db(db, "health_visible_threshold") end
+local function get_release_speed(db) return get_clamped_db(db, "health_release_speed") / 100 end
 
 local function lerp(a, b, t)
     return a + ((b - a) * t)

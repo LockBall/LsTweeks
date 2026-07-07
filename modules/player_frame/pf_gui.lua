@@ -62,9 +62,6 @@ local FADE_SLIDER_DEFS = {
         name_suffix = "FadeAlpha",
         label_key = "fade_slider_label",
         help_key = "fade_alpha_help",
-        min = 0.1,
-        max = 1.0,
-        step = 0.05,
     },
     {
         key = "fade_delay",
@@ -72,9 +69,6 @@ local FADE_SLIDER_DEFS = {
         name_suffix = "FadeDelay",
         label_key = "fade_delay_slider_label",
         help_key = "fade_delay_help",
-        min = 0,
-        max = 5,
-        step = 0.25,
     },
     {
         key = "fade_length",
@@ -82,9 +76,6 @@ local FADE_SLIDER_DEFS = {
         name_suffix = "FadeLength",
         label_key = "fade_length_slider_label",
         help_key = "fade_length_help",
-        min = 0,
-        max = 10,
-        step = 0.25,
     },
     {
         key = "health_visible_threshold",
@@ -92,9 +83,6 @@ local FADE_SLIDER_DEFS = {
         name_suffix = "HealthVisibleThreshold",
         label_key = "health_visible_slider_label",
         help_key = "health_visible_help",
-        min = 0,
-        max = 100,
-        step = 1,
     },
     {
         key = "health_release_speed",
@@ -102,9 +90,6 @@ local FADE_SLIDER_DEFS = {
         name_suffix = "HealthReleaseSpeed",
         label_key = "health_release_speed_slider_label",
         help_key = "health_release_speed_help",
-        min = 0,
-        max = 100,
-        step = 5,
     },
 }
 
@@ -159,13 +144,14 @@ function M.build_options_panel(parent)
 
     for index, def in ipairs(FADE_SLIDER_DEFS) do
         local slider_key = def.key
+        local range = M.FADE_SETTING_RANGES[slider_key]
         local slider = addon.CreateSliderWithBox(
             addon_name .. "PlayerFrame" .. def.name_suffix,
             parent,
             STRINGS[def.label_key],
-            def.min,
-            def.max,
-            def.step,
+            range.min,
+            range.max,
+            range.step,
             db,
             def.key,
             M.FADE_DEFAULTS,

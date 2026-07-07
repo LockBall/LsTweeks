@@ -16,6 +16,7 @@ local MODULE_KEY = M.MODULE_KEY or "player_frame"
 
 local defaults = M.defaults or {}
 local FADE_DEFAULTS = M.FADE_DEFAULTS or {}
+local FADE_SETTING_RANGES = M.FADE_SETTING_RANGES or {}
 
 --#endregion SETTINGS AND DEFAULTS =============================================
 
@@ -40,6 +41,9 @@ end
 M.get_db = get_player_frame_db
 
 function M.get_clamped_fade_value(db, key, min_value, max_value)
+    local range = FADE_SETTING_RANGES[key]
+    min_value = min_value or (range and range.min)
+    max_value = max_value or (range and range.max)
     local value = tonumber(db and db[key]) or FADE_DEFAULTS[key]
     return math_max(min_value, math_min(max_value, value))
 end

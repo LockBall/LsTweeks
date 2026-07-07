@@ -20,6 +20,14 @@ M.FADE_DEFAULTS = {
     health_release_speed = 75,
 }
 
+M.FADE_SETTING_RANGES = {
+    fade_alpha = { min = 0.1, max = 1.0, step = 0.05 },
+    fade_delay = { min = 0, max = 5, step = 0.25 },
+    fade_length = { min = 0, max = 10, step = 0.25 },
+    health_visible_threshold = { min = 0, max = 100, step = 1 },
+    health_release_speed = { min = 0, max = 100, step = 5 },
+}
+
 M.defaults = {
     player_frame = {
         hide_portrait_combat_text = false,

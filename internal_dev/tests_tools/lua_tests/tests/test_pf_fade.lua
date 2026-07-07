@@ -27,6 +27,7 @@ local function fresh_db(overrides)
 end
 
 local F = h.addon.player_frame.fade
+local M = h.addon.player_frame
 
 local function reset_runtime()
     stub.in_combat = false
@@ -34,6 +35,37 @@ local function reset_runtime()
     F.stop_transition()
     PlayerFrame:SetAlpha(1)
 end
+
+h.test("fade settings clamp through centralized ranges", function()
+    for key, range in pairs(M.FADE_SETTING_RANGES) do
+        local low_db = { [key] = range.min - 1000 }
+        local high_db = { [key] = range.max + 1000 }
+        h.eq(M.get_clamped_fade_value(low_db, key), range.min, key .. " lower clamp")
+        h.eq(M.get_clamped_fade_value(high_db, key), range.max, key .. " upper clamp")
+    end
+end)
+
+h.test("fade sliders use centralized ranges", function()
+    fresh_db()
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.build_options_panel(parent)
+
+    local controls = {
+        fade_alpha = "fade_alpha_slider",
+        fade_delay = "fade_delay_slider",
+        fade_length = "fade_length_slider",
+        health_visible_threshold = "health_visible_threshold_slider",
+        health_release_speed = "health_release_speed_slider",
+    }
+
+    for key, control_key in pairs(controls) do
+        local control = M.controls[control_key]
+        h.ok(control and control.slider, key .. " slider exists")
+        local lo, hi = control.slider:GetMinMaxValues()
+        h.eq(lo, M.FADE_SETTING_RANGES[key].min, key .. " slider min")
+        h.eq(hi, M.FADE_SETTING_RANGES[key].max, key .. " slider max")
+    end
+end)
 
 h.test("leaving combat waits fade_delay then fades to fade_alpha over fade_length", function()
     local db = fresh_db()
