@@ -67,6 +67,15 @@ h.test("fade sliders use centralized ranges", function()
     end
 end)
 
+h.test("truthy fade setting registers fade events", function()
+    fresh_db({ fade_out_of_combat = 1 })
+    reset_runtime()
+
+    M.update_player_frame()
+    local status = h.addon.module_status_builders.player_frame()
+    h.ok(tContains(status, "fade_events=true"), "truthy fade setting should register fade events")
+end)
+
 h.test("leaving combat waits fade_delay then fades to fade_alpha over fade_length", function()
     local db = fresh_db()
     reset_runtime()

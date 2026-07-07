@@ -83,7 +83,7 @@ end
 local function sync_fade_events(db)
     if not loader then return end
 
-    local should_register = db and db.fade_out_of_combat == true
+    local should_register = db and db.fade_out_of_combat
     if should_register == fadeEventsRegistered then return end
 
     if should_register then
