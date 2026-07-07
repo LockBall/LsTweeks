@@ -10,6 +10,11 @@ local addon_name, addon = ...
 --#region SLIDER CONSTANTS ====================================================
 
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE or {
+    width = 130,
+    height = 95,
+}
+addon.SLIDER_WITH_BOX_SIZE = SLIDER_WITH_BOX_SIZE
 
 --#endregion SLIDER CONSTANTS =================================================
 
@@ -17,7 +22,7 @@ local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step, db_table, db_key, defaults_table, callback, opts)
     opts = opts or {}
-    local container = addon.CreateControlPanel(parent, 130, 95)
+    local container = addon.CreateControlPanel(parent, SLIDER_WITH_BOX_SIZE.width, SLIDER_WITH_BOX_SIZE.height)
 
     local control_gap = 5
 

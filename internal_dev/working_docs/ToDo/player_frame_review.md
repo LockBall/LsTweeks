@@ -47,7 +47,7 @@ Unprompted-mistake and optimization review of `modules/player_frame/`. Full read
 
 3. [x] `ALPHA_EPSILON` reused as a time epsilon: `pf_fade.lua:162` (fade length seconds) and `pf_fade.lua:239` (fade delay seconds) compare durations against an alpha constant. Name a separate `TIME_EPSILON` or compare against 0. Resolved 2026-07-07: `TIME_EPSILON` now owns near-zero duration comparisons, leaving `ALPHA_EPSILON` for alpha comparisons only.
 
-4. `UI_CONFIG.slider_width = 130` (`pf_gui.lua:21`) and the bare `95` in the fade row height (`pf_gui.lua:125`) duplicate the slider factory's hardcoded container footprint (`slider_with_box.lua:20`); expose the factory's size instead of re-owning it in the panel.
+4. [x] `UI_CONFIG.slider_width = 130` (`pf_gui.lua:21`) and the bare `95` in the fade row height (`pf_gui.lua:125`) duplicate the slider factory's hardcoded container footprint (`slider_with_box.lua:20`); expose the factory's size instead of re-owning it in the panel. Resolved 2026-07-07: `CreateSliderWithBox` now exposes `addon.SLIDER_WITH_BOX_SIZE`, and Player Frame grid width/height math reads that shared footprint.
 
 5. Inconsistent `M.fade` guards in pf_main: `stop_runtime`/`start_runtime` guard with `if M.fade and ...` (`pf_main.lua:140,152`) while `set_player_frame_setting`, `on_fade_slider_changed`, and `handle_runtime_event` call `M.fade` unguarded (`pf_main.lua:121,130,164-168`). Load order makes all the guards dead; pick one style.
 

@@ -11,6 +11,7 @@ addon.player_frame = M
 M.controls = M.controls or {}
 
 local math_abs = math.abs
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
 
 local UI_CONFIG = {
     checkbox_offset_x = 20,
@@ -18,7 +19,6 @@ local UI_CONFIG = {
     checkbox_height = 24,
     row_gap_y = 18,
     slider_gap_x = 18,
-    slider_width = 130,
     slider_offset_y = -8,
     fade_row_padding_top = 8,
     fade_row_padding_bottom = 8,
@@ -100,14 +100,14 @@ function M.build_options_panel(parent)
     local db = M.get_db and M.get_db()
     local grid = addon.CreateSettingsGrid(parent, {
         column_count = #FADE_SLIDER_DEFS,
-        col_gap = cfg.slider_width + cfg.slider_gap_x,
-        col_width = cfg.slider_width,
+        col_gap = SLIDER_WITH_BOX_SIZE.width + cfg.slider_gap_x,
+        col_width = SLIDER_WITH_BOX_SIZE.width,
         col_offset = cfg.checkbox_offset_x,
         row_start = cfg.checkbox_offset_y,
         row_gap = 0,
         row_heights = {
             cfg.checkbox_height + cfg.row_gap_y,
-            cfg.fade_row_padding_top + cfg.checkbox_height + math_abs(cfg.slider_offset_y) + 95 + cfg.fade_row_padding_bottom,
+            cfg.fade_row_padding_top + cfg.checkbox_height + math_abs(cfg.slider_offset_y) + SLIDER_WITH_BOX_SIZE.height + cfg.fade_row_padding_bottom,
         },
         col_align = { "left", "left", "left", "left", "left" },
         offsets = { default = 0 },
