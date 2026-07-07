@@ -51,7 +51,7 @@ Unprompted-mistake and optimization review of `modules/player_frame/`. Full read
 
 5. [x] Inconsistent `M.fade` guards in pf_main: `stop_runtime`/`start_runtime` guard with `if M.fade and ...` (`pf_main.lua:140,152`) while `set_player_frame_setting`, `on_fade_slider_changed`, and `handle_runtime_event` call `M.fade` unguarded (`pf_main.lua:121,130,164-168`). Load order makes all the guards dead; pick one style. Resolved 2026-07-07: runtime behavior now calls `M.fade` directly so the required runtime dependency fails visibly; only `/lst status` keeps a defensive partial-load guard.
 
-6. `stop_runtime` always calls `set_portrait_combat_text_hidden(false)` (`pf_main.lua:139`), doing the hit-indicator lookup plus a `SetAlpha(1)` on the Blizzard frame even when the feature was never on; guard on `hidePortraitText` for a free no-op.
+6. [x] `stop_runtime` always calls `set_portrait_combat_text_hidden(false)` (`pf_main.lua:139`), doing the hit-indicator lookup plus a `SetAlpha(1)` on the Blizzard frame even when the feature was never on; guard on `hidePortraitText` for a free no-op. Resolved 2026-07-07: runtime stop now restores portrait combat text only when Player Frame previously hid it.
 
 
 ## Reviewed And Confirmed Deliberate
