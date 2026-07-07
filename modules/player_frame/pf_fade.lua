@@ -12,6 +12,7 @@ M.fade = F
 
 local math_min = math.min
 local math_max = math.max
+local math_abs = math.abs
 local pcall = pcall
 local C_Timer = C_Timer
 local GetTime = GetTime
@@ -188,6 +189,12 @@ local function begin_fade(db, force_visible_start)
     end
 
     set_base_alpha(db, start_alpha, not force_visible_start)
+
+    if math_abs(target - start_alpha) <= ALPHA_EPSILON then
+        set_base_alpha(db, target, true)
+        state = STATE_FADED
+        return
+    end
 
     local start_time = GetTime()
     fadeTicker = C_Timer.NewTicker(FADE_TICK_INTERVAL, function()

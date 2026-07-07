@@ -169,6 +169,20 @@ h.test("health updates are debounced through queue_health_update", function()
     h.near(PlayerFrame:GetAlpha(), 1, 0.001, "debounced health update applied")
 end)
 
+h.test("refresh while faded skips no-op fade ticker", function()
+    local db = fresh_db({ fade_delay = 0, fade_length = 5 })
+    reset_runtime()
+
+    F.on_leave_combat(db)
+    h.advance(6.0)
+    h.eq(F.get_runtime_status().state, "faded", "precondition: faded")
+
+    M.update_player_frame()
+    h.advance(0)
+    h.eq(F.get_runtime_status().state, "faded", "still faded after refresh")
+    h.eq(F.get_runtime_status().fade_ticker, false, "no no-op ticker started")
+end)
+
 h.test("slider change mid-fade retargets to the new value", function()
     local db = fresh_db({ fade_alpha = 0.5 })
     reset_runtime()
