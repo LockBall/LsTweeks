@@ -45,7 +45,7 @@ Unprompted-mistake and optimization review of `modules/player_frame/`. Full read
 
 2. [x] Dead load-order fallbacks duplicate owned constants: `M.MODULE_KEY or "player_frame"` (`pf_main.lua:13`), `M.CATEGORY_NAME or "Player Frame"` (`pf_main.lua:246`), `M.defaults or {}` / `M.FADE_DEFAULTS or {}` (`pf_main.lua:17-18`), and `M.FADE_DEFAULTS or {}` (`pf_fade.lua:49`). The `.toc` order (defaults -> gui -> main -> fade, `LsTweeks.toc:43-46`) guarantees the owners loaded first, so every fallback literal is an unreachable duplicate of a one-owner constant. Resolved 2026-07-07: Player Frame now reads the owned constants directly, and a cross-module follow-up tracks similar load-order fallback literals elsewhere.
 
-3. `ALPHA_EPSILON` reused as a time epsilon: `pf_fade.lua:162` (fade length seconds) and `pf_fade.lua:239` (fade delay seconds) compare durations against an alpha constant. Name a separate `TIME_EPSILON` or compare against 0.
+3. [x] `ALPHA_EPSILON` reused as a time epsilon: `pf_fade.lua:162` (fade length seconds) and `pf_fade.lua:239` (fade delay seconds) compare durations against an alpha constant. Name a separate `TIME_EPSILON` or compare against 0. Resolved 2026-07-07: `TIME_EPSILON` now owns near-zero duration comparisons, leaving `ALPHA_EPSILON` for alpha comparisons only.
 
 4. `UI_CONFIG.slider_width = 130` (`pf_gui.lua:21`) and the bare `95` in the fade row height (`pf_gui.lua:125`) duplicate the slider factory's hardcoded container footprint (`slider_with_box.lua:20`); expose the factory's size instead of re-owning it in the panel.
 

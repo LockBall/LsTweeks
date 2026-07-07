@@ -18,6 +18,7 @@ local C_Timer = C_Timer
 local GetTime = GetTime
 
 local ALPHA_EPSILON       = 0.001
+local TIME_EPSILON        = 0.001
 local FADE_TICK_INTERVAL  = (addon.UPDATE_INTERVALS and (addon.UPDATE_INTERVALS.player_frame_fade_tick or addon.UPDATE_INTERVALS.tenth_sec)) or 0.1
 local HEALTH_DEBOUNCE_DELAY = FADE_TICK_INTERVAL
 local HEALTH_RELEASE_CAP  = 0.99
@@ -182,7 +183,7 @@ local function begin_fade(db, force_visible_start)
     local length = get_fade_length(db)
     local start_alpha = force_visible_start and 1 or currentBaseAlpha
 
-    if length <= ALPHA_EPSILON then
+    if length <= TIME_EPSILON then
         set_base_alpha(db, target, true)
         state = STATE_FADED
         return
@@ -265,7 +266,7 @@ function F.on_leave_combat(db)
     end
 
     local delay = get_fade_delay(db)
-    if delay > ALPHA_EPSILON then
+    if delay > TIME_EPSILON then
         state = STATE_DELAY
         fadeDelayTimer = C_Timer.NewTimer(delay, function()
             fadeDelayTimer = nil
