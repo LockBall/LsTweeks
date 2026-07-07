@@ -1,7 +1,7 @@
 -- Player Frame OOC fade runtime: time-based fade with pass-through health curve gating.
 
 
---#region FILE CONTENTS ======================================================
+--#region MODULE SETUP =========================================================
 
 local _, addon = ...
 addon.player_frame = addon.player_frame or { controls = {}, frames = {} }
@@ -16,6 +16,10 @@ local math_abs = math.abs
 local pcall = pcall
 local C_Timer = C_Timer
 local GetTime = GetTime
+
+--#endregion MODULE SETUP ======================================================
+
+--#region CONSTANTS AND STATE ==================================================
 
 local ALPHA_EPSILON       = 0.001
 local TIME_EPSILON        = 0.001
@@ -52,6 +56,10 @@ local curveReleaseSpeed = nil
 local DEFAULTS = M.FADE_DEFAULTS
 local RANGES = M.FADE_SETTING_RANGES
 
+--#endregion CONSTANTS AND STATE ===============================================
+
+--#region RUNTIME HELPERS ======================================================
+
 local function is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
 end
@@ -82,6 +90,10 @@ local function get_release_speed(db) return get_clamped_db(db, "health_release_s
 local function lerp(a, b, t)
     return a + ((b - a) * t)
 end
+
+--#endregion RUNTIME HELPERS ===================================================
+
+--#region HEALTH-GATED ALPHA ===================================================
 
 local function get_health_curve()
     if healthCurve then return healthCurve end
@@ -144,6 +156,10 @@ local function set_base_alpha(db, base_alpha, use_health_gate)
         PlayerFrame:SetAlpha(base_alpha)
     end
 end
+
+--#endregion HEALTH-GATED ALPHA ================================================
+
+--#region TIMER AND STATE TRANSITIONS ==========================================
 
 local function stop_animation()
     if fadeTicker then
@@ -237,6 +253,10 @@ local function queue_apply(db)
         on_delay_expired(db, false)
     end)
 end
+
+--#endregion TIMER AND STATE TRANSITIONS =======================================
+
+--#region PUBLIC RUNTIME API ===================================================
 
 function F.stop_transition()
     cancel_delay()
@@ -371,6 +391,10 @@ function F.queue_health_update(get_db)
     end)
 end
 
+--#endregion PUBLIC RUNTIME API ================================================
+
+--#region STATUS ===============================================================
+
 function F.get_runtime_status()
     return {
         state = state,
@@ -382,4 +406,4 @@ function F.get_runtime_status()
     }
 end
 
---#endregion FILE CONTENTS ===================================================
+--#endregion STATUS ============================================================

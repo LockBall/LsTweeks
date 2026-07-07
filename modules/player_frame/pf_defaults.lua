@@ -1,7 +1,7 @@
 -- Default DB values for the Player Frame module.
 
 
---#region FILE CONTENTS ======================================================
+--#region MODULE DEFAULTS =====================================================
 
 local _, addon = ...
 
@@ -42,4 +42,4 @@ M.defaults = {
 
 return M
 
---#endregion FILE CONTENTS ===================================================
+--#endregion MODULE DEFAULTS ==================================================
