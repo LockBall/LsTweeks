@@ -78,6 +78,15 @@ local function background_picker_buttons()
     return color_button, reset_button
 end
 
+local function objective_border_frame()
+    for _, child in ipairs({ ObjectiveTrackerFrame:GetChildren() }) do
+        if child:GetCalls("SetBackdropBorderColor") then
+            return child
+        end
+    end
+    return nil
+end
+
 h.test("module disable restores objective opacity through Edit Mode", function()
     reset_runtime()
     fresh_db({ customize_background = false })
@@ -134,6 +143,26 @@ h.test("region diagnostics preserve explicit false values", function()
     h.ok(tContains(fields, "bg_region_1_desaturated=false"), "false desaturated status")
     h.ok(tContains(fields, "bg_region_1_texture=false"), "false texture status")
     h.ok(tContains(fields, "bg_region_1_atlas=false"), "false atlas status")
+end)
+
+h.test("border sync skips redundant anchoring and visibility calls", function()
+    reset_runtime()
+    fresh_db({ objective_tracker_border = true })
+
+    M.apply_background()
+    local border_shown = tContains(M.get_background_status(), "objective_border_shown=true")
+    h.ok(border_shown, "border shown after apply")
+
+    local border = objective_border_frame()
+    h.ok(border, "border frame found")
+    local anchor_calls = #(border:GetCalls("SetPoint") or {})
+    local show_calls = #(border:GetCalls("Show") or {})
+    h.ok(anchor_calls >= 2, "initial border anchors")
+    h.ok(show_calls >= 1, "initial border show")
+
+    M.apply_background()
+    h.eq(#(border:GetCalls("SetPoint") or {}), anchor_calls, "second apply skips re-anchor")
+    h.eq(#(border:GetCalls("Show") or {}), show_calls, "second apply skips repeated show")
 end)
 
 h.run("ob_background")

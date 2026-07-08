@@ -85,6 +85,8 @@ local background_edit_mode_state = "unavailable"
 local background_color_overlay_anchor = nil
 local background_color_auto_enabled_border = false
 local objective_border_frame
+local objective_border_anchor_signature = nil
+local objective_border_shown = nil
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -249,19 +251,34 @@ local function sync_objective_border()
 
     local border = ensure_objective_border(tracker)
     if not border then return end
-    anchor_to_objective_background(
-        tracker,
-        border,
-        OBJECTIVE_BORDER_PADDING_LEFT,
-        OBJECTIVE_BORDER_PADDING_RIGHT,
-        OBJECTIVE_BORDER_PADDING_TOP,
-        OBJECTIVE_BORDER_PADDING_BOTTOM
-    )
+    local anchor = tracker.NineSlice or tracker
+    local anchor_signature = table.concat({
+        tostring(anchor),
+        tostring(OBJECTIVE_BORDER_PADDING_LEFT),
+        tostring(OBJECTIVE_BORDER_PADDING_RIGHT),
+        tostring(OBJECTIVE_BORDER_PADDING_TOP),
+        tostring(OBJECTIVE_BORDER_PADDING_BOTTOM),
+    }, ":")
+    if objective_border_anchor_signature ~= anchor_signature then
+        anchor_to_objective_background(
+            tracker,
+            border,
+            OBJECTIVE_BORDER_PADDING_LEFT,
+            OBJECTIVE_BORDER_PADDING_RIGHT,
+            OBJECTIVE_BORDER_PADDING_TOP,
+            OBJECTIVE_BORDER_PADDING_BOTTOM
+        )
+        objective_border_anchor_signature = anchor_signature
+    end
 
-    if is_background_border_enabled() then
-        border:Show()
-    else
-        border:Hide()
+    local show_border = is_background_border_enabled() == true
+    if objective_border_shown ~= show_border then
+        if show_border then
+            border:Show()
+        else
+            border:Hide()
+        end
+        objective_border_shown = show_border
     end
 end
 
@@ -929,6 +946,8 @@ function M.restore_background()
     if objective_border_frame then
         objective_border_frame:Hide()
     end
+    objective_border_anchor_signature = nil
+    objective_border_shown = nil
     restore_background_color()
     if tracker and tracker.Update then
         tracker:Update()
