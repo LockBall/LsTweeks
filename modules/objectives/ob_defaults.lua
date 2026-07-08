@@ -41,9 +41,6 @@ M.defaults = {
     },
 }
 
-addon.module_defaults = addon.module_defaults or {}
-addon.module_defaults.ob = M.defaults
-
 return M
 
 --#endregion FILE CONTENTS ===================================================
