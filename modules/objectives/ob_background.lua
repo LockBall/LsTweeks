@@ -1004,24 +1004,9 @@ local function set_background_color_enabled(enabled)
     local db = M.get_db()
     if not db then return end
 
-    local border_was_enabled = is_background_border_enabled()
     db.background_color_enabled = enabled == true
     sync_background_controls()
     apply_configured_background_color(true)
-
-    local border_is_enabled = is_background_border_enabled()
-    if border_was_enabled ~= border_is_enabled then
-        if border_is_enabled then
-            set_background_border_position_offsets()
-            if M.apply_objective_position then
-                M.apply_objective_position()
-            end
-            if M.sync_objective_position_sliders then
-                M.sync_objective_position_sliders()
-            end
-        end
-        sync_objective_border()
-    end
 end
 
 local function set_objective_border(enabled)
