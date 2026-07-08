@@ -165,6 +165,30 @@ h.test("border sync skips redundant anchoring and visibility calls", function()
     h.eq(#(border:GetCalls("Show") or {}), show_calls, "second apply skips repeated show")
 end)
 
+h.test("background color sync skips unchanged overlay writes", function()
+    reset_runtime()
+    fresh_db({
+        background_color_enabled = true,
+        background_color = { r = 0.31, g = 0.41, b = 0.51, a = 0.61 },
+    })
+
+    M.apply_background()
+    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
+    h.ok(overlay, "color overlay created")
+    h.ok(
+        tContains(M.get_background_status(), "bg_color_signature=0.31:0.41:0.51:0.61:bg_alpha=0:color_alpha=0.61:overlay=true"),
+        "status keeps the background color signature"
+    )
+
+    local vertex_calls = #(overlay:GetCalls("SetVertexColor") or {})
+    local show_calls = #(overlay:GetCalls("Show") or {})
+
+    M.apply_background()
+
+    h.eq(#(overlay:GetCalls("SetVertexColor") or {}), vertex_calls, "second apply skips overlay color write")
+    h.eq(#(overlay:GetCalls("Show") or {}), show_calls, "second apply skips overlay show")
+end)
+
 h.test("priority background anchors force-expand without scratch state", function()
     reset_runtime()
     fresh_db()

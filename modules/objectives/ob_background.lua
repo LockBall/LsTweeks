@@ -80,6 +80,11 @@ local background_color_last_signature = "none"
 local background_color_state = "unavailable"
 local background_regions_reset = false
 local background_last_applied_alpha = nil
+local background_last_color_r = nil
+local background_last_color_g = nil
+local background_last_color_b = nil
+local background_last_color_a = nil
+local background_last_overlay_enabled = nil
 local background_alpha_applying = false
 local background_edit_mode_state = "unavailable"
 local background_color_overlay_anchor = nil
@@ -311,19 +316,17 @@ local function get_background_color_alpha()
     return addon.clamp_number(type(color) == "table" and color.a, DEFAULT_BACKGROUND_COLOR.a or 0.5, COLOR_RANGE)
 end
 
-local function get_background_color()
+local function get_background_color_values()
     local db = M.get_db()
     local color = db and db.background_color or DEFAULT_BACKGROUND_COLOR
     if type(color) ~= "table" then
         color = DEFAULT_BACKGROUND_COLOR
     end
 
-    return {
-        r = addon.clamp_number(color.r, DEFAULT_BACKGROUND_COLOR.r, COLOR_RANGE),
-        g = addon.clamp_number(color.g, DEFAULT_BACKGROUND_COLOR.g, COLOR_RANGE),
-        b = addon.clamp_number(color.b, DEFAULT_BACKGROUND_COLOR.b, COLOR_RANGE),
-        a = get_background_color_alpha(),
-    }
+    return addon.clamp_number(color.r, DEFAULT_BACKGROUND_COLOR.r, COLOR_RANGE),
+        addon.clamp_number(color.g, DEFAULT_BACKGROUND_COLOR.g, COLOR_RANGE),
+        addon.clamp_number(color.b, DEFAULT_BACKGROUND_COLOR.b, COLOR_RANGE),
+        get_background_color_alpha()
 end
 
 local function get_background_opacity()
@@ -437,17 +440,15 @@ function M.migrate_background_settings(db)
     end
 end
 
-local function get_color_signature(color)
-    return table.concat({
-        tostring(color.r),
-        tostring(color.g),
-        tostring(color.b),
-        tostring(color.a),
-    }, ":")
+local function get_color_signature(r, g, b, a)
+    return tostring(r) .. ":" .. tostring(g) .. ":" .. tostring(b) .. ":" .. tostring(a)
 end
 
-local function get_background_signature(color, opacity)
-    return get_color_signature(color) .. ":bg_alpha=" .. tostring(opacity) .. ":color_alpha=" .. tostring(get_background_color_alpha())
+local function get_background_signature(r, g, b, a, opacity, overlay_enabled)
+    return get_color_signature(r, g, b, a)
+        .. ":bg_alpha=" .. tostring(opacity)
+        .. ":color_alpha=" .. tostring(a)
+        .. ":overlay=" .. tostring(overlay_enabled)
 end
 
 local function apply_color_to_region(region)
@@ -474,7 +475,7 @@ local function reset_background_regions(background)
     return applied
 end
 
-local function apply_center_color_overlay(background, color, enabled)
+local function apply_center_color_overlay(background, r, g, b, a, enabled)
     local overlay = background and background._lstweeks_center_color_overlay
     if not enabled then
         if overlay then
@@ -501,12 +502,12 @@ local function apply_center_color_overlay(background, color, enabled)
         background_color_overlay_anchor = anchor
     end
 
-    overlay:SetVertexColor(color.r, color.g, color.b, get_background_color_alpha())
+    overlay:SetVertexColor(r, g, b, a)
     overlay:Show()
     return true
 end
 
-local function apply_background_color(color, force, opacity_override, show_color_overlay, update_edit_mode)
+local function apply_background_color(r, g, b, a, force, opacity_override, show_color_overlay, update_edit_mode)
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
     if not background then
@@ -518,8 +519,15 @@ local function apply_background_color(color, force, opacity_override, show_color
     if opacity == nil then
         opacity = get_background_opacity()
     end
-    local signature = get_background_signature(color, opacity) .. ":overlay=" .. tostring(show_color_overlay == true)
-    if not force and background_color_last_signature == signature then
+    local overlay_enabled = show_color_overlay == true
+    if not force
+        and background_last_applied_alpha == opacity
+        and background_last_color_r == r
+        and background_last_color_g == g
+        and background_last_color_b == b
+        and background_last_color_a == a
+        and background_last_overlay_enabled == overlay_enabled
+    then
         return
     end
 
@@ -535,11 +543,16 @@ local function apply_background_color(color, force, opacity_override, show_color
         applied = reset_background_regions(background)
         background_regions_reset = true
     end
-    local overlay_applied = apply_center_color_overlay(background, color, show_color_overlay == true)
+    local overlay_applied = apply_center_color_overlay(background, r, g, b, a, overlay_enabled)
 
-    background_color_last_signature = signature
+    background_last_color_r = r
+    background_last_color_g = g
+    background_last_color_b = b
+    background_last_color_a = a
+    background_last_overlay_enabled = overlay_enabled
+    background_color_last_signature = get_background_signature(r, g, b, a, opacity, overlay_enabled)
     background_color_state = overlay_applied
-        and ("center_overlay:bg_alpha=" .. tostring(opacity) .. ":color_alpha=" .. tostring(get_background_color_alpha()) .. ":reset_regions=" .. tostring(applied))
+        and ("center_overlay:bg_alpha=" .. tostring(opacity) .. ":color_alpha=" .. tostring(a) .. ":reset_regions=" .. tostring(applied))
         or "no_regions"
 end
 
@@ -559,8 +572,14 @@ local function apply_configured_background_color(force)
     if not show_blizzard_background then
         opacity = 0
     end
-    local color = show_color_background and get_background_color() or DEFAULT_BACKGROUND_COLOR
-    apply_background_color(color, force, opacity, show_color_background)
+    local r = DEFAULT_BACKGROUND_COLOR.r
+    local g = DEFAULT_BACKGROUND_COLOR.g
+    local b = DEFAULT_BACKGROUND_COLOR.b
+    local a = DEFAULT_BACKGROUND_COLOR.a
+    if show_color_background then
+        r, g, b, a = get_background_color_values()
+    end
+    apply_background_color(r, g, b, a, force, opacity, show_color_background)
 end
 
 local function restore_background_color()
@@ -573,7 +592,16 @@ local function restore_background_color()
     end
 
     background_regions_reset = false
-    apply_background_color(DEFAULT_BACKGROUND_COLOR, true, 1, false, true)
+    apply_background_color(
+        DEFAULT_BACKGROUND_COLOR.r,
+        DEFAULT_BACKGROUND_COLOR.g,
+        DEFAULT_BACKGROUND_COLOR.b,
+        DEFAULT_BACKGROUND_COLOR.a,
+        true,
+        1,
+        false,
+        true
+    )
 end
 
 --#endregion COLOR AND OPACITY =================================================
@@ -584,9 +612,10 @@ end
 local function show_background_to_header(tracker, background, state)
     local header = tracker and tracker.Header
     if header and header.IsShown and header:IsShown() then
-        local changed = not background_points_to_header(tracker, background)
+        local points_to_header = background_points_to_header(tracker, background)
+        local changed = not points_to_header
             or not (background.IsShown and background:IsShown())
-        if not background_points_to_header(tracker, background) then
+        if not points_to_header then
             set_background_bottom_to_header(tracker, background)
         end
         if background.Show and not (background.IsShown and background:IsShown()) then
