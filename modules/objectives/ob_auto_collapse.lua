@@ -90,14 +90,6 @@ local function get_tracker(def)
     return nil
 end
 
-local function mark_tracker_dirty(tracker)
-    if tracker and tracker.MarkDirty then
-        tracker:MarkDirty()
-    elseif ObjectiveTrackerManager and ObjectiveTrackerManager.UpdateAll then
-        ObjectiveTrackerManager:UpdateAll()
-    end
-end
-
 local function defer_tracker_update(def, action, reason)
     if not def then return end
     collapse_queued[def.key] = false
@@ -123,7 +115,6 @@ local function collapse_tracker(def, reason)
     last_apply_reason[def.key] = reason or "unknown"
 
     if tracker.IsCollapsed and tracker:IsCollapsed() then
-        mark_tracker_dirty(tracker)
         return
     end
 
@@ -146,7 +137,6 @@ local function expand_tracker(def, reason)
     last_apply_reason[def.key] = reason or "unknown"
 
     if tracker.IsCollapsed and not tracker:IsCollapsed() then
-        mark_tracker_dirty(tracker)
         return
     end
 

@@ -46,6 +46,11 @@ local function call_count(frame, method)
     return calls and #calls or 0
 end
 
+local function manager_call_count(method)
+    local calls = ObjectiveTrackerManager:GetCalls(method)
+    return calls and #calls or 0
+end
+
 h.test("auto-collapse apply defers tracker mutation while in combat", function()
     reset_runtime()
     fresh_db({ collapse_all = true })
@@ -105,6 +110,36 @@ h.test("disabling auto-collapse in combat defers tracker expansion", function()
     h.eq(ObjectiveTrackerFrame:IsCollapsed(), false, "tracker expanded after regen")
     local last_call = ObjectiveTrackerFrame:GetLastCall("SetCollapsed")
     h.eq(last_call and last_call[1], false, "deferred call expands")
+end)
+
+h.test("already-satisfied auto-collapse state skips dirty relayout", function()
+    reset_runtime()
+    fresh_db({ collapse_all = true })
+    ObjectiveTrackerFrame.__collapsed = true
+
+    M.apply_auto_collapse()
+    h.advance(1)
+
+    h.eq(call_count(ObjectiveTrackerFrame, "SetCollapsed"), 0, "no redundant collapse call")
+    h.eq(call_count(ObjectiveTrackerFrame, "MarkDirty"), 0, "no dirty mark on already collapsed tracker")
+    h.eq(manager_call_count("UpdateAll"), 0, "no manager relayout fallback")
+end)
+
+h.test("already-expanded disabled setting skips dirty relayout", function()
+    reset_runtime()
+    local db = fresh_db({ collapse_all = true })
+
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildAutoCollapseSettings(parent)
+
+    db.collapse_all = true
+    local control = M.controls.collapse_all_checkbox
+    control:SetChecked(false)
+    control.checkbox:Click()
+
+    h.eq(call_count(ObjectiveTrackerFrame, "SetCollapsed"), 0, "no redundant expand call")
+    h.eq(call_count(ObjectiveTrackerFrame, "MarkDirty"), 0, "no dirty mark on already expanded tracker")
+    h.eq(manager_call_count("UpdateAll"), 0, "no manager relayout fallback")
 end)
 
 h.run("ob_auto_collapse")
