@@ -38,6 +38,46 @@ local function edit_mode_calls()
     return EditModeManagerFrame and EditModeManagerFrame.calls or {}
 end
 
+local function install_color_picker_frame()
+    ColorPickerFrame = CreateFrame("Frame", "ColorPickerFrame", UIParent)
+    ColorPickerFrame.Footer = {
+        OkayButton = CreateFrame("Button", nil, ColorPickerFrame),
+        CancelButton = CreateFrame("Button", nil, ColorPickerFrame),
+    }
+    ColorPickerFrame.Content = {
+        ColorPicker = {
+            GetColorHSV = function() return 0, 0 end,
+            SetColorHSV = function() end,
+        },
+    }
+    ColorPickerFrame.GetColorRGB = function() return 0.25, 0.25, 0.25 end
+    ColorPickerFrame.GetColorAlpha = function() return 0.75 end
+    ColorPickerFrame.SetColorAlpha = function(_, alpha) ColorPickerFrame.__alpha = alpha end
+    ColorPickerFrame.SetupColorPickerAndShow = function(_, opts)
+        ColorPickerFrame.__opts = opts
+    end
+end
+
+local function background_picker_buttons()
+    local picker = M.controls.background_color_picker
+    local color_button, reset_button
+    local function visit(frame)
+        if not frame then return end
+        if frame.__kind == "Button" then
+            if frame:GetText() == "Reset" then
+                reset_button = frame
+            else
+                color_button = color_button or frame
+            end
+        end
+        for _, child in ipairs({ frame:GetChildren() }) do
+            visit(child)
+        end
+    end
+    visit(picker)
+    return color_button, reset_button
+end
+
 h.test("module disable restores objective opacity through Edit Mode", function()
     reset_runtime()
     fresh_db({ customize_background = false })
@@ -59,6 +99,25 @@ h.test("module disable restores objective opacity through Edit Mode", function()
 
     h.eq(ObjectiveTrackerManager:GetOpacity(), 100, "module disable restores full live opacity")
     h.eq(edit_mode_calls()[2].percent, 100, "module disable restores full Edit Mode opacity")
+end)
+
+h.test("accepted color reset does not let later cancel clear border", function()
+    reset_runtime()
+    local db = fresh_db({ background_color_enabled = true, objective_tracker_border = nil })
+    install_color_picker_frame()
+
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildBackgroundSettings(parent)
+    local color_button, reset_button = background_picker_buttons()
+
+    reset_button:Click()
+    h.eq(db.objective_tracker_border, true, "reset auto-enables border")
+
+    color_button:Click()
+    h.ok(ColorPickerFrame.__opts and ColorPickerFrame.__opts.cancelFunc, "picker opened")
+    ColorPickerFrame.__opts.cancelFunc()
+
+    h.eq(db.objective_tracker_border, true, "later cancel keeps accepted reset border")
 end)
 
 h.run("ob_background")

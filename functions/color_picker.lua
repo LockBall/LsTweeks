@@ -1,6 +1,7 @@
 -- Color picker widget that wraps the system ColorPickerFrame with an integrated reset button.
 -- addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb) returns a 95x45 container;
 -- the reset button restores the default color from the defaults table.
+-- The callback reason is one of open/reset/swatch/alpha/cancel.
 
 
 local addon_name, addon = ...
@@ -271,6 +272,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     -- Color Picker Dialog
     button:SetScript("OnClick", function()
         local current = db_table[db_key]
+        if type(callback) == "function" then callback("open") end
         local auto_visible_from_transparent = has_alpha and current and (current.a or 0) == 0
         local auto_visible_done = false
         local auto_visible_applying = false

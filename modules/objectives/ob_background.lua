@@ -973,6 +973,8 @@ local function set_background_color(reason)
         db.objective_tracker_border = true
         background_color_auto_enabled_border = true
         border_auto_enabled = true
+    elseif reason == "open" then
+        background_color_auto_enabled_border = false
     elseif reason == "cancel" then
         if db and background_color_auto_enabled_border and is_background_color_default(db.background_color) then
             db.objective_tracker_border = nil
