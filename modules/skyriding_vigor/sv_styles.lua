@@ -14,6 +14,8 @@ local abs = math.abs
 local clamp_number = addon.clamp_number
 local tonumber = tonumber
 
+local COLOR_EPSILON = 0.001
+
 local function settings_locked_by_flight()
     return M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()
 end
@@ -387,9 +389,9 @@ end
 
 local function fill_color_is_custom(color)
     if not color then return false end
-    return abs((color.r or 1) - 1) > 0.001
-        or abs((color.g or 1) - 1) > 0.001
-        or abs((color.b or 1) - 1) > 0.001
+    return abs((color.r or 1) - 1) > COLOR_EPSILON
+        or abs((color.g or 1) - 1) > COLOR_EPSILON
+        or abs((color.b or 1) - 1) > COLOR_EPSILON
 end
 
 M.fill_color_is_custom = fill_color_is_custom

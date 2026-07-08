@@ -25,6 +25,7 @@ local tostring = tostring
 
 local MAX_SLOTS = M.MAX_SLOTS
 local GRID_SIZE = 20
+local PROGRESS_EPSILON = 0.0001
 
 local BACKGROUND_LAYOUT = {
     scale_x = 0.50,
@@ -436,7 +437,7 @@ function M.update_filling_slot_progress(index, progress)
         return
     end
 
-    if abs((slot._progress or -1) - progress) < 0.0001 then
+    if abs((slot._progress or -1) - progress) < PROGRESS_EPSILON then
         return
     end
 
@@ -618,7 +619,7 @@ function M.set_slot_state(index, state, progress, context)
         and effective_progress < 1 and spark_atlas
     if slot._state == state and slot._static_style == style and slot._frame_atlas == frame_atlas
         and slot._spark_enabled == show_spark and (not show_spark or slot._spark_atlas == spark_atlas)
-        and abs((slot._progress or -1) - effective_progress) < 0.0001
+        and abs((slot._progress or -1) - effective_progress) < PROGRESS_EPSILON
     then
         update_slot_spark(slot, state, effective_progress, style_key, style, db, spark_atlas)
         return
