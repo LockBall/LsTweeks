@@ -46,6 +46,9 @@ addon.UPDATE_INTERVALS.aura_hover_check = addon.UPDATE_INTERVALS.fifth_sec
 addon.UPDATE_INTERVALS.player_frame_fade_tick = addon.UPDATE_INTERVALS.tenth_sec
 -- fifth_sec looks jittery
 
+-- CPU profile hotness: low; coalesces noisy quest/achievement event bursts.
+addon.UPDATE_INTERVALS.objectives_title_event_bucket = addon.UPDATE_INTERVALS.fifth_sec
+
 -- CPU profile hotness: moderate; active only while a Skyriding Vigor node is filling.
 addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 

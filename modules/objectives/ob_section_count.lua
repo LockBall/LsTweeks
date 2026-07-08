@@ -56,6 +56,15 @@ local title_events_registered = {
     quests = false,
     achievements = false,
 }
+local TITLE_EVENT_SYNC_REASONS = {
+    QUEST_ACCEPTED = true,
+    QUEST_LOG_UPDATE = true,
+    QUEST_REMOVED = true,
+    QUEST_TURNED_IN = true,
+    CONTENT_TRACKING_UPDATE = true,
+    TRACKED_ACHIEVEMENT_LIST_CHANGED = true,
+    ACHIEVEMENT_EARNED = true,
+}
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -280,7 +289,9 @@ end
 queue_title_sync = function(reason)
     if title_sync_queued then return end
     title_sync_queued = true
-    local delay = addon.UPDATE_INTERVALS.next_frame
+    local delay = TITLE_EVENT_SYNC_REASONS[reason]
+        and addon.UPDATE_INTERVALS.objectives_title_event_bucket
+        or addon.UPDATE_INTERVALS.next_frame
     C_Timer.After(delay, function()
         sync_section_titles(reason)
     end)
