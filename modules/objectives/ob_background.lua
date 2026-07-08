@@ -78,7 +78,6 @@ local background_last_applied_alpha = nil
 local background_alpha_applying = false
 local background_edit_mode_state = "unavailable"
 local background_color_overlay_anchor = nil
-local background_color_reset_pending = false
 local background_color_auto_enabled_border = false
 local objective_border_frame
 
@@ -972,19 +971,12 @@ local function set_background_color(reason)
     local border_auto_enabled = false
     if reason == "reset" and db then
         db.objective_tracker_border = true
-        background_color_reset_pending = false
-        background_color_auto_enabled_border = true
-        border_auto_enabled = true
-    elseif reason ~= "cancel" and db and background_color_reset_pending and not is_background_color_default(db.background_color) then
-        db.objective_tracker_border = true
-        background_color_reset_pending = false
         background_color_auto_enabled_border = true
         border_auto_enabled = true
     elseif reason == "cancel" then
         if db and background_color_auto_enabled_border and is_background_color_default(db.background_color) then
             db.objective_tracker_border = nil
         end
-        background_color_reset_pending = false
         background_color_auto_enabled_border = false
     end
 
