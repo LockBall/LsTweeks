@@ -120,6 +120,22 @@ h.test("accepted color reset does not let later cancel clear border", function()
     h.eq(db.objective_tracker_border, true, "later cancel keeps accepted reset border")
 end)
 
+h.test("region diagnostics preserve explicit false values", function()
+    reset_runtime()
+    fresh_db()
+    local region = ObjectiveTrackerFrame.NineSlice:CreateTexture(nil, "ARTWORK")
+    region.GetBlendMode = function() return false end
+    region.IsDesaturated = function() return false end
+    region.GetTexture = function() return false end
+    region.GetAtlas = function() return false end
+
+    local fields = M.get_background_status()
+    h.ok(tContains(fields, "bg_region_1_blend=false"), "false blend status")
+    h.ok(tContains(fields, "bg_region_1_desaturated=false"), "false desaturated status")
+    h.ok(tContains(fields, "bg_region_1_texture=false"), "false texture status")
+    h.ok(tContains(fields, "bg_region_1_atlas=false"), "false atlas status")
+end)
+
 h.run("ob_background")
 
 --#endregion FILE CONTENTS ===================================================

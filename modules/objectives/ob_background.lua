@@ -8,7 +8,12 @@ local M = addon.objectives
 
 local DEFAULTS = M.defaults
 local FORCE_EXPAND_GRACE_SECONDS = 2
-local DEFAULT_BACKGROUND_COLOR = DEFAULTS.objectives.background_color
+local DEFAULT_BACKGROUND_COLOR = {
+    r = DEFAULTS.objectives.background_color.r,
+    g = DEFAULTS.objectives.background_color.g,
+    b = DEFAULTS.objectives.background_color.b,
+    a = DEFAULTS.objectives.background_color.a,
+}
 local COLOR_RANGE = { min = 0, max = 1 }
 local COLOR_BLOCK_PADDING_LEFT = -4
 local COLOR_BLOCK_PADDING_RIGHT = -12
@@ -112,6 +117,14 @@ local function get_bool_state(frame, method_name)
     local method = frame and frame[method_name]
     if method then
         return method(frame) == true
+    end
+    return nil
+end
+
+local function get_method_value(frame, method_name)
+    local method = frame and frame[method_name]
+    if method then
+        return method(frame)
     end
     return nil
 end
@@ -817,14 +830,10 @@ local function append_background_region_status(fields)
         if region.GetVertexColor then
             vertex_r, vertex_g, vertex_b, vertex_a = region:GetVertexColor()
         end
-        local get_blend_mode = region["GetBlendMode"]
-        local is_desaturated = region["IsDesaturated"]
-        local get_texture = region["GetTexture"]
-        local get_atlas = region["GetAtlas"]
-        local blend_mode = get_blend_mode and get_blend_mode(region) or nil
-        local desaturated = is_desaturated and is_desaturated(region) or nil
-        local texture = get_texture and get_texture(region) or nil
-        local atlas = get_atlas and get_atlas(region) or nil
+        local blend_mode = get_method_value(region, "GetBlendMode")
+        local desaturated = get_method_value(region, "IsDesaturated")
+        local texture = get_method_value(region, "GetTexture")
+        local atlas = get_method_value(region, "GetAtlas")
 
         fields[#fields + 1] = prefix .. "name=" .. get_frame_name(region, "unnamed")
         fields[#fields + 1] = prefix .. "type=" .. tostring(object_type)
