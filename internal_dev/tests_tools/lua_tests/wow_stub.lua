@@ -169,6 +169,13 @@ end
 
 function frame_methods:IsShown() return self.__shown end
 
+function frame_methods:SetCollapsed(collapsed)
+    record(self, "SetCollapsed", collapsed)
+    self.__collapsed = collapsed == true
+end
+function frame_methods:IsCollapsed() return self.__collapsed == true end
+function frame_methods:MarkDirty() record(self, "MarkDirty") end
+
 function frame_methods:IsVisible()
     local f = self
     while f do
@@ -679,6 +686,24 @@ ObjectiveTrackerFrame.NineSlice = CreateFrame("Frame", nil, ObjectiveTrackerFram
 ObjectiveTrackerFrame.Header = CreateFrame("Frame", nil, ObjectiveTrackerFrame)
 ObjectiveTrackerFrame.Header.Text = ObjectiveTrackerFrame.Header:CreateFontString()
 ObjectiveTrackerFrame.Header.MinimizeButton = CreateFrame("Button", nil, ObjectiveTrackerFrame.Header)
+CampaignQuestObjectiveTracker = CreateFrame("Frame", "CampaignQuestObjectiveTracker", ObjectiveTrackerFrame)
+QuestObjectiveTracker = CreateFrame("Frame", "QuestObjectiveTracker", ObjectiveTrackerFrame)
+AchievementObjectiveTracker = CreateFrame("Frame", "AchievementObjectiveTracker", ObjectiveTrackerFrame)
+ObjectiveTrackerManager = {
+    __opacity = 100,
+    __calls = {},
+}
+function ObjectiveTrackerManager:SetOpacity(percent)
+    self.__opacity = percent
+    self.__calls.SetOpacity = self.__calls.SetOpacity or {}
+    table.insert(self.__calls.SetOpacity, { percent })
+end
+function ObjectiveTrackerManager:GetOpacity() return self.__opacity end
+function ObjectiveTrackerManager:UpdateAll()
+    self.__calls.UpdateAll = self.__calls.UpdateAll or {}
+    table.insert(self.__calls.UpdateAll, {})
+end
+function ObjectiveTrackerManager:GetCalls(method) return self.__calls[method] end
 
 --#endregion common globals
 

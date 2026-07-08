@@ -64,6 +64,7 @@ local TRACKER_DEFS = {
 
 local collapse_queued = {}
 local collapse_attempts = {}
+local deferred_tracker_updates = {}
 local last_apply_reason = {}
 
 --#endregion RUNTIME STATE =====================================================
@@ -97,10 +98,24 @@ local function mark_tracker_dirty(tracker)
     end
 end
 
+local function defer_tracker_update(def, action, reason)
+    if not def then return end
+    collapse_queued[def.key] = false
+    deferred_tracker_updates[def.key] = { action = action, reason = reason }
+    if M.defer_objectives_combat_update then
+        M.defer_objectives_combat_update()
+    end
+end
+
 local function collapse_tracker(def, reason)
     if not def then return end
     collapse_queued[def.key] = false
     if not should_auto_collapse(def) then return end
+
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        defer_tracker_update(def, "collapse", reason)
+        return
+    end
 
     local tracker = get_tracker(def)
     if not tracker then return end
@@ -119,6 +134,11 @@ end
 local function expand_tracker(def, reason)
     if not def then return end
     collapse_queued[def.key] = false
+
+    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+        defer_tracker_update(def, "expand", reason)
+        return
+    end
 
     local tracker = get_tracker(def)
     if not tracker then return end
@@ -150,8 +170,13 @@ end
 
 function M.apply_auto_collapse()
     for _, def in ipairs(TRACKER_DEFS) do
+        local deferred = deferred_tracker_updates[def.key]
+        deferred_tracker_updates[def.key] = nil
         if should_auto_collapse(def) then
-            queue_collapse(def, "apply")
+            local reason = deferred and deferred.reason or "apply"
+            queue_collapse(def, reason)
+        elseif deferred and deferred.action == "expand" then
+            expand_tracker(def, deferred.reason)
         end
     end
 end
@@ -165,6 +190,7 @@ function M.get_auto_collapse_status()
         fields[#fields + 1] = prefix .. "auto_collapse=" .. tostring(should_auto_collapse(def) == true)
         fields[#fields + 1] = prefix .. "collapsed=" .. tostring(tracker and tracker.IsCollapsed and tracker:IsCollapsed() or false)
         fields[#fields + 1] = prefix .. "queued=" .. tostring(collapse_queued[def.key] == true)
+        fields[#fields + 1] = prefix .. "deferred=" .. tostring(deferred_tracker_updates[def.key] and deferred_tracker_updates[def.key].action or "none")
         fields[#fields + 1] = prefix .. "attempts=" .. tostring(collapse_attempts[def.key] or 0)
         fields[#fields + 1] = prefix .. "last_reason=" .. tostring(last_apply_reason[def.key] or "none")
     end
