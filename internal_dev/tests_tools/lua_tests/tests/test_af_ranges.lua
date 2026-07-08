@@ -31,6 +31,22 @@ h.test("visible icon tick clamps and snaps from centralized range metadata", fun
     h.eq(M.get_visible_icon_tick_interval(), range.min + range.step, "in-range value snaps to nearest step")
 end)
 
+h.test("visible icon ticker refresh stops idle ticker immediately", function()
+    local M = load_aura_frames()
+    local range = M.SETTING_RANGES.aura_visible_icon_tick
+    M.db = { aura_visible_icon_tick = range.min }
+    M.frames_list = {}
+
+    h.eq(h.stub.ActiveTimerCount(), 0, "starts without timers")
+    M.ensure_visible_icon_ticker(true)
+    h.ok(M._visible_icon_ticker, "ticker started")
+    h.eq(h.stub.ActiveTimerCount(), 1, "ticker queued")
+
+    M.refresh_visible_icon_ticker()
+    h.eq(M._visible_icon_ticker, nil, "ticker reference cleared")
+    h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
+end)
+
 h.run("af_ranges")
 
 --#endregion FILE CONTENTS ===================================================

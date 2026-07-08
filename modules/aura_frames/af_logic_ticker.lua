@@ -121,7 +121,6 @@ function M.ensure_visible_icon_ticker(needs_tick_known)
 end
 
 function M.refresh_visible_icon_ticker()
-    if M._visible_icon_ticker then return end
     if M.any_frame_needs_visible_icon_tick() then
         M.ensure_visible_icon_ticker(true)
     else
