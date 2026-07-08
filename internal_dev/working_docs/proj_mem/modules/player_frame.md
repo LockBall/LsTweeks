@@ -27,7 +27,7 @@ Important `player_frame` keys:
 - OOC fade is delay plus fade length. Combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`.
 - The Player Frame fade tick uses `addon.UPDATE_INTERVALS.player_frame_fade_tick` (`0.1s`). Earlier in-game review found coarser `fifth_sec` cadence visibly jittery for this fade.
 - Queued OOC fade apply work must recheck the Player Frame module-enabled gate before starting a fade; `C_Timer.After(0)` cannot be cancelled after module disable.
-- Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` fallback. Do not use `UnitAffectingCombat("player")`; it can remain sticky after regen and block post-combat refade.
+- Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` fallback. Do not use `UnitAffectingCombat("player")`; it can remain sticky after regen and block post-combat refade. Setting-change helpers must refresh this guard before state-specific work so delayed/fading state cannot survive combat re-entry before the normal event path runs.
 - On `PLAYER_REGEN_ENABLED`, schedule the delay and set visible alpha, but do not immediately call the combat-gated full update while the delay is active; transient combat state can cancel the new delay timer.
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
 - Retail 12.x health APIs can return Secret Values from tainted addon paths. Player Frame health fade is strictly OOC: combat cancels fade and sets plain alpha `1`.
@@ -38,3 +38,4 @@ Important `player_frame` keys:
 - Do not use Lua comparisons/arithmetic/string conversion on current health or curve output. Health events should not stop or restart an active fade; after the base fade is already at target, health events only refresh the gated target alpha.
 - Do not use Blizzard PlayerFrame health bar internals or hidden status bars for the health gate.
 - Threshold slider changes must route through `M.fade.on_threshold_changed(db)` so the curve cache clears and already-faded alpha is reapplied without waiting for the next health event.
+- Profiling-gated follow-up: only if Player Frame in-combat health-event routing shows material CPU cost, consider unregistering `UNIT_HEALTH` / `UNIT_MAXHEALTH` during combat while OOC fade is enabled; add a headless event-registration test if implemented.

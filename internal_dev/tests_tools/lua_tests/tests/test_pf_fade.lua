@@ -233,6 +233,20 @@ h.test("slider change while combat re-entered restores combat state, not a fade"
     h.near(PlayerFrame:GetAlpha(), 1, 0.001, "alpha restored")
 end)
 
+h.test("slider change while delayed and combat re-entered restores combat state", function()
+    local db = fresh_db()
+    reset_runtime()
+
+    F.on_leave_combat(db)
+    h.eq(F.get_runtime_status().state, "delay", "precondition: delay state")
+
+    stub.in_combat = true -- combat began but event not yet processed
+    F.on_fade_setting_changed(db, "fade_alpha")
+    h.eq(F.get_runtime_status().state, "combat", "combat detected during delayed setting change")
+    h.eq(F.get_runtime_status().fade_delay_timer, false, "delay timer cancelled")
+    h.near(PlayerFrame:GetAlpha(), 1, 0.001, "alpha restored")
+end)
+
 h.test("threshold change while faded requeues an apply pass", function()
     local db = fresh_db({ fade_delay = 0, fade_length = 1 })
     reset_runtime()

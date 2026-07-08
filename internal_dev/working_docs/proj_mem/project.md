@@ -112,6 +112,10 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Before handoff, do a focused cleanup pass for duplicated helpers, stale fallbacks, dead status fields, repeated formatting, and broad API fallbacks.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
+- Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.
+- Keep setting ranges, shared widget footprints, runtime clamp metadata, and tolerance constants single-owned and domain-named.
+- Timed visual progress should use real elapsed time, aura expiration, or WoW duration objects. Fixed-interval timers belong to debounces, event buckets, polling, retry/follow-up work, and preview restore delays where nominal cadence is the contract.
+- Delayed work and state helpers must be safe when called in isolation: gate cheap no-op states before queuing, stop stale tickers as soon as no work remains, refresh combat/enablement/lifecycle guards inside helpers, and add headless tests when the harness can model the risk.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
 - Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).

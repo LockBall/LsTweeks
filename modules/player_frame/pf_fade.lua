@@ -364,12 +364,12 @@ function F.on_fade_setting_changed(db, key)
         return
     end
 
-    if state == STATE_FADING then
-        if refresh_combat_state() then
-            restore_combat_state(db)
-            return
-        end
+    if refresh_combat_state() then
+        restore_combat_state(db)
+        return
+    end
 
+    if state == STATE_FADING then
         stop_animation()
         state = STATE_IDLE
         if db and db.fade_out_of_combat and not playerInCombat then
