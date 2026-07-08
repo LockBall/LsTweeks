@@ -506,7 +506,7 @@ local function apply_center_color_overlay(background, color, enabled)
     return true
 end
 
-local function apply_background_color(color, force, opacity_override, show_color_overlay)
+local function apply_background_color(color, force, opacity_override, show_color_overlay, update_edit_mode)
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
     if not background then
@@ -524,7 +524,10 @@ local function apply_background_color(color, force, opacity_override, show_color
     end
 
     if force or background_last_applied_alpha ~= opacity then
-        set_wow_background_opacity(opacity, opacity_override == nil or opacity == 0)
+        if update_edit_mode == nil then
+            update_edit_mode = opacity_override == nil or opacity == 0
+        end
+        set_wow_background_opacity(opacity, update_edit_mode)
         background_last_applied_alpha = opacity
     end
     local applied = 0
@@ -575,7 +578,7 @@ local function restore_background_color()
     end
 
     background_regions_reset = false
-    apply_background_color(DEFAULT_BACKGROUND_COLOR, true, 1, false)
+    apply_background_color(DEFAULT_BACKGROUND_COLOR, true, 1, false, true)
 end
 
 --#endregion COLOR AND OPACITY =================================================
