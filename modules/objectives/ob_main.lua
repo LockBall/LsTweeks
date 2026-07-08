@@ -4,7 +4,7 @@ local addon_name, addon = ...
 addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
-local MODULE_KEY = M.MODULE_KEY or "objectives"
+local MODULE_KEY = M.MODULE_KEY
 local CATEGORY_NAME = "Objectives"
 local objectives_combat_update_pending = false
 local loader
@@ -127,7 +127,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         M.apply_objectives()
-        C_Timer.After(addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.fifth_sec or 0.2, function()
+        C_Timer.After(addon.UPDATE_INTERVALS.fifth_sec, function()
             M.apply_objectives()
         end)
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")

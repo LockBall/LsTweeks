@@ -44,7 +44,7 @@ local RACE_PROFILE_EVENTS = {
 
 --#region SETTINGS AND DEFAULTS ================================================
 -- Module metadata and default values shared by runtime and settings code.
-local DEFAULTS = addon.module_defaults and addon.module_defaults.sv and addon.module_defaults.sv.skyriding_vigor or {}
+local DEFAULTS = addon.module_defaults.sv.skyriding_vigor
 local PROFILE_DEFAULTS = DEFAULTS.race_profile or DEFAULTS
 local SETTING_RANGES = M.SETTING_RANGES
 M.MODULE_KEY = "skyriding_vigor"
@@ -94,15 +94,15 @@ local function normalize_db(db, include_race_controls)
     if M.get_valid_bar_style_key then
         db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
     else
-        db.style = db.style or DEFAULTS.style or "default"
+        db.style = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
     end
     if M.get_style_layout_table then
-        local default_style_layout = M.get_style_layout_table(db, M.BAR_STYLE_DEFAULT or "default", true)
+        local default_style_layout = M.get_style_layout_table(db, M.BAR_STYLE_DEFAULT, true)
         if default_style_layout and (
             color_matches(default_style_layout.fill_color, 1, 1, 1, 1)
             or color_matches(default_style_layout.fill_color, 0.20, 0.82, 1.00, 1)
         ) then
-            default_style_layout.fill_color = M.get_style_layout_default(M.BAR_STYLE_DEFAULT or "default", "fill_color")
+            default_style_layout.fill_color = M.get_style_layout_default(M.BAR_STYLE_DEFAULT, "fill_color")
         end
 
         local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
@@ -115,7 +115,7 @@ local function normalize_db(db, include_race_controls)
     if M.get_valid_decor_style_key then
         db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
     else
-        db.decor_style = db.decor_style or DEFAULTS.decor_style or "default"
+        db.decor_style = db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT
     end
     if M.get_decor_layout_table then
         local decor_layout = M.get_decor_layout_table(db, db.decor_style, true)
@@ -154,7 +154,7 @@ local function get_root_db()
     if not Ls_Tweeks_DB then return nil end
     Ls_Tweeks_DB.skyriding_vigor = Ls_Tweeks_DB.skyriding_vigor or {}
     if not M._defaults_applied then
-        addon.apply_defaults(addon.module_defaults and addon.module_defaults.sv or {}, Ls_Tweeks_DB)
+        addon.apply_defaults(addon.module_defaults.sv, Ls_Tweeks_DB)
         M._defaults_applied = true
         M._db_normalized = false
     end

@@ -11,7 +11,7 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
     slots = {},
 }
 
-local default_progress_interval = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.skyriding_vigor_progress or 0.05
+local default_progress_interval = addon.UPDATE_INTERVALS.skyriding_vigor_progress
 
 local function build_profile_defaults()
     return {

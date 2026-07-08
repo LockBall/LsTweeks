@@ -23,7 +23,7 @@ local tostring = tostring
 
 --#region BAR LAYOUT DEFINITIONS ===============================================
 
-local MAX_SLOTS = M.MAX_SLOTS or 6
+local MAX_SLOTS = M.MAX_SLOTS
 local GRID_SIZE = 20
 
 local BACKGROUND_LAYOUT = {
@@ -67,11 +67,11 @@ local WING_LAYOUT = {
 --#region SHARED ACCESSORS =====================================================
 
 local function get_db()
-    return M.get_db and M.get_db()
+    return M.get_db()
 end
 
 local function get_defaults()
-    return M.DEFAULTS or {}
+    return M.DEFAULTS
 end
 
 --#endregion SHARED ACCESSORS ==================================================

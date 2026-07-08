@@ -732,14 +732,14 @@ end
 local function queue_background_sync(reason)
     if background_sync_queued then return end
     background_sync_queued = true
-    local delay = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.next_frame or 0
+    local delay = addon.UPDATE_INTERVALS.next_frame
     C_Timer.After(delay, function()
         sync_objective_background(reason)
     end)
 end
 
 local function queue_background_followup(reason)
-    local delay = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.fifth_sec or 0.2
+    local delay = addon.UPDATE_INTERVALS.fifth_sec
     C_Timer.After(delay, function()
         sync_objective_background(reason)
     end)

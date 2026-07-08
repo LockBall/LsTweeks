@@ -136,7 +136,7 @@ end
 local function queue_collapse(def, reason)
     if not def or collapse_queued[def.key] then return end
     collapse_queued[def.key] = true
-    local delay = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.next_frame or 0
+    local delay = addon.UPDATE_INTERVALS.next_frame
     C_Timer.After(delay, function()
         collapse_tracker(def, reason)
     end)

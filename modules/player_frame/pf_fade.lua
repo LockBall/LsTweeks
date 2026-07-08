@@ -23,7 +23,7 @@ local GetTime = GetTime
 
 local ALPHA_EPSILON       = 0.001
 local TIME_EPSILON        = 0.001
-local FADE_TICK_INTERVAL  = (addon.UPDATE_INTERVALS and (addon.UPDATE_INTERVALS.player_frame_fade_tick or addon.UPDATE_INTERVALS.tenth_sec)) or 0.1
+local FADE_TICK_INTERVAL  = addon.UPDATE_INTERVALS.player_frame_fade_tick
 local HEALTH_DEBOUNCE_DELAY = FADE_TICK_INTERVAL
 local HEALTH_RELEASE_CAP  = 0.99
 local RELEASE_25_MIN      = 0.06

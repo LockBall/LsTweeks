@@ -241,7 +241,7 @@ function M.queue_wow_cooldown_refresh(profile, category_filter)
     local refresh_config = type(profile) == "table" and profile
         or WOW_COOLDOWN_REFRESH_PROFILES[profile or "immediate"]
         or WOW_COOLDOWN_REFRESH_PROFILES.immediate
-    if category_filter and not (M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category_filter]) then
+    if category_filter and not M.WOW_COOLDOWN_CATEGORIES[category_filter] then
         category_filter = nil
     end
     local delays = refresh_config.delays or { refresh_config.delay or 0 }
@@ -429,7 +429,7 @@ function M.prewarm_aura_tooltip_cache(frame)
     frame._tooltip_cache_retry_count = (frame._tooltip_cache_retry_count or 0) + 1
     frame._tooltip_cache_retry_pending = true
     local retry_frame = frame
-    C_Timer.After(UPDATE_INTERVALS.fifth_sec or 0.2, function()
+    C_Timer.After(UPDATE_INTERVALS.fifth_sec, function()
         retry_frame._tooltip_cache_retry_pending = false
         if not (InCombatLockdown and InCombatLockdown()) and M.prewarm_aura_tooltip_cache then
             M.prewarm_aura_tooltip_cache(retry_frame)
@@ -591,7 +591,7 @@ end
 local function handle_frame_mouse_enter(frame)
     if not set_frame_hovered(frame, true) then return end
     if frame and not frame._hover_check_ticker and C_Timer and C_Timer.NewTicker then
-        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_hover_check or M.UPDATE_INTERVALS.tenth_sec, function()
+        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_hover_check, function()
             if not aura_frame_contains_mouse(frame) then
                 set_frame_hovered(frame, false)
             end
@@ -866,7 +866,7 @@ local function register_aura_frame_events(frame, category)
     frame:RegisterEvent("PLAYER_REGEN_ENABLED")
     frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 
-    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
+    if M.WOW_COOLDOWN_CATEGORIES[category] then
         frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
         frame:RegisterEvent("SPELL_UPDATE_CHARGES")
     end
@@ -889,7 +889,7 @@ local function queue_deferred_aura_scan(frame, params)
     local f = frame
     -- A short bucket matches ElkBuffBars' short UNIT_AURA bucket and coalesces
     -- noisy event bursts while ensuring scans run outside event-dispatch taint.
-    C_Timer.After(UPDATE_INTERVALS.aura_event_bucket or UPDATE_INTERVALS.tenth_sec, function()
+    C_Timer.After(UPDATE_INTERVALS.aura_event_bucket, function()
         f._scan_pending = false
         local event_info = f._pending_aura_info
         f._pending_aura_info = nil
@@ -923,7 +923,6 @@ local function handle_aura_frame_event(frame, event, unit, info)
         M.mark_aura_scan_dirty()
     end
     if event == "PLAYER_REGEN_DISABLED"
-        and M.WOW_COOLDOWN_CATEGORIES
         and M.WOW_COOLDOWN_CATEGORIES[params.category] then
         M.queue_wow_cooldown_refresh("combat_entry")
     end
@@ -1036,7 +1035,7 @@ end
 function M.spawn_custom_frame()
     if not M.db then return nil end
     M.db.custom_frames = M.db.custom_frames or {}
-    if #M.db.custom_frames >= (M.MAX_CUSTOM_FRAMES or 4) then return nil end
+    if #M.db.custom_frames >= M.MAX_CUSTOM_FRAMES then return nil end
 
     local entry = M.new_custom_entry()
     table.insert(M.db.custom_frames, entry)

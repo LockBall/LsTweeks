@@ -89,7 +89,7 @@ local function refresh_aura_frames_after_cancel()
     end
 
     if C_Timer and C_Timer.After then
-        C_Timer.After(M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.next_frame or 0, refresh)
+        C_Timer.After(M.UPDATE_INTERVALS.next_frame, refresh)
     else
         refresh()
     end
@@ -456,7 +456,7 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     local category = frame and frame.category
     local cfg_db = M.get_frame_config_db(frame)
     local is_custom = frame and frame.is_custom == true
-    local is_cdm = category and M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] == true
+    local is_cdm = category and M.WOW_COOLDOWN_CATEGORIES[category] == true
     local enabled_key = is_custom and "show" or show_key
     local moving_key = is_custom and "move" or move_key
     local test_key = is_custom and "test_aura" or (category and ("test_aura_" .. category))
@@ -482,7 +482,7 @@ function M.get_frame_activity_state(frame, show_key, move_key)
 end
 
 function M.cdm_category_needs_viewer(category)
-    if not (category and M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category]) then
+    if not (category and M.WOW_COOLDOWN_CATEGORIES[category]) then
         return false
     end
     local keys = M.get_preset_keys(category)

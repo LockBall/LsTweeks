@@ -720,7 +720,7 @@ local function build_render_list(frame, aura_map, aura_filter, sort_mode)
 
     if frame.category == "short" then
         apply_short_frame_render_order(frame, list)
-    elseif M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[frame.category] then
+    elseif M.WOW_COOLDOWN_CATEGORIES[frame.category] then
         apply_cdm_frame_render_order(list)
     end
 

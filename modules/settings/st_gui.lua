@@ -41,7 +41,7 @@ M.CATEGORY_NAME = STRINGS.category_name
 function M.build_settings_page(parent)
     local cfg = UI_CONFIG
     local theme = addon.UI_THEME
-    local defaults = addon.module_defaults and addon.module_defaults.st or {}
+    local defaults = addon.module_defaults.st
 
     local title = parent:CreateFontString(nil, "OVERLAY", theme.font_title)
     title:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.title_offset_x, cfg.title_offset_y)
@@ -110,7 +110,7 @@ function M.build_settings_page(parent)
     modules_title:SetFontObject("GameFontNormalLarge")
 
     local widest_content = modules_title:GetStringWidth() or 0
-    for index, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+    for index, module_def in ipairs(addon.FEATURE_MODULES) do
         local row_module_def = module_def
         local module_container = addon.CreateCheckbox(
             modules_group,
@@ -134,7 +134,7 @@ end
 function M.sync_settings_controls()
     if not Ls_Tweeks_DB then return end
 
-    local defaults = addon.module_defaults and addon.module_defaults.st or {}
+    local defaults = addon.module_defaults.st
     local minimap_cb = M.controls.minimap_checkbox
     if minimap_cb and minimap_cb.SetCheckedSilently then
         minimap_cb:SetCheckedSilently(not Ls_Tweeks_DB.minimap.hide)
@@ -147,7 +147,7 @@ function M.sync_settings_controls()
     if alpha_slider and alpha_slider.SetValueSilently then
         alpha_slider:SetValueSilently(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
     end
-    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+    for _, module_def in ipairs(addon.FEATURE_MODULES) do
         local module_cb = M.controls["module_" .. module_def.key]
         if module_cb and module_cb.SetCheckedSilently then
             module_cb:SetCheckedSilently(addon.is_module_enabled and addon.is_module_enabled(module_def.key))

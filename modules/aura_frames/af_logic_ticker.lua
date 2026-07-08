@@ -96,14 +96,12 @@ function M.stop_visible_icon_ticker()
 end
 
 function M.get_visible_icon_tick_interval()
-    local default_interval = (M.defaults and M.defaults.aura_visible_icon_tick)
-        or (M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.aura_visible_icon_tick)
-        or (M.UPDATE_INTERVALS and M.UPDATE_INTERVALS.tenth_sec)
-        or 0.1
+    local default_interval = M.defaults.aura_visible_icon_tick
+        or M.UPDATE_INTERVALS.aura_visible_icon_tick
     local value = M.db and tonumber(M.db.aura_visible_icon_tick) or default_interval
-    local min_interval = M.MIN_VISIBLE_ICON_TICK or 0.10
-    local max_interval = M.MAX_VISIBLE_ICON_TICK or 0.20
-    local step = M.VISIBLE_ICON_TICK_STEP or 0.05
+    local min_interval = M.MIN_VISIBLE_ICON_TICK
+    local max_interval = M.MAX_VISIBLE_ICON_TICK
+    local step = M.VISIBLE_ICON_TICK_STEP
     value = math_max(min_interval, math_min(max_interval, value))
     value = min_interval + math.floor(((value - min_interval) / step) + 0.5) * step
     return math_max(min_interval, math_min(max_interval, value))

@@ -121,7 +121,7 @@ end
 -- so the shared panel builder does not branch on source type for common controls.
 local function make_preset_frame_settings_config(data)
     local cat = data.show_key:sub(6)
-    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[cat] and M.refresh_cdm_default_positions then
+    if M.WOW_COOLDOWN_CATEGORIES[cat] and M.refresh_cdm_default_positions then
         M.refresh_cdm_default_positions()
     end
     return {
@@ -441,7 +441,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
             local f = M.frames[frame_show_key]
             if not f then return end
             local reset_default_position = default_position
-            if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[id] and M.refresh_cdm_default_positions then
+            if M.WOW_COOLDOWN_CATEGORIES[id] and M.refresh_cdm_default_positions then
                 M.refresh_cdm_default_positions()
             elseif frame_config.is_custom and M.get_default_custom_frame_position then
                 reset_default_position = M.get_default_custom_frame_position(id)
@@ -554,9 +554,9 @@ function M.build_general_tab(p)
         addon_name.."AuraVisibleIconTick",
         p,
         "Timer Tick Sec",
-        M.MIN_VISIBLE_ICON_TICK or 0.10,
-        M.MAX_VISIBLE_ICON_TICK or 0.20,
-        M.VISIBLE_ICON_TICK_STEP or 0.05,
+        M.MIN_VISIBLE_ICON_TICK,
+        M.MAX_VISIBLE_ICON_TICK,
+        M.VISIBLE_ICON_TICK_STEP,
         M.db,
         "aura_visible_icon_tick",
         M.defaults,
@@ -814,9 +814,9 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         frame_config,
         "OOCAlpha",
         "Fade Alpha",
-        M.MIN_WOW_COOLDOWN_OOC_ALPHA or 0,
-        M.MAX_WOW_COOLDOWN_OOC_ALPHA or 1,
-        M.WOW_COOLDOWN_OOC_ALPHA_STEP or 0.05,
+        M.MIN_WOW_COOLDOWN_OOC_ALPHA,
+        M.MAX_WOW_COOLDOWN_OOC_ALPHA,
+        M.WOW_COOLDOWN_OOC_ALPHA_STEP,
         "ooc_alpha",
         update
     )

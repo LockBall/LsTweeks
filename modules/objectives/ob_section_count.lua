@@ -280,7 +280,7 @@ end
 queue_title_sync = function(reason)
     if title_sync_queued then return end
     title_sync_queued = true
-    local delay = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.next_frame or 0
+    local delay = addon.UPDATE_INTERVALS.next_frame
     C_Timer.After(delay, function()
         sync_section_titles(reason)
     end)

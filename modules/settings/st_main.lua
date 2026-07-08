@@ -37,7 +37,7 @@ addon.apply_interface_alpha = apply_interface_alpha
 
 function M.on_reset_complete()
     if not Ls_Tweeks_DB then return end
-    local defaults = addon.module_defaults and addon.module_defaults.st or {}
+    local defaults = addon.module_defaults.st
     addon.apply_defaults(defaults, Ls_Tweeks_DB)
     apply_interface_alpha()
 
@@ -52,10 +52,10 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
-        local defaults = addon.module_defaults and addon.module_defaults.st or {}
+        local defaults = addon.module_defaults.st
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME or "Settings", M.build_settings_page)
+            addon.register_category(M.CATEGORY_NAME, M.build_settings_page)
         end
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)

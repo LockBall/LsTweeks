@@ -21,7 +21,7 @@ end
 function M.get_db()
     Ls_Tweeks_DB = Ls_Tweeks_DB or {}
     if not M._defaults_applied then
-        local defaults = addon.module_defaults and addon.module_defaults.audio_volumes
+        local defaults = addon.module_defaults.audio_volumes
         if defaults then
             addon.apply_defaults(defaults, Ls_Tweeks_DB)
         end
@@ -35,7 +35,7 @@ end
 function M.get_target_db(target_key)
     local db = M.get_db()
     db.targets[target_key] = db.targets[target_key] or {}
-    local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+    local target = M.SOUND_TARGETS[target_key]
     local defaults = M.defaults
         and M.defaults.audio_volumes
         and M.defaults.audio_volumes.targets
@@ -59,20 +59,20 @@ end
 --#region PRESET AND TARGET HELPERS ============================================
 
 function M.get_preset_by_value(value)
-    local option = M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value]
+    local option = M.PRESET_OPTIONS_BY_VALUE[value]
     if option then return option end
-    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE["0"]
+    return M.PRESET_OPTIONS_BY_VALUE["0"]
 end
 
 function M.is_valid_preset_value(value)
-    return M.PRESET_OPTIONS_BY_VALUE and M.PRESET_OPTIONS_BY_VALUE[value] ~= nil
+    return M.PRESET_OPTIONS_BY_VALUE[value] ~= nil
 end
 
 function M.get_preset_by_slider_value(value)
     local rounded = math.floor((tonumber(value) or 0) + 0.5)
-    local option = M.PRESET_OPTIONS_BY_SLIDER_VALUE and M.PRESET_OPTIONS_BY_SLIDER_VALUE[rounded]
+    local option = M.PRESET_OPTIONS_BY_SLIDER_VALUE[rounded]
     if option then return option end
-    return M.PRESET_OPTIONS_BY_SLIDER_VALUE and M.PRESET_OPTIONS_BY_SLIDER_VALUE[0]
+    return M.PRESET_OPTIONS_BY_SLIDER_VALUE[0]
 end
 
 function M.should_mute_original(target_db)
@@ -99,7 +99,7 @@ end
 
 function M.get_ordered_sound_targets()
     local targets = {}
-    for target_key, target in pairs(M.SOUND_TARGETS or {}) do
+    for target_key, target in pairs(M.SOUND_TARGETS) do
         targets[#targets + 1] = {
             key = target_key,
             target = target,
@@ -125,10 +125,10 @@ end
 -- path needs, so the event handler touches no DB or defaults machinery at all.
 function M.rebuild_event_cache()
     local cache = {}
-    for event_name, target_keys in pairs(M.SOUND_EVENT_TARGETS or {}) do
+    for event_name, target_keys in pairs(M.SOUND_EVENT_TARGETS) do
         local slots = {}
         for _, target_key in ipairs(target_keys) do
-            local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+            local target = M.SOUND_TARGETS[target_key]
             if target then
                 local target_db = M.get_target_db(target_key)
                 local muted = M.should_mute_original(target_db)

@@ -394,7 +394,7 @@ function M.build_frames_tab(p, frames_data)
 
         -- ---- + Custom button ----
         local max_reached = M.db and M.db.custom_frames
-            and #M.db.custom_frames >= (M.MAX_CUSTOM_FRAMES or 4)
+            and #M.db.custom_frames >= M.MAX_CUSTOM_FRAMES
 
         if add_btn_ref then
             add_btn_ref:ClearAllPoints()

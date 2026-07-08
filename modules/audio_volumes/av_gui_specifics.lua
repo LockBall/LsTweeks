@@ -29,7 +29,7 @@ end
 function M.BuildSpecificsTab(parent)
     local db = M.get_db()
     local targets = M.get_ordered_sound_targets()
-    local selected_key = (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) and db.last_sound_key or (targets[1] and targets[1].key)
+    local selected_key = (db.last_sound_key and M.SOUND_TARGETS[db.last_sound_key]) and db.last_sound_key or (targets[1] and targets[1].key)
     local target_rows = {}
     local slider_panels = {}
 
@@ -50,7 +50,7 @@ function M.BuildSpecificsTab(parent)
     M.ApplyGUIBoxBackdrop(target_list_panel)
 
     local function select_sound(target_key)
-        if not (target_key and M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]) then
+        if not (target_key and M.SOUND_TARGETS[target_key]) then
             return
         end
         selected_key = target_key
@@ -63,7 +63,7 @@ function M.BuildSpecificsTab(parent)
         for _, sound_slider_panel in pairs(slider_panels) do
             sound_slider_panel:Hide()
         end
-        local target = M.SOUND_TARGETS and M.SOUND_TARGETS[selected_key]
+        local target = M.SOUND_TARGETS[selected_key]
         if target then
             if not slider_panels[selected_key] then
                 slider_panels[selected_key] = M.BuildSoundTargetSliderPanel(parent, selected_key, target)

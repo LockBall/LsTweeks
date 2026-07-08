@@ -58,7 +58,7 @@ end
 local function get_vigor_power_info()
     if not UnitPower or not UnitPowerMax then return nil end
 
-    local max_slots = M.MAX_SLOTS or 6
+    local max_slots = M.MAX_SLOTS
     for _, power_type in ipairs(VIGOR_POWER_TYPES) do
         local max_power = UnitPowerMax("player", power_type)
         if max_power and not is_secret(max_power) and max_power > 0 then
@@ -89,7 +89,7 @@ function M.get_charge_info()
         if info and info.maxCharges and not is_secret(info.maxCharges) and info.maxCharges > 0 then
             local spell_current = info.currentCharges or 0
             -- Action spell charges can report maxCharges = 1; keep the six-node bar shape in fallback mode.
-            local max_slots = M.MAX_SLOTS or 6
+            local max_slots = M.MAX_SLOTS
             if not is_secret(spell_current) then
                 return min(spell_current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
             end

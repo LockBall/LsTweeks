@@ -18,7 +18,7 @@ function M.on_reset_complete()
     M._defaults_applied = nil
     M._target_defaults_applied = nil
     local db = M.get_db()
-    if not (db.last_sound_key and M.SOUND_TARGETS and M.SOUND_TARGETS[db.last_sound_key]) then
+    if not (db.last_sound_key and M.SOUND_TARGETS[db.last_sound_key]) then
         db.last_sound_key = M.defaults.audio_volumes.last_sound_key
     end
     if type(db.last_tab_index) ~= "number" then
@@ -26,7 +26,7 @@ function M.on_reset_complete()
     end
     M.apply_audio_volumes()
 
-    for target_key in pairs(M.SOUND_TARGETS or {}) do
+    for target_key in pairs(M.SOUND_TARGETS) do
         local target_db = M.get_target_db(target_key)
         local preset = M.controls[target_key .. "_preset"]
         if preset and preset.SetValue then

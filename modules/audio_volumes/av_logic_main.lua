@@ -86,7 +86,7 @@ end
 --#region MUTES AND RUNTIME APPLY ==============================================
 
 function M.unmute_all_sound_files()
-    for _, target in pairs(M.SOUND_TARGETS or {}) do
+    for _, target in pairs(M.SOUND_TARGETS) do
         for _, file_id in ipairs(target.original_file_ids or {}) do
             _UnmuteSoundFile(file_id)
         end
@@ -100,7 +100,7 @@ function M.apply_audio_volumes()
     end
 
     M.get_db()
-    for target_key, target in pairs(M.SOUND_TARGETS or {}) do
+    for target_key, target in pairs(M.SOUND_TARGETS) do
         local target_db = M.get_target_db(target_key)
         local mute = M.should_mute_original(target_db)
         for _, file_id in ipairs(target.original_file_ids or {}) do
@@ -125,7 +125,7 @@ function M.play_replacement(target_key)
         return false
     end
 
-    local target = M.SOUND_TARGETS and M.SOUND_TARGETS[target_key]
+    local target = M.SOUND_TARGETS[target_key]
     if not target then return false end
 
     local target_db = M.get_target_db(target_key)
