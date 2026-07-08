@@ -610,19 +610,21 @@ local function show_background_to_header(tracker, background, state)
     end
 end
 
+local function is_priority_module(tracker, frame)
+    for _, module in ipairs(tracker.modules or {}) do
+        if module == frame and module.hasDisplayPriority == true then
+            return true
+        end
+    end
+    return false
+end
+
 local function get_priority_module_for_anchor(tracker, anchor)
     if not tracker or not anchor then return nil end
 
-    local priority_modules = {}
-    for _, module in ipairs(tracker.modules or {}) do
-        if module.hasDisplayPriority == true then
-            priority_modules[module] = true
-        end
-    end
-
     local frame = anchor
     while frame do
-        if priority_modules[frame] then
+        if is_priority_module(tracker, frame) then
             return frame
         end
         if not frame.GetParent then

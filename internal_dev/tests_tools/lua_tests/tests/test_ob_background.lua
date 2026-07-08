@@ -165,6 +165,29 @@ h.test("border sync skips redundant anchoring and visibility calls", function()
     h.eq(#(border:GetCalls("Show") or {}), show_calls, "second apply skips repeated show")
 end)
 
+h.test("priority background anchors force-expand without scratch state", function()
+    reset_runtime()
+    fresh_db()
+    ObjectiveTrackerFrame.__collapsed = true
+    ObjectiveTrackerFrame.ForceExpand = function(self)
+        self.__collapsed = false
+        self.__calls.ForceExpand = self.__calls.ForceExpand or {}
+        table.insert(self.__calls.ForceExpand, {})
+    end
+
+    local priority_module = CreateFrame("Frame", "PriorityObjectiveModule", ObjectiveTrackerFrame)
+    priority_module.hasDisplayPriority = true
+    local priority_child = CreateFrame("Frame", "PriorityObjectiveChild", priority_module)
+    ObjectiveTrackerFrame.modules = { priority_module }
+
+    M.apply_background()
+    ObjectiveTrackerFrame.NineSlice:SetPoint("BOTTOM", priority_child, "BOTTOM")
+
+    local fields = M.get_background_status()
+    h.ok(tContains(fields, "bg_force_expand=background:PriorityObjectiveModule"), "priority force-expand status")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("ForceExpand") or {}), 1, "force expand called")
+end)
+
 h.run("ob_background")
 
 --#endregion FILE CONTENTS ===================================================
