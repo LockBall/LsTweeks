@@ -118,8 +118,9 @@ M.cancel_frame_ooc_fade = cancel_frame_ooc_fade
 
 local function clamp_ooc_alpha(value)
     value = tonumber(value) or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA
-    local min_alpha = M.MIN_WOW_COOLDOWN_OOC_ALPHA
-    local max_alpha = M.MAX_WOW_COOLDOWN_OOC_ALPHA
+    local range = M.SETTING_RANGES.ooc_alpha
+    local min_alpha = range.min
+    local max_alpha = range.max
     if value < min_alpha then return min_alpha end
     if value > max_alpha then return max_alpha end
     return value

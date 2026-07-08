@@ -67,6 +67,10 @@ local function normalize_cancel_modifier(value)
     return "CTRL"
 end
 
+local function get_setting_range(key)
+    return M.SETTING_RANGES[key]
+end
+
 local function add_label_tooltip(container, label, text)
     if not (container and label and text) then return end
     local hitbox = CreateFrame("Frame", nil, container)
@@ -306,9 +310,9 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         font_size_name,
         parent,
         labels.font_size_label or "Font Size",
-        8,
-        14,
-        0.5,
+        get_setting_range("timer_number_font_size").min,
+        get_setting_range("timer_number_font_size").max,
+        get_setting_range("timer_number_font_size").step,
         frame_config.value_table,
         timer_font_size_key,
         frame_config.defaults_table,
@@ -383,9 +387,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         addon_name .. id .. (options.x_name_suffix or "XPos"),
         parent,
         "X Position",
-        -1000,
-        1000,
-        1,
+        get_setting_range("frame_position").min,
+        get_setting_range("frame_position").max,
+        get_setting_range("frame_position").step,
         position_table,
         "x",
         default_position
@@ -399,9 +403,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         addon_name .. id .. (options.y_name_suffix or "YPos"),
         parent,
         "Y Position",
-        -1000,
-        1000,
-        1,
+        get_setting_range("frame_position").min,
+        get_setting_range("frame_position").max,
+        get_setting_range("frame_position").step,
         position_table,
         "y",
         default_position
@@ -416,9 +420,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         frame_config,
         options.width_name_suffix or "Width",
         "Width",
-        M.MIN_FRAME_WIDTH,
-        M.MAX_FRAME_WIDTH,
-        1,
+        get_setting_range("width").min,
+        get_setting_range("width").max,
+        get_setting_range("width").step,
         "width"
     )
     width_slider:HookValueChanged(function(_, value)
@@ -536,7 +540,8 @@ function M.build_general_tab(p)
     M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_container
 
     -- Short Buff Threshold slider
-    local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", 10, 300, 10, M.db, "short_threshold", M.defaults, function()
+    local short_threshold_range = get_setting_range("short_threshold")
+    local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", short_threshold_range.min, short_threshold_range.max, short_threshold_range.step, M.db, "short_threshold", M.defaults, function()
         local frames_list = M.frames_list
         if not frames_list then return end
         for i = 1, #frames_list do
@@ -554,9 +559,9 @@ function M.build_general_tab(p)
         addon_name.."AuraVisibleIconTick",
         p,
         "Timer Tick Sec",
-        M.MIN_VISIBLE_ICON_TICK,
-        M.MAX_VISIBLE_ICON_TICK,
-        M.VISIBLE_ICON_TICK_STEP,
+        get_setting_range("aura_visible_icon_tick").min,
+        get_setting_range("aura_visible_icon_tick").max,
+        get_setting_range("aura_visible_icon_tick").step,
         M.db,
         "aura_visible_icon_tick",
         M.defaults,
@@ -697,7 +702,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local update = opts.update
     local has_timer_controls = opts.show_timer_controls ~= false
     local grid = addon.CreateSettingsGrid(parent, {
-        row_separators = has_timer_controls and { 1, 2, 3, 4, 5 } or { 1, 2, 3, 4 },
+        row_separators = { 1, 2, 3, 4, 5 },
     })
     local value_table = frame_config.value_table
 
@@ -788,10 +793,12 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)
     grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
 
-    local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", 0.5, 2.5, 0.01, "scale", update)
+    local scale_range = get_setting_range("scale")
+    local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", scale_range.min, scale_range.max, scale_range.step, "scale", update)
     grid:place_at(scale_slider, 1, 3)
 
-    local spacing_slider = create_frame_slider(parent, frame_config, "Spacing", "Spacing", 0, 20, 0.1, "spacing", update)
+    local spacing_range = get_setting_range("spacing")
+    local spacing_slider = create_frame_slider(parent, frame_config, "Spacing", "Spacing", spacing_range.min, spacing_range.max, spacing_range.step, "spacing", update)
     grid:place_at(spacing_slider, 1, 4)
 
     if opts.build_source_controls then
@@ -814,18 +821,20 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         frame_config,
         "OOCAlpha",
         "Fade Alpha",
-        M.MIN_WOW_COOLDOWN_OOC_ALPHA,
-        M.MAX_WOW_COOLDOWN_OOC_ALPHA,
-        M.WOW_COOLDOWN_OOC_ALPHA_STEP,
+        get_setting_range("ooc_alpha").min,
+        get_setting_range("ooc_alpha").max,
+        get_setting_range("ooc_alpha").step,
         "ooc_alpha",
         update
     )
     grid:place_at(ooc_alpha_slider, 4, 2)
 
-    local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", 0, 10, 0.1, "fade_delay", update)
+    local fade_delay_range = get_setting_range("fade_delay")
+    local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", fade_delay_range.min, fade_delay_range.max, fade_delay_range.step, "fade_delay", update)
     grid:place_at(fade_delay_slider, 4, 3)
 
-    local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", 0, 10, 0.1, "fade_length", update)
+    local fade_length_range = get_setting_range("fade_length")
+    local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", fade_length_range.min, fade_length_range.max, fade_length_range.step, "fade_length", update)
     grid:place_at(fade_length_slider, 4, 4)
 
     local timer_swipe_container
@@ -871,8 +880,9 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
     end
 
-    local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", 5, M.MAX_ICONS_LIMIT, 1, "max_icons", opts.on_max_icons_changed)
-    grid:place_at(max_icons_slider, has_timer_controls and 6 or 5, 4)
+    local max_icons_range = get_setting_range("max_icons")
+    local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", max_icons_range.min, max_icons_range.max, max_icons_range.step, "max_icons", opts.on_max_icons_changed)
+    grid:place_at(max_icons_slider, 6, 4)
 end
 
 --#region FRAME PANEL BUILDERS =================================================

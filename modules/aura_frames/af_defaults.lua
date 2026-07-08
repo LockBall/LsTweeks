@@ -149,22 +149,38 @@ end
 M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 M.DEFAULT_FRAME_WIDTH = 200
-M.MIN_FRAME_WIDTH = 180
-M.MAX_FRAME_WIDTH = 800
 M.MIN_FRAME_HEIGHT = 44
 M.DEFAULT_MAX_ICONS = 20
-M.MAX_ICONS_LIMIT = 40
 M.DEFAULT_SHORT_THRESHOLD = 60
 M.DEFAULT_TIMER_NUMBER_FONT_KEY = "source_code_pro"
+M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
 M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
-M.MIN_WOW_COOLDOWN_OOC_ALPHA = 0
-M.MAX_WOW_COOLDOWN_OOC_ALPHA = 1
-M.WOW_COOLDOWN_OOC_ALPHA_STEP = 0.05
 M.DEFAULT_OOC_FADE_DELAY = 2
 M.DEFAULT_OOC_FADE_LENGTH = 3
-M.MIN_VISIBLE_ICON_TICK = 0.10
-M.MAX_VISIBLE_ICON_TICK = 0.20
-M.VISIBLE_ICON_TICK_STEP = 0.05
+
+M.SETTING_RANGES = {
+    aura_visible_icon_tick = { min = 0.10, max = 0.20, step = 0.05 },
+    fade_delay = { min = 0, max = 10, step = 0.1 },
+    fade_length = { min = 0, max = 10, step = 0.1 },
+    frame_position = { min = -1000, max = 1000, step = 1 },
+    max_icons = { min = 5, max = 40, step = 1 },
+    ooc_alpha = { min = 0, max = 1, step = 0.05 },
+    scale = { min = 0.5, max = 2.5, step = 0.01 },
+    short_threshold = { min = 10, max = 300, step = 10 },
+    spacing = { min = 0, max = 20, step = 0.1 },
+    timer_number_font_size = { min = 8, max = 14, step = 0.5 },
+    width = { min = 180, max = 800, step = 1 },
+}
+
+M.MIN_FRAME_WIDTH = M.SETTING_RANGES.width.min
+M.MAX_FRAME_WIDTH = M.SETTING_RANGES.width.max
+M.MAX_ICONS_LIMIT = M.SETTING_RANGES.max_icons.max
+M.MIN_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.min
+M.MAX_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.max
+M.WOW_COOLDOWN_OOC_ALPHA_STEP = M.SETTING_RANGES.ooc_alpha.step
+M.MIN_VISIBLE_ICON_TICK = M.SETTING_RANGES.aura_visible_icon_tick.min
+M.MAX_VISIBLE_ICON_TICK = M.SETTING_RANGES.aura_visible_icon_tick.max
+M.VISIBLE_ICON_TICK_STEP = M.SETTING_RANGES.aura_visible_icon_tick.step
 
 M.CUSTOM_AURA_BASE_FILTERS = {
     { value = "HELPFUL", text = "HELPFUL" },
@@ -220,7 +236,7 @@ M.defaults = {
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
     aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
     timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size = 10,
+    timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
 
     -- STATIC
@@ -270,7 +286,7 @@ M.defaults = {
     sort_short   = "timeleft",
     test_aura_short = true,
     timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_short = 10,
+    timer_number_font_size_short = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_short = false,
     timer_color_short = { r = 1, g = 1, b = 1 },
     bar_text_color_short = { r = 1, g = 1, b = 1 },
@@ -298,7 +314,7 @@ M.defaults = {
     sort_long    = "timeleft",
     test_aura_long = true,
     timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_long = 10,
+    timer_number_font_size_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_long = false,
     timer_color_long = { r = 1, g = 1, b = 1 },
     bar_text_color_long = { r = 1, g = 1, b = 1 },
@@ -328,7 +344,7 @@ M.defaults = {
     sort_essential = "timeleft",
     test_aura_essential = false,
     timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_essential = 10,
+    timer_number_font_size_essential = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_essential = false,
     timer_color_essential = { r = 1, g = 1, b = 1 },
     bar_text_color_essential = { r = 1, g = 1, b = 1 },
@@ -358,7 +374,7 @@ M.defaults = {
     sort_utility = "timeleft",
     test_aura_utility = false,
     timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_utility = 10,
+    timer_number_font_size_utility = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_utility = false,
     timer_color_utility = { r = 1, g = 1, b = 1 },
     bar_text_color_utility = { r = 1, g = 1, b = 1 },
@@ -387,7 +403,7 @@ M.defaults = {
     sort_tracked_buffs = "timeleft",
     test_aura_tracked_buffs = false,
     timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_tracked_buffs = 10,
+    timer_number_font_size_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_buffs = false,
     timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
     bar_text_color_tracked_buffs = { r = 1, g = 1, b = 1 },
@@ -416,7 +432,7 @@ M.defaults = {
     sort_tracked_bars = "timeleft",
     test_aura_tracked_bars = false,
     timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_tracked_bars = 10,
+    timer_number_font_size_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_bars = false,
     timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
     bar_text_color_tracked_bars = { r = 1, g = 1, b = 1 },
@@ -444,7 +460,7 @@ M.defaults = {
     sort_debuff  = "timeleft",
     test_aura_debuff = true,
     timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size_debuff = 10,
+    timer_number_font_size_debuff = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_debuff = false,
     timer_color_debuff = { r = 1, g = 1, b = 1 },
     bar_text_color_debuff = { r = 1, g = 1, b = 1 },
@@ -501,7 +517,7 @@ M.CUSTOM_FRAME_TEMPLATE = {
 
     -- Timer font (matches TIMER_CATEGORIES convention)
     timer_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-    timer_number_font_size = 10,
+    timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_color     = { r = 1, g = 1, b = 1 },
     bar_text_color  = { r = 1, g = 1, b = 1 },

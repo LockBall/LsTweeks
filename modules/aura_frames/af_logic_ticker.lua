@@ -99,9 +99,10 @@ function M.get_visible_icon_tick_interval()
     local default_interval = M.defaults.aura_visible_icon_tick
         or M.UPDATE_INTERVALS.aura_visible_icon_tick
     local value = M.db and tonumber(M.db.aura_visible_icon_tick) or default_interval
-    local min_interval = M.MIN_VISIBLE_ICON_TICK
-    local max_interval = M.MAX_VISIBLE_ICON_TICK
-    local step = M.VISIBLE_ICON_TICK_STEP
+    local range = M.SETTING_RANGES.aura_visible_icon_tick
+    local min_interval = range.min
+    local max_interval = range.max
+    local step = range.step
     value = math_max(min_interval, math_min(max_interval, value))
     value = min_interval + math.floor(((value - min_interval) / step) + 0.5) * step
     return math_max(min_interval, math_min(max_interval, value))

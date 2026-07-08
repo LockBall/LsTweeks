@@ -426,7 +426,7 @@ function M.sync_general_controls_from_db()
 
         local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
         if font_size_slider and font_size_slider.SetValueSilently then
-            font_size_slider:SetValueSilently(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or 10)
+            font_size_slider:SetValueSilently(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or M.DEFAULT_TIMER_NUMBER_FONT_SIZE)
         end
     end
 
