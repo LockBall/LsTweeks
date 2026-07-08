@@ -6,6 +6,8 @@ local M = addon.audio_volumes
 
 --#region CONFIGURATION ========================================================
 
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
+
 local STRINGS = {
     use_original_label = "Original",
     play_on_adjust_label = "Play on Adjust",
@@ -47,11 +49,12 @@ local UI = {
     slider_height = 20,
     slider_frame_width = 400,
     slider_frame_height = 22,
-    fishing_slider_width = 130,
+    fishing_slider_width = SLIDER_WITH_BOX_SIZE.width,
     fishing_slider_gap = 10,
     fishing_slider_pad_x = 10,
     fishing_slider_row_start = -32,
-    fishing_volumes_panel_height = 134,
+    fishing_slider_row_height = SLIDER_WITH_BOX_SIZE.height + 20,
+    fishing_volumes_panel_height = SLIDER_WITH_BOX_SIZE.height + 39,
 }
 
 M.GUI_STRINGS = STRINGS

@@ -9,6 +9,7 @@ local M = addon.objectives
 local DEFAULTS = M.defaults
 local POSITION_RANGE = { min = -500, max = 500, step = 1 }
 local SNAP_GRID_SIZE = 20
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
 
 local UI_CONFIG = {
     group_offset_x = 20,
@@ -18,8 +19,9 @@ local UI_CONFIG = {
     position_group_height = 150,
     grid_offset_x = 12,
     grid_offset_y = -37,
-    grid_col_width = 130,
+    grid_col_width = SLIDER_WITH_BOX_SIZE.width,
     grid_column_gap_x = 18,
+    slider_row_height = SLIDER_WITH_BOX_SIZE.height + 5,
 }
 
 --#endregion SETTINGS AND DEFAULTS =============================================
@@ -408,7 +410,7 @@ function M.BuildPositionSettings(parent)
         row_start = cfg.grid_offset_y,
         col_width = cfg.grid_col_width,
         column_gap_x = cfg.grid_column_gap_x,
-        row_heights = { 100 },
+        row_heights = { cfg.slider_row_height },
         col_align = { "left", "left", "left" },
         offsets = { default = 0 },
     })

@@ -277,7 +277,7 @@ function M.BuildSituationsTab(parent)
         column_gap_x = UI.fishing_slider_gap,
         col_offset = UI.fishing_slider_pad_x,
         row_start = UI.fishing_slider_row_start,
-        row_heights = { 115 },
+        row_heights = { UI.fishing_slider_row_height },
         col_align = { "left", "left", "left", "left", "left" },
     }
     local current_grid = addon.CreateSettingsGrid(current_panel, channel_grid_opts)
@@ -314,7 +314,6 @@ function M.BuildSituationsTab(parent)
                 combat_defaults[channel.key] = tonumber(value) or 0
             end
         )
-        current_slider:SetSize(UI.fishing_slider_width, 95)
         current_grid:place_at(current_slider, 1, i)
         current_sliders[channel.key] = current_slider
         M.controls["normal_volume_" .. channel.key] = current_slider
@@ -468,7 +467,6 @@ function M.BuildSituationsTab(parent)
                     resync_situation_runtime(entry)
                 end
             )
-            slider:SetSize(UI.fishing_slider_width, 95)
             situation_grid:place_at(slider, 1, i)
             M.controls["situation_" .. entry.key .. "_" .. channel.key] = slider
             if entry.key == "fishing" then

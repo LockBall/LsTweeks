@@ -15,19 +15,21 @@ local InCombatLockdown = InCombatLockdown
 
 --#region CONFIGURATION ========================================================
 
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
+
 local UI_CONFIG = {
     title_offset_x = 20,
     title_offset_y = -20,
     row_gap_y = 18,
     slider_gap_x = 18,
-    slider_width = 130,
+    slider_width = SLIDER_WITH_BOX_SIZE.width,
     color_picker_width = 95,
     button_height = 22,
     button_padding_x = 24,
     race_profile_panel_padding_x = 8,
     race_profile_panel_padding_y = 8,
     slider_offset_y = -14,
-    slider_row_height = 115,
+    slider_row_height = SLIDER_WITH_BOX_SIZE.height + 20,
     slider_row_gap_y = 0,
     grid_row_gap = 20,
     reset_bottom_x = 20,
