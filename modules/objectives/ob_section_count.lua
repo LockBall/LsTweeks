@@ -65,7 +65,7 @@ local title_events_registered = {
 local function get_count_settings()
     local db = M.get_db()
     if not M.is_runtime_enabled() or not db then
-        return false, false
+        return false, false, false, false
     end
 
     local show_quest_log = db.show_quest_log_count == true

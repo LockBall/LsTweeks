@@ -420,45 +420,6 @@ local function get_background_signature(color, opacity)
     return get_color_signature(color) .. ":bg_alpha=" .. tostring(opacity) .. ":color_alpha=" .. tostring(get_background_color_alpha())
 end
 
-local function hide_background_color_frame(background)
-    local overlay = background and background._lstweeks_color_overlay
-    if overlay then
-        overlay:Hide()
-        overlay:ClearAllPoints()
-        background._lstweeks_color_overlay = nil
-    end
-
-    local overlays = background and background._lstweeks_color_overlays
-    if overlays then
-        for _, entry in ipairs(overlays) do
-            if entry.overlay then
-                entry.overlay:Hide()
-                entry.overlay:ClearAllPoints()
-            end
-            if entry.mask then
-                entry.mask:Hide()
-                entry.mask:ClearAllPoints()
-            end
-        end
-    end
-
-    local corner_overlays = background and background._lstweeks_corner_color_overlays
-    if corner_overlays then
-        for _, entry in ipairs(corner_overlays) do
-            if entry.overlay then
-                entry.overlay:Hide()
-                entry.overlay:ClearAllPoints()
-            end
-        end
-    end
-
-    local color_frame = background and background._lstweeks_color_frame
-    if color_frame then
-        color_frame:Hide()
-        color_frame:ClearAllPoints()
-    end
-end
-
 local function apply_color_to_region(region)
     if region and region.SetVertexColor then
         if region.SetDesaturated then
@@ -471,6 +432,16 @@ local function apply_color_to_region(region)
         return true
     end
     return false
+end
+
+local function reset_background_regions(background)
+    local applied = 0
+    for _, key in ipairs(BACKGROUND_ALPHA_REGION_KEYS) do
+        if apply_color_to_region(background[key]) then
+            applied = applied + 1
+        end
+    end
+    return applied
 end
 
 local function apply_center_color_overlay(background, color, enabled)
@@ -531,12 +502,7 @@ local function apply_background_color(color, force, opacity_override, show_color
     end
     local applied = 0
     if force or not background_regions_reset then
-        hide_background_color_frame(background)
-        for _, key in ipairs(BACKGROUND_ALPHA_REGION_KEYS) do
-            if apply_color_to_region(background[key]) then
-                applied = applied + 1
-            end
-        end
+        applied = reset_background_regions(background)
         background_regions_reset = true
     end
     local overlay_applied = apply_center_color_overlay(background, color, show_color_overlay == true)
