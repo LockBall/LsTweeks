@@ -384,7 +384,6 @@ local function set_count_setting(key, value)
     local db = M.get_db()
     if not db then return end
     db[key] = value == true
-    ensure_title_event_frame()
     update_title_event_registrations()
     queue_title_sync("count setting changed")
 end

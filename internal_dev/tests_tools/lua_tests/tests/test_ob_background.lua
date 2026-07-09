@@ -30,6 +30,8 @@ local function reset_runtime()
     ObjectiveTrackerManager.__calls = {}
     ObjectiveTrackerManager.__opacity = 100
     ObjectiveTrackerFrame.HasSetting = nil
+    ObjectiveTrackerFrame.UpdateSystemSettingValue = nil
+    ObjectiveTrackerFrame.__system_setting_calls = nil
     EditModeManagerFrame = nil
     Enum = nil
 end
@@ -44,14 +46,20 @@ local function install_color_picker_frame()
         OkayButton = CreateFrame("Button", nil, ColorPickerFrame),
         CancelButton = CreateFrame("Button", nil, ColorPickerFrame),
     }
+    local color_picker = CreateFrame("Frame", nil, ColorPickerFrame)
+    color_picker.GetColorHSV = function() return 0, 0 end
+    color_picker.SetColorHSV = function() end
+    local opacity_slider = CreateFrame("Slider", nil, ColorPickerFrame)
     ColorPickerFrame.Content = {
-        ColorPicker = {
-            GetColorHSV = function() return 0, 0 end,
-            SetColorHSV = function() end,
-        },
+        ColorPicker = color_picker,
+        OpacitySlider = opacity_slider,
     }
-    ColorPickerFrame.GetColorRGB = function() return 0.25, 0.25, 0.25 end
-    ColorPickerFrame.GetColorAlpha = function() return 0.75 end
+    ColorPickerFrame.__r = 0.25
+    ColorPickerFrame.__g = 0.25
+    ColorPickerFrame.__b = 0.25
+    ColorPickerFrame.__alpha = 0.75
+    ColorPickerFrame.GetColorRGB = function() return ColorPickerFrame.__r, ColorPickerFrame.__g, ColorPickerFrame.__b end
+    ColorPickerFrame.GetColorAlpha = function() return ColorPickerFrame.__alpha end
     ColorPickerFrame.SetColorAlpha = function(_, alpha) ColorPickerFrame.__alpha = alpha end
     ColorPickerFrame.SetupColorPickerAndShow = function(_, opts)
         ColorPickerFrame.__opts = opts
@@ -97,6 +105,7 @@ h.test("module disable restores objective opacity through Edit Mode", function()
         calls = {},
         OnSystemSettingChange = function(self, tracker, setting, percent)
             self.calls[#self.calls + 1] = { tracker = tracker, setting = setting, percent = percent }
+            ObjectiveTrackerManager.__opacity = percent
         end,
     }
 
@@ -108,6 +117,26 @@ h.test("module disable restores objective opacity through Edit Mode", function()
 
     h.eq(ObjectiveTrackerManager:GetOpacity(), 100, "module disable restores full live opacity")
     h.eq(edit_mode_calls()[2].percent, 100, "module disable restores full Edit Mode opacity")
+    h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "Edit Mode path skips duplicate manager writes")
+end)
+
+h.test("system setting opacity fallback skips duplicate manager write", function()
+    reset_runtime()
+    fresh_db({ customize_background = false })
+
+    Enum = { EditModeObjectiveTrackerSetting = { Opacity = 99 } }
+    ObjectiveTrackerFrame.HasSetting = function(_, setting) return setting == 99 end
+    ObjectiveTrackerFrame.UpdateSystemSettingValue = function(self, setting, percent)
+        self.__system_setting_calls = self.__system_setting_calls or {}
+        self.__system_setting_calls[#self.__system_setting_calls + 1] = { setting = setting, percent = percent }
+        ObjectiveTrackerManager.__opacity = percent
+    end
+
+    M.apply_background()
+
+    h.eq(ObjectiveTrackerManager:GetOpacity(), 0, "system setting path applies live opacity")
+    h.eq(ObjectiveTrackerFrame.__system_setting_calls[1].percent, 0, "system setting path writes opacity")
+    h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "system setting path skips duplicate manager write")
 end)
 
 h.test("accepted color reset does not let later cancel clear border", function()
@@ -127,6 +156,52 @@ h.test("accepted color reset does not let later cancel clear border", function()
     ColorPickerFrame.__opts.cancelFunc()
 
     h.eq(db.objective_tracker_border, true, "later cancel keeps accepted reset border")
+end)
+
+h.test("background color picker live preview is debounced", function()
+    reset_runtime()
+    local db = fresh_db({ background_color_enabled = true })
+    install_color_picker_frame()
+
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildBackgroundSettings(parent)
+    local color_button = background_picker_buttons()
+
+    color_button:Click()
+    h.ok(ColorPickerFrame.__opts and ColorPickerFrame.__opts.swatchFunc, "picker opened")
+    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
+    h.ok(overlay, "overlay created on open")
+    local vertex_calls = #(overlay:GetCalls("SetVertexColor") or {})
+
+    ColorPickerFrame.__r = 0.8
+    ColorPickerFrame.__g = 0.4
+    ColorPickerFrame.__b = 0.2
+    ColorPickerFrame.__alpha = 0.6
+    ColorPickerFrame.Content.ColorPicker:GetScript("OnColorSelect")()
+
+    h.eq(db.background_color.r, 0.8, "swatch writes DB immediately")
+    h.eq(#(overlay:GetCalls("SetVertexColor") or {}), vertex_calls, "swatch defers runtime preview")
+
+    h.advance(h.addon.UPDATE_INTERVALS.tenth_sec)
+
+    local calls = overlay:GetCalls("SetVertexColor") or {}
+    h.eq(#calls, vertex_calls + 1, "debounced swatch applies one runtime preview")
+    h.eq(calls[#calls][1], 0.8, "preview red applied")
+    h.eq(calls[#calls][2], 0.4, "preview green applied")
+    h.eq(calls[#calls][3], 0.2, "preview blue applied")
+    h.eq(calls[#calls][4], 0.6, "preview alpha applied")
+
+    ColorPickerFrame.__alpha = 0.35
+    ColorPickerFrame.Content.OpacitySlider:GetScript("OnValueChanged")()
+    ColorPickerFrame.__alpha = 0.45
+    ColorPickerFrame.Content.OpacitySlider:GetScript("OnValueChanged")()
+    h.eq(#(overlay:GetCalls("SetVertexColor") or {}), vertex_calls + 1, "alpha changes coalesce before debounce")
+
+    h.advance(h.addon.UPDATE_INTERVALS.tenth_sec)
+
+    calls = overlay:GetCalls("SetVertexColor") or {}
+    h.eq(#calls, vertex_calls + 2, "debounced alpha applies one runtime preview")
+    h.eq(calls[#calls][4], 0.45, "latest alpha applied")
 end)
 
 h.test("region diagnostics preserve explicit false values", function()
@@ -187,6 +262,32 @@ h.test("background color sync skips unchanged overlay writes", function()
 
     h.eq(#(overlay:GetCalls("SetVertexColor") or {}), vertex_calls, "second apply skips overlay color write")
     h.eq(#(overlay:GetCalls("Show") or {}), show_calls, "second apply skips overlay show")
+end)
+
+h.test("background color overlay renders behind Blizzard line art", function()
+    reset_runtime()
+    fresh_db({ background_color_enabled = true })
+    ObjectiveTrackerFrame:SetFrameLevel(2)
+    ObjectiveTrackerFrame.NineSlice:SetFrameLevel(4)
+    ObjectiveTrackerFrame.NineSlice.Center = ObjectiveTrackerFrame.NineSlice:CreateTexture(nil, "ARTWORK")
+
+    M.apply_background()
+
+    local overlay_frame = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay_frame
+    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
+    h.ok(overlay_frame, "overlay frame created")
+    h.ok(overlay, "overlay texture created")
+    h.eq(overlay_frame:GetParent(), ObjectiveTrackerFrame, "overlay frame stays independent of NineSlice alpha")
+    h.ok(
+        overlay_frame:GetFrameLevel() < ObjectiveTrackerFrame.NineSlice:GetFrameLevel(),
+        "overlay frame is behind Blizzard line art"
+    )
+    h.eq(ObjectiveTrackerFrame.NineSlice.Center:GetAlpha(), 0, "Blizzard center fill lets custom color show through")
+
+    Ls_Tweeks_DB.objectives.background_color_enabled = false
+    M.apply_background()
+
+    h.eq(ObjectiveTrackerFrame.NineSlice.Center:GetAlpha(), 1, "Blizzard center fill restores when custom color is disabled")
 end)
 
 h.test("priority background anchors force-expand without scratch state", function()

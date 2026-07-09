@@ -15,16 +15,21 @@ local DEFAULT_BACKGROUND_COLOR = {
     a = DEFAULTS.objectives.background_color.a,
 }
 local COLOR_RANGE = { min = 0, max = 1 }
-local COLOR_BLOCK_PADDING_LEFT = -4
-local COLOR_BLOCK_PADDING_RIGHT = -12
-local COLOR_BLOCK_PADDING_TOP = -10
-local COLOR_BLOCK_PADDING_BOTTOM = -8
-local OBJECTIVE_BORDER_PADDING_LEFT = 0
-local OBJECTIVE_BORDER_PADDING_RIGHT = -10
-local OBJECTIVE_BORDER_PADDING_TOP = -8
-local OBJECTIVE_BORDER_PADDING_BOTTOM = -6
-local OBJECTIVE_BORDER_OFFSET_X = -12
-local OBJECTIVE_BORDER_OFFSET_Y = -5
+-- Shape shifts are direct SetPoint x/y offsets from Blizzard's objective background:
+-- negative x moves left, positive x moves right; negative y moves down, positive y moves up.
+local COLOR_BLOCK_LEFT_X = -8
+local COLOR_BLOCK_RIGHT_X = 14
+local COLOR_BLOCK_TOP_Y = 10
+local COLOR_BLOCK_BOTTOM_Y = -8
+local COLOR_BLOCK_FRAME_LEVEL_DELTA = -1
+local COLOR_BLOCK_TEXTURE_LAYER = "BACKGROUND"
+local OBJECTIVE_BORDER_LEFT_X = -6
+local OBJECTIVE_BORDER_RIGHT_X = 10
+local OBJECTIVE_BORDER_TOP_Y = 8
+local OBJECTIVE_BORDER_BOTTOM_Y = -6
+-- Auto shifts write the saved Objective Tracker position when Border reset auto-positions the tracker.
+local OBJECTIVE_TRACKER_AUTO_SHIFT_X = -12
+local OBJECTIVE_TRACKER_AUTO_SHIFT_Y = -5
 local OBJECTIVE_BORDER_STYLE = {
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
     tile = true,
@@ -101,14 +106,7 @@ local objective_border_shown = nil
 local get_background_bottom_anchor
 local background_points_to_header
 local set_background_bottom_to_header
-
-local function get_objective_tracker()
-    local tracker = ObjectiveTrackerFrame
-    if tracker and tracker.NineSlice then
-        return tracker
-    end
-    return nil
-end
+local get_objective_tracker = M.get_objective_tracker
 
 local function get_frame_name(frame, fallback)
     if frame and frame.GetName then
@@ -208,18 +206,18 @@ local function is_background_border_enabled()
 end
 M.is_background_border_enabled = is_background_border_enabled
 
-local function anchor_to_objective_background(tracker, frame, left, right, top, bottom)
+local function anchor_to_objective_background(tracker, frame, left_shift, right_shift, top_shift, bottom_shift)
     if not tracker or not frame then return end
 
     local background = tracker.NineSlice
     local anchor = background or tracker
-    left = left or 0
-    right = right or 0
-    top = top or 0
-    bottom = bottom or 0
+    left_shift = left_shift or 0
+    right_shift = right_shift or 0
+    top_shift = top_shift or 0
+    bottom_shift = bottom_shift or 0
     frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", anchor, "TOPLEFT", left, -top)
-    frame:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", -right, bottom)
+    frame:SetPoint("TOPLEFT", anchor, "TOPLEFT", left_shift, top_shift)
+    frame:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", right_shift, bottom_shift)
 end
 
 local function ensure_objective_border(tracker)
@@ -259,19 +257,19 @@ local function sync_objective_border()
     local anchor = tracker.NineSlice or tracker
     local anchor_signature = table.concat({
         tostring(anchor),
-        tostring(OBJECTIVE_BORDER_PADDING_LEFT),
-        tostring(OBJECTIVE_BORDER_PADDING_RIGHT),
-        tostring(OBJECTIVE_BORDER_PADDING_TOP),
-        tostring(OBJECTIVE_BORDER_PADDING_BOTTOM),
+        tostring(OBJECTIVE_BORDER_LEFT_X),
+        tostring(OBJECTIVE_BORDER_RIGHT_X),
+        tostring(OBJECTIVE_BORDER_TOP_Y),
+        tostring(OBJECTIVE_BORDER_BOTTOM_Y),
     }, ":")
     if objective_border_anchor_signature ~= anchor_signature then
         anchor_to_objective_background(
             tracker,
             border,
-            OBJECTIVE_BORDER_PADDING_LEFT,
-            OBJECTIVE_BORDER_PADDING_RIGHT,
-            OBJECTIVE_BORDER_PADDING_TOP,
-            OBJECTIVE_BORDER_PADDING_BOTTOM
+            OBJECTIVE_BORDER_LEFT_X,
+            OBJECTIVE_BORDER_RIGHT_X,
+            OBJECTIVE_BORDER_TOP_Y,
+            OBJECTIVE_BORDER_BOTTOM_Y
         )
         objective_border_anchor_signature = anchor_signature
     end
@@ -291,15 +289,15 @@ local function set_background_border_position_offsets()
     local db = M.get_db()
     if not db then return end
 
-    db.objective_tracker_offset_x = OBJECTIVE_BORDER_OFFSET_X
-    db.objective_tracker_offset_y = OBJECTIVE_BORDER_OFFSET_Y
+    db.objective_tracker_offset_x = OBJECTIVE_TRACKER_AUTO_SHIFT_X
+    db.objective_tracker_offset_y = OBJECTIVE_TRACKER_AUTO_SHIFT_Y
 end
 M.set_background_border_position_offsets = set_background_border_position_offsets
 
 local function get_background_aware_position_default(key)
     if is_background_border_enabled() then
-        if key == "objective_tracker_offset_x" then return OBJECTIVE_BORDER_OFFSET_X end
-        if key == "objective_tracker_offset_y" then return OBJECTIVE_BORDER_OFFSET_Y end
+        if key == "objective_tracker_offset_x" then return OBJECTIVE_TRACKER_AUTO_SHIFT_X end
+        if key == "objective_tracker_offset_y" then return OBJECTIVE_TRACKER_AUTO_SHIFT_Y end
     end
     return DEFAULTS.objectives[key]
 end
@@ -354,11 +352,6 @@ local function set_wow_background_opacity(opacity, update_edit_mode)
             local ok = pcall(manager.OnSystemSettingChange, manager, tracker, setting, percent)
             background_alpha_applying = false
             if ok then
-                if ObjectiveTrackerManager and ObjectiveTrackerManager.SetOpacity then
-                    background_alpha_applying = true
-                    ObjectiveTrackerManager:SetOpacity(percent)
-                    background_alpha_applying = false
-                end
                 background_edit_mode_state = "edit_mode:" .. tostring(percent)
                 return true
             end
@@ -369,11 +362,6 @@ local function set_wow_background_opacity(opacity, update_edit_mode)
             local ok = pcall(tracker.UpdateSystemSettingValue, tracker, setting, percent)
             background_alpha_applying = false
             if ok then
-                if ObjectiveTrackerManager and ObjectiveTrackerManager.SetOpacity then
-                    background_alpha_applying = true
-                    ObjectiveTrackerManager:SetOpacity(percent)
-                    background_alpha_applying = false
-                end
                 background_edit_mode_state = "system_frame:" .. tostring(percent)
                 return true
             end
@@ -459,6 +447,9 @@ local function apply_color_to_region(region)
         if region.SetBlendMode then
             region:SetBlendMode("BLEND")
         end
+        if region.SetAlpha then
+            region:SetAlpha(1)
+        end
         region:SetVertexColor(1, 1, 1, 1)
         return true
     end
@@ -475,35 +466,69 @@ local function reset_background_regions(background)
     return applied
 end
 
+local function sync_center_color_overlay_frame_order(background, overlay_frame)
+    if not background or not overlay_frame then return end
+
+    local owner = background.GetParent and background:GetParent() or background
+    if overlay_frame.SetFrameStrata and owner.GetFrameStrata then
+        overlay_frame:SetFrameStrata(owner:GetFrameStrata())
+    end
+    if overlay_frame.SetFrameLevel then
+        local background_level = background.GetFrameLevel and background:GetFrameLevel() or nil
+        local owner_level = owner.GetFrameLevel and owner:GetFrameLevel() or nil
+        overlay_frame:SetFrameLevel(math.max(0, (background_level or owner_level or 0) + COLOR_BLOCK_FRAME_LEVEL_DELTA))
+    end
+end
+
+local function set_background_center_fill_visible(background, visible)
+    local center = background and background.Center
+    if center and center.SetAlpha then
+        center:SetAlpha(visible and 1 or 0)
+    end
+end
+
 local function apply_center_color_overlay(background, r, g, b, a, enabled)
     local overlay = background and background._lstweeks_center_color_overlay
+    local overlay_frame = background and background._lstweeks_center_color_overlay_frame
     if not enabled then
-        if overlay then
+        set_background_center_fill_visible(background, true)
+        if overlay_frame then
+            overlay_frame:Hide()
+        elseif overlay then
             overlay:Hide()
         end
         background_color_overlay_anchor = nil
         return false
     end
 
-    if not overlay then
+    if not overlay_frame then
         local owner = background.GetParent and background:GetParent() or background
-        overlay = owner:CreateTexture(nil, "BORDER")
+        overlay_frame = CreateFrame("Frame", nil, owner)
+
+        if overlay then
+            overlay:Hide()
+        end
+        overlay = overlay_frame:CreateTexture(nil, COLOR_BLOCK_TEXTURE_LAYER)
         overlay:SetTexture("Interface\\Buttons\\WHITE8X8")
         overlay:SetVertexColor(1, 1, 1, 1)
+        overlay:SetAllPoints(overlay_frame)
+        background._lstweeks_center_color_overlay_frame = overlay_frame
         background._lstweeks_center_color_overlay = overlay
         background_color_overlay_anchor = nil
     end
+    sync_center_color_overlay_frame_order(background, overlay_frame)
+    set_background_center_fill_visible(background, false)
 
     local anchor = background.Center or background
     if background_color_overlay_anchor ~= anchor then
-        overlay:ClearAllPoints()
-        overlay:SetPoint("TOPLEFT", anchor, "TOPLEFT", COLOR_BLOCK_PADDING_LEFT, -COLOR_BLOCK_PADDING_TOP)
-        overlay:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", -COLOR_BLOCK_PADDING_RIGHT, COLOR_BLOCK_PADDING_BOTTOM)
+        overlay_frame:ClearAllPoints()
+        overlay_frame:SetPoint("TOPLEFT", anchor, "TOPLEFT", COLOR_BLOCK_LEFT_X, COLOR_BLOCK_TOP_Y)
+        overlay_frame:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", COLOR_BLOCK_RIGHT_X, COLOR_BLOCK_BOTTOM_Y)
         background_color_overlay_anchor = anchor
     end
 
     overlay:SetVertexColor(r, g, b, a)
-    overlay:Show()
+    overlay_frame:Show()
     return true
 end
 

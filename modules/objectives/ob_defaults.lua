@@ -20,6 +20,14 @@ function M.is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
 end
 
+function M.get_objective_tracker()
+    local tracker = ObjectiveTrackerFrame
+    if tracker and tracker.NineSlice then
+        return tracker
+    end
+    return nil
+end
+
 M.defaults = {
     objectives = {
         collapse_all = false,

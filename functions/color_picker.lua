@@ -20,6 +20,7 @@ local POPUP_ALPHA_BOX_H = 16
 local POPUP_BUTTON_W = 64
 local POPUP_BUTTON_GAP = 8
 local AUTO_VISIBLE_DEFAULT = 0.75
+local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec or 0.1
 
 --#endregion COLOR PICKER CONSTANTS ===========================================
 
@@ -112,6 +113,30 @@ end
 local function get_color_picker_widget()
     local content = ColorPickerFrame and ColorPickerFrame["Content"]
     return content and content["ColorPicker"]
+end
+
+local function ensure_live_picker_hooks()
+    local picker = get_color_picker_widget()
+    if picker and picker.HookScript and not picker._lstweeks_live_color_hooked then
+        picker:HookScript("OnColorSelect", function()
+            local handler = ColorPickerFrame and ColorPickerFrame._lstweeks_live_swatch_func
+            if handler then
+                handler()
+            end
+        end)
+        picker._lstweeks_live_color_hooked = true
+    end
+
+    local opacity_slider = get_color_picker_alpha_slider()
+    if opacity_slider and opacity_slider.HookScript and not opacity_slider._lstweeks_live_alpha_hooked then
+        opacity_slider:HookScript("OnValueChanged", function()
+            local handler = ColorPickerFrame and ColorPickerFrame._lstweeks_live_opacity_func
+            if handler then
+                handler()
+            end
+        end)
+        opacity_slider._lstweeks_live_alpha_hooked = true
+    end
 end
 
 local function set_color_picker_value_midpoint()
@@ -242,10 +267,41 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     end
     reset:SetPoint("LEFT", button, "RIGHT", control_gap, 0)
 
-    -- Local update helper
-    local function apply_and_refresh(r, g, b, a, reason)
-        button:SetBackdropColor(r, g, b, color_alpha_or_default(a, 1))
+    local preview_timer = nil
+    local preview_reason = nil
+    local function cancel_preview_timer()
+        if preview_timer then
+            preview_timer:Cancel()
+            preview_timer = nil
+        end
+    end
+    local function run_callback(reason)
         if type(callback) == "function" then callback(reason) end
+    end
+    local function queue_callback(reason)
+        preview_reason = reason
+        if preview_timer then return end
+        if C_Timer and C_Timer.NewTimer then
+            preview_timer = C_Timer.NewTimer(PREVIEW_DEBOUNCE, function()
+                local queued_reason = preview_reason
+                preview_timer = nil
+                preview_reason = nil
+                run_callback(queued_reason)
+            end)
+        else
+            run_callback(reason)
+        end
+    end
+
+    -- Local update helper
+    local function apply_and_refresh(r, g, b, a, reason, immediate)
+        button:SetBackdropColor(r, g, b, color_alpha_or_default(a, 1))
+        if immediate then
+            cancel_preview_timer()
+            run_callback(reason)
+        else
+            queue_callback(reason)
+        end
     end
 
     -- Setup Initial Color
@@ -265,7 +321,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         local dc = defaults_table[db_key]
         if dc then
             db_table[db_key] = has_alpha and {r=dc.r, g=dc.g, b=dc.b, a=dc.a} or {r=dc.r, g=dc.g, b=dc.b}
-            apply_and_refresh(dc.r, dc.g, dc.b, dc.a, "reset")
+            apply_and_refresh(dc.r, dc.g, dc.b, dc.a, "reset", true)
         end
     end)
 
@@ -277,50 +333,62 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         local auto_visible_done = false
         local auto_visible_applying = false
         local auto_visible_ready = false
-        local function update_alpha(alpha)
+        local function update_alpha(alpha, immediate)
             local r, g, b = ColorPickerFrame:GetColorRGB()
             db_table[db_key] = { r = r, g = g, b = b, a = alpha }
-            apply_and_refresh(r, g, b, alpha, "alpha")
+            apply_and_refresh(r, g, b, alpha, "alpha", immediate)
+        end
+        local function update_swatch()
+            if auto_visible_applying then return end
+
+            local r, g, b = ColorPickerFrame:GetColorRGB()
+            local a = has_alpha and ColorPickerFrame:GetColorAlpha() or 1
+
+            if auto_visible_from_transparent and auto_visible_ready and not auto_visible_done and not auto_visible_applying then
+                auto_visible_done = true
+                auto_visible_applying = true
+                set_color_picker_alpha(AUTO_VISIBLE_DEFAULT)
+                set_color_picker_value_midpoint()
+                set_popup_alpha_percent_text(AUTO_VISIBLE_DEFAULT)
+                r, g, b = ColorPickerFrame:GetColorRGB()
+                a = AUTO_VISIBLE_DEFAULT
+                auto_visible_applying = false
+            end
+
+            db_table[db_key] = has_alpha and {r=r, g=g, b=b, a=a} or {r=r, g=g, b=b}
+            apply_and_refresh(r, g, b, a, "swatch", false)
+            if has_alpha and ColorPickerFrame._lstweeks_alpha_percent and ColorPickerFrame._lstweeks_alpha_percent:IsShown() then
+                ColorPickerFrame._lstweeks_alpha_percent.box:SetText(format_alpha_percent(a))
+            end
+        end
+        local function update_opacity()
+            local alpha = ColorPickerFrame:GetColorAlpha()
+            update_alpha(alpha, false)
+            set_popup_alpha_percent_text(alpha)
         end
 
         ColorPickerFrame:SetupColorPickerAndShow({
             r = current.r, g = current.g, b = current.b,
             hasOpacity = has_alpha,
             opacity = color_alpha_or_default(current.a, 1),
-            swatchFunc = function()
-                if auto_visible_applying then return end
-
-                local r, g, b = ColorPickerFrame:GetColorRGB()
-                local a = has_alpha and ColorPickerFrame:GetColorAlpha() or 1
-
-                if auto_visible_from_transparent and auto_visible_ready and not auto_visible_done and not auto_visible_applying then
-                    auto_visible_done = true
-                    auto_visible_applying = true
-                    set_color_picker_alpha(AUTO_VISIBLE_DEFAULT)
-                    set_color_picker_value_midpoint()
-                    set_popup_alpha_percent_text(AUTO_VISIBLE_DEFAULT)
-                    r, g, b = ColorPickerFrame:GetColorRGB()
-                    a = AUTO_VISIBLE_DEFAULT
-                    auto_visible_applying = false
-                end
-
-                db_table[db_key] = has_alpha and {r=r, g=g, b=b, a=a} or {r=r, g=g, b=b}
-                apply_and_refresh(r, g, b, a, "swatch")
-                if has_alpha and ColorPickerFrame._lstweeks_alpha_percent and ColorPickerFrame._lstweeks_alpha_percent:IsShown() then
-                    ColorPickerFrame._lstweeks_alpha_percent.box:SetText(format_alpha_percent(a))
-                end
-            end,
+            swatchFunc = update_swatch,
+            opacityFunc = has_alpha and update_opacity or nil,
             cancelFunc = function()
                 db_table[db_key] = current
-                apply_and_refresh(current.r, current.g, current.b, current.a, "cancel")
+                apply_and_refresh(current.r, current.g, current.b, current.a, "cancel", true)
                 hide_popup_alpha_percent()
             end
         })
+        ColorPickerFrame._lstweeks_live_swatch_func = update_swatch
+        ColorPickerFrame._lstweeks_live_opacity_func = has_alpha and update_opacity or nil
+        ensure_live_picker_hooks()
         resize_popup_action_buttons()
         if has_alpha then
             show_popup_alpha_percent(function()
                 return color_alpha_or_default(db_table[db_key].a, 1)
-            end, update_alpha)
+            end, function(alpha)
+                update_alpha(alpha, true)
+            end)
         else
             hide_popup_alpha_percent()
         end

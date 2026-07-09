@@ -41,13 +41,7 @@ local objective_drag_state = setmetatable({}, { __mode = "k" })
 
 --#region OBJECTIVE TRACKER HELPERS ============================================
 
-local function get_objective_tracker()
-    local tracker = ObjectiveTrackerFrame
-    if tracker and tracker.NineSlice then
-        return tracker
-    end
-    return nil
-end
+local get_objective_tracker = M.get_objective_tracker
 
 --#endregion OBJECTIVE TRACKER HELPERS =========================================
 
