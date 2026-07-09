@@ -10,6 +10,8 @@ addon.objectives = M
 
 M.MODULE_KEY = "objectives"
 
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
+
 function M.get_db()
     if not Ls_Tweeks_DB then return nil end
     Ls_Tweeks_DB.objectives = Ls_Tweeks_DB.objectives or {}
@@ -46,6 +48,45 @@ M.defaults = {
         objective_tracker_snap_to_grid = false,
         objective_tracker_offset_x = 0,
         objective_tracker_offset_y = 0,
+    },
+}
+
+M.SETTINGS_LAYOUT = {
+    group_offset_x = 20,
+    group_padding_x = 12,
+    grid_offset_x = 12,
+    grid_offset_y = -37,
+    grid_column_gap_x = 18,
+    slider_col_width = SLIDER_WITH_BOX_SIZE.width,
+    slider_row_height = SLIDER_WITH_BOX_SIZE.height + 5,
+    groups = {
+        position = {
+            offset_y = -20,
+            width = 1,
+            height = 150,
+        },
+        background = {
+            offset_y = -180,
+            width = 673,
+            height = 150,
+        },
+        auto_collapse = {
+            offset_y = -340,
+            width = 1,
+            height = 158,
+            grid_col_width = 220,
+            grid_col_gap = 220,
+            child_gap_y = -8,
+            child_indent_x = 18,
+        },
+        section_count = {
+            offset_y = -514,
+            width = 1,
+            height = 112,
+            grid_col_width = 130,
+            sub_checkbox_gap_y = -2,
+            sub_checkbox_indent_x = 18,
+        },
     },
 }
 

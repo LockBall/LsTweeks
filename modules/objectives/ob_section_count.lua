@@ -8,19 +8,8 @@ M.controls = M.controls or {}
 
 --#region SETTINGS AND DEFAULTS ================================================
 
-local UI_CONFIG = {
-    group_offset_x = 20,
-    group_offset_y = -514,
-    group_width = 1,
-    group_height = 112,
-    group_padding_x = 12,
-    grid_offset_x = 12,
-    grid_offset_y = -37,
-    grid_col_width = 130,
-    grid_column_gap_x = 18,
-    sub_checkbox_gap_y = -2,
-    sub_checkbox_indent_x = 18,
-}
+local UI_LAYOUT = M.SETTINGS_LAYOUT
+local UI_GROUP = UI_LAYOUT.groups.section_count
 
 local TITLE_COUNT_DEFS = {
     {
@@ -389,21 +378,21 @@ local function set_count_setting(key, value)
 end
 
 function M.BuildSectionCountSettings(parent)
-    local cfg = UI_CONFIG
+    local cfg = UI_LAYOUT
     local count_group = addon.CreateSettingsGroup(
         parent,
         "Section Count",
-        cfg.group_width,
-        cfg.group_height,
+        UI_GROUP.width,
+        UI_GROUP.height,
         cfg.group_offset_x,
-        cfg.group_offset_y
+        UI_GROUP.offset_y
     )
 
     local grid = addon.CreateSettingsGrid(count_group, {
         column_count = 2,
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
-        col_width = cfg.grid_col_width,
+        col_width = UI_GROUP.grid_col_width,
         column_gap_x = cfg.grid_column_gap_x,
         row_heights = { 64 },
         col_align = { "left", "left" },
@@ -441,7 +430,7 @@ function M.BuildSectionCountSettings(parent)
         "show_quest_log_count_on_hover_checkbox",
         "Shows the Quests count only while hovering the Quests section title."
     )
-    grid:stack_below(quest_hover_container, quest_log_container, { x = cfg.sub_checkbox_indent_x, y = cfg.sub_checkbox_gap_y })
+    grid:stack_below(quest_hover_container, quest_log_container, { x = UI_GROUP.sub_checkbox_indent_x, y = UI_GROUP.sub_checkbox_gap_y })
 
     local tracked_achievement_container = create_count_checkbox(
         "Achievements",
@@ -459,13 +448,13 @@ function M.BuildSectionCountSettings(parent)
         "show_tracked_achievement_count_on_hover_checkbox",
         "Shows the Achievements count only while hovering the Achievements section title."
     )
-    grid:stack_below(achievement_hover_container, tracked_achievement_container, { x = cfg.sub_checkbox_indent_x, y = cfg.sub_checkbox_gap_y })
+    grid:stack_below(achievement_hover_container, tracked_achievement_container, { x = UI_GROUP.sub_checkbox_indent_x, y = UI_GROUP.sub_checkbox_gap_y })
 
     local count_width = math.max(
         grid[2] - cfg.grid_offset_x + (tracked_achievement_container:GetWidth() or 0),
-        grid[2] - cfg.grid_offset_x + cfg.sub_checkbox_indent_x + (achievement_hover_container:GetWidth() or 0),
+        grid[2] - cfg.grid_offset_x + UI_GROUP.sub_checkbox_indent_x + (achievement_hover_container:GetWidth() or 0),
         quest_log_container:GetWidth() or 0,
-        cfg.sub_checkbox_indent_x + (quest_hover_container:GetWidth() or 0)
+        UI_GROUP.sub_checkbox_indent_x + (quest_hover_container:GetWidth() or 0)
     )
     count_group:SetWidth(math.ceil(count_width + cfg.group_padding_x * 2))
 end

@@ -8,19 +8,8 @@ M.controls = M.controls or {}
 
 --#region SETTINGS AND DEFAULTS ================================================
 
-local UI_CONFIG = {
-    group_offset_x = 20,
-    group_offset_y = -340,
-    group_width = 1,
-    group_height = 158,
-    group_padding_x = 12,
-    grid_offset_x = 12,
-    grid_offset_y = -37,
-    grid_col_width = 220,
-    grid_col_gap = 220,
-    child_gap_y = -8,
-    child_indent_x = 18,
-}
+local UI_LAYOUT = M.SETTINGS_LAYOUT
+local UI_GROUP = UI_LAYOUT.groups.auto_collapse
 
 local TRACKER_DEFS = {
     {
@@ -209,24 +198,24 @@ local function set_auto_collapse_setting(key, value)
 end
 
 function M.BuildAutoCollapseSettings(parent)
-    local cfg = UI_CONFIG
+    local cfg = UI_LAYOUT
     local db = M.get_db()
 
     local group = addon.CreateSettingsGroup(
         parent,
         "Auto-Collapse",
-        cfg.group_width,
-        cfg.group_height,
+        UI_GROUP.width,
+        UI_GROUP.height,
         cfg.group_offset_x,
-        cfg.group_offset_y
+        UI_GROUP.offset_y
     )
 
     local grid = addon.CreateSettingsGrid(group, {
         column_count = 1,
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
-        col_width = cfg.grid_col_width,
-        col_gap = cfg.grid_col_gap,
+        col_width = UI_GROUP.grid_col_width,
+        col_gap = UI_GROUP.grid_col_gap,
         row_heights = { 100 },
         col_align = { "left" },
         offsets = { default = 0 },
@@ -246,11 +235,11 @@ function M.BuildAutoCollapseSettings(parent)
             end
         )
         M.controls[row_def.control_key] = collapse_container
-        local indent_x = row_def.key == "all" and 0 or cfg.child_indent_x
+        local indent_x = row_def.key == "all" and 0 or UI_GROUP.child_indent_x
         if index == 1 then
             grid:place_at(collapse_container, 1, 1)
         else
-            grid:stack_below(collapse_container, previous_container, { x = indent_x - previous_indent_x, y = cfg.child_gap_y })
+            grid:stack_below(collapse_container, previous_container, { x = indent_x - previous_indent_x, y = UI_GROUP.child_gap_y })
         end
         addon.AttachTooltip(collapse_label, nil, row_def.help)
         widest_content = math.max(widest_content, indent_x + (collapse_container:GetWidth() or 0))

@@ -38,20 +38,8 @@ local OBJECTIVE_BORDER_STYLE = {
     insets = { left = 11, right = 12, top = 12, bottom = 11 },
 }
 local OBJECTIVE_BORDER_COLOR = { r = 1, g = 1, b = 1, a = 0.9 }
-local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
-
-local UI_CONFIG = {
-    group_width = 673,
-    group_offset_x = 20,
-    group_padding_x = 12,
-    background_group_offset_y = -180,
-    background_group_height = 150,
-    grid_offset_x = 12,
-    grid_offset_y = -37,
-    grid_col_width = SLIDER_WITH_BOX_SIZE.width,
-    grid_column_gap_x = 18,
-    slider_row_height = SLIDER_WITH_BOX_SIZE.height + 5,
-}
+local UI_LAYOUT = M.SETTINGS_LAYOUT
+local UI_GROUP = UI_LAYOUT.groups.background
 
 local BACKGROUND_ALPHA_REGION_KEYS = {
     "TopLeftCorner",
@@ -1110,7 +1098,7 @@ local function set_objective_border(enabled)
 end
 
 function M.BuildBackgroundSettings(parent)
-    local cfg = UI_CONFIG
+    local cfg = UI_LAYOUT
     local db = M.get_db()
     if not db then return end
     ensure_background_color()
@@ -1118,17 +1106,17 @@ function M.BuildBackgroundSettings(parent)
     local background_group = addon.CreateSettingsGroup(
         parent,
         "Background",
-        cfg.group_width,
-        cfg.background_group_height,
+        UI_GROUP.width,
+        UI_GROUP.height,
         cfg.group_offset_x,
-        cfg.background_group_offset_y
+        UI_GROUP.offset_y
     )
 
     local background_grid = addon.CreateSettingsGrid(background_group, {
         column_count = 3,
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
-        col_width = cfg.grid_col_width,
+        col_width = cfg.slider_col_width,
         column_gap_x = cfg.grid_column_gap_x,
         row_heights = { cfg.slider_row_height },
         col_align = { "left", "left", "left" },
@@ -1200,7 +1188,7 @@ function M.BuildBackgroundSettings(parent)
     background_grid:stack_below(border_container, picker, { y = -2 })
     addon.AttachTooltip(border_label, nil, "Shows the LsTweeks dialog border around the All Objectives tracker.")
 
-    local background_width = background_grid[3] - cfg.grid_offset_x + cfg.grid_col_width
+    local background_width = background_grid[3] - cfg.grid_offset_x + cfg.slider_col_width
     background_group:SetWidth(math.ceil(background_width + cfg.group_padding_x * 2))
 
     sync_background_controls()

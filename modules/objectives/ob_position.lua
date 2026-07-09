@@ -9,20 +9,8 @@ local M = addon.objectives
 local DEFAULTS = M.defaults
 local POSITION_RANGE = { min = -500, max = 500, step = 1 }
 local SNAP_GRID_SIZE = 20
-local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
-
-local UI_CONFIG = {
-    group_offset_x = 20,
-    group_padding_x = 12,
-    position_group_offset_y = -20,
-    position_group_width = 1,
-    position_group_height = 150,
-    grid_offset_x = 12,
-    grid_offset_y = -37,
-    grid_col_width = SLIDER_WITH_BOX_SIZE.width,
-    grid_column_gap_x = 18,
-    slider_row_height = SLIDER_WITH_BOX_SIZE.height + 5,
-}
+local UI_LAYOUT = M.SETTINGS_LAYOUT
+local UI_GROUP = UI_LAYOUT.groups.position
 
 --#endregion SETTINGS AND DEFAULTS =============================================
 
@@ -385,24 +373,24 @@ local function get_objective_position_default(key)
 end
 
 function M.BuildPositionSettings(parent)
-    local cfg = UI_CONFIG
+    local cfg = UI_LAYOUT
     local db = M.get_db()
     if not db then return end
 
     local position_group = addon.CreateSettingsGroup(
         parent,
         "Position",
-        cfg.position_group_width,
-        cfg.position_group_height,
+        UI_GROUP.width,
+        UI_GROUP.height,
         cfg.group_offset_x,
-        cfg.position_group_offset_y
+        UI_GROUP.offset_y
     )
 
     local position_grid = addon.CreateSettingsGrid(position_group, {
         column_count = 3,
         col_offset = cfg.grid_offset_x,
         row_start = cfg.grid_offset_y,
-        col_width = cfg.grid_col_width,
+        col_width = cfg.slider_col_width,
         column_gap_x = cfg.grid_column_gap_x,
         row_heights = { cfg.slider_row_height },
         col_align = { "left", "left", "left" },
@@ -473,7 +461,7 @@ function M.BuildPositionSettings(parent)
     M.controls.objective_tracker_offset_y_slider = y_slider
     position_grid:place_at(y_slider, 1, 3)
 
-    local position_width = position_grid[3] - cfg.grid_offset_x + (y_slider:GetWidth() or cfg.grid_col_width)
+    local position_width = position_grid[3] - cfg.grid_offset_x + (y_slider:GetWidth() or cfg.slider_col_width)
     position_group:SetWidth(math.ceil(position_width + cfg.group_padding_x * 2))
 end
 
