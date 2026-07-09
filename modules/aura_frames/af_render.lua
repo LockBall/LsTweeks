@@ -27,6 +27,7 @@ local M = addon.aura_frames
 local clear_timer_text = M.clear_timer_text
 local set_shown_if_changed = M.set_shown_if_changed
 
+--#region RENDER CACHE =========================================================
 -- Scratch tables reused every render_aura_map call to avoid per-frame allocation.
 local _scratch_list      = {}
 local _scratch_seen      = {}
@@ -39,6 +40,7 @@ function M.clear_sorted_aura_ids_cache()
     wipe(_sorted_aura_ids_cache)
 end
 
+--#endregion RENDER CACHE ======================================================
 --#region TIME FORMATTING ======================================================
 
 -- Logic for converting seconds into readable text strings

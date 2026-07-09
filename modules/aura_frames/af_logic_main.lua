@@ -11,6 +11,7 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+--#region RUNTIME CONFIGURATION AND FRAME STATE ================================
 function M.uses_cooldown_icon_overlay(category, bar_mode, db)
     return (not bar_mode) and db and db["cooldown_mode_" .. category] == true
 end
@@ -307,6 +308,7 @@ local function set_backdrop_state_if_changed(frame, bg_r, bg_g, bg_b, bg_a, br_r
     frame:SetBackdropBorderColor(br_r, br_g, br_b, br_a)
 end
 
+--#endregion RUNTIME CONFIGURATION AND FRAME STATE =============================
 --#region AURA UPDATE (MAIN PER-FRAME REFRESH) =================================
 -- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.

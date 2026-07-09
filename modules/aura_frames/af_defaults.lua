@@ -7,6 +7,7 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+--#region FRAME DEFINITIONS AND DEFAULTS ======================================
 M.MODULE_KEY = "aura_frames"
 
 function M.is_runtime_enabled()
@@ -482,6 +483,7 @@ M.defaults = {
     }
 }
 
+--#endregion FRAME DEFINITIONS AND DEFAULTS ===================================
 --#region CUSTOM FRAME TEMPLATE ================================================
 -- Default values for a newly created custom filtered frame.
 -- Each entry in M.db.custom_frames is a copy of this template with a unique id/name.

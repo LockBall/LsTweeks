@@ -6,6 +6,7 @@ local M = addon.audio_volumes
 local STRINGS = M.GUI_STRINGS
 local UI = M.GUI_LAYOUT
 
+--#region SPECIFICS HELPERS ====================================================
 local function create_specifics_help_panel(parent, anchor, anchor_point, offset_x, offset_y, width)
     local panel, text = addon.CreateRivetedPanel(
         parent,
@@ -24,6 +25,8 @@ local function create_specifics_help_panel(parent, anchor, anchor_point, offset_
     panel:SetHeight(math.max(addon.RIVETED_PANEL_STYLE.panel_min_height, text:GetHeight() + (panel_padding * 2)))
     return panel
 end
+
+--#endregion SPECIFICS HELPERS =================================================
 --#region SPECIFICS TAB =========================================================
 
 function M.BuildSpecificsTab(parent)

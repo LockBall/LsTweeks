@@ -6,6 +6,7 @@
 local addon_name, addon = ...
 local M = addon.aura_frames
 
+--#region MODULE STATE AND COOLDOWN REFRESH ====================================
 -- Runtime state tables. The saved DB is attached during ADDON_LOADED.
 M.frames = M.frames or {}
 M.frames_list = M.frames_list or {}
@@ -250,6 +251,7 @@ function M.queue_wow_cooldown_refresh(profile, category_filter)
     end
 end
 
+--#endregion MODULE STATE AND COOLDOWN REFRESH =================================
 --#region AURA ICON TOOLTIPS ===================================================
 
 local function get_aura_tooltip()

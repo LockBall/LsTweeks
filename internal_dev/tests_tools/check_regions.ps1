@@ -78,6 +78,11 @@ function Read-Regions {
     $functions = New-Object System.Collections.Generic.List[object]
     $errors = New-Object System.Collections.Generic.List[string]
 
+    $first_content = $lines | Where-Object { $_.Trim() -ne "" } | Select-Object -First 1
+    if (-not $first_content -or $first_content -notmatch "^--\s+") {
+        $errors.Add("missing short responsibility header before code")
+    }
+
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line_number = $i + 1
         $line = $lines[$i]
@@ -126,6 +131,15 @@ function Read-Regions {
     for ($i = $stack.Count - 1; $i -ge 0; $i--) {
         $start = $stack[$i]
         $errors.Add("$($start.StartLine): unclosed region '$($start.Name)'")
+    }
+
+    foreach ($function in $functions) {
+        $is_covered = @($regions | Where-Object {
+            $function.Line -gt $_.StartLine -and $function.Line -lt $_.EndLine
+        }).Count -gt 0
+        if (-not $is_covered) {
+            $errors.Add("$($function.Line): function '$($function.Name)' is outside a region")
+        }
     }
 
     if ($regions.Count -eq 0) {

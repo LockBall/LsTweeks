@@ -4,7 +4,6 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 ## Table of Contents
 - [Session Start](#session-start)
-- [First Checks](#first-checks)
 - [Collaboration Rules](#collaboration-rules)
 - [Documentation Rules](#documentation-rules)
 - [Engineering Rules](#engineering-rules)
@@ -13,26 +12,23 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 ## Session Start
 1. Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
-2. Read `code_map.md` first for compact file ownership, routing, and verification commands.
-3. Read targeted sections of `project.md` when the request touches architecture, workflow, packaging, LuaLS/Ketho, shared GUI rules, cross-module behavior, or durable project docs.
-4. Read only the relevant module memory file before touching a module. For large module memories, use `code_map.md` section hints or `rg -n "^##" <memory-file>`, then open only the matching section instead of the whole file:
-   `modules/player_frame.md`, `modules/objectives.md`, `modules/audio_volumes.md`, `modules/skyriding_vigor.md`, or `modules/aura_frames.md`.
-5. Read `README.md` only when the request touches public behavior, feature names, settings names, slash commands, install/use expectations, release docs, or user-facing terminology.
-6. Check focused TODO/review notes under `ToDo/` only when the task touches that area. Promote transient notes into durable docs only after code review confirms they are still true.
-7. For tool, LuaLS, packaging, or sandbox problems, check `internal_dev/tests_tools/tools_notes.md` before inventing a new recovery path.
-8. For PowerShell file-writing or newline issues, check `internal_dev/tests_tools/powershell.md` before scripting rewrites.
+2. Read only `code_map.md` `## Read-In Shortcuts` using its section-reader command; do not load the whole map as baseline context.
+3. Follow every route directly matched by the request. Add another route only when the request also matches it.
 
+| Request trigger | Required targeted read |
+| --- | --- |
+| Module code or module behavior | Matching module memory section and source outline before broad source reads |
+| Shared helper, core, or settings factory | `code_map.md` `## Core And Shared Helpers`, then source outline |
+| Architecture, workflow, packaging, LuaLS/Ketho, shared GUI, cross-module behavior, or durable project docs | Matching `project.md` section |
+| Public behavior, names, settings, slash commands, install/use, release docs, or user-facing terminology | `README.md` |
+| Focused active review or follow-up | Matching `ToDo/` note |
+| Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |
+| PowerShell file-writing or newline issue | `internal_dev/tests_tools/powershell.md` |
 
-## First Checks
-- Repo search: `rg` / `rg --files`.
-- Command strings: `code_map.md` `## Fast Commands`.
-- Source read-in: start with `region validation / source outline` before opening whole large Lua files.
-- Routine validation: `fast validation`.
-- Known diagnostic suppressions: when touching suppressed LuaLS/Ketho lines, read the relevant module memory `## Ketho / LuaLS` section before changing or removing the suppression.
-- Package validation: `fast validation plus package build/verify`.
-- Public behavior: compare against `README.md` wording before changing settings names, feature names, slash commands, or user-facing docs.
-- Durable architecture/defaults/tooling changes: update `project.md`.
-- Durable module changes: update that module's memory file.
+- Start investigation or editing after the baseline and directly matched reads are complete. Do not read adjacent modules, whole large memory files, public docs, or review notes merely for familiarity.
+- Before changing a known LuaLS/Ketho suppression, read the relevant module memory `## Ketho / LuaLS` section.
+- Use `code_map.md` `## Fast Commands` for command strings, source outlines, routine validation, package validation, and repo search.
+- Update `project.md` for durable architecture/defaults/tooling changes and the relevant module memory for durable module changes.
 - File scope: routing and session-start guidance only; project facts belong in `project.md`, feature facts in module memory.
 
 

@@ -6,6 +6,7 @@ local addon_name, addon = ...
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
+--#region SHARED FRAME PANEL HELPERS ===========================================
 local function get_timer_font_options()
     local options = {}
     local defs = M.get_number_font_options()
@@ -885,6 +886,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:place_at(max_icons_slider, 6, 4)
 end
 
+--#endregion SHARED FRAME PANEL HELPERS ========================================
 --#region FRAME PANEL BUILDERS =================================================
 function M.build_preset_frame_panel(p, data)
     local frame_config = make_preset_frame_settings_config(data)

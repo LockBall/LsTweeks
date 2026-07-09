@@ -31,7 +31,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 ### Workflow
 - Source of truth: this file plus module files under `proj_mem/modules/`.
 - Durable changes: update this file or the relevant module file for architecture, defaults, APIs, or debugging lessons.
-- Session start: read `agent_start.md` first; `code_map.md` owns read-in shortcuts, validation commands, and source-outline routing.
+- Session start: read `agent_start.md` first, then only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
@@ -93,7 +93,7 @@ internal_dev/          internal docs excluded from release zips
 dist/                   generated package output, ignored
 ```
 
-Every Lua file starts with a short responsibility header before `local addon_name, addon = ...`. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
+Every project Lua file starts with a short responsibility header before code, and each declared function belongs to a named `--#region` so source outlines form a complete source TOC. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
 
 Lua section headers use VS Code foldable region markers with visual dividers: `--#region SECTION NAME =====` and `--#endregion SECTION NAME =====`. Use uppercase section names and keep region markers paired. Put the explanatory section comment directly under `--#region` with no blank line, put no blank line before `--#endregion`, and leave two blank lines before the next `--#region`.
 

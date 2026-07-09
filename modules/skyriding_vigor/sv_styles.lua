@@ -16,6 +16,7 @@ local tonumber = tonumber
 
 local COLOR_EPSILON = 0.001
 
+--#region FLIGHT LOCK HELPERS ==================================================
 local function settings_locked_by_flight()
     return M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()
 end
@@ -28,6 +29,7 @@ local function reject_settings_change_during_flight()
     return true
 end
 
+--#endregion FLIGHT LOCK HELPERS ===============================================
 --#region STYLE DEFINITIONS ====================================================
 
 local MAX_SLOTS = 6

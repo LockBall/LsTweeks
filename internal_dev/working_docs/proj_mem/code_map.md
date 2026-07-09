@@ -3,14 +3,31 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 
 ## Table of Contents
-- [Fast Commands](#fast-commands)
 - [Read-In Shortcuts](#read-in-shortcuts)
+- [Fast Commands](#fast-commands)
 - [Public Surface](#public-surface)
 - [Core And Shared Helpers](#core-and-shared-helpers)
 - [Feature Modules](#feature-modules)
 - [Internal Docs And Tools](#internal-docs-and-tools)
 - [Release Package](#release-package)
 - [Edit Boundaries](#edit-boundaries)
+
+
+## Read-In Shortcuts
+- Baseline after `agent_start.md`: run the worktree check, then read this section only. Defer all other project docs and code-map sections until the request routes to them.
+- Section reader: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 <markdown-file> "<heading>"`; use `-List` to list stable `##` headings.
+
+| Request trigger | Next targeted read |
+| --- | --- |
+| Project workflow, docs ownership, validation, packaging, LuaLS/Ketho, or durable cross-module rule | Matching `project.md` section: `Project Operations`, `Project Overview`, or `Shared Architecture` |
+| Shared helper, settings control, layout, panel, tooltip, button, checkbox, slider, dropdown, color picker, reset panel, or table/default utility | `## Core And Shared Helpers` |
+| Feature module | `## Feature Modules`, then matching module-memory heading; use `rg -n "^##" <memory-file>` before opening a large memory file |
+| Aura Frames CDM regression | `internal_dev/tests_tools/aura_frames_cdm_regression.md` |
+| Audio Volumes public sound asset or preset | `modules/audio_volumes/sounds/sound_reference.md` |
+| Public wording, credits, research, review note, CPU profile, SoundKit constant, package doc, or LuaLS tool note | Read only the directly matched file |
+
+- For source work, run a source outline before broad file reads. Outlines are the source-file TOC; every project Lua file has a short responsibility header and every declared function belongs to a named `--#region`. Keep those markers current instead of duplicating detailed source maps in docs.
+- Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
 
 
 ## Fast Commands
@@ -32,25 +49,6 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 - Headless Lua tests (all suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - Headless Lua tests (one suite): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 <name-substring>`
-
-
-## Read-In Shortcuts
-- Default session read-in is `agent_start.md`, `git status --short`, then this file. Defer everything else until the request routes there.
-- `project.md` workflow, docs ownership, or validation commands: `## Project Operations`.
-- `project.md` addon identity, slash command, SavedVariables, or load-order map: `## Project Overview`.
-- `project.md` module lifecycle, DB defaults, timing buckets, combat guards, or shared GUI rules: `## Shared Architecture`.
-- Shared factory lookup: check `## Core And Shared Helpers` before searching source or hand-building controls. It maps the common addon factories/helpers for settings controls, layout, panels, tooltips, buttons, checkboxes, sliders, dropdowns, color pickers, reset panels, and table/default utilities to their owning files.
-- `modules/aura_frames.md` large-section routing: `## Ownership`, `## Runtime Gates And Refresh`, `## Scanning, Rendering, Timers`, `## Aura Cancellation`, `## Aura Tooltips`, `## Position, Drag, Resize`, `## Profiles And Reset`, `## GUI`, `## Debug, Grid, Style`.
-- Aura Frames CDM manual regression route: `internal_dev/tests_tools/aura_frames_cdm_regression.md`.
-- `modules/skyriding_vigor.md` large-section routing: `## Settings And Defaults`, `## Position And GUI`, `## Assets And Credits`, `## Runtime Visibility And Fade`, `## Charge State`, `## Styles And Rendering`, `## Fill Test And Progress`, `## Module Gating And Race Profile`.
-- `modules/player_frame.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `pf_defaults.lua` defaults, `pf_gui.lua` settings panel, `pf_main.lua` combat text/controller, and `pf_fade.lua` out-of-combat fade.
-- `modules/objectives.md` routing: `## Settings And Defaults` plus `## Runtime Notes`; source ownership is split between `ob_defaults.lua` defaults, `ob_position.lua` All Objectives position/move controls, `ob_auto_collapse.lua` Auto-Collapse, `ob_section_count.lua` Section Count, `ob_background.lua` background/border runtime and settings, and `ob_main.lua` lifecycle/status shell.
-- `modules/audio_volumes.md` routing: use targeted sections such as `## Saved Variables`, `## Ownership`, `## Runtime Rules`, `## Event Cache And Performance`, `## Situations And Quick Picks`, `## GUI`, and `## Ketho / LuaLS`; use source outlines for `av_*` ownership and search `modules/audio_volumes/sounds/sound_reference.md` only when public sound assets or presets matter.
-- Memory heading command: `rg -n "^##" <memory-file>`. Use it before opening large memory files, then read only the matching section.
-- Markdown section read: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 <markdown-file> "<heading>"`; use `-List` to list `##` headings.
-- Source outline command: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline <target paths>`. Outlines include region ranges plus named function declarations inside each region. Use `rg -n "^--#region|^-- [A-Za-z].*" <target paths>` only for a quick fallback. Treat file responsibility headers and `--#region` markers as the source-code TOC before broad reads; keep those headers/regions current instead of copying detailed per-file maps into docs.
-- Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
-- Read `README.md`, public `sources.md`, research source references, focused review notes, CPU profiles, SoundKit constants, packaging docs, or LuaLS tool notes only when the request directly routes there.
 
 
 ## Public Surface
