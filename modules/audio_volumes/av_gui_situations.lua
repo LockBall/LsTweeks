@@ -14,6 +14,10 @@ local function set_checked_silently(control, value)
     end
 end
 
+local function get_situation_control_key(situation_key, field)
+    return "situation_" .. situation_key .. "_" .. field
+end
+
 function M.sync_temporary_profile_controls()
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
@@ -40,10 +44,10 @@ function M.sync_temporary_profile_controls()
     local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
     for situation_id, situation in pairs(custom_situations) do
         local situation_key = "custom:" .. situation_id
-        local enabled_control = M.controls["situation_" .. situation_key:gsub("[^%w_]", "_") .. "_enabled"]
+        local enabled_control = M.controls[get_situation_control_key(situation_key, "enabled")]
         set_checked_silently(enabled_control, situation.enabled)
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-            local slider = M.controls["situation_" .. situation_key .. "_" .. channel.key]
+            local slider = M.controls[get_situation_control_key(situation_key, channel.key)]
             if slider and slider.SetValueSilently then
                 slider:SetValueSilently(situation[channel.key])
             end
@@ -383,7 +387,7 @@ function M.BuildSituationsTab(parent)
                 checked = entry.db.enabled == true,
                 control_key = entry.key == "quiet_custom"
                     and "quiet_custom_enabled"
-                    or ("situation_" .. entry.key:gsub("[^%w_]", "_") .. "_enabled"),
+                    or get_situation_control_key(entry.key, "enabled"),
                 on_click = function(is_checked)
                     if M.set_manual_situation_enabled then
                         M.set_manual_situation_enabled(entry.key, is_checked == true)
@@ -468,7 +472,7 @@ function M.BuildSituationsTab(parent)
                 end
             )
             situation_grid:place_at(slider, 1, i)
-            M.controls["situation_" .. entry.key .. "_" .. channel.key] = slider
+            M.controls[get_situation_control_key(entry.key, channel.key)] = slider
             if entry.key == "fishing" then
                 M.controls["fishing_focus_" .. channel.key] = slider
             elseif entry.key == "combat" then

@@ -198,6 +198,8 @@ local function handle_event(_, event)
 
     local slots = M._event_cache and M._event_cache[event]
     if not slots then return end
+    -- SOUND_EVENT_TARGETS currently assigns one target per event. Keep the
+    -- early return so a future shared event cannot create double playback.
     for i = 1, #slots do
         local slot = slots[i]
         if slot.path then

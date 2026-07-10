@@ -157,6 +157,8 @@ h.test("Situations controls rebuild against reset profile tables", function()
     AV.BuildSettings(parent)
     local stale_fishing = AV.get_fishing_focus_db()
     h.ok(AV.controls["situation_" .. custom_key .. "_master"], "custom situation control exists before reset")
+    h.ok(AV.controls["situation_" .. custom_key .. "_enabled"], "custom situation enable control uses the shared key convention")
+    h.is_nil(AV.controls["situation_" .. custom_key:gsub("[^%w_]", "_") .. "_enabled"], "custom situation enable control does not use a second key convention")
 
     table.wipe(av_db())
     h.addon.deep_copy_into(AV.defaults.audio_volumes, av_db())

@@ -98,6 +98,8 @@ M.SOUND_TARGETS = {
 apply_replacement_paths(M.SOUND_TARGETS)
 
 M.SOUND_EVENT_TARGETS = {}
+-- Each event intentionally belongs to one target. handle_event plays only the
+-- first cached slot, so revisit that handler before assigning an event twice.
 for target_key, target in pairs(M.SOUND_TARGETS) do
     for _, event_name in ipairs(target.events or {}) do
         local event_targets = M.SOUND_EVENT_TARGETS[event_name]
