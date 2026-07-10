@@ -60,7 +60,9 @@ function Assert-UnderRoot {
         [System.IO.Path]::GetFullPath($Path)
     }
 
-    if (-not $resolvedPath.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+    $rootPrefix = $resolvedRoot.TrimEnd([char[]]@('\', '/')) + [System.IO.Path]::DirectorySeparatorChar
+    $isRoot = $resolvedPath.Equals($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)
+    if (-not $isRoot -and -not $resolvedPath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to operate outside repository root: $resolvedPath"
     }
 }

@@ -55,7 +55,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 ### Packaging / Release
 - Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
-- Packaging docs and policy live in `package_me.md` and `package-policy.json`.
+- Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - README image assets and Audio Volumes reference/log files are public-facing and included.
 

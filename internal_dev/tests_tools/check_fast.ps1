@@ -7,7 +7,21 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-$luac = "C:\Program Files (x86)\Lua\5.1\luac.exe"
+$luacCandidates = @(
+    "C:\Program Files (x86)\Lua\5.1\luac.exe",
+    "luac5.1",
+    "luac51",
+    "luac"
+)
+$luac = $null
+
+foreach ($candidate in $luacCandidates) {
+    $command = Get-Command $candidate -ErrorAction SilentlyContinue
+    if ($command) {
+        $luac = $command.Source
+        break
+    }
+}
 
 function Invoke-Step {
     param(
@@ -91,8 +105,13 @@ function Get-ChangedLuaFiles {
     }
 }
 
-if (-not (Test-Path -LiteralPath $luac)) {
-    throw "Missing Lua 5.1 compiler: $luac"
+if (-not $luac) {
+    throw "Missing Lua 5.1 compiler. Checked: $($luacCandidates -join ', ')"
+}
+
+$luacVersion = (& $luac -v 2>&1 | Out-String).Trim()
+if ($luacVersion -notmatch "Lua 5\.1") {
+    throw "Lua 5.1 compiler required; found '$luacVersion' at $luac"
 }
 
 Push-Location $repoRoot
@@ -122,6 +141,7 @@ try {
 
     Invoke-Step "Whitespace diff check" {
         git diff --check
+        git diff --cached --check
     }
 
     Invoke-Step "Line endings" {
