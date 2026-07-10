@@ -35,6 +35,14 @@ function M.BuildSettings(parent)
         { label = "Profiles", builder = M.BuildProfilesTab },
     }
     local selected_index = math.max(1, math.min(#definitions, tonumber(db.last_tab_index) or 1))
+    local function build_panel(index)
+        local panel = CreateFrame("Frame", nil, parent)
+        panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -48)
+        panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+        panels[index] = panel
+        definitions[index].builder(panel)
+        return panel
+    end
     local function select_tab(index)
         selected_index = definitions[index] and index or 1
         db.last_tab_index = selected_index
@@ -50,12 +58,14 @@ function M.BuildSettings(parent)
         tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and parent or tabs[i - 1], i == 1 and "TOPLEFT" or "RIGHT", i == 1 and 20 or 5, -12)
         PanelTemplates_TabResize(tab, 0)
         tabs[i] = tab
-        local panel = CreateFrame("Frame", nil, parent)
-        panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -48)
-        panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-        panels[i] = panel
-        definition.builder(panel)
+        build_panel(i)
         tab:SetScript("OnClick", function(self) select_tab(self:GetID()) end)
+    end
+    M.rebuild_tracker_tab = function()
+        local tracker_index = 2
+        if panels[tracker_index] then panels[tracker_index]:Hide() end
+        build_panel(tracker_index)
+        if selected_index == tracker_index then panels[tracker_index]:Show() end
     end
     PanelTemplates_SetNumTabs(parent, #definitions)
     select_tab(selected_index)

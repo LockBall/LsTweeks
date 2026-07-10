@@ -55,6 +55,7 @@ end
 
 function M.on_reset_complete()
     if M.migrate_background_settings then M.migrate_background_settings(M.get_db()) end
+    if M.rebuild_tracker_tab then M.rebuild_tracker_tab() end
     M.apply_objectives()
     if M.refresh_profiles_tab then M.refresh_profiles_tab() end
 end

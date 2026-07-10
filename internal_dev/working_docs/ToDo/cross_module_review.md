@@ -15,8 +15,8 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 
 - [x] 1. Reset and profile references — completed initial scan; remove stale table/callback ownership and obsolete reset construction.
 - [x] 2. Delayed restore ownership — audited previews, timers, tickers, debounces, and deferred work that can overwrite newer state.
-- [ ] 3. Temporary-state symmetry — compare temporary-state read/write/cache guards across relevant modules.
-- [ ] 4. UI and runtime synchronization — verify reset/profile loads refresh controls, panels, event registrations, and session state.
+- [x] 3. Temporary-state symmetry — compared temporary-state read/write/cache guards across relevant modules.
+- [x] 4. UI and runtime synchronization — verified reset/profile-load control, panel, event, and session synchronization.
 - [ ] 5. Shared factory contracts — audit shared UI/profile factory consumers for consistent confirmation, lifecycle, and control APIs.
 
 
@@ -38,12 +38,14 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 - [ ] Compare every read path with its matching write path when a temporary runtime override is active. Fishing/Combat/Quick Pick-style states must use the same activation guard for cached normal values.
 - [ ] Confirm copy, seed, default, display, and restore helpers read the intended normal or temporary source.
 - [ ] Add a focused test for each temporary state that differs from the primary state.
+- [x] Initial cross-module audit: Audio Volumes cached-profile reads and writes share Fishing/Combat/Quick Pick activation guards; Skyriding Vigor settings access follows the active normal/race profile; Aura Frames derives test/move activity from the same frame config; Player Frame has no alternate settings profile.
 
 
 ## UI And Runtime Synchronization
 - [ ] After reset/profile load, synchronize runtime state, events, timers, control values, cached panels, selected entries, and any module-specific frame ownership.
 - [ ] Reset session-only flags and test modes when they would otherwise reactivate unexpectedly after defaults restore.
 - [x] Skyriding Vigor reset clears Fill Test, Race Profile Test, and race-active session state, and its General reset retains the active-flight gate.
+- [x] Initial cross-module audit: Aura Frames refreshes frames, tree, profile UI, and runtime; Audio Volumes rebuilds Situations and resyncs events; Skyriding Vigor synchronizes active-profile controls/runtime; Objectives rebuilds Tracker controls before reapplying runtime after reset or profile load.
 - [ ] Recheck disabled and combat-locked behavior; a reset/load must not leave runtime active against newly replaced settings.
 
 
