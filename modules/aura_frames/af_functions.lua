@@ -494,6 +494,8 @@ function M.cdm_category_needs_viewer(category)
 end
 
 function M.mark_aura_scan_dirty()
+    if M._aura_scan_dirty then return end
+
     M._aura_scan_dirty = true
     M.clear_custom_aura_scan_cache()
     if M.clear_sorted_aura_ids_cache then

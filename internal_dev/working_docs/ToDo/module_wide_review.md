@@ -38,9 +38,10 @@ Patterns found while working through `objectives_review.md` that may apply to ot
    - Check modules using shared popups or preview controls for session-scoped flags that need reset on open, accept, cancel, or reset.
    - Completed: reviewed shared color picker, dropdown, module-reset, sliders, Aura Frames dialogs/previews, Audio Volumes previews, and Skyriding test state. Fixed the shared color picker so its live callbacks clear on cancel or popup hide; its session identity prevents a closing older popup from clearing a newer session.
 
-- [ ] 9. Audit redundant work on already-satisfied state.
+- [x] 9. Audit redundant work on already-satisfied state.
    - Source pattern: Objectives removed relayout calls, repeated anchoring, repeated show/hide, duplicate setup calls, and unchanged overlay writes.
    - Check event handlers, sync functions, and slider/picker previews for signature/state checks before frame writes, relayout calls, allocation-heavy work, or timer scheduling.
+   - Completed: reviewed Objectives, Aura Frames, Audio Volumes, Player Frame, Skyriding Vigor, and shared controls. Existing state/signature guards cover repeated frame writes, preview timers, fades, and layout. Aura Frames now clears its custom and sorted scan caches only once while a unified scan is pending.
 
 - [ ] 10. Audit high-frequency event debounce buckets.
    - Source pattern: Objectives moved quest/achievement event bursts from next-frame sync to a fifth-second bucket while keeping manual/UI paths immediate.

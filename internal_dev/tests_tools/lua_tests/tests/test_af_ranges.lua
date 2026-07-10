@@ -47,6 +47,25 @@ h.test("visible icon ticker refresh stops idle ticker immediately", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
 end)
 
+h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()
+    local M = load_aura_frames()
+    local custom_cache_clears = 0
+    local sorted_cache_clears = 0
+    M._aura_scan_dirty = false
+    M.clear_custom_aura_scan_cache = function()
+        custom_cache_clears = custom_cache_clears + 1
+    end
+    M.clear_sorted_aura_ids_cache = function()
+        sorted_cache_clears = sorted_cache_clears + 1
+    end
+
+    M.mark_aura_scan_dirty()
+    M.mark_aura_scan_dirty()
+
+    h.eq(custom_cache_clears, 1, "custom Aura cache clears once per pending scan")
+    h.eq(sorted_cache_clears, 1, "sorted Aura cache clears once per pending scan")
+end)
+
 h.run("af_ranges")
 
 --#endregion FILE CONTENTS ===================================================
