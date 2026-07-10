@@ -59,14 +59,17 @@ function addon.CreateProfileManager(opts)
     function manager:save(name, overwrite)
         name = trim_name(name)
         if name == "" then return false, "Enter a profile name." end
+        if not (self.get_db and self.get_db()) then return false, "Profile storage is unavailable." end
         if type(self.export_data) ~= "function" then return false, "Profile export is unavailable." end
+        local data = self.export_data()
+        if type(data) ~= "table" then return false, "Profile data is unavailable." end
         local existing, index = self:find(name)
         if existing and not overwrite then return false, "Profile already exists. Use Overwrite." end
         local profile = {
             name = name,
             version = self.schema_version,
             saved_at = date and date("%Y-%m-%d %H:%M") or nil,
-            data = deep_copy(self.export_data()),
+            data = deep_copy(data),
         }
         local profiles = self:get_profiles()
         if index then profiles[index] = profile else profiles[#profiles + 1] = profile end
@@ -86,6 +89,7 @@ function addon.CreateProfileManager(opts)
     end
 
     function manager:rename(old_name, new_name)
+        old_name = trim_name(old_name)
         local profile = self:find(old_name)
         if not profile then return false, "Profile not found." end
         new_name = trim_name(new_name)

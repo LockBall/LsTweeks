@@ -17,7 +17,7 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 - [x] 2. Delayed restore ownership — audited previews, timers, tickers, debounces, and deferred work that can overwrite newer state.
 - [x] 3. Temporary-state symmetry — compared temporary-state read/write/cache guards across relevant modules.
 - [x] 4. UI and runtime synchronization — verified reset/profile-load control, panel, event, and session synchronization.
-- [ ] 5. Shared factory contracts — audit shared UI/profile factory consumers for consistent confirmation, lifecycle, and control APIs.
+- [x] 5. Shared factory contracts — audited shared UI/profile factory consumers for consistent confirmation, lifecycle, and control APIs.
 
 
 ## Reset And Profile References
@@ -53,6 +53,7 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 - [ ] Shared factories own shared safety behavior: confirmation dialogs, deep-copy isolation, versioned profile envelopes, combat guards, and public control synchronization APIs.
 - [ ] Module profile files own only module-specific snapshot allowlists, migrations, validation, and runtime application.
 - [ ] Audit every existing consumer when changing a shared factory so behavior remains consistent across Aura Frames, Audio Volumes, Objectives, Skyriding Vigor, and future modules.
+- [x] Initial audit: Aura Frames, Audio Volumes, Objectives, and Skyriding Vigor use `BuildProfilesTab`; module profile files keep their own export/apply contracts. The factory owns overwrite/delete confirmations, copy isolation, version envelopes, and load combat guards, and now rejects saves when storage or exported data is unavailable. The unreachable Aura Frames pre-factory tab builder was removed, leaving one shared UI path.
 
 
 ## Priority Scan Targets
