@@ -63,6 +63,7 @@
 - Disabled sync should not create situation event frames or initialize situation DB values.
 - Normal Volumes sliders edit the user's normal `Sound_*` CVars. If a temporary situation is active, they update the cached normal values restored afterward instead of overwriting the active temporary situation.
 - Normal Volume reads use the cached profile for Fishing, Combat, and active manual Quick Picks, so slider display and Use Normal copy/seed helpers always use normal values rather than temporary CVar overrides.
+- During a situation preview, Normal Volume edits update the preview restore cache so the delayed restore applies the new normal value rather than overwriting the edit.
 - Preview buttons play FishingBobber SoundKit `3355` on SFX. Normal Volumes preview must not write CVars; situation previews temporarily apply and then restore their CVar values.
 - Active situation application cancels/restores any pending situation preview before writing runtime CVars, so a delayed preview restore cannot overwrite a newly active Fishing, Combat, or Quick Pick situation.
 - Temporary situation GUI refresh uses the shared slider `SetValueSilently()` helper so programmatic display sync does not schedule situation resync callbacks.

@@ -218,6 +218,16 @@ h.test("Normal test-sound preview does not cache or restore CVars", function()
     h.eq(stub.cvars.Sound_MasterVolume, before, "Normal preview leaves CVars untouched")
 end)
 
+h.test("Normal edits survive a situation-preview restore", function()
+    reset_sound_state()
+    local combat = AV.get_combat_volumes_db()
+    combat.master = 20
+    AV.play_situation_preview("combat", "bloodlust")
+    AV.set_current_sound_channel_percent(AV.FISHING_FOCUS_CHANNELS[1], 80)
+    h.advance(2.1)
+    h.eq(stub.cvars.Sound_MasterVolume, "0.8", "preview restore keeps Normal edit")
+end)
+
 h.test("combat volumes win over fishing focus and restore cleanly through both exits", function()
     reset_sound_state()
     local focus_db = AV.get_fishing_focus_db()

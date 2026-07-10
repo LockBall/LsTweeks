@@ -205,15 +205,31 @@ function addon.BuildProfilesTab(parent, manager, opts)
         control:SetScript("OnClick", on_click)
         return control
     end
+    local function confirm(dialog_key, text, accept_text, on_accept)
+        StaticPopupDialogs[dialog_key] = {
+            text = text,
+            button1 = accept_text,
+            button2 = "Cancel",
+            OnAccept = on_accept,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+        StaticPopup_Show(dialog_key)
+    end
     local save = button("Save New", { "TOPLEFT", status, "BOTTOMLEFT", 0, -18 }, function()
         local ok, message = manager:save(get_name(), false)
         if ok then select_profile(get_name()); rebuild_list() end
         set_status(ok, message)
     end)
     button("Overwrite", { "LEFT", save, "RIGHT", 8, 0 }, function()
-        local ok, message = manager:save(get_name(), true)
-        if ok then select_profile(get_name()); rebuild_list() end
-        set_status(ok, message)
+        local name = get_name()
+        if name == "" then set_status(false, "Enter a profile name to overwrite."); return end
+        confirm("LSTWEEKS_OVERWRITE_PROFILE", 'Overwrite ' .. label:lower() .. ' profile "' .. name .. '"?', "Overwrite", function()
+            local ok, message = manager:save(name, true)
+            if ok then select_profile(name); rebuild_list() end
+            set_status(ok, message)
+        end)
     end)
     local load = button("Load", { "TOPLEFT", save, "BOTTOMLEFT", 0, -8 }, function()
         local name = get_name() ~= "" and get_name() or selected_name
@@ -230,9 +246,12 @@ function addon.BuildProfilesTab(parent, manager, opts)
     end)
     button("Delete", { "TOPLEFT", load, "BOTTOMLEFT", 0, -8 }, function()
         local name = get_name() ~= "" and get_name() or selected_name
-        local ok, message = manager:delete(name)
-        if ok then selected_name = manager:get_selected_name(); name_box:SetText(selected_name or ""); rebuild_list() end
-        set_status(ok, message)
+        if not name or name == "" then set_status(false, "Select a profile to delete."); return end
+        confirm("LSTWEEKS_DELETE_PROFILE", 'Delete ' .. label:lower() .. ' profile "' .. name .. '"?', "Delete", function()
+            local ok, message = manager:delete(name)
+            if ok then selected_name = manager:get_selected_name(); name_box:SetText(selected_name or ""); rebuild_list() end
+            set_status(ok, message)
+        end)
     end)
     rebuild_list()
     return function()

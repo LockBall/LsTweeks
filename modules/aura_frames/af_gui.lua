@@ -25,7 +25,7 @@ local function create_profile_button(parent, text, width, on_click)
     return button
 end
 
-local function build_profiles_tab(parent)
+local function build_profiles_tab_legacy(parent)
     local selected_name = M.db and M.db.last_profile_name
     local rows = {}
 
@@ -246,6 +246,13 @@ local function build_profiles_tab(parent)
     delete:SetPoint("TOPLEFT", load, "BOTTOMLEFT", 0, -8)
 
     rebuild_profile_list()
+end
+
+local function build_profiles_tab(parent)
+    M.refresh_profiles_tab = addon.BuildProfilesTab(parent, M.profile_manager, {
+        label = "Aura Frames",
+        note = "Profiles save the complete Aura Frames setup for use on another character.",
+    })
 end
 
 local function build_frames_data()

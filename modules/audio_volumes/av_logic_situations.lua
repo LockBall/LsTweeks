@@ -407,6 +407,10 @@ function M.set_current_sound_channel_percent(channel, percent)
     if not channel then return end
     local value = math.max(0, math.min(100, tonumber(percent) or 0))
     local cvar_value = tostring(value / 100)
+    if M._fishing_bobber_preview_cached then
+        M._fishing_bobber_preview_cached[channel.cvar] = cvar_value
+        return
+    end
     if (M._fishing_focus_active or M._combat_volumes_active or M._manual_situation_active_key) and M._temporary_sound_profile_cached then
         M._temporary_sound_profile_cached[channel.cvar] = cvar_value
         M._fishing_focus_cached = M._temporary_sound_profile_cached
