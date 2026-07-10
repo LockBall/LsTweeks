@@ -116,7 +116,7 @@ Important `aura_frames` keys:
 
 
 ## Profiles And Reset
-- Aura Frame Profiles live under `M.db.profiles`; save/load is owned by `af_profiles.lua` with an explicit schema.
+- Aura Frame Profiles live under `M.db.profiles`; `af_profiles.lua` owns the explicit schema and runtime apply hook while the shared profile manager owns versioned CRUD and storage.
 - Loading a profile is blocked in combat. It replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.

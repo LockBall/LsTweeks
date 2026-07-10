@@ -118,6 +118,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Timed visual progress should use real elapsed time, aura expiration, or WoW duration objects. Fixed-interval timers belong to debounces, event buckets, polling, retry/follow-up work, and preview restore delays where nominal cadence is the contract.
 - Delayed work and state helpers must be safe when called in isolation: gate cheap no-op states before queuing, stop stale tickers as soon as no work remains, refresh combat/enablement/lifecycle guards inside helpers, and add headless tests when the harness can model the risk.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
+- Reusable profile mechanics live in `functions/profiles.lua` through `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`. Each module keeps its own profile file for the explicit snapshot schema, migrations, and post-load runtime refresh.
 - Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
 - Keep high-frequency runtime paths narrow. If code runs every frame/tick or many

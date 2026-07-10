@@ -51,6 +51,12 @@ function M.on_reset_complete()
         end
     end
 
+    if M.rebuild_situations_tab then
+        M.rebuild_situations_tab()
+    end
+    if M.refresh_profiles_tab then
+        M.refresh_profiles_tab()
+    end
     if M.sync_temporary_profile_controls then
         M.sync_temporary_profile_controls()
     end

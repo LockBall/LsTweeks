@@ -34,6 +34,7 @@ functions\color_picker.lua
 functions\panel_riveted.lua
 functions\dropdown.lua
 functions\group_column.lua
+functions\profiles.lua
 
 # --- Modules ---
 modules\about.lua
@@ -54,10 +55,12 @@ modules\audio_volumes\av_defaults.lua
 modules\audio_volumes\av_functions.lua
 modules\audio_volumes\av_logic_main.lua
 modules\audio_volumes\av_logic_situations.lua
+modules\audio_volumes\av_profiles.lua
 modules\audio_volumes\av_gui.lua
 modules\audio_volumes\av_gui_general.lua
 modules\audio_volumes\av_gui_specifics.lua
 modules\audio_volumes\av_gui_situations.lua
+modules\audio_volumes\av_gui_profiles.lua
 modules\audio_volumes\av_main.lua
 modules\skyriding_vigor\sv_defaults.lua
 modules\skyriding_vigor\sv_styles.lua

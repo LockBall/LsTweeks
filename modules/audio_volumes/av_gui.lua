@@ -305,6 +305,7 @@ function M.BuildSettings(parent)
         { label = "General", builder = M.BuildGeneralTab },
         { label = "Specifics", builder = M.BuildSpecificsTab },
         { label = "Situations", builder = M.BuildSituationsTab },
+        { label = "Profiles", builder = M.BuildProfilesTab },
     }
     local selected_index = math.max(1, math.min(#tab_defs, tonumber(db.last_tab_index) or 1))
 
@@ -328,6 +329,17 @@ function M.BuildSettings(parent)
         end
     end
 
+    local function build_tab_panel(index)
+        local def = tab_defs[index]
+        local tab_panel = CreateFrame("Frame", nil, parent)
+        tab_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, UI.content_top)
+        tab_panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+        tab_panel:Hide()
+        tab_panels[index] = tab_panel
+        def.builder(tab_panel)
+        return tab_panel
+    end
+
     for i, def in ipairs(tab_defs) do
         local tab = CreateFrame("Button", nil, parent, "PanelTabButtonTemplate")
         tab:SetText(def.label)
@@ -335,17 +347,35 @@ function M.BuildSettings(parent)
         tab:SetPoint(i == 1 and "TOPLEFT" or "LEFT", i == 1 and parent or tabs[i-1], i == 1 and "TOPLEFT" or "RIGHT", i == 1 and UI.pad_x or 5, i == 1 and UI.pad_y or 0)
         PanelTemplates_TabResize(tab, 0)
         tabs[i] = tab
-
-        local tab_panel = CreateFrame("Frame", nil, parent)
-        tab_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, UI.content_top)
-        tab_panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-        tab_panel:Hide()
-        tab_panels[i] = tab_panel
-
-        def.builder(tab_panel)
+        build_tab_panel(i)
         tab:SetScript("OnClick", function(self)
             select_tab(self:GetID())
         end)
+    end
+
+    M.rebuild_situations_tab = function()
+        local situations_index = 3
+        local old_panel = tab_panels[situations_index]
+        if old_panel then
+            old_panel:Hide()
+        end
+        for control_key in pairs(M.controls) do
+            if control_key == "fishing_focus_refresh_current"
+                or control_key:match("^normal_volume_")
+                or control_key:match("^fishing_focus_")
+                or control_key:match("^combat_volumes_")
+                or control_key == "quiet_custom_enabled"
+                or control_key:match("^situation_") then
+                M.controls[control_key] = nil
+            end
+        end
+        build_tab_panel(situations_index)
+        if selected_index == situations_index then
+            tab_panels[situations_index]:Show()
+            if tab_panels[situations_index]._lstweeks_refresh_current then
+                tab_panels[situations_index]._lstweeks_refresh_current()
+            end
+        end
     end
 
     PanelTemplates_SetNumTabs(parent, #tab_defs)

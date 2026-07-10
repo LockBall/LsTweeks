@@ -125,8 +125,10 @@ M.defaults = {
             test_sound = "bloodlust",
         },
         custom_situations = {},
+        profiles = {},
         last_situation_key = "fishing",
         last_quick_pick_key = "quiet_custom",
+        last_profile_name = nil,
         next_custom_situation_id = 1,
         targets = {
             achievement = {

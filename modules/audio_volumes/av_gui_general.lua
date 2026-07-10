@@ -13,6 +13,9 @@ function M.BuildGeneralTab(parent)
     title:SetText("General")
 
     local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.audio_volumes, {
+        preserve_label = "Keep Profiles",
+        preserve_default = true,
+        preserve_keys = { "profiles", "last_profile_name" },
         after_reset = M.on_reset_complete,
     })
     reset:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -24)

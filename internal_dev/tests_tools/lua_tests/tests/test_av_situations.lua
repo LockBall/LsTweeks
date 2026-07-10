@@ -122,6 +122,30 @@ h.test("Specifics controls write the reset target table", function()
     h.eq(stale_target.preset, "10", "slider leaves stale target table untouched")
 end)
 
+h.test("Situations controls rebuild against reset profile tables", function()
+    reset_sound_state()
+    local custom_key = AV.create_custom_situation()
+    av_db().last_tab_index = 3
+    av_db().last_situation_key = custom_key
+    local parent = CreateFrame("Frame", nil, UIParent)
+    AV.BuildSettings(parent)
+    local stale_fishing = AV.get_fishing_focus_db()
+    h.ok(AV.controls["situation_" .. custom_key .. "_master"], "custom situation control exists before reset")
+
+    table.wipe(av_db())
+    h.addon.deep_copy_into(AV.defaults.audio_volumes, av_db())
+    AV.on_reset_complete()
+    local fresh_fishing = AV.get_fishing_focus_db()
+    h.ok(fresh_fishing ~= stale_fishing, "reset replaces fishing profile table")
+    h.is_nil(AV.controls["situation_" .. custom_key .. "_master"], "deleted custom control is removed with rebuilt tab")
+
+    local fishing_slider = AV.controls.fishing_focus_master.slider
+    fishing_slider:SetValue(45)
+    fishing_slider:GetScript("OnValueChanged")(fishing_slider, 45)
+    h.eq(fresh_fishing.master, 45, "slider updates reset fishing profile table")
+    h.ok(stale_fishing.master ~= 45, "slider leaves stale fishing profile table untouched")
+end)
+
 h.test("Original toggle previews only when Play on Adjust is enabled", function()
     reset_sound_state()
     local parent = CreateFrame("Frame", nil, UIParent)
@@ -147,6 +171,32 @@ h.test("Original toggle previews only when Play on Adjust is enabled", function(
     original_control.checkbox:Click()
     h.eq(previews, 1, "Original toggle previews when Play on Adjust is enabled")
     AV.play_replacement = original_play_replacement
+end)
+
+h.test("Audio Volumes profiles restore copied sound and situation settings", function()
+    reset_sound_state()
+    local db = av_db()
+    db.profiles = {}
+    local target = AV.get_target_db("ready_check")
+    target.preset = "5"
+    local fishing = AV.get_fishing_focus_db()
+    fishing.enabled = true
+    fishing.master = 35
+    local custom_key = AV.create_custom_situation()
+    AV.get_situation_profile_db(custom_key).music = 15
+
+    local ok = AV.save_audio_volumes_profile("Regression", false)
+    h.ok(ok, "profile saves")
+    target.preset = "15"
+    fishing.master = 80
+    AV.get_situation_profile_db(custom_key).music = 90
+
+    ok = AV.load_audio_volumes_profile("Regression")
+    h.ok(ok, "profile loads")
+    h.eq(AV.get_target_db("ready_check").preset, "5", "target preset restored")
+    h.eq(AV.get_fishing_focus_db().master, 35, "fishing profile restored")
+    h.eq(AV.get_situation_profile_db(custom_key).music, 15, "custom Quick Pick restored")
+    h.eq(AV.get_audio_volumes_profiles()[1].version, 1, "profile records schema version")
 end)
 
 h.test("combat volumes win over fishing focus and restore cleanly through both exits", function()

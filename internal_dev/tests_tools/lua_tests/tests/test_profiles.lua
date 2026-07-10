@@ -1,0 +1,47 @@
+-- Shared profile manager regression coverage.
+---@diagnostic disable: undefined-global
+
+package.path = arg[0]:gsub("[\\/][^\\/]+$", "") .. "/../?.lua;" .. package.path
+local h = require("harness")
+
+--#region PROFILE MANAGER ======================================================
+
+h.load_addon()
+h.boot({})
+
+h.test("shared profile manager isolates saved data and tracks selection", function()
+    local db = {}
+    local live = { nested = { value = 10 } }
+    local manager = h.addon.CreateProfileManager({
+        label = "Test",
+        get_db = function() return db end,
+        export_data = function() return live end,
+        apply_data = function(data)
+            live = data
+            return true, "Loaded profile."
+        end,
+    })
+    local ok = manager:save("One", false)
+    h.ok(ok, "save succeeds")
+    live.nested.value = 40
+    ok = manager:load("One")
+    h.ok(ok, "load succeeds")
+    h.eq(live.nested.value, 10, "load restores independent copy")
+    h.eq(manager:get_selected_name(), "One", "saved profile remains selected")
+end)
+
+h.test("Aura Frames profiles retain their module-specific refresh contract", function()
+    local AF = h.addon.aura_frames
+    AF.db.profiles = {}
+    AF.db.short_threshold = 7
+    local ok = AF.save_aura_frame_profile("Aura Regression", false)
+    h.ok(ok, "Aura Frames profile saves through shared manager")
+    AF.db.short_threshold = 19
+    ok = AF.load_aura_frame_profile("Aura Regression")
+    h.ok(ok, "Aura Frames profile loads through shared manager")
+    h.eq(AF.db.short_threshold, 7, "Aura Frames schema restores its own setting")
+end)
+
+h.run("profiles")
+
+--#endregion PROFILE MANAGER ===================================================
