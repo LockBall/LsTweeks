@@ -322,6 +322,17 @@ function frame_methods:SetTexelSnappingBias() end
 -- Slider / StatusBar widgets
 function frame_methods:SetValue(v) record(self, "SetValue", v); self.__value = v end
 function frame_methods:GetValue() return self.__value end
+function frame_methods:Init(initial_value)
+    if self.Slider then self.Slider:SetValue(initial_value) end
+end
+function frame_methods:RegisterCallback(event, callback)
+    self.__callbacks = self.__callbacks or {}
+    self.__callbacks[event] = callback
+end
+function frame_methods:TriggerCallback(event, ...)
+    local callback = self.__callbacks and self.__callbacks[event]
+    if callback then callback(self, ...) end
+end
 function frame_methods:SetMinMaxValues(lo, hi) self.__min, self.__max = lo, hi end
 function frame_methods:GetMinMaxValues() return self.__min or 0, self.__max or 1 end
 function frame_methods:SetValueStep(step) self.__step = step end

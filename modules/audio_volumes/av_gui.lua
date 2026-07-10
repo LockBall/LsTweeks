@@ -130,7 +130,7 @@ local function has_original_playback(target)
 end
 
 function M.BuildSoundTargetSliderPanel(parent, target_key, target)
-    local target_db = M.get_target_db(target_key)
+    local initial_target_db = M.get_target_db(target_key)
 
     local slider_panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     slider_panel:SetSize(UI.slider_panel_width, UI.slider_panel_height)
@@ -147,12 +147,12 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     slider_container:SetSize(UI.slider_frame_width, UI.slider_frame_height)
     slider_container:SetPoint("TOP", slider_panel, "TOP", 0, -36)
 
-    local current_preset = M.get_preset_by_value(target_db.preset)
+    local current_preset = M.get_preset_by_value(initial_target_db.preset)
     local preset_options = M.PRESET_OPTIONS or {}
     local slider_min = 0
     local slider_max = math.max(#preset_options - 1, 0)
     local slider_steps = slider_max - slider_min
-    local initial_slider_value = target_db.sound_off == true and slider_min or (current_preset and current_preset.slider_value or slider_max)
+    local initial_slider_value = initial_target_db.sound_off == true and slider_min or (current_preset and current_preset.slider_value or slider_max)
 
     local slider_widget = CreateFrame("Frame", nil, slider_panel, "MinimalSliderWithSteppersTemplate")
     slider_widget:SetSize(UI.slider_width, UI.slider_height)
@@ -177,10 +177,12 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     end
 
     local function sync_original_inactive_state()
+        local target_db = M.get_target_db(target_key)
         set_slider_inactive(target_db.use_original == true)
     end
 
     local function clear_original_from_slider_interaction()
+        local target_db = M.get_target_db(target_key)
         if target_db.use_original ~= true then return end
         target_db.use_original = false
         if original_container and original_container.SetCheckedSilently then
@@ -202,6 +204,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
         if suppress_original_clear then
             return
         end
+        local target_db = M.get_target_db(target_key)
         clear_original_from_slider_interaction()
         if target_db.play_on_adjust == true then
             M.queue_adjust_preview(target_key)
@@ -246,8 +249,9 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     original_container, original_checkbox, original_label = addon.CreateCheckbox(
         slider_panel,
         STRINGS.use_original_label,
-        target_db.use_original == true,
+        initial_target_db.use_original == true,
         function(is_checked)
+            local target_db = M.get_target_db(target_key)
             target_db.use_original = is_checked == true
             if is_checked == true then
                 target_db.sound_off = false
@@ -257,12 +261,14 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
             sync_original_inactive_state()
             M.stop_preview_sound()
             M.apply_audio_volumes()
-            M.play_replacement(target_key)
+            if target_db.play_on_adjust == true then
+                M.play_replacement(target_key)
+            end
         end
     )
     sync_original_inactive_state()
     if not has_original_playback(target) then
-        target_db.use_original = false
+        initial_target_db.use_original = false
         original_container:SetCheckedSilently(false)
         original_container:Disable()
         original_label:SetTextColor(0.55, 0.55, 0.55, 1)
@@ -274,8 +280,9 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     local play_on_adjust_frame, play_on_adjust_checkbox = addon.CreateCheckbox(
         slider_panel,
         STRINGS.play_on_adjust_label,
-        target_db.play_on_adjust == true,
+        initial_target_db.play_on_adjust == true,
         function(is_checked)
+            local target_db = M.get_target_db(target_key)
             target_db.play_on_adjust = is_checked == true
         end
     )

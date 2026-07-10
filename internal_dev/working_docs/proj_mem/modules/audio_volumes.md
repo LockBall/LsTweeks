@@ -70,6 +70,7 @@
 
 ## GUI
 - Audio Volumes settings are not a normal full-panel `CreateSettingsGrid()` consumer. The Specifics tab remains a custom list/detail selector and General is riveted help plus reset. Situations tab uses a left tree/list plus settings-group panels; Normal Volumes is always visible and only the selected situation row is shown below it.
+- Specifics panel callbacks must resolve `M.get_target_db(target_key)` at interaction time. ARM reset replaces nested target tables while settings panels remain built, so callbacks must not retain a captured target DB table.
 - `av_gui.lua` owns shared GUI strings/layout, `M.ApplyGUIBoxBackdrop()`, Specifics sound-target slider panel construction, and `M.BuildSettings()`. Do not move these to `av_functions.lua` unless they become non-GUI module helpers.
 - `av_gui_general.lua`, `av_gui_specifics.lua`, and `av_gui_situations.lua` own their tab builders.
 - Situations tab always shows Normal Volumes plus exactly one selected situation panel. The left list has a Triggered group for Fishing/Combat and a Quick Picks group for Quiet Custom plus user-created custom entries backed by `audio_volumes.custom_situations`.

@@ -101,6 +101,54 @@ h.test("non-fishing channel spells are ignored", function()
     assert_normal_profile("unrelated channel spell does not trigger focus")
 end)
 
+h.test("Specifics controls write the reset target table", function()
+    reset_sound_state()
+    local parent = CreateFrame("Frame", nil, UIParent)
+    local target_key = "ready_check"
+    AV.BuildSoundTargetSliderPanel(parent, target_key, AV.SOUND_TARGETS[target_key])
+    local stale_target = AV.get_target_db(target_key)
+
+    table.wipe(av_db())
+    h.addon.deep_copy_into(AV.defaults.audio_volumes, av_db())
+    AV.on_reset_complete()
+    local fresh_target = AV.get_target_db(target_key)
+    h.ok(fresh_target ~= stale_target, "reset replaces target table")
+
+    local preset = AV.controls[target_key .. "_preset"]
+    preset.Slider:SetValue(5)
+    preset:TriggerCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, 5)
+
+    h.eq(fresh_target.preset, "15", "slider updates reset target table")
+    h.eq(stale_target.preset, "10", "slider leaves stale target table untouched")
+end)
+
+h.test("Original toggle previews only when Play on Adjust is enabled", function()
+    reset_sound_state()
+    local parent = CreateFrame("Frame", nil, UIParent)
+    local target_key = "ready_check"
+    local target_db = AV.get_target_db(target_key)
+    target_db.play_on_adjust = false
+    target_db.use_original = false
+    AV.BuildSoundTargetSliderPanel(parent, target_key, AV.SOUND_TARGETS[target_key])
+
+    local previews = 0
+    local original_play_replacement = AV.play_replacement
+    AV.play_replacement = function()
+        previews = previews + 1
+    end
+
+    local original_control = AV.controls[target_key .. "_use_original"]
+    original_control.checkbox:SetChecked(true)
+    original_control.checkbox:Click()
+    h.eq(previews, 0, "Original toggle is silent when Play on Adjust is disabled")
+
+    target_db.play_on_adjust = true
+    original_control.checkbox:SetChecked(false)
+    original_control.checkbox:Click()
+    h.eq(previews, 1, "Original toggle previews when Play on Adjust is enabled")
+    AV.play_replacement = original_play_replacement
+end)
+
 h.test("combat volumes win over fishing focus and restore cleanly through both exits", function()
     reset_sound_state()
     local focus_db = AV.get_fishing_focus_db()
