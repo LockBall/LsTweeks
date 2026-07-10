@@ -15,7 +15,7 @@ Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full rea
 - [x] 2. Situations controls retained stale Fishing, Combat, and Quick Pick tables after ARM reset. Rebuild the Situations tab before control synchronization so callbacks and sliders capture the fresh profile tables; focused coverage verifies a Fishing slider writes the reset table.
 - [x] 3. Situations list and cached panels were not rebuilt after ARM reset. The same tab rebuild replaces list/panel closures and removes controls for reset-deleted custom Quick Picks; focused coverage verifies the stale custom control is gone.
 - [x] 4. `read_channel_percent` ignored an active manual Quick Pick. The cached-profile read guard now matches the write guard, so Normal controls and copy/seed helpers use saved normal values while a Quick Pick is active; focused coverage verifies the read path.
-- [ ] 5. Normal-panel test-sound preview writes CVars, violating the documented rule that Normal Volumes preview must not write CVars. `play_situation_preview("current", test_sound_key)` has no profile but still creates a cache and delayed restore. Skip the cache/timer when `profile_db` is nil.
+- [x] 5. Normal-panel test-sound preview wrote CVars. The no-profile preview path now plays the selected test sound directly without caching, writing, or scheduling a CVar restore; focused coverage verifies that contract.
 - [ ] 6. A situation-preview restore can overwrite a Normal Volume edit made during its two-second window when no temporary situation is active. `set_current_sound_channel_percent` neither cancels nor updates the preview cache, and reads can also observe preview CVars. Verify and route/cancel the pending preview restore as needed.
 
 

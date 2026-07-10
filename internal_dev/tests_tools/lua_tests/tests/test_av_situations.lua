@@ -209,6 +209,15 @@ h.test("Normal volume reads use the cached profile during an active Quick Pick",
     h.eq(AV.get_current_sound_channel_percent(channel), 60, "Normal read returns cached profile instead of Quick Pick CVar")
 end)
 
+h.test("Normal test-sound preview does not cache or restore CVars", function()
+    reset_sound_state()
+    local before = stub.cvars.Sound_MasterVolume
+    AV.play_situation_preview("current", "bloodlust")
+    h.is_nil(AV._fishing_bobber_preview_cached, "Normal preview creates no CVar cache")
+    h.is_nil(AV._fishing_bobber_preview_timer, "Normal preview creates no restore timer")
+    h.eq(stub.cvars.Sound_MasterVolume, before, "Normal preview leaves CVars untouched")
+end)
+
 h.test("combat volumes win over fishing focus and restore cleanly through both exits", function()
     reset_sound_state()
     local focus_db = AV.get_fishing_focus_db()

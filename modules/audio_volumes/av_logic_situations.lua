@@ -491,13 +491,23 @@ function M.play_situation_preview(profile_key, test_sound_key)
         or (M.TEST_SOUND_OPTIONS and M.TEST_SOUND_OPTIONS[1])
     if not test_sound then return false end
 
+    if not profile_db then
+        local did_play, sound_handle
+        if test_sound.file_id then
+            did_play, sound_handle = _PlaySoundFile(test_sound.file_id, test_sound.channel or "SFX")
+        else
+            ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
+            did_play, sound_handle = _PlaySound(test_sound.soundkit, test_sound.channel or "SFX")
+        end
+        M._fishing_bobber_preview_handle = sound_handle
+        return did_play ~= false
+    end
+
     local cached = {}
     for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         cached[channel.cvar] = get_cvar(channel.cvar)
-        if profile_db then
-            local percent = profile_db[channel.key]
-            set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
-        end
+        local percent = profile_db[channel.key]
+        set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
     end
     M._fishing_bobber_preview_cached = cached
 
