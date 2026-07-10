@@ -2,6 +2,8 @@
 
 Read and follow internal_dev/working_docs/proj_mem/agent_start.md
 
+save anything important, to where it goes and cross module review if necessary then delete file if no longer needed
+
 - if we should check for similiar patterns throughout then make a note
 
 What are you least confident about right now ?

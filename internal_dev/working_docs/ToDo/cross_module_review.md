@@ -3,6 +3,7 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 
 
 ## Table of Contents
+- [Priority Work Order](#priority-work-order)
 - [Reset And Profile References](#reset-and-profile-references)
 - [Delayed Restore Ownership](#delayed-restore-ownership)
 - [Temporary-State Symmetry](#temporary-state-symmetry)
@@ -10,9 +11,18 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 - [Shared Factory Contracts](#shared-factory-contracts)
 - [Priority Scan Targets](#priority-scan-targets)
 
+## Priority Work Order
+
+- [x] 1. Reset and profile references — completed initial scan; remove stale table/callback ownership and obsolete reset construction.
+- [x] 2. Delayed restore ownership — audited previews, timers, tickers, debounces, and deferred work that can overwrite newer state.
+- [ ] 3. Temporary-state symmetry — compare temporary-state read/write/cache guards across relevant modules.
+- [ ] 4. UI and runtime synchronization — verify reset/profile loads refresh controls, panels, event registrations, and session state.
+- [ ] 5. Shared factory contracts — audit shared UI/profile factory consumers for consistent confirmation, lifecycle, and control APIs.
+
 
 ## Reset And Profile References
 - [ ] Check whether ARM reset, profile load, defaults application, or table replacement replaces nested DB tables while built controls, callbacks, dropdowns, or cached panels retain old table references.
+- [x] Initial Aura Frames, Objectives, Skyriding Vigor, and Player Frame scan: no additional stale nested-DB callback was found beyond the Audio Volumes fixes. Skyriding Vigor obsolete in-tab reset construction was removed after its General-tab move.
 - [ ] Rebuild affected panels or resolve the live DB table at interaction time; do not make a control only appear synchronized while its write callback still targets an orphaned table.
 - [ ] Cover the replacement path with a headless test that proves post-reset/profile-load interaction writes the fresh table and leaves the stale table unchanged.
 
@@ -21,6 +31,7 @@ Reusable findings from recent Audio Volumes reset, preview, and profile work. Ap
 - [ ] Find previews, debounce callbacks, timers, tickers, delayed C_Timer work, and deferred restores that can run after a newer user edit, reset, disable, profile load, or panel rebuild.
 - [ ] Cancel stale work or update its restore/cache state so it cannot overwrite the newer value.
 - [ ] Verify both the normal completion path and interruption by a newer user action.
+- [x] Initial cross-module audit: Audio previews cancel/update pending work; Aura Frames and Player Frame cancel fade/ticker state; Skyriding Vigor coalesced refresh re-enters guarded runtime; Objectives title-sync recomputes settings when its uncancellable next-frame callback runs and restores titles when disabled.
 
 
 ## Temporary-State Symmetry

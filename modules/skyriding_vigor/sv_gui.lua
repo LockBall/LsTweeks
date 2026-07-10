@@ -32,9 +32,6 @@ local UI_CONFIG = {
     slider_row_height = SLIDER_WITH_BOX_SIZE.height + 20,
     slider_row_gap_y = 0,
     grid_row_gap = 20,
-    reset_bottom_x = 20,
-    reset_panel_padding_top = 8,
-    reset_row_height = 150,
 }
 
 local ROWS = {
@@ -193,12 +190,6 @@ end
 local function get_separator_y(row, cfg)
     return cfg.title_offset_y - ((row - 1) * (cfg.slider_row_height + cfg.slider_row_gap_y))
         + math.floor(cfg.grid_row_gap / 2)
-end
-
-local function get_reset_panel_y(reset_panel, cfg)
-    local reset_row_top_y = get_separator_y(ROWS.spark + 1, cfg)
-    local reset_panel_height = reset_panel and reset_panel:GetHeight() or cfg.reset_row_height
-    return reset_row_top_y - cfg.reset_panel_padding_top - ((cfg.reset_row_height - reset_panel_height) / 2)
 end
 
 local function open_skyriding_talents()
@@ -1031,29 +1022,6 @@ local function build_spark_row(parent, context)
     place_grid_control(spark_size_slider, CONTROL_GRID.spark_size)
 end
 
-local function build_reset_panel(parent, context)
-    local cfg = context.cfg
-    local root_db = context.root_db
-    local defaults = context.defaults
-
-    if addon.CreateModuleReset and root_db then
-        local reset_panel = addon.CreateModuleReset(parent, root_db, defaults, {
-            before_reset = function()
-                if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-                    if M.sync_settings_controls then
-                        M.sync_settings_controls(M.get_db and M.get_db())
-                    end
-                    return false
-                end
-                return true
-            end,
-            after_reset = M.on_reset_complete,
-        })
-        reset_panel:SetPoint("TOPLEFT", parent, "TOPLEFT", cfg.reset_bottom_x, get_reset_panel_y(reset_panel, cfg))
-        M.controls.reset_panel = register_flight_locked_control(reset_panel)
-    end
-end
-
 function M.BuildVigorTab(parent)
     local cfg = UI_CONFIG
     M.controls_parent = parent
@@ -1071,7 +1039,6 @@ function M.BuildVigorTab(parent)
             cfg.slider_row_height,
             cfg.slider_row_height,
             cfg.slider_row_height,
-            cfg.reset_row_height,
         },
         col_align = { "left", "left", "left", "left", "left" },
         offsets = { default = 0 },
