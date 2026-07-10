@@ -6,7 +6,15 @@ function M.BuildSettings(parent)
     local db, tabs, panels = M.get_root_db(), {}, {}
     local defs = {
         { label = "General", build = function(panel)
-            local reset = addon.CreateModuleReset(panel, M.get_root_db(), M.DEFAULTS, { preserve_label = "Keep Profiles", preserve_default = true, preserve_keys = { "profiles", "last_profile_name" }, after_reset = M.on_reset_complete })
+            local reset = addon.CreateModuleReset(panel, M.get_root_db(), M.DEFAULTS, {
+                preserve_label = "Keep Profiles",
+                preserve_default = true,
+                preserve_keys = { "profiles", "last_profile_name" },
+                before_reset = function()
+                    return not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+                end,
+                after_reset = M.on_reset_complete,
+            })
             reset:SetPoint("TOPLEFT", panel, "TOPLEFT", 20, -20)
         end },
         { label = "Vigor Bar", build = M.BuildVigorTab },

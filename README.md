@@ -119,7 +119,7 @@ The `IMPORTANT` AuraFilter was added in WoW 12.0.1 and is described as spells th
 ### Profiles
 Profiles save the full Aura Frames setup, including preset frame settings, Cooldown Manager-backed frame presentation, positions, colors, timer styling, and custom filtered frames. Loading a profile replaces the current Aura Frames setup and recreates missing custom frames. Profile loading is blocked during combat.
 
-The Aura Frames reset panel includes a checked **Keep Profiles** option so saved profiles can survive a module reset.
+Aura Frames, Audio Volumes, Objectives, and Skyriding Vigor reset panels include a checked **Keep Profiles** option so saved profiles can survive a module reset.
 
 
 ## Audio Volumes

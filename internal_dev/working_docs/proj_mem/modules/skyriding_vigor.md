@@ -42,9 +42,9 @@ Important `skyriding_vigor` keys:
 
 ## Position And GUI
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
-- The settings panel uses `CreateModuleReset()` for a module-scoped ARM-code reset of all Skyriding Vigor settings.
+- Skyriding Vigor uses General, Vigor Bar, and Profiles tabs. General owns the root-DB ARM reset with checked-by-default **Keep Profiles**; Profiles use the shared profile manager and save both normal and race configuration.
 - The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns control construction and control synchronization. Add a one-off `sv_gui_sync.lua` split only if a broader cross-module GUI-sync file pattern is introduced.
-- `M.BuildSettings()` coordinates local builder functions (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, `build_spark_row`, and `build_reset_panel`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
+- `M.BuildVigorTab()` coordinates local Vigor Bar builders (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, and `build_spark_row`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
 - Settings controls that must disable during real active flight are registered in
   `sv_gui.lua` through the module-local `register_flight_locked_control()` helper.
   Use that registry for new Skyriding setting controls instead of extending a
@@ -88,6 +88,7 @@ Important `skyriding_vigor` keys:
 - Skyriding Vigor end-decoration placement uses per-style defaults in `DECOR_STYLES` in `sv_styles.lua` (`decor_node_gap_x`, `offset_y`, `scale`, `scale_x`, `scale_y`, `decor_color`), with saved user X/Y/scale/color overrides under `db.decor_layouts`. X/Y no longer use shared `WING_LAYOUT` fallback values.
 - End Decor `disabled` is intentionally implemented as a decor style that preserves the default decor footprint and hides via alpha. Replace it with a separate visibility flag only for a concrete layout mismatch.
 - Skyriding Vigor reset hooks must resync controls/runtime from the DB only. Do not write defaults in `on_reset_complete()`: `CreateModuleReset()` wipes only the calling module's DB and invokes only that module's `after_reset` hook.
+- Skyriding Vigor General reset is blocked during active flight and clears Fill Test, Race Profile Test, and race-active session flags before synchronizing the reset DB and runtime.
 - `M.apply_layout()` intentionally returns early only when both conditions hold: `not M._layout_dirty and M._layout_signature`. If the signature is nil, layout must rebuild.
 
 

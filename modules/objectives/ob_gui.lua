@@ -3,6 +3,23 @@ local _, addon = ...
 addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
+--#region GENERAL TAB ==========================================================
+
+function M.BuildGeneralTab(parent)
+    local title = parent:CreateFontString(nil, "OVERLAY", addon.UI_THEME.font_title)
+    title:SetPoint("TOPLEFT", parent, "TOPLEFT", 20, -20)
+    title:SetText("Objectives")
+    local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.objectives, {
+        preserve_label = "Keep Profiles",
+        preserve_default = true,
+        preserve_keys = { "profiles", "last_profile_name" },
+        after_reset = M.on_reset_complete,
+    })
+    reset:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -24)
+end
+
+--#endregion GENERAL TAB =======================================================
+
 --#region SETTINGS CONSTRUCTION ================================================
 
 function M.BuildSettings(parent)
@@ -46,3 +63,14 @@ function M.BuildSettings(parent)
 end
 
 --#endregion SETTINGS CONSTRUCTION =============================================
+
+--#region PROFILES TAB =========================================================
+
+function M.BuildProfilesTab(parent)
+    M.refresh_profiles_tab = addon.BuildProfilesTab(parent, M.profile_manager, {
+        label = "Objectives",
+        note = "Profiles save Objective Tracker position, background, collapse, and count settings for use on another character.",
+    })
+end
+
+--#endregion PROFILES TAB ======================================================

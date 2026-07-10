@@ -629,8 +629,10 @@ local function reject_settings_change_during_flight()
 end
 
 function M.on_reset_complete()
-    if reject_settings_change_during_flight() then return end
-
+    M._fill_test_enabled = false
+    M._fill_test_started_at = nil
+    M._race_profile_test_enabled = false
+    M._race_active = false
     M._db_normalized = false
     local db = get_db()
     if not db then return end
