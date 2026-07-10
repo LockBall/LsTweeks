@@ -72,6 +72,7 @@ Important `skyriding_vigor` keys:
 
 ## Charge State
 - `modules/skyriding_vigor/sv_state.lua` owns charge and flight-state detection. Vigor charges prefer mounted/alternate unit power (`Enum.PowerType.AlternateMount`, then `Alternate`) and fall back to `C_Spell.GetSpellCharges()` for spell IDs `372610` (Skyward Ascent) and `372608` (Surge Forward). The spell-charge fallback must not drive visual node count because action spell charges can report `maxCharges = 1`; always keep the six-node bar shape in that path. Guard secret values with `issecretvalue`. `get_charge_info()` always returns four values: current, maximum, cooldown start, and cooldown duration; unavailable values are explicit `nil`s.
+- `SPELL_UPDATE_CHARGES` and `SPELL_UPDATE_COOLDOWN` share `addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket` (`0.1` seconds) before calling `M.refresh()`. Keep mount, glide, race, and settings changes immediate.
 
 
 ## Styles And Rendering

@@ -43,9 +43,10 @@ Patterns found while working through `objectives_review.md` that may apply to ot
    - Check event handlers, sync functions, and slider/picker previews for signature/state checks before frame writes, relayout calls, allocation-heavy work, or timer scheduling.
    - Completed: reviewed Objectives, Aura Frames, Audio Volumes, Player Frame, Skyriding Vigor, and shared controls. Existing state/signature guards cover repeated frame writes, preview timers, fades, and layout. Aura Frames now clears its custom and sorted scan caches only once while a unified scan is pending.
 
-- [ ] 10. Audit high-frequency event debounce buckets.
+- [x] 10. Audit high-frequency event debounce buckets.
    - Source pattern: Objectives moved quest/achievement event bursts from next-frame sync to a fifth-second bucket while keeping manual/UI paths immediate.
    - Check event-heavy modules for appropriate update rates by source: user-driven UI preview, periodic combat/runtime state, and bursty Blizzard events should not all default to the same cadence.
+   - Completed: reviewed Objectives, Aura Frames, Player Frame, Audio Volumes, and Skyriding Vigor. Existing event buckets match their sources; Skyriding cooldown/charge bursts now coalesce through a dedicated 0.1-second bucket while stateful mount/glide/race/UI paths remain immediate.
 
 - [ ] 11. Audit scratch allocations inside hot sync or hook paths.
    - Source pattern: Objectives removed a per-call scratch table from a `SetPoint` hook path and skipped diagnostic string work before unchanged syncs.

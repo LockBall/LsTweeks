@@ -70,6 +70,22 @@ h.test("spell-charge fallback keeps the six-node bar shape", function()
     h.eq(duration, 10, "cooldown duration passed through")
 end)
 
+h.test("charge event bursts coalesce before the Skyriding refresh", function()
+    local original_refresh = SV.refresh
+    local refresh_count = 0
+    SV.refresh = function()
+        refresh_count = refresh_count + 1
+    end
+
+    h.fire_event("SPELL_UPDATE_CHARGES")
+    h.fire_event("SPELL_UPDATE_COOLDOWN")
+
+    h.eq(refresh_count, 0, "charge events defer the refresh")
+    h.advance(h.addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket)
+    h.eq(refresh_count, 1, "charge event burst performs one refresh")
+    SV.refresh = original_refresh
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

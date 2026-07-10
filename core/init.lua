@@ -52,6 +52,9 @@ addon.UPDATE_INTERVALS.objectives_title_event_bucket = addon.UPDATE_INTERVALS.fi
 -- CPU profile hotness: moderate; active only while a Skyriding Vigor node is filling.
 addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 
+-- CPU profile hotness: bursty charge/cooldown events; keep display response prompt.
+addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket = addon.UPDATE_INTERVALS.tenth_sec
+
 addon.FEATURE_MODULES = {
     { key = "player_frame", label = "Player Frame" },
     { key = "objectives", label = "Objectives" },

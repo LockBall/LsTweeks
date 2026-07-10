@@ -57,6 +57,7 @@ M.DEFAULTS = DEFAULTS
 -- Hidden frames that own event dispatch and active-only progress updates.
 local loader = CreateFrame("Frame")
 local progress_driver = CreateFrame("Frame")
+local event_refresh_queued = false
 progress_driver:Hide()
 --#endregion RUNTIME EVENT AND UPDATE FRAMES ===================================
 
@@ -773,6 +774,16 @@ end
 
 --#region EVENT BOOTSTRAP ======================================================
 -- Addon-load registration and runtime event dispatch into the refresh path.
+local function queue_charge_event_refresh()
+    if event_refresh_queued then return end
+
+    event_refresh_queued = true
+    C_Timer.After(addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket, function()
+        event_refresh_queued = false
+        M.refresh()
+    end)
+end
+
 loader:RegisterEvent("ADDON_LOADED")
 
 loader:SetScript("OnEvent", function(self, event, name)
@@ -793,6 +804,12 @@ loader:SetScript("OnEvent", function(self, event, name)
     then
         update_race_active_state(get_root_db())
     end
+
+    if event == "SPELL_UPDATE_CHARGES" or event == "SPELL_UPDATE_COOLDOWN" then
+        queue_charge_event_refresh()
+        return
+    end
+
     M.refresh()
 end)
 --#endregion EVENT BOOTSTRAP ===================================================
