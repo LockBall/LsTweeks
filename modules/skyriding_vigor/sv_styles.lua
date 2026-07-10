@@ -669,7 +669,7 @@ local function get_decor_position_field(axis)
     elseif axis == "y" then
         return "offset_y", "decor_y_position"
     end
-    return nil
+    return nil, nil
 end
 
 function M.get_decor_position_axis(axis)

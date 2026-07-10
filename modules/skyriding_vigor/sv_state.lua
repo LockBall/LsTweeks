@@ -56,7 +56,7 @@ local function normalize_power_value(value, max_power, slot_count, power_type)
 end
 
 local function get_vigor_power_info()
-    if not UnitPower or not UnitPowerMax then return nil end
+    if not UnitPower or not UnitPowerMax then return nil, nil, nil, nil end
 
     local max_slots = M.MAX_SLOTS
     for _, power_type in ipairs(VIGOR_POWER_TYPES) do
@@ -73,7 +73,7 @@ local function get_vigor_power_info()
         end
     end
 
-    return nil
+    return nil, nil, nil, nil
 end
 
 function M.get_charge_info()
@@ -82,7 +82,7 @@ function M.get_charge_info()
         return current, max_charges, start_time, duration
     end
 
-    if not C_Spell_GetSpellCharges then return nil end
+    if not C_Spell_GetSpellCharges then return nil, nil, nil, nil end
 
     for _, spell_id in ipairs(VIGOR_SPELL_IDS) do
         local info = C_Spell_GetSpellCharges(spell_id)
@@ -96,7 +96,7 @@ function M.get_charge_info()
         end
     end
 
-    return nil
+    return nil, nil, nil, nil
 end
 
 --#endregion POWER STATE =======================================================

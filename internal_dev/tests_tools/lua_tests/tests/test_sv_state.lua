@@ -49,7 +49,12 @@ end)
 
 h.test("no power type reports nil charge info", function()
     reset_power()
-    h.is_nil(SV.get_charge_info(), "no vigor resource, no spell-charge fallback data")
+    h.eq(select("#", SV.get_charge_info()), 4, "nil charge info return arity")
+    local current, max_charges, start_time, duration = SV.get_charge_info()
+    h.is_nil(current, "no vigor resource current charges")
+    h.is_nil(max_charges, "no vigor resource max charges")
+    h.is_nil(start_time, "no vigor resource cooldown start")
+    h.is_nil(duration, "no vigor resource cooldown duration")
 end)
 
 h.test("spell-charge fallback keeps the six-node bar shape", function()

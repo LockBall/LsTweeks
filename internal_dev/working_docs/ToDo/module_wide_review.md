@@ -19,17 +19,19 @@ Patterns found while working through `objectives_review.md` that may apply to ot
    - Source pattern: Objectives background opacity initially restored live manager opacity without writing through the primary Edit Mode path.
    - Check modules that change Blizzard/user settings or owned frame state while enabled. Disable should restore through the same owner/API path that applied the change, with fallback paths clearly separated.
 
-- [ ] 5. Audit primary-API success paths for duplicate fallback writes.
+- [x] 5. Audit primary-API success paths for duplicate fallback writes.
    - Source pattern: Objectives removed `ObjectiveTrackerManager:SetOpacity()` after successful Edit Mode writes.
    - Check integrations that try a primary Blizzard API and then a fallback. Fallback should run only when the primary path is unavailable or fails.
 
-- [ ] 6. Audit defaults and template tables for accidental aliasing.
+- [x] 6. Audit defaults and template tables for accidental aliasing.
    - Source pattern: Objectives copied `DEFAULT_BACKGROUND_COLOR` from defaults by reference before replacing it with a file-scope value copy.
    - Check local default/template tables that point at `M.defaults` or profile data. Mutable defaults should be copied before use unless sharing is intentional and documented.
+   - Completed: reviewed Objectives, Aura Frames, Audio Volumes, Player Frame, Skyriding Vigor, Settings, shared UI helpers, and profile/reset code. Nested defaults are copied by `apply_defaults()`/`deep_copy_into()`; mutable Audio GUI defaults are fresh local tables; Aura custom entries copy nested template values; and Skyriding style-color defaults return value copies.
 
-- [ ] 7. Audit helper return-value contracts.
+- [x] 7. Audit helper return-value contracts.
    - Source pattern: `get_count_settings()` returned fewer values on its disabled path than on its enabled path.
    - Check helpers with multiple returns, especially settings readers and status helpers. Disabled/nil/error paths should return the same arity and explicit false/nil semantics expected by callers.
+   - Completed: reviewed multi-value helpers across Objectives, Aura Frames, Audio Volumes, Player Frame, Skyriding Vigor, and shared UI helpers. Skyriding charge detection now returns four explicit `nil` values when unavailable; the decor axis mapper now returns two explicit `nil` values for an invalid axis.
 
 - [ ] 8. Audit shared picker/session callbacks for stale cross-session state.
    - Source pattern: Objectives color reset state could leak into a later color-picker session until the shared picker exposed an open callback.
