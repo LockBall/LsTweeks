@@ -1157,6 +1157,9 @@ local function stop_aura_frame_runtime_services()
     if M.set_grid_visible then M.set_grid_visible(false) end
     if M.toggle_blizz_buffs then M.toggle_blizz_buffs(false) end
     if M.toggle_blizz_debuffs then M.toggle_blizz_debuffs(false) end
+    if M.restore_blizz_cdm_viewer_settings then
+        M.restore_blizz_cdm_viewer_settings()
+    end
     restore_cdm_viewer_visibility()
 
     for _, frame in ipairs(M.frames_list or {}) do

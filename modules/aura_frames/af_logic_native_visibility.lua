@@ -10,6 +10,7 @@ local M = addon.aura_frames
 --#region BLIZZARD BUFF/DEBUFF FRAME TOGGLES ===================================
 
 local blizz_aura_frame_state = setmetatable({}, { __mode = "k" })
+local cdm_setting_restore_frame
 
 local function get_blizz_aura_frame_state(frame)
     local state = blizz_aura_frame_state[frame]
@@ -18,6 +19,30 @@ local function get_blizz_aura_frame_state(frame)
         blizz_aura_frame_state[frame] = state
     end
     return state
+end
+
+local function get_cdm_viewer_state(frame)
+    M._cd_viewer_state = M._cd_viewer_state or setmetatable({}, { __mode = "k" })
+    local state = M._cd_viewer_state[frame]
+    if not state then
+        state = {}
+        M._cd_viewer_state[frame] = state
+    end
+    return state
+end
+
+local function queue_cdm_setting_restore()
+    if cdm_setting_restore_frame then
+        cdm_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        return
+    end
+
+    cdm_setting_restore_frame = CreateFrame("Frame")
+    cdm_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    cdm_setting_restore_frame:SetScript("OnEvent", function(self)
+        self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+        M.restore_blizz_cdm_viewer_settings()
+    end)
 end
 
 local function set_blizz_frame_state(frame, hide)
@@ -74,14 +99,57 @@ function M.ensure_blizz_cdm_viewer_always_visible(category)
     local always = visible_setting_enum.Always
     if frame.visibleSetting == always then return end
 
+    local previous_setting = frame.visibleSetting
+    local applied = false
     if frame.UpdateSystemSettingValue then
-        pcall(frame.UpdateSystemSettingValue, frame, edit_setting_enum.VisibleSetting, always)
+        applied = pcall(frame.UpdateSystemSettingValue, frame, edit_setting_enum.VisibleSetting, always)
     else
         frame.visibleSetting = always
+        applied = true
+    end
+    if not applied then return end
+
+    local state = get_cdm_viewer_state(frame)
+    if not state.visible_setting_captured then
+        state.visible_setting_captured = true
+        state.previous_visible_setting = previous_setting
     end
 
     if frame.UpdateShownState then
         pcall(frame.UpdateShownState, frame)
+    end
+end
+
+function M.restore_blizz_cdm_viewer_settings()
+    if InCombatLockdown and InCombatLockdown() then
+        queue_cdm_setting_restore()
+        return
+    end
+
+    local visible_setting_enum = Enum and Enum.CooldownViewerVisibleSetting
+    local edit_setting_enum = Enum and Enum.EditModeCooldownViewerSetting
+    local always = visible_setting_enum and visible_setting_enum.Always
+    local setting = edit_setting_enum and edit_setting_enum.VisibleSetting
+    if always == nil or setting == nil then return end
+
+    for frame, state in pairs(M._cd_viewer_state or {}) do
+        if frame and state and state.visible_setting_captured then
+            local previous_setting = state.previous_visible_setting
+            if previous_setting ~= nil and frame.visibleSetting == always then
+                local restored = false
+                if frame.UpdateSystemSettingValue then
+                    restored = pcall(frame.UpdateSystemSettingValue, frame, setting, previous_setting)
+                else
+                    frame.visibleSetting = previous_setting
+                    restored = true
+                end
+                if restored and frame.UpdateShownState then
+                    pcall(frame.UpdateShownState, frame)
+                end
+            end
+            state.visible_setting_captured = nil
+            state.previous_visible_setting = nil
+        end
     end
 end
 
@@ -95,9 +163,7 @@ function M.update_blizz_cdm_visibility(category)
     if not hide and not (state and state.forced_hidden) then return end
 
     if not state then
-        M._cd_viewer_state = M._cd_viewer_state or setmetatable({}, { __mode = "k" })
-        state = {}
-        M._cd_viewer_state[frame] = state
+        state = get_cdm_viewer_state(frame)
     end
 
     local function apply_visibility_state()

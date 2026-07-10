@@ -3,49 +3,57 @@ Patterns found while working through `objectives_review.md` that may apply to ot
 
 
 ## Action Items
-1. Audit protected or Blizzard-owned UI mutations for combat deferral.
+- [x] 1. Audit direct protected tracker mutations for combat deferral.
    - Source pattern: Objectives Auto-Collapse had direct tracker collapse/expand mutations that needed the module combat deferral path.
-   - Check modules that call Blizzard frame mutation APIs, move frames, update tracker/UI state, or restore Blizzard-owned settings. Confirm either the mutation is safe in combat or it is queued through an explicit regen path.
+   - Check calls such as `SetCollapsed`, `ForceExpand`, tracker `Update`, and other state-changing Blizzard tracker methods. Confirm either the mutation is safe in combat or it is queued through an explicit regen path.
 
-2. Audit module disable/restore paths for complete handback to Blizzard or user state.
+- [x] 2. Audit protected frame positioning and layout mutations for combat deferral.
+   - Source pattern: Objectives background and position behavior defer tracker anchor correction and move-mode changes through the module combat path.
+   - Check `SetPoint`, `ClearAllPoints`, drag/move-mode changes, frame sizing, and layout refreshes only where the target frame can be protected.
+
+- [x] 3. Audit deferred combat callbacks for a second combat check.
+   - Source pattern: Objectives queued collapse work rechecks combat when the timer fires before mutating the tracker.
+   - Check callbacks queued before combat that can run after combat begins. Re-defer instead of mutating UI while combat remains active.
+
+- [x] 4. Audit module disable/restore paths for complete handback to Blizzard or user state.
    - Source pattern: Objectives background opacity initially restored live manager opacity without writing through the primary Edit Mode path.
    - Check modules that change Blizzard/user settings or owned frame state while enabled. Disable should restore through the same owner/API path that applied the change, with fallback paths clearly separated.
 
-3. Audit shared picker/session callbacks for stale cross-session state.
-   - Source pattern: Objectives color reset state could leak into a later color-picker session until the shared picker exposed an open callback.
-   - Check modules using shared popups or preview controls for session-scoped flags that need reset on open, accept, cancel, or reset.
+- [ ] 5. Audit primary-API success paths for duplicate fallback writes.
+   - Source pattern: Objectives removed `ObjectiveTrackerManager:SetOpacity()` after successful Edit Mode writes.
+   - Check integrations that try a primary Blizzard API and then a fallback. Fallback should run only when the primary path is unavailable or fails.
 
-4. Audit helper return-value contracts.
-   - Source pattern: `get_count_settings()` returned fewer values on its disabled path than on its enabled path.
-   - Check helpers with multiple returns, especially settings readers and status helpers. Disabled/nil/error paths should return the same arity and explicit false/nil semantics expected by callers.
-
-5. Audit defaults and template tables for accidental aliasing.
+- [ ] 6. Audit defaults and template tables for accidental aliasing.
    - Source pattern: Objectives copied `DEFAULT_BACKGROUND_COLOR` from defaults by reference before replacing it with a file-scope value copy.
    - Check local default/template tables that point at `M.defaults` or profile data. Mutable defaults should be copied before use unless sharing is intentional and documented.
 
-6. Audit falsy-value handling in diagnostics and API probes.
-   - Source pattern: Objectives status diagnostics used `method and method(region) or nil`, which swallowed explicit `false`.
-   - Check status/debug code for Lua `and/or` fallback patterns where `false`, `0`, or an intentional `nil` true branch matters.
+- [ ] 7. Audit helper return-value contracts.
+   - Source pattern: `get_count_settings()` returned fewer values on its disabled path than on its enabled path.
+   - Check helpers with multiple returns, especially settings readers and status helpers. Disabled/nil/error paths should return the same arity and explicit false/nil semantics expected by callers.
 
-7. Audit redundant work on already-satisfied state.
+- [ ] 8. Audit shared picker/session callbacks for stale cross-session state.
+   - Source pattern: Objectives color reset state could leak into a later color-picker session until the shared picker exposed an open callback.
+   - Check modules using shared popups or preview controls for session-scoped flags that need reset on open, accept, cancel, or reset.
+
+- [ ] 9. Audit redundant work on already-satisfied state.
    - Source pattern: Objectives removed relayout calls, repeated anchoring, repeated show/hide, duplicate setup calls, and unchanged overlay writes.
    - Check event handlers, sync functions, and slider/picker previews for signature/state checks before frame writes, relayout calls, allocation-heavy work, or timer scheduling.
 
-8. Audit high-frequency event debounce buckets.
+- [ ] 10. Audit high-frequency event debounce buckets.
    - Source pattern: Objectives moved quest/achievement event bursts from next-frame sync to a fifth-second bucket while keeping manual/UI paths immediate.
    - Check event-heavy modules for appropriate update rates by source: user-driven UI preview, periodic combat/runtime state, and bursty Blizzard events should not all default to the same cadence.
 
-9. Audit scratch allocations inside hot sync or hook paths.
+- [ ] 11. Audit scratch allocations inside hot sync or hook paths.
    - Source pattern: Objectives removed a per-call scratch table from a `SetPoint` hook path and skipped diagnostic string work before unchanged syncs.
    - Check hooks, OnUpdate/ticker callbacks, scan loops, and event burst handlers for avoidable temporary tables or strings.
 
-10. Audit duplicate ownership of setup/layout constants and helper APIs.
+- [ ] 12. Audit duplicate ownership of setup/layout constants and helper APIs.
     - Source pattern: Objectives centralized duplicated tracker lookup and settings-page layout constants.
     - Check modules split across multiple files for repeated local helpers, repeated settings layout constants, or duplicated registration setup. Prefer one local owner and module-scoped accessors when the value is shared.
 
-11. Audit primary-API success paths for duplicate fallback writes.
-    - Source pattern: Objectives removed `ObjectiveTrackerManager:SetOpacity()` after successful Edit Mode writes.
-    - Check integrations that try a primary Blizzard API and then a fallback. Fallback should run only when the primary path is unavailable or fails.
+- [ ] 13. Audit falsy-value handling in diagnostics and API probes.
+    - Source pattern: Objectives status diagnostics used `method and method(region) or nil`, which swallowed explicit `false`.
+    - Check status/debug code for Lua `and/or` fallback patterns where `false`, `0`, or an intentional `nil` true branch matters.
 
 
 ## Review Notes
