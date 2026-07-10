@@ -308,10 +308,17 @@ local function get_enabled_manual_situation_key()
 end
 
 function M.set_manual_situation_enabled(situation_key, enabled)
-    local selected_db = M.get_situation_profile_db(situation_key)
+    local entries = get_manual_situation_entries()
+    local selected_db = nil
+    for _, entry in ipairs(entries) do
+        if entry.key == situation_key then
+            selected_db = entry.db
+            break
+        end
+    end
     if not selected_db then return false end
 
-    for _, entry in ipairs(get_manual_situation_entries()) do
+    for _, entry in ipairs(entries) do
         if entry.db then
             entry.db.enabled = enabled == true and entry.key == situation_key
         end

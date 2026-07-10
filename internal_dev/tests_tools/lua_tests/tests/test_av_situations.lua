@@ -116,6 +116,17 @@ h.test("non-fishing channel spells are ignored", function()
     assert_normal_profile("unrelated channel spell does not trigger focus")
 end)
 
+h.test("manual situation API rejects triggered situation keys", function()
+    reset_sound_state()
+    local quick_pick = AV.get_quiet_custom_db()
+    quick_pick.enabled = true
+
+    local ok = AV.set_manual_situation_enabled("fishing", true)
+
+    h.ok(not ok, "Fishing cannot enter the manual Quick Pick path")
+    h.ok(quick_pick.enabled, "rejected triggered key leaves the Quick Pick unchanged")
+end)
+
 h.test("Specifics controls write the reset target table", function()
     reset_sound_state()
     local parent = CreateFrame("Frame", nil, UIParent)
