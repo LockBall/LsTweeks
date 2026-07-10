@@ -754,6 +754,12 @@ function M.sync_fishing_focus_events()
         M.fishing_focus_frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player")
         M._fishing_focus_events_registered = true
     end
+    if UnitChannelInfo then
+        local _, _, _, _, _, _, _, spell_id = UnitChannelInfo("player")
+        if spell_id == FISHING_CHANNEL_SPELL_ID then
+            M.apply_fishing_focus()
+        end
+    end
 end
 
 function M.sync_combat_volumes_events()

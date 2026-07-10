@@ -620,8 +620,13 @@ function IsLoggedIn() return true end
 function IsAddOnLoaded() return false end
 function InCombatLockdown() return stub.in_combat == true end
 function UnitAffectingCombat(_unit) return stub.in_combat == true end
+function UnitChannelInfo(unit)
+    if unit ~= "player" or not stub.channel_spell_id then return nil end
+    return "Test Channel", "Test Channel", 0, 0, 0, false, false, stub.channel_spell_id
+end
 
 stub.in_combat = false
+stub.channel_spell_id = nil
 stub.hooked_functions = {}
 
 function hooksecurefunc(table_or_name, name_or_fn, maybe_fn)

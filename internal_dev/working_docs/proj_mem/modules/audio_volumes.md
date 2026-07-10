@@ -56,6 +56,7 @@
 - Fishing Bobber bite timing is not exposed through tested Lua hooks/APIs. Do not re-add Bobber replacement controls without a new confirmed trigger.
 - Fishing Focus caches `Sound_*` CVars on Fishing channel start (`131476`), applies configured Master/SFX/Music/Ambience/Dialog values, and restores cached values on channel stop/reset/logout.
 - Fishing Focus registers `UNIT_SPELLCAST_CHANNEL_START/STOP` only when enabled, via `RegisterUnitEvent(..., "player")`, and keeps the Fishing spell ID guard.
+- Enabling Fishing Focus while Fishing is already channeling checks `UnitChannelInfo("player")` for spell `131476` and applies the profile immediately; do not rely only on the next channel-start event.
 - Combat Volumes registers `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` only when enabled. Entering combat exits the Fishing situation, so combat end restores normal volumes instead of returning to Fishing Volumes.
 - Quick Picks are manual situation toggles. Fishing/Combat triggered situations temporarily override the enabled Quick Pick, and the enabled Quick Pick resumes afterward.
 - The addon minimap icon right-click menu lists Quick Picks and toggles the selected Quick Pick through the same manual situation path as the Situations tab. It uses Blizzard's current `MenuUtil.CreateContextMenu` API only; do not add legacy `EasyMenu` or `UIDropDownMenu_*` fallbacks.

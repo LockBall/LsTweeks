@@ -20,7 +20,7 @@ Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full rea
 
 
 ## Latent Traps
-- [ ] 1. Enabling Fishing Focus while already channeling Fishing does not apply the profile until the next cast: `sync_fishing_focus_events` has no mid-channel equivalent of the combat path's re-apply. A `UnitChannelInfo("player")` spell-ID check could close the gap; verify-in-game whether it matters in practice.
+- [x] 1. Enabling Fishing Focus while already channeling Fishing did not apply the profile until the next cast. `sync_fishing_focus_events` now checks `UnitChannelInfo("player")` after registration and applies Fishing Focus for spell `131476`; focused coverage models the existing channel. In-game check: toggle Fishing Focus once during an active Fishing cast and confirm the immediate volume change.
 - [ ] 2. `set_manual_situation_enabled("fishing"/"combat", true)` resolves a profile db so it passes the guard, then disables every Quick Pick and enables nothing because triggered keys are absent from `get_manual_situation_entries()`. Unreachable from current callers; add an early reject for non-manual keys or a comment.
 - [ ] 3. `handle_event` returns after the first playable slot; every created slot has either `path` or `soundkit_id`, so later slots are unreachable. Fine today because `SOUND_EVENT_TARGETS` maps one target per event, but a future shared event silently plays only one. Either loop without the early returns or document the single-slot assumption where the cache is built.
 - [ ] 4. Custom-situation control keys use mixed conventions: enabled-checkbox keys sanitize `custom:N`, while slider keys retain it. Both pairs match today, but use one convention before a future reader/writer diverges.

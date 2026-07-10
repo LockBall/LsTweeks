@@ -27,6 +27,7 @@ local NORMAL_CVARS = {
 
 local function reset_sound_state()
     stub.in_combat = false
+    stub.channel_spell_id = nil
     AV._fishing_focus_active = false
     AV._combat_volumes_active = false
     AV._manual_situation_active_key = nil
@@ -90,6 +91,20 @@ h.test("fishing focus applies on channel start and restores on channel stop", fu
 
     h.fire_event("UNIT_SPELLCAST_CHANNEL_STOP", "player", "cast-guid", FISHING_SPELL_ID)
     assert_normal_profile("restored after fishing channel")
+end)
+
+h.test("fishing focus applies when enabled during an existing fishing channel", function()
+    reset_sound_state()
+    local focus_db = AV.get_fishing_focus_db()
+    focus_db.enabled = true
+    focus_db.master = 50
+    av_db().fishing_focus.enabled = true
+    stub.channel_spell_id = FISHING_SPELL_ID
+
+    AV.sync_fishing_focus_events()
+
+    h.eq(stub.cvars.Sound_MasterVolume, "0.5", "existing fishing channel applies focus on enable")
+    h.ok(AV._fishing_focus_active, "fishing focus tracks the existing channel")
 end)
 
 h.test("non-fishing channel spells are ignored", function()
