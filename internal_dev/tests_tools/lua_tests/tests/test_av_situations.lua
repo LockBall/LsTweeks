@@ -199,6 +199,16 @@ h.test("Audio Volumes profiles restore copied sound and situation settings", fun
     h.eq(AV.get_audio_volumes_profiles()[1].version, 1, "profile records schema version")
 end)
 
+h.test("Normal volume reads use the cached profile during an active Quick Pick", function()
+    reset_sound_state()
+    local channel = AV.FISHING_FOCUS_CHANNELS[1]
+    AV._manual_situation_active_key = "quiet_custom"
+    AV._temporary_sound_profile_cached = { [channel.cvar] = "0.6" }
+    stub.cvars[channel.cvar] = "0.25"
+
+    h.eq(AV.get_current_sound_channel_percent(channel), 60, "Normal read returns cached profile instead of Quick Pick CVar")
+end)
+
 h.test("combat volumes win over fishing focus and restore cleanly through both exits", function()
     reset_sound_state()
     local focus_db = AV.get_fishing_focus_db()

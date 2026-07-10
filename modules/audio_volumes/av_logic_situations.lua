@@ -76,7 +76,7 @@ end
 local function read_channel_percent(channel)
     if not channel then return 0 end
     local raw_value = nil
-    if (M._fishing_focus_active or M._combat_volumes_active) and M._temporary_sound_profile_cached then
+    if (M._fishing_focus_active or M._combat_volumes_active or M._manual_situation_active_key) and M._temporary_sound_profile_cached then
         raw_value = M._temporary_sound_profile_cached[channel.cvar]
     end
     if raw_value == nil then

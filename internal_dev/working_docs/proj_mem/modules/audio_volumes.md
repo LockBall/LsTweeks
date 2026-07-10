@@ -62,6 +62,7 @@
 - The minimap Quick Picks disabled branch must not call `M.get_quick_pick_menu_entries()` or other situation DB initializers. Keep menu entry lookup lazy and only request entries after confirming Audio Volumes is enabled.
 - Disabled sync should not create situation event frames or initialize situation DB values.
 - Normal Volumes sliders edit the user's normal `Sound_*` CVars. If a temporary situation is active, they update the cached normal values restored afterward instead of overwriting the active temporary situation.
+- Normal Volume reads use the cached profile for Fishing, Combat, and active manual Quick Picks, so slider display and Use Normal copy/seed helpers always use normal values rather than temporary CVar overrides.
 - Preview buttons play FishingBobber SoundKit `3355` on SFX. Normal Volumes preview must not write CVars; situation previews temporarily apply and then restore their CVar values.
 - Active situation application cancels/restores any pending situation preview before writing runtime CVars, so a delayed preview restore cannot overwrite a newly active Fishing, Combat, or Quick Pick situation.
 - Temporary situation GUI refresh uses the shared slider `SetValueSilently()` helper so programmatic display sync does not schedule situation resync callbacks.
