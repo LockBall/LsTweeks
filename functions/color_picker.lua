@@ -115,6 +115,24 @@ local function get_color_picker_widget()
     return content and content["ColorPicker"]
 end
 
+local function clear_live_picker_callbacks(session)
+    if not ColorPickerFrame then return end
+    if session and ColorPickerFrame._lstweeks_live_session ~= session then return end
+
+    ColorPickerFrame._lstweeks_live_session = nil
+    ColorPickerFrame._lstweeks_live_swatch_func = nil
+    ColorPickerFrame._lstweeks_live_opacity_func = nil
+end
+
+local function ensure_live_picker_session_cleanup()
+    if not (ColorPickerFrame and ColorPickerFrame.HookScript) or ColorPickerFrame._lstweeks_live_session_hooked then return end
+
+    ColorPickerFrame:HookScript("OnHide", function()
+        clear_live_picker_callbacks()
+    end)
+    ColorPickerFrame._lstweeks_live_session_hooked = true
+end
+
 local function ensure_live_picker_hooks()
     local picker = get_color_picker_widget()
     if picker and picker.HookScript and not picker._lstweeks_live_color_hooked then
@@ -327,7 +345,9 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
 
     -- Color Picker Dialog
     button:SetScript("OnClick", function()
+        clear_live_picker_callbacks()
         local current = db_table[db_key]
+        local session = {}
         if type(callback) == "function" then callback("open") end
         local auto_visible_from_transparent = has_alpha and current and (current.a or 0) == 0
         local auto_visible_done = false
@@ -376,11 +396,14 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
             cancelFunc = function()
                 db_table[db_key] = current
                 apply_and_refresh(current.r, current.g, current.b, current.a, "cancel", true)
+                clear_live_picker_callbacks(session)
                 hide_popup_alpha_percent()
             end
         })
+        ColorPickerFrame._lstweeks_live_session = session
         ColorPickerFrame._lstweeks_live_swatch_func = update_swatch
         ColorPickerFrame._lstweeks_live_opacity_func = has_alpha and update_opacity or nil
+        ensure_live_picker_session_cleanup()
         ensure_live_picker_hooks()
         resize_popup_action_buttons()
         if has_alpha then

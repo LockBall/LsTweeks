@@ -33,9 +33,10 @@ Patterns found while working through `objectives_review.md` that may apply to ot
    - Check helpers with multiple returns, especially settings readers and status helpers. Disabled/nil/error paths should return the same arity and explicit false/nil semantics expected by callers.
    - Completed: reviewed multi-value helpers across Objectives, Aura Frames, Audio Volumes, Player Frame, Skyriding Vigor, and shared UI helpers. Skyriding charge detection now returns four explicit `nil` values when unavailable; the decor axis mapper now returns two explicit `nil` values for an invalid axis.
 
-- [ ] 8. Audit shared picker/session callbacks for stale cross-session state.
+- [x] 8. Audit shared picker/session callbacks for stale cross-session state.
    - Source pattern: Objectives color reset state could leak into a later color-picker session until the shared picker exposed an open callback.
    - Check modules using shared popups or preview controls for session-scoped flags that need reset on open, accept, cancel, or reset.
+   - Completed: reviewed shared color picker, dropdown, module-reset, sliders, Aura Frames dialogs/previews, Audio Volumes previews, and Skyriding test state. Fixed the shared color picker so its live callbacks clear on cancel or popup hide; its session identity prevents a closing older popup from clearing a newer session.
 
 - [ ] 9. Audit redundant work on already-satisfied state.
    - Source pattern: Objectives removed relayout calls, repeated anchoring, repeated show/hide, duplicate setup calls, and unchanged overlay writes.

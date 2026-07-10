@@ -170,6 +170,32 @@ h.test("accepted color reset does not let later cancel clear border", function()
     h.eq(db.objective_tracker_border, true, "later cancel keeps accepted reset border")
 end)
 
+h.test("color picker clears live callbacks after its session closes", function()
+    reset_runtime()
+    local db = fresh_db({ background_color_enabled = true })
+    install_color_picker_frame()
+
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildBackgroundSettings(parent)
+    local color_button = background_picker_buttons()
+
+    color_button:Click()
+    h.ok(ColorPickerFrame._lstweeks_live_swatch_func, "open session installs swatch callback")
+    ColorPickerFrame.__opts.cancelFunc()
+    h.is_nil(ColorPickerFrame._lstweeks_live_swatch_func, "cancel clears swatch callback")
+    h.is_nil(ColorPickerFrame._lstweeks_live_opacity_func, "cancel clears opacity callback")
+
+    ColorPickerFrame.__r = 0.8
+    local on_color_select = ColorPickerFrame.Content.ColorPicker:GetScript("OnColorSelect")
+    on_color_select()
+    h.eq(db.background_color.r, 0.25, "closed session ignores later color events")
+
+    color_button:Click()
+    ColorPickerFrame:Show()
+    ColorPickerFrame:Hide()
+    h.is_nil(ColorPickerFrame._lstweeks_live_swatch_func, "hide clears accepted-session callback")
+end)
+
 h.test("background color picker live preview is debounced", function()
     reset_runtime()
     local db = fresh_db({ background_color_enabled = true })
