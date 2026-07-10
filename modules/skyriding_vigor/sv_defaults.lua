@@ -52,6 +52,9 @@ local defs = {}
 local normal_profile = build_profile_defaults()
 normal_profile.race_profile_enabled = false
 normal_profile.race_profile = build_profile_defaults()
+normal_profile.profiles = {}
+normal_profile.last_profile_name = nil
+normal_profile.last_tab_index = 1
 
 defs.defaults = {
     skyriding_vigor = normal_profile,

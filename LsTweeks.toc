@@ -72,6 +72,8 @@ modules\skyriding_vigor\sv_bar.lua
 modules\skyriding_vigor\sv_fade.lua
 modules\skyriding_vigor\sv_state.lua
 modules\skyriding_vigor\sv_gui.lua
+modules\skyriding_vigor\sv_profiles.lua
+modules\skyriding_vigor\sv_gui_tabs.lua
 modules\skyriding_vigor\sv_main.lua
 
 # --- Aura Frames Module ---

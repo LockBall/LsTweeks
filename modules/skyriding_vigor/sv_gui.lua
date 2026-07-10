@@ -1054,7 +1054,7 @@ local function build_reset_panel(parent, context)
     end
 end
 
-function M.BuildSettings(parent)
+function M.BuildVigorTab(parent)
     local cfg = UI_CONFIG
     M.controls_parent = parent
     M.flight_locked_controls = {}
@@ -1170,7 +1170,6 @@ function M.BuildSettings(parent)
 
     build_spark_row(parent, context)
 
-    build_reset_panel(parent, context)
 end
 
 --#endregion SETTINGS CONSTRUCTION =============================================
