@@ -50,6 +50,10 @@ modules\objectives\ob_position.lua
 modules\objectives\ob_auto_collapse.lua
 modules\objectives\ob_section_count.lua
 modules\objectives\ob_background.lua
+modules\objectives\ob_profiles.lua
+modules\objectives\ob_gui_general.lua
+modules\objectives\ob_gui_profiles.lua
+modules\objectives\ob_gui.lua
 modules\objectives\ob_main.lua
 modules\audio_volumes\av_defaults.lua
 modules\audio_volumes\av_functions.lua

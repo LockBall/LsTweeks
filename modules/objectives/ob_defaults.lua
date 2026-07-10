@@ -48,6 +48,9 @@ M.defaults = {
         objective_tracker_snap_to_grid = false,
         objective_tracker_offset_x = 0,
         objective_tracker_offset_y = 0,
+        last_tab_index = 1,
+        last_profile_name = nil,
+        profiles = {},
     },
 }
 

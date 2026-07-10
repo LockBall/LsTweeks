@@ -48,25 +48,16 @@ end
 
 --#region GUI ==================================================================
 
-function M.BuildSettings(parent)
-    if M.BuildPositionSettings then
-        M.BuildPositionSettings(parent)
-    end
-    if M.BuildBackgroundSettings then
-        M.BuildBackgroundSettings(parent)
-    end
-    if M.BuildAutoCollapseSettings then
-        M.BuildAutoCollapseSettings(parent)
-    end
-    if M.BuildSectionCountSettings then
-        M.BuildSectionCountSettings(parent)
-    end
-end
-
 --#endregion GUI ===============================================================
 
 
 --#region PUBLIC MODULE HOOKS ==================================================
+
+function M.on_reset_complete()
+    if M.migrate_background_settings then M.migrate_background_settings(M.get_db()) end
+    M.apply_objectives()
+    if M.refresh_profiles_tab then M.refresh_profiles_tab() end
+end
 
 function M.set_module_enabled(enabled)
     if enabled then
