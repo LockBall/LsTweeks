@@ -60,6 +60,8 @@ local BACKGROUND_ALPHA_REGION_KEYS = {
 
 local background_hooks_installed = false
 local background_sync_queued = false
+local background_followup_queued = false
+local background_followup_reason
 local background_adjustments = 0
 local background_last_reason = "none"
 local background_last_state = "unavailable"
@@ -83,7 +85,7 @@ local background_edit_mode_state = "unavailable"
 local background_color_overlay_anchor = nil
 local background_color_auto_enabled_border = false
 local objective_border_frame
-local objective_border_anchor_signature = nil
+local objective_border_anchor
 local objective_border_shown = nil
 
 --#endregion RUNTIME STATE =====================================================
@@ -240,17 +242,19 @@ local function sync_objective_border()
     local tracker = get_objective_tracker()
     if not tracker then return end
 
+    local show_border = is_background_border_enabled() == true
+    if not show_border then
+        if objective_border_frame and objective_border_shown ~= false then
+            objective_border_frame:Hide()
+        end
+        objective_border_shown = false
+        return
+    end
+
     local border = ensure_objective_border(tracker)
     if not border then return end
     local anchor = tracker.NineSlice or tracker
-    local anchor_signature = table.concat({
-        tostring(anchor),
-        tostring(OBJECTIVE_BORDER_LEFT_X),
-        tostring(OBJECTIVE_BORDER_RIGHT_X),
-        tostring(OBJECTIVE_BORDER_TOP_Y),
-        tostring(OBJECTIVE_BORDER_BOTTOM_Y),
-    }, ":")
-    if objective_border_anchor_signature ~= anchor_signature then
+    if objective_border_anchor ~= anchor then
         anchor_to_objective_background(
             tracker,
             border,
@@ -259,17 +263,12 @@ local function sync_objective_border()
             OBJECTIVE_BORDER_TOP_Y,
             OBJECTIVE_BORDER_BOTTOM_Y
         )
-        objective_border_anchor_signature = anchor_signature
+        objective_border_anchor = anchor
     end
 
-    local show_border = is_background_border_enabled() == true
-    if objective_border_shown ~= show_border then
-        if show_border then
-            border:Show()
-        else
-            border:Hide()
-        end
-        objective_border_shown = show_border
+    if objective_border_shown ~= true then
+        border:Show()
+        objective_border_shown = true
     end
 end
 
@@ -783,9 +782,16 @@ local function queue_background_sync(reason)
 end
 
 local function queue_background_followup(reason)
+    background_followup_reason = reason
+    if background_followup_queued then return end
+
+    background_followup_queued = true
     local delay = addon.UPDATE_INTERVALS.fifth_sec
     C_Timer.After(delay, function()
-        sync_objective_background(reason)
+        background_followup_queued = false
+        local followup_reason = background_followup_reason
+        background_followup_reason = nil
+        sync_objective_background(followup_reason)
     end)
 end
 
@@ -990,7 +996,7 @@ function M.restore_background()
     if objective_border_frame then
         objective_border_frame:Hide()
     end
-    objective_border_anchor_signature = nil
+    objective_border_anchor = nil
     objective_border_shown = nil
     restore_background_color()
     if tracker and tracker.Update then

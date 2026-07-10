@@ -95,6 +95,18 @@ local function objective_border_frame()
     return nil
 end
 
+h.test("disabled border does not create an unused frame", function()
+    reset_runtime()
+    fresh_db()
+
+    M.apply_background()
+
+    h.is_nil(objective_border_frame(), "disabled border does not create a frame")
+    Ls_Tweeks_DB.objectives.customize_background = true
+    M.apply_background()
+    h.advance(h.addon.UPDATE_INTERVALS.next_frame)
+end)
+
 h.test("module disable restores objective opacity through Edit Mode", function()
     reset_runtime()
     fresh_db({ customize_background = false })
@@ -311,6 +323,23 @@ h.test("priority background anchors force-expand without scratch state", functio
     local fields = M.get_background_status()
     h.ok(tContains(fields, "bg_force_expand=background:PriorityObjectiveModule"), "priority force-expand status")
     h.eq(#(ObjectiveTrackerFrame:GetCalls("ForceExpand") or {}), 1, "force expand called")
+end)
+
+h.test("background collapse followups coalesce", function()
+    reset_runtime()
+    fresh_db()
+    h.advance(h.addon.UPDATE_INTERVALS.fifth_sec)
+    h.stub.timers = {}
+
+    ObjectiveTrackerFrame:SetCollapsed(true)
+    ObjectiveTrackerFrame:SetCollapsed(false)
+    ObjectiveTrackerFrame:SetCollapsed(true)
+
+    h.eq(h.stub.ActiveTimerCount(), 2, "collapse burst queues one sync and one followup")
+    h.advance(h.addon.UPDATE_INTERVALS.fifth_sec)
+    h.eq(h.stub.ActiveTimerCount(), 0, "coalesced collapse timers complete")
+
+    ObjectiveTrackerFrame.__collapsed = false
 end)
 
 h.run("ob_background")
