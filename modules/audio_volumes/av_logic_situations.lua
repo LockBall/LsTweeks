@@ -409,13 +409,6 @@ function M.set_quick_pick_from_menu(situation_key, enabled)
     if M.sync_temporary_profile_controls then
         M.sync_temporary_profile_controls()
     end
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0, function()
-            if M.sync_temporary_profile_controls then
-                M.sync_temporary_profile_controls()
-            end
-        end)
-    end
     return true
 end
 

@@ -9,4 +9,4 @@ Remaining follow-up items from the completed Audio Volumes review. Delete this f
 - [x] 2. Legacy alias audit — removed write-only `M._fishing_focus_cached`; the shared temporary-profile cache is the sole owner.
 - [x] 3. Normal-slider defaults ownership — consolidated Fishing, Combat, and Quiet Custom default seeding behind one local helper while retaining Quiet Custom’s fixed initial value.
 - [x] 4. Original-preview unmute — retained the defensive unmute loop and documented why preview playback must remain self-contained after unusual UI/runtime sequencing.
-- [ ] 5. Quick Pick menu double sync — determine whether the next-frame `C_Timer.After(0)` refresh covers a menu lifecycle need; retain it with a comment or remove the redundant pass.
+- [x] 5. Quick Pick menu double sync — removed the redundant next-frame control sync. The immediate sync updates settings controls, and the minimap menu refreshes from live state; focused coverage verifies one sync per menu selection. In-game check: confirm menu checkmark and open Situations controls update after one selection.

@@ -143,6 +143,19 @@ h.test("Normal Volumes Quick Pick clears the active manual profile", function()
     h.ok(AV.is_quick_pick_active("normal"), "Normal Volumes reports its live menu state")
 end)
 
+h.test("Quick Pick menu selection synchronizes controls once", function()
+    reset_sound_state()
+    local syncs = 0
+    local original_sync = AV.sync_temporary_profile_controls
+    AV.sync_temporary_profile_controls = function() syncs = syncs + 1 end
+
+    h.ok(AV.set_quick_pick_from_menu("quiet_custom", true), "Quick Pick menu selection succeeds")
+    h.advance(0)
+
+    h.eq(syncs, 1, "Quick Pick menu selection performs one control sync")
+    AV.sync_temporary_profile_controls = original_sync
+end)
+
 h.test("Normal Volumes leaves an active triggered situation in control", function()
     reset_sound_state()
     local combat_db = AV.get_combat_volumes_db()
