@@ -92,6 +92,24 @@ h.test("secret charge timing and display values fall back safely", function()
     h.eq(duration, 0, "secret cooldown duration falls back to zero")
 end)
 
+h.test("spark color normalization clamps saved components", function()
+    local root_db = SV.get_root_db()
+    local old_color = root_db.spark_color
+    root_db.spark_color = { r = -1, g = 2, b = "0.5", a = 99 }
+    SV._db_normalized = false
+
+    SV.get_root_db()
+
+    h.eq(root_db.spark_color.r, 0, "red clamps to zero")
+    h.eq(root_db.spark_color.g, 1, "green clamps to one")
+    h.eq(root_db.spark_color.b, 0.5, "blue keeps valid numeric text")
+    h.eq(root_db.spark_color.a, 1, "alpha clamps to one")
+
+    root_db.spark_color = old_color
+    SV._db_normalized = false
+    SV.get_root_db()
+end)
+
 h.test("charge event bursts coalesce before the Skyriding refresh", function()
     local original_refresh = SV.refresh
     local refresh_count = 0

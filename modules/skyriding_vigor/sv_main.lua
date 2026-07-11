@@ -21,6 +21,7 @@ local ipairs = ipairs
 
 local BRONZE_TIMEPIECE_ITEM_ID = 191140
 local FILL_TEST_NODE_SECONDS = 2.0
+local COLOR_COMPONENT_RANGE = { min = 0, max = 1 }
 local BASE_RUNTIME_EVENTS = {
     "PLAYER_ENTERING_WORLD",
     "PLAYER_CAN_GLIDE_CHANGED",
@@ -88,10 +89,10 @@ local function normalize_db(db, include_race_controls)
         local color = DEFAULTS.spark_color or { r = 1, g = 1, b = 1, a = 1 }
         db.spark_color = { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
     end
-    db.spark_color.r = clamp_number(db.spark_color.r, DEFAULTS.spark_color and DEFAULTS.spark_color.r or 1)
-    db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color and DEFAULTS.spark_color.g or 1)
-    db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color and DEFAULTS.spark_color.b or 1)
-    db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color and DEFAULTS.spark_color.a or 1)
+    db.spark_color.r = clamp_number(db.spark_color.r, DEFAULTS.spark_color and DEFAULTS.spark_color.r or 1, COLOR_COMPONENT_RANGE)
+    db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color and DEFAULTS.spark_color.g or 1, COLOR_COMPONENT_RANGE)
+    db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color and DEFAULTS.spark_color.b or 1, COLOR_COMPONENT_RANGE)
+    db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color and DEFAULTS.spark_color.a or 1, COLOR_COMPONENT_RANGE)
     if M.get_valid_bar_style_key then
         db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
     else

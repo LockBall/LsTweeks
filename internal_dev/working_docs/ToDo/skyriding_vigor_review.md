@@ -22,7 +22,6 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Minor Cleanups
-5. `normalize_db()` coerces `spark_color` components to numbers but never range-clamps them to 0-1 (`sv_main.lua:90-93`); `clamp_number` without a range only applies the fallback (`functions/table_utils.lua:41-47`).
 
 
 ## Reviewed And Confirmed Deliberate
