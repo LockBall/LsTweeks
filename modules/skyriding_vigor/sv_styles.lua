@@ -15,6 +15,22 @@ local clamp_number = addon.clamp_number
 local tonumber = tonumber
 
 local COLOR_EPSILON = 0.001
+local COLOR_COMPONENT_RANGE = { min = 0, max = 1 }
+
+--#region COLOR HELPERS =======================================================
+
+local function normalize_color(color, fallback)
+    color = type(color) == "table" and color or fallback or {}
+    fallback = type(fallback) == "table" and fallback or {}
+    return {
+        r = clamp_number(color.r, fallback.r or 1, COLOR_COMPONENT_RANGE),
+        g = clamp_number(color.g, fallback.g or 1, COLOR_COMPONENT_RANGE),
+        b = clamp_number(color.b, fallback.b or 1, COLOR_COMPONENT_RANGE),
+        a = clamp_number(color.a, fallback.a or 1, COLOR_COMPONENT_RANGE),
+    }
+end
+
+--#endregion COLOR HELPERS ====================================================
 
 --#region FLIGHT LOCK HELPERS ==================================================
 local function settings_locked_by_flight()
@@ -358,6 +374,7 @@ function M.get_style_layout_table(db, style_key, create, initial_scale)
         if layout.fill_color == nil then
             layout.fill_color = M.get_style_layout_default(style_key, "fill_color")
         end
+        layout.fill_color = normalize_color(layout.fill_color, M.get_style_layout_default(style_key, "fill_color"))
         if layout.fill_add_alpha == nil then
             layout.fill_add_alpha = M.get_style_layout_default(style_key, "fill_add_alpha")
         end
@@ -524,12 +541,7 @@ function M.set_style_fill_color(color)
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.fill_color = {
-        r = color.r or 1,
-        g = color.g or 1,
-        b = color.b or 1,
-        a = color.a or 1,
-    }
+    layout.fill_color = normalize_color(color, M.get_style_layout_default(style_key, "fill_color"))
     if M.apply_fill_color then
         M.apply_fill_color()
     elseif M.refresh then

@@ -110,6 +110,21 @@ h.test("spark color normalization clamps saved components", function()
     SV.get_root_db()
 end)
 
+h.test("style fill color normalization clamps saved components", function()
+    local root_db = SV.get_root_db()
+    local layout = SV.get_style_layout_table(root_db, root_db.style, true)
+    local old_color = layout.fill_color
+    layout.fill_color = { r = -1, g = 2, b = "0.5", a = 9 }
+
+    local color = SV.get_style_fill_color()
+    h.eq(color.r, 0, "fill red clamps to zero")
+    h.eq(color.g, 1, "fill green clamps to one")
+    h.eq(color.b, 0.5, "fill blue coerces to a number")
+    h.eq(color.a, 1, "fill alpha clamps to one")
+
+    layout.fill_color = old_color
+end)
+
 h.test("charge event bursts coalesce before the Skyriding refresh", function()
     local original_refresh = SV.refresh
     local refresh_count = 0

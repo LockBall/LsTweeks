@@ -73,6 +73,7 @@ function M.apply_aura_frame_profile_data(data)
     M.db.positions = copy(data.positions or {})
     M.db.custom_frames = copy(data.custom_frames or {})
     addon.apply_defaults(M.defaults, M.db)
+    if M.normalize_saved_colors then M.normalize_saved_colors(M.db) end
     if M.create_custom_frame then
         for _, entry in ipairs(M.db.custom_frames) do
             local show_key = entry.id and ("show_" .. entry.id)

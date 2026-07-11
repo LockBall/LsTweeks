@@ -1093,6 +1093,7 @@ local function prepare_aura_frame_db()
     if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
     if M.migrate_legacy_cdm_fade_settings then M.migrate_legacy_cdm_fade_settings(M.db) end
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
+    if M.normalize_saved_colors then M.normalize_saved_colors(M.db) end
     if M.apply_cdm_default_positions_to_db then M.apply_cdm_default_positions_to_db() end
 end
 

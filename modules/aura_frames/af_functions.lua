@@ -384,6 +384,50 @@ function M.get_setting(cfg_db, category, key, fallback)
     return fallback
 end
 
+local COLOR_COMPONENT_RANGE = { min = 0, max = 1 }
+local COLOR_KEYS = {
+    { key = "color", has_alpha = true },
+    { key = "bar_bg_color", has_alpha = true },
+    { key = "bar_text_color", has_alpha = false },
+    { key = "bg_color", has_alpha = true },
+    { key = "timer_color", has_alpha = false },
+}
+
+local function normalize_saved_color(color, fallback, has_alpha)
+    color = type(color) == "table" and color or fallback or {}
+    fallback = type(fallback) == "table" and fallback or {}
+    local normalized = {
+        r = addon.clamp_number(color.r, fallback.r or 1, COLOR_COMPONENT_RANGE),
+        g = addon.clamp_number(color.g, fallback.g or 1, COLOR_COMPONENT_RANGE),
+        b = addon.clamp_number(color.b, fallback.b or 1, COLOR_COMPONENT_RANGE),
+    }
+    if has_alpha then
+        normalized.a = addon.clamp_number(color.a, fallback.a or 1, COLOR_COMPONENT_RANGE)
+    end
+    return normalized
+end
+
+function M.normalize_saved_colors(db)
+    if type(db) ~= "table" then return end
+
+    for _, category in ipairs(M.CATEGORIES or {}) do
+        for _, color_def in ipairs(COLOR_KEYS) do
+            local key = color_def.key .. "_" .. category
+            db[key] = normalize_saved_color(db[key], M.defaults and M.defaults[key], color_def.has_alpha)
+        end
+    end
+
+    for _, entry in ipairs(db.custom_frames or {}) do
+        for _, color_def in ipairs(COLOR_KEYS) do
+            entry[color_def.key] = normalize_saved_color(
+                entry[color_def.key],
+                M.CUSTOM_FRAME_TEMPLATE and M.CUSTOM_FRAME_TEMPLATE[color_def.key],
+                color_def.has_alpha
+            )
+        end
+    end
+end
+
 function M.migrate_legacy_cdm_fade_settings(dest, source)
     dest = dest or M.db
     source = source or dest

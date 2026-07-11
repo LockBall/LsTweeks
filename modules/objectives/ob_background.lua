@@ -392,9 +392,11 @@ local function ensure_background_color()
             b = DEFAULT_BACKGROUND_COLOR.b,
             a = DEFAULT_BACKGROUND_COLOR.a or 0.5,
         }
-    elseif db.background_color.a == nil then
-        db.background_color.a = DEFAULT_BACKGROUND_COLOR.a or 0.5
     end
+    db.background_color.r = addon.clamp_number(db.background_color.r, DEFAULT_BACKGROUND_COLOR.r, COLOR_RANGE)
+    db.background_color.g = addon.clamp_number(db.background_color.g, DEFAULT_BACKGROUND_COLOR.g, COLOR_RANGE)
+    db.background_color.b = addon.clamp_number(db.background_color.b, DEFAULT_BACKGROUND_COLOR.b, COLOR_RANGE)
+    db.background_color.a = addon.clamp_number(db.background_color.a, DEFAULT_BACKGROUND_COLOR.a or 0.5, COLOR_RANGE)
 end
 
 local function should_customize_background()

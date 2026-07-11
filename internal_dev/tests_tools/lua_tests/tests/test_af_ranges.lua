@@ -31,6 +31,30 @@ h.test("visible icon tick clamps and snaps from centralized range metadata", fun
     h.eq(M.get_visible_icon_tick_interval(), range.min + range.step, "in-range value snaps to nearest step")
 end)
 
+h.test("saved preset and custom colors normalize to readable RGBA", function()
+    local M = load_aura_frames()
+    M.db = {
+        color_static = { r = -1, g = 2, b = "0.5", a = 9 },
+        bar_bg_color_static = "invalid",
+        custom_frames = {
+            {
+                id = "custom_color_test",
+                color = { r = 2, g = -1, b = 0.25 },
+                bg_color = { r = 0.5, g = 0.5, b = 0.5, a = -1 },
+            },
+        },
+    }
+
+    M.normalize_saved_colors(M.db)
+    h.eq(M.db.color_static.r, 0, "preset red clamps to zero")
+    h.eq(M.db.color_static.g, 1, "preset green clamps to one")
+    h.eq(M.db.color_static.b, 0.5, "preset blue coerces to a number")
+    h.eq(M.db.color_static.a, 1, "preset alpha clamps to one")
+    h.eq(M.db.custom_frames[1].color.r, 1, "custom red clamps to one")
+    h.eq(M.db.custom_frames[1].color.g, 0, "custom green clamps to zero")
+    h.eq(M.db.custom_frames[1].bg_color.a, 0, "custom alpha clamps to zero")
+end)
+
 h.test("visible icon ticker refresh stops idle ticker immediately", function()
     local M = load_aura_frames()
     local range = M.SETTING_RANGES.aura_visible_icon_tick
