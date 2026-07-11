@@ -86,6 +86,24 @@ h.test("charge event bursts coalesce before the Skyriding refresh", function()
     SV.refresh = original_refresh
 end)
 
+h.test("Race Test control stays disabled while flight locks settings", function()
+    local old_controls = SV.controls
+    local old_lock_check = SV.is_settings_locked_by_flight
+    local button = CreateFrame("Button")
+    SV.controls = { race_profile_test_button = button }
+    SV.is_settings_locked_by_flight = function() return true end
+
+    SV.sync_race_profile_controls({ race_profile_enabled = true })
+
+    h.ok(not button:IsEnabled(), "Race Test stays disabled during flight")
+    SV.is_settings_locked_by_flight = function() return false end
+    SV.sync_race_profile_controls({ race_profile_enabled = true })
+    h.ok(button:IsEnabled(), "Race Test enables when flight lock clears")
+
+    SV.controls = old_controls
+    SV.is_settings_locked_by_flight = old_lock_check
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

@@ -248,15 +248,9 @@ function M.sync_race_profile_controls(root_db)
     if button and button.SetTextToFit then
         button:SetTextToFit(M._race_profile_test_enabled and STRINGS.stop_race_profile_test or STRINGS.race_profile_test)
     end
-    if button and button.SetEnabled then
-        button:SetEnabled(root_db and root_db.race_profile_enabled or false)
-    elseif button then
-        if root_db and root_db.race_profile_enabled then
-            button:Enable()
-        else
-            button:Disable()
-        end
-    end
+    local race_test_enabled = root_db and root_db.race_profile_enabled
+        and not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+    set_control_enabled(button, race_test_enabled)
     sync_race_profile_panel_size()
     if M.sync_fade_controls_enabled then
         M.sync_fade_controls_enabled()
