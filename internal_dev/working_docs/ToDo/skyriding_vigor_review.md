@@ -10,7 +10,6 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Latent Traps
-4. `sync_slider_controls()` sets `M._syncing_slider_controls = true` and clears it at the end with no pcall (`sv_gui.lua:344-367`); one error inside a control sync leaves the flag stuck and every Skyriding slider callback permanently muted (`sv_gui.lua:132-137`). Same shape for `M._syncing_position_controls` (`sv_gui.lua:330-341`), though those blocks are smaller.
 
 
 ## Optimization Candidates

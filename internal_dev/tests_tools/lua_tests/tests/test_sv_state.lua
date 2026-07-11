@@ -126,6 +126,30 @@ h.test("Race Test control stays disabled while flight locks settings", function(
     SV.is_settings_locked_by_flight = old_lock_check
 end)
 
+h.test("control-sync guards clear after a control error", function()
+    local old_controls = SV.controls
+    SV.controls = {
+        spacing = {
+            GetValue = function() return 0 end,
+            SetValueSilently = function() error("slider sync failure") end,
+        },
+        x_position = {
+            GetValue = function() return 0 end,
+            SetValueSilently = function() error("position sync failure") end,
+        },
+    }
+
+    local slider_ok = pcall(SV.sync_slider_controls, { spacing = 5 })
+    h.ok(not slider_ok, "slider sync still reports control errors")
+    h.is_nil(SV._syncing_slider_controls, "slider guard clears after an error")
+
+    local position_ok = pcall(SV.sync_position_controls, { position = { x = 5 } })
+    h.ok(not position_ok, "position sync still reports control errors")
+    h.is_nil(SV._syncing_position_controls, "position guard clears after an error")
+
+    SV.controls = old_controls
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

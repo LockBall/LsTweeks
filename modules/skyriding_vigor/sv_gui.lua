@@ -294,6 +294,15 @@ set_control_enabled = function(control, enabled)
     end
 end
 
+local function run_with_sync_guard(guard_key, callback)
+    M[guard_key] = true
+    local ok, err = pcall(callback)
+    M[guard_key] = nil
+    if not ok then
+        error(err, 0)
+    end
+end
+
 function M.sync_settings_controls_enabled()
     local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
     local controls = M.flight_locked_controls
@@ -315,16 +324,16 @@ function M.sync_position_controls(db)
 
     local x_slider = M.controls.x_position
     if x_slider and x_slider.GetValue and x_slider.SetValueSilently and position.x ~= nil and x_slider:GetValue() ~= position.x then
-        M._syncing_position_controls = true
-        x_slider:SetValueSilently(position.x)
-        M._syncing_position_controls = nil
+        run_with_sync_guard("_syncing_position_controls", function()
+            x_slider:SetValueSilently(position.x)
+        end)
     end
 
     local y_slider = M.controls.y_position
     if y_slider and y_slider.GetValue and y_slider.SetValueSilently and position.y ~= nil and y_slider:GetValue() ~= position.y then
-        M._syncing_position_controls = true
-        y_slider:SetValueSilently(position.y)
-        M._syncing_position_controls = nil
+        run_with_sync_guard("_syncing_position_controls", function()
+            y_slider:SetValueSilently(position.y)
+        end)
     end
 end
 
@@ -332,25 +341,25 @@ function M.sync_slider_controls(db)
     if not db then return end
     local defaults = M.DEFAULTS or {}
 
-    M._syncing_slider_controls = true
-    for _, key in ipairs(M.SLIDER_KEYS or {}) do
-        local control = M.controls[key]
-        if control and control.GetValue and control.SetValueSilently then
-            local value
-            if key == "scale" and M.get_style_scale then
-                value = M.get_style_scale()
-            elseif key == "fill_add_alpha" and M.get_style_fill_add_alpha then
-                value = M.get_style_fill_add_alpha()
-            else
-                value = db[key]
-            end
-            if value == nil then value = defaults[key] end
-            if value ~= nil and control:GetValue() ~= value then
-                control:SetValueSilently(value)
+    run_with_sync_guard("_syncing_slider_controls", function()
+        for _, key in ipairs(M.SLIDER_KEYS or {}) do
+            local control = M.controls[key]
+            if control and control.GetValue and control.SetValueSilently then
+                local value
+                if key == "scale" and M.get_style_scale then
+                    value = M.get_style_scale()
+                elseif key == "fill_add_alpha" and M.get_style_fill_add_alpha then
+                    value = M.get_style_fill_add_alpha()
+                else
+                    value = db[key]
+                end
+                if value == nil then value = defaults[key] end
+                if value ~= nil and control:GetValue() ~= value then
+                    control:SetValueSilently(value)
+                end
             end
         end
-    end
-    M._syncing_slider_controls = nil
+    end)
 end
 
 function M.sync_decor_position_controls(db)

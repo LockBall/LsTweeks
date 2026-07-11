@@ -54,6 +54,7 @@ Important `skyriding_vigor` keys:
 - `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
 - `sync_slider_controls()` intentionally uses both the module-level `_syncing_slider_controls` guard and per-control `_suppress_callback` flags. The module guard prevents Skyriding's local setting writes during programmatic sync, while `CreateSliderWithBox()` consumes `_suppress_callback` before debouncing the supplied callback. Decor sliders use the generic slider callback path and need `_suppress_callback`; X/Y position sliders use `_syncing_position_controls` because they attach direct `OnValueChanged` hooks.
+- Programmatic slider and position synchronization must clear their module guard even when a control setter errors, then rethrow the error. A stuck guard silently mutes later user callbacks.
 
 
 ## Assets And Credits
