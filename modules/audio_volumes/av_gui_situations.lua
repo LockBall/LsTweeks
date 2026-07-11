@@ -432,20 +432,28 @@ function M.BuildSituationsTab(parent)
         name_box:SetScript("OnEditFocusGained", function(self)
             self:SetTextColor(1, 1, 1, 1)
         end)
-        name_box:SetScript("OnEditFocusLost", function(self)
-            self:SetTextColor(1, 0.82, 0, 1)
-        end)
-        name_box:SetScript("OnEnterPressed", function(self)
-            if M.rename_situation then
-                M.rename_situation(entry.key, self:GetText())
-                entry.label = entry.db.name or entry.label
-                self:SetText(entry.label)
-                if title then
-                    title:SetText(entry.label)
-                end
+
+        local function commit_situation_name(self)
+            if not M.rename_situation then return end
+
+            local previous_label = entry.label
+            M.rename_situation(entry.key, self:GetText())
+            entry.label = entry.db.name or entry.label
+            self:SetText(entry.label)
+            if title then
+                title:SetText(entry.label)
+            end
+            if entry.label ~= previous_label then
                 rebuild_situation_list()
                 select_situation(entry.key)
             end
+        end
+
+        name_box:SetScript("OnEditFocusLost", function(self)
+            self:SetTextColor(1, 0.82, 0, 1)
+            commit_situation_name(self)
+        end)
+        name_box:SetScript("OnEnterPressed", function(self)
             self:ClearFocus()
         end)
         name_box:SetScript("OnEscapePressed", function(self)
