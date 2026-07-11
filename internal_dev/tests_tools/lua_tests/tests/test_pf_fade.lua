@@ -76,6 +76,20 @@ h.test("truthy fade setting registers fade events", function()
     h.ok(tContains(status, "fade_events=true"), "truthy fade setting should register fade events")
 end)
 
+h.test("enabling fade during combat adopts current combat state", function()
+    local db = fresh_db({ fade_out_of_combat = true })
+    reset_runtime()
+    stub.in_combat = true
+
+    M.update_player_frame()
+
+    h.eq(F.get_runtime_status().state, "combat", "fade enable recognizes current combat state")
+    h.near(PlayerFrame:GetAlpha(), 1, 0.001, "fade enable keeps PlayerFrame visible in combat")
+    h.fire_event("PLAYER_REGEN_ENABLED")
+    h.eq(F.get_runtime_status().state, "delay", "registered event resumes OOC fade after combat")
+    stub.in_combat = false
+end)
+
 h.test("leaving combat waits fade_delay then fades to fade_alpha over fade_length", function()
     local db = fresh_db()
     reset_runtime()
