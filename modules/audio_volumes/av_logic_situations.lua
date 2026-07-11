@@ -658,13 +658,14 @@ function M.restore_manual_situation_profile()
     M.apply_active_sound_channel_profile()
 end
 
-function M.resync_manual_situation_profile()
+function M.resync_manual_situation_profile(situation_key)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M.restore_manual_situation_profile()
         return
     end
 
-    if M._manual_situation_active_key then
+    if situation_key and situation_key ~= M._manual_situation_active_key then return end
+    if M._manual_situation_active_key and not M._fishing_focus_active and not M._combat_volumes_active then
         M.apply_active_sound_channel_profile()
     end
 end

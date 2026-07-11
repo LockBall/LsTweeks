@@ -158,6 +158,25 @@ h.test("Normal Volumes leaves an active triggered situation in control", functio
     assert_normal_profile("Normal Volumes resumes after combat")
 end)
 
+h.test("manual Quick Pick resync applies only the editable active profile", function()
+    reset_sound_state()
+    AV._manual_situation_active_key = "quiet_custom"
+    local applies = 0
+    local original_apply = AV.apply_active_sound_channel_profile
+    AV.apply_active_sound_channel_profile = function() applies = applies + 1 end
+
+    AV.resync_manual_situation_profile("custom:inactive")
+    h.eq(applies, 0, "inactive Quick Pick edit skips runtime CVar writes")
+
+    AV.resync_manual_situation_profile("quiet_custom")
+    h.eq(applies, 1, "active Quick Pick edit reapplies its profile")
+
+    AV._fishing_focus_active = true
+    AV.resync_manual_situation_profile("quiet_custom")
+    h.eq(applies, 1, "Fishing override skips manual Quick Pick runtime writes")
+    AV.apply_active_sound_channel_profile = original_apply
+end)
+
 h.test("deleting an enabled custom Quick Pick restores Normal Volumes", function()
     reset_sound_state()
     local custom_key = AV.create_custom_situation("Delete Me")

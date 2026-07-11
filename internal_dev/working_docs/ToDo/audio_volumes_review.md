@@ -30,7 +30,7 @@ Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full rea
 
 ## Optimization Candidates
 - [x] 1. `apply_audio_volumes()` ran on every replacement preset slider step, causing redundant mute/unmute work. Preset-only changes now refresh the event cache and registrations without touching mute state; Off and Original transitions retain the full apply. Focused coverage verifies both paths, including leaving Original without changing the stored preset.
-- [ ] 2. `resync_situation_runtime` on a Quick Pick slider change re-applies the active situation even when the edited situation is not the active one (`av_gui_situations.lua:285-293` routes to `resync_manual_situation_profile`, which applies `M._manual_situation_active_key` unconditionally): five redundant `SetCVar` writes per drag step while editing an inactive Quick Pick. Early-out when the edited entry key is not the active key.
+- [x] 2. Quick Pick slider edits could reapply a different active manual profile, producing five redundant CVar writes per step. Manual resync now accepts the edited key and applies only when that key is active and no Fishing/Combat override has priority; focused coverage verifies inactive and overridden edits skip runtime writes.
 - [ ] 3. `get_manual_situation_entries()` (`av_logic_situations.lua:279-299`) rebuilds the entry list and re-runs the per-channel clamp/validate loops in `get_situation_profile_db` on every call; `set_manual_situation_enabled` triggers it twice (directly and via `sync_manual_situation_profile`). Settings-time only, so minor.
 - [ ] 4. `handle_delete_situation` calls `M.get_situation_profile_db(delete_key)` twice for the `was_enabled` check (`av_gui_situations.lua:570-573`); fold into one local.
 

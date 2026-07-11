@@ -299,7 +299,7 @@ function M.BuildSituationsTab(parent)
         elseif entry.key == "combat" then
             M.resync_combat_volumes()
         elseif M.resync_manual_situation_profile then
-            M.resync_manual_situation_profile()
+            M.resync_manual_situation_profile(entry.key)
         end
     end
 
