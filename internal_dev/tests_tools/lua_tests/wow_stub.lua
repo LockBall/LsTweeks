@@ -120,6 +120,7 @@ local function new_region(kind, name, parent)
         __height = 0,
         __scripts = {},
         __events = {},
+        __unit_events = {},
         __points = {},
         __children = {},
         __regions = {},
@@ -244,9 +245,18 @@ function frame_methods:HookScript(handler, fn)
 end
 
 function frame_methods:RegisterEvent(event) self.__events[event] = true end
-function frame_methods:RegisterUnitEvent(event) self.__events[event] = true end
-function frame_methods:UnregisterEvent(event) self.__events[event] = nil end
-function frame_methods:UnregisterAllEvents() self.__events = {} end
+function frame_methods:RegisterUnitEvent(event, ...)
+    self.__events[event] = true
+    self.__unit_events[event] = { ... }
+end
+function frame_methods:UnregisterEvent(event)
+    self.__events[event] = nil
+    self.__unit_events[event] = nil
+end
+function frame_methods:UnregisterAllEvents()
+    self.__events = {}
+    self.__unit_events = {}
+end
 function frame_methods:IsEventRegistered(event) return self.__events[event] == true end
 
 function frame_methods:CreateTexture(name, _layer)
@@ -539,7 +549,18 @@ stub.FrameMethods = frame_methods
 -- Fire an event to every stub frame registered for it, mirroring the client.
 function stub.FireEvent(event, ...)
     for _, f in ipairs(stub.frames) do
-        if f.__events[event] and f.__scripts.OnEvent then
+        local unit_events = f.__unit_events[event]
+        local unit_matches = not unit_events
+        if unit_events then
+            local event_unit = select(1, ...)
+            for i = 1, #unit_events do
+                if unit_events[i] == event_unit then
+                    unit_matches = true
+                    break
+                end
+            end
+        end
+        if f.__events[event] and unit_matches and f.__scripts.OnEvent then
             f.__scripts.OnEvent(f, event, ...)
         end
     end

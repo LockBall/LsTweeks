@@ -30,9 +30,11 @@ local BASE_RUNTIME_EVENTS = {
     "SPELL_UPDATE_COOLDOWN",
     "MOUNT_JOURNAL_USABILITY_CHANGED",
     "PLAYER_MOUNT_DISPLAY_CHANGED",
+    "VEHICLE_UPDATE",
+}
+local PLAYER_UNIT_RUNTIME_EVENTS = {
     "UNIT_ENTERED_VEHICLE",
     "UNIT_EXITED_VEHICLE",
-    "VEHICLE_UPDATE",
 }
 local RACE_PROFILE_EVENTS = {
     "BAG_UPDATE_DELAYED",
@@ -226,6 +228,9 @@ local function sync_runtime_events(enabled)
     for _, event in ipairs(BASE_RUNTIME_EVENTS) do
         loader:UnregisterEvent(event)
     end
+    for _, event in ipairs(PLAYER_UNIT_RUNTIME_EVENTS) do
+        loader:UnregisterEvent(event)
+    end
     for _, event in ipairs(RACE_PROFILE_EVENTS) do
         loader:UnregisterEvent(event)
     end
@@ -233,6 +238,9 @@ local function sync_runtime_events(enabled)
     if enabled then
         for _, event in ipairs(BASE_RUNTIME_EVENTS) do
             loader:RegisterEvent(event)
+        end
+        for _, event in ipairs(PLAYER_UNIT_RUNTIME_EVENTS) do
+            loader:RegisterUnitEvent(event, "player")
         end
     end
     if race_events_enabled then

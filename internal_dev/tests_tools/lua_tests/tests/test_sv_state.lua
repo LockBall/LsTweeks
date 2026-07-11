@@ -150,6 +150,21 @@ h.test("race events refresh only when race state changes", function()
     SV.set_race_profile_enabled(previous_enabled)
 end)
 
+h.test("vehicle events refresh only for the player unit", function()
+    local original_refresh = SV.refresh
+    local refresh_count = 0
+    SV.refresh = function()
+        refresh_count = refresh_count + 1
+    end
+
+    h.fire_event("UNIT_ENTERED_VEHICLE", "party1")
+    h.eq(refresh_count, 0, "other unit vehicle event is ignored")
+    h.fire_event("UNIT_ENTERED_VEHICLE", "player")
+    h.eq(refresh_count, 1, "player vehicle event refreshes")
+
+    SV.refresh = original_refresh
+end)
+
 h.test("Race Test control stays disabled while flight locks settings", function()
     local old_controls = SV.controls
     local old_lock_check = SV.is_settings_locked_by_flight
