@@ -127,6 +127,51 @@ h.test("manual situation API rejects triggered situation keys", function()
     h.ok(quick_pick.enabled, "rejected triggered key leaves the Quick Pick unchanged")
 end)
 
+h.test("Normal Volumes Quick Pick clears the active manual profile", function()
+    reset_sound_state()
+    local quick_pick = AV.get_quiet_custom_db()
+    quick_pick.master = 20
+    h.ok(AV.set_manual_situation_enabled("quiet_custom", true), "Quick Pick enables")
+    h.eq(stub.cvars.Sound_MasterVolume, "0.2", "Quick Pick profile applies")
+
+    h.ok(AV.set_quick_pick_from_menu("normal", true), "Normal Volumes selection succeeds")
+
+    assert_normal_profile("Normal Volumes clears the active Quick Pick")
+    h.is_nil(av_db().last_quick_pick_key, "Normal Volumes does not become a saved Quick Pick")
+    h.is_nil(av_db().last_situation_key, "Normal Volumes leaves no stale situation selection")
+    h.ok(AV.get_quick_pick_menu_entries()[1].enabled, "Normal Volumes is selected in Quick Picks menu data")
+    h.ok(AV.is_quick_pick_active("normal"), "Normal Volumes reports its live menu state")
+end)
+
+h.test("Normal Volumes leaves an active triggered situation in control", function()
+    reset_sound_state()
+    local combat_db = AV.get_combat_volumes_db()
+    combat_db.enabled = true
+    combat_db.master = 30
+    AV.sync_combat_volumes_events()
+    h.enter_combat()
+
+    h.ok(AV.set_quick_pick_from_menu("normal", true), "Normal Volumes selection succeeds during combat")
+
+    h.eq(stub.cvars.Sound_MasterVolume, "0.3", "Combat Volumes retains priority over Normal Volumes")
+    h.leave_combat()
+    assert_normal_profile("Normal Volumes resumes after combat")
+end)
+
+h.test("deleting an enabled custom Quick Pick restores Normal Volumes", function()
+    reset_sound_state()
+    local custom_key = AV.create_custom_situation("Delete Me")
+    local custom_db = AV.get_situation_profile_db(custom_key)
+    custom_db.master = 20
+    h.ok(AV.set_manual_situation_enabled(custom_key, true), "custom Quick Pick enables")
+    h.eq(stub.cvars.Sound_MasterVolume, "0.2", "enabled custom Quick Pick applies its profile")
+
+    h.ok(AV.delete_custom_situation(custom_key), "custom Quick Pick deletes")
+
+    assert_normal_profile("deleting the enabled Quick Pick restores Normal Volumes")
+    h.is_nil(av_db().last_situation_key, "deletion clears the invalid saved selection")
+end)
+
 h.test("Specifics controls write the reset target table", function()
     reset_sound_state()
     local parent = CreateFrame("Frame", nil, UIParent)

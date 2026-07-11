@@ -226,13 +226,18 @@ function M.delete_custom_situation(situation_key)
     local situation_id = get_custom_situation_id(situation_key)
     if not situation_id then return false end
     local situations = M.get_custom_situations_db()
-    if not situations[situation_id] then return false end
+    local situation = situations[situation_id]
+    if not situation then return false end
+    local was_enabled = situation.enabled == true
     situations[situation_id] = nil
     local db = M.get_db()
     if db.last_situation_key == situation_key then
-        db.last_situation_key = "fishing"
+        db.last_situation_key = nil
     end
     db.next_custom_situation_id = get_next_custom_situation_id(situations)
+    if was_enabled then
+        M.sync_manual_situation_profile()
+    end
     return true
 end
 
@@ -330,13 +335,36 @@ function M.set_manual_situation_enabled(situation_key, enabled)
     return true
 end
 
+function M.clear_manual_situation()
+    for _, entry in ipairs(get_manual_situation_entries()) do
+        if entry.db then
+            entry.db.enabled = false
+        end
+    end
+    M.sync_manual_situation_profile()
+end
+
+function M.is_quick_pick_active(situation_key)
+    local active_key = get_enabled_manual_situation_key()
+    if situation_key == "normal" then
+        return active_key == nil
+    end
+    return active_key == situation_key
+end
+
 function M.get_quick_pick_menu_entries()
-    local entries = {}
+    local entries = {
+        {
+            key = "normal",
+            label = "Normal Volumes",
+            enabled = M.is_quick_pick_active("normal"),
+        },
+    }
     local quiet_custom = M.get_quiet_custom_db()
     entries[#entries + 1] = {
         key = "quiet_custom",
         label = quiet_custom.name or "Quiet Custom",
-        enabled = quiet_custom.enabled == true,
+        enabled = M.is_quick_pick_active("quiet_custom"),
     }
 
     local custom_situations = M.get_custom_situations_db()
@@ -354,7 +382,7 @@ function M.get_quick_pick_menu_entries()
             entries[#entries + 1] = {
                 key = situation_key,
                 label = situation.name or ("Custom " .. situation_id),
-                enabled = situation.enabled == true,
+                enabled = M.is_quick_pick_active(situation_key),
             }
         end
     end
@@ -362,12 +390,19 @@ function M.get_quick_pick_menu_entries()
 end
 
 function M.set_quick_pick_from_menu(situation_key, enabled)
-    if not M.set_manual_situation_enabled(situation_key, enabled) then
+    if situation_key == "normal" then
+        M.clear_manual_situation()
+    elseif not M.set_manual_situation_enabled(situation_key, enabled) then
         return false
     end
     local db = M.get_db()
-    db.last_quick_pick_key = situation_key
-    db.last_situation_key = situation_key
+    if situation_key == "normal" then
+        db.last_quick_pick_key = nil
+        db.last_situation_key = nil
+    else
+        db.last_quick_pick_key = situation_key
+        db.last_situation_key = situation_key
+    end
     if M.sync_temporary_profile_controls then
         M.sync_temporary_profile_controls()
     end

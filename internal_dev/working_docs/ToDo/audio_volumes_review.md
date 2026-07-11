@@ -24,7 +24,7 @@ Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full rea
 - [x] 2. `set_manual_situation_enabled("fishing"/"combat", true)` could disable every Quick Pick without enabling a triggered key. The manual-only API now resolves keys from `get_manual_situation_entries()` and rejects anything else before mutating state; focused coverage verifies Fishing leaves the active Quick Pick unchanged.
 - [x] 3. `handle_event` returns after the first playable slot. Kept deliberately: `SOUND_EVENT_TARGETS` has a one-target-per-event contract, documented both where that map is built and at the early return; revisit the handler before assigning any event to multiple targets.
 - [x] 4. Custom-situation control keys used mixed sanitized and raw forms. `get_situation_control_key()` now owns the raw `custom:N` convention for custom sliders and enable controls, and focused coverage verifies no second enable-key form is created.
-- [ ] 5. Post-delete selection has two owners: the data layer sets `last_situation_key = "fishing"`, then the GUI overwrites it with `quiet_custom`/fallback. Pick one owner.
+- [x] 5. Post-delete selection had two owners: the data layer chose Fishing, then the GUI chose Quiet Custom. Deletion now clears only an invalid saved selection and restores Normal Volumes when it removes the enabled Quick Pick; the GUI alone selects the next visible panel. Focused coverage verifies the runtime fallback and cleared stale selection.
 - [ ] 6. Deleted custom-situation controls linger in `M.controls`. Current DB-driven sync skips them, but cleanup during list/panel removal would make ownership explicit.
 
 

@@ -134,7 +134,7 @@ Replacement volume is shown as `0-100%` in 5% steps. `0%` is off. The **Original
 
 The **Situations** tab always shows Normal Volumes for the user's regular Master, Music, Effects, Ambience, and Dialog channel volumes. Its list has a Triggered group for Fishing and Combat plus a Quick Picks group for Quiet Custom and user-created custom Quick Picks. Fishing and Combat have title-bar enable checkboxes for automatic activation. Combat starts use `PLAYER_REGEN_DISABLED`, combat ends use `PLAYER_REGEN_ENABLED`, and entering combat exits the Fishing situation.
 
-Quick Picks store manual sound-channel situations and do not auto-trigger because there is no user-facing trigger builder. Fishing and Combat temporarily override an enabled Quick Pick, then the Quick Pick resumes afterward. The Play buttons preview the selected situation with the Fishing Bobber splash sound. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
+Quick Picks store manual sound-channel situations and do not auto-trigger because there is no user-facing trigger builder. Right-clicking the minimap button includes **Normal Volumes** to clear the active Quick Pick. Fishing and Combat temporarily override an enabled Quick Pick, then the Quick Pick resumes afterward. The Play buttons preview the selected situation with the Fishing Bobber splash sound. Exact Fishing Bobber bite-sound replacement is not available because the bite timing is not exposed through the tested Lua hooks/APIs.
 
 Sound target details are tracked in `modules/audio_volumes/sounds/sound_reference.md`.
 

@@ -40,16 +40,15 @@ local function get_audio_volumes_module()
     return addon.audio_volumes
 end
 
-local function is_quick_pick_enabled(quick_pick_key)
+local function is_quick_pick_active(quick_pick_key)
     local M = get_audio_volumes_module()
-    local profile_db = M and M.get_situation_profile_db and M.get_situation_profile_db(quick_pick_key)
-    return profile_db and profile_db.enabled == true
+    return M and M.is_quick_pick_active and M.is_quick_pick_active(quick_pick_key) or false
 end
 
 local function apply_quick_pick(quick_pick_key)
     local M = get_audio_volumes_module()
     if not (M and M.set_quick_pick_from_menu) then return end
-    M.set_quick_pick_from_menu(quick_pick_key, not is_quick_pick_enabled(quick_pick_key))
+    M.set_quick_pick_from_menu(quick_pick_key, not is_quick_pick_active(quick_pick_key))
 end
 
 local function create_disabled_menu_button(root_description, text)
@@ -82,7 +81,7 @@ local function show_menu(owner, module_enabled, get_entries)
             root_description:CreateCheckbox(
                 quick_pick_label,
                 function()
-                    return is_quick_pick_enabled(quick_pick_key)
+                    return is_quick_pick_active(quick_pick_key)
                 end,
                 function()
                     apply_quick_pick(quick_pick_key)

@@ -569,14 +569,7 @@ function M.BuildSituationsTab(parent)
                     situation_panels[delete_key]:Hide()
                     situation_panels[delete_key] = nil
                 end
-                local was_enabled = delete_key ~= "quiet_custom"
-                    and M.get_situation_profile_db
-                    and M.get_situation_profile_db(delete_key)
-                    and M.get_situation_profile_db(delete_key).enabled == true
                 if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
-                    if was_enabled and M.sync_manual_situation_profile then
-                        M.sync_manual_situation_profile()
-                    end
                     selected_key = selected_key == delete_key and "quiet_custom" or selected_key
                     rebuild_situation_list()
                     select_situation(get_situation_entry(selected_key) and selected_key or fallback_selection_key)
