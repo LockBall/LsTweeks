@@ -64,6 +64,7 @@ Important `skyriding_vigor` keys:
 
 ## Runtime Visibility And Fade
 - Visibility comes from readable vigor charges plus move mode, active gliding from `C_PlayerInfo.GetGlidingInfo()`, or mounted/flying state gated by `GetGlidingInfo()`'s `can_glide` result. Do not show only because `IsFlying()` or `IsMounted()` + `IsAdvancedFlyableArea()` is true; that also matches normal non-skyriding mounts in advanced-flyable zones. Grounded skyriding-mounted visibility is allowed when `can_glide` is true; `fade_when_full` handles idle/full states.
+- Refresh may skip charge API reads only when Fill Test, Move Mode, gliding, and every `can_glide`-gated flying/mounted vigor state are inactive. Never skip them for a grounded skyriding mount that can glide; it must still show and apply the configured full-charge fade.
 - Ridealong passengers can inherit enough skyriding state to look eligible for the bar. Normal runtime visibility must suppress the bar when `UnitInVehicle("player")` is true and `UnitInVehicleControlSeat("player")` is false. Keep move mode/fill test usable for configuration.
 - `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` gated by `can_glide` restores full alpha even when charges are full; plain ground movement and normal flying mounts must not.
 - `modules/skyriding_vigor/sv_fade.lua` owns Skyriding Vigor alpha transitions and the full-charge fade decision. `sv_main.lua` should call `M.restore_frame_alpha()` / `M.apply_full_charge_fade()` instead of owning frame fade scripts directly.

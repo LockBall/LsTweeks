@@ -165,6 +165,41 @@ h.test("vehicle events refresh only for the player unit", function()
     SV.refresh = original_refresh
 end)
 
+h.test("visibility gate skips charges only outside valid vigor states", function()
+    local root_db = SV.get_root_db()
+    local original_enabled = root_db.enabled
+    local original_move_mode = root_db.move_mode
+    local original_gliding_state = SV.get_gliding_state
+    local original_charge_info = SV.get_charge_info
+    local original_is_flying = SV.is_player_flying
+    local original_is_mounted = SV.is_mounted_in_advanced_flyable_area
+    local charge_reads = 0
+
+    root_db.enabled = true
+    root_db.move_mode = false
+    SV._fill_test_enabled = nil
+    SV.get_charge_info = function()
+        charge_reads = charge_reads + 1
+        return 6, 6, 0, 0
+    end
+    SV.get_gliding_state = function() return false, false end
+    SV.refresh()
+    h.eq(charge_reads, 0, "normal non-vigor state skips charge reads")
+
+    SV.get_gliding_state = function() return false, true end
+    SV.is_player_flying = function() return false end
+    SV.is_mounted_in_advanced_flyable_area = function() return true end
+    SV.refresh()
+    h.eq(charge_reads, 1, "grounded vigor mount still reads charges")
+
+    root_db.enabled = original_enabled
+    root_db.move_mode = original_move_mode
+    SV.get_gliding_state = original_gliding_state
+    SV.get_charge_info = original_charge_info
+    SV.is_player_flying = original_is_flying
+    SV.is_mounted_in_advanced_flyable_area = original_is_mounted
+end)
+
 h.test("Race Test control stays disabled while flight locks settings", function()
     local old_controls = SV.controls
     local old_lock_check = SV.is_settings_locked_by_flight

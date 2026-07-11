@@ -479,6 +479,18 @@ function M.refresh()
         M.sync_settings_controls_enabled()
     end
 
+    local is_flying = can_glide and M.is_player_flying()
+    local is_mounted_in_vigor_area = can_glide and not is_flying
+        and M.is_mounted_in_advanced_flyable_area(can_glide)
+    local visibility_state_active = M._fill_test_enabled or db.move_mode or is_gliding
+        or (can_glide and (is_flying or is_mounted_in_vigor_area))
+    if not visibility_state_active then
+        M.restore_frame_alpha(frame)
+        frame:Hide()
+        stop_progress_driver()
+        return
+    end
+
     local current, max_charges, start_time, duration = M.get_charge_info()
     local max_slots = M.MAX_SLOTS
 
@@ -496,12 +508,7 @@ function M.refresh()
         and M.is_player_ridealong_passenger and M.is_player_ridealong_passenger()
     local should_show = current and max_charges
         and not is_ridealong_passenger
-        and (
-            M._fill_test_enabled
-            or db.move_mode
-            or is_gliding
-            or (can_glide and (M.is_player_flying() or M.is_mounted_in_advanced_flyable_area(can_glide)))
-        )
+        and visibility_state_active
     if not should_show then
         M.restore_frame_alpha(frame)
         frame:Hide()
@@ -540,7 +547,7 @@ function M.refresh()
         end
     end
 
-    local is_active_flight = is_gliding or (can_glide and M.is_player_flying())
+    local is_active_flight = is_gliding or is_flying
     local charges_full = current >= min(max_charges, max_slots)
     M.apply_full_charge_fade(frame, db, charges_full, is_active_flight)
 
