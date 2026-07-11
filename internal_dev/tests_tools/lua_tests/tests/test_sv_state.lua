@@ -242,6 +242,38 @@ h.test("control-sync guards clear after a control error", function()
     SV.controls = old_controls
 end)
 
+h.test("settings flight-lock sync skips unchanged control writes", function()
+    local old_controls = SV.controls
+    local old_flight_controls = SV.flight_locked_controls
+    local old_lock_check = SV.is_settings_locked_by_flight
+    local old_cached_lock = SV._settings_controls_flight_locked
+    local writes = 0
+    local control = {
+        SetEnabled = function(_, _enabled)
+            writes = writes + 1
+        end,
+    }
+    SV.controls = {}
+    SV.flight_locked_controls = { { control = control } }
+    SV._settings_controls_flight_locked = nil
+    SV.is_settings_locked_by_flight = function() return false end
+
+    SV.sync_settings_controls_enabled()
+    SV.sync_settings_controls_enabled()
+    h.eq(writes, 1, "unchanged flight state skips repeated control writes")
+
+    SV.is_settings_locked_by_flight = function() return true end
+    SV.sync_settings_controls_enabled()
+    h.eq(writes, 2, "flight-lock change resynchronizes controls")
+    SV.sync_settings_controls_enabled(true)
+    h.eq(writes, 3, "forced sync refreshes rebuilt controls")
+
+    SV.controls = old_controls
+    SV.flight_locked_controls = old_flight_controls
+    SV.is_settings_locked_by_flight = old_lock_check
+    SV._settings_controls_flight_locked = old_cached_lock
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

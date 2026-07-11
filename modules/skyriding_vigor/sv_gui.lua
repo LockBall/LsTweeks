@@ -298,8 +298,12 @@ local function run_with_sync_guard(guard_key, callback)
     end
 end
 
-function M.sync_settings_controls_enabled()
-    local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+function M.sync_settings_controls_enabled(force)
+    local flight_locked = M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() or false
+    if not force and M._settings_controls_flight_locked == flight_locked then return end
+    M._settings_controls_flight_locked = flight_locked
+
+    local enabled = not flight_locked
     local controls = M.flight_locked_controls
     if controls then
         for i = 1, #controls do
@@ -1026,6 +1030,7 @@ function M.BuildVigorTab(parent)
     local cfg = UI_CONFIG
     M.controls_parent = parent
     M.flight_locked_controls = {}
+    M._settings_controls_flight_locked = nil
     M.settings_grid = addon.CreateSettingsGrid(parent, {
         column_count = 5,
         col_gap = cfg.slider_width + cfg.slider_gap_x,
@@ -1137,6 +1142,7 @@ function M.BuildVigorTab(parent)
 
     build_spark_row(parent, context)
 
+    M.sync_settings_controls_enabled(true)
 end
 
 --#endregion SETTINGS CONSTRUCTION =============================================

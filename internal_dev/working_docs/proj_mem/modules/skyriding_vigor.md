@@ -50,6 +50,7 @@ Important `skyriding_vigor` keys:
   Use that registry for new Skyriding setting controls instead of extending a
   manual list. Controls with narrower enabled rules can pass a predicate so those
   rules compose with the flight lock.
+- `sync_settings_controls_enabled()` writes the flight-lock registry only when the lock changes; force a sync after rebuilding the Vigor Bar tab so new controls receive the current state.
 - Skyriding's Move Mode cell is a three-control stack: Move Mode, Snap to Grid, and Reset Position. The first control is grid-placed and the secondary controls use `grid:stack_below()` so the row/column cell owns the repeated vertical-stack math.
 - `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
