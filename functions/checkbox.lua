@@ -86,8 +86,9 @@ function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
     container.SetCheckedSilently = function(_, checked)
         local was_suppressed = suppress_callback
         suppress_callback = true
-        checkbox:SetChecked(checked)
+        local ok, err = pcall(checkbox.SetChecked, checkbox, checked)
         suppress_callback = was_suppressed
+        if not ok then error(err, 0) end
     end
     container.HookCheckedChanged = function(_, handler, opts)
         if type(handler) ~= "function" then return end

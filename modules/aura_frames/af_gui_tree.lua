@@ -294,6 +294,7 @@ function M.build_frames_tab(p, frames_data)
                     rename_box:Hide()
                     cat_btn:Show()
                     rename_box:ClearFocus()
+                    rename_box._suppress_commit = nil
                 end)
 
                 -- Single-click: select; double-click: open rename

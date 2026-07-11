@@ -245,8 +245,9 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     M.controls[target_key .. "_preset"] = slider_widget
     slider_widget._lstweeks_set_sound_level_value = function(_, value)
         suppress_original_clear = true
-        slider_widget:SetValue(value)
+        local ok, err = pcall(slider_widget.SetValue, slider_widget, value)
         suppress_original_clear = false
+        if not ok then error(err, 0) end
         sync_original_inactive_state()
     end
     slider_widget._lstweeks_sync_original_state = sync_original_inactive_state

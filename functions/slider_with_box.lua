@@ -219,12 +219,15 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         cancel_debounce()
         local was_suppressed = container._suppress_callback
         container._suppress_callback = true
-        if db_table then
-            db_table[db_key] = value
-        end
-        eb:SetText(format_display_value(value))
-        slider:SetValue(value)
+        local ok, err = pcall(function()
+            if db_table then
+                db_table[db_key] = value
+            end
+            eb:SetText(format_display_value(value))
+            slider:SetValue(value)
+        end)
         container._suppress_callback = was_suppressed
+        if not ok then error(err, 0) end
     end
     container.HookValueChanged = function(_, handler, hook_opts)
         if type(handler) ~= "function" then return end

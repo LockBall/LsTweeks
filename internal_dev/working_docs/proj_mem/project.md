@@ -130,6 +130,8 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
   such as disabling settings edits during an active runtime state while still
   allowing controlled test modes.
 - When a settings control has both a broad runtime lock and a local eligibility rule, register the local rule with the centralized gate. Local state synchronization must reapply that composite gate rather than directly enabling the control.
+- Give each direct `OnUpdate` assignment one owning subsystem. Use `HookScript` when extending a Blizzard-owned frame, or a dedicated driver frame when independent addon lifecycles need concurrent updates; only the owner may clear its callback.
+- Programmatic control synchronization may suppress callbacks only for the setter call. Restore the prior suppression state through a protected cleanup path and rethrow setter errors, so a failed sync cannot mute later user input.
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore addon-owned suppression state and let Blizzard handlers run; module-specific stricter rules such as Aura Frames' `BuffFrame` / `DebuffFrame` handling take precedence.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
 
