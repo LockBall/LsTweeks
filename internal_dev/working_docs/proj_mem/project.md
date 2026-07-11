@@ -35,6 +35,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
+- Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Add unresolved addon-wide checks to `ToDo/cross_module_followups.md` immediately; keep only durable generalized lessons in this file.
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
