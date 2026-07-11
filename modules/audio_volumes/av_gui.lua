@@ -205,6 +205,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
             return
         end
         local target_db = M.get_target_db(target_key)
+        local was_using_original = target_db.use_original == true
         clear_original_from_slider_interaction()
         if target_db.play_on_adjust == true then
             M.queue_adjust_preview(target_key)
@@ -212,7 +213,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
 
         local is_off = slider_value == slider_min
         local new_preset = option and option.value
-        local changed = target_db.sound_off ~= is_off or ((not is_off) and target_db.preset ~= new_preset)
+        local changed = was_using_original or target_db.sound_off ~= is_off or ((not is_off) and target_db.preset ~= new_preset)
         target_db.sound_off = is_off
         if is_off then
             if changed then
@@ -225,13 +226,21 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
         new_preset = new_preset or target.default_preset or "0"
         if target_db.preset == new_preset then
             if changed then
-                M.apply_audio_volumes()
+                if was_using_original then
+                    M.apply_audio_volumes()
+                else
+                    M.refresh_audio_event_cache()
+                end
             end
             return
         end
 
         target_db.preset = new_preset
-        M.apply_audio_volumes()
+        if was_using_original then
+            M.apply_audio_volumes()
+        else
+            M.refresh_audio_event_cache()
+        end
     end)
     M.controls[target_key .. "_preset"] = slider_widget
     slider_widget._lstweeks_set_sound_level_value = function(_, value)

@@ -93,6 +93,16 @@ function M.unmute_all_sound_files()
     end
 end
 
+function M.refresh_audio_event_cache()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+        M.stop_runtime()
+        return
+    end
+
+    M.rebuild_event_cache()
+    M.sync_registered_events()
+end
+
 function M.apply_audio_volumes()
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
         M.stop_runtime()
@@ -111,8 +121,7 @@ function M.apply_audio_volumes()
             end
         end
     end
-    M.rebuild_event_cache()
-    M.sync_registered_events()
+    M.refresh_audio_event_cache()
 end
 
 --#endregion MUTES AND RUNTIME APPLY ===========================================

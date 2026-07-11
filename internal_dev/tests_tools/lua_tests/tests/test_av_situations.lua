@@ -207,6 +207,44 @@ h.test("Specifics controls write the reset target table", function()
     h.eq(stale_target.preset, "10", "slider leaves stale target table untouched")
 end)
 
+h.test("replacement preset sliders refresh cache without reapplying mute state", function()
+    reset_sound_state()
+    local parent = CreateFrame("Frame", nil, UIParent)
+    local target_key = "ready_check"
+    local target_db = AV.get_target_db(target_key)
+    target_db.sound_off = false
+    target_db.use_original = false
+    target_db.preset = "10"
+    AV.BuildSoundTargetSliderPanel(parent, target_key, AV.SOUND_TARGETS[target_key])
+    local control = AV.controls[target_key .. "_preset"]
+    local apply_calls, cache_calls = 0, 0
+    local original_apply = AV.apply_audio_volumes
+    local original_refresh = AV.refresh_audio_event_cache
+    AV.apply_audio_volumes = function() apply_calls = apply_calls + 1 end
+    AV.refresh_audio_event_cache = function() cache_calls = cache_calls + 1 end
+
+    control.Slider:SetValue(5)
+    control:TriggerCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, 5)
+
+    h.eq(apply_calls, 0, "replacement preset change skips mute-state apply")
+    h.eq(cache_calls, 1, "replacement preset change refreshes event cache")
+
+    target_db.use_original = true
+    local current_option = AV.get_preset_by_value(target_db.preset)
+    control.Slider:SetValue(current_option.slider_value)
+    control:TriggerCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, current_option.slider_value)
+
+    h.eq(apply_calls, 1, "leaving Original reapplies mute state even when preset is unchanged")
+    h.eq(cache_calls, 1, "leaving Original does not use the cache-only path")
+
+    control.Slider:SetValue(0)
+    control:TriggerCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, 0)
+
+    h.eq(apply_calls, 2, "turning a target Off reapplies mute state")
+    AV.apply_audio_volumes = original_apply
+    AV.refresh_audio_event_cache = original_refresh
+end)
+
 h.test("Situations controls rebuild against reset profile tables", function()
     reset_sound_state()
     local custom_key = AV.create_custom_situation()

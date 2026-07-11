@@ -45,6 +45,7 @@
 
 ## Event Cache And Performance
 - Runtime playback is cache-driven: `M._event_cache[event]` holds only actionable `path` or `soundkit_id` plus `channel`.
+- Replacement-preset slider changes refresh only the event cache and registrations; use the full audio apply only when Off or Original state changes because those transitions alter file mutes.
 - Off and Original targets do not create event-cache slots.
 - `handle_event` must not read DB/defaults or resolve presets/paths.
 - `sync_registered_events()` diffs registrations against the actionable cache.
