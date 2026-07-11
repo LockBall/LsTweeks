@@ -201,6 +201,8 @@ local function on_event(self, event, name)
 
     -- Note: Aura Frames will initialize themselves in af_main.lua
     -- using the Ls_Tweeks_DB.aura_frames table we ensured exists above.
+    self:UnregisterEvent("ADDON_LOADED")
+    self:SetScript("OnEvent", nil)
 end
 
 local f = CreateFrame("Frame")
