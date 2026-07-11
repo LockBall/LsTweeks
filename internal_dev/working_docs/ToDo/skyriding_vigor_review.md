@@ -3,19 +3,13 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Table of Contents
-- [Potential Bugs To Verify](#potential-bugs-to-verify)
 - [Latent Traps](#latent-traps)
 - [Optimization Candidates](#optimization-candidates)
 - [Minor Cleanups](#minor-cleanups)
 - [Reviewed And Confirmed Deliberate](#reviewed-and-confirmed-deliberate)
 
 
-## Potential Bugs To Verify
-1. Half-up rounding in `normalize_power_value()` (`sv_state.lua:47-54`) displays a node as full at >=50% partial power when the display-mod or max_power>slot_count normalization path is active, and could briefly show one more charge than the player can spend. Only reachable if the live power values are scaled; defer unless a real scaled power source is observed.
-
-
 ## Latent Traps
-2. `M.frame` has two competing `OnUpdate` owners: the fade animation (`sv_fade.lua:61`) and the drag tracker (`sv_bar.lua:722`), and `OnDragStop` clears the script unconditionally (`sv_bar.lua:732-733`). Today safe only because fades run exclusively outside move mode and drags exclusively inside it; if that invariant ever loosens, a drag-stop orphans `_sv_fade_state` and the signature check (`sv_fade.lua:44`) then swallows the next identical fade request forever. `set_move_mode()` also stamps `frame._sv_alpha = 1` without clearing `_sv_fade_state` (`sv_bar.lua:899-903`), relying on `apply_full_charge_fade()` cancelling later in the same synchronous refresh. Consider moving the fade OnUpdate to a dedicated child frame or asserting the invariant in a comment.
 3. `get_atlas_size()` raises a hard `error()` in the render path when atlas metadata is missing (`sv_bar.lua:108-116`). Non-default styles are validated by `atlas_exists()` with fallback to default (`sv_styles.lua:254-257,295-303`), but the default style's own `dragonriding_vigor_*` atlases are assumed present — a Blizzard rename breaks every refresh instead of degrading. Fail-fast may be intended (matches the SETTING_RANGES invariant); if so, document it in module memory.
 4. `sync_slider_controls()` sets `M._syncing_slider_controls = true` and clears it at the end with no pcall (`sv_gui.lua:344-367`); one error inside a control sync leaves the flag stuck and every Skyriding slider callback permanently muted (`sv_gui.lua:132-137`). Same shape for `M._syncing_position_controls` (`sv_gui.lua:330-341`), though those blocks are smaller.
 

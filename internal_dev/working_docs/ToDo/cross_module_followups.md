@@ -6,3 +6,4 @@ Targeted checks discovered during active module reviews. Keep only unresolved pa
 
 ## Priority Items
 - [ ] 1. Secret-value guard completeness — review WoW API values that flow into addon comparisons, arithmetic, string construction, or table keys. Guard every potentially secret value before use, not only adjacent fields from the same API result.
+- [ ] 2. Independent `OnUpdate` ownership — review frames whose `OnUpdate` scripts can be assigned by separate subsystems. Keep each owner on a dedicated driver frame or route them through an intentional multiplexer so one lifecycle cannot silently clear another callback.

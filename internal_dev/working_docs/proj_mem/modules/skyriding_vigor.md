@@ -66,6 +66,7 @@ Important `skyriding_vigor` keys:
 - Ridealong passengers can inherit enough skyriding state to look eligible for the bar. Normal runtime visibility must suppress the bar when `UnitInVehicle("player")` is true and `UnitInVehicleControlSeat("player")` is false. Keep move mode/fill test usable for configuration.
 - `fade_when_full` is keyed to visually full charges while not in move mode. Active gliding or `IsFlying()` gated by `can_glide` restores full alpha even when charges are full; plain ground movement and normal flying mounts must not.
 - `modules/skyriding_vigor/sv_fade.lua` owns Skyriding Vigor alpha transitions and the full-charge fade decision. `sv_main.lua` should call `M.restore_frame_alpha()` / `M.apply_full_charge_fade()` instead of owning frame fade scripts directly.
+- Fade animation runs on a dedicated child driver frame so Move Mode drag tracking remains the sole `OnUpdate` owner on the main vigor frame.
 - Fade settings do not apply while the race profile is active. The settings UI disables Fade When Full, Fade Alpha, and Fade Length during real race detection or Race Profile Test mode through `M.sync_fade_controls_enabled()`.
 - `M.sync_settings_controls_enabled()` owns the broad settings lock during real active flight. It disables settings controls and then calls `M.sync_fade_controls_enabled()` so the flight lock composes with the narrower race-profile fade lock. Fill Test remains editable while it is the active simulated state, but starting real flight stops Fill Test and re-locks settings.
 

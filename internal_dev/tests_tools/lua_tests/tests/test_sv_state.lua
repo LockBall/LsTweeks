@@ -154,6 +154,20 @@ h.test("repeating the same fade request does not restart the animation", functio
     h.ok(later < mid, "fade continued from prior progress instead of restarting, got " .. tostring(later))
 end)
 
+h.test("fade driver remains independent from the frame drag callback", function()
+    local frame = CreateFrame("Frame")
+    SV.set_frame_alpha(frame, 1)
+    SV.fade_frame_alpha(frame, 0.25, 2)
+
+    frame:SetScript("OnUpdate", function() end)
+    h.advance(1)
+
+    h.ok(frame:GetAlpha() < 1 and frame:GetAlpha() > 0.25, "fade continues while the frame owns a drag callback")
+    h.ok(frame._sv_fade_driver and frame._sv_fade_driver:GetScript("OnUpdate"), "fade uses a dedicated driver")
+    SV.restore_frame_alpha(frame)
+    h.is_nil(frame._sv_fade_driver:GetScript("OnUpdate"), "restore stops the dedicated fade driver")
+end)
+
 h.test("zero duration snaps and restore cancels a running fade", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

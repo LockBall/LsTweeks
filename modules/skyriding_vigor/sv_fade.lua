@@ -8,6 +8,7 @@ addon.skyriding_vigor = addon.skyriding_vigor or {
 
 local M = addon.skyriding_vigor
 
+local CreateFrame = CreateFrame
 local GetTime = GetTime
 local tonumber = tonumber
 
@@ -24,11 +25,27 @@ function M.set_frame_alpha(frame, alpha)
     set_frame_alpha(frame, alpha)
 end
 
+local function get_fade_driver(frame)
+    local driver = frame._sv_fade_driver
+    if driver then return driver end
+
+    -- Keep fade updates separate from the main frame drag callback.
+    driver = CreateFrame("Frame", nil, frame)
+    driver:Hide()
+    frame._sv_fade_driver = driver
+    return driver
+end
+
 function M.cancel_frame_fade(frame)
     if not frame then return end
-    if frame._sv_fade_state then
+    local driver = frame._sv_fade_driver
+    if frame._sv_fade_state or driver then
         frame._sv_fade_state = nil
-        frame:SetScript("OnUpdate", nil)
+        if driver then
+            driver._sv_fade_state = nil
+            driver:SetScript("OnUpdate", nil)
+            driver:Hide()
+        end
     end
 end
 
@@ -51,6 +68,7 @@ function M.fade_frame_alpha(frame, target_alpha, duration)
     if frame._sv_alpha == target_alpha then return end
 
     state = {
+        frame = frame,
         signature = signature,
         started_at = GetTime(),
         start_alpha = frame._sv_alpha or (frame.GetAlpha and frame:GetAlpha()) or 1,
@@ -58,22 +76,28 @@ function M.fade_frame_alpha(frame, target_alpha, duration)
         duration = duration,
     }
     frame._sv_fade_state = state
-    frame:SetScript("OnUpdate", function(self)
+    local driver = get_fade_driver(frame)
+    driver._sv_fade_state = state
+    driver:SetScript("OnUpdate", function(self)
         local fade_state = self._sv_fade_state
         if not fade_state then
             self:SetScript("OnUpdate", nil)
+            self:Hide()
             return
         end
         local progress = (GetTime() - fade_state.started_at) / fade_state.duration
         if progress >= 1 then
-            set_frame_alpha(self, fade_state.target_alpha)
+            set_frame_alpha(fade_state.frame, fade_state.target_alpha)
+            fade_state.frame._sv_fade_state = nil
             self._sv_fade_state = nil
             self:SetScript("OnUpdate", nil)
+            self:Hide()
             return
         end
         local alpha = fade_state.start_alpha + ((fade_state.target_alpha - fade_state.start_alpha) * progress)
-        set_frame_alpha(self, alpha)
+        set_frame_alpha(fade_state.frame, alpha)
     end)
+    driver:Show()
 end
 
 function M.restore_frame_alpha(frame)
