@@ -130,6 +130,8 @@ function M.BuildSituationsTab(parent)
     local quiet_custom_defaults = {}
     local control_scope = "Situation"
     local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
+    local slider_col_align = {}
+    for i = 1, slider_count do slider_col_align[i] = "left" end
     local situation_panels = {}
     local situation_entries = {}
     local selected_key = nil
@@ -167,7 +169,7 @@ function M.BuildSituationsTab(parent)
             UI.fishing_volumes_panel_height + 16,
             UI.fishing_volumes_panel_height,
         },
-        col_align = { "left", "left", "left", "left", "left" },
+        col_align = slider_col_align,
     })
 
     local situation_list_panel = addon.CreateGroupColumn(parent, {
@@ -289,7 +291,7 @@ function M.BuildSituationsTab(parent)
         col_offset = UI.fishing_slider_pad_x,
         row_start = UI.fishing_slider_row_start,
         row_heights = { UI.fishing_slider_row_height },
-        col_align = { "left", "left", "left", "left", "left" },
+        col_align = slider_col_align,
     }
     local current_grid = addon.CreateSettingsGrid(current_panel, channel_grid_opts)
 
@@ -459,7 +461,7 @@ function M.BuildSituationsTab(parent)
     end
 
     local function create_situation_sliders(panel, entry)
-        local situation_grid = addon.CreateSettingsGrid(panel, channel_grid_opts)
+        local sliders_grid = addon.CreateSettingsGrid(panel, channel_grid_opts)
         local slider_name_key = entry.key:gsub("[^%w_]", "_")
         local slider_defaults = get_situation_slider_defaults(entry)
 
@@ -478,7 +480,7 @@ function M.BuildSituationsTab(parent)
                     resync_situation_runtime(entry)
                 end
             )
-            situation_grid:place_at(slider, 1, i)
+            sliders_grid:place_at(slider, 1, i)
             M.controls[get_situation_control_key(entry.key, channel.key)] = slider
             if entry.key == "fishing" then
                 M.controls["fishing_focus_" .. channel.key] = slider

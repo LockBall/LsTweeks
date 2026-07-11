@@ -1,58 +1,12 @@
-# Audio Volumes Review Findings 2026-07-04
-Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full reads: `av_main.lua`, `av_functions.lua`, `av_defaults.lua`, `av_logic_main.lua`, `av_logic_situations.lua`, `av_gui.lua`, `av_gui_general.lua`, `av_gui_specifics.lua`, `av_gui_situations.lua`. Supporting partial reads for cross-checks: `functions/module_reset.lua`, `functions/table_utils.lua`, `functions/slider_with_box.lua` (write path only), `core/main_frame.lua` (category tab build only). Not reviewed: `sounds/` reference docs, `core/minimap_button.lua`. Items are ranked within each section; strike or annotate items as they are resolved or rejected.
-
+# Audio Volumes Cleanup Review
+Remaining follow-up items from the completed Audio Volumes review. Delete this file after the queue is resolved or rejected; durable module rules belong in `proj_mem/modules/audio_volumes.md`.
 
 ## Table of Contents
-- [Potential Bugs To Verify](#potential-bugs-to-verify)
-- [Latent Traps](#latent-traps)
-- [Optimization Candidates](#optimization-candidates)
-- [Minor Cleanups](#minor-cleanups)
-- [Reviewed And Confirmed Deliberate](#reviewed-and-confirmed-deliberate)
+- [Cleanup Queue](#cleanup-queue)
 
-
-## Potential Bugs To Verify
-- [x] 1. Specifics controls retained stale target tables after ARM reset. `BuildSoundTargetSliderPanel` captured the target DB during construction, so post-reset slider interactions could update an orphaned table. Fixed by resolving `M.get_target_db(target_key)` in interaction callbacks; focused reset coverage verifies the fresh table is written.
-- [x] 2. Situations controls retained stale Fishing, Combat, and Quick Pick tables after ARM reset. Rebuild the Situations tab before control synchronization so callbacks and sliders capture the fresh profile tables; focused coverage verifies a Fishing slider writes the reset table.
-- [x] 3. Situations list and cached panels were not rebuilt after ARM reset. The same tab rebuild replaces list/panel closures and removes controls for reset-deleted custom Quick Picks; focused coverage verifies the stale custom control is gone.
-- [x] 4. `read_channel_percent` ignored an active manual Quick Pick. The cached-profile read guard now matches the write guard, so Normal controls and copy/seed helpers use saved normal values while a Quick Pick is active; focused coverage verifies the read path.
-- [x] 5. Normal-panel test-sound preview wrote CVars. The no-profile preview path now plays the selected test sound directly without caching, writing, or scheduling a CVar restore; focused coverage verifies that contract.
-- [x] 6. A situation-preview restore could overwrite a Normal Volume edit made during its two-second window. Normal edits now update the pending preview restore cache, so the preview ends at the new normal value; focused coverage verifies the restore.
-
-
-## Latent Traps
-- [x] 1. Enabling Fishing Focus while already channeling Fishing did not apply the profile until the next cast. `sync_fishing_focus_events` now checks `UnitChannelInfo("player")` after registration and applies Fishing Focus for spell `131476`; focused coverage models the existing channel. In-game check: toggle Fishing Focus once during an active Fishing cast and confirm the immediate volume change.
-- [x] 2. `set_manual_situation_enabled("fishing"/"combat", true)` could disable every Quick Pick without enabling a triggered key. The manual-only API now resolves keys from `get_manual_situation_entries()` and rejects anything else before mutating state; focused coverage verifies Fishing leaves the active Quick Pick unchanged.
-- [x] 3. `handle_event` returns after the first playable slot. Kept deliberately: `SOUND_EVENT_TARGETS` has a one-target-per-event contract, documented both where that map is built and at the early return; revisit the handler before assigning any event to multiple targets.
-- [x] 4. Custom-situation control keys used mixed sanitized and raw forms. `get_situation_control_key()` now owns the raw `custom:N` convention for custom sliders and enable controls, and focused coverage verifies no second enable-key form is created.
-- [x] 5. Post-delete selection had two owners: the data layer chose Fishing, then the GUI chose Quiet Custom. Deletion now clears only an invalid saved selection and restores Normal Volumes when it removes the enabled Quick Pick; the GUI alone selects the next visible panel. Focused coverage verifies the runtime fallback and cleared stale selection.
-- [x] 6. Deleted custom-situation controls lingered in `M.controls`. Custom deletion now requests UI cleanup when the Situations tab exists, removing the custom enable control and channel sliders immediately; focused coverage verifies the references are gone.
-
-
-## Optimization Candidates
-- [x] 1. `apply_audio_volumes()` ran on every replacement preset slider step, causing redundant mute/unmute work. Preset-only changes now refresh the event cache and registrations without touching mute state; Off and Original transitions retain the full apply. Focused coverage verifies both paths, including leaving Original without changing the stored preset.
-- [x] 2. Quick Pick slider edits could reapply a different active manual profile, producing five redundant CVar writes per step. Manual resync now accepts the edited key and applies only when that key is active and no Fishing/Combat override has priority; focused coverage verifies inactive and overridden edits skip runtime writes.
-- [ ] 3. `get_manual_situation_entries()` (`av_logic_situations.lua:279-299`) rebuilds the entry list and re-runs the per-channel clamp/validate loops in `get_situation_profile_db` on every call; `set_manual_situation_enabled` triggers it twice (directly and via `sync_manual_situation_profile`). Settings-time only, so minor.
-- [ ] 4. `handle_delete_situation` calls `M.get_situation_profile_db(delete_key)` twice for the `was_enabled` check (`av_gui_situations.lua:570-573`); fold into one local.
-
-
-## Minor Cleanups
-- [ ] 1. `M._fishing_focus_cached` is a write-only legacy alias (`av_logic_situations.lua:412,527,544`) — never read anywhere in the repo; remove it or comment why it is kept.
-- [ ] 2. Inner `situation_grid` local in `create_situation_sliders` (`av_gui_situations.lua:452`) shadows the tab-level `situation_grid` (`av_gui_situations.lua:148`); rename one.
-- [ ] 3. Normal-slider defaults seeding has three owners: the build loop (`av_gui_situations.lua:295-299`), `refresh_current_values` (`av_gui_situations.lua:255-270`), and the slider on_change (`av_gui_situations.lua:313-314`) all write `focus_defaults`/`combat_defaults`/`quiet_custom_defaults`. One helper would satisfy the constants-owned-in-one-place rule.
-- [ ] 4. `col_align = { "left", "left", "left", "left", "left" }` hardcodes five entries while `column_count = slider_count` is derived from `FISHING_FOCUS_CHANNELS` (`av_gui_situations.lua:159,281`); build the align table from `slider_count`.
-- [ ] 5. `play_original_file` unmute loop (`av_logic_main.lua:72-74`) is redundant on its only reachable path (use_original targets are already unmuted by `apply_audio_volumes`); keep as defense with a comment or drop it.
-- [ ] 6. `local profile_db = nil` immediately reassigned (`av_logic_situations.lua:451-452`); collapse to one line.
-- [ ] 7. `set_quick_pick_from_menu` syncs controls twice, immediately and via `C_Timer.After(0)` (`av_logic_situations.lua:364-373`); if the deferred pass covers a menu-close timing issue, comment it, otherwise drop one.
-
-
-## Reviewed And Confirmed Deliberate
-Checked against `proj_mem/modules/audio_volumes.md`; do not re-flag without new evidence.
-- Combat end restores normal volumes rather than returning to Fishing Volumes even if still channeling: `apply_combat_volumes` clearing `_fishing_focus_active` (`av_logic_situations.lua:656`) matches the documented combat-exits-fishing priority. The reverse case (fishing channel starting mid-combat sets the flag and resumes after combat if still channeling) also resolves correctly through `apply_active_sound_channel_profile` priority order.
-- Event hot path matches the Event Cache And Performance section: `handle_event` reads only pre-resolved `M._event_cache` slots with no DB/preset/path work (`av_logic_main.lua:193-215`), Off and Original targets create no slots (`av_functions.lua:139-156`), `sync_registered_events` diffs registrations (`av_logic_main.lua:217-244`), and mute/unmute stays outside the hot path. No polling or OnUpdate anywhere in the module.
-- `PlaySound(soundKitID, "SFX")` string-channel calls with inline Ketho `param-type-mismatch` suppressions: verified in-game per memory; do not convert to numeric `UISoundSubType`.
-- Bloodlust test sound played via `PlaySoundFile(568812)` file-ID branch (`av_logic_situations.lua:505-506`): verified in-game per memory; `PlaySound(568812)` does not work.
-- `achievmentsound1` spelling matches Blizzard's original asset naming and the on-disk replacement folder; do not correct in isolation.
-- Fishing events registered player-only via `RegisterUnitEvent` and only while enabled; combat events only while enabled; disabled sync branches restore and unregister without creating frames or initializing situation DB values — matches the memory's disabled-sync and lazy-init rules.
-- `apply_active_sound_channel_profile` calls `restore_bobber_preview_profile()` before writing runtime CVars (`av_logic_situations.lua:548`) — the documented preview-vs-active-situation ordering rule.
-- `create_custom_situation` seeding `last_situation_key` so new Quick Picks open immediately in the unified Situations tab — documented GUI behavior.
-- Sound API upvalues resolved once at file load in `av_logic_main.lua:8-12` and reused at call sites — documented ownership rule.
+## Cleanup Queue
+- [x] 1. Mechanical source cleanup — renamed the inner `situation_grid`, derived slider alignment from `slider_count`, and collapsed the redundant `profile_db` assignment.
+- [ ] 2. Legacy alias audit — remove `M._fishing_focus_cached` if it remains write-only, or document its required compatibility purpose.
+- [ ] 3. Normal-slider defaults ownership — consolidate the three `focus_defaults` / `combat_defaults` / `quiet_custom_defaults` seeding paths behind one local helper without changing Normal Volume behavior.
+- [ ] 4. Original-preview unmute — verify whether `play_original_file` needs its defensive unmute loop; remove it only if the runtime mute contract makes it unreachable.
+- [ ] 5. Quick Pick menu double sync — determine whether the next-frame `C_Timer.After(0)` refresh covers a menu lifecycle need; retain it with a comment or remove the redundant pass.

@@ -497,8 +497,7 @@ function M.play_fishing_bobber_preview(profile_key)
 
     restore_bobber_preview_profile()
 
-    local profile_db = nil
-    profile_db = M.get_situation_profile_db(profile_key)
+    local profile_db = M.get_situation_profile_db(profile_key)
 
     if not profile_db then
         ---@diagnostic disable-next-line: param-type-mismatch -- Ketho types C_Sound.PlaySound channel as numeric, but current client accepts string channels.
