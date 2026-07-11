@@ -889,7 +889,9 @@ WOW_PROJECT_ID = 1
 WOW_PROJECT_MAINLINE = 1
 function securecallfunction(fn, ...) return fn(...) end
 function issecrettable() return false end
-function issecretvalue() return false end
+function issecretvalue(value)
+    return type(value) == "table" and value.__lstweeks_test_secret_value == true
+end
 function MuteSoundFile() end
 function UnmuteSoundFile() end
 function StopSound() end

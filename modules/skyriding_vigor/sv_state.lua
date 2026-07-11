@@ -44,6 +44,9 @@ local function normalize_power_value(value, max_power, slot_count, power_type)
     if not value or not max_power or max_power <= 0 then return nil end
 
     local display_mod = UnitPowerDisplayMod and UnitPowerDisplayMod(power_type) or 0
+    if is_secret(display_mod) then
+        display_mod = 0
+    end
     if display_mod and display_mod > 1 then
         return floor((value / display_mod) + 0.5)
     end
@@ -91,7 +94,11 @@ function M.get_charge_info()
             -- Action spell charges can report maxCharges = 1; keep the six-node bar shape in fallback mode.
             local max_slots = M.MAX_SLOTS
             if not is_secret(spell_current) then
-                return min(spell_current, max_slots), max_slots, info.cooldownStartTime or 0, info.cooldownDuration or 0
+                local start_time = info.cooldownStartTime
+                local duration = info.cooldownDuration
+                if is_secret(start_time) then start_time = 0 end
+                if is_secret(duration) then duration = 0 end
+                return min(spell_current, max_slots), max_slots, start_time or 0, duration or 0
             end
         end
     end

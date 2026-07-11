@@ -70,6 +70,28 @@ h.test("spell-charge fallback keeps the six-node bar shape", function()
     h.eq(duration, 10, "cooldown duration passed through")
 end)
 
+h.test("secret charge timing and display values fall back safely", function()
+    local secret_value = { __lstweeks_test_secret_value = true }
+    reset_power()
+    stub.power_display_mod = secret_value
+    stub.power[ALT_MOUNT_POWER] = { current = 4, max = 6 }
+    local current, max_charges = SV.get_charge_info()
+    h.eq(current, 4, "secret display mod does not enter arithmetic")
+    h.eq(max_charges, 6, "power path remains usable without a readable display mod")
+
+    reset_power()
+    stub.spell_charges = {
+        [372610] = { currentCharges = 2, maxCharges = 1, cooldownStartTime = secret_value, cooldownDuration = secret_value },
+    }
+    local start_time, duration
+    current, max_charges, start_time, duration = SV.get_charge_info()
+    stub.spell_charges = nil
+    h.eq(current, 2, "fallback current charges survive secret timing")
+    h.eq(max_charges, 6, "fallback keeps six slots with secret timing")
+    h.eq(start_time, 0, "secret cooldown start falls back to zero")
+    h.eq(duration, 0, "secret cooldown duration falls back to zero")
+end)
+
 h.test("charge event bursts coalesce before the Skyriding refresh", function()
     local original_refresh = SV.refresh
     local refresh_count = 0
