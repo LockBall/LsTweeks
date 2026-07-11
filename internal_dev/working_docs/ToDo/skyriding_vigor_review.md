@@ -10,7 +10,6 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Latent Traps
-3. `get_atlas_size()` raises a hard `error()` in the render path when atlas metadata is missing (`sv_bar.lua:108-116`). Non-default styles are validated by `atlas_exists()` with fallback to default (`sv_styles.lua:254-257,295-303`), but the default style's own `dragonriding_vigor_*` atlases are assumed present — a Blizzard rename breaks every refresh instead of degrading. Fail-fast may be intended (matches the SETTING_RANGES invariant); if so, document it in module memory.
 4. `sync_slider_controls()` sets `M._syncing_slider_controls = true` and clears it at the end with no pcall (`sv_gui.lua:344-367`); one error inside a control sync leaves the flag stuck and every Skyriding slider callback permanently muted (`sv_gui.lua:132-137`). Same shape for `M._syncing_position_controls` (`sv_gui.lua:330-341`), though those blocks are smaller.
 
 
