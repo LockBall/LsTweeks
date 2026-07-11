@@ -200,6 +200,30 @@ h.test("visibility gate skips charges only outside valid vigor states", function
     SV.is_mounted_in_advanced_flyable_area = original_is_mounted
 end)
 
+h.test("render context reuses stable style resolution and invalidates with layout", function()
+    local db = SV.get_db()
+    local original_frame_atlas = SV.get_frame_atlas
+    local frame_atlas_reads = 0
+    SV.get_frame_atlas = function(...)
+        frame_atlas_reads = frame_atlas_reads + 1
+        return original_frame_atlas(...)
+    end
+    SV.invalidate_render_context()
+
+    local first = SV.get_render_context(db)
+    local second = SV.get_render_context(db)
+    h.eq(first, second, "stable refreshes reuse the same render context")
+    h.eq(frame_atlas_reads, 1, "stable refreshes resolve frame atlas once")
+
+    SV.invalidate_layout()
+    local third = SV.get_render_context(db)
+    h.ok(third ~= first, "layout invalidation rebuilds render context")
+    h.eq(frame_atlas_reads, 2, "layout invalidation resolves the atlas again")
+
+    SV.get_frame_atlas = original_frame_atlas
+    SV.invalidate_render_context()
+end)
+
 h.test("Race Test control stays disabled while flight locks settings", function()
     local old_controls = SV.controls
     local old_lock_check = SV.is_settings_locked_by_flight

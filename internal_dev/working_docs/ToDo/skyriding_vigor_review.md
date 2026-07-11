@@ -13,7 +13,6 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Optimization Candidates
-5. `M.get_render_context()` allocates a new table and re-resolves the frame atlas per refresh (`sv_bar.lua:264-274`); `get_frame_atlas()` runs `get_style_layout_table(create)` plus `get_valid_node_color_key()` → `atlas_exists()` → `C_Texture.GetAtlasInfo` every time (`sv_styles.lua:440-446,259-273`). The atlas result only changes when style/node-color settings change; cache the resolved frame/spark atlas pair and invalidate from the existing setter paths, and reuse a scratch context table.
 6. The full frame tree (main frame, visual frame, 6 slots x ~5 subframes/textures, decor) is built during the `ADDON_LOADED` refresh (`sv_main.lua:442,787`, `sv_bar.lua:692-751`) even for characters that never mount. Deferring `ensure_frame()` until the first `should_show`/move-mode/fill-test need saves login work; medium effort because `apply_layout()` currently assumes the frame exists (`sv_bar.lua:780`).
 
 

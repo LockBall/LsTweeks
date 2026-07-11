@@ -264,14 +264,25 @@ end
 
 function M.get_render_context(db)
     db = db or get_db()
+    local context = M._render_context
+    if context and context.db == db then
+        return context
+    end
+
     local style_key, style = M.get_bar_style(db)
-    return {
+    context = {
         db = db,
         style_key = style_key,
         style = style,
         frame_atlas = M.get_frame_atlas(db, style_key, style),
         spark_atlas = M.get_spark_atlas and M.get_spark_atlas(db, style_key, style) or false,
     }
+    M._render_context = context
+    return context
+end
+
+function M.invalidate_render_context()
+    M._render_context = nil
 end
 
 local function apply_slot_static_atlases(slot, db, style_key, style, frame_atlas)
@@ -760,6 +771,7 @@ end
 function M.invalidate_layout()
     M._layout_signature = nil
     M._layout_dirty = true
+    M.invalidate_render_context()
 end
 
 function M.apply_layout()
