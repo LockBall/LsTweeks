@@ -806,7 +806,9 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "BAG_UPDATE_DELAYED" or event == "QUEST_ACCEPTED" or event == "QUEST_LOG_UPDATE"
         or event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN"
     then
-        update_race_active_state(get_root_db())
+        if not update_race_active_state(get_root_db()) then return end
+        M.refresh()
+        return
     end
 
     if event == "SPELL_UPDATE_CHARGES" or event == "SPELL_UPDATE_COOLDOWN" then

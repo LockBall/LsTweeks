@@ -923,7 +923,12 @@ C_Texture = {
         }
     end,
 }
-C_Item = {}
+stub.item_counts = {}
+C_Item = {
+    GetItemCount = function(item_id)
+        return stub.item_counts[item_id] or 0
+    end,
+}
 C_PlayerInfo = { GetGlidingInfo = function() return false, false, 0 end }
 
 --#endregion C_* namespaces and unit API

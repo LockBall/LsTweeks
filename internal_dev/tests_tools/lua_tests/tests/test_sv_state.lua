@@ -126,6 +126,30 @@ h.test("charge event bursts coalesce before the Skyriding refresh", function()
     SV.refresh = original_refresh
 end)
 
+h.test("race events refresh only when race state changes", function()
+    local root_db = SV.get_root_db()
+    local original_refresh = SV.refresh
+    local previous_enabled = root_db.race_profile_enabled
+    local refresh_count = 0
+    stub.item_counts[191140] = 0
+    SV._race_active = false
+    SV.set_race_profile_enabled(true)
+    SV.refresh = function()
+        refresh_count = refresh_count + 1
+    end
+
+    h.fire_event("QUEST_LOG_UPDATE")
+    h.eq(refresh_count, 0, "unchanged race event skips refresh")
+
+    stub.item_counts[191140] = 1
+    h.fire_event("QUEST_LOG_UPDATE")
+    h.eq(refresh_count, 1, "race state transition refreshes")
+
+    SV.refresh = original_refresh
+    stub.item_counts[191140] = 0
+    SV.set_race_profile_enabled(previous_enabled)
+end)
+
 h.test("Race Test control stays disabled while flight locks settings", function()
     local old_controls = SV.controls
     local old_lock_check = SV.is_settings_locked_by_flight
