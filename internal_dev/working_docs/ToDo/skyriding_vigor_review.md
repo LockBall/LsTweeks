@@ -22,7 +22,6 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Minor Cleanups
-1. `loader` keeps `ADDON_LOADED` registered forever (`sv_main.lua:776-789`); every later-loading addon calls the handler just to hit the name check. Unregister it inside the own-addon branch.
 2. `M.set_wing_layout()` (`sv_bar.lua:757-767`) has no callers anywhere in the repo — dev tuning hook; delete it or tag it as intentionally dev-only, since WING_LAYOUT scale fallbacks are otherwise reachable only through `DECOR_STYLES` gaps.
 3. `update_slot_spark()` calls `slot.spark:Hide()` and rewrites `_spark_shown` unconditionally on the no-spark path (`sv_bar.lua:372-377`), which runs for all six slots on every refresh (including the unchanged-state early return at `sv_bar.lua:619-625`). Guard on `slot._spark_shown`.
 4. `set_slot_spark_clip_bounds()` calls `get_fill_size(style)` before its own nil-style resolution block (`sv_bar.lua:344-353`), and every caller already passes a style, so the resolution block is dead — reorder or remove it.

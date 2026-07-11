@@ -791,6 +791,7 @@ loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addon_name then return end
+        self:UnregisterEvent("ADDON_LOADED")
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         local root_db = get_root_db()
         update_race_active_state(root_db)
