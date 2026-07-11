@@ -458,7 +458,6 @@ function M.set_current_sound_channel_percent(channel, percent)
     end
     if (M._fishing_focus_active or M._combat_volumes_active or M._manual_situation_active_key) and M._temporary_sound_profile_cached then
         M._temporary_sound_profile_cached[channel.cvar] = cvar_value
-        M._fishing_focus_cached = M._temporary_sound_profile_cached
         return
     end
     set_cvar(channel.cvar, cvar_value)
@@ -582,7 +581,6 @@ local function ensure_temporary_sound_profile_cache()
             M._temporary_sound_profile_cached[channel.cvar] = get_cvar(channel.cvar)
         end
     end
-    M._fishing_focus_cached = M._temporary_sound_profile_cached
 end
 
 local function apply_channel_profile(profile_db)
@@ -599,7 +597,6 @@ local function restore_cached_normal_profile()
         end
     end
     M._temporary_sound_profile_cached = nil
-    M._fishing_focus_cached = nil
 end
 
 function M.apply_active_sound_channel_profile()
