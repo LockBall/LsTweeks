@@ -69,6 +69,8 @@ local function play_original_file(target)
         return play_preview_soundkit(target)
     end
 
+    -- apply_audio_volumes normally leaves Original files unmuted, but keep
+    -- this preview path self-contained when called after a stale UI/runtime sequence.
     for _, original_file_id in ipairs(original_file_ids or {}) do
         _UnmuteSoundFile(original_file_id)
     end
