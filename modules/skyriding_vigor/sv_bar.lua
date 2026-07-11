@@ -346,11 +346,11 @@ local function set_slot_spark_clip_bounds(slot, style)
     if not slot or not slot.spark_frame then return end
     if slot._spark_clip_bounds_set then return end
 
-    local fill_width, fill_height = get_fill_size(style)
     if not style then
         local unused_style_key
         unused_style_key, style = M.get_bar_style(get_db())
     end
+    local fill_width, fill_height = get_fill_size(style)
     local frame_width = get_frame_size(style)
     local inset_x = max(0, style.spark_clip_inset_x or 0)
     local inset_y = max(0, style.spark_clip_inset_y or 0)
@@ -373,8 +373,10 @@ local function update_slot_spark(slot, state, progress, style_key, style, db, sp
     local show_spark = SHOW_SPARK_LAYER and db and db.show_spark and state == "filling"
         and progress and progress > 0 and progress < 1 and spark_atlas
     if not show_spark then
-        slot.spark:Hide()
-        slot._spark_shown = false
+        if slot._spark_shown then
+            slot.spark:Hide()
+            slot._spark_shown = false
+        end
         return
     end
 
@@ -754,18 +756,6 @@ end
 --#endregion FRAME AND SLOT API ================================================
 
 --#region LAYOUT ===============================================================
-
-function M.set_wing_layout(values)
-    if not values then return end
-
-    if values.scale_x ~= nil then WING_LAYOUT.scale_x = values.scale_x end
-    if values.scale_y ~= nil then WING_LAYOUT.scale_y = values.scale_y end
-
-    M.invalidate_layout()
-    if M.frame and M.refresh then
-        M.refresh()
-    end
-end
 
 function M.invalidate_layout()
     M._layout_signature = nil

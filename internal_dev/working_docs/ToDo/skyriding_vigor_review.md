@@ -22,12 +22,7 @@ Unprompted-mistake and optimization review of `modules/skyriding_vigor/`. Full r
 
 
 ## Minor Cleanups
-2. `M.set_wing_layout()` (`sv_bar.lua:757-767`) has no callers anywhere in the repo — dev tuning hook; delete it or tag it as intentionally dev-only, since WING_LAYOUT scale fallbacks are otherwise reachable only through `DECOR_STYLES` gaps.
-3. `update_slot_spark()` calls `slot.spark:Hide()` and rewrites `_spark_shown` unconditionally on the no-spark path (`sv_bar.lua:372-377`), which runs for all six slots on every refresh (including the unchanged-state early return at `sv_bar.lua:619-625`). Guard on `slot._spark_shown`.
-4. `set_slot_spark_clip_bounds()` calls `get_fill_size(style)` before its own nil-style resolution block (`sv_bar.lua:344-353`), and every caller already passes a style, so the resolution block is dead — reorder or remove it.
 5. `normalize_db()` coerces `spark_color` components to numbers but never range-clamps them to 0-1 (`sv_main.lua:90-93`); `clamp_number` without a range only applies the fallback (`functions/table_utils.lua:41-47`).
-6. Per-refresh throwaway allocations in GUI sync: `#(controls or {})` builds an empty table when unbuilt (`sv_gui.lua:313`) and `sync_fade_controls_enabled()` allocates the fade-control list every call (`sv_gui.lua:279-283`).
-7. Unused checkbox locals in the builders: `enabled_cb` (`sv_gui.lua:489`), `move_cb` (`sv_gui.lua:625`), `snap_cb` (`sv_gui.lua:631`), `spark_cb` (`sv_gui.lua:990`).
 
 
 ## Reviewed And Confirmed Deliberate

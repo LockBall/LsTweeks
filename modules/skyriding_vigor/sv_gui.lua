@@ -223,6 +223,7 @@ end
 --#region CONTROL SYNCHRONIZATION ==============================================
 
 local set_control_enabled
+local FADE_CONTROL_KEYS = { "fade_when_full", "fade_alpha", "fade_length" }
 
 function M.sync_fill_test_button()
     local button = M.controls and M.controls.fill_test_button
@@ -263,14 +264,8 @@ function M.sync_fade_controls_enabled()
 
     local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
         and not (M.is_race_profile_active and M.is_race_profile_active())
-    local fade_controls = {
-        controls.fade_when_full,
-        controls.fade_alpha,
-        controls.fade_length,
-    }
-
-    for i = 1, #fade_controls do
-        local control = fade_controls[i]
+    for i = 1, #FADE_CONTROL_KEYS do
+        local control = controls[FADE_CONTROL_KEYS[i]]
         if control then
             if control.SetEnabled then
                 control:SetEnabled(enabled)
@@ -306,13 +301,15 @@ end
 function M.sync_settings_controls_enabled()
     local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
     local controls = M.flight_locked_controls
-    for i = 1, #(controls or {}) do
-        local entry = controls[i]
-        local entry_enabled = enabled
-        if entry.is_enabled then
-            entry_enabled = entry_enabled and entry.is_enabled()
+    if controls then
+        for i = 1, #controls do
+            local entry = controls[i]
+            local entry_enabled = enabled
+            if entry.is_enabled then
+                entry_enabled = entry_enabled and entry.is_enabled()
+            end
+            set_control_enabled(entry.control, entry_enabled)
         end
-        set_control_enabled(entry.control, entry_enabled)
     end
 
     M.sync_fade_controls_enabled()
@@ -482,7 +479,7 @@ local function build_top_row(parent, context)
     local db = context.db
     local defaults = context.defaults
 
-    local enabled_container, enabled_cb = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
+    local enabled_container = addon.CreateCheckbox(parent, STRINGS.enabled, db and db.enabled, function(is_checked)
         M.set_db_value("enabled", is_checked)
     end)
     M.controls.enabled = register_flight_locked_control(enabled_container)
@@ -618,13 +615,13 @@ local function build_position_row(parent, context)
     local active_profile_proxy = context.active_profile_proxy
     local position_proxy = context.position_proxy
 
-    local move_container, move_cb = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
+    local move_container = addon.CreateCheckbox(parent, STRINGS.move_mode, db and db.move_mode, function(is_checked)
         M.set_db_value("move_mode", is_checked)
     end)
     M.controls.move_mode = register_flight_locked_control(move_container)
     place_grid_control(move_container, CONTROL_GRID.move_mode)
 
-    local snap_container, snap_cb = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
+    local snap_container = addon.CreateCheckbox(parent, STRINGS.snap_to_grid, db and db.snap_to_grid, function(is_checked)
         M.set_snap_to_grid(is_checked)
     end)
     M.controls.snap_to_grid = register_flight_locked_control(snap_container)
@@ -983,7 +980,7 @@ local function build_spark_row(parent, context)
     place_grid_control(skyriding_talents_button, CONTROL_GRID.skyriding_talents)
     M.controls.skyriding_talents_button = skyriding_talents_button
 
-    local spark_container, spark_cb = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
+    local spark_container = addon.CreateCheckbox(parent, STRINGS.show_spark, db and db.show_spark, function(is_checked)
         M.set_db_value("show_spark", is_checked)
     end)
     M.controls.show_spark = register_flight_locked_control(spark_container)
