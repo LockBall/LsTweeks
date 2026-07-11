@@ -18,6 +18,13 @@ local function get_situation_control_key(situation_key, field)
     return "situation_" .. situation_key .. "_" .. field
 end
 
+function M.clear_custom_situation_controls(situation_key)
+    M.controls[get_situation_control_key(situation_key, "enabled")] = nil
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        M.controls[get_situation_control_key(situation_key, channel.key)] = nil
+    end
+end
+
 function M.sync_temporary_profile_controls()
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()

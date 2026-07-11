@@ -172,6 +172,20 @@ h.test("deleting an enabled custom Quick Pick restores Normal Volumes", function
     h.is_nil(av_db().last_situation_key, "deletion clears the invalid saved selection")
 end)
 
+h.test("deleting a custom Quick Pick clears its built controls", function()
+    reset_sound_state()
+    local custom_key = AV.create_custom_situation("Delete Controls")
+    local parent = CreateFrame("Frame", nil, UIParent)
+    AV.BuildSettings(parent)
+    h.ok(AV.controls["situation_" .. custom_key .. "_enabled"], "custom enable control exists before deletion")
+    h.ok(AV.controls["situation_" .. custom_key .. "_master"], "custom slider exists before deletion")
+
+    h.ok(AV.delete_custom_situation(custom_key), "custom Quick Pick deletes")
+
+    h.is_nil(AV.controls["situation_" .. custom_key .. "_enabled"], "custom enable control is removed")
+    h.is_nil(AV.controls["situation_" .. custom_key .. "_master"], "custom slider is removed")
+end)
+
 h.test("Specifics controls write the reset target table", function()
     reset_sound_state()
     local parent = CreateFrame("Frame", nil, UIParent)

@@ -235,6 +235,9 @@ function M.delete_custom_situation(situation_key)
         db.last_situation_key = nil
     end
     db.next_custom_situation_id = get_next_custom_situation_id(situations)
+    if M.clear_custom_situation_controls then
+        M.clear_custom_situation_controls(situation_key)
+    end
     if was_enabled then
         M.sync_manual_situation_profile()
     end

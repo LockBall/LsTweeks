@@ -25,7 +25,7 @@ Unprompted-mistake and optimization review of `modules/audio_volumes/`. Full rea
 - [x] 3. `handle_event` returns after the first playable slot. Kept deliberately: `SOUND_EVENT_TARGETS` has a one-target-per-event contract, documented both where that map is built and at the early return; revisit the handler before assigning any event to multiple targets.
 - [x] 4. Custom-situation control keys used mixed sanitized and raw forms. `get_situation_control_key()` now owns the raw `custom:N` convention for custom sliders and enable controls, and focused coverage verifies no second enable-key form is created.
 - [x] 5. Post-delete selection had two owners: the data layer chose Fishing, then the GUI chose Quiet Custom. Deletion now clears only an invalid saved selection and restores Normal Volumes when it removes the enabled Quick Pick; the GUI alone selects the next visible panel. Focused coverage verifies the runtime fallback and cleared stale selection.
-- [ ] 6. Deleted custom-situation controls linger in `M.controls`. Current DB-driven sync skips them, but cleanup during list/panel removal would make ownership explicit.
+- [x] 6. Deleted custom-situation controls lingered in `M.controls`. Custom deletion now requests UI cleanup when the Situations tab exists, removing the custom enable control and channel sliders immediately; focused coverage verifies the references are gone.
 
 
 ## Optimization Candidates
