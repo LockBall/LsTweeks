@@ -265,13 +265,20 @@ function M.BuildSituationsTab(parent)
     local current_defaults = {}
     local current_sliders = {}
 
+    local function seed_situation_defaults(channel, normal_value, seed_quiet_custom)
+        normal_value = tonumber(normal_value) or 0
+        focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, normal_value)
+        combat_defaults[channel.key] = normal_value
+        if seed_quiet_custom then
+            quiet_custom_defaults[channel.key] = 25
+        end
+    end
+
     local function refresh_current_values()
         for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
             local current_percent = M.get_current_sound_channel_percent(channel)
             current_values[channel.key] = current_percent
-            focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, current_percent)
-            combat_defaults[channel.key] = current_percent
-            quiet_custom_defaults[channel.key] = 25
+            seed_situation_defaults(channel, current_percent, true)
             if current_defaults[channel.key] == nil then
                 current_defaults[channel.key] = current_percent
             end
@@ -308,8 +315,7 @@ function M.BuildSituationsTab(parent)
     for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
         current_values[channel.key] = M.get_current_sound_channel_percent(channel)
         current_defaults[channel.key] = current_values[channel.key]
-        combat_defaults[channel.key] = current_values[channel.key]
-        quiet_custom_defaults[channel.key] = 25
+        seed_situation_defaults(channel, current_values[channel.key], true)
 
         local current_slider = addon.CreateSliderWithBox(
             addon_name .. "_" .. control_scope .. "NormalSound_" .. channel.key,
@@ -323,8 +329,7 @@ function M.BuildSituationsTab(parent)
             current_defaults,
             function(value)
                 M.set_current_sound_channel_percent(channel, value)
-                focus_defaults[channel.key] = M.get_default_fishing_focus_channel_percent(channel, tonumber(value) or 0)
-                combat_defaults[channel.key] = tonumber(value) or 0
+                seed_situation_defaults(channel, value, false)
             end
         )
         current_grid:place_at(current_slider, 1, i)
