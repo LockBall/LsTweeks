@@ -66,6 +66,22 @@ h.test("repeated dirty marks do not clear Aura scan caches before the pending sc
     h.eq(sorted_cache_clears, 1, "sorted Aura cache clears once per pending scan")
 end)
 
+h.test("custom frame deletion clears its scan cache and controls", function()
+    local M = load_aura_frames()
+    local cache_clears = 0
+    M.db = { custom_frames = { { id = "custom_test" } } }
+    M.frames = {}
+    M.frames_list = {}
+    M.controls = { custom_custom_test_scale = {} }
+    M.clear_custom_aura_scan_cache = function() cache_clears = cache_clears + 1 end
+
+    M.destroy_custom_frame("custom_test")
+
+    h.eq(#M.db.custom_frames, 0, "custom frame DB entry is removed")
+    h.is_nil(M.controls.custom_custom_test_scale, "custom frame controls are removed")
+    h.eq(cache_clears, 1, "custom frame deletion clears its scan cache")
+end)
+
 h.run("af_ranges")
 
 --#endregion FILE CONTENTS ===================================================

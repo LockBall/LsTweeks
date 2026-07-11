@@ -1074,6 +1074,9 @@ function M.destroy_custom_frame(id)
             end
         end
     end
+    if M.clear_custom_aura_scan_cache then
+        M.clear_custom_aura_scan_cache()
+    end
 end
 
 --#endregion CUSTOM FRAME LIFECYCLE ============================================

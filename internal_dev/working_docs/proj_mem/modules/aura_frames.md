@@ -120,6 +120,7 @@ Important `aura_frames` keys:
 - Loading a profile is blocked in combat. It replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
+- Custom-frame deletion removes its runtime frame/events/fades, DB entry, controls, and custom aura scan cache; the Frames tree chooses the visible fallback selection.
 - There is no tracked legacy saved-profile corpus for Aura Frames. Reopen deleted/renamed custom-frame profile compatibility only when real saved variables are found or profile storage is intentionally changed; for storage changes, create synthetic profiles specific to that change.
 
 

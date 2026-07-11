@@ -5,5 +5,5 @@ Targeted checks discovered during active module reviews. Keep only unresolved pa
 - [Priority Items](#priority-items)
 
 ## Priority Items
-- [ ] 1. User-created object deletion lifecycle — review Aura Frames custom-frame deletion and any future user-created objects. A deletion should remove runtime state, cached UI/control references, saved selection, and active overrides in one defined ownership path.
+- [x] 1. User-created object deletion lifecycle — Aura Frames custom-frame deletion already removes runtime frame/events/fades, DB entry, controls, and GUI selection; added custom aura scan-cache cleanup. Audio Volumes custom Quick Pick deletion already owns runtime restoration and UI-control cleanup. Apply this lifecycle check to future user-created objects.
 - [ ] 2. Mid-state feature activation — review event-gated features that can be enabled while their triggering state is already active. They should query current state and apply immediately rather than waiting for a future event; candidates include Aura Frames activity/fade settings and Player Frame out-of-combat fade behavior.
