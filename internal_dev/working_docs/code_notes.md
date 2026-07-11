@@ -1,3 +1,4 @@
+<!-- User-owned personal scratch notes. Agents must not modify, reorganize, or delete this file unless the user explicitly requests it. -->
 
 
 Read and follow internal_dev/working_docs/proj_mem/agent_start.md

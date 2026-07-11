@@ -129,6 +129,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
   resolved state for the hot path. Make the mutability boundary explicit first,
   such as disabling settings edits during an active runtime state while still
   allowing controlled test modes.
+- When a settings control has both a broad runtime lock and a local eligibility rule, register the local rule with the centralized gate. Local state synchronization must reapply that composite gate rather than directly enabling the control.
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore addon-owned suppression state and let Blizzard handlers run; module-specific stricter rules such as Aura Frames' `BuffFrame` / `DebuffFrame` handling take precedence.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
 
@@ -162,6 +163,7 @@ Violations here can create invisible or unstable controls.
 - Tooltip APIs: use addon-owned tooltips. Rich renderers such as `SetUnitAuraByAuraInstanceID()` or `SetSpellByID()` must run through `securecallfunction` wrappers with a `C_TooltipInfo` line-cache fallback.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
+- Secret API values: guard only known restricted API outputs before comparisons, arithmetic, string construction, table keys, cache writes, or ordinary UI calls. Keep the safe local result through the path; direct pass-through is acceptable only to a Blizzard display API that supports the value, without inspecting or caching it.
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.
 - Objective Tracker APIs: `ObjectiveTrackerFrame`, `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker` expose `SetCollapsed`/`IsCollapsed`. Objective module frames also inherit `ToggleCollapsed` and `MarkDirty`; apply startup/default state with `SetCollapsed`, but do not hook re-collapse behavior when the user must retain normal manual expand/collapse control.
 - Lua operator precedence trap: `and` binds tighter than `or`, so `a and b ~= nil or false` parses as `(a and (b ~= nil)) or false`. The trailing `or false` is always a no-op when the left side already evaluates to a boolean. Write `a and b ~= nil` directly.

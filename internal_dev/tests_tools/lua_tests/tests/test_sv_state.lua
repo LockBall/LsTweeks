@@ -298,6 +298,44 @@ h.test("settings flight-lock sync skips unchanged control writes", function()
     SV._settings_controls_flight_locked = old_cached_lock
 end)
 
+h.test("style control sync retains the registered flight lock", function()
+    local old_controls = SV.controls
+    local old_flight_controls = SV.flight_locked_controls
+    local old_lock_check = SV.is_settings_locked_by_flight
+    local old_get_node_color = SV.get_node_color
+    local old_get_decor_color = SV.get_decor_color
+    local node_enabled = nil
+    local decor_enabled = nil
+    local node = {
+        SetValue = function() end,
+        SetEnabled = function(_, enabled) node_enabled = enabled end,
+    }
+    local decor = {
+        SetValue = function() end,
+        SetEnabled = function(_, enabled) decor_enabled = enabled end,
+    }
+
+    SV.controls = { node_color = node, decor_color = decor }
+    SV.flight_locked_controls = {
+        { control = node, is_enabled = function() return true end },
+        { control = decor, is_enabled = function() return true end },
+    }
+    SV.get_node_color = function() return "default" end
+    SV.get_decor_color = function() return "default" end
+    SV.is_settings_locked_by_flight = function() return true end
+
+    SV.sync_node_color_controls()
+    SV.sync_decor_color_controls()
+    h.ok(node_enabled == false, "node color stays disabled while flight-locked")
+    h.ok(decor_enabled == false, "decor color stays disabled while flight-locked")
+
+    SV.controls = old_controls
+    SV.flight_locked_controls = old_flight_controls
+    SV.is_settings_locked_by_flight = old_lock_check
+    SV.get_node_color = old_get_node_color
+    SV.get_decor_color = old_get_decor_color
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

@@ -51,6 +51,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Path references: use the shortest unambiguous filename/path after the first full path or when section context already scopes the directory.
 - Command references: keep copy/paste command strings in command-owner docs such as `code_map.md`; use command names elsewhere.
 - Completed working logs: prune or summarize old completion bullets after the durable result is captured in `proj_mem`.
+- `internal_dev/working_docs/code_notes.md` is user-owned personal scratch space. Treat it as read-only unless the user explicitly requests an edit, reorganization, or deletion.
 - List/table wording: prefer compact labels over explanatory sentences when meaning stays clear.
 - Markdown structure: one `#` title; multi-section docs include `## Table of Contents` and stable `##` headings.
 - Token measurement: GUI-reported agent-token measurements only; no rough character-count/file-size estimates.

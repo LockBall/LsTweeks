@@ -289,6 +289,28 @@ set_control_enabled = function(control, enabled)
     end
 end
 
+local function get_registered_control_enabled(entry, flight_locked)
+    local enabled = not flight_locked
+    if enabled and entry.is_enabled then
+        enabled = entry.is_enabled() and true or false
+    end
+    return enabled
+end
+
+local function sync_registered_control_enabled(control)
+    local controls = M.flight_locked_controls
+    if not controls then return end
+
+    local flight_locked = M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() or false
+    for i = 1, #controls do
+        local entry = controls[i]
+        if entry.control == control then
+            set_control_enabled(control, get_registered_control_enabled(entry, flight_locked))
+            return
+        end
+    end
+end
+
 local function run_with_sync_guard(guard_key, callback)
     M[guard_key] = true
     local ok, err = pcall(callback)
@@ -303,16 +325,11 @@ function M.sync_settings_controls_enabled(force)
     if not force and M._settings_controls_flight_locked == flight_locked then return end
     M._settings_controls_flight_locked = flight_locked
 
-    local enabled = not flight_locked
     local controls = M.flight_locked_controls
     if controls then
         for i = 1, #controls do
             local entry = controls[i]
-            local entry_enabled = enabled
-            if entry.is_enabled then
-                entry_enabled = entry_enabled and entry.is_enabled()
-            end
-            set_control_enabled(entry.control, entry_enabled)
+            set_control_enabled(entry.control, get_registered_control_enabled(entry, flight_locked))
         end
     end
 
@@ -410,9 +427,7 @@ function M.sync_node_color_controls()
     local dropdown = M.controls and M.controls.node_color
     if dropdown and dropdown.SetValue and M.get_node_color then
         dropdown:SetValue(M.get_node_color())
-        if dropdown.SetEnabled and M.bar_style_supports_node_color then
-            dropdown:SetEnabled(M.bar_style_supports_node_color())
-        end
+        sync_registered_control_enabled(dropdown)
     end
 end
 
@@ -420,11 +435,7 @@ function M.sync_decor_color_controls()
     local dropdown = M.controls and M.controls.decor_color
     if dropdown and dropdown.SetValue and M.get_decor_color then
         dropdown:SetValue(M.get_decor_color())
-        if dropdown.SetEnabled and M.decor_style_supports_color then
-            local style_dropdown = M.controls and M.controls.decor_style
-            local style_key = style_dropdown and style_dropdown.GetValue and style_dropdown:GetValue() or nil
-            dropdown:SetEnabled(M.decor_style_supports_color(style_key))
-        end
+        sync_registered_control_enabled(dropdown)
     end
 end
 
