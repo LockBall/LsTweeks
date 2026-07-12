@@ -23,9 +23,9 @@ Active findings for `modules/aura_frames/`. Verified against the current code af
   - [x] c. Remove unused `floor` and `format` cached globals.
   - [x] d. Reuse `cache_timing()` child state for the queued category.
 
-- [ ] 4. Render and ticker pooling cleanup
-  - [ ] a. Skip already-cleared pooled icons (`af_render.lua`) — bypass teardown only for objects already hidden and fully cleared; previously displayed cooldown, grey, count, and tooltip state must still clear.
-  - [ ] b. Centralize the bar min/max cache helper — `af_render.lua` and `af_logic_ticker.lua` duplicate `set_bar_minmax_if_changed()` and its `_lstweeks_min_value/_lstweeks_max_value` contract. Move it to the Aura module table.
+- [x] 4. Render and ticker pooling cleanup
+  - [x] a. Skip teardown only for fully-cleared hidden pooled icons.
+  - [x] b. Centralize the bar min/max cache helper on the Aura module table.
 
 - [ ] 5. Layout ownership refactor (`af_logic_main.lua`, `af_icon_layout.lua`)
   - [ ] Derive frame height from layout-owned values instead of duplicated icon/bar padding literals. Require focused growth-anchor regression coverage because height, combat guards, and user positioning interact.

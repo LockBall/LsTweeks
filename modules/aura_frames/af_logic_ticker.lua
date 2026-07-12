@@ -13,17 +13,7 @@ addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local clear_timer_text = M.clear_timer_text
-
---#region TICKER HELPERS =======================================================
-local function set_bar_minmax_if_changed(bar, min_value, max_value)
-    if not bar then return end
-    if bar._lstweeks_min_value == min_value and bar._lstweeks_max_value == max_value then return end
-    bar._lstweeks_min_value = min_value
-    bar._lstweeks_max_value = max_value
-    bar:SetMinMaxValues(min_value, max_value)
-end
-
---#endregion TICKER HELPERS ====================================================
+local set_bar_minmax_if_changed = M.set_bar_minmax_if_changed
 --#region TIMER TICKER =========================================================
 
 

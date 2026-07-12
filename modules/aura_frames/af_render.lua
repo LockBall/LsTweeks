@@ -271,13 +271,14 @@ local function set_texture_color_if_changed(texture, r, g, b, a)
     texture:SetColorTexture(r, g, b, a)
 end
 
-local function set_bar_minmax_if_changed(bar, min_value, max_value)
+function M.set_bar_minmax_if_changed(bar, min_value, max_value)
     if not bar then return end
     if bar._lstweeks_min_value == min_value and bar._lstweeks_max_value == max_value then return end
     bar._lstweeks_min_value = min_value
     bar._lstweeks_max_value = max_value
     bar:SetMinMaxValues(min_value, max_value)
 end
+local set_bar_minmax_if_changed = M.set_bar_minmax_if_changed
 
 local function set_count_point_if_changed(obj, point, relative_to, relative_point, x, y)
     if not point then return end
@@ -732,18 +733,30 @@ end
 local function hide_unused_icons(icons, first_unused_index)
     for i = first_unused_index, #icons do
         local obj = icons[i]
-        obj.is_spell_cooldown = false
-        obj.grey_cooldown = false
-        obj.aura_index = nil
-        obj.aura_live_duration = nil
-        obj.aura_timer_behavior = nil
-        obj.tooltip_enabled = false
-        obj._lstweeks_count_text = nil
-        set_icon_greyed(obj.texture, false)
-        if obj.cooldown then
-            obj.cooldown:Hide()
+        local is_cleared = not obj:IsShown()
+            and obj.is_spell_cooldown == false
+            and obj.grey_cooldown == false
+            and obj.aura_index == nil
+            and obj.aura_live_duration == nil
+            and obj.aura_timer_behavior == nil
+            and obj.tooltip_enabled == false
+            and obj._lstweeks_count_text == nil
+            and (not obj.texture or obj.texture._lstweeks_greyed == false)
+            and (not obj.cooldown or not obj.cooldown:IsShown())
+        if not is_cleared then
+            obj.is_spell_cooldown = false
+            obj.grey_cooldown = false
+            obj.aura_index = nil
+            obj.aura_live_duration = nil
+            obj.aura_timer_behavior = nil
+            obj.tooltip_enabled = false
+            obj._lstweeks_count_text = nil
+            set_icon_greyed(obj.texture, false)
+            if obj.cooldown then
+                obj.cooldown:Hide()
+            end
+            obj:Hide()
         end
-        obj:Hide()
     end
 end
 

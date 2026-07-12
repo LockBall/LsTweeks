@@ -71,6 +71,22 @@ h.test("visible icon ticker refresh stops idle ticker immediately", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
 end)
 
+h.test("shared Aura bar range helper skips unchanged writes", function()
+    local M = load_aura_frames()
+    local writes = 0
+    local bar = {
+        SetMinMaxValues = function()
+            writes = writes + 1
+        end,
+    }
+
+    M.set_bar_minmax_if_changed(bar, 0, 10)
+    M.set_bar_minmax_if_changed(bar, 0, 10)
+    M.set_bar_minmax_if_changed(bar, 0, 20)
+
+    h.eq(writes, 2, "shared helper writes only changed ranges")
+end)
+
 h.test("disabled module rejects tooltip cache prewarm before frame inspection", function()
     local M = load_aura_frames()
     local original_is_runtime_enabled = M.is_runtime_enabled
