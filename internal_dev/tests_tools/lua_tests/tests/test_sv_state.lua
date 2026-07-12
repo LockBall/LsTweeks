@@ -351,6 +351,40 @@ h.test("style control sync retains the registered flight lock", function()
     SV.get_decor_color = old_get_decor_color
 end)
 
+h.test("visual scale sliders apply each drag value once without debounce", function()
+    local old_controls = SV.controls
+    local old_flight_controls = SV.flight_locked_controls
+    local old_settings_grid = SV.settings_grid
+    local old_controls_parent = SV.controls_parent
+    local old_set_db_value = SV.set_db_value
+    local old_set_decor_scale = SV.set_decor_scale
+    local scale_calls = 0
+    local decor_scale_calls = 0
+
+    SV.BuildVigorTab(CreateFrame("Frame"))
+    SV.set_db_value = function(key)
+        if key == "scale" then scale_calls = scale_calls + 1 end
+    end
+    SV.set_decor_scale = function()
+        decor_scale_calls = decor_scale_calls + 1
+    end
+
+    local timers_before = stub.ActiveTimerCount()
+    SV.controls.scale.slider.__scripts.OnValueChanged(SV.controls.scale.slider, 1.1)
+    SV.controls.decor_scale.slider.__scripts.OnValueChanged(SV.controls.decor_scale.slider, 1.1)
+
+    h.eq(scale_calls, 1, "Vigor scale callback applies immediately")
+    h.eq(decor_scale_calls, 1, "decor proxy applies scale without a duplicate callback")
+    h.eq(stub.ActiveTimerCount(), timers_before, "visual scale drags do not queue debounce timers")
+
+    SV.controls = old_controls
+    SV.flight_locked_controls = old_flight_controls
+    SV.settings_grid = old_settings_grid
+    SV.controls_parent = old_controls_parent
+    SV.set_db_value = old_set_db_value
+    SV.set_decor_scale = old_set_decor_scale
+end)
+
 h.test("fade_frame_alpha animates to target over the duration", function()
     local frame = CreateFrame("Frame")
     SV.set_frame_alpha(frame, 1)

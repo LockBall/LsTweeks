@@ -69,6 +69,23 @@ h.test("immediate slider callbacks do not queue drag updates", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "immediate drag updates do not queue timers")
 end)
 
+h.test("slider bindings without callbacks do not queue empty timers", function()
+    local container = addon.CreateSliderWithBox(
+        "LsTweaksCallbackFreeControlFactoryTest",
+        UIParent,
+        "Test",
+        0,
+        10,
+        1,
+        {},
+        "value",
+        { value = 0 }
+    )
+
+    container.slider.__scripts.OnValueChanged(container.slider, 1)
+    h.eq(h.stub.ActiveTimerCount(), 0, "callback-free slider writes without an empty debounce timer")
+end)
+
 h.run("control_factories")
 
 --#endregion FILE CONTENTS ===================================================

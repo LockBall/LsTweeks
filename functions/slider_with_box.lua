@@ -152,7 +152,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
             db_table[db_key] = value
         end
         eb:SetText(format_display_value(value))
-        if not container._suppress_callback then
+        if not container._suppress_callback and type(callback) == "function" then
             if opts.immediate_callback then
                 cancel_debounce()
                 run_callback(value)

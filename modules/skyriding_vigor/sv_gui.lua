@@ -710,7 +710,7 @@ local function build_position_row(parent, context)
         "scale",
         defaults,
         set_setting_from_slider("scale"),
-        { display_decimals = 2 }
+        { display_decimals = 2, immediate_callback = true }
     )
     M.controls.scale = register_flight_locked_control(scale_slider)
     place_grid_control(scale_slider, CONTROL_GRID.scale)
@@ -856,9 +856,7 @@ local function build_decor_row(parent, context)
         decor_position_proxy,
         "scale",
         decor_position_defaults_proxy,
-        function(value)
-            M.set_decor_scale(value)
-        end,
+        nil,
         { display_decimals = 2 }
     )
     M.controls.decor_scale = register_flight_locked_control(decor_scale_slider)
