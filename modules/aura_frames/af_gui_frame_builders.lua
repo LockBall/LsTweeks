@@ -234,7 +234,7 @@ local function create_frame_color_picker(parent, frame_config, grid, logical_key
     return picker
 end
 
-local function create_frame_slider(parent, frame_config, name_suffix, label, min_v, max_v, step, logical_key, on_change)
+local function create_frame_slider(parent, frame_config, name_suffix, label, min_v, max_v, step, logical_key, on_change, slider_opts)
     local key = frame_setting_key(frame_config, logical_key)
     return addon.CreateSliderWithBox(
         addon_name .. frame_config.id .. name_suffix,
@@ -246,7 +246,8 @@ local function create_frame_slider(parent, frame_config, name_suffix, label, min
         frame_config.value_table,
         key,
         frame_config.defaults_table,
-        on_change
+        on_change,
+        slider_opts
     )
 end
 
@@ -795,7 +796,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
 
     local scale_range = get_setting_range("scale")
-    local scale_slider = create_frame_slider(parent, frame_config, "Scale", "Scale", scale_range.min, scale_range.max, scale_range.step, "scale", update)
+    local scale_slider = create_frame_slider(
+        parent,
+        frame_config,
+        "Scale",
+        "Scale",
+        scale_range.min,
+        scale_range.max,
+        scale_range.step,
+        "scale",
+        update,
+        { immediate_callback = true }
+    )
     grid:place_at(scale_slider, 1, 3)
 
     local spacing_range = get_setting_range("spacing")

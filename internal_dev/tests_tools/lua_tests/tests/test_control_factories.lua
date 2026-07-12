@@ -46,6 +46,29 @@ h.test("silent slider setter restores callback state after an error", function()
     h.is_nil(container._suppress_callback, "successful silent update leaves no suppression")
 end)
 
+h.test("immediate slider callbacks do not queue drag updates", function()
+    local calls = 0
+    local container = addon.CreateSliderWithBox(
+        "LsTweaksImmediateControlFactoryTest",
+        UIParent,
+        "Test",
+        0,
+        10,
+        1,
+        {},
+        "value",
+        { value = 0 },
+        function() calls = calls + 1 end,
+        { immediate_callback = true }
+    )
+
+    container.slider.__scripts.OnValueChanged(container.slider, 1)
+    h.eq(calls, 1, "first drag value applies immediately")
+    container.slider.__scripts.OnValueChanged(container.slider, 2)
+    h.eq(calls, 2, "later drag value does not wait for debounce")
+    h.eq(h.stub.ActiveTimerCount(), 0, "immediate drag updates do not queue timers")
+end)
+
 h.run("control_factories")
 
 --#endregion FILE CONTENTS ===================================================

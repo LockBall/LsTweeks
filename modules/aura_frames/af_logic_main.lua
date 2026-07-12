@@ -2,7 +2,6 @@
 -- update_auras() orchestrates scan, render, layout, sizing, and visibility for preset and custom aura frames.
 local addon_name, addon = ...
 
-local math_ceil      = math.ceil
 local GetTime        = GetTime
 local C_Timer        = C_Timer
 local wipe           = wipe
@@ -479,26 +478,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
 
-    local lc = self._layout_cache
-    local icon_timer_h = layout_show_timer_text and 12 or 0
-    local icon_bot_pad = layout_show_timer_text and 14 or 12
-    local new_height = bar_mode and ((lc and lc.row_height or 18) + spacing + 12)
-                                or  ((lc and lc.icon_size  or 32) + icon_timer_h + icon_bot_pad)
-    if display_count > 0 then
-        if bar_mode then
-            local bar_row_h = lc and lc.row_height or 18
-            new_height = display_count * (bar_row_h + spacing) + 12
-        elseif lc and (lc.growth == "DOWN" or lc.growth == "UP") then
-            local isz = lc.icon_size or 32
-            new_height = display_count * (isz + spacing + icon_timer_h) - spacing + icon_bot_pad
-        elseif lc and lc.icons_per_row then
-            local isz = lc.icon_size or 32
-            local rows = math_ceil(display_count / lc.icons_per_row)
-            new_height = rows * (isz + spacing + icon_timer_h) - spacing + icon_bot_pad
-        else
-            new_height = display_count * 44
-        end
-    end
+    local new_height = M.get_aura_frame_height(
+        self._layout_cache,
+        display_count,
+        bar_mode,
+        spacing,
+        layout_show_timer_text
+    )
 
     if not in_combat and not is_user_positioning then
         set_height_for_growth_if_changed(self, new_height, growth)

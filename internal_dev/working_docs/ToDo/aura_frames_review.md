@@ -27,8 +27,8 @@ Active findings for `modules/aura_frames/`. Verified against the current code af
   - [x] a. Skip teardown only for fully-cleared hidden pooled icons.
   - [x] b. Centralize the bar min/max cache helper on the Aura module table.
 
-- [ ] 5. Layout ownership refactor (`af_logic_main.lua`, `af_icon_layout.lua`)
-  - [ ] Derive frame height from layout-owned values instead of duplicated icon/bar padding literals. Require focused growth-anchor regression coverage because height, combat guards, and user positioning interact.
+- [x] 5. Layout ownership refactor (`af_logic_main.lua`, `af_icon_layout.lua`)
+  - [x] Derive frame height from layout-owned values and retain focused growth-layout regression coverage.
 
 ## Deferred Work
 - [ ] CDM viewer-child scratch ownership — `_scratch_viewer_children` is safe while every caller consumes it synchronously. Revisit only with CDM work; per-call tables trade a small allocation cost for a looser ownership contract.

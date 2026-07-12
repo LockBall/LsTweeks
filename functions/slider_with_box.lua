@@ -1,5 +1,5 @@
 -- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb, opts).
--- Changes from either the slider or the box are synced to each other and written to the DB; uses addon.UPDATE_INTERVALS.tenth_sec for debounce.
+-- Changes from either the slider or the box are synced to each other and written to the DB; callbacks debounce at addon.UPDATE_INTERVALS.tenth_sec unless opts.immediate_callback is set for live visual previews.
 -- Programmatic refresh callers can use container:SetValueSilently(value) to sync display/DB without invoking the callback.
 -- Use container:GetValue(), container:SetValue(value), and container:HookValueChanged(fn, opts)
 -- instead of reaching into container.slider for routine value handling.
@@ -153,7 +153,12 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         end
         eb:SetText(format_display_value(value))
         if not container._suppress_callback then
-            debounced_callback(value)
+            if opts.immediate_callback then
+                cancel_debounce()
+                run_callback(value)
+            else
+                debounced_callback(value)
+            end
         end
     end)
 

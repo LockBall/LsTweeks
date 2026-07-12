@@ -87,6 +87,19 @@ h.test("shared Aura bar range helper skips unchanged writes", function()
     h.eq(writes, 2, "shared helper writes only changed ranges")
 end)
 
+h.test("layout-owned Aura height calculation covers bars and icon growth", function()
+    local M = load_aura_frames()
+    local layout = { row_height = 18, icon_size = 32, icons_per_row = 2, growth = "RIGHT" }
+
+    h.eq(M.get_aura_frame_height(layout, 3, true, 2, false), 72, "bar rows include shared bottom padding")
+    layout.growth = "UP"
+    h.eq(M.get_aura_frame_height(layout, 3, false, 2, true), 150, "vertical icons retain timer footprint")
+    layout.growth = "RIGHT"
+    h.eq(M.get_aura_frame_height(layout, 3, false, 2, true), 104, "horizontal icons use wrapped rows")
+    h.eq(M.get_aura_frame_height(layout, 0, false, 2, false), 44, "empty icon frame keeps its base footprint")
+    h.eq(M.get_aura_frame_height(nil, 3, false, 2, true), 132, "missing layout retains the stable legacy icon fallback")
+end)
+
 h.test("disabled module rejects tooltip cache prewarm before frame inspection", function()
     local M = load_aura_frames()
     local original_is_runtime_enabled = M.is_runtime_enabled

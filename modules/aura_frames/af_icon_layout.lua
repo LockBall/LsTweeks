@@ -41,6 +41,11 @@ local GROWTH_LAYOUT = {
 }
 
 local DEFAULT_GROWTH_LAYOUT = GROWTH_LAYOUT.DOWN
+local BAR_ROW_HEIGHT = 18
+local ICON_SIZE = 32
+local FRAME_BOTTOM_PADDING = 12
+local TIMER_SLOT_HEIGHT = 12
+local TIMER_BOTTOM_PADDING = 2
 
 --#region BAR LAYOUT PARAMS ====================================================
 
@@ -53,24 +58,24 @@ function M.get_bar_layout_params(timer_font_size)
     return {
         frame_inset = 6,
         frame_inner_width_pad = 12,
-        row_height = 18,
+        row_height = BAR_ROW_HEIGHT,
 
-        icon_size = 18,
+        icon_size = BAR_ROW_HEIGHT,
         icon_to_bar_gap = 5,
-        bar_height = 18,
+        bar_height = BAR_ROW_HEIGHT,
 
         stack_slot_left_pad = 2,
         stack_slot_width = 20,
-        stack_slot_height = 18,
+        stack_slot_height = BAR_ROW_HEIGHT,
 
         timer_slot_width = timer_slot_width,
         timer_slot_right_pad = 2,
-        timer_slot_height = 18,
+        timer_slot_height = BAR_ROW_HEIGHT,
 
         name_slot_left_gap = 2,
         name_slot_right_gap = 2,
         name_slot_right_no_timer = 4,
-        name_slot_height = 18,
+        name_slot_height = BAR_ROW_HEIGHT,
 
         name_text_left_pad = 2,
         name_text_right_pad = 2,
@@ -78,6 +83,43 @@ function M.get_bar_layout_params(timer_font_size)
 end
 
 --#endregion BAR LAYOUT PARAMS =================================================
+
+--#region FRAME HEIGHT LAYOUT ==================================================
+
+-- Mirrors setup_layout() so update_auras() does not duplicate content dimensions.
+function M.get_aura_frame_height(layout, display_count, bar_mode, spacing, layout_show_timer_text)
+    local has_layout = layout ~= nil
+    layout = layout or {}
+    display_count = tonumber(display_count) or 0
+    spacing = tonumber(spacing) or layout.spacing or 0
+
+    if bar_mode then
+        local row_height = layout.row_height or BAR_ROW_HEIGHT
+        if display_count > 0 then
+            return display_count * (row_height + spacing) + FRAME_BOTTOM_PADDING
+        end
+        return row_height + spacing + FRAME_BOTTOM_PADDING
+    end
+
+    local icon_size = layout.icon_size or ICON_SIZE
+    local timer_height = layout_show_timer_text and TIMER_SLOT_HEIGHT or 0
+    local bottom_padding = FRAME_BOTTOM_PADDING + (layout_show_timer_text and TIMER_BOTTOM_PADDING or 0)
+    if display_count <= 0 then
+        return icon_size + timer_height + bottom_padding
+    end
+
+    local row_height = icon_size + spacing + timer_height
+    if has_layout and (layout.growth == "DOWN" or layout.growth == "UP") then
+        return display_count * row_height - spacing + bottom_padding
+    end
+    if has_layout and layout.icons_per_row then
+        local rows = math_ceil(display_count / layout.icons_per_row)
+        return rows * row_height - spacing + bottom_padding
+    end
+    return display_count * (ICON_SIZE + FRAME_BOTTOM_PADDING)
+end
+
+--#endregion FRAME HEIGHT LAYOUT ===============================================
 
 --#region FRAME HEIGHT RESIZE (PRESERVES ANCHOR POINT) =========================
 
@@ -187,7 +229,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local bar_timer_slot_width = bar_layout.timer_slot_width
     local bar_timer_slot_right_pad = bar_layout.timer_slot_right_pad
 
-    local icon_size = 32
+    local icon_size = ICON_SIZE
     local icon_footprint = icon_size + spacing
     local icons_per_row = growth_layout.vertical
         and 1
@@ -261,7 +303,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
 
             local col_idx = (i - 1) % icons_per_row
             local row_idx = floor((i - 1) / icons_per_row)
-            local timer_h = layout_show_timer_text and 12 or 0
+            local timer_h = layout_show_timer_text and TIMER_SLOT_HEIGHT or 0
             local row_h   = icon_size + spacing + timer_h
 
             local up_offset = 6 + (timer_h > 0 and (timer_h + 2) or 0)
@@ -278,7 +320,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
 
             obj.timer_slot:ClearAllPoints()
             obj.timer_slot:SetPoint("TOPRIGHT", obj, "BOTTOMRIGHT", 0, -2)
-            obj.timer_slot:SetSize(icon_size, 12)
+            obj.timer_slot:SetSize(icon_size, TIMER_SLOT_HEIGHT)
 
             obj.time_text:ClearAllPoints()
             obj.time_text:SetPoint(timer_anchor_point, obj.timer_slot, timer_anchor_point, 0, 0)
@@ -308,7 +350,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
         growth          = growth,
         growth_layout   = growth_layout,
         row_height      = bar_layout.row_height,
-        icon_size       = 32,
+        icon_size       = ICON_SIZE,
     }
 end
 
