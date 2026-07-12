@@ -235,6 +235,31 @@ h.test("unified scan continues after malformed helpful and debuff records", func
     h.stub.auras.player = nil
 end)
 
+h.test("unified scan refreshes an Aura order key when identity changes", function()
+    local M = load_aura_frames()
+    M.db = {
+        max_icons_static = 1,
+        max_icons_short = 1,
+        max_icons_long = 1,
+        max_icons_debuff = 1,
+    }
+    h.stub.auras.player = {
+        buffs = {
+            { auraInstanceID = 303, spellId = 3003, name = "Original", icon = 3, duration = 10, expirationTime = 10 },
+        },
+        debuffs = {},
+    }
+    M._aura_map = {}
+
+    M.unified_scan(nil, 5, 1, 1)
+    local original_key = M._aura_map[303].order_key
+    h.stub.auras.player.buffs[1].name = "Updated"
+    M.unified_scan(nil, 5, 1, 1)
+
+    h.ok(M._aura_map[303].order_key ~= original_key, "identity change refreshes ordering")
+    h.stub.auras.player = nil
+end)
+
 h.run("af_ranges")
 
 --#endregion FILE CONTENTS ===================================================

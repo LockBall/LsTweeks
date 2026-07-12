@@ -17,11 +17,11 @@ Active findings for `modules/aura_frames/`. Verified against the current code af
   - [x] b. Skip malformed helpful and debuff records while continuing later scan entries.
   - [x] c. Preserve explicit false profile settings through the cross-module profile-import fix.
 
-- [ ] 3. Scan-path cleanup and targeted optimization (`af_scan.lua`)
-  - [ ] a. Avoid rebuilding unchanged aura order keys — retain the existing key unless readable spell ID, name, or icon changes; preserve secret-value behavior.
-  - [ ] b. Name the exact-GCD filter — `SetCooldown` ignores durations at or below `1.5`, while grey-state detection uses `GCD_GREY_THRESHOLD = 2.0`. Name the exact-GCD threshold and document the intentional distinction.
-  - [ ] c. Remove unused `floor` and `format` cached globals.
-  - [ ] d. Reuse `cache_timing()` child state — pass `state.category` to `queue_cooldown_viewer_refresh()` instead of fetching the state again.
+- [x] 3. Scan-path cleanup and targeted optimization (`af_scan.lua`)
+  - [x] a. Rebuild Aura order keys only when readable identity changes or secret data requires the conservative path.
+  - [x] b. Name the exact-GCD filter and document its intentional distinction from grey-state detection.
+  - [x] c. Remove unused `floor` and `format` cached globals.
+  - [x] d. Reuse `cache_timing()` child state for the queued category.
 
 - [ ] 4. Render and ticker pooling cleanup
   - [ ] a. Skip already-cleared pooled icons (`af_render.lua`) — bypass teardown only for objects already hidden and fully cleared; previously displayed cooldown, grey, count, and tooltip state must still clear.

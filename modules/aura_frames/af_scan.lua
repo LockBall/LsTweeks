@@ -6,15 +6,14 @@
 
 local addon_name, addon = ...
 
-local floor      = math.floor
 local math_max   = math.max
 local GetTime    = GetTime
 local wipe       = wipe
 local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local C_Spell       = C_Spell
-local format        = format
 local GCD_GREY_THRESHOLD = 2.0
+local GCD_HOOK_THRESHOLD = 1.5
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
@@ -140,6 +139,15 @@ end
 
 -- Update an existing entry in place (avoids allocation on unchanged auras).
 local function update_entry(entry, name, icon, duration, expiration, spell_id, dispel_name, rem, count, scan_rem, live_cnt, category)
+    local refresh_order_key = issecretvalue(spell_id)
+        or issecretvalue(name)
+        or issecretvalue(icon)
+        or issecretvalue(entry.spell_id)
+        or issecretvalue(entry.name)
+        or issecretvalue(entry.icon)
+        or spell_id ~= entry.spell_id
+        or name ~= entry.name
+        or icon ~= entry.icon
     entry.name          = name
     entry.icon          = icon
     entry.duration      = duration
@@ -150,7 +158,9 @@ local function update_entry(entry, name, icon, duration, expiration, spell_id, d
     entry.count         = count
     entry.scan_remaining = scan_rem
     entry.live_count    = live_cnt
-    entry.order_key     = make_order_key(spell_id, name, icon, entry.is_helpful)
+    if refresh_order_key then
+        entry.order_key = make_order_key(spell_id, name, icon, entry.is_helpful)
+    end
     if category then entry.category = category end
 end
 
@@ -558,16 +568,17 @@ local function hook_cd_item_frame(child)
             name = state.name,
             icon = state.icon,
         }
-        queue_cooldown_viewer_refresh(get_cd_child_state(child).category)
+        queue_cooldown_viewer_refresh(state.category)
     end
 
     -- Standard cooldown path: arguments are passed by Blizzard code, so read
-    -- them directly when they are not secret. Ignore GCD-sized values here;
-    -- GCD animation can still arrive through the DurationObject path.
+    -- them directly when they are not secret. Ignore exact-GCD-sized values
+    -- here; the broader grey-state threshold has a margin, while GCD animation
+    -- can still arrive through the DurationObject path.
     pcall(hooksecurefunc, cd, "SetCooldown", function(_, start, duration)
         if not (start and duration) then return end
         if issecretvalue(start) or issecretvalue(duration) then return end
-        if duration <= 1.5 then return end  -- GCD
+        if duration <= GCD_HOOK_THRESHOLD then return end
         cache_timing(start + duration, duration, nil)
     end)
 
