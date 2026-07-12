@@ -71,6 +71,24 @@ h.test("visible icon ticker refresh stops idle ticker immediately", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
 end)
 
+h.test("disabled module rejects tooltip cache prewarm before frame inspection", function()
+    local M = load_aura_frames()
+    local original_is_runtime_enabled = M.is_runtime_enabled
+    local frame_inspected = false
+    local blocked_frame = setmetatable({}, {
+        __index = function()
+            frame_inspected = true
+            error("disabled prewarm must not inspect the frame")
+        end,
+    })
+
+    M.is_runtime_enabled = function() return false end
+    M.prewarm_aura_tooltip_cache(blocked_frame)
+    M.is_runtime_enabled = original_is_runtime_enabled
+
+    h.ok(not frame_inspected, "disabled module exits before reading tooltip frame state")
+end)
+
 h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()
     local M = load_aura_frames()
     local custom_cache_clears = 0

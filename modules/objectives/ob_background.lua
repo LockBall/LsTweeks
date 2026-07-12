@@ -730,6 +730,11 @@ local function sync_objective_background(reason)
     background_sync_queued = false
     background_last_reason = reason or "unknown"
 
+    if not M.is_runtime_enabled() then
+        background_last_state = "module_disabled"
+        return
+    end
+
     if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
         background_last_state = "combat_deferred"
         if M.defer_objectives_combat_update then
@@ -742,11 +747,6 @@ local function sync_objective_background(reason)
     local background = tracker and tracker.NineSlice
     if not tracker or not background then
         background_last_state = "unavailable"
-        return
-    end
-
-    if not M.is_runtime_enabled() then
-        background_last_state = "module_disabled"
         return
     end
 

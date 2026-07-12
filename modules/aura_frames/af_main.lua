@@ -398,6 +398,7 @@ local function cache_tooltip_data_lines(obj)
 end
 
 function M.prewarm_aura_tooltip_cache(frame)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if InCombatLockdown and InCombatLockdown() then return end
     local icons = frame and frame.icons
     if not icons then return end

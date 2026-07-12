@@ -132,6 +132,23 @@ h.test("module disable restores objective opacity through Edit Mode", function()
     h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "Edit Mode path skips duplicate manager writes")
 end)
 
+h.test("queued background sync rejects a disabled module before combat deferral", function()
+    reset_runtime()
+    fresh_db({ customize_background = true })
+
+    M.apply_background()
+    ObjectiveTrackerFrame:Update()
+    h.addon.set_module_enabled("objectives", false)
+    h.stub.in_combat = true
+    h.advance(h.addon.UPDATE_INTERVALS.next_frame)
+
+    local fields = M.get_background_status()
+    h.ok(tContains(fields, "bg_state=module_disabled"), "queued sync skips combat defer after module disable")
+
+    h.stub.in_combat = false
+    h.addon.set_module_enabled("objectives", true)
+end)
+
 h.test("system setting opacity fallback skips duplicate manager write", function()
     reset_runtime()
     fresh_db({ customize_background = false })
