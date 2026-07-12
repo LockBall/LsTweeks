@@ -89,6 +89,23 @@ h.test("disabled module rejects tooltip cache prewarm before frame inspection", 
     h.ok(not frame_inspected, "disabled module exits before reading tooltip frame state")
 end)
 
+h.test("world-entry tooltip cache eviction retains reusable spell lines", function()
+    local M = load_aura_frames()
+    local aura_lines = { { left_text = "Aura" } }
+    local spell_lines = { { left_text = "Spell" } }
+    M._tooltip_data_lines_cache = {
+        ["aura:101"] = aura_lines,
+        ["aura:202"] = aura_lines,
+        ["spell:303"] = spell_lines,
+    }
+
+    M.clear_aura_tooltip_instance_cache()
+
+    h.is_nil(M._tooltip_data_lines_cache["aura:101"], "first aura entry evicted")
+    h.is_nil(M._tooltip_data_lines_cache["aura:202"], "second aura entry evicted")
+    h.eq(M._tooltip_data_lines_cache["spell:303"], spell_lines, "spell entry survives world entry")
+end)
+
 h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()
     local M = load_aura_frames()
     local custom_cache_clears = 0
@@ -111,9 +128,13 @@ end)
 h.test("custom frame deletion clears its scan cache and controls", function()
     local M = load_aura_frames()
     local cache_clears = 0
+    local frame = CreateFrame("Frame", nil, UIParent)
+    frame._display_count = 4
+    frame._tooltip_cache_retry_count = 2
+    frame._tooltip_cache_retry_pending = true
     M.db = { custom_frames = { { id = "custom_test" } } }
-    M.frames = {}
-    M.frames_list = {}
+    M.frames = { show_custom_test = frame }
+    M.frames_list = { frame }
     M.controls = { custom_custom_test_scale = {} }
     M.clear_custom_aura_scan_cache = function() cache_clears = cache_clears + 1 end
 
@@ -122,6 +143,96 @@ h.test("custom frame deletion clears its scan cache and controls", function()
     h.eq(#M.db.custom_frames, 0, "custom frame DB entry is removed")
     h.is_nil(M.controls.custom_custom_test_scale, "custom frame controls are removed")
     h.eq(cache_clears, 1, "custom frame deletion clears its scan cache")
+    h.eq(frame._display_count, 0, "custom frame display state cleared")
+    h.eq(frame._tooltip_cache_retry_count, 0, "custom frame retry count cleared")
+    h.eq(frame._tooltip_cache_retry_pending, false, "custom frame retry state cleared")
+end)
+
+h.test("category-specific false settings override flat Aura Frame fallbacks", function()
+    local M = load_aura_frames()
+    local original_activity = M.get_frame_activity_state
+    local original_timer_text = M.is_timer_text_enabled
+    local original_cooldown_overlay = M.uses_cooldown_icon_overlay
+    local original_render = M.render_aura_map
+    local original_refresh_fade = M.refresh_frame_ooc_fade
+    local original_refresh_ticker = M.refresh_visible_icon_ticker
+    M.db = {
+        short_threshold = 5,
+        bar_mode_short = false,
+        bar_mode = true,
+        bg_short = false,
+        bg = true,
+        width_short = 120,
+        spacing_short = 2,
+        scale_short = 1,
+        growth_short = "DOWN",
+        max_icons_short = 1,
+        color_short = { r = 1, g = 1, b = 1 },
+        bar_bg_color_short = { r = 0, g = 0, b = 0, a = 1 },
+        bar_text_color_short = { r = 1, g = 1, b = 1 },
+        bg_color_short = { r = 1, g = 0, b = 0, a = 0.5 },
+    }
+    M._aura_map = {}
+    local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    frame.category = "short"
+    frame.icons = {}
+    frame._layout_cache = {
+        frame_width = 120,
+        bar_mode = false,
+        show_timer_text = false,
+        layout_show_timer_text = false,
+        cooldown_icon_overlay = false,
+        spacing = 2,
+        growth = "DOWN",
+    }
+
+    M.get_frame_activity_state = function()
+        return { enabled = true, moving = false, test_aura = false }
+    end
+    M.is_timer_text_enabled = function() return false end
+    M.uses_cooldown_icon_overlay = function() return false end
+    M.render_aura_map = function() return 0 end
+    M.refresh_frame_ooc_fade = function() end
+    M.refresh_visible_icon_ticker = function() end
+
+    M.update_auras(frame, "show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "HELPFUL")
+
+    M.get_frame_activity_state = original_activity
+    M.is_timer_text_enabled = original_timer_text
+    M.uses_cooldown_icon_overlay = original_cooldown_overlay
+    M.render_aura_map = original_render
+    M.refresh_frame_ooc_fade = original_refresh_fade
+    M.refresh_visible_icon_ticker = original_refresh_ticker
+
+    h.eq(frame._bar_mode, false, "category false keeps icon mode")
+    h.eq(frame._lstweeks_bg_a, 0, "category false hides background")
+end)
+
+h.test("unified scan continues after malformed helpful and debuff records", function()
+    local M = load_aura_frames()
+    M.db = {
+        max_icons_static = 2,
+        max_icons_short = 2,
+        max_icons_long = 2,
+        max_icons_debuff = 2,
+    }
+    h.stub.auras.player = {
+        buffs = {
+            { spellId = 1001, name = "Malformed Buff", icon = 1, duration = 10, expirationTime = 10 },
+            { auraInstanceID = 101, spellId = 1002, name = "Valid Buff", icon = 2, duration = 10, expirationTime = 10 },
+        },
+        debuffs = {
+            { spellId = 2001, name = "Malformed Debuff", icon = 3, duration = 10, expirationTime = 10 },
+            { auraInstanceID = 202, spellId = 2002, name = "Valid Debuff", icon = 4, duration = 10, expirationTime = 10 },
+        },
+    }
+    M._aura_map = {}
+
+    M.unified_scan(nil, 5, 2, 2)
+
+    h.ok(M._aura_map[101], "valid helpful record survives an earlier malformed record")
+    h.ok(M._aura_map[202], "valid debuff record survives an earlier malformed record")
+    h.stub.auras.player = nil
 end)
 
 h.run("af_ranges")

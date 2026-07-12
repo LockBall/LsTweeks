@@ -891,13 +891,12 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         i = i + 1
 
         local iid = aura.auraInstanceID
-        if not iid then break end
-
-        local old_entry     = old_map[iid]
-        local safe_spell_id = get_aura_spell_id(aura, old_entry)
-        local duration      = aura.duration
-        local expiration    = aura.expirationTime
-        local rem           = compute_remaining(duration, expiration)
+        if iid then
+            local old_entry     = old_map[iid]
+            local safe_spell_id = get_aura_spell_id(aura, old_entry)
+            local duration      = aura.duration
+            local expiration    = aura.expirationTime
+            local rem           = compute_remaining(duration, expiration)
 
         -- GetAuraDuration is readable even when scan fields are secret (combat).
         local need_live = (rem == nil) or issecretvalue(rem) or issecretvalue(expiration)
@@ -968,6 +967,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
 
             count = count + 1
         end
+        end
     end
 
     -- -------------------------------------------------------------------------
@@ -982,15 +982,14 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         i = i + 1
 
         local iid = aura.auraInstanceID
-        if not iid then break end
-
-        local old_entry     = old_map[iid]
-        local duration      = aura.duration
-        local expiration    = aura.expirationTime
-        local name          = aura.name
-        local icon          = aura.icon
-        local dispel        = aura.dispelName
-        if issecretvalue(dispel) then dispel = nil end
+        if iid then
+            local old_entry     = old_map[iid]
+            local duration      = aura.duration
+            local expiration    = aura.expirationTime
+            local name          = aura.name
+            local icon          = aura.icon
+            local dispel        = aura.dispelName
+            if issecretvalue(dispel) then dispel = nil end
 
         local rem = compute_remaining(duration, expiration)
         local belongs = false
@@ -1047,6 +1046,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
             seen_iids[iid] = true
             add_to_category_bucket(category_buckets, entry)
             count = count + 1
+        end
         end
     end
 

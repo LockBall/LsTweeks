@@ -20,7 +20,13 @@ end
 function M.apply_objectives_profile_data(data)
     if not data then return false, "Profile data is missing." end
     local db, defaults = M.get_db(), M.defaults.objectives
-    for _, key in ipairs(KEYS) do db[key] = data[key] ~= nil and copy(data[key]) or copy(defaults[key]) end
+    for _, key in ipairs(KEYS) do
+        if data[key] ~= nil then
+            db[key] = copy(data[key])
+        else
+            db[key] = copy(defaults[key])
+        end
+    end
     if M.migrate_background_settings then M.migrate_background_settings(db) end
     if M.on_reset_complete then M.on_reset_complete() end
     return true, "Loaded profile."

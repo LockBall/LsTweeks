@@ -37,7 +37,10 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_mode_key = frame._bar_mode_key or ("bar_mode_" .. category)
     frame._bar_mode_key = bar_mode_key
 
-    local bar_mode = cfg_db[bar_mode_key] ~= nil and cfg_db[bar_mode_key] or cfg_db["bar_mode"]
+    local bar_mode = cfg_db[bar_mode_key]
+    if bar_mode == nil then
+        bar_mode = cfg_db["bar_mode"]
+    end
     local show_timer_text = M.is_timer_text_enabled(cfg_db, category, timer_key)
     local cooldown_icon_overlay = M.uses_cooldown_icon_overlay(category, bar_mode, cfg_db)
     local color = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
@@ -501,7 +504,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         set_height_for_growth_if_changed(self, new_height, growth)
     end
 
-    local is_bg_enabled = cfg_db[bg_key] ~= nil and cfg_db[bg_key] or cfg_db["bg"]
+    local is_bg_enabled = cfg_db[bg_key]
+    if is_bg_enabled == nil then
+        is_bg_enabled = cfg_db["bg"]
+    end
     local bg_r, bg_g, bg_b, bg_a
     local br_r, br_g, br_b, br_a
     if is_moving then

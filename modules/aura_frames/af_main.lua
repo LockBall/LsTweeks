@@ -267,14 +267,15 @@ local function is_usable_tooltip_text(value)
 end
 
 local function get_aura_tooltip_cache_keys(obj)
-    local keys = {}
+    local aura_key
     if is_usable_tooltip_number(obj.aura_index) then
-        keys[#keys + 1] = "aura:" .. tostring(obj.aura_index)
+        aura_key = "aura:" .. tostring(obj.aura_index)
     end
+    local spell_key
     if is_usable_tooltip_number(obj.aura_spell_id) then
-        keys[#keys + 1] = "spell:" .. tostring(obj.aura_spell_id)
+        spell_key = "spell:" .. tostring(obj.aura_spell_id)
     end
-    return keys
+    return aura_key, spell_key
 end
 
 local function has_cacheable_tooltip_identity(obj)
@@ -374,15 +375,12 @@ local function get_safe_tooltip_data(obj)
 end
 
 local function cache_tooltip_data_lines(obj)
-    local cache_keys = get_aura_tooltip_cache_keys(obj)
-    if #cache_keys == 0 then return nil end
+    local aura_key, spell_key = get_aura_tooltip_cache_keys(obj)
+    if not aura_key and not spell_key then return nil end
     M._tooltip_data_lines_cache = M._tooltip_data_lines_cache or {}
-    for i = 1, #cache_keys do
-        local cached = M._tooltip_data_lines_cache[cache_keys[i]]
-        if cached then
-            return cached
-        end
-    end
+    local cached = aura_key and M._tooltip_data_lines_cache[aura_key]
+        or spell_key and M._tooltip_data_lines_cache[spell_key]
+    if cached then return cached end
 
     if InCombatLockdown and InCombatLockdown() then
         return nil
@@ -390,11 +388,20 @@ local function cache_tooltip_data_lines(obj)
 
     local lines = copy_tooltip_data_lines(get_safe_tooltip_data(obj))
     if lines then
-        for i = 1, #cache_keys do
-            M._tooltip_data_lines_cache[cache_keys[i]] = lines
-        end
+        if aura_key then M._tooltip_data_lines_cache[aura_key] = lines end
+        if spell_key then M._tooltip_data_lines_cache[spell_key] = lines end
     end
     return lines
+end
+
+function M.clear_aura_tooltip_instance_cache()
+    local cache = M._tooltip_data_lines_cache
+    if not cache then return end
+    for key in pairs(cache) do
+        if type(key) == "string" and key:sub(1, 5) == "aura:" then
+            cache[key] = nil
+        end
+    end
 end
 
 function M.prewarm_aura_tooltip_cache(frame)
@@ -906,6 +913,10 @@ local function handle_aura_frame_event(frame, event, unit, info)
     if not params then return end
     if not is_aura_frame_event_relevant(event, unit) then return end
 
+    if event == "PLAYER_ENTERING_WORLD" and M.clear_aura_tooltip_instance_cache then
+        M.clear_aura_tooltip_instance_cache()
+    end
+
     local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
     if not activity.enabled then
         frame._pending_aura_info = nil
@@ -1054,6 +1065,9 @@ function M.destroy_custom_frame(id)
     if frame then
         if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
         stop_frame_hover_check(frame)
+        frame._display_count = 0
+        frame._tooltip_cache_retry_count = 0
+        frame._tooltip_cache_retry_pending = false
         frame:Hide()
         frame:UnregisterAllEvents()
         frame:SetScript("OnEvent", nil)

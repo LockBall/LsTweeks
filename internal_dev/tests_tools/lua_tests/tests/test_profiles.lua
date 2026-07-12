@@ -62,6 +62,31 @@ h.test("Aura Frames profiles retain their module-specific refresh contract", fun
     h.eq(AF.db.short_threshold, 7, "Aura Frames schema restores its own setting")
 end)
 
+h.test("Aura Frames profile import preserves an explicit false category setting", function()
+    local AF = h.addon.aura_frames
+    AF.db.bar_mode_short = true
+
+    local ok = AF.apply_aura_frame_profile_data({ bar_mode_short = false })
+
+    h.ok(ok, "Aura Frames profile data applies")
+    h.eq(AF.db.bar_mode_short, false, "explicit false survives profile fallback")
+end)
+
+h.test("Objectives profile import preserves an explicit false setting", function()
+    local OB = h.addon.objectives
+    local db = OB.get_db()
+    local original_default = OB.defaults.objectives.collapse_all
+    OB.defaults.objectives.collapse_all = true
+    db.collapse_all = true
+
+    local ok = OB.apply_objectives_profile_data({ collapse_all = false })
+
+    OB.defaults.objectives.collapse_all = original_default
+
+    h.ok(ok, "Objectives profile data applies")
+    h.eq(db.collapse_all, false, "explicit false survives profile fallback")
+end)
+
 h.run("profiles")
 
 --#endregion PROFILE MANAGER ===================================================

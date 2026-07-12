@@ -7,14 +7,15 @@ Active findings for `modules/aura_frames/`. Verified against the current code af
 - [Confirmed Deliberate](#confirmed-deliberate)
 
 ## Priority Queue
-- [ ] 1. Tooltip lifecycle and cache bounds (`af_main.lua`)
-  - [ ] a. Clear destroyed custom-frame display and tooltip-retry state — `destroy_custom_frame()` leaves `_display_count` and `_tooltip_cache_retry_pending`, allowing a scheduled retry to inspect stale icon data while the module remains enabled. Clear the display count, retry count, and pending flag during destruction.
-  - [ ] b. Bound the runtime tooltip line cache — `_tooltip_data_lines_cache` stores one entry per aura instance ID for the session. Clear only `aura:<id>` entries on `PLAYER_ENTERING_WORLD`, retain reusable `spell:<id>` entries, and add regression coverage for eviction.
-  - [ ] c. Avoid tooltip-key table allocation in prewarm — `get_aura_tooltip_cache_keys()` allocates a table and strings per displayed icon. Return bounded values or use safe reusable scratch state without weakening numeric-only key rules.
+- [x] 1. Tooltip lifecycle and cache bounds (`af_main.lua`)
+  - [x] a. Clear destroyed custom-frame display and tooltip-retry state.
+  - [x] b. Bound the runtime tooltip line cache by clearing `aura:<id>` entries on `PLAYER_ENTERING_WORLD` while retaining reusable `spell:<id>` entries.
+  - [x] c. Avoid tooltip-key table allocation in prewarm with bounded key returns.
 
-- [ ] 2. Defensive frame and scan behavior
-  - [ ] a. Preserve explicit false per-frame settings (`af_logic_main.lua`) — bar mode and background enable use `x ~= nil and x or y`, so category-specific `false` can fall through to a future flat fallback. Use explicit nil selection.
-  - [ ] b. Skip malformed aura records (`af_scan.lua`) — helpful and debuff loops stop at a missing `auraInstanceID`. The index already advances, so skip the record and continue scanning later entries.
+- [x] 2. Defensive frame and scan behavior
+  - [x] a. Preserve explicit false per-frame runtime settings with explicit nil fallback selection.
+  - [x] b. Skip malformed helpful and debuff records while continuing later scan entries.
+  - [x] c. Preserve explicit false profile settings through the cross-module profile-import fix.
 
 - [ ] 3. Scan-path cleanup and targeted optimization (`af_scan.lua`)
   - [ ] a. Avoid rebuilding unchanged aura order keys — retain the existing key unless readable spell ID, name, or icon changes; preserve secret-value behavior.

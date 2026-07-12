@@ -66,7 +66,13 @@ function M.apply_aura_frame_profile_data(data)
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
             local key = prefix .. "_" .. category
-            M.db[key] = data[key] ~= nil and copy(data[key]) or (M.defaults[key] ~= nil and copy(M.defaults[key]) or nil)
+            if data[key] ~= nil then
+                M.db[key] = copy(data[key])
+            elseif M.defaults[key] ~= nil then
+                M.db[key] = copy(M.defaults[key])
+            else
+                M.db[key] = nil
+            end
         end
     end
     if M.migrate_legacy_cdm_fade_settings then M.migrate_legacy_cdm_fade_settings(M.db, data) end
