@@ -62,6 +62,17 @@ h.test("Aura Frames profiles retain their module-specific refresh contract", fun
     h.eq(AF.db.short_threshold, 7, "Aura Frames schema restores its own setting")
 end)
 
+h.test("Skyriding Vigor profile storage resolves after module initialization", function()
+    local SV = h.addon.skyriding_vigor
+    local db = SV.get_root_db()
+    db.profiles = {}
+
+    local ok, message = SV.profile_manager:save("Skyriding Regression", false)
+
+    h.ok(ok, message or "Skyriding Vigor profile save succeeds")
+    h.eq(SV.profile_manager:get_selected_name(), "Skyriding Regression", "saved Skyriding profile remains selected")
+end)
+
 h.test("Aura Frames profile import preserves an explicit false category setting", function()
     local AF = h.addon.aura_frames
     AF.db.bar_mode_short = true

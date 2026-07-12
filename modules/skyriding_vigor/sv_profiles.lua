@@ -19,5 +19,5 @@ function M.apply_skyriding_vigor_profile_data(data)
     M.on_reset_complete()
     return true, "Loaded profile."
 end
-M.profile_manager = addon.CreateProfileManager({ label = "Skyriding Vigor", schema_version = 1, get_db = M.get_root_db, export_data = M.export_skyriding_vigor_profile_data, apply_data = M.apply_skyriding_vigor_profile_data })
+M.profile_manager = addon.CreateProfileManager({ label = "Skyriding Vigor", schema_version = 1, get_db = function() return M.get_root_db and M.get_root_db() end, export_data = M.export_skyriding_vigor_profile_data, apply_data = M.apply_skyriding_vigor_profile_data })
 --#endregion PROFILES ==========================================================

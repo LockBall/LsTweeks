@@ -43,6 +43,7 @@ Important `skyriding_vigor` keys:
 ## Position And GUI
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
 - Skyriding Vigor uses General, Vigor Bar, and Profiles tabs. General owns the root-DB ARM reset with checked-by-default **Keep Profiles**; Profiles use the shared profile manager and save both normal and race configuration.
+- `sv_profiles.lua` loads before `sv_main.lua`; its profile manager must resolve `M.get_root_db()` through a call-time closure instead of capturing the not-yet-defined function.
 - The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns control construction and control synchronization. Add a one-off `sv_gui_sync.lua` split only if a broader cross-module GUI-sync file pattern is introduced.
 - `M.BuildVigorTab()` coordinates local Vigor Bar builders (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, and `build_spark_row`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
 - Settings controls that must disable during real active flight are registered in
