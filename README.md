@@ -38,17 +38,20 @@ Slash command: `/lst`
 - Optional **Auto-Collapse** group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
 - Optional **Section Count** checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - Keeps the All Objectives background sized to the visible tracker sections when Objectives module behavior is active.
+- Profiles for saving and loading complete Objective Tracker setups, plus a module reset that can preserve saved profiles.
 
 
 ### Skyriding Vigor
 - Restores a compact player vigor display using Blizzard UI assets.
 - Adjustable position, size, spacing, node style/color, fill color, end-decoration style/color, fade behavior, and optional separate race profile.
+- Profiles for saving and loading complete Vigor Bar setups, plus a module reset that can preserve saved profiles.
 
 
 ### Audio Volumes
 - Quieter addon replacement sounds for supported targets, currently including Achievement test and Ready Check.
 - Per-target Original behavior and replacement volume controls.
 - Temporary channel controls for normal game volumes, fishing volumes, combat volumes, and manual Quick Picks.
+- Profiles for saving and loading complete Audio Volumes setups, plus a module reset that can preserve saved profiles.
 
 
 ### Settings
@@ -78,9 +81,9 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Buffs & Debuffs** for aura frame settings.
 - Use **Buffs & Debuffs > Profiles** to save or load complete Aura Frames setups.
 - Open **Settings** for minimap, open-on-reload, interface transparency, and module enable toggles.
-- Open **Objectives** for Auto-Collapse and Section Count options.
-- Open **Skyriding Vigor** to enable the restored vigor display and adjust its position, size, spacing, node style/color, fill color, end decorations, fade behavior, and optional race profile.
-- Open **Audio Volumes** to configure quieter replacement sounds, keep the original Blizzard sound, or use temporary Fishing/Combat sound profiles.
+- Open **Objectives** for Tracker settings, module reset, and saved profiles.
+- Open **Skyriding Vigor** for General module controls, Vigor Bar appearance and behavior, and saved profiles.
+- Open **Audio Volumes** to configure replacement sounds and temporary-volume situations, reset the module, or manage saved profiles.
 - Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
 

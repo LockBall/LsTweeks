@@ -197,11 +197,11 @@ h.test("visibility gate skips charges only outside valid vigor states", function
         charge_reads = charge_reads + 1
         return 6, 6, 0, 0
     end
-    SV.get_gliding_state = function() return false, false end
+    rawset(SV, "get_gliding_state", function() return false, false end)
     SV.refresh()
     h.eq(charge_reads, 0, "normal non-vigor state skips charge reads")
 
-    SV.get_gliding_state = function() return false, true end
+    rawset(SV, "get_gliding_state", function() return false, true end)
     SV.is_player_flying = function() return false end
     SV.is_mounted_in_advanced_flyable_area = function() return true end
     SV.refresh()
@@ -244,12 +244,12 @@ h.test("Race Test control stays disabled while flight locks settings", function(
     local old_lock_check = SV.is_settings_locked_by_flight
     local button = CreateFrame("Button")
     SV.controls = { race_profile_test_button = button }
-    SV.is_settings_locked_by_flight = function() return true end
+    rawset(SV, "is_settings_locked_by_flight", function() return true end)
 
     SV.sync_race_profile_controls({ race_profile_enabled = true })
 
     h.ok(not button:IsEnabled(), "Race Test stays disabled during flight")
-    SV.is_settings_locked_by_flight = function() return false end
+    rawset(SV, "is_settings_locked_by_flight", function() return false end)
     SV.sync_race_profile_controls({ race_profile_enabled = true })
     h.ok(button:IsEnabled(), "Race Test enables when flight lock clears")
 
@@ -295,13 +295,13 @@ h.test("settings flight-lock sync skips unchanged control writes", function()
     SV.controls = {}
     SV.flight_locked_controls = { { control = control } }
     SV._settings_controls_flight_locked = nil
-    SV.is_settings_locked_by_flight = function() return false end
+    rawset(SV, "is_settings_locked_by_flight", function() return false end)
 
     SV.sync_settings_controls_enabled()
     SV.sync_settings_controls_enabled()
     h.eq(writes, 1, "unchanged flight state skips repeated control writes")
 
-    SV.is_settings_locked_by_flight = function() return true end
+    rawset(SV, "is_settings_locked_by_flight", function() return true end)
     SV.sync_settings_controls_enabled()
     h.eq(writes, 2, "flight-lock change resynchronizes controls")
     SV.sync_settings_controls_enabled(true)

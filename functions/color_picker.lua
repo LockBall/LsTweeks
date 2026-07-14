@@ -133,27 +133,30 @@ local function ensure_live_picker_session_cleanup()
     ColorPickerFrame._lstweeks_live_session_hooked = true
 end
 
+local hooked_color_pickers = setmetatable({}, { __mode = "k" })
+local hooked_opacity_sliders = setmetatable({}, { __mode = "k" })
+
 local function ensure_live_picker_hooks()
     local picker = get_color_picker_widget()
-    if picker and picker.HookScript and not picker._lstweeks_live_color_hooked then
+    if picker and picker.HookScript and not hooked_color_pickers[picker] then
         picker:HookScript("OnColorSelect", function()
             local handler = ColorPickerFrame and ColorPickerFrame._lstweeks_live_swatch_func
             if handler then
                 handler()
             end
         end)
-        picker._lstweeks_live_color_hooked = true
+        hooked_color_pickers[picker] = true
     end
 
     local opacity_slider = get_color_picker_alpha_slider()
-    if opacity_slider and opacity_slider.HookScript and not opacity_slider._lstweeks_live_alpha_hooked then
+    if opacity_slider and opacity_slider.HookScript and not hooked_opacity_sliders[opacity_slider] then
         opacity_slider:HookScript("OnValueChanged", function()
             local handler = ColorPickerFrame and ColorPickerFrame._lstweeks_live_opacity_func
             if handler then
                 handler()
             end
         end)
-        opacity_slider._lstweeks_live_alpha_hooked = true
+        hooked_opacity_sliders[opacity_slider] = true
     end
 end
 

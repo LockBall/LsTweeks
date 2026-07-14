@@ -311,8 +311,11 @@ function frame_methods:SetShadowColor() end
 function frame_methods:SetTextScale() end
 
 -- Texture widgets
-function frame_methods:SetTexture(...) record(self, "SetTexture", ...) end
-function frame_methods:GetTexture() return nil end
+function frame_methods:SetTexture(texture, ...)
+    self.__texture = texture
+    record(self, "SetTexture", texture, ...)
+end
+function frame_methods:GetTexture() return self.__texture end
 function frame_methods:SetAtlas(...) record(self, "SetAtlas", ...) end
 function frame_methods:SetTexCoord(...) record(self, "SetTexCoord", ...) end
 function frame_methods:SetColorTexture(...) record(self, "SetColorTexture", ...) end
@@ -729,18 +732,18 @@ AchievementObjectiveTracker = CreateFrame("Frame", "AchievementObjectiveTracker"
 ObjectiveTrackerManager = {
     __opacity = 100,
     __calls = {},
+    SetOpacity = function(self, percent)
+        self.__opacity = percent
+        self.__calls.SetOpacity = self.__calls.SetOpacity or {}
+        table.insert(self.__calls.SetOpacity, { percent })
+    end,
+    GetOpacity = function(self) return self.__opacity end,
+    UpdateAll = function(self)
+        self.__calls.UpdateAll = self.__calls.UpdateAll or {}
+        table.insert(self.__calls.UpdateAll, {})
+    end,
+    GetCalls = function(self, method) return self.__calls[method] end,
 }
-function ObjectiveTrackerManager:SetOpacity(percent)
-    self.__opacity = percent
-    self.__calls.SetOpacity = self.__calls.SetOpacity or {}
-    table.insert(self.__calls.SetOpacity, { percent })
-end
-function ObjectiveTrackerManager:GetOpacity() return self.__opacity end
-function ObjectiveTrackerManager:UpdateAll()
-    self.__calls.UpdateAll = self.__calls.UpdateAll or {}
-    table.insert(self.__calls.UpdateAll, {})
-end
-function ObjectiveTrackerManager:GetCalls(method) return self.__calls[method] end
 
 --#endregion common globals
 

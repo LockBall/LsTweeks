@@ -32,7 +32,7 @@ end
 
 h.test("disabled count settings return four explicit false values", function()
     Ls_Tweeks_DB = { objectives = {}, modules = { objectives = false } }
-    local get_count_settings = find_upvalue(M.get_section_count_status, "get_count_settings")
+    local get_count_settings = assert(find_upvalue(M.get_section_count_status, "get_count_settings"))
     h.ok(type(get_count_settings) == "function", "get_count_settings upvalue found")
 
     h.eq(select("#", get_count_settings()), 4, "disabled arity")

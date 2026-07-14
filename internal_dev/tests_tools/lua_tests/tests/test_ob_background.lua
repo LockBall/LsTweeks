@@ -11,6 +11,11 @@ local h = require("harness")
 h.load_addon("modules/objectives")
 
 local M = h.addon.objectives
+local edit_mode_test_calls = {}
+
+local function frame_calls(frame, method)
+    return frame:GetCalls(method) or {}
+end
 
 local function fresh_db(overrides)
     local db = {
@@ -33,11 +38,12 @@ local function reset_runtime()
     ObjectiveTrackerFrame.UpdateSystemSettingValue = nil
     ObjectiveTrackerFrame.__system_setting_calls = nil
     EditModeManagerFrame = nil
+    edit_mode_test_calls = {}
     Enum = nil
 end
 
 local function edit_mode_calls()
-    return EditModeManagerFrame and EditModeManagerFrame.calls or {}
+    return edit_mode_test_calls
 end
 
 local function install_color_picker_frame()
@@ -88,7 +94,7 @@ end
 
 local function objective_border_frame()
     for _, child in ipairs({ ObjectiveTrackerFrame:GetChildren() }) do
-        if child:GetCalls("SetBackdropBorderColor") then
+        if #frame_calls(child, "SetBackdropBorderColor") > 0 then
             return child
         end
     end
@@ -114,9 +120,8 @@ h.test("module disable restores objective opacity through Edit Mode", function()
     Enum = { EditModeObjectiveTrackerSetting = { Opacity = 99 } }
     ObjectiveTrackerFrame.HasSetting = function(_, setting) return setting == 99 end
     EditModeManagerFrame = {
-        calls = {},
-        OnSystemSettingChange = function(self, tracker, setting, percent)
-            self.calls[#self.calls + 1] = { tracker = tracker, setting = setting, percent = percent }
+        OnSystemSettingChange = function(_self, tracker, setting, percent)
+            edit_mode_test_calls[#edit_mode_test_calls + 1] = { tracker = tracker, setting = setting, percent = percent }
             ObjectiveTrackerManager.__opacity = percent
         end,
     }
@@ -265,7 +270,7 @@ h.test("region diagnostics preserve explicit false values", function()
     local region = ObjectiveTrackerFrame.NineSlice:CreateTexture(nil, "ARTWORK")
     region.GetBlendMode = function() return false end
     region.IsDesaturated = function() return false end
-    region.GetTexture = function() return false end
+    region:SetTexture(false)
     region.GetAtlas = function() return false end
 
     local fields = M.get_background_status()
@@ -283,16 +288,15 @@ h.test("border sync skips redundant anchoring and visibility calls", function()
     local border_shown = tContains(M.get_background_status(), "objective_border_shown=true")
     h.ok(border_shown, "border shown after apply")
 
-    local border = objective_border_frame()
-    h.ok(border, "border frame found")
-    local anchor_calls = #(border:GetCalls("SetPoint") or {})
-    local show_calls = #(border:GetCalls("Show") or {})
+    local border = assert(objective_border_frame(), "border frame found")
+    local anchor_calls = #frame_calls(border, "SetPoint")
+    local show_calls = #frame_calls(border, "Show")
     h.ok(anchor_calls >= 2, "initial border anchors")
     h.ok(show_calls >= 1, "initial border show")
 
     M.apply_background()
-    h.eq(#(border:GetCalls("SetPoint") or {}), anchor_calls, "second apply skips re-anchor")
-    h.eq(#(border:GetCalls("Show") or {}), show_calls, "second apply skips repeated show")
+    h.eq(#frame_calls(border, "SetPoint"), anchor_calls, "second apply skips re-anchor")
+    h.eq(#frame_calls(border, "Show"), show_calls, "second apply skips repeated show")
 end)
 
 h.test("background color sync skips unchanged overlay writes", function()
