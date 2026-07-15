@@ -361,7 +361,7 @@ function M.get_style_layout_default(style_key, field)
     return nil
 end
 
-function M.get_style_layout_table(db, style_key, create, initial_scale)
+function M.get_style_layout_table(db, style_key, create)
     if not db then return nil end
     style_key = M.get_valid_bar_style_key(style_key or db.style or DEFAULT_STYLE_KEY)
     if create then
@@ -369,7 +369,7 @@ function M.get_style_layout_table(db, style_key, create, initial_scale)
         db.style_layouts[style_key] = db.style_layouts[style_key] or {}
         local layout = db.style_layouts[style_key]
         if layout.scale == nil then
-            layout.scale = initial_scale or M.get_style_layout_default(style_key, "scale")
+            layout.scale = M.get_style_layout_default(style_key, "scale")
         end
         if layout.fill_color == nil then
             layout.fill_color = M.get_style_layout_default(style_key, "fill_color")

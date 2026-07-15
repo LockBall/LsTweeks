@@ -4,7 +4,7 @@ Important `aura_frames` keys:
 - Global AF settings: `short_threshold`, `enable_blizz_buffs`, `enable_blizz_debuffs`, `snap_to_grid`, `show_grid`, `show_bar_section_outlines`
 - Timer fallback: `timer_number_font`, `timer_number_font_size`, `timer_number_font_bold`
 - Preset per-category keys: `<setting>_<category>` such as `show_static`, `color_debuff`, `scale_short`
-- OOC fade: preset frames use `fade_ooc_<category>`, `ooc_alpha_<category>`, `fade_delay_<category>`, and `fade_length_<category>`; custom frames use flat `fade_ooc`, `ooc_alpha`, `fade_delay`, and `fade_length`. `af_defaults.lua` owns the `ooc_alpha` range/step constants (`0.00..1.00`, step `0.05`) so the slider and runtime clamp stay aligned; zero lets users fully hide a faded frame background. Fade timing defaults are 2s delay and 3s fade length. Legacy global CDM fade keys are migrated into per-CDM-frame settings when missing.
+- OOC fade: preset frames use `fade_ooc_<category>`, `ooc_alpha_<category>`, `fade_delay_<category>`, and `fade_length_<category>`; custom frames use flat `fade_ooc`, `ooc_alpha`, `fade_delay`, and `fade_length`. `af_defaults.lua` owns the `ooc_alpha` range/step constants (`0.00..1.00`, step `0.05`) so the slider and runtime clamp stay aligned; zero lets users fully hide a faded frame background. Fade timing defaults are 2s delay and 3s fade length.
 - Aura Frames OOC fade immediately restores full alpha while the mouse is over title bars, the resize handle, or visible icons/bars; leaving the visible frame controls resumes the configured delay/fade.
 - Timer swipe keys: preset frames use `timer_swipe_<category>` and custom frames use `timer_swipe`; Bar Mode suppresses normal icon timer swipes regardless of the saved timer swipe value, and CDM cooldown-mode swipe overlays intentionally remain visible even when timer swipe is off.
 - Aura cancel modifier: `cancel_modifier` is a global Aura Frames setting (`OFF`, `CTRL`, `ALT`, `SHIFT`; default `CTRL`). Modifier + right `OnMouseUp` cancellation is out-of-combat only, owned by `M.try_cancel_aura_icon()` in `af_functions.lua`, and only cancels auras resolved through a fresh `HELPFUL|CANCELABLE` scan.
@@ -32,7 +32,7 @@ Important `aura_frames` keys:
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - First-install visible frames are only `static`, `short`, `long`, `debuff`. CDM defaults keep `show_*`, `move_*`, and `test_aura_*` false.
 - Preset DB keys use `aura_frames.<setting>_<category>`; custom frame entries use flat keys.
-- `M.normalize_saved_colors()` clamps preset and custom `color`, `bar_bg_color`, `bar_text_color`, `bg_color`, and `timer_color` components at startup and profile load. Keep this normalization before runtime-config caching so edited or legacy saved values cannot reach frame color APIs unchanged.
+- `M.normalize_saved_colors()` clamps preset and custom `color`, `bar_bg_color`, `bar_text_color`, `bg_color`, and `timer_color` components at startup and profile load. Keep this normalization before runtime-config caching so edited or malformed saved values cannot reach frame color APIs unchanged.
 - Preset and custom frame settings share the same presentation model via normalized `frame_config.keys` and `build_frame_settings_panel()` in `af_gui_frame_builders.lua`.
 - Aura update logic is split by runtime responsibility: `af_logic_ticker.lua` owns visible icon timer/bar ticking, `af_logic_native_visibility.lua` owns Blizzard/native BuffFrame, DebuffFrame, and CooldownViewer visibility suppression, and `af_logic_main.lua` owns runtime config cache, OOC fade, and the main per-frame aura refresh pipeline.
 - `af_functions.lua` is still a broad Aura Frames shared-helper bucket. Its current ownership includes CDM viewer lookup, frame positioning, custom frame setup, frame/category setting fallback resolution, aura cancellation, and timer behavior helpers. Prefer splitting future work by subsystem instead of adding more helpers there; likely split names are `af_frame_helpers.lua`, `af_settings_helpers.lua`, `af_cancel.lua`, and `af_timer_helpers.lua`.
@@ -118,12 +118,12 @@ Important `aura_frames` keys:
 
 
 ## Profiles And Reset
-- Aura Frame Profiles live under `M.db.profiles`; `af_profiles.lua` owns the explicit schema and runtime apply hook while the shared profile manager owns versioned CRUD and storage.
+- Aura Frame Profiles live under `M.db.profiles`; `af_profiles.lua` owns the explicit snapshot and runtime apply hook while the shared profile manager owns CRUD and storage.
 - Loading a profile is blocked in combat. It replaces `M.db.custom_frames`, creates missing custom runtime frames, then runs reset refresh.
 - General reset uses `CreateModuleReset(..., opts)` with checked-by-default **Keep Profiles**. When unchecked, `profiles` and `last_profile_name` must be cleared and cached profile UI refreshed.
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
 - Custom-frame deletion removes its runtime frame/events/fades, DB entry, controls, and custom aura scan cache; the Frames tree chooses the visible fallback selection.
-- There is no tracked legacy saved-profile corpus for Aura Frames. Reopen deleted/renamed custom-frame profile compatibility only when real saved variables are found or profile storage is intentionally changed; for storage changes, create synthetic profiles specific to that change.
+- Aura Frame profiles are local unreleased snapshots. If a future storage change makes one unsuitable, delete it and save a new profile; do not add compatibility or migration code.
 
 
 ## GUI

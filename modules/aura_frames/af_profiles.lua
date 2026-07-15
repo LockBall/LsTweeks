@@ -75,7 +75,6 @@ function M.apply_aura_frame_profile_data(data)
             end
         end
     end
-    if M.migrate_legacy_cdm_fade_settings then M.migrate_legacy_cdm_fade_settings(M.db, data) end
     M.db.positions = copy(data.positions or {})
     M.db.custom_frames = copy(data.custom_frames or {})
     addon.apply_defaults(M.defaults, M.db)
@@ -92,7 +91,6 @@ end
 
 M.profile_manager = addon.CreateProfileManager({
     label = "Aura Frames",
-    schema_version = 1,
     get_db = function() return M.db end,
     export_data = M.export_aura_frame_profile_data,
     apply_data = M.apply_aura_frame_profile_data,

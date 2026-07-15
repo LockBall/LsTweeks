@@ -16,8 +16,8 @@
 - `audio_volumes.fishing_focus.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied only while channeling Fishing. Missing/reset values initialize from the user's current `Sound_*Volume` CVars; SFX starts 25 percentage points above normal Effects volume, clamped to 100.
 - `audio_volumes.combat_volumes.enabled`: toggles the Combat Volumes channel profile.
 - `audio_volumes.combat_volumes.master`, `sfx`, `music`, `ambience`, `dialog`: `0-100` channel volumes applied while the player is in combat. Missing/reset values initialize from the user's current `Sound_*Volume` CVars.
-- `audio_volumes.custom_situations.<id>.name`, `.enabled`, `.master`, `.sfx`, `.music`, `.ambience`, `.dialog`: legacy storage key for user-created custom Quick Picks. Only one Quick Pick is enabled at a time, and triggered Fishing/Combat situations temporarily take priority.
-- `audio_volumes.last_situation_key`, `last_quick_pick_key`, `next_custom_situation_id`, `last_tab_index`, and `last_sound_key`: UI/session restoration and custom ID state. The unified Situations tab uses `last_situation_key` for both triggered situations and Quick Picks; `last_quick_pick_key` remains as legacy/minimap Quick Pick state.
+- `audio_volumes.custom_situations.<id>.name`, `.enabled`, `.master`, `.sfx`, `.music`, `.ambience`, `.dialog`: storage for user-created custom Quick Picks. Only one Quick Pick is enabled at a time, and triggered Fishing/Combat situations temporarily take priority.
+- `audio_volumes.last_situation_key`, `last_quick_pick_key`, `next_custom_situation_id`, `last_tab_index`, and `last_sound_key`: UI/session restoration and custom ID state. The unified Situations tab uses `last_situation_key` for both triggered situations and Quick Picks; `last_quick_pick_key` retains minimap Quick Pick state.
 
 
 ## Ownership

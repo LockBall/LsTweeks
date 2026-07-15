@@ -54,7 +54,6 @@ end
 --#region PUBLIC MODULE HOOKS ==================================================
 
 function M.on_reset_complete()
-    if M.migrate_background_settings then M.migrate_background_settings(M.get_db()) end
     if M.rebuild_tracker_tab then M.rebuild_tracker_tab() end
     M.apply_objectives()
     if M.refresh_profiles_tab then M.refresh_profiles_tab() end
@@ -107,9 +106,6 @@ loader:SetScript("OnEvent", function(self, event, name)
     if event == "ADDON_LOADED" then
         if name == addon_name then
             Ls_Tweeks_DB = Ls_Tweeks_DB or {}
-            if M.migrate_background_settings then
-                M.migrate_background_settings(Ls_Tweeks_DB.objectives)
-            end
             addon.apply_defaults(DEFAULTS, Ls_Tweeks_DB)
             if addon.register_category then
                 addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 600, module_key = MODULE_KEY })

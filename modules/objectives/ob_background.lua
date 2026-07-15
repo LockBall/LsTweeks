@@ -176,12 +176,7 @@ local function is_background_color_default(color)
 end
 
 local function is_background_color_enabled(db)
-    if not db then return false end
-    if db.background_color_enabled ~= nil then
-        return db.background_color_enabled == true
-    end
-
-    return db.customize_background == true and not is_background_color_default(db.background_color)
+    return db and db.background_color_enabled == true
 end
 
 local function is_background_border_enabled()
@@ -407,14 +402,6 @@ end
 local function should_show_background_color()
     local db = M.get_db()
     return M.is_runtime_enabled() and is_background_color_enabled(db)
-end
-
-function M.migrate_background_settings(db)
-    if not db then return end
-    if db.background_color_enabled ~= nil then return end
-    if db.customize_background == true and not is_background_color_default(db.background_color) then
-        db.background_color_enabled = true
-    end
 end
 
 local function get_color_signature(r, g, b, a)

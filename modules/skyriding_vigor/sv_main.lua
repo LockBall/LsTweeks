@@ -66,12 +66,7 @@ progress_driver:Hide()
 
 
 --#region DATABASE =============================================================
--- Saved-variable access, normalization, and compatibility cleanup.
-local function color_matches(color, r, g, b, a)
-    if type(color) ~= "table" then return false end
-    return color.r == r and color.g == g and color.b == b and (color.a or 1) == (a or 1)
-end
-
+-- Saved-variable access and current-value normalization.
 local function normalize_db(db, include_race_controls)
     if not db then return end
 
@@ -81,7 +76,6 @@ local function normalize_db(db, include_race_controls)
         db.race_profile_enabled = nil
         db.race_profile = nil
     end
-    db.scale = clamp_number(db.scale, DEFAULTS.scale or 1, SETTING_RANGES.scale)
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_RANGES.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_RANGES.fade_alpha)
     db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_RANGES.fade_length)
@@ -101,17 +95,9 @@ local function normalize_db(db, include_race_controls)
         db.style = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
     end
     if M.get_style_layout_table then
-        local default_style_layout = M.get_style_layout_table(db, M.BAR_STYLE_DEFAULT, true)
-        if default_style_layout and (
-            color_matches(default_style_layout.fill_color, 1, 1, 1, 1)
-            or color_matches(default_style_layout.fill_color, 0.20, 0.82, 1.00, 1)
-        ) then
-            default_style_layout.fill_color = M.get_style_layout_default(M.BAR_STYLE_DEFAULT, "fill_color")
-        end
-
-        local style_layout = M.get_style_layout_table(db, db.style, true, db.scale)
+        local style_layout = M.get_style_layout_table(db, db.style, true)
         if style_layout then
-            style_layout.scale = clamp_number(style_layout.scale, db.scale or DEFAULTS.scale or 1, SETTING_RANGES.scale)
+            style_layout.scale = clamp_number(style_layout.scale, M.get_style_layout_default(db.style, "scale"), SETTING_RANGES.scale)
             local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
             style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_RANGES.fill_add_alpha)
         end
@@ -698,10 +684,7 @@ function M.set_db_value(key, value)
     end
     db[key] = value
     if key == "style" and M.get_style_layout_table then
-        local style_layout = M.get_style_layout_table(db, value, true)
-        if style_layout and style_layout.scale ~= nil then
-            db.scale = clamp_number(style_layout.scale, DEFAULTS.scale or 1, SETTING_RANGES.scale)
-        end
+        M.get_style_layout_table(db, value, true)
         if M.sync_slider_controls then
             M.sync_slider_controls(db)
         end

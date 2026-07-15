@@ -3,7 +3,7 @@
 
 local addon_name, addon = ...
 
---#region LEGACY GRID HELPERS =================================================
+--#region GRID ANCHOR HELPERS =================================================
 
 function addon.GetGridOffset(placement, cfg)
     placement = placement or {}
@@ -38,7 +38,7 @@ function addon.CenterGridControl(frame, parent, placement, cfg)
     addon.SetGridPoint(frame, parent, centered_placement, cfg)
 end
 
---#endregion LEGACY GRID HELPERS ==============================================
+--#endregion GRID ANCHOR HELPERS ==============================================
 
 --#region GRID PLACEMENT HELPERS =============================================
 

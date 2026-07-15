@@ -353,7 +353,7 @@ h.test("Audio Volumes profiles restore copied sound and situation settings", fun
     h.eq(AV.get_target_db("ready_check").preset, "5", "target preset restored")
     h.eq(AV.get_fishing_focus_db().master, 35, "fishing profile restored")
     h.eq(AV.get_situation_profile_db(custom_key).music, 15, "custom Quick Pick restored")
-    h.eq(AV.get_audio_volumes_profiles()[1].version, 1, "profile records schema version")
+    h.is_nil(AV.get_audio_volumes_profiles()[1].version, "profile does not carry schema version metadata")
 end)
 
 h.test("Normal volume reads use the cached profile during an active Quick Pick", function()

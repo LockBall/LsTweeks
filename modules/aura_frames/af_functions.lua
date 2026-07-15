@@ -428,27 +428,6 @@ function M.normalize_saved_colors(db)
     end
 end
 
-function M.migrate_legacy_cdm_fade_settings(dest, source)
-    dest = dest or M.db
-    source = source or dest
-    if not (dest and source and M.CDM_CATEGORIES) then return end
-
-    local legacy_fade = source.fade_wow_cooldown_ooc
-    local legacy_alpha = source.wow_cooldown_ooc_alpha
-    if legacy_fade == nil and legacy_alpha == nil then return end
-
-    for _, category in ipairs(M.CDM_CATEGORIES) do
-        local fade_key = "fade_ooc_" .. category
-        local alpha_key = "ooc_alpha_" .. category
-        if source[fade_key] == nil and legacy_fade ~= nil then
-            dest[fade_key] = legacy_fade == true
-        end
-        if source[alpha_key] == nil and legacy_alpha ~= nil then
-            dest[alpha_key] = legacy_alpha
-        end
-    end
-end
-
 function M.get_bar_bg_color(cfg_db, category, color)
     color = color or M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
     return M.get_setting(cfg_db, category, "bar_bg_color", {

@@ -29,7 +29,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - State machines and timing logic: fade sequences, delay/debounce behavior, ticker lifecycles, combat-interrupt handling.
 - Anything driven by `C_Timer`: the stub clock is manual, so a 30-second scenario runs instantly and deterministically.
 - Event-driven flows: `ADDON_LOADED` boot, `PLAYER_REGEN_DISABLED/ENABLED`, `UNIT_HEALTH`, module enable/disable reactions.
-- DB handling: defaults merging, clamping, migrations, profile logic, saved-variable shapes.
+- DB handling: defaults merging, clamping, profile logic, and saved-variable shapes.
 - Pure computation: aura sorting/filtering, timing-bucket assignment, layout math given fixed fake sizes.
 - Call-level frame assertions: every stub frame records its method calls, so a test can assert "SetAlpha was called with 0.5" or read back `frame:GetAlpha()`.
 - Full-addon load: the smoke suite loads all TOC files (vendored Libs included) in real load order and boots, catching load-time errors, nil-global calls, and file-order dependencies.

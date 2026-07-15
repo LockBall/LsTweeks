@@ -1,4 +1,4 @@
--- Shared versioned profile storage and settings-tab UI.
+-- Shared profile storage and settings-tab UI.
 -- Modules own profile contents and runtime application through factory callbacks.
 
 local _, addon = ...
@@ -22,7 +22,6 @@ function addon.CreateProfileManager(opts)
     opts = opts or {}
     local manager = {
         label = opts.label or "Module",
-        schema_version = opts.schema_version or 1,
         get_db = opts.get_db,
         export_data = opts.export_data,
         apply_data = opts.apply_data,
@@ -67,7 +66,6 @@ function addon.CreateProfileManager(opts)
         if existing and not overwrite then return false, "Profile already exists. Use Overwrite." end
         local profile = {
             name = name,
-            version = self.schema_version,
             saved_at = date and date("%Y-%m-%d %H:%M") or nil,
             data = deep_copy(data),
         }
@@ -108,7 +106,7 @@ function addon.CreateProfileManager(opts)
             return false, "Cannot load a " .. self.label:lower() .. " profile in combat."
         end
         if type(self.apply_data) ~= "function" then return false, "Profile load is unavailable." end
-        local ok, message = self.apply_data(deep_copy(profile.data), tonumber(profile.version) or 0)
+        local ok, message = self.apply_data(deep_copy(profile.data))
         if ok then
             self:set_selected_name(profile.name)
             return true, message or ("Loaded profile: " .. profile.name)

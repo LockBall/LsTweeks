@@ -1,5 +1,5 @@
 -- Audio Volumes profile schema and runtime application.
--- Shared profile storage, versioning, and CRUD live in functions/profiles.lua.
+-- Shared profile storage and CRUD live in functions/profiles.lua.
 
 local _, addon = ...
 
@@ -46,7 +46,6 @@ end
 
 M.profile_manager = addon.CreateProfileManager({
     label = "Audio Volumes",
-    schema_version = 1,
     get_db = M.get_db,
     export_data = M.export_audio_volumes_profile_data,
     apply_data = M.apply_audio_volumes_profile_data,

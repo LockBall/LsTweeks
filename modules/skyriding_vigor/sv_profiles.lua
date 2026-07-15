@@ -37,7 +37,6 @@ end
 
 M.profile_manager = addon.CreateProfileManager({
     label = "Skyriding Vigor",
-    schema_version = 1,
     get_db = function()
         return M.get_root_db and M.get_root_db()
     end,

@@ -15,7 +15,7 @@ Important `objectives` keys:
 - `show_tracked_achievement_count`: when true, shows tracked achievement count/capacity in the Achievements objective section title.
 - `show_tracked_achievement_count_on_hover`: when true, shows the Achievements section count only while hovering the Achievements title.
 - `customize_background`: when true, sets Blizzard's Objective Tracker Edit Mode opacity to `background_alpha`; when false, sets that opacity to 0.
-- `background_color_enabled`: when true, shows the addon-owned center color block and enables the color picker. Missing legacy values are migrated to true only when `customize_background` is true and `background_color` is already non-default.
+- `background_color_enabled`: when true, shows the addon-owned center color block and enables the color picker.
 - `background_alpha`: alpha applied to Blizzard's own All Objectives `NineSlice` background. Default `0.5`.
 - `background_color`: RGB/alpha for the owned center color block over the All Objectives background. Default/reset is 25% gray at 75% alpha: `{ r = 0.25, g = 0.25, b = 0.25, a = 0.75 }`.
 - `objective_tracker_offset_x` / `objective_tracker_offset_y`: saved All Objectives tracker offsets from its captured startup center anchor.
