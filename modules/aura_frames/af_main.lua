@@ -490,42 +490,6 @@ local function add_basic_aura_tooltip_lines(tooltip, obj)
     end
 end
 
-local function rich_tooltip_secure_call(method, tooltip, ...)
-    method(tooltip, ...)
-    return tooltip.NumLines and tooltip:NumLines() > 0
-end
-
-local function try_secure_rich_tooltip_call(method, tooltip, ...)
-    if not (securecallfunction and method and tooltip) then
-        return false
-    end
-    return securecallfunction(rich_tooltip_secure_call, method, tooltip, ...) == true
-end
-
-local function try_show_rich_aura_tooltip(tooltip, obj)
-    if InCombatLockdown and InCombatLockdown() then
-        return false
-    end
-
-    if is_usable_tooltip_number(obj.aura_index)
-        and try_secure_rich_tooltip_call(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
-    then
-        return true
-    end
-    addon.ResetOwnedTooltip(tooltip)
-    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-
-    if is_usable_tooltip_number(obj.aura_spell_id)
-        and try_secure_rich_tooltip_call(tooltip.SetSpellByID, tooltip, obj.aura_spell_id)
-    then
-        return true
-    end
-    addon.ResetOwnedTooltip(tooltip)
-    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-
-    return false
-end
-
 local function show_aura_icon_tooltip(obj)
     local tooltip = get_aura_tooltip()
     if not obj.aura_name then
@@ -540,11 +504,14 @@ local function show_aura_icon_tooltip(obj)
     addon.ResetOwnedTooltip(tooltip)
     tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
 
+    -- Do not bind live aura data to a GameTooltip here. Even through
+    -- securecallfunction, the client can retain that taint until a later
+    -- Blizzard tooltip (including map POI widgets) processes secret values.
+    -- The out-of-combat cache retains the useful tooltip data without sharing
+    -- the live TooltipDataHandler path.
     local cached_lines = cache_tooltip_data_lines(obj)
-    if not try_show_rich_aura_tooltip(tooltip, obj) then
-        if not add_cached_tooltip_data_lines(tooltip, cached_lines) then
-            add_basic_aura_tooltip_lines(tooltip, obj)
-        end
+    if not add_cached_tooltip_data_lines(tooltip, cached_lines) then
+        add_basic_aura_tooltip_lines(tooltip, obj)
     end
     tooltip:Show()
 end

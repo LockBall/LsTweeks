@@ -88,24 +88,78 @@ end
 
 local owned_tooltip
 
+-- This is intentionally a plain frame, rather than a GameTooltip.  Retail's
+-- GameTooltip now manages Blizzard widget sets whose layout values can be
+-- secret.  Giving addon data to that shared path can taint later Blizzard
+-- tooltips (map POIs, unit frames, and others).
 function addon.CreateOwnedTooltip(name, parent)
-    return CreateFrame("GameTooltip", name or (addon_name .. "Tooltip"), parent or UIParent, "GameTooltipTemplate")
+    local tooltip = CreateFrame("Frame", name or (addon_name .. "Tooltip"), parent or UIParent, "BackdropTemplate")
+    tooltip:SetSize(240, 1)
+    tooltip:SetFrameStrata("TOOLTIP")
+    tooltip:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 12,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    tooltip:SetBackdropColor(0, 0, 0, 0.9)
+    tooltip.lines = {}
+
+    function tooltip:ClearLines()
+        for _, line in ipairs(self.lines) do
+            line:Hide()
+        end
+        self.line_count = 0
+        self:SetHeight(1)
+    end
+
+    function tooltip:SetOwner(owner, anchor)
+        self.owner = owner
+        self:ClearAllPoints()
+        local point = anchor == "ANCHOR_BOTTOMRIGHT" and "TOPRIGHT" or "TOPLEFT"
+        local relative_point = anchor == "ANCHOR_BOTTOMRIGHT" and "BOTTOMRIGHT" or "TOPRIGHT"
+        local x = anchor == "ANCHOR_BOTTOMRIGHT" and 0 or 8
+        self:SetPoint(point, owner or UIParent, relative_point, x, 0)
+    end
+
+    function tooltip:AddLine(text, r, g, b, wrap)
+        local index = (self.line_count or 0) + 1
+        local line = self.lines[index]
+        if not line then
+            line = self:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            line:SetJustifyH("LEFT")
+            self.lines[index] = line
+        end
+        line:ClearAllPoints()
+        line:SetPoint("TOPLEFT", self, "TOPLEFT", 8, -((index - 1) * 16 + 7))
+        line:SetWidth(224)
+        line:SetText(text or "")
+        line:SetTextColor(r or 1, g or 1, b or 1)
+        line:Show()
+        self.line_count = index
+        self:SetHeight(index * 16 + 12)
+    end
+
+    function tooltip:AddDoubleLine(left, right, lr, lg, lb)
+        self:AddLine((left or "") .. "    " .. (right or ""), lr, lg, lb)
+    end
+
+    function tooltip:SetText(text, r, g, b)
+        self:ClearLines()
+        self:AddLine(text, r, g, b, true)
+    end
+
+    tooltip:Hide()
+    return tooltip
 end
 
 function addon.ResetOwnedTooltip(tooltip)
     tooltip = tooltip or owned_tooltip
     if not tooltip then return end
-    if tooltip.ItemTooltip and tooltip.ItemTooltip.Hide then
-        tooltip.ItemTooltip:Hide()
-    end
     if tooltip.ClearLines then
         tooltip:ClearLines()
-    end
-    if tooltip.ClearHandlerInfo then
-        tooltip:ClearHandlerInfo()
-    end
-    if tooltip.ClearPadding then
-        tooltip:ClearPadding()
     end
 end
 
