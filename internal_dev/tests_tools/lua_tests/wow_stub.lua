@@ -488,9 +488,16 @@ function frame_methods:ClearLines() record(self, "ClearLines") end
 function frame_methods:SetUnitAura() end
 function frame_methods:SetUnitBuff() end
 function frame_methods:SetUnitDebuff() end
-function frame_methods:SetSpellByID() end
+function frame_methods:SetUnitAuraByAuraInstanceID(...)
+    record(self, "SetUnitAuraByAuraInstanceID", ...)
+    self.__tooltip_num_lines = 1
+end
+function frame_methods:SetSpellByID(...)
+    record(self, "SetSpellByID", ...)
+    self.__tooltip_num_lines = 1
+end
 function frame_methods:SetAnchorType() end
-function frame_methods:NumLines() return 0 end
+function frame_methods:NumLines() return self.__tooltip_num_lines or 0 end
 function frame_methods:FadeOut() record(self, "FadeOut") end
 
 -- Unknown methods become recorded no-ops so template-provided or niche

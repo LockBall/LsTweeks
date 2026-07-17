@@ -135,6 +135,25 @@ h.test("world-entry tooltip cache eviction retains reusable spell lines", functi
     h.eq(M._tooltip_data_lines_cache["spell:303"], spell_lines, "spell entry survives world entry")
 end)
 
+h.test("Aura icon hover uses a dedicated rich tooltip outside combat", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    local icon = frame.icons[1]
+    icon.aura_index = 101
+    icon.aura_spell_id = 202
+    icon.aura_name = "Test Aura"
+    icon.tooltip_enabled = true
+
+    icon:GetScript("OnEnter")(icon)
+
+    local tooltip = _G.LsTweeksAuraTooltip
+    h.ok(tooltip, "dedicated Aura tooltip created")
+    h.eq(tooltip.__kind, "GameTooltip", "Aura tooltip retains Blizzard rich-tooltip support")
+    h.ok(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "live Aura data bound to the rich tooltip")
+    h.eq(h.addon.GetOwnedTooltip().__kind, "Frame", "plain shared tooltip remains independent")
+end)
+
 h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()
     local M = load_aura_frames()
     local custom_cache_clears = 0

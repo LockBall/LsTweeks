@@ -88,6 +88,28 @@ end
 
 local owned_tooltip
 
+-- Rich data tooltips need a real GameTooltip, but settings help should remain
+-- on the plain frame below so it never shares Blizzard tooltip widget state.
+function addon.CreateRichTooltip(name, parent)
+    return CreateFrame("GameTooltip", name or (addon_name .. "RichTooltip"), parent or UIParent, "GameTooltipTemplate")
+end
+
+function addon.ResetRichTooltip(tooltip)
+    if not tooltip then return end
+    if tooltip.ItemTooltip and tooltip.ItemTooltip.Hide then
+        tooltip.ItemTooltip:Hide()
+    end
+    if tooltip.ClearLines then
+        tooltip:ClearLines()
+    end
+    if tooltip.ClearHandlerInfo then
+        tooltip:ClearHandlerInfo()
+    end
+    if tooltip.ClearPadding then
+        tooltip:ClearPadding()
+    end
+end
+
 -- This is intentionally a plain frame, rather than a GameTooltip.  Retail's
 -- GameTooltip now manages Blizzard widget sets whose layout values can be
 -- secret.  Giving addon data to that shared path can taint later Blizzard
