@@ -139,6 +139,10 @@ try {
         & "internal_dev/tests_tools/check_regions.ps1"
     }
 
+    Invoke-Step "Memory section sizes" {
+        & "internal_dev/tests_tools/check_memory_sections.ps1"
+    }
+
     Invoke-Step "Whitespace diff check" {
         git diff --check
         git diff --cached --check

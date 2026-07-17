@@ -19,7 +19,14 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | --- | --- |
 | Module code or module behavior | Matching module memory section and source outline before broad source reads |
 | Shared helper, core, or settings factory | `code_map.md` `## Core And Shared Helpers`, then source outline |
-| Architecture, workflow, packaging, LuaLS/Ketho, shared GUI, cross-module behavior, or durable project docs | Matching `project.md` section |
+| Session/doc workflow, ownership, or scratchpad rules | `project.md` `### Workflow` |
+| Ketho/LuaLS setup or annotation lookup | `project.md` `### Ketho / LuaLS` |
+| Packaging, release zip, or `package-policy.json` | `project.md` `### Packaging / Release` |
+| AddOn identity, slash command, SavedVariables name, or version edit point | `project.md` `### AddOn Summary` |
+| Top-level file/folder ownership | `project.md` `### File Map` |
+| Module pattern, file naming, runtime/reset contracts, or other addon-wide code rules | `project.md` `### Core Architecture Rules` |
+| Shared GUI/layout rules, widget anchoring, or settings-grid usage | `project.md` `### GUI/Layout Rules` |
+| WoW API usage, taint, combat guard, or Lua gotcha | `project.md` `### Key WoW APIs And Lessons` |
 | Public behavior, names, settings, slash commands, install/use, release docs, or user-facing terminology | `README.md` |
 | Focused active review or follow-up | Matching `ToDo/` note |
 | Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |
@@ -48,6 +55,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Module memory files: module-specific settings, runtime lessons, regressions, ownership details.
 - Project read-in docs: repo-local tools, validation commands, known failure modes, project-specific command rules. Keep tool-owned notes under `internal_dev/tests_tools/`; exclude platform-provided session tools.
 - Memory/doc size: do not split files for token savings; use markdown headings, source responsibility headers, and `--#region` markers.
+- Routing table size: keep `agent_start.md` `## Session Start` and `code_map.md` `## Read-In Shortcuts` tables at roughly one screen each. Push new detail into a `project.md` section/subsection or module memory instead of growing a routing table row-by-row; add a routing row only when a new section/file needs a lookup path.
 - Path references: use the shortest unambiguous filename/path after the first full path or when section context already scopes the directory.
 - Command references: keep copy/paste command strings in command-owner docs such as `code_map.md`; use command names elsewhere.
 - Completed working logs: prune or summarize old completion bullets after the durable result is captured in `proj_mem`.

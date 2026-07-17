@@ -24,7 +24,12 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 | Feature module | `## Feature Modules`, then matching module-memory heading; use `rg -n "^##" <memory-file>` before opening a large memory file |
 | Aura Frames CDM regression | `internal_dev/tests_tools/aura_frames_cdm_regression.md` |
 | Audio Volumes public sound asset or preset | `modules/audio_volumes/sounds/sound_reference.md` |
-| Public wording, credits, research, review note, CPU profile, SoundKit constant, package doc, or LuaLS tool note | Read only the directly matched file |
+| Public credits/attribution | `sources.md` |
+| Internal API/FrameXML/tool/release reference links | `research_sources.md` |
+| CPU profiling workflow or run history | `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, then `internal_dev/tests_tools/cpu_profiles/` |
+| Sound ID lookup | `internal_dev/working_docs/SoundKitConstants.lua` |
+| Packaging policy/doc | `internal_dev/tests_tools/packaging/package_me.md` |
+| Shell, sandbox, LuaLS/Ketho, packaging, or tool recovery problem | `internal_dev/tests_tools/tools_notes.md` |
 
 - For source work, run a source outline before broad file reads. Outlines are the source-file TOC; every project Lua file has a short responsibility header and every declared function belongs to a named `--#region`. Keep those markers current instead of duplicating detailed source maps in docs.
 - Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
@@ -40,6 +45,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Fast validation (includes headless Lua tests; add `-SkipTests` to skip them): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
 - Changed-file fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
 - Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
+- Memory section size check (flags oversized `proj_mem` `##`/`###` sections; included in fast validation): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_memory_sections.ps1`
 - Diff whitespace checks: `git diff --check` and `git diff --cached --check`
 - Fast validation plus package build/verify: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package`
 - Full LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1`

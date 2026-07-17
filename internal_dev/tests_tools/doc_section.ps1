@@ -49,23 +49,27 @@ if ([string]::IsNullOrWhiteSpace($Heading)) {
 }
 
 $targetHeading = Normalize-Heading $Heading
-$matches = @($headings | Where-Object { $_.Level -eq 2 -and $_.Text -eq $targetHeading })
+$matches = @($headings | Where-Object { ($_.Level -eq 2 -or $_.Level -eq 3) -and $_.Text -eq $targetHeading })
 
 if ($matches.Count -eq 0) {
-    throw "No ## heading named '$targetHeading' found in $Path. Use -List to inspect available headings."
+    throw "No ## or ### heading named '$targetHeading' found in $Path. Use -List to inspect available ## headings."
 }
 
 if ($matches.Count -gt 1) {
-    throw "Multiple ## headings named '$targetHeading' found in $Path."
+    throw "Multiple headings named '$targetHeading' found in $Path."
 }
 
+$targetLevel = $matches[0].Level
 $start = $matches[0].Line
 $end = $lines.Count
 
 for ($i = $start + 1; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -match "^(#{1,2})\s+") {
-        $end = $i
-        break
+    if ($lines[$i] -match "^(#{1,6})\s+") {
+        $lineLevel = ($lines[$i] -replace "^(#{1,6}).*", '$1').Length
+        if ($lineLevel -le $targetLevel) {
+            $end = $i
+            break
+        }
     }
 }
 
