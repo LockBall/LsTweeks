@@ -44,11 +44,43 @@ end
 --#region TIME FORMATTING ======================================================
 
 -- Logic for converting seconds into readable text strings
+-- Floating-point subtraction can put an exact boundary infinitesimally below its
+-- intended value (for example, 9.95 days becoming 9.949999...).  Keep compact
+-- displays stable without rounding up any meaningful amount of remaining time.
+local TIME_FORMAT_EPSILON = M.AURA_TIMER_EPSILON
+
+-- Decimal labels suppress a fractional part that would only contain zeroes,
+-- except in the final seconds-only range where fixed precision avoids visible
+-- width changes while the countdown is active.
+local function format_compact_decimal(value, unit, places, keep_zero_fraction)
+    local scale = places == 2 and 100 or 10
+    local truncated = floor(value * scale + TIME_FORMAT_EPSILON)
+    local displayed = truncated / scale
+    if truncated % scale == 0 and not keep_zero_fraction then
+        return format("%d%s", displayed, unit)
+    end
+    if places == 2 then
+        return format("%.2f%s", displayed, unit)
+    end
+    return format("%.1f%s", displayed, unit)
+end
+
 local function format_time(s)
-    if s >= 3600 then return format("%d h", floor(s/3600)) end
-    if s >= 60 then return format("%d m", floor(s/60)) end
-    if s >= 5 then return format("%d s", floor(s)) end
-    return format("%.1f s", s)
+    if s >= 8640000 then return format("%dd", floor(s / 86400)) end
+    if s >= 86400 then return format_compact_decimal(s / 86400, "d", 1, true) end
+    if s >= 36000 then return format_compact_decimal(s / 3600, "h", 1, true) end
+    if s >= 3600 then
+        local hours = floor(s / 3600)
+        local minutes = floor(s / 60) % 60
+        return format("%dh%02dm", hours, minutes)
+    end
+    if s >= 600 then return format_compact_decimal(s / 60, "m", 1, true) end
+    if s >= 60 then
+        local minutes = floor(s / 60)
+        local seconds = floor(s) % 60
+        return format("%dm%02ds", minutes, seconds)
+    end
+    return format_compact_decimal(s, "s", 1, true)
 end
 
 --#endregion TIME FORMATTING ===================================================
@@ -441,6 +473,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, live_dura
     obj.aura_timer_behavior = timer_behavior
     obj.tooltip_enabled = tooltip_enabled
     obj.is_test_preview = entry.is_test_preview or false
+    obj.test_preview_show_key = entry.test_preview_show_key
     obj.is_spell_cooldown = is_spell_cooldown
     obj.aura_is_static = is_static_entry == true
     obj.grey_cooldown = entry.grey_cooldown == true

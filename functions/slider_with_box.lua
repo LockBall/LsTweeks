@@ -1,5 +1,5 @@
 -- Slider widget paired with a numeric text input and a reset button: addon.CreateSliderWithBox(name, parent, label, min, max, step, db, key, defaults, cb, opts).
--- Changes from either the slider or the box are synced to each other and written to the DB; callbacks debounce at addon.UPDATE_INTERVALS.tenth_sec unless opts.immediate_callback is set for live visual previews.
+-- Changes from either the slider or the box are synced to each other and written to the DB; callbacks debounce at addon.UPDATE_INTERVALS.tenth_sec unless opts.immediate_callback is set for live previews. Live callbacks apply the first value immediately, then throttle updates to addon.UPDATE_INTERVALS.tenth_sec while retaining the latest dragged value.
 -- Programmatic refresh callers can use container:SetValueSilently(value) to sync display/DB without invoking the callback.
 -- Use container:GetValue(), container:SetValue(value), and container:HookValueChanged(fn, opts)
 -- instead of reaching into container.slider for routine value handling.
@@ -128,11 +128,22 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end
 
     local debounce_timer = nil
+    local live_timer = nil
+    local live_pending_value = nil
+    local last_live_callback_at = nil
     local function cancel_debounce()
         if debounce_timer then
             debounce_timer:Cancel()
             debounce_timer = nil
         end
+    end
+
+    local function cancel_live_callback()
+        if live_timer then
+            live_timer:Cancel()
+            live_timer = nil
+        end
+        live_pending_value = nil
     end
 
     local function debounced_callback(value)
@@ -143,8 +154,31 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         end)
     end
 
+    local function throttled_live_callback(value)
+        local interval = opts.live_callback_interval or UPDATE_INTERVALS.tenth_sec
+        local now = GetTime()
+        local elapsed = last_live_callback_at and (now - last_live_callback_at) or interval
+        if elapsed >= interval then
+            cancel_live_callback()
+            last_live_callback_at = now
+            run_callback(value)
+            return
+        end
+
+        live_pending_value = value
+        if live_timer then return end
+        live_timer = C_Timer.NewTimer(interval - elapsed, function()
+            live_timer = nil
+            local pending_value = live_pending_value
+            live_pending_value = nil
+            last_live_callback_at = GetTime()
+            run_callback(pending_value)
+        end)
+    end
+
     container:SetScript("OnHide", function()
         cancel_debounce()
+        cancel_live_callback()
     end)
 
     slider:SetScript("OnValueChanged", function(self, value)
@@ -155,7 +189,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         if not container._suppress_callback and type(callback) == "function" then
             if opts.immediate_callback then
                 cancel_debounce()
-                run_callback(value)
+                throttled_live_callback(value)
             else
                 debounced_callback(value)
             end
@@ -222,6 +256,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
     end
     container.SetValueSilently = function(_, value)
         cancel_debounce()
+        cancel_live_callback()
         local was_suppressed = container._suppress_callback
         container._suppress_callback = true
         local ok, err = pcall(function()

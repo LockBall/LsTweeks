@@ -43,17 +43,21 @@ local GROWTH_LAYOUT = {
 local DEFAULT_GROWTH_LAYOUT = GROWTH_LAYOUT.DOWN
 local BAR_ROW_HEIGHT = 18
 local ICON_SIZE = 32
+local MIN_TIMER_SLOT_WIDTH = 36
+local TIMER_SLOT_FONT_WIDTH_FACTOR = 3.4
 local FRAME_BOTTOM_PADDING = 12
 local TIMER_SLOT_HEIGHT = 12
 local TIMER_BOTTOM_PADDING = 2
 
 --#region BAR LAYOUT PARAMS ====================================================
 
-function M.get_bar_layout_params(timer_font_size)
+function M.get_timer_slot_width(timer_font_size)
     timer_font_size = tonumber(timer_font_size) or 10
-    local min_width = 36
-    local scale_factor = 2.7
-    local timer_slot_width = math_max(min_width, math_ceil(timer_font_size * scale_factor))
+    return math_max(MIN_TIMER_SLOT_WIDTH, math_ceil(timer_font_size * TIMER_SLOT_FONT_WIDTH_FACTOR))
+end
+
+function M.get_bar_layout_params(timer_font_size)
+    local timer_slot_width = M.get_timer_slot_width(timer_font_size)
 
     return {
         frame_inset = 6,
@@ -181,20 +185,23 @@ local function set_bar_icon_position(obj, frame, layout, index, step, inset)
     end
 end
 
-local function set_icon_position(obj, frame, layout, col_idx, row_idx, icon_footprint, row_height, up_offset)
+local function set_icon_position(obj, frame, layout, col_idx, row_idx, icon_footprint, row_height, up_offset, icon_inset)
+    icon_inset = icon_inset or 6
     if layout.grows_up then
-        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, 6, row_idx * row_height + up_offset)
+        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, icon_inset, row_idx * row_height + up_offset)
     elseif layout.vertical then
-        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, 6, -(row_idx * row_height + 6))
+        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, icon_inset, -(row_idx * row_height + 6))
     else
         obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor,
-            (layout.x_sign or 1) * (col_idx * icon_footprint + 6),
+            (layout.x_sign or 1) * (col_idx * icon_footprint + icon_inset),
             -(row_idx * row_height + 6))
     end
 end
 
 local function get_timer_text_alignment(category, frame)
-    return category == "long" and "CENTER" or "RIGHT"
+    -- A fixed right edge prevents visible horizontal shifts when a countdown
+    -- changes format (for example, 10.1m -> 9m59s).
+    return "RIGHT"
 end
 
 function M.setup_layout(self, show_key, spacing_key, bar_mode)
@@ -230,7 +237,9 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local bar_timer_slot_right_pad = bar_layout.timer_slot_right_pad
 
     local icon_size = ICON_SIZE
-    local icon_footprint = icon_size + spacing
+    local icon_timer_width = layout_show_timer_text and M.get_timer_slot_width(timer_font_size) or icon_size
+    local icon_timer_inset = 6 + ((icon_timer_width - icon_size) / 2)
+    local icon_footprint = icon_timer_width + spacing
     local icons_per_row = growth_layout.vertical
         and 1
         or math_max(1, floor((frame_width - 12 + spacing) / icon_footprint))
@@ -307,7 +316,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             local row_h   = icon_size + spacing + timer_h
 
             local up_offset = 6 + (timer_h > 0 and (timer_h + 2) or 0)
-            set_icon_position(obj, self, growth_layout, col_idx, row_idx, icon_footprint, row_h, up_offset)
+            set_icon_position(obj, self, growth_layout, col_idx, row_idx, icon_footprint, row_h, up_offset, icon_timer_inset)
 
             obj.stack_slot:ClearAllPoints()
             obj.stack_slot:Hide()
@@ -319,12 +328,12 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             obj.name_text:Hide()
 
             obj.timer_slot:ClearAllPoints()
-            obj.timer_slot:SetPoint("TOPRIGHT", obj, "BOTTOMRIGHT", 0, -2)
-            obj.timer_slot:SetSize(icon_size, TIMER_SLOT_HEIGHT)
+            obj.timer_slot:SetPoint("TOP", obj, "BOTTOM", 0, -2)
+            obj.timer_slot:SetSize(icon_timer_width, TIMER_SLOT_HEIGHT)
 
             obj.time_text:ClearAllPoints()
             obj.time_text:SetPoint(timer_anchor_point, obj.timer_slot, timer_anchor_point, 0, 0)
-            obj.time_text:SetWidth(icon_size)
+            obj.time_text:SetWidth(icon_timer_width)
             obj.time_text:SetJustifyH(timer_text_align)
             if layout_show_timer_text then
                 obj.timer_slot:Show()
@@ -351,6 +360,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
         growth_layout   = growth_layout,
         row_height      = bar_layout.row_height,
         icon_size       = ICON_SIZE,
+        icon_timer_width = icon_timer_width,
     }
 end
 

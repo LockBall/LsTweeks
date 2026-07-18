@@ -17,7 +17,20 @@ addon.CreateControlPanel = function(parent, width, height)
 end
 
 h.load_file("functions/checkbox.lua")
+h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
+
+h.test("play pause button swaps font-safe texture states", function()
+    local button = addon.CreatePlayPauseButton(UIParent, nil)
+
+    h.ok(button.pause_left:IsShown(), "running button shows its pause bars")
+    h.ok(button.pause_mask:IsShown(), "running button masks the native play triangle")
+    button:SetPaused(true)
+    h.ok(not button.pause_mask:IsShown(), "paused button reveals its native play triangle")
+    h.ok(not button.pause_left:IsShown(), "paused button hides its pause bars")
+    button:SetEnabled(false)
+    h.ok(not button:IsEnabled(), "media button retains normal disabled behavior")
+end)
 
 h.test("silent checkbox setter restores callback state after an error", function()
     local callback_calls = 0
@@ -46,8 +59,8 @@ h.test("silent slider setter restores callback state after an error", function()
     h.is_nil(container._suppress_callback, "successful silent update leaves no suppression")
 end)
 
-h.test("immediate slider callbacks do not queue drag updates", function()
-    local calls = 0
+h.test("immediate slider callbacks throttle drag updates", function()
+    local calls = {}
     local container = addon.CreateSliderWithBox(
         "LsTweaksImmediateControlFactoryTest",
         UIParent,
@@ -58,15 +71,19 @@ h.test("immediate slider callbacks do not queue drag updates", function()
         {},
         "value",
         { value = 0 },
-        function() calls = calls + 1 end,
+        function(value) calls[#calls + 1] = value end,
         { immediate_callback = true }
     )
 
     container.slider.__scripts.OnValueChanged(container.slider, 1)
-    h.eq(calls, 1, "first drag value applies immediately")
+    h.eq(#calls, 1, "first drag value applies immediately")
+    h.eq(calls[1], 1, "first callback receives the first value")
     container.slider.__scripts.OnValueChanged(container.slider, 2)
-    h.eq(calls, 2, "later drag value does not wait for debounce")
-    h.eq(h.stub.ActiveTimerCount(), 0, "immediate drag updates do not queue timers")
+    h.eq(#calls, 1, "rapid later values wait for the live update interval")
+    h.eq(h.stub.ActiveTimerCount(), 1, "rapid updates queue one live timer")
+    h.stub.Advance(0.1)
+    h.eq(#calls, 2, "latest drag value applies after the live update interval")
+    h.eq(calls[2], 2, "throttled callback retains the latest value")
 end)
 
 h.test("slider bindings without callbacks do not queue empty timers", function()

@@ -726,7 +726,8 @@ local function build_position_row(parent, context)
         active_profile_proxy,
         "spacing",
         defaults,
-        set_setting_from_slider("spacing")
+        set_setting_from_slider("spacing"),
+        { immediate_callback = true }
     )
     M.controls.spacing = register_flight_locked_control(spacing_slider)
     place_grid_control(spacing_slider, CONTROL_GRID.spacing)
@@ -888,7 +889,8 @@ local function build_fade_row(parent, context)
         active_profile_proxy,
         "fade_alpha",
         defaults,
-        set_setting_from_slider("fade_alpha")
+        set_setting_from_slider("fade_alpha"),
+        { immediate_callback = true }
     )
     M.controls.fade_alpha = register_flight_locked_control(fade_alpha_slider, function()
         return not (M.is_race_profile_active and M.is_race_profile_active())
@@ -1029,7 +1031,7 @@ local function build_spark_row(parent, context)
         "spark_size",
         defaults,
         set_setting_from_slider("spark_size"),
-        { display_decimals = 2 }
+        { display_decimals = 2, immediate_callback = true }
     )
     M.controls.spark_size = register_flight_locked_control(spark_size_slider)
     place_grid_control(spark_size_slider, CONTROL_GRID.spark_size)

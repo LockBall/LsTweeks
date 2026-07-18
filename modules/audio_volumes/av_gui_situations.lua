@@ -330,7 +330,8 @@ function M.BuildSituationsTab(parent)
             function(value)
                 M.set_current_sound_channel_percent(channel, value)
                 seed_situation_defaults(channel, value, false)
-            end
+            end,
+            { immediate_callback = true }
         )
         current_grid:place_at(current_slider, 1, i)
         current_sliders[channel.key] = current_slider

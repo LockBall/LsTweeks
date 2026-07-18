@@ -87,7 +87,8 @@ function M.build_settings_page(parent)
         Ls_Tweeks_DB,
         "interface_alpha",
         defaults,
-        addon.apply_interface_alpha
+        addon.apply_interface_alpha,
+        { immediate_callback = true }
     )
     M.controls.alpha_slider = alpha_slider
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)

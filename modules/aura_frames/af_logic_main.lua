@@ -29,6 +29,37 @@ function M.invalidate_all_frame_runtime_config()
     end
 end
 
+-- A long helpful aura changes category when its remaining time reaches the
+-- short threshold.  The visible-icon ticker detects that boundary; this
+-- deferred refresh rebuilds the shared scan once, outside the ticker loop.
+function M.queue_threshold_reclassification()
+    if M._threshold_reclassification_pending then return end
+    M._threshold_reclassification_pending = true
+
+    local function refresh()
+        M._threshold_reclassification_pending = nil
+        if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() else M._aura_scan_dirty = true end
+
+        local frames_list = M.frames_list
+        if not frames_list then return end
+        for i = 1, #frames_list do
+            local frame = frames_list[i]
+            local params = frame and frame.update_params
+            if params then
+                M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
+                    params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
+            end
+        end
+    end
+
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, refresh)
+    else
+        refresh()
+    end
+end
+
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
     local cache = frame._runtime_config_cache
     if cache then return cache end
@@ -433,7 +464,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         else
             -- Preset frame: use the scan-built bucket when available.
             local category_bucket = M._aura_maps_by_category and M._aura_maps_by_category[category]
-            if category_bucket and not preview_enabled then
+            local shared_long_preview = preview_enabled and show_key == "show_long"
+                and M.is_shared_long_test_preview_active and M.is_shared_long_test_preview_active()
+            if category_bucket and (not preview_enabled or shared_long_preview) then
                 render_map = category_bucket
             else
                 if not self._aura_map then self._aura_map = {} end
@@ -456,7 +489,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     M.refresh_frame_ooc_fade(self, activity, cfg_db)
 
-    if preview_enabled then
+    local shared_long_preview = preview_enabled and show_key == "show_long"
+        and M.is_shared_long_test_preview_active and M.is_shared_long_test_preview_active()
+    if preview_enabled and not shared_long_preview then
         if render_map ~= self._aura_map then
             if not self._aura_map then self._aura_map = {} end
             wipe(self._aura_map)

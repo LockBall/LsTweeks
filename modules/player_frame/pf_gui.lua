@@ -167,6 +167,7 @@ function M.build_options_panel(parent)
                 M.on_fade_slider_changed(slider_key)
             end,
             {
+                immediate_callback = true,
                 tooltip = STRINGS[def.help_key],
             }
         )

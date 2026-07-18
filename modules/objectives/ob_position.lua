@@ -436,6 +436,7 @@ function M.BuildPositionSettings(parent)
         set_objective_position,
         {
             get_default_value = get_objective_position_default,
+            immediate_callback = true,
             tooltip = "Moves the All Objectives tracker horizontally from its original anchor.",
         }
     )
@@ -455,6 +456,7 @@ function M.BuildPositionSettings(parent)
         set_objective_position,
         {
             get_default_value = get_objective_position_default,
+            immediate_callback = true,
             tooltip = "Moves the All Objectives tracker vertically from its original anchor.",
         }
     )

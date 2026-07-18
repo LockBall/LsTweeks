@@ -132,6 +132,96 @@ end
 --#endregion TEXT BUTTONS ======================================================
 
 
+--#region PLAY / PAUSE BUTTONS ================================================
+
+function addon.CreatePlayPauseButton(parent, on_click, opts)
+    opts = opts or {}
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(opts.width or 32, opts.height or 32)
+
+    -- This is the native square play button used by Blizzard's Options UI.
+    button:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+    button:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
+    button:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled")
+    button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+
+    -- WoW has no matching pause button texture.  Cover the integral play
+    -- triangle only while running, keeping the native square button surround.
+    local pause_mask = button:CreateTexture(nil, "OVERLAY")
+    pause_mask:SetSize(opts.pause_mask_width or 14, opts.pause_mask_height or 14)
+    pause_mask:SetTexture("Interface\\Buttons\\WHITE8x8")
+    pause_mask:SetVertexColor(0.03, 0.03, 0.03, 0.96)
+
+    local pause_left = button:CreateTexture(nil, "OVERLAY")
+    pause_left:SetSize(opts.pause_bar_width or 3, opts.pause_bar_height or 14)
+    pause_left:SetTexture("Interface\\Buttons\\WHITE8x8")
+
+    local pause_right = button:CreateTexture(nil, "OVERLAY")
+    pause_right:SetSize(opts.pause_bar_width or 3, opts.pause_bar_height or 14)
+    pause_right:SetTexture("Interface\\Buttons\\WHITE8x8")
+
+    local supports_pause = opts.show_pause ~= false
+    local pressed = false
+
+    local function refresh_visuals()
+        local enabled = button._media_enabled ~= false
+        local paused = button._media_paused == true
+        local icon_alpha = enabled and 1 or 0.4
+
+        pause_mask:SetShown(supports_pause and not paused)
+        pause_left:SetShown(supports_pause and not paused)
+        pause_right:SetShown(supports_pause and not paused)
+        pause_mask:SetAlpha(icon_alpha)
+        pause_left:SetVertexColor(1, 0.82, 0, icon_alpha)
+        pause_right:SetVertexColor(1, 0.82, 0, icon_alpha)
+
+        pause_mask:ClearAllPoints()
+        pause_mask:SetPoint("CENTER", button, "CENTER", pressed and 1 or 0, pressed and -1 or 0)
+        pause_left:ClearAllPoints()
+        pause_left:SetPoint("CENTER", button, "CENTER", pressed and -4 or -3, pressed and -1 or 0)
+        pause_right:ClearAllPoints()
+        pause_right:SetPoint("CENTER", button, "CENTER", pressed and 2 or 3, pressed and -1 or 0)
+    end
+
+    function button:SetPaused(is_paused)
+        self._media_paused = is_paused == true
+        refresh_visuals()
+    end
+
+    local set_enabled = button.SetEnabled
+    function button:SetEnabled(enabled)
+        set_enabled(self, enabled)
+        self._media_enabled = enabled ~= false
+        refresh_visuals()
+    end
+
+    button:SetScript("OnLeave", function()
+        pressed = false
+        refresh_visuals()
+    end)
+    button:SetScript("OnMouseDown", function()
+        pressed = true
+        refresh_visuals()
+    end)
+    button:SetScript("OnMouseUp", function()
+        pressed = false
+        refresh_visuals()
+    end)
+    if type(on_click) == "function" then
+        button:SetScript("OnClick", on_click)
+    end
+
+    button._media_enabled = true
+    button.pause_mask = pause_mask
+    button.pause_left = pause_left
+    button.pause_right = pause_right
+    button:SetPaused(opts.paused == true)
+    return button
+end
+
+--#endregion PLAY / PAUSE BUTTONS =============================================
+
+
 --#region MOVE RESET BUTTONS ===================================================
 
 function addon.CreateMoveResetButton(parent, anchor_to, opts)

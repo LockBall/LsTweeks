@@ -80,44 +80,9 @@ end
 --#region SOUND TARGET CONTROLS ================================================
 
 local function create_play_button(parent, target_key)
-    local button = CreateFrame("Button", nil, parent)
-    button:SetSize(32, 32)
-
-    local button_ring = button:CreateTexture(nil, "BORDER")
-    button_ring:SetAllPoints()
-    button_ring:SetTexture("Interface\\Artifacts\\ArtifactRelic-Slot")
-    button_ring:SetDesaturated(true)
-    button_ring:SetVertexColor(0.55, 0.55, 0.55, 0.85)
-
-    local play_icon = button:CreateTexture(nil, "OVERLAY")
-    play_icon:SetSize(18, 22)
-    play_icon:SetPoint("CENTER", button, "CENTER", 1, 0)
-    play_icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
-    play_icon:SetTexCoord(0.18, 0.82, 0.16, 0.84)
-    play_icon:SetVertexColor(0.9, 0.9, 0.9, 1)
-
-    button:SetScript("OnEnter", function()
-        button_ring:SetVertexColor(0.75, 0.75, 0.75, 0.95)
-        play_icon:SetVertexColor(1, 1, 1, 1)
-    end)
-    button:SetScript("OnLeave", function()
-        button_ring:SetVertexColor(0.55, 0.55, 0.55, 0.85)
-        play_icon:SetVertexColor(0.9, 0.9, 0.9, 1)
-        play_icon:SetPoint("CENTER", button, "CENTER", 1, 0)
-    end)
-    button:SetScript("OnMouseDown", function()
-        button_ring:SetVertexColor(0.4, 0.4, 0.4, 0.85)
-        play_icon:SetPoint("CENTER", button, "CENTER", 2, -1)
-    end)
-    button:SetScript("OnMouseUp", function()
-        button_ring:SetVertexColor(0.75, 0.75, 0.75, 0.95)
-        play_icon:SetPoint("CENTER", button, "CENTER", 1, 0)
-    end)
-    button:SetScript("OnClick", function()
+    return addon.CreatePlayPauseButton(parent, function()
         M.play_replacement(target_key)
-    end)
-
-    return button
+    end, { show_pause = false })
 end
 
 local function format_percent(option)

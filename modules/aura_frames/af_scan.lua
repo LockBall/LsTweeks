@@ -1061,6 +1061,10 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         end
     end
 
+    if M.add_shared_long_test_aura then
+        M.add_shared_long_test_aura(category_buckets, short_threshold)
+    end
+
     -- -------------------------------------------------------------------------
     -- CLEANUP: remove stale IIDs not seen this scan pass.
     -- -------------------------------------------------------------------------

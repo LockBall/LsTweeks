@@ -154,9 +154,9 @@ function M.tick_visible_icons(now)
             end
             for i = 1, display_count do
                 local obj = frame.icons[i]
-                if obj:IsShown() then
+                    if obj:IsShown() then
                     if obj.is_test_preview and M.update_test_preview_state then
-                        M.update_test_preview_state(obj, "show_" .. frame.category, short_threshold, now)
+                        M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), short_threshold, now)
                     end
                     local is_static_entry = is_static_frame or obj.aura_is_static == true
                     if is_static_entry then
@@ -207,6 +207,11 @@ function M.tick_visible_icons(now)
                             end
                         end
                         if remaining and remaining > 0 then
+                            if M.should_reclassify_aura_category
+                                and M.should_reclassify_aura_category(frame.category, remaining, short_threshold, obj.is_test_preview)
+                                and M.queue_threshold_reclassification then
+                                M.queue_threshold_reclassification()
+                            end
                             if show_timer_text and not show_cooldown_overlay then
                                 M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining, obj.aura_timer_behavior)
                             end

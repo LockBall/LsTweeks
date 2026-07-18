@@ -14,6 +14,9 @@ M.controls = M.controls or {}
 
 -- CACHED GLOBALS AND CONSTANTS
 local format = string.format
+local floor = math.floor
+local math_max = math.max
+local GetTime = GetTime
 local issecretvalue = issecretvalue
 local issecrettable = issecrettable
 local securecallfunction = securecallfunction
@@ -305,6 +308,30 @@ local function get_safe_basic_aura_name(obj)
     return "Aura"
 end
 
+function M.format_aura_tooltip_duration(seconds)
+    seconds = math_max(0, floor(seconds or 0))
+    local days = floor(seconds / 86400)
+    seconds = seconds % 86400
+    local hours = floor(seconds / 3600)
+    seconds = seconds % 3600
+    local minutes = floor(seconds / 60)
+    local secs = seconds % 60
+    if days > 0 then
+        return format("%dd %02dh %02dm %02ds", days, hours, minutes, secs)
+    end
+    return format("%02dh %02dm %02ds", hours, minutes, secs)
+end
+
+local function get_safe_basic_aura_remaining(obj)
+    if is_usable_tooltip_number(obj.aura_expiration) then
+        return math_max(0, obj.aura_expiration - GetTime())
+    end
+    if is_usable_tooltip_number(obj.aura_remaining) then
+        return obj.aura_remaining
+    end
+    return nil
+end
+
 local function get_safe_color_component(value)
     if is_usable_tooltip_number(value) then
         return value
@@ -495,9 +522,12 @@ end
 local function add_basic_aura_tooltip_lines(tooltip, obj)
     tooltip:AddLine(get_safe_basic_aura_name(obj), 1, 1, 1)
     if is_usable_tooltip_number(obj.aura_duration) and obj.aura_duration > 0 then
-        local remaining_str = is_usable_tooltip_number(obj.aura_remaining) and format("%.1f", obj.aura_remaining) or "?"
-        local duration_str = format("%.1f", obj.aura_duration)
-        tooltip:AddLine(remaining_str .. "s / " .. duration_str .. "s", 0.7, 0.7, 1)
+        local remaining = get_safe_basic_aura_remaining(obj)
+        local remaining_str = is_usable_tooltip_number(remaining)
+            and M.format_aura_tooltip_duration(remaining)
+            or "?"
+        tooltip:AddLine("Remaining: " .. remaining_str, 0.7, 0.7, 1)
+        tooltip:AddLine("Duration: " .. M.format_aura_tooltip_duration(obj.aura_duration), 0.7, 0.7, 1)
     else
         tooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
     end

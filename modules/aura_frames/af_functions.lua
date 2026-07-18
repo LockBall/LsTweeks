@@ -31,6 +31,32 @@ local DEFAULT_TIMER_BEHAVIOR = {
 }
 
 local CANCELABLE_AURA_FILTER = "HELPFUL|CANCELABLE"
+M.AURA_TIMER_EPSILON = 0.000001
+
+-- Keep minute/hour boundaries stable after floating-point subtraction without
+-- meaningfully rounding a timer upward.  Callers opt into compensation only
+-- after an arithmetic countdown step; exact configured start values remain
+-- untouched.
+function M.normalize_aura_timer_remaining(seconds, allow_zero, compensate_boundary)
+    if type(seconds) ~= "number" then return seconds end
+    local epsilon = M.AURA_TIMER_EPSILON
+    if allow_zero and seconds <= epsilon then return 0 end
+    if compensate_boundary and seconds > 0 then return seconds + epsilon end
+    return seconds
+end
+
+function M.is_aura_timer_phase_active(elapsed, duration)
+    if type(elapsed) ~= "number" or type(duration) ~= "number" then return false end
+    return elapsed < duration and (duration - elapsed) > M.AURA_TIMER_EPSILON
+end
+
+-- Real auras only count down, so they can move Long -> Short.  The cycling
+-- test preview also restarts above the threshold and must return Short -> Long.
+function M.should_reclassify_aura_category(category, remaining, short_threshold, is_test_preview)
+    if type(remaining) ~= "number" or type(short_threshold) ~= "number" then return false end
+    if category == "long" then return remaining <= short_threshold end
+    return is_test_preview and category == "short" and remaining > short_threshold
+end
 
 function M.set_shown_if_changed(frame, shown)
     if not frame then return end

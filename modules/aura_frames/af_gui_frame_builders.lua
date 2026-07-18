@@ -318,7 +318,8 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         frame_config.value_table,
         timer_font_size_key,
         frame_config.defaults_table,
-        refresh_fonts
+        refresh_fonts,
+        { immediate_callback = true }
     )
     grid:place_at(font_size_slider, row, 4)
     M.controls[labels.font_size_control_key or ("timer_number_font_size_slider_" .. control_prefix)] = font_size_slider
@@ -779,14 +780,37 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         update()
     end)
 
+    local test_aura_key = frame_setting_key(frame_config, "test_aura")
+    local preview_show_key = opts.frame_show_key or frame_config.frame_show_key
+    local pause_test_aura_button
+    local function refresh_pause_test_aura_button()
+        if not pause_test_aura_button then return end
+        local is_enabled = value_table[test_aura_key] == true
+        local is_paused = M.is_test_preview_paused(preview_show_key)
+        pause_test_aura_button:SetEnabled(is_enabled)
+        pause_test_aura_button:SetPaused(is_paused)
+    end
+
     local test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
         if is_checked then
             value_table[frame_setting_key(frame_config, "show")] = true
             if enable_container and enable_container.SetCheckedSilently then enable_container:SetCheckedSilently(true) end
+            if M.reset_test_preview_clock then M.reset_test_preview_clock(preview_show_key) end
+        elseif M.stop_test_preview_clock then
+            M.stop_test_preview_clock(preview_show_key)
         end
         if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
+        refresh_pause_test_aura_button()
         update()
     end)
+    pause_test_aura_button = addon.CreatePlayPauseButton(parent, function()
+        M.toggle_test_preview_pause(preview_show_key)
+        refresh_pause_test_aura_button()
+        update()
+    end, { width = 28, height = 28 })
+    pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 8, 0)
+    M.controls[control_key("test_aura") .. "_pause"] = pause_test_aura_button
+    refresh_pause_test_aura_button()
     grid:stack_below(test_aura_container, enable_container)
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
     grid:stack_below(tooltip_container, test_aura_container)
@@ -811,7 +835,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:place_at(scale_slider, 1, 3)
 
     local spacing_range = get_setting_range("spacing")
-    local spacing_slider = create_frame_slider(parent, frame_config, "Spacing", "Spacing", spacing_range.min, spacing_range.max, spacing_range.step, "spacing", update)
+    local spacing_slider = create_frame_slider(
+        parent,
+        frame_config,
+        "Spacing",
+        "Spacing",
+        spacing_range.min,
+        spacing_range.max,
+        spacing_range.step,
+        "spacing",
+        update,
+        { immediate_callback = true }
+    )
     grid:place_at(spacing_slider, 1, 4)
 
     if opts.build_source_controls then
@@ -838,16 +873,17 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         get_setting_range("ooc_alpha").max,
         get_setting_range("ooc_alpha").step,
         "ooc_alpha",
-        update
+        update,
+        { immediate_callback = true }
     )
     grid:place_at(ooc_alpha_slider, 4, 2)
 
     local fade_delay_range = get_setting_range("fade_delay")
-    local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", fade_delay_range.min, fade_delay_range.max, fade_delay_range.step, "fade_delay", update)
+    local fade_delay_slider = create_frame_slider(parent, frame_config, "FadeDelay", "Fade Delay", fade_delay_range.min, fade_delay_range.max, fade_delay_range.step, "fade_delay", update, { immediate_callback = true })
     grid:place_at(fade_delay_slider, 4, 3)
 
     local fade_length_range = get_setting_range("fade_length")
-    local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", fade_length_range.min, fade_length_range.max, fade_length_range.step, "fade_length", update)
+    local fade_length_slider = create_frame_slider(parent, frame_config, "FadeLength", "Fade Length", fade_length_range.min, fade_length_range.max, fade_length_range.step, "fade_length", update, { immediate_callback = true })
     grid:place_at(fade_length_slider, 4, 4)
 
     local timer_swipe_container
