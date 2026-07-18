@@ -795,7 +795,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         if is_checked then
             value_table[frame_setting_key(frame_config, "show")] = true
             if enable_container and enable_container.SetCheckedSilently then enable_container:SetCheckedSilently(true) end
-            if M.reset_test_preview_clock then M.reset_test_preview_clock(preview_show_key) end
+            -- Start the fresh preview paused so the user must click Play.
+            if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
         elseif M.stop_test_preview_clock then
             M.stop_test_preview_clock(preview_show_key)
         end

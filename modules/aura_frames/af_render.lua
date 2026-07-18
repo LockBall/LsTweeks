@@ -357,6 +357,24 @@ local function set_count_text(obj, text, point, relative_to, relative_point, x, 
     end
 end
 
+-- Live ticker refresh for test-preview stacks: same visibility rule and text
+-- cache as set_count_text, but never moves the anchor the scan render set.
+function M.update_preview_count_text(obj, count)
+    if not obj.count_text then return end
+    if count and count > 1 then
+        if obj._lstweeks_count_text ~= count then
+            obj.count_text:SetText(count)
+            obj._lstweeks_count_text = count
+        end
+        if not obj.count_text:IsShown() then
+            obj.count_text:Show()
+        end
+    elseif obj._lstweeks_count_text ~= nil then
+        obj.count_text:Hide()
+        obj._lstweeks_count_text = nil
+    end
+end
+
 local function resolve_stack_text(entry, live_count)
     if entry.count and not issecretvalue(entry.count) and entry.count > 1 then
         return entry.count

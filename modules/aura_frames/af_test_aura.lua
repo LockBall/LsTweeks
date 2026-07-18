@@ -141,16 +141,22 @@ local CFG = {
     min_remaining   = 0.1,  -- floor except the final allow-zero segment
 }
 
+-- Phases are fixed at load, so the ticker-path cycle length is summed once.
+local LONG_PREVIEW_CYCLE_SECONDS = 0
+for i = 1, #CFG.long_preview_phases do
+    LONG_PREVIEW_CYCLE_SECONDS = LONG_PREVIEW_CYCLE_SECONDS + CFG.long_preview_phases[i].seconds
+end
+
 -- The test suite reads this runtime-derived snapshot instead of reproducing
 -- range order, handoff durations, or the final zero hold on its own.
 function M.get_long_preview_test_timing()
     local ranges, zero_hold_seconds = M.get_long_preview_test_ranges()
-    local phase_start, cycle_seconds = {}, 0
+    local phase_start, phase_offset = {}, 0
     for i = 1, #CFG.long_preview_phases do
-        phase_start[LONG_PREVIEW_RANGE_ORDER[i]] = cycle_seconds
-        cycle_seconds = cycle_seconds + CFG.long_preview_phases[i].seconds
+        phase_start[LONG_PREVIEW_RANGE_ORDER[i]] = phase_offset
+        phase_offset = phase_offset + CFG.long_preview_phases[i].seconds
     end
-    return ranges, phase_start, cycle_seconds, zero_hold_seconds
+    return ranges, phase_start, LONG_PREVIEW_CYCLE_SECONDS, zero_hold_seconds
 end
 
 M._test_preview_time_offsets = M._test_preview_time_offsets or {}
@@ -174,6 +180,12 @@ end
 function M.toggle_test_preview_pause(show_key, now)
     if not show_key then return false end
     now = now or GetTime()
+    -- A never-started preview reads as paused in the UI; its Play click must
+    -- start the clock rather than freeze the unstarted one.
+    if M._test_preview_started[show_key] ~= true then
+        M.reset_test_preview_clock(show_key, now)
+        return false
+    end
     local paused_time = M._test_preview_paused_times[show_key]
     if paused_time ~= nil then
         M._test_preview_time_offsets[show_key] = now - paused_time
@@ -199,7 +211,16 @@ function M.restore_test_preview_clock_paused(show_key, now)
     if not show_key or M._test_preview_started[show_key] then return end
     now = now or GetTime()
     M.reset_test_preview_clock(show_key, now)
-    M._test_preview_paused_times[show_key] = get_test_preview_clock(show_key, now)
+    -- A freshly reset clock reads exactly zero; freeze it there directly.
+    M._test_preview_paused_times[show_key] = 0
+end
+
+-- Checkbox-on entry point: always begin a fresh paused preview, even when a
+-- silent settings resync (profile load/reset) skipped the stop on uncheck.
+function M.start_test_preview_paused(show_key, now)
+    if not show_key then return end
+    M.stop_test_preview_clock(show_key)
+    M.restore_test_preview_clock_paused(show_key, now)
 end
 
 function M.stop_test_preview_clock(show_key)
@@ -221,12 +242,7 @@ local function get_preview_segment_remaining(segment, elapsed)
 end
 
 local function get_long_test_preview_state(now)
-    local cycle_seconds = 0
-    for i = 1, #CFG.long_preview_phases do
-        cycle_seconds = cycle_seconds + CFG.long_preview_phases[i].seconds
-    end
-
-    local elapsed = now % cycle_seconds
+    local elapsed = now % LONG_PREVIEW_CYCLE_SECONDS
     for i = 1, #CFG.long_preview_phases do
         local phase = CFG.long_preview_phases[i]
         if M.is_aura_timer_phase_active(elapsed, phase.seconds) then
@@ -314,9 +330,7 @@ end
 -- exercise the same Long -> Short threshold transfer as a real buff.
 function M.add_shared_long_test_aura(category_buckets, short_threshold)
     if not (category_buckets and M.is_shared_long_test_preview_active()) then return end
-    if not M._test_preview_started.show_long then
-        M.restore_test_preview_clock_paused("show_long")
-    end
+    M.restore_test_preview_clock_paused("show_long")
 
     local entry = build_test_aura_entry("show_long", "HELPFUL")
     entry.is_helpful = true
@@ -328,19 +342,21 @@ function M.add_shared_long_test_aura(category_buckets, short_threshold)
 end
 
 function M.append_test_aura(aura_map, show_key, filter)
-    if not M._test_preview_started[show_key] then
-        M.restore_test_preview_clock_paused(show_key)
-    end
+    M.restore_test_preview_clock_paused(show_key)
     aura_map["__test_preview__"] = build_test_aura_entry(show_key, filter)
 end
 
 function M.update_test_preview_state(obj, show_key, now)
-    local duration, remaining = get_test_preview_state(show_key, now)
+    now = now or GetTime()
+    local duration, remaining, count = get_test_preview_state(show_key, now)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining
     obj.aura_expiration = now + remaining
     obj.aura_scan_time = now
+    -- Stacks tick live alongside the timer so a scan rebuild (e.g. from the
+    -- pause button) never reveals a stale count with a visible jump.
+    M.update_preview_count_text(obj, count)
 end
 
 --#endregion TEST AURA CONFIG ==================================================

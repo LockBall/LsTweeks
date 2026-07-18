@@ -198,6 +198,59 @@ h.test("restored test preview starts paused until played", function()
     h.eq(math.floor(preview.aura_remaining), 364 * 86400, "playing restored preview begins its countdown")
 end)
 
+h.test("play on a never-started preview starts its clock playing", function()
+    local M = load_aura_frames()
+    local preview = {}
+    M._test_preview_time_offsets = {}
+    M._test_preview_paused_times = {}
+    M._test_preview_started = {}
+
+    h.ok(M.is_test_preview_paused("show_long"), "unstarted preview reads as paused")
+    local paused = M.toggle_test_preview_pause("show_long", 100)
+    h.ok(not paused, "play click on an unstarted preview reports playing")
+    h.ok(not M.is_test_preview_paused("show_long"), "unstarted preview plays after one click")
+    M.update_test_preview_state(preview, "show_long", 101)
+    h.eq(math.floor(preview.aura_remaining), 364 * 86400, "started clock counts down from cycle zero")
+end)
+
+h.test("rechecking test aura after a silent uncheck restarts paused at zero", function()
+    local M = load_aura_frames()
+    M._test_preview_time_offsets = {}
+    M._test_preview_paused_times = {}
+    M._test_preview_started = {}
+
+    -- Preview was playing when a profile load silently unchecked the box:
+    -- the uncheck callback never ran, so the started clock survives.
+    M.reset_test_preview_clock("show_long", 0)
+    M.toggle_test_preview_pause("show_long", 50)
+    M.toggle_test_preview_pause("show_long", 50)
+
+    M.start_test_preview_paused("show_long", 60)
+    h.ok(M.is_test_preview_paused("show_long"), "recheck starts the preview paused")
+    local preview = {}
+    M.update_test_preview_state(preview, "show_long", 60)
+    h.eq(preview.aura_remaining, 365 * 86400, "recheck discards the stale clock and shows the initial value")
+end)
+
+h.test("test preview stacks tick live with the timer", function()
+    local M = load_aura_frames()
+    M._test_preview_time_offsets = {}
+    M._test_preview_paused_times = {}
+    M._test_preview_started = {}
+    M.reset_test_preview_clock("show_short", 0)
+
+    -- Icon factories create count_text hidden (af_main.lua); mirror that here.
+    local preview = { count_text = CreateFrame("Frame"):CreateFontString() }
+    preview.count_text:Hide()
+    -- sec_per_stack is 2.0 with stack_min 1: bucket 1 hides the count text,
+    -- bucket 2 shows "2" without waiting for a scan rebuild.
+    M.update_test_preview_state(preview, "show_short", 1)
+    h.ok(not preview.count_text:IsShown(), "stack count of one stays hidden")
+    M.update_test_preview_state(preview, "show_short", 3)
+    h.ok(preview.count_text:IsShown(), "ticker reveals the next stack bucket live")
+    h.eq(preview._lstweeks_count_text, 2, "ticker writes the live stack value through the render cache")
+end)
+
 h.test("long Aura test preview transfers to Short at the configured threshold", function()
     local M = load_aura_frames()
     local ranges, phase_start = get_long_preview_timing(M)
