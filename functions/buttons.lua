@@ -157,7 +157,6 @@ function addon.CreatePlayPauseButton(parent, on_click, opts)
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(opts.width or 32, opts.height or 32)
 
-
     local supports_pause = opts.show_pause ~= false
 
     local function refresh_visuals()
@@ -196,17 +195,10 @@ function addon.CreatePlayPauseButton(parent, on_click, opts)
         refresh_visuals()
     end
 
-    local set_enabled = button.SetEnabled
-    function button:SetEnabled(enabled)
-        set_enabled(self, enabled)
-        self._media_enabled = enabled ~= false
-    end
-
     if type(on_click) == "function" then
         button:SetScript("OnClick", on_click)
     end
 
-    button._media_enabled = true
     button:SetPaused(opts.paused == true)
     return button
 end
