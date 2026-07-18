@@ -20,16 +20,17 @@ h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
 
-h.test("play pause button swaps font-safe texture states", function()
+h.test("play pause button swaps native texture states", function()
     local button = addon.CreatePlayPauseButton(UIParent, nil)
 
-    h.ok(button.pause_left:IsShown(), "running button shows its pause bars")
-    h.ok(button.pause_mask:IsShown(), "running button masks the native play triangle")
+    h.eq(button.current_glyph, "pause", "running button offers the native pause glyph")
     button:SetPaused(true)
-    h.ok(not button.pause_mask:IsShown(), "paused button reveals its native play triangle")
-    h.ok(not button.pause_left:IsShown(), "paused button hides its pause bars")
+    h.eq(button.current_glyph, "play", "paused button offers the native play triangle")
     button:SetEnabled(false)
     h.ok(not button:IsEnabled(), "media button retains normal disabled behavior")
+
+    local play_only = addon.CreatePlayPauseButton(UIParent, nil, { show_pause = false })
+    h.eq(play_only.current_glyph, "play", "play-only button always shows the play triangle")
 end)
 
 h.test("silent checkbox setter restores callback state after an error", function()

@@ -134,53 +134,61 @@ end
 
 --#region PLAY / PAUSE BUTTONS ================================================
 
+-- Native play art is Blizzard's Options-UI square triangle button; the pause
+-- glyph is the stopwatch pause texture tinted to the same gold, the pairing
+-- retail AddonProfiler ships.
+local PLAY_PAUSE_TEXTURES = {
+    play = {
+        normal = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up",
+        pushed = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down",
+        disabled = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled",
+        color = { 1, 1, 1 },
+    },
+    pause = {
+        normal = "Interface\\TimeManager\\PauseButton",
+        pushed = "Interface\\TimeManager\\PauseButton",
+        disabled = "Interface\\TimeManager\\PauseButton",
+        color = { 0.84, 0.81, 0.52 },
+    },
+}
+
 function addon.CreatePlayPauseButton(parent, on_click, opts)
     opts = opts or {}
     local button = CreateFrame("Button", nil, parent)
     button:SetSize(opts.width or 32, opts.height or 32)
 
-    -- This is the native square play button used by Blizzard's Options UI.
-    button:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
-    button:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
-    button:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled")
-    button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-
-    -- WoW has no matching pause button texture.  Cover the integral play
-    -- triangle only while running, keeping the native square button surround.
-    local pause_mask = button:CreateTexture(nil, "OVERLAY")
-    pause_mask:SetSize(opts.pause_mask_width or 14, opts.pause_mask_height or 14)
-    pause_mask:SetTexture("Interface\\Buttons\\WHITE8x8")
-    pause_mask:SetVertexColor(0.03, 0.03, 0.03, 0.96)
-
-    local pause_left = button:CreateTexture(nil, "OVERLAY")
-    pause_left:SetSize(opts.pause_bar_width or 3, opts.pause_bar_height or 14)
-    pause_left:SetTexture("Interface\\Buttons\\WHITE8x8")
-
-    local pause_right = button:CreateTexture(nil, "OVERLAY")
-    pause_right:SetSize(opts.pause_bar_width or 3, opts.pause_bar_height or 14)
-    pause_right:SetTexture("Interface\\Buttons\\WHITE8x8")
 
     local supports_pause = opts.show_pause ~= false
-    local pressed = false
 
     local function refresh_visuals()
-        local enabled = button._media_enabled ~= false
+        -- Paused preview offers Play; running preview offers Pause.
         local paused = button._media_paused == true
-        local icon_alpha = enabled and 1 or 0.4
+        local glyph = (supports_pause and not paused) and "pause" or "play"
+        local art = PLAY_PAUSE_TEXTURES[glyph]
 
-        pause_mask:SetShown(supports_pause and not paused)
-        pause_left:SetShown(supports_pause and not paused)
-        pause_right:SetShown(supports_pause and not paused)
-        pause_mask:SetAlpha(icon_alpha)
-        pause_left:SetVertexColor(1, 0.82, 0, icon_alpha)
-        pause_right:SetVertexColor(1, 0.82, 0, icon_alpha)
+        button:SetNormalTexture(art.normal)
+        button:SetPushedTexture(art.pushed)
+        button:SetDisabledTexture(art.disabled)
 
-        pause_mask:ClearAllPoints()
-        pause_mask:SetPoint("CENTER", button, "CENTER", pressed and 1 or 0, pressed and -1 or 0)
-        pause_left:ClearAllPoints()
-        pause_left:SetPoint("CENTER", button, "CENTER", pressed and -4 or -3, pressed and -1 or 0)
-        pause_right:ClearAllPoints()
-        pause_right:SetPoint("CENTER", button, "CENTER", pressed and 2 or 3, pressed and -1 or 0)
+        local r, g, b = art.color[1], art.color[2], art.color[3]
+        local normal = button:GetNormalTexture()
+        if normal then normal:SetVertexColor(r, g, b) end
+        local pushed = button:GetPushedTexture()
+        if pushed then pushed:SetVertexColor(r * 0.8, g * 0.8, b * 0.8) end
+        local disabled = button:GetDisabledTexture()
+        if disabled then
+            disabled:SetVertexColor(r, g, b, 0.4)
+            disabled:SetDesaturated(true)
+        end
+
+        -- Hover glow: the button art added onto itself. Gold border and glyph
+        -- brighten while the dark plate stays dark, so the highlight always
+        -- matches the art with no separate overlay asset.
+        button:SetHighlightTexture(art.normal, "ADD")
+        local highlight = button:GetHighlightTexture()
+        if highlight then highlight:SetVertexColor(r, g, b, 0.7) end
+
+        button.current_glyph = glyph
     end
 
     function button:SetPaused(is_paused)
@@ -192,29 +200,13 @@ function addon.CreatePlayPauseButton(parent, on_click, opts)
     function button:SetEnabled(enabled)
         set_enabled(self, enabled)
         self._media_enabled = enabled ~= false
-        refresh_visuals()
     end
 
-    button:SetScript("OnLeave", function()
-        pressed = false
-        refresh_visuals()
-    end)
-    button:SetScript("OnMouseDown", function()
-        pressed = true
-        refresh_visuals()
-    end)
-    button:SetScript("OnMouseUp", function()
-        pressed = false
-        refresh_visuals()
-    end)
     if type(on_click) == "function" then
         button:SetScript("OnClick", on_click)
     end
 
     button._media_enabled = true
-    button.pause_mask = pause_mask
-    button.pause_left = pause_left
-    button.pause_right = pause_right
     button:SetPaused(opts.paused == true)
     return button
 end
