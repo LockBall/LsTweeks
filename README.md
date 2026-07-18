@@ -97,6 +97,9 @@ Aura Frames replace and extend the default player buff and debuff display. The m
 - `Long`: timed player buffs above the short-buff threshold.
 - `Debuffs`: harmful player auras.
 
+### Test Aura Preview
+Use **Test Aura** to preview a frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play.
+
 
 ### WoW Cooldown Manager Frames
 Cooldown Manager-backed frames read live Blizzard Cooldown Manager viewer state:

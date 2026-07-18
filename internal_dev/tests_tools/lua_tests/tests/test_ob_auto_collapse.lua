@@ -12,6 +12,12 @@ local stub = h.stub
 h.load_addon("modules/objectives")
 
 local M = h.addon.objectives
+
+---@class TestObjectiveTracker : ObjectiveTrackerFrame
+---@field __collapsed boolean
+---@field __calls table<string, table[]>
+---@field GetCalls fun(self: TestObjectiveTracker, method: string): table[]?
+---@field GetLastCall fun(self: TestObjectiveTracker, method: string): table?
 local TRACKERS = {
     ObjectiveTrackerFrame,
     CampaignQuestObjectiveTracker,
@@ -35,6 +41,7 @@ local function reset_runtime()
     stub.in_combat = false
     stub.timers = {}
     for _, tracker in ipairs(TRACKERS) do
+        ---@cast tracker TestObjectiveTracker
         tracker.__collapsed = false
         tracker.__calls = {}
     end
@@ -108,7 +115,9 @@ h.test("disabling auto-collapse in combat defers tracker expansion", function()
     h.advance(1)
 
     h.eq(ObjectiveTrackerFrame:IsCollapsed(), false, "tracker expanded after regen")
-    local last_call = ObjectiveTrackerFrame:GetLastCall("SetCollapsed")
+    local tracker = ObjectiveTrackerFrame
+    ---@cast tracker TestObjectiveTracker
+    local last_call = tracker:GetLastCall("SetCollapsed")
     h.eq(last_call and last_call[1], false, "deferred call expands")
 end)
 

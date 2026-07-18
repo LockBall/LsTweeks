@@ -521,13 +521,17 @@ end
 
 local function add_basic_aura_tooltip_lines(tooltip, obj)
     tooltip:AddLine(get_safe_basic_aura_name(obj), 1, 1, 1)
-    if is_usable_tooltip_number(obj.aura_duration) and obj.aura_duration > 0 then
-        local remaining = get_safe_basic_aura_remaining(obj)
+    local remaining = get_safe_basic_aura_remaining(obj)
+    local has_total_duration = is_usable_tooltip_number(obj.aura_duration) and obj.aura_duration > 0
+    local has_remaining_time = is_usable_tooltip_number(remaining)
+    if has_total_duration or has_remaining_time then
         local remaining_str = is_usable_tooltip_number(remaining)
             and M.format_aura_tooltip_duration(remaining)
             or "?"
         tooltip:AddLine("Remaining: " .. remaining_str, 0.7, 0.7, 1)
-        tooltip:AddLine("Duration: " .. M.format_aura_tooltip_duration(obj.aura_duration), 0.7, 0.7, 1)
+        if has_total_duration then
+            tooltip:AddLine("Duration: " .. M.format_aura_tooltip_duration(obj.aura_duration), 0.7, 0.7, 1)
+        end
     else
         tooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
     end
@@ -546,10 +550,6 @@ local function try_secure_rich_tooltip_call(method, tooltip, ...)
 end
 
 local function try_show_rich_aura_tooltip(tooltip, obj)
-    if InCombatLockdown and InCombatLockdown() then
-        return false
-    end
-
     if is_usable_tooltip_number(obj.aura_index)
         and try_secure_rich_tooltip_call(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
     then

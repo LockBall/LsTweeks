@@ -110,12 +110,12 @@ h.test("long Aura test preview cycles through every compact countdown format", f
         return phase_start[name] + (ranges[name].handoff_seconds or 0) + (ranges[name].seconds_per_unit or 1)
     end
     local function check_preview_at(now, expected, message)
-        M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, now)
+        M.update_test_preview_state(preview, "show_long", now)
         M.set_timer_text(text, "long", preview.aura_remaining, { enabled = true, format = "time" })
         h.eq(text:GetText(), expected, message)
     end
 
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 0)
+    M.update_test_preview_state(preview, "show_long", 0)
     h.eq(preview.aura_duration, ranges.many_days.start * ranges.many_days.unit, "first phase starts in the whole-day range")
     h.eq(preview.aura_remaining, preview.aura_duration, "long preview begins at its full duration")
     check_preview_at(phase_start.many_days, whole(ranges.many_days.start, "d"), "first phase displays whole days")
@@ -136,11 +136,11 @@ h.test("long Aura test preview cycles through every compact countdown format", f
     check_preview_at(after_first_unit("double_seconds"), decimal(ranges.double_seconds.start - 1, "s"), "seconds complete their slowed handoff")
     check_preview_at(phase_start.single_seconds, decimal(ranges.single_seconds.start, "s"), "seconds phase reaches the real-time final ten seconds")
     check_preview_at(phase_start.single_seconds + 5, decimal(ranges.single_seconds.start - 5, "s"), "final ten seconds count down in real time")
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, cycle_seconds - zero_hold_seconds)
+    M.update_test_preview_state(preview, "show_long", cycle_seconds - zero_hold_seconds)
     h.eq(preview.aura_remaining, 0, "single-seconds phase reaches zero before the preview resets")
     check_preview_at(cycle_seconds, whole(ranges.many_days.start, "d"), "preview loops only after the zero state has been visible")
 
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, phase_start.single_seconds + 5)
+    M.update_test_preview_state(preview, "show_long", phase_start.single_seconds + 5)
     h.eq(M.format_aura_tooltip_duration(preview.aura_remaining), "00h 00m 05s", "tooltip duration retains full hours, minutes, and seconds")
 end)
 
@@ -155,12 +155,12 @@ h.test("long Aura test preview pause preserves and resumes its countdown phase",
     M.reset_test_preview_clock("show_long", 0)
     M.toggle_test_preview_pause("show_long", phase_start.single_days)
     h.ok(M.is_test_preview_paused("show_long"), "preview reports paused state")
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 100)
+    M.update_test_preview_state(preview, "show_long", 100)
     h.eq(preview.aura_remaining, ranges.single_days.start * ranges.single_days.unit, "paused preview retains its captured phase")
 
     M.toggle_test_preview_pause("show_long", 100)
     h.ok(not M.is_test_preview_paused("show_long"), "preview reports resumed state")
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 101)
+    M.update_test_preview_state(preview, "show_long", 101)
     h.eq(preview.aura_remaining,
         ranges.single_days.start * ranges.single_days.unit,
         "resumed preview remains on the held handoff label")
@@ -174,9 +174,9 @@ h.test("long Aura test preview starts from whole days when enabled", function()
     M._test_preview_started = {}
 
     h.ok(M.is_test_preview_paused("show_long"), "uninitialized restored preview reports paused for the Play button")
-    M.append_test_aura({}, "show_long", "HELPFUL", M.DEFAULT_SHORT_THRESHOLD)
+    M.append_test_aura({}, "show_long", "HELPFUL")
     M.reset_test_preview_clock("show_long", 100)
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 100)
+    M.update_test_preview_state(preview, "show_long", 100)
 
     h.eq(preview.aura_remaining, 365 * 86400, "new preview begins at the whole-day phase")
 end)
@@ -188,13 +188,13 @@ h.test("restored test preview starts paused until played", function()
     M._test_preview_paused_times = {}
     M._test_preview_started = {}
 
-    M.append_test_aura({}, "show_long", "HELPFUL", M.DEFAULT_SHORT_THRESHOLD)
+    M.append_test_aura({}, "show_long", "HELPFUL")
     h.ok(M.is_test_preview_paused("show_long"), "restored preview begins paused")
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 100)
+    M.update_test_preview_state(preview, "show_long", 100)
     h.eq(preview.aura_remaining, 365 * 86400, "paused restored preview retains its initial value")
 
     M.toggle_test_preview_pause("show_long", 100)
-    M.update_test_preview_state(preview, "show_long", M.DEFAULT_SHORT_THRESHOLD, 101)
+    M.update_test_preview_state(preview, "show_long", 101)
     h.eq(math.floor(preview.aura_remaining), 364 * 86400, "playing restored preview begins its countdown")
 end)
 
@@ -402,6 +402,44 @@ h.test("Aura icon hover uses a dedicated rich tooltip outside combat", function(
     h.eq(tooltip.__kind, "GameTooltip", "Aura tooltip retains Blizzard rich-tooltip support")
     h.ok(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "live Aura data bound to the rich tooltip")
     h.eq(h.addon.GetOwnedTooltip().__kind, "Frame", "plain shared tooltip remains independent")
+end)
+
+h.test("Aura icon hover uses the dedicated rich tooltip in combat", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    local icon = frame.icons[1]
+    icon.aura_index = 101
+    icon.aura_spell_id = 202
+    icon.aura_name = "Combat Aura"
+    icon.tooltip_enabled = true
+    h.stub.in_combat = true
+
+    icon:GetScript("OnEnter")(icon)
+
+    h.stub.in_combat = false
+    local tooltip = _G["LsTweeksAuraTooltip"]
+    h.ok(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "combat hover binds live Aura data to the rich tooltip")
+end)
+
+h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    local icon = frame.icons[1]
+    icon.aura_name = "Combat Aura"
+    icon.aura_duration = 0
+    icon.aura_remaining = 90
+    icon.aura_expiration = GetTime() + 90
+    icon.tooltip_enabled = true
+    h.stub.in_combat = true
+
+    icon:GetScript("OnEnter")(icon)
+
+    h.stub.in_combat = false
+    local lines = _G["LsTweeksAuraTooltip"]:GetCalls("AddLine") or {}
+    h.eq(lines[2][1], "Remaining: 00h 01m 30s", "live remaining time is shown without a readable total duration")
+    h.is_nil(lines[3], "combat fallback does not label the timed aura permanent")
 end)
 
 h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()

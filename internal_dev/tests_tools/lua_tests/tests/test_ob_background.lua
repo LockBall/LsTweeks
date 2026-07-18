@@ -13,6 +13,28 @@ h.load_addon("modules/objectives")
 local M = h.addon.objectives
 local edit_mode_test_calls = {}
 
+---@class TestObjectiveTrackerFrame : ObjectiveTrackerFrame
+---@field __collapsed boolean
+---@field __calls table<string, table[]>
+---@field GetCalls fun(self: TestObjectiveTrackerFrame, method: string): table[]?
+---@field ForceExpand fun(self: TestObjectiveTrackerFrame)
+
+---@class TestObjectiveTrackerNineSlice : ObjectiveTrackerContainerTemplate_NineSlice
+---@field __calls table<string, table[]>
+---@field Center Texture?
+---@field _lstweeks_center_color_overlay TestTexture?
+---@field _lstweeks_center_color_overlay_frame TestFrame?
+
+---@class TestFrame : Frame
+---@field GetCalls fun(self: TestFrame, method: string): table[]?
+
+---@class TestTexture : Texture
+---@field __texture boolean|string|number|nil
+---@field GetCalls fun(self: TestTexture, method: string): table[]?
+
+---@type TestObjectiveTrackerNineSlice
+local nine_slice = ObjectiveTrackerFrame.NineSlice
+
 local function frame_calls(frame, method)
     return frame:GetCalls(method) or {}
 end
@@ -31,7 +53,7 @@ end
 
 local function reset_runtime()
     h.stub.in_combat = false
-    ObjectiveTrackerFrame.NineSlice.__calls = {}
+    nine_slice.__calls = {}
     ObjectiveTrackerManager.__calls = {}
     ObjectiveTrackerManager.__opacity = 100
     ObjectiveTrackerFrame.HasSetting = nil
@@ -229,8 +251,7 @@ h.test("background color picker live preview is debounced", function()
 
     color_button:Click()
     h.ok(ColorPickerFrame.__opts and ColorPickerFrame.__opts.swatchFunc, "picker opened")
-    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
-    h.ok(overlay, "overlay created on open")
+    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "overlay created on open")
     local vertex_calls = #(overlay:GetCalls("SetVertexColor") or {})
 
     ColorPickerFrame.__r = 0.8
@@ -270,7 +291,8 @@ h.test("region diagnostics preserve explicit false values", function()
     local region = ObjectiveTrackerFrame.NineSlice:CreateTexture(nil, "ARTWORK")
     region.GetBlendMode = function() return false end
     region.IsDesaturated = function() return false end
-    region:SetTexture(false)
+    ---@cast region TestTexture
+    region.__texture = false
     region.GetAtlas = function() return false end
 
     local fields = M.get_background_status()
@@ -307,8 +329,7 @@ h.test("background color sync skips unchanged overlay writes", function()
     })
 
     M.apply_background()
-    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
-    h.ok(overlay, "color overlay created")
+    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "color overlay created")
     h.ok(
         tContains(M.get_background_status(), "bg_color_signature=0.31:0.41:0.51:0.61:bg_alpha=0:color_alpha=0.61:overlay=true"),
         "status keeps the background color signature"
@@ -328,32 +349,32 @@ h.test("background color overlay renders behind Blizzard line art", function()
     fresh_db({ background_color_enabled = true })
     ObjectiveTrackerFrame:SetFrameLevel(2)
     ObjectiveTrackerFrame.NineSlice:SetFrameLevel(4)
-    ObjectiveTrackerFrame.NineSlice.Center = ObjectiveTrackerFrame.NineSlice:CreateTexture(nil, "ARTWORK")
+    nine_slice.Center = nine_slice:CreateTexture(nil, "ARTWORK")
 
     M.apply_background()
 
-    local overlay_frame = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay_frame
-    local overlay = ObjectiveTrackerFrame.NineSlice._lstweeks_center_color_overlay
-    h.ok(overlay_frame, "overlay frame created")
-    h.ok(overlay, "overlay texture created")
+    local overlay_frame = assert(nine_slice._lstweeks_center_color_overlay_frame, "overlay frame created")
+    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "overlay texture created")
     h.eq(overlay_frame:GetParent(), ObjectiveTrackerFrame, "overlay frame stays independent of NineSlice alpha")
     h.ok(
-        overlay_frame:GetFrameLevel() < ObjectiveTrackerFrame.NineSlice:GetFrameLevel(),
+        overlay_frame:GetFrameLevel() < nine_slice:GetFrameLevel(),
         "overlay frame is behind Blizzard line art"
     )
-    h.eq(ObjectiveTrackerFrame.NineSlice.Center:GetAlpha(), 0, "Blizzard center fill lets custom color show through")
+    h.eq(nine_slice.Center:GetAlpha(), 0, "Blizzard center fill lets custom color show through")
 
     Ls_Tweeks_DB.objectives.background_color_enabled = false
     M.apply_background()
 
-    h.eq(ObjectiveTrackerFrame.NineSlice.Center:GetAlpha(), 1, "Blizzard center fill restores when custom color is disabled")
+    h.eq(nine_slice.Center:GetAlpha(), 1, "Blizzard center fill restores when custom color is disabled")
 end)
 
 h.test("priority background anchors force-expand without scratch state", function()
     reset_runtime()
     fresh_db()
-    ObjectiveTrackerFrame.__collapsed = true
-    ObjectiveTrackerFrame.ForceExpand = function(self)
+    local tracker = ObjectiveTrackerFrame
+    ---@cast tracker TestObjectiveTrackerFrame
+    tracker.__collapsed = true
+    tracker.ForceExpand = function(self)
         self.__collapsed = false
         self.__calls.ForceExpand = self.__calls.ForceExpand or {}
         table.insert(self.__calls.ForceExpand, {})
@@ -369,7 +390,7 @@ h.test("priority background anchors force-expand without scratch state", functio
 
     local fields = M.get_background_status()
     h.ok(tContains(fields, "bg_force_expand=background:PriorityObjectiveModule"), "priority force-expand status")
-    h.eq(#(ObjectiveTrackerFrame:GetCalls("ForceExpand") or {}), 1, "force expand called")
+    h.eq(#(tracker:GetCalls("ForceExpand") or {}), 1, "force expand called")
 end)
 
 h.test("background collapse followups coalesce", function()

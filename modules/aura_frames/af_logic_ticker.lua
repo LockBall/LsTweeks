@@ -156,7 +156,7 @@ function M.tick_visible_icons(now)
                 local obj = frame.icons[i]
                     if obj:IsShown() then
                     if obj.is_test_preview and M.update_test_preview_state then
-                        M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), short_threshold, now)
+                        M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), now)
                     end
                     local is_static_entry = is_static_frame or obj.aura_is_static == true
                     if is_static_entry then

@@ -138,7 +138,7 @@ local CFG = {
     stack_steps     = 4,    -- number of distinct steps in the cycle
     stack_min       = 1,    -- lowest stack count shown during the cycle
     stack_max       = 4,    -- highest stack count shown during the cycle
-    min_remaining   = 0.1,  -- floor for remaining time so bar never shows fully empty
+    min_remaining   = 0.1,  -- floor except the final allow-zero segment
 }
 
 -- The test suite reads this runtime-derived snapshot instead of reproducing
@@ -209,12 +209,15 @@ function M.stop_test_preview_clock(show_key)
     M._test_preview_started[show_key] = nil
 end
 
-local function get_preview_segment_remaining(segment, elapsed)
-    local minimum = segment.allow_zero and 0 or CFG.min_remaining
-    local remaining = segment.start - (elapsed * segment.rate)
-    remaining = M.normalize_aura_timer_remaining(remaining, segment.allow_zero,
-        segment.rate ~= 0 and elapsed > 0)
+local function normalize_preview_remaining(remaining, allow_zero, compensate_boundary)
+    local minimum = allow_zero and 0 or CFG.min_remaining
+    remaining = M.normalize_aura_timer_remaining(remaining, allow_zero, compensate_boundary)
     return math_max(minimum, remaining)
+end
+
+local function get_preview_segment_remaining(segment, elapsed)
+    return normalize_preview_remaining(segment.start - (elapsed * segment.rate), segment.allow_zero,
+        segment.rate ~= 0 and elapsed > 0)
 end
 
 local function get_long_test_preview_state(now)
@@ -246,11 +249,13 @@ local function get_long_test_preview_state(now)
         elapsed = elapsed - phase.seconds
     end
 
+    -- Treat an exhausted loop caused by floating-point residue as the next
+    -- cycle's exact reset rather than exposing a near-zero phantom state.
     local phase = CFG.long_preview_phases[1]
     return phase.start, phase.start
 end
 
-local function get_test_preview_state(show_key, short_threshold, now)
+local function get_test_preview_state(show_key, now)
     now = now or GetTime()
     now = get_test_preview_clock(show_key, now)
 
@@ -264,7 +269,8 @@ local function get_test_preview_state(show_key, short_threshold, now)
         duration, remaining = get_long_test_preview_state(now)
     else
         duration = short_duration
-        remaining = math_max(CFG.min_remaining, duration - (now % duration))
+        local elapsed = now % duration
+        remaining = normalize_preview_remaining(duration - elapsed, false, elapsed > 0)
     end
 
     -- Stack count cycles on its own period, independent of the timer length.
@@ -276,9 +282,9 @@ local function get_test_preview_state(show_key, short_threshold, now)
     return duration, remaining, count
 end
 
-local function build_test_aura_entry(show_key, filter, short_threshold)
+local function build_test_aura_entry(show_key, filter)
     local now = GetTime()
-    local duration, remaining, count = get_test_preview_state(show_key, short_threshold, now)
+    local duration, remaining, count = get_test_preview_state(show_key, now)
     local frame_def = M.get_frame_def_from_show_key(show_key)
         or ((filter and filter:find("HARMFUL", 1, true)) and M.get_frame_def("debuff"))
     local preview_name = (frame_def and frame_def.test_label) or "Test Custom Buff"
@@ -312,7 +318,7 @@ function M.add_shared_long_test_aura(category_buckets, short_threshold)
         M.restore_test_preview_clock_paused("show_long")
     end
 
-    local entry = build_test_aura_entry("show_long", "HELPFUL", short_threshold)
+    local entry = build_test_aura_entry("show_long", "HELPFUL")
     entry.is_helpful = true
     entry.category = entry.remaining <= short_threshold and "short" or "long"
     local bucket = category_buckets[entry.category]
@@ -321,15 +327,15 @@ function M.add_shared_long_test_aura(category_buckets, short_threshold)
     end
 end
 
-function M.append_test_aura(aura_map, show_key, filter, short_threshold)
+function M.append_test_aura(aura_map, show_key, filter)
     if not M._test_preview_started[show_key] then
         M.restore_test_preview_clock_paused(show_key)
     end
-    aura_map["__test_preview__"] = build_test_aura_entry(show_key, filter, short_threshold)
+    aura_map["__test_preview__"] = build_test_aura_entry(show_key, filter)
 end
 
-function M.update_test_preview_state(obj, show_key, short_threshold, now)
-    local duration, remaining = get_test_preview_state(show_key, short_threshold, now)
+function M.update_test_preview_state(obj, show_key, now)
+    local duration, remaining = get_test_preview_state(show_key, now)
 
     obj.aura_duration = duration
     obj.aura_remaining = remaining

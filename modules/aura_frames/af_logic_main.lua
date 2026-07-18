@@ -502,7 +502,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             end
             render_map = self._aura_map
         end
-        M.append_test_aura(render_map, show_key, aura_filter, short_threshold)
+        M.append_test_aura(render_map, show_key, aura_filter)
     elseif render_map == self._aura_map then
         self._aura_map["__test_preview__"] = nil
     end
