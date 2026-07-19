@@ -493,6 +493,19 @@ h.test("centralized tooltip renderer preserves rich left and right text", functi
     h.eq(tooltip.right_lines[1]:GetText(), "1 min", "right text retained")
 end)
 
+h.test("centralized tooltip renderer shows right-text-only cached lines", function()
+    load_aura_frames()
+    local owner = CreateFrame("Frame", nil, UIParent)
+    h.addon.ShowOwnedTooltipLines(owner, {
+        { right_text = "500 armor", right_color = { r = 0.7, g = 0.7, b = 1 } },
+    })
+
+    local tooltip = h.addon.GetOwnedTooltip()
+    h.eq(tooltip:IsShown(), true, "right-only cached lines still show the tooltip")
+    h.eq(tooltip.right_lines[1]:GetText(), "500 armor", "right-only text renders")
+    h.eq(tooltip.right_lines[1]:IsShown(), true, "right-only line is visible")
+end)
+
 h.test("centralized tooltip renderer matches native fonts and flips at screen edges", function()
     load_aura_frames()
     local owner = CreateFrame("Frame", nil, UIParent)

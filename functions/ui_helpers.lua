@@ -122,6 +122,8 @@ function addon.CreateOwnedTooltip(name, parent)
         self:SetHeight(1)
     end
 
+    -- Quadrant-aware placement from readable owner/screen centers always wins;
+    -- the anchor argument only applies in the secret-coordinate fallback.
     function tooltip:SetOwner(owner, anchor)
         self.owner = owner
         self:ClearAllPoints()
@@ -241,12 +243,14 @@ function addon.AddOwnedTooltipLines(tooltip, lines)
         local line = lines[i]
         local left_text = line and line.left_text
         local right_text = line and line.right_text
-        if left_text and left_text ~= "" then
+        local has_left = left_text and left_text ~= ""
+        local has_right = right_text and right_text ~= ""
+        if has_left or has_right then
             local left_color = line.left_color or NORMAL_FONT_COLOR or {}
-            if right_text and right_text ~= "" then
+            if has_right then
                 local right_color = line.right_color or NORMAL_FONT_COLOR or {}
                 tooltip:AddDoubleLine(
-                    left_text,
+                    left_text or "",
                     right_text,
                     left_color.r or 1,
                     left_color.g or 1,
