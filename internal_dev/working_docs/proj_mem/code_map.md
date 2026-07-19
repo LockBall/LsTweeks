@@ -75,6 +75,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/group_column.lua`: shared Aura-style grouped selector column factory with section outlines, selected-group border highlighting, optional row delete buttons, and optional group actions.
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
+- `functions/profiles.lua`: shared profile mechanics via `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`; each module keeps its own profile file for snapshot contents and post-load refresh.
 - `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
 - `functions/slider_with_box.lua`: shared slider plus numeric edit box, including `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`.
 - `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, gold outlined settings groups, and simple tooltip hooks.

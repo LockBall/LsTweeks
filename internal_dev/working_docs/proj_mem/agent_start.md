@@ -12,7 +12,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 ## Session Start
 1. Run `git status --short` before edits so user changes, deleted docs, generated files, and untracked notes are visible.
-2. Read only `code_map.md` `## Read-In Shortcuts` using its section-reader command; do not load the whole map as baseline context.
+2. Read only `code_map.md` `## Read-In Shortcuts` via `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 internal_dev/working_docs/proj_mem/code_map.md "Read-In Shortcuts"`; do not load the whole map as baseline context.
 3. Follow every route directly matched by the request. Add another route only when the request also matches it.
 
 | Request trigger | Required targeted read |
