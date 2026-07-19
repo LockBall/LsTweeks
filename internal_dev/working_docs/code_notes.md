@@ -1,7 +1,8 @@
 <!-- User-owned personal scratch notes. Agents must not modify, reorganize, or delete this file unless the user explicitly requests it. -->
 
-
+**Agent Read-In**
 Run pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1 and follow its output
+---
 
 save anything important, to where it goes and cross module review if necessary then delete file if no longer needed
 
