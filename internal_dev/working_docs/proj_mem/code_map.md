@@ -74,7 +74,8 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/profiles.lua`: shared profile mechanics via `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`; each module keeps its own profile file for snapshot contents and post-load refresh.
 - `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
 - `functions/slider_with_box.lua`: shared slider plus numeric edit box, including `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`.
-- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, gold outlined settings groups, and simple tooltip hooks.
+- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops and gold outlined settings groups.
+- `functions/tooltip.lua`: centralized taint-safe owned tooltip factory: `addon.CreateOwnedTooltip()` (plain frame skinned with native `TooltipBackdropTemplate` nine-slice, auto-sized width, quadrant anchoring), `addon.ShowOwnedTooltipLines()`, `addon.ShowOwnedTooltip()`, `addon.AttachTooltip()`; never GameTooltip machinery (see project.md Tooltip APIs rule).
 - `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 
 

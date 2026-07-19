@@ -25,6 +25,7 @@ core\minimap_button.lua
 # --- Shared Functions ---
 functions\table_utils.lua
 functions\ui_helpers.lua
+functions\tooltip.lua
 functions\layout_grid.lua
 functions\buttons.lua
 functions\checkbox.lua

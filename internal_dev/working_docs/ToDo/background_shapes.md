@@ -10,6 +10,7 @@ Working notes from the Aura Frames rounded/chamfered background discussion.
 - [NineSlice Explanation](#nineslice-explanation)
 - [Internet Findings](#internet-findings)
 - [Current Recommendation](#current-recommendation)
+- [Asset Generation Plan (2026-07-19)](#asset-generation-plan-2026-07-19)
 
 
 ## Summary
@@ -79,3 +80,14 @@ Best revisit path:
 2. Verify the asset can be tinted cleanly with `SetVertexColor`.
 3. Prototype it on one Aura Frame background only.
 4. Test at multiple UI scales and frame sizes before adding saved variables or settings UI.
+
+
+## Asset Generation Plan (2026-07-19)
+The required asset is geometry, not artwork, so a coding agent can generate it programmatically; no art tools or BLP conversion needed.
+
+- Format: uncompressed 32-bit TGA with alpha, power-of-two dimensions; WoW retail loads these natively from the addon folder.
+- Asset: a small (e.g. 64x64) solid-white square with alpha-shaped corners (rounded radius or 45-degree chamfer), anti-aliased alpha along the corner edges. White so `SetVertexColor` tints it to any saved background color.
+- Generation: a short script computes per-pixel alpha from the corner shape and writes the TGA bytes directly. Keep the script in `internal_dev/tests_tools/` so the asset is reproducible; changing radius/chamfer size is a parameter change plus regenerate, not a redraw.
+- Runtime: one texture plus `SetTextureSliceMargins` matching the corner size (10.2.0+ API, preferred over a multi-texture NineSlice set). Corners stay fixed while edges/center stretch.
+- Limits: hand-drawn artwork (ornamented borders, artistic gradients) is out of scope for agent generation; only shape-defined alpha masks like this are.
+- Division of work: steps 1-2 of the revisit path are fully scriptable; steps 3-4 (in-game visual checks at multiple UI scales and frame sizes) remain manual.
