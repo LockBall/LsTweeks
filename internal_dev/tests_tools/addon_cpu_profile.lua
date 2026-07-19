@@ -258,6 +258,11 @@ local PROFILE_SECTIONS = {
         end,
     },
     -- Aura Frames module, including scan/render/CDM/profile helpers.
+    -- Caveat: hot-path files capture some M helpers as load-time locals
+    -- (clear_timer_text, set_bar_minmax_if_changed, set_shown_if_changed in
+    -- af_render/af_logic_ticker/af_logic_main), so those rows undercount; their
+    -- cost is still included in parent rows like render_aura_map and
+    -- tick_visible_icons. Do not read a near-zero row for them as "cheap".
     {
         key = "aura_frames",
         label = "Aura Frames",
@@ -282,15 +287,18 @@ local function get_enabled_target_names()
     return table.concat(names, ", ")
 end
 
+local function get_aura_timer_tick()
+    if not is_target_enabled("aura_frames") then return nil end
+    local M = addon.aura_frames
+    local timer_tick = M and M.db and M.db.aura_visible_icon_tick
+    return tonumber(timer_tick) or (M and M.defaults and M.defaults.aura_visible_icon_tick)
+        or (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.aura_visible_icon_tick)
+end
+
 local function print_target_settings()
-    if is_target_enabled("aura_frames") then
-        local M = addon.aura_frames
-        local timer_tick = M and M.db and M.db.aura_visible_icon_tick
-        timer_tick = tonumber(timer_tick) or (M and M.defaults and M.defaults.aura_visible_icon_tick)
-            or (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.aura_visible_icon_tick)
-        if timer_tick then
-            print(format("aura_timer_tick %.2fs", timer_tick))
-        end
+    local timer_tick = get_aura_timer_tick()
+    if timer_tick then
+        print(format("aura_timer_tick %.2fs", timer_tick))
     end
 end
 
@@ -364,6 +372,15 @@ local function report_profile(limit)
     print("|cff33ff99== LsTweeks CPU Profile report ==|r")
     print("elapsed " .. format("%.1fs", elapsed))
     print_target_settings()
+    local metadata = format("<!-- cpu-profile-run: elapsed=%.1f", elapsed)
+    if combat_elapsed > 0 then
+        metadata = metadata .. format(" combat=%.1f", combat_elapsed)
+    end
+    local timer_tick = get_aura_timer_tick()
+    if timer_tick then
+        metadata = metadata .. format(" timer_tick=%.2f", timer_tick)
+    end
+    print(metadata .. " -->")
     print(format(
         "combat %.1fs %.1f%% segments=%d active=%s",
         combat_elapsed,
@@ -381,8 +398,11 @@ local function report_profile(limit)
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
         local normalized = ""
+        if combat_elapsed > 0 then
+            normalized = format(" cb_msps=%.3f cb_callsps=%.2f", row.total / combat_elapsed, row.calls / combat_elapsed)
+        end
         if skyriding_elapsed > 0 then
-            normalized = format(" sv_msps=%.3f sv_callsps=%.2f", row.total / skyriding_elapsed, row.calls / skyriding_elapsed)
+            normalized = normalized .. format(" sv_msps=%.3f sv_callsps=%.2f", row.total / skyriding_elapsed, row.calls / skyriding_elapsed)
         end
         print(format(
             "%s calls=%d total=%.3fms avg=%.4fms max=%.3fms%s",

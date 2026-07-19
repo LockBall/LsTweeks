@@ -265,8 +265,9 @@ function frame_methods:CreateTexture(name, _layer)
     return t
 end
 
-function frame_methods:CreateFontString(name, _layer, _template)
+function frame_methods:CreateFontString(name, _layer, template)
     local fs = new_region("FontString", name, self)
+    fs.__template = template
     self.__regions[#self.__regions + 1] = fs
     return fs
 end
@@ -430,7 +431,7 @@ function frame_methods:SetUserPlaced() end
 function frame_methods:StartMoving() end
 function frame_methods:StartSizing() end
 function frame_methods:StopMovingOrSizing() end
-function frame_methods:SetClampedToScreen() end
+function frame_methods:SetClampedToScreen(...) record(self, "SetClampedToScreen", ...) end
 function frame_methods:SetClampRectInsets() end
 function frame_methods:SetHitRectInsets() end
 function frame_methods:SetResizeBounds() end
@@ -715,8 +716,8 @@ function PanelTemplates_SetNumTabs() end
 function PanelTemplates_UpdateTabs() end
 SOUNDKIT = setmetatable({}, { __index = function() return 0 end })
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
-GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall =
-    {}, {}, {}, {}, {}, {}, {}
+GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall,
+    GameTooltipHeaderText, GameTooltipText = {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 UIParent = CreateFrame("Frame", "UIParent")
 UIParent:SetSize(1920, 1080)

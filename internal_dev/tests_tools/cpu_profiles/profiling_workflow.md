@@ -31,6 +31,13 @@ in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`
 - The profiler prints clear start/report/stop markers and tracks combat time.
   Prefer combat-normalized comparisons for combat-driven modules:
   `metric total ms / combat seconds`, plus `metric calls / combat seconds`.
+- Reports print these per row as `cb_msps` / `cb_callsps` when combat time was
+  recorded, and emit a paste-ready `<!-- cpu-profile-run: ... -->` metadata line
+  for the run-history files; no manual normalization or metadata transcription
+  is needed.
+- Rows for helpers captured as load-time locals in hot-path files undercount
+  (their cost folds into parent rows); see the caveat comment beside the Aura
+  Frames section in `addon_cpu_profile.lua`.
 - Do not sum nested rows as exclusive module totals. Wrapped functions can call
   other wrapped functions, so use rows to identify hot paths and compare the same
   metric across similar runs.

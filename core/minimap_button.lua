@@ -22,6 +22,21 @@ local CONFIG = {
     tooltip_right_click = "Right-click: Quick Picks",
 }
 
+local TOOLTIP_LINES = {
+    {
+        left_text = CONFIG.title,
+        left_color = { r = 1, g = 0.82, b = 0 },
+    },
+    {
+        left_text = CONFIG.tooltip_left_click,
+        left_color = { r = 1, g = 1, b = 1 },
+    },
+    {
+        left_text = CONFIG.tooltip_right_click,
+        left_color = { r = 1, g = 1, b = 1 },
+    },
+}
+
 -- Private Helper: Toggle main frame visibility
 local function toggle_main_frame()
     if addon.main_frame then
@@ -107,7 +122,8 @@ end
 -- LDB DATA OBJECT
 -- LibDataBroker: Provides a data source for minimap buttons via LibDBIcon.
 -- OnClick handles opening the settings window from the minimap icon.
--- OnTooltipShow provides contextual help when hovering over the button.
+-- OnEnter/OnLeave keep help text on the shared addon-owned tooltip instead of
+-- LibDBIcon's GameTooltip, whose widget state can taint later Blizzard tooltips.
 addon.data_object = LDB:NewDataObject(CONFIG.name, {
     type = "launcher",
     icon = CONFIG.icon,
@@ -120,10 +136,12 @@ addon.data_object = LDB:NewDataObject(CONFIG.name, {
         end
     end,
 
-    OnTooltipShow = function(tooltip)
-        tooltip:AddLine(CONFIG.title)
-        tooltip:AddLine(CONFIG.tooltip_left_click, 1, 1, 1)
-        tooltip:AddLine(CONFIG.tooltip_right_click, 1, 1, 1)
+    OnEnter = function(owner)
+        addon.ShowOwnedTooltipLines(owner, TOOLTIP_LINES)
+    end,
+
+    OnLeave = function()
+        addon.HideOwnedTooltip()
     end,
 })
 

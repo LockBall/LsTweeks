@@ -257,21 +257,8 @@ end
 --#endregion MODULE STATE AND COOLDOWN REFRESH =================================
 --#region AURA ICON TOOLTIPS ===================================================
 
-local aura_tooltip
-
-local function get_aura_tooltip()
-    if not aura_tooltip then
-        aura_tooltip = addon.CreateRichTooltip(addon_name .. "AuraTooltip")
-        addon.ResetRichTooltip(aura_tooltip)
-    end
-    return aura_tooltip
-end
-
 local function hide_aura_tooltip()
-    if aura_tooltip then
-        aura_tooltip:Hide()
-        addon.ResetRichTooltip(aura_tooltip)
-    end
+    addon.HideOwnedTooltip()
 end
 
 local function is_usable_tooltip_number(value)
@@ -487,40 +474,13 @@ function M.prewarm_aura_tooltip_cache(frame)
     end)
 end
 
-local function add_cached_tooltip_data_lines(tooltip, lines)
-    if type(lines) ~= "table" or #lines == 0 then return false end
-
-    local added = false
-    for i = 1, #lines do
-        local line = lines[i]
-        local left_text = line and line.left_text
-        local right_text = line and line.right_text
-        if left_text and left_text ~= "" then
-            local left_color = line.left_color or NORMAL_FONT_COLOR
-            if right_text and right_text ~= "" then
-                local right_color = line.right_color or NORMAL_FONT_COLOR
-                tooltip:AddDoubleLine(
-                    left_text,
-                    right_text,
-                    left_color.r or 1,
-                    left_color.g or 1,
-                    left_color.b or 1,
-                    right_color.r or 1,
-                    right_color.g or 1,
-                    right_color.b or 1
-                )
-            else
-                tooltip:AddLine(left_text, left_color.r or 1, left_color.g or 1, left_color.b or 1, line.wrap_text == true)
-            end
-            added = true
-        end
-    end
-
-    return added
-end
-
-local function add_basic_aura_tooltip_lines(tooltip, obj)
-    tooltip:AddLine(get_safe_basic_aura_name(obj), 1, 1, 1)
+local function build_basic_aura_tooltip_lines(obj)
+    local lines = {
+        {
+            left_text = get_safe_basic_aura_name(obj),
+            left_color = { r = 1, g = 1, b = 1 },
+        },
+    }
     local remaining = get_safe_basic_aura_remaining(obj)
     local has_total_duration = is_usable_tooltip_number(obj.aura_duration) and obj.aura_duration > 0
     local has_remaining_time = is_usable_tooltip_number(remaining)
@@ -528,64 +488,33 @@ local function add_basic_aura_tooltip_lines(tooltip, obj)
         local remaining_str = is_usable_tooltip_number(remaining)
             and M.format_aura_tooltip_duration(remaining)
             or "?"
-        tooltip:AddLine("Remaining: " .. remaining_str, 0.7, 0.7, 1)
+        lines[#lines + 1] = {
+            left_text = "Remaining: " .. remaining_str,
+            left_color = { r = 0.7, g = 0.7, b = 1 },
+        }
         if has_total_duration then
-            tooltip:AddLine("Duration: " .. M.format_aura_tooltip_duration(obj.aura_duration), 0.7, 0.7, 1)
+            lines[#lines + 1] = {
+                left_text = "Duration: " .. M.format_aura_tooltip_duration(obj.aura_duration),
+                left_color = { r = 0.7, g = 0.7, b = 1 },
+            }
         end
     else
-        tooltip:AddLine("(Permanent)", 0.7, 0.7, 1)
+        lines[#lines + 1] = {
+            left_text = "(Permanent)",
+            left_color = { r = 0.7, g = 0.7, b = 1 },
+        }
     end
-end
-
-local function rich_tooltip_secure_call(method, tooltip, ...)
-    method(tooltip, ...)
-    return tooltip.NumLines and tooltip:NumLines() > 0
-end
-
-local function try_secure_rich_tooltip_call(method, tooltip, ...)
-    if not (securecallfunction and method and tooltip) then
-        return false
-    end
-    return securecallfunction(rich_tooltip_secure_call, method, tooltip, ...) == true
-end
-
-local function try_show_rich_aura_tooltip(tooltip, obj)
-    if is_usable_tooltip_number(obj.aura_index)
-        and try_secure_rich_tooltip_call(tooltip.SetUnitAuraByAuraInstanceID, tooltip, "player", obj.aura_index)
-    then
-        return true
-    end
-    addon.ResetRichTooltip(tooltip)
-    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-
-    if is_usable_tooltip_number(obj.aura_spell_id)
-        and try_secure_rich_tooltip_call(tooltip.SetSpellByID, tooltip, obj.aura_spell_id)
-    then
-        return true
-    end
-    addon.ResetRichTooltip(tooltip)
-    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-
-    return false
+    return lines
 end
 
 local function show_aura_icon_tooltip(obj)
-    local tooltip = get_aura_tooltip()
     if obj.tooltip_enabled == false then
         hide_aura_tooltip()
         return
     end
 
-    addon.ResetRichTooltip(tooltip)
-    tooltip:SetOwner(obj, "ANCHOR_BOTTOMRIGHT")
-
-    local cached_lines = cache_tooltip_data_lines(obj)
-    if not try_show_rich_aura_tooltip(tooltip, obj) then
-        if not add_cached_tooltip_data_lines(tooltip, cached_lines) then
-            add_basic_aura_tooltip_lines(tooltip, obj)
-        end
-    end
-    tooltip:Show()
+    local lines = cache_tooltip_data_lines(obj) or build_basic_aura_tooltip_lines(obj)
+    addon.ShowOwnedTooltipLines(obj, lines, "ANCHOR_BOTTOMRIGHT")
 end
 
 local function aura_frame_contains_mouse(frame)
