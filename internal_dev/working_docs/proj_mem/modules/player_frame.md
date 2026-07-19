@@ -2,6 +2,9 @@
 ## Table of Contents
 - [Settings And Defaults](#settings-and-defaults)
 - [Runtime Notes](#runtime-notes)
+  - [File Ownership And Settings UI](#file-ownership-and-settings-ui)
+  - [OOC Fade Runtime](#ooc-fade-runtime)
+  - [Health Gate](#health-gate)
 
 
 ## Settings And Defaults
@@ -17,11 +20,15 @@ Important `player_frame` keys:
 
 
 ## Runtime Notes
+### File Ownership And Settings UI
 - `modules/player_frame/pf_defaults.lua` owns Player Frame defaults. `modules/player_frame/pf_gui.lua` owns the settings panel. `modules/player_frame/pf_main.lua` owns portrait combat text hiding, controller hooks, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 - `pf_main.lua` registers the Player Frame settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Runtime side effects route through `M.update_player_frame()` / `M.set_module_enabled()` and stop at the module gate.
 - Player Frame settings layout uses the shared `addon.CreateSettingsGrid()` helper from `functions/layout_grid.lua`; keep checkbox rows, fade slider columns, and per-row heights parameterized there instead of chaining row frames by hand. The OOC Fade checkbox and fade sliders share one taller grid row.
-- PlayerFrame remains clickable while faded.
 - Portrait combat text suppression must use `HitIndicator:SetAlpha(0)` plus the HitIndicator `OnShow` hook, never `Hide()`, to stay taint-safe on the Blizzard PlayerFrame.
+
+
+### OOC Fade Runtime
+- PlayerFrame remains clickable while faded.
 - Player Frame fade combat/health events are registered only while `fade_out_of_combat` is enabled. When enabling fade, refresh combat state from `InCombatLockdown()` because the module may not have been receiving regen events while disabled.
 - Player Frame fade should not install its `PlayerFrame:HookScript("OnShow", ...)` hook until `fade_out_of_combat` is enabled.
 - OOC fade is delay plus fade length. Combat always cancels pending fade work and restores `PlayerFrame` alpha to `1`.
@@ -30,6 +37,9 @@ Important `player_frame` keys:
 - Combat state for Player Frame fade is owned by `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` with `InCombatLockdown()` fallback. Do not use `UnitAffectingCombat("player")`; it can remain sticky after regen and block post-combat refade. Setting-change helpers must refresh this guard before state-specific work so delayed/fading state cannot survive combat re-entry before the normal event path runs.
 - On `PLAYER_REGEN_ENABLED`, schedule the delay and set visible alpha, but do not immediately call the combat-gated full update while the delay is active; transient combat state can cancel the new delay timer.
 - Do not use `CreateAnimationGroup()` / `AnimationGroup:Play()` on `PlayerFrame`; it tainted Blizzard unit-frame heal prediction on reload. Use the module-owned `OnUpdate` fade path instead.
+
+
+### Health Gate
 - Retail 12.x health APIs can return Secret Values from tainted addon paths. Player Frame health fade is strictly OOC: combat cancels fade and sets plain alpha `1`.
 - In-game testing showed `UnitHealth`, `UnitHealthPercent`, `CurveConstants.ScaleTo100`, custom `UnitHealthPercent` curves, and PlayerFrame health bars all return secret current-health values OOC. The usable pattern is pass-through only: compute a normal time-based base alpha, build a `C_CurveUtil` curve where low health maps to `1` and health above the threshold eases toward the base alpha, then pass `UnitHealthPercent("player", true, curve)` directly to `PlayerFrame:SetAlpha()`.
 - Health-gate API fallback is intentionally fail-visible: latest Retail is the supported target and `UnitHealthPercent` / `C_CurveUtil` are expected to exist; if the gate cannot be evaluated, keep `PlayerFrame` visible rather than applying an unsafe faded alpha.

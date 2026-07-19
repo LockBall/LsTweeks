@@ -9,14 +9,14 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 
 ## Session Start
-1. Run `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1` once. It prints this file, `git status --short`, and `code_map.md` `## Read-In Shortcuts`; do not re-read those separately or load the whole code map as baseline context. (Fallback without the script: `git status --short`, then `doc_section.ps1 internal_dev/working_docs/proj_mem/code_map.md "Read-In Shortcuts"`.)
+1. Baseline = this file + `git status --short` + `code_map.md` `## Read-In Shortcuts` (all printed by `internal_dev/tests_tools/agent_startup.ps1`; run the pieces manually only if the script fails). Do not re-read baseline pieces or load the whole code map.
 2. `ToDo/` holds review notes and findings; read it only when the user directs you there or the request routes to a specific note.
 3. Follow every route directly matched by the request. Add another route only when the request also matches it.
 
 | Request trigger | Required targeted read |
 | --- | --- |
-| Module code or module behavior | Matching module memory section and source outline before broad source reads |
-| Shared helper, core, or settings factory | `code_map.md` `## Core And Shared Helpers`, then source outline |
+| Module code or module behavior | Matching module memory section (list `##` headings first on large files) and source outline before broad source reads |
+| Shared helper, core, settings factory, or shared widget (button, checkbox, slider, dropdown, color picker, panel, grid) | `code_map.md` `## Core And Shared Helpers`, then source outline |
 | Session/doc workflow, ownership, or scratchpad rules | `project.md` `### Workflow` |
 | Editing, creating, or reorganizing any doc/memory markdown | `project.md` `### Documentation Rules` |
 | Adding media, referencing external code, or Blizzard assets | `project.md` `### Asset And Reference Rules` |

@@ -14,14 +14,11 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 
 ## Read-In Shortcuts
-- Baseline after `agent_start.md`: run the worktree check, then read this section only. Defer all other project docs and code-map sections until the request routes to them.
+Reference routes not covered by the `agent_start.md` routing table; that table is the primary router.
 - Section reader: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 <markdown-file> "<heading>"`; use `-List` to list stable `##` headings.
 
 | Request trigger | Next targeted read |
 | --- | --- |
-| Project workflow, docs ownership, validation, packaging, LuaLS/Ketho, or durable cross-module rule | Matching `project.md` section: `Project Operations`, `Project Overview`, or `Shared Architecture` |
-| Shared helper, settings control, layout, panel, tooltip, button, checkbox, slider, dropdown, color picker, reset panel, or table/default utility | `## Core And Shared Helpers` |
-| Feature module | `## Feature Modules`, then matching module-memory heading; use `rg -n "^##" <memory-file>` before opening a large memory file |
 | Aura Frames CDM regression | `internal_dev/tests_tools/aura_frames_cdm_regression.md` |
 | Audio Volumes public sound asset or preset | `modules/audio_volumes/sounds/sound_reference.md` |
 | Public credits/attribution | `sources.md` |
@@ -29,10 +26,8 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 | CPU profiling workflow or run history | `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, then `internal_dev/tests_tools/cpu_profiles/` |
 | Sound ID lookup | `internal_dev/working_docs/SoundKitConstants.lua` |
 | Packaging policy/doc | `internal_dev/tests_tools/packaging/package_me.md` |
-| Shell, sandbox, LuaLS/Ketho, packaging, or tool recovery problem | `internal_dev/tests_tools/tools_notes.md` |
 
-- For source work, run a source outline before broad file reads. Outlines are the source-file TOC; every project Lua file has a short responsibility header and every declared function belongs to a named `--#region`. Keep those markers current instead of duplicating detailed source maps in docs.
-- Documentation/read-in policy owner: `project.md` `### Documentation Rules`.
+- Source outlines are the source-file TOC: every project Lua file has a short responsibility header and every declared function belongs to a named `--#region`. Keep those markers current instead of duplicating detailed source maps in docs.
 
 
 ## Fast Commands
