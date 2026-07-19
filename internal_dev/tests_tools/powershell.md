@@ -28,6 +28,7 @@ PowerShell notes for repo-local scripts, validation helpers, and coding-agent sh
   ```powershell
   pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 -Outline modules/aura_frames/af_render.lua
   ```
+- `-Outline` accepts multiple files in one call; batch related files instead of invoking per file.
 - Treat the live outline as the source-file TOC. Add manual Lua TOCs only if a generated/validated TOC workflow is introduced.
 
 

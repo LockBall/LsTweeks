@@ -32,19 +32,20 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 | Shell, sandbox, LuaLS/Ketho, packaging, or tool recovery problem | `internal_dev/tests_tools/tools_notes.md` |
 
 - For source work, run a source outline before broad file reads. Outlines are the source-file TOC; every project Lua file has a short responsibility header and every declared function belongs to a named `--#region`. Keep those markers current instead of duplicating detailed source maps in docs.
-- Documentation/read-in policy owner: `agent_start.md` `## Documentation Rules`.
+- Documentation/read-in policy owner: `project.md` `### Documentation Rules`.
 
 
 ## Fast Commands
 These are repo-local or project-specific commands. Platform-provided agent tools are session context, not project read-in.
 
+- Session baseline (agent_start.md + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1`
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
 - Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
 - Fast validation (includes headless Lua tests; add `-SkipTests` to skip them): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
 - Changed-file fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
-- Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file>]`
+- Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file> [<lua-file> ...]]`; pass several files to one `-Outline` call instead of invoking per file
 - Memory section size check (flags oversized `proj_mem` `##`/`###` sections; included in fast validation): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_memory_sections.ps1`
 - Diff whitespace checks: `git diff --check` and `git diff --cached --check`
 - Fast validation plus package build/verify: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package`
@@ -107,6 +108,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines with named functions.
 - `doc_section.ps1`: prints one named `##` markdown section or lists `##` headings.
+- `agent_startup.ps1`: one-shot session baseline printer (agent_start.md, worktree status, Read-In Shortcuts); read-only.
 - `packaging/`: release package builder, policy, and verifier.
 - `lua_checks/`: LuaLS/Ketho helper and ignored generated diagnostics.
 - `internal_dev/working_docs/SoundKitConstants.lua`: large searchable sound reference; search only when sound IDs are needed.

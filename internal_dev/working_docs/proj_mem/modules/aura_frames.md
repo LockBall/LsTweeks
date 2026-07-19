@@ -110,7 +110,7 @@ Important `aura_frames` keys:
 
 
 ## Position, Drag, Resize
-- Aura frame positions are stored as unscaled UIParent-center coordinates.
+- Aura frame positions are stored as unscaled UIParent-center coordinates: `SetPoint("TOPLEFT", UIParent, "CENTER", pos.x / scale, pos.y / scale)`. Chosen because center-relative values are small and resolution-independent; do not switch to BOTTOMLEFT origin without updating defaults, saved positions, and slider ranges together.
 - CDM default positions are dynamic: new/missing CDM positions are placed outside the current main GUI right edge with a 32px gap via `M.refresh_cdm_default_positions()` / `M.apply_cdm_default_positions_to_db()`.
 - New custom frame default positions also use the current main GUI right edge with a 32px gap; existing saved/profile custom positions are not overwritten.
 - Use `M.apply_frame_position()`, `M.read_frame_position()`, `M.sync_frame_position_to_db()`, `M.apply_saved_frame_position()`, and `M.sync_frame_position_from_drag()` rather than branching on preset vs custom manually.

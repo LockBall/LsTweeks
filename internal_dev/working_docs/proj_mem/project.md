@@ -5,13 +5,17 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 ## Table of Contents
 - [Project Operations](#project-operations)
   - [Workflow](#workflow)
+  - [Documentation Rules](#documentation-rules)
+  - [Asset And Reference Rules](#asset-and-reference-rules)
   - [Ketho / LuaLS](#ketho--luals)
   - [Packaging / Release](#packaging--release)
 - [Project Overview](#project-overview)
   - [AddOn Summary](#addon-summary)
   - [File Map](#file-map)
 - [Shared Architecture](#shared-architecture)
-  - [Core Architecture Rules](#core-architecture-rules)
+  - [Module Structure And Registration](#module-structure-and-registration)
+  - [Runtime And Performance Rules](#runtime-and-performance-rules)
+  - [Data, Resets, And Profiles](#data-resets-and-profiles)
   - [GUI/Layout Rules](#guilayout-rules)
   - [Key WoW APIs And Lessons](#key-wow-apis-and-lessons)
 - [Agent Start](agent_start.md)
@@ -43,6 +47,38 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - PowerShell/newlines/line endings/regions: `internal_dev/tests_tools/powershell.md`.
 - Validation commands: `code_map.md` `## Fast Commands`.
 - CPU profiling: workflow in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, run history in `internal_dev/tests_tools/cpu_profiles/`, durable conclusions in module memory.
+
+
+### Documentation Rules
+Read this section before editing, creating, or reorganizing any doc/memory markdown (per the agent_start hard gate).
+
+- `agent_start.md`: single entry point.
+- `project.md`: project-wide architecture, workflow, file maps, packaging, LuaLS/Ketho notes, durable cross-module lessons.
+- `code_map.md`: compact file ownership, command routing, token-saving context shortcuts.
+- Module memory files: module-specific settings, runtime lessons, regressions, ownership details.
+- Project read-in docs: repo-local tools, validation commands, known failure modes, project-specific command rules. Keep tool-owned notes under `internal_dev/tests_tools/`; exclude platform-provided session tools.
+- Memory/doc size: do not split files for token savings; use markdown headings, source responsibility headers, and `--#region` markers.
+- Routing table size: keep `agent_start.md` `## Session Start` and `code_map.md` `## Read-In Shortcuts` tables at roughly one screen each. Push new detail into a `project.md` section/subsection or module memory instead of growing a routing table row-by-row; add a routing row only when a new section/file needs a lookup path.
+- Path references: use the shortest unambiguous filename/path after the first full path or when section context already scopes the directory.
+- Command references: keep copy/paste command strings in command-owner docs such as `code_map.md`; use command names elsewhere.
+- Completed working logs: prune or summarize old completion bullets after the durable result is captured in `proj_mem`.
+- List/table wording: prefer compact labels over explanatory sentences when meaning stays clear.
+- Opportunistic compression: when updating a proj_mem section whose code/behavior this session actually worked with, also compress that section's prose to compact labels. Only compress bullets fully understood in this session; keep qualifiers and Why text that guard against a known failure; keep the diff small and reviewable. Never run bulk compression passes over sections read cold.
+- Opportunistic deduplication: when a bullet being edited duplicates content owned by another section or file, promote-then-point — first verify the owning location states the complete lesson including the Why, add any gap there, then replace the duplicate with a one-line rule statement plus pointer. Never delete first; skip when coverage is uncertain.
+- Markdown structure: one `#` title; multi-section docs include `## Table of Contents` and stable `##` headings.
+- Token measurement: GUI-reported agent-token measurements only; no rough character-count/file-size estimates.
+- Rule phrasing: prefer positive gating (`Only do X when Y`) for conditional guidance; keep direct negative language for hard prohibitions.
+- `ToDo/`: temporary active review context and TODO/follow-up items.
+- Future work: active/dormant TODOs belong in review notes; durable `proj_mem` can point to them but should not be the only owner.
+- Root-level markdown files such as `README.md` and `sources.md` are public-facing release/user docs, not internal agent memory.
+- Forbidden doc content: secrets, personal data, machine-local scratch notes, session logs.
+- Durable markdown spacing: no blank lines between list items or between a section heading and its first item; two blank lines between sections. Active scratchpads/working notes may use readable spacing while being edited; compact before promotion to durable memory.
+
+
+### Asset And Reference Rules
+- Use external projects, mirrors, examples, and API sources as references only. Do not copy code from them unless they are intentionally added as compatible, attributed dependencies.
+- Treat Blizzard assets and mirrors of Blizzard assets as reference material, not open-source vendorable assets.
+- Do not add copied Blizzard art assets unless the project has an explicit, reviewed packaging/legal plan for that asset.
 
 
 ### Ketho / LuaLS
@@ -100,7 +136,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 
 
 ## Shared Architecture
-### Core Architecture Rules
+### Module Structure And Registration
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
 - Avoid accidental globals in addon files. Keep helpers, constants, builder functions, and cached API references `local` by default; expose values through `addon` or a module table `M` only when another file genuinely needs that public contract.
 - Module file naming pattern: use `<prefix>_defaults.lua` for DB defaults/metadata, `<prefix>_gui*.lua` for settings UI, `<prefix>_logic_<subsystem>.lua` for larger runtime subsystems, and `<prefix>_main.lua` for entrypoint/controller/bootstrap. Avoid broad `logic.lua`, `runtime.lua`, or `functions.lua` buckets unless the file is genuinely a small shared-helper owner; when a module grows, split by owned subsystem before adding vague catch-all files.
@@ -108,37 +144,38 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Feature modules are listed in `addon.FEATURE_MODULES` (`core/init.lua`) and can be disabled with `Ls_Tweeks_DB.modules.<module_key> = false`. Categories for feature modules pass `opts.module_key`; `core/main_frame.lua` keeps disabled module pages visible and selectable in the sidebar, greys them out, and overlays the selected page so options can be inspected but not changed.
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 - Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. Use `/lst status <module key or label>` for focused diagnostics, such as `/lst status objectives`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
+- When a factory is constructed before a provider function exists in TOC order, pass a closure that resolves the provider at call time. Passing the current field value captures `nil` permanently even if the module defines that function later.
+- Before handoff, do a focused cleanup pass for duplicated helpers, stale fallbacks, dead status fields, repeated formatting, and broad API fallbacks.
+
+
+### Runtime And Performance Rules
 - Before adding a small feature with runtime side effects, define its runtime contract: owned events, hooks, timers, queued work, off-state behavior, module-disable behavior, and restore path.
 - When adding or changing runtime work in a feature module, audit disabled behavior before finishing: events, hooks, timers, callbacks, tickers, queued `C_Timer` work, frames, and status fields must either stop at disable time or cheaply no-op before doing owned work.
 - Event, hook, timer, ticker, `OnUpdate`, scan, and layout paths must make unchanged state cheap first. Compare the smallest stable state before frame writes, Blizzard layout calls, follow-up scheduling, table rebuilds, or diagnostic string formatting. Use cached signatures, dirty flags, or explicit state fields for hot/noisy paths; keep one-shot settings-page code simple unless it fans out into runtime refresh work.
 - Filter early by default: use the narrowest event registration available, then reject disabled, irrelevant, invisible, stale, or unchanged work at the entry point before DB/config resolution, allocations, scheduling, scans, or frame writes. Add broader work only when the behavior requires it.
-- Before handoff, do a focused cleanup pass for duplicated helpers, stale fallbacks, dead status fields, repeated formatting, and broad API fallbacks.
-- Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
-- Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
-- Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.
-- When a factory is constructed before a provider function exists in TOC order, pass a closure that resolves the provider at call time. Passing the current field value captures `nil` permanently even if the module defines that function later.
-- Keep setting ranges, shared widget footprints, runtime clamp metadata, and tolerance constants single-owned and domain-named.
 - Timed visual progress should use real elapsed time, aura expiration, or WoW duration objects. Fixed-interval timers belong to debounces, event buckets, polling, retry/follow-up work, and preview restore delays where nominal cadence is the contract.
 - Delayed work and state helpers must be safe when called in isolation: gate cheap no-op states before queuing, stop stale tickers as soon as no work remains, refresh combat/enablement/lifecycle guards inside helpers, and add headless tests when the harness can model the risk.
 - Shared timing values live in `addon.UPDATE_INTERVALS`; do not hardcode repeated refresh/debounce delays.
-  - Reusable profile mechanics live in `functions/profiles.lua` through `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`. Each module keeps its own profile file for its explicit snapshot contents and post-load runtime refresh. The addon is unreleased: do not add saved-data migrations or schema-version handling; replace incompatible local profiles instead.
-  - Profile/default imports must select a fallback only when the source key is `nil`; explicit `false` is saved data and must survive the copy.
-- When a reset, profile system, preview workflow, or shared UI factory changes, review five cross-module concerns before handoff: live DB references after table replacement; ownership and cancellation of delayed restores; symmetry between normal and temporary-state reads/writes; reset/profile-load synchronization of controls, runtime, and session flags; and every consumer of the changed shared factory. Keep the durable rule here and record only unresolved module-specific work in a ToDo review.
 - Behavior-specific runtime timing aliases live in `addon.UPDATE_INTERVALS` immediately after the generic buckets. Use aliases such as `aura_visible_icon_tick`, `aura_event_bucket`, `aura_hover_check`, `player_frame_fade_tick`, and `skyriding_vigor_progress` as profiling/test adjustment points instead of changing generic buckets directly.
 - Cache hot globals at file top (`local floor = math.floor`, `local GetTime = GetTime`, etc.).
-- Keep high-frequency runtime paths narrow. If code runs every frame/tick or many
-  times per second, avoid repeated DB/style/layout/atlas/config resolution there;
-  do that work in a lower-frequency refresh/setup path and pass or store the
-  resolved state for the hot path. Make the mutability boundary explicit first,
-  such as disabling settings edits during an active runtime state while still
-  allowing controlled test modes.
+- Keep high-frequency runtime paths narrow. If code runs every frame/tick or many times per second, avoid repeated DB/style/layout/atlas/config resolution there; do that work in a lower-frequency refresh/setup path and pass or store the resolved state for the hot path. Make the mutability boundary explicit first, such as disabling settings edits during an active runtime state while still allowing controlled test modes.
 - When a settings control has both a broad runtime lock and a local eligibility rule, register the local rule with the centralized gate. Local state synchronization must reapply that composite gate rather than directly enabling the control.
 - Give each direct `OnUpdate` assignment one owning subsystem. Use `HookScript` when extending a Blizzard-owned frame, or a dedicated driver frame when independent addon lifecycles need concurrent updates; only the owner may clear its callback.
 - Programmatic control synchronization may suppress callbacks only for the setter call. Restore the prior suppression state through a protected cleanup path and rethrow setter errors, so a failed sync cannot mute later user input.
-- Normalize persisted RGBA tables at each module startup/profile-import boundary. Clamp readable components to 0–1 before cached or runtime visual paths use them; do not rely solely on a color picker to sanitize manually edited or malformed saved variables.
 - Release initialization-only listeners such as `ADDON_LOADED` as soon as their own initialization completes. Retain one only for a named later-load dependency and document that dependency beside the listener.
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore addon-owned suppression state and let Blizzard handlers run; module-specific stricter rules such as Aura Frames' `BuffFrame` / `DebuffFrame` handling take precedence.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
+
+
+### Data, Resets, And Profiles
+- Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
+- Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
+- Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.
+- Keep setting ranges, shared widget footprints, runtime clamp metadata, and tolerance constants single-owned and domain-named.
+- Reusable profile mechanics live in `functions/profiles.lua` through `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`. Each module keeps its own profile file for its explicit snapshot contents and post-load runtime refresh. The addon is unreleased: do not add saved-data migrations or schema-version handling; replace incompatible local profiles instead.
+- Profile/default imports must select a fallback only when the source key is `nil`; explicit `false` is saved data and must survive the copy.
+- When a reset, profile system, preview workflow, or shared UI factory changes, review five cross-module concerns before handoff: live DB references after table replacement; ownership and cancellation of delayed restores; symmetry between normal and temporary-state reads/writes; reset/profile-load synchronization of controls, runtime, and session flags; and every consumer of the changed shared factory. Keep the durable rule here and record only unresolved module-specific work in a ToDo review.
+- Normalize persisted RGBA tables at each module startup/profile-import boundary. Clamp readable components to 0–1 before cached or runtime visual paths use them; do not rely solely on a color picker to sanitize manually edited or malformed saved variables.
 
 
 ### GUI/Layout Rules
@@ -168,6 +205,7 @@ Violations here can create invisible or unstable controls.
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
+- Spell APIs: legacy globals `GetSpellInfo`, `GetSpellTexture`, and similar are removed on modern retail (11.0+); use `C_Spell.GetSpellInfo(spellId)` (returns an info table with `name`, `iconID`, etc.), `C_Spell.GetSpellTexture`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`. Never cache the legacy globals; caching captures `nil` and fails at call time.
 - Tooltip APIs: use addon-owned tooltips. Rich renderers such as `SetUnitAuraByAuraInstanceID()` or `SetSpellByID()` must run through `securecallfunction` wrappers with a `C_TooltipInfo` line-cache fallback.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
