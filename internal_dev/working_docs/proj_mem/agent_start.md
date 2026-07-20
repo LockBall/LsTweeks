@@ -44,6 +44,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 ## Collaboration Rules
 - Treat user statements as hypotheses until code, docs, runtime behavior, or API annotations confirm them. Correct wrong assumptions directly.
 - Prefer concrete evidence over memory or inference, especially for WoW APIs, taint/combat behavior, packaging contents, and generated diagnostics.
+- Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Example: the "never any GameTooltip" rule was correctly narrowed to allow validated shared-native delegates (2026-07-19).
 - Preserve user changes. Do not revert unrelated edits while cleaning, refactoring, or packaging.
 - After significant changes, provide a concise git commit message.
 - When suggesting a commit message, provide one complete combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives. Do not show both a short and long option.
