@@ -21,7 +21,8 @@ What could I have done differently to make this session more efficient ?
 read agent read-in and consider how we can decrease the number of tokens used for agent start / read-in without sacrificing capability, functionality, or intent
 
 
-discuss and record only.
+- discuss and record only.
+- lets work through them, consult me on anything that is high risk or needs clarification
 
 
 skip package rebuilds and checks for these minor edits and dont announce it after changes.
@@ -39,8 +40,6 @@ Read & follow internal_dev/working_docs/proj_mem/agent_start.md.
 
 x_X module, verify existing findings, check for issues, dead code, repeated code that should be consolidated or a function and especially CPU inefficiencies
 
-lets work through them, consult me on anything that is high risk or needs clarification
-
 
 
 consider having a simple canary instruction that an agent will drop first when it starts to get overwhelmed, e.g. start every response with "OK John"
@@ -52,4 +51,3 @@ https://www.reddit.com/r/ClaudeAI/comments/1u3euwc/after_10_years_as_an_engineer
 
 Karpathy's CLAUDE.md
 
-dynamic workflows

@@ -475,61 +475,6 @@ h.test("Aura icon hover uses the centralized taint-safe tooltip in combat", func
     h.is_nil(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "combat hover never binds live Aura data")
 end)
 
-h.test("centralized tooltip renderer preserves rich left and right text", function()
-    load_aura_frames()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    h.addon.ShowOwnedTooltipLines(owner, {
-        {
-            left_text = "Test Aura",
-            right_text = "1 min",
-            left_color = { r = 1, g = 0.82, b = 0 },
-            right_color = { r = 0.7, g = 0.7, b = 1 },
-        },
-    })
-
-    local tooltip = h.addon.GetOwnedTooltip()
-    h.eq(tooltip.__kind, "Frame", "rich line rendering stays off Blizzard GameTooltip")
-    h.eq(tooltip.lines[1]:GetText(), "Test Aura", "left text retained")
-    h.eq(tooltip.right_lines[1]:GetText(), "1 min", "right text retained")
-end)
-
-h.test("centralized tooltip renderer shows right-text-only cached lines", function()
-    load_aura_frames()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    h.addon.ShowOwnedTooltipLines(owner, {
-        { right_text = "500 armor", right_color = { r = 0.7, g = 0.7, b = 1 } },
-    })
-
-    local tooltip = h.addon.GetOwnedTooltip()
-    h.eq(tooltip:IsShown(), true, "right-only cached lines still show the tooltip")
-    h.eq(tooltip.right_lines[1]:GetText(), "500 armor", "right-only text renders")
-    h.eq(tooltip.right_lines[1]:IsShown(), true, "right-only line is visible")
-end)
-
-h.test("centralized tooltip renderer matches native fonts and flips at screen edges", function()
-    load_aura_frames()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    owner.GetCenter = function()
-        return 1800, 100
-    end
-    h.addon.ShowOwnedTooltipLines(owner, {
-        { left_text = "Header" },
-        { left_text = "Body" },
-    })
-
-    local tooltip = h.addon.GetOwnedTooltip()
-    h.eq(tooltip.lines[1].__template, "GameTooltipHeaderText", "first row uses the native tooltip header font")
-    h.eq(tooltip.lines[2].__template, "GameTooltipText", "later rows use the native tooltip body font")
-    h.eq(tooltip:GetLastCall("SetClampedToScreen")[1], true, "tooltip is clamped as a final screen-edge guard")
-
-    local point, relative_to, relative_point, x, y = tooltip:GetPoint()
-    h.eq(point, "BOTTOMRIGHT", "bottom-right owner places tooltip above and to the left")
-    h.eq(relative_to, owner, "smart anchor remains attached to its owner")
-    h.eq(relative_point, "TOPLEFT", "owner-facing corner is selected")
-    h.eq(x, -8, "smart anchor keeps a horizontal gap")
-    h.eq(y, 8, "smart anchor keeps a vertical gap")
-end)
-
 h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }

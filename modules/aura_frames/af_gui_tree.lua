@@ -516,11 +516,20 @@ function M.build_frames_tab(p, frames_data)
         addon.ApplyStandardButtonStyle(sync_cdm_btn)
     end
     sync_cdm_btn:SetScript("OnEnter", function(self)
-        local tooltip = addon.GetOwnedTooltip()
-        addon.ShowOwnedTooltip(self, "Sync to CDM", nil)
-        tooltip:AddLine("Rebuilds addon cooldown frames from the live WoW Cooldown Manager viewers.", nil, nil, nil, true)
-        tooltip:AddLine("Use after reordering icons inside a CDM group; group changes usually update automatically.", nil, nil, nil, true)
-        tooltip:Show()
+        addon.ShowOwnedTooltipLines(self, {
+            {
+                left_text = "Sync to CDM",
+                left_color = { r = 1, g = 0.82, b = 0 },
+            },
+            {
+                left_text = "Rebuilds addon cooldown frames from the live WoW Cooldown Manager viewers.",
+                wrap_text = true,
+            },
+            {
+                left_text = "Use after reordering icons inside a CDM group; group changes usually update automatically.",
+                wrap_text = true,
+            },
+        })
     end)
     sync_cdm_btn:SetScript("OnLeave", function()
         addon.HideOwnedTooltip()

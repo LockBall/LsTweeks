@@ -13,17 +13,31 @@ local TOOLTIP_MAX_TEXT_WIDTH = 224
 local TOOLTIP_MIN_WIDTH = 120
 local TOOLTIP_TEXT_INSET = 8
 local TOOLTIP_COLUMN_GAP = 10
+local TOOLTIP_MIN_COLUMN_WIDTH = 40
 
 local function get_safe_string_width(font_string)
     local width = font_string.GetStringWidth and font_string:GetStringWidth()
     if type(width) ~= "number"
         or (issecretvalue and issecretvalue(width))
         or width < 0
-        or width > TOOLTIP_MAX_TEXT_WIDTH
     then
-        return TOOLTIP_MAX_TEXT_WIDTH
+        return TOOLTIP_MAX_TEXT_WIDTH, true
     end
-    return width
+    if width > TOOLTIP_MAX_TEXT_WIDTH then
+        return TOOLTIP_MAX_TEXT_WIDTH, true
+    end
+    return width, false
+end
+
+local function get_safe_string_height(font_string)
+    local height = font_string.GetStringHeight and font_string:GetStringHeight()
+    if type(height) ~= "number"
+        or (issecretvalue and issecretvalue(height))
+        or height < 16
+    then
+        return 16
+    end
+    return height
 end
 
 -- This is intentionally a plain frame, rather than a GameTooltip.  Retail's
@@ -89,7 +103,10 @@ function addon.CreateOwnedTooltip(name, parent)
         self:SetPoint(point, relative_to, relative_point, x, 0)
     end
 
-    function tooltip:AddLine(text, r, g, b, wrap)
+    -- The wrap argument is accepted for caller compatibility but sizing is
+    -- measurement-driven: lines whose natural width fits the cap size to it,
+    -- and only cap-exceeding lines take the full width and wrap.
+    function tooltip:AddLine(text, r, g, b, _wrap)
         local index = (self.line_count or 0) + 1
         local line = self.lines[index]
         if not line then
@@ -104,26 +121,22 @@ function addon.CreateOwnedTooltip(name, parent)
         local offset_y = self.content_height or 0
         line:ClearAllPoints()
         line:SetPoint("TOPLEFT", self, "TOPLEFT", TOOLTIP_TEXT_INSET, -(offset_y + 7))
-        line:SetWordWrap(wrap == true)
-        -- Wrapped lines take the full text width; unwrapped lines size naturally
-        -- so the tooltip can shrink to its widest line like native tooltips.
-        line:SetWidth(wrap == true and TOOLTIP_MAX_TEXT_WIDTH or 0)
+        line:SetWordWrap(false)
+        line:SetWidth(0)
         line:SetText(text or "")
         line:SetTextColor(r or 1, g or 1, b or 1)
         line:Show()
 
-        local line_width = wrap == true and TOOLTIP_MAX_TEXT_WIDTH or get_safe_string_width(line)
+        local line_width, width_was_bounded = get_safe_string_width(line)
+        line:SetWidth(line_width)
+        if width_was_bounded then
+            line:SetWordWrap(true)
+        end
         if line_width > (self.content_width or 0) then
             self.content_width = line_width
         end
 
-        local line_height = line.GetStringHeight and line:GetStringHeight()
-        if type(line_height) ~= "number"
-            or (issecretvalue and issecretvalue(line_height))
-            or line_height < 16
-        then
-            line_height = 16
-        end
+        local line_height = get_safe_string_height(line)
         self.row_offsets[index] = offset_y
         self.line_count = index
         self.content_height = offset_y + line_height
@@ -148,16 +161,46 @@ function addon.CreateOwnedTooltip(name, parent)
         right_line:SetTextColor(rr or 1, rg or 1, rb or 1)
         right_line:Show()
 
-        local left_width = get_safe_string_width(left_line)
-        local right_width = get_safe_string_width(right_line)
-        local row_width = left_width + TOOLTIP_COLUMN_GAP + right_width
-        if row_width > TOOLTIP_MAX_TEXT_WIDTH then
-            left_line:SetWidth(TOOLTIP_MAX_TEXT_WIDTH - TOOLTIP_COLUMN_GAP - right_width)
-            row_width = TOOLTIP_MAX_TEXT_WIDTH
+        local has_left = left ~= nil and left ~= ""
+        local has_right = right ~= nil and right ~= ""
+        local left_width, left_was_bounded = 0, false
+        local right_width, right_was_bounded = 0, false
+        if has_left then
+            left_width, left_was_bounded = get_safe_string_width(left_line)
         end
+        if has_right then
+            right_width, right_was_bounded = get_safe_string_width(right_line)
+        end
+
+        local gap = has_left and has_right and TOOLTIP_COLUMN_GAP or 0
+        local available_width = TOOLTIP_MAX_TEXT_WIDTH - gap
+        local left_layout_width = left_width
+        local right_layout_width = right_width
+        if left_layout_width + right_layout_width > available_width then
+            if left_layout_width <= available_width - TOOLTIP_MIN_COLUMN_WIDTH then
+                right_layout_width = available_width - left_layout_width
+            elseif right_layout_width <= available_width - TOOLTIP_MIN_COLUMN_WIDTH then
+                left_layout_width = available_width - right_layout_width
+            else
+                left_layout_width = math.floor(available_width / 2)
+                right_layout_width = available_width - left_layout_width
+            end
+        end
+
+        left_line:SetWidth(left_layout_width)
+        left_line:SetWordWrap(left_was_bounded or left_layout_width < left_width)
+        right_line:SetWidth(right_layout_width)
+        right_line:SetWordWrap(right_was_bounded or right_layout_width < right_width)
+
+        local row_width = left_layout_width + gap + right_layout_width
         if row_width > (self.content_width or 0) then
             self.content_width = row_width
         end
+
+        local row_height = math.max(get_safe_string_height(left_line), get_safe_string_height(right_line))
+        local offset_y = self.row_offsets[index] or 0
+        self.content_height = offset_y + row_height
+        self:SetHeight(self.content_height + 12)
     end
 
     function tooltip:ApplyContentWidth()
