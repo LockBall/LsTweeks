@@ -1,6 +1,6 @@
 -- Aura Frames setting range tests: verifies centralized numeric metadata drives public clamp helpers.
 -- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
----@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-global, undefined-field
 
 
 --#region FILE CONTENTS ======================================================
@@ -438,7 +438,7 @@ h.test("world-entry tooltip cache eviction retains reusable spell lines", functi
     h.eq(M._tooltip_data_lines_cache["spell:303"], spell_lines, "spell entry survives world entry")
 end)
 
-h.test("Aura icon hover uses the centralized taint-safe tooltip outside combat", function()
+h.test("Aura icon hover uses the native secure tooltip delegate outside combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -450,13 +450,13 @@ h.test("Aura icon hover uses the centralized taint-safe tooltip outside combat",
 
     icon:GetScript("OnEnter")(icon)
 
-    local tooltip = h.addon.GetOwnedTooltip()
-    h.eq(tooltip.__kind, "Frame", "Aura tooltip avoids Blizzard GameTooltip widget state")
-    h.is_nil(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "Aura hover never binds live data to a GameTooltip")
-    h.eq(tooltip.lines[1]:GetText(), "Test Aura", "safe Aura details still render")
+    local call = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    h.eq(call[1], "player", "native Aura tooltip uses the player unit")
+    h.eq(call[2], 101, "native Aura tooltip receives the rendered Aura instance")
+    h.eq(GameTooltip:IsShown(), true, "native Aura tooltip is shown")
 end)
 
-h.test("Aura icon hover uses the centralized taint-safe tooltip in combat", function()
+h.test("Aura icon hover uses the native secure tooltip delegate in combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -470,9 +470,9 @@ h.test("Aura icon hover uses the centralized taint-safe tooltip in combat", func
     icon:GetScript("OnEnter")(icon)
 
     h.stub.in_combat = false
-    local tooltip = h.addon.GetOwnedTooltip()
-    h.eq(tooltip.__kind, "Frame", "combat Aura tooltip avoids Blizzard GameTooltip widget state")
-    h.is_nil(tooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "combat hover never binds live Aura data")
+    local call = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    h.eq(call[1], "player", "combat Aura tooltip uses the player unit")
+    h.eq(call[2], 101, "combat Aura tooltip receives the rendered Aura instance")
 end)
 
 h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()

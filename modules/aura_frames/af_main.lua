@@ -258,6 +258,7 @@ end
 --#region AURA ICON TOOLTIPS ===================================================
 
 local function hide_aura_tooltip()
+    addon.HideNativeTooltip()
     addon.HideOwnedTooltip()
 end
 
@@ -510,6 +511,17 @@ end
 local function show_aura_icon_tooltip(obj)
     if obj.tooltip_enabled == false then
         hide_aura_tooltip()
+        return
+    end
+
+    if is_usable_tooltip_number(obj.aura_index)
+        and addon.ShowNativeAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
+    then
+        return
+    end
+    if is_usable_tooltip_number(obj.aura_spell_id)
+        and addon.ShowNativeSpellTooltip(obj, obj.aura_spell_id, "ANCHOR_BOTTOMRIGHT")
+    then
         return
     end
 

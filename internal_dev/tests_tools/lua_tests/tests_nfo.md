@@ -61,9 +61,9 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
 - `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
-- `tests/test_af_ranges.lua`: Aura Frames numeric setting metadata and visible-icon ticker behavior, currently the visible icon tick clamp/snap helper, compatibility constants, and idle ticker cancellation.
+- `tests/test_af_ranges.lua`: Aura Frames numeric setting metadata, visible-icon ticker behavior, and Aura-tooltip integration, including direct shared native delegate use both outside and during combat plus the plain live-timing fallback.
 - `tests/test_table_utils.lua`: shared table/default utilities.
-- `tests/test_tooltip.lua`: shared owned-tooltip factory (`functions/tooltip.lua`) — rich left/right line rendering, right-only lines, width bounding and shrink-to-fit, native fonts, and quadrant anchoring. Aura-specific tooltip integration (hover paths, combat fallback) stays in `test_af_ranges.lua`.
+- `tests/test_tooltip.lua`: centralized plain owned-tooltip renderer (`functions/tooltip.lua`) — rich left/right line rendering, right-only lines, width bounding and shrink-to-fit, native fonts, and quadrant anchoring. Aura-specific shared-native delegate integration and fallback behavior stay in `test_af_ranges.lua`.
 
 
 ## The Stub: wow_stub.lua
