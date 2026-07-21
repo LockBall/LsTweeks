@@ -30,12 +30,19 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Defaults, DB handling, resets, or profiles | `project.md` `### Data, Resets, And Profiles` |
 | Shared GUI/layout rules, widget anchoring, or settings-grid usage | `project.md` `### GUI/Layout Rules` |
 | WoW API usage, taint, combat guard, or Lua gotcha | `project.md` `### Key WoW APIs And Lessons` |
-| Public behavior, names, settings, slash commands, install/use, release docs, or user-facing terminology | `README.md` |
+| Public install/use steps, embedded libraries, license, or credits | `README.md` `## Installation`, `## Use Notes`, `## Embedded Libraries`, `## License`, or `## Credits` via `doc_section.ps1` |
+| Public Aura Frames behavior, names, or terminology | `README.md` `### Aura Frames` via `doc_section.ps1` |
+| Public Player Frame behavior, names, or terminology | `README.md` `### Player Frame` via `doc_section.ps1` |
+| Public Objectives behavior, names, or terminology | `README.md` `### Objectives` via `doc_section.ps1` |
+| Public Skyriding Vigor behavior, names, or terminology | `README.md` `### Skyriding Vigor` via `doc_section.ps1` |
+| Public Audio Volumes behavior, names, or terminology | `README.md` `### Audio Volumes` via `doc_section.ps1` |
+| Public Settings behavior, names, or terminology | `README.md` `### Settings` via `doc_section.ps1` |
+| Full public capability overview across modules, or unclear which module a README request routes to | `README.md` `## Modules` via `doc_section.ps1`, then the matching row above |
 | Focused active review or follow-up | Matching `ToDo/` note |
 | Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |
 | PowerShell file-writing or newline issue | `internal_dev/tests_tools/powershell.md` |
 
-- Start investigation or editing after the baseline and directly matched reads are complete. Do not read adjacent modules, whole large memory files, public docs, or review notes merely for familiarity.
+- Start investigation or editing after the baseline and directly matched reads are complete. Do not read adjacent modules, whole large memory files, public docs, or review notes merely for familiarity unless truly necessary.
 - Before changing a known LuaLS/Ketho suppression, read the relevant module memory `## Ketho / LuaLS` section.
 - Use `code_map.md` `## Fast Commands` for command strings, source outlines, routine validation, package validation, and repo search.
 - Update `project.md` for durable architecture/defaults/tooling changes and the relevant module memory for durable module changes.
