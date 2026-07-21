@@ -6,6 +6,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - [Session Start](#session-start)
 - [Collaboration Rules](#collaboration-rules)
 - [Engineering Rules](#engineering-rules)
+- [Handoff Audit](#handoff-audit)
 
 
 ## Session Start
@@ -44,7 +45,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 ## Collaboration Rules
 - Treat user statements as hypotheses until code, docs, runtime behavior, or API annotations confirm them. Correct wrong assumptions directly.
 - Prefer concrete evidence over memory or inference, especially for WoW APIs, taint/combat behavior, packaging contents, and generated diagnostics.
-- Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Example: the "never any GameTooltip" rule was correctly narrowed to allow validated shared-native delegates (2026-07-19).
+- Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Example: short testing initially appeared to validate shared-native Aura delegates, but delayed taint evidence required a dedicated native tooltip instead (2026-07-20).
 - Preserve user changes. Do not revert unrelated edits while cleaning, refactoring, or packaging.
 - After significant changes, provide a concise git commit message.
 - When suggesting a commit message, provide one complete combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives. Do not show both a short and long option.
@@ -62,5 +63,16 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
 - Vendored libraries under `libs/` are third-party dependencies. Do not edit them for style or type warnings unless intentionally updating the dependency.
 - Runtime-logic bugs: reproduce as a failing headless Lua test (`internal_dev/tests_tools/lua_tests/`) before fixing when the bug is testable there (timers, events, state machines, DB handling); taint/visual/event-order bugs stay in-game-only. The fix then keeps the test as permanent regression coverage.
-- Headless tests are impact-selected. Use the directly affected suite for the intentional red→green loop, then do not rerun that green suite through another validation wrapper in the same change set; use `check_fast.ps1 -Changed -SkipTests` for remaining checks. Use impacted-suite selection when tests have not already run. Run all suites only for broad harness/core/load-order/profile-schema changes, uncertain impact, packaging/release validation, or an explicit request.
+- Headless validation is one-pass and impact-selected: run the smallest red-to-green suite once, then only the remaining non-test checks; use all suites only when broad or uncertain impact justifies them. Commands live in `code_map.md` `## Fast Commands`; detailed selection policy lives in `tests_nfo.md` `## Workflow Integration`.
 - LuaLS/Ketho changed-file validation uses one smallest-common workspace, not one process per directory; repeated language-server initialization is slower than a broader single pass and provides no additional diagnostics.
+
+
+## Handoff Audit
+Before saying work is complete, resolve these questions internally; ask the user only when required evidence cannot be obtained safely.
+- Scope: does the final diff implement only the requested behavior, preserve unrelated/user-owned changes, and cover every consumer of changed shared state?
+- Evidence timing: did relevant validation run after the last behavior-changing edit, without counting stale or duplicate runs?
+- Assumptions: could a bad reload, stale client state, delayed callback, cached data, combat state, or incomplete stub make the apparent result misleading?
+- Regression value: did the test fail before the fix and enforce the actual safety boundary, not merely the visible happy path?
+- Environment gap: what cannot headless tests or static analysis prove, and was the smallest necessary in-game check completed and recorded?
+- Documentation: after behavior or architecture changes, did a repository-wide markdown search find and correct superseded rules in project/module memory, `code_map.md`, test docs, applicable public docs, and temporary ToDos?
+- Closeout: are diagnostics, scratch files, generated output, deleted review notes, untracked files, and the proposed commit scope all intentional?

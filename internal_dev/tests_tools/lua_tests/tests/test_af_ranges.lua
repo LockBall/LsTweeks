@@ -438,7 +438,7 @@ h.test("world-entry tooltip cache eviction retains reusable spell lines", functi
     h.eq(M._tooltip_data_lines_cache["spell:303"], spell_lines, "spell entry survives world entry")
 end)
 
-h.test("Aura icon hover uses the native secure tooltip delegate outside combat", function()
+h.test("Aura icon hover uses an isolated native tooltip delegate outside combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -450,13 +450,16 @@ h.test("Aura icon hover uses the native secure tooltip delegate outside combat",
 
     icon:GetScript("OnEnter")(icon)
 
-    local call = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    local tooltip = h.addon.GetNativeTooltip()
+    local call = tooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
     h.eq(call[1], "player", "native Aura tooltip uses the player unit")
     h.eq(call[2], 101, "native Aura tooltip receives the rendered Aura instance")
-    h.eq(GameTooltip:IsShown(), true, "native Aura tooltip is shown")
+    h.eq(tooltip:IsShown(), true, "native Aura tooltip is shown")
+    h.is_nil(GameTooltip:GetLastCall("SetOwner"), "Aura hover does not mutate Blizzard's shared GameTooltip")
+    h.is_nil(GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "Aura data never enters Blizzard's shared GameTooltip")
 end)
 
-h.test("Aura icon hover uses the native secure tooltip delegate in combat", function()
+h.test("Aura icon hover uses an isolated native tooltip delegate in combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -470,7 +473,7 @@ h.test("Aura icon hover uses the native secure tooltip delegate in combat", func
     icon:GetScript("OnEnter")(icon)
 
     h.stub.in_combat = false
-    local call = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    local call = h.addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
     h.eq(call[1], "player", "combat Aura tooltip uses the player unit")
     h.eq(call[2], 101, "combat Aura tooltip receives the rendered Aura instance")
 end)
@@ -485,17 +488,18 @@ h.test("Aura icon leave hides only the native tooltip it still owns", function()
     icon.tooltip_enabled = true
 
     icon:GetScript("OnEnter")(icon)
-    h.eq(GameTooltip:GetOwner(), icon, "Aura icon owns the native tooltip after enter")
-    local hide_count = #(GameTooltip:GetCalls("Hide") or {})
+    local tooltip = h.addon.GetNativeTooltip()
+    h.eq(tooltip:GetOwner(), icon, "Aura icon owns the native tooltip after enter")
+    local hide_count = #(tooltip:GetCalls("Hide") or {})
     icon:GetScript("OnLeave")(icon)
-    h.eq(#(GameTooltip:GetCalls("Hide") or {}), hide_count + 1, "leaving current owner hides its native tooltip")
+    h.eq(#(tooltip:GetCalls("Hide") or {}), hide_count + 1, "leaving current owner hides its native tooltip")
 
     icon:GetScript("OnEnter")(icon)
     local replacement_owner = CreateFrame("Frame", nil, UIParent)
-    GameTooltip:SetOwner(replacement_owner, "ANCHOR_RIGHT")
-    hide_count = #(GameTooltip:GetCalls("Hide") or {})
+    tooltip:SetOwner(replacement_owner, "ANCHOR_RIGHT")
+    hide_count = #(tooltip:GetCalls("Hide") or {})
     icon:GetScript("OnLeave")(icon)
-    h.eq(#(GameTooltip:GetCalls("Hide") or {}), hide_count, "stale Aura leave preserves a replacement tooltip")
+    h.eq(#(tooltip:GetCalls("Hide") or {}), hide_count, "stale Aura leave preserves a replacement tooltip")
 end)
 
 h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()

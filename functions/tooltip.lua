@@ -8,6 +8,7 @@ local addon_name, addon = ...
 --#region OWNED TOOLTIP FACTORY ================================================
 
 local owned_tooltip
+local native_tooltip
 local native_tooltip_owner
 
 local TOOLTIP_MAX_TEXT_WIDTH = 224
@@ -243,43 +244,61 @@ end
 
 --#region NATIVE TOOLTIP DELEGATES =============================================
 
--- Aura data can contain secret values that only Blizzard's secure tooltip
--- delegates may render. Use the shared native tooltip directly: do not create
--- an addon-owned GameTooltip, wrap the call in securecallfunction, or inspect
--- its rendered lines afterward. Those were the ingredients in the old rich
--- tooltip path that later tainted unrelated map widget layout.
-local function show_native_tooltip(owner, anchor, method, ...)
-    if not (owner and GameTooltip and method) then return false end
+-- Aura data can contain secret values that only native GameTooltip setters can
+-- render. Keep that state on one dedicated tooltip so addon-tainted Aura data
+-- never enters Blizzard's shared GameTooltip and cannot contaminate later map
+-- POI widget layout. Do not inspect or measure the rendered native lines.
+function addon.GetNativeTooltip()
+    if not native_tooltip then
+        native_tooltip = CreateFrame(
+            "GameTooltip",
+            addon_name .. "NativeTooltip",
+            UIParent,
+            "GameTooltipTemplate"
+        )
+    end
+    return native_tooltip
+end
+
+local function show_native_tooltip(owner, anchor, method_name, ...)
+    if not owner then return false end
+
+    local tooltip = addon.GetNativeTooltip()
+    local method = tooltip and tooltip[method_name]
+    if not method then return false end
 
     addon.HideOwnedTooltip()
-    GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
-    local ok = pcall(method, GameTooltip, ...)
+    tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
+    local ok = pcall(method, tooltip, ...)
     if not ok then
-        GameTooltip:Hide()
+        tooltip:Hide()
         native_tooltip_owner = nil
         return false
     end
 
     native_tooltip_owner = owner
-    GameTooltip:Show()
+    tooltip:Show()
     return true
 end
 
 function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
-    ---@diagnostic disable-next-line: undefined-field
-    local method = GameTooltip and GameTooltip.SetUnitAuraByAuraInstanceID
-    return show_native_tooltip(owner, anchor, method, unit or "player", aura_instance_id)
+    return show_native_tooltip(
+        owner,
+        anchor,
+        "SetUnitAuraByAuraInstanceID",
+        unit or "player",
+        aura_instance_id
+    )
 end
 
 function addon.ShowNativeSpellTooltip(owner, spell_id, anchor)
-    local method = GameTooltip and GameTooltip.SetSpellByID
-    return show_native_tooltip(owner, anchor, method, spell_id)
+    return show_native_tooltip(owner, anchor, "SetSpellByID", spell_id)
 end
 
 function addon.HideNativeTooltip(owner)
     if not (owner and native_tooltip_owner and owner == native_tooltip_owner) then return end
-    if GameTooltip and GameTooltip:GetOwner() == native_tooltip_owner then
-        GameTooltip:Hide()
+    if native_tooltip and native_tooltip:GetOwner() == native_tooltip_owner then
+        native_tooltip:Hide()
     end
     native_tooltip_owner = nil
 end
