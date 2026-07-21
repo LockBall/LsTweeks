@@ -11,6 +11,7 @@ Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS d
 - [Project Venv Check](#project-venv-check)
 - [Project Venv Repair](#project-venv-repair)
 - [Project Validation](#project-validation)
+- [Lua Error Condenser](#lua-error-condenser)
 - [LuaLS / Ketho Shell Diagnostics](#luals-ketho-shell-diagnostics)
 
 
@@ -212,6 +213,22 @@ Expected package result includes:
 ```text
 Fast checks passed.
 Package verification passed.
+```
+
+
+## Lua Error Condenser
+Condense a WoW Lua error text export into an agent-readable Markdown report:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -OutputPath internal_dev/working_docs/ToDo/new_issue_condensed.md
+```
+
+The report groups normalized messages, sums reported counts, extracts common stack prefixes, retains distinct caller tails, and surfaces message origin, explicit taint attribution, and addons present in captured stacks. Locals are omitted by default; add `-IncludeLocals` for capped representative excerpts or `-Format Json` for structured output.
+
+Focused tool regression:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/test_condense_lua_errors.ps1
 ```
 
 

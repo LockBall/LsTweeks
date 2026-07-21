@@ -49,6 +49,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Changed-file LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`; multiple changed files use one smallest-common workspace so Ketho initializes once while retaining cross-file diagnostics.
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
 - Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
+- Condense repeated WoW Lua errors: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path <error-export.txt> [-OutputPath <report.md>]`; add `-IncludeLocals` only for deeper follow-up.
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 - Headless Lua tests (all suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - Headless Lua tests (one suite): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 <name-substring>`
@@ -105,6 +106,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `internal_dev/tests_tools/lua_tests/`: headless Lua 5.1 tests against a stubbed WoW API; see `lua_tests/tests_nfo.md` for the stub, harness, and test-writing rules.
 - `api_lookup.ps1`: prints exact Ketho annotation blocks for WoW API functions.
+- `condense_lua_errors.ps1`: groups WoW Lua error exports by message and stack variant, surfaces taint/addon ownership signals, and omits repetitive locals by default; `test_condense_lua_errors.ps1` owns focused regression checks.
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines with named functions.
 - `doc_section.ps1`: prints one named `##` markdown section or lists `##` headings.

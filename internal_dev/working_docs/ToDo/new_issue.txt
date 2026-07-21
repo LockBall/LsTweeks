@@ -1,0 +1,653 @@
+Message: .../Mainline/Blizzard_UIWidgetTemplateTextWithState.lua:35: attempt to perform arithmetic on local 'textHeight' (a secret number value, while execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:03 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateTextWithState.lua]:35: in function 'Setup'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:526: in function 'ProcessWidget'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:562: in function 'ProcessAllWidgets'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:275: in function 'RegisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:598: in function 'GameTooltip_AddWidgetSet'
+[Interface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua]:44: in function <...terface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua:3>
+[tail call]: ?
+[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua]:166: in function <...zzard_SharedMapDataProviders/AreaPOIDataProvider.lua:159>
+
+Locals:
+self=Frame <Blizzard_UIWidgetManager.lua:432>{
+ tooltipLoc=0
+ tooltipYOffset=0
+ widgetType=8
+ tooltipContainsHyperLink=false
+ tooltip=""
+ widgetID=7335
+ widgetContainer=Frame <GameTooltip.lua:590>
+ tooltipAnchor="ANCHOR_BOTTOMLEFT"
+ FadeInAnim=AnimationGroup <Blizzard_UIWidgetTemplateBase.xml:16>
+ disableTooltip=true
+ scriptedAnimationEffectID=0
+ modelSceneLayer=0
+ layoutDirection=0
+ outAnimType=0
+ inAnimType=0
+ widgetTag=""
+ orderIndex=0
+ widgetSetID=1738
+ defaultTooltipAnchor="ANCHOR_BOTTOMLEFT"
+ hasTimer=false
+ FadeOutAnim=AnimationGroup <Blizzard_UIWidgetTemplateBase.xml:23>
+ Text=FontString <Blizzard_UIWidgetTemplateTextWithState.xml:7>
+ tooltipXOffset=0
+}
+widgetInfo=<table>{
+ scriptedAnimationEffectID=0
+ modelSceneLayer=0
+ widgetScale=0
+ tooltipLoc=0
+ fontType=0
+ shownState=1
+ widgetSizeSetting=250
+ bottomPadding=0
+ enabledState=1
+ textSizeType=0
+ text="Story Variant: Lightbloom Invasion"
+ orderIndex=0
+ layoutDirection=0
+ inAnimType=0
+ widgetTag=""
+ hasTimer=false
+ outAnimType=0
+ tooltip=""
+ hAlign=0
+}
+widgetContainer=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=false
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+textHeight=<secret number>
+(*temporary)=0
+(*temporary)=0
+(*temporary)=0
+(*temporary)=1
+(*temporary)=0
+(*temporary)="attempt to perform arithmetic on local 'textHeight' (a secret number value, while execution tainted by 'LsTweeks')"
+
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:07 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'Hide'
+[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua]:212: in function <...zzard_SharedMapDataProviders/AreaPOIDataProvider.lua:194>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:40 2026
+Count: 2
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'Hide'
+[Interface/AddOns/Blizzard_SharedMapDataProviders/SharedMapPoiTemplates.lua]:159: in function 'CheckHideTooltip'
+[Interface/AddOns/Blizzard_SharedMapDataProviders/SharedMapPoiTemplates.lua]:172: in function <...ard_SharedMapDataProviders/SharedMapPoiTemplates.lua:169>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:44 2026
+Count: 7
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'Hide'
+[Interface/AddOns/Bartender4/libs/LibActionButton-1.0/LibActionButton-1.0.lua]:1111: in function <...er4/libs/LibActionButton-1.0/LibActionButton-1.0.lua:1103>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:47 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'SetOwner'
+[Interface/AddOns/Blizzard_SharedXML/SharedTooltipTemplates.lua]:88: in function 'GameTooltip_SetDefaultAnchor'
+[Interface/AddOns/Bartender4/libs/LibActionButton-1.0/LibActionButton-1.0.lua]:2150: in function <...er4/libs/LibActionButton-1.0/LibActionButton-1.0.lua:2147>
+[Interface/AddOns/Bartender4/libs/LibActionButton-1.0/LibActionButton-1.0.lua]:1085: in function <...er4/libs/LibActionButton-1.0/LibActionButton-1.0.lua:1083>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:28:54 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:30:30 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'Hide'
+[Interface/AddOns/Blizzard_QuickJoin/QuickJoinToast.lua]:381: in function <...terface/AddOns/Blizzard_QuickJoin/QuickJoinToast.lua:380>
+[C]: ?
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
+
+Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: attempt to compare a secret number value (execution tainted by 'LsTweeks')
+Time: Tue Jul 21 17:30:46 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua]:491: in function <Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:486>
+[tail call]: ?
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:213: in function 'DefaultWidgetLayout'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:580: in function 'layoutFunc'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:606: in function 'UpdateWidgetLayout'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:295: in function 'UnregisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:610: in function 'GameTooltip_ClearWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:407: in function <...AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua:393>
+[C]: in function 'Hide'
+[*FloatingChatFrame.xml:319_OnLeave]:2: in function <[string "*FloatingChatFrame.xml:319_OnLeave"]:1>
+
+Locals:
+self=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=true
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1738
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
+}
+(*temporary)=<secret number>
+(*temporary)=1
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare a secret number value (execution tainted by 'LsTweeks')"
