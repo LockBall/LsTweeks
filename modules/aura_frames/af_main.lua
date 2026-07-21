@@ -257,8 +257,8 @@ end
 --#endregion MODULE STATE AND COOLDOWN REFRESH =================================
 --#region AURA ICON TOOLTIPS ===================================================
 
-local function hide_aura_tooltip()
-    addon.HideNativeTooltip()
+local function hide_aura_tooltip(owner)
+    addon.HideNativeTooltip(owner)
     addon.HideOwnedTooltip()
 end
 
@@ -510,7 +510,7 @@ end
 
 local function show_aura_icon_tooltip(obj)
     if obj.tooltip_enabled == false then
-        hide_aura_tooltip()
+        hide_aura_tooltip(obj)
         return
     end
 
@@ -674,9 +674,9 @@ local function bind_icon_tooltip(obj)
         handle_frame_mouse_enter(self:GetParent())
         show_aura_icon_tooltip(self)
     end)
-    obj:SetScript("OnLeave", function()
-        hide_aura_tooltip()
-        handle_frame_mouse_leave(obj:GetParent())
+    obj:SetScript("OnLeave", function(self)
+        hide_aura_tooltip(self)
+        handle_frame_mouse_leave(self:GetParent())
     end)
     obj:SetScript("OnMouseUp", function(self, button)
         if M.try_cancel_aura_icon then

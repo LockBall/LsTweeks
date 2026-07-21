@@ -1,10 +1,15 @@
 param(
     [switch]$Package,
     [switch]$Changed,
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$AllTests
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($SkipTests -and $AllTests) {
+    throw "Use either -SkipTests or -AllTests, not both."
+}
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $luacCandidates = @(
@@ -157,7 +162,15 @@ try {
 
     if (-not $SkipTests) {
         Invoke-Step "Headless Lua tests" {
-            pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "internal_dev/tests_tools/lua_tests/run_tests.ps1"
+            $testArgs = @(
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "internal_dev/tests_tools/lua_tests/run_tests.ps1"
+            )
+            if (-not ($AllTests -or $Package)) {
+                $testArgs += "-Changed"
+            }
+            pwsh.exe @testArgs
             if ($LASTEXITCODE -ne 0) {
                 throw "Headless Lua tests failed."
             }

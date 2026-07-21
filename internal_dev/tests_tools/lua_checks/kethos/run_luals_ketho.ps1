@@ -84,6 +84,32 @@ function Get-ChangedLuaFiles {
     }
 }
 
+function Get-CommonCheckDirectory {
+    param([string[]]$Paths)
+
+    $directories = @($Paths | ForEach-Object {
+        $directory = Split-Path -Parent $_
+        if ([string]::IsNullOrWhiteSpace($directory)) { "." } else { $directory -replace "\\", "/" }
+    })
+    if ($directories.Count -eq 0) { return $null }
+    if ($directories.Count -eq 1) { return $directories[0] }
+
+    $common = @($directories[0] -split "/")
+    foreach ($directory in $directories | Select-Object -Skip 1) {
+        $parts = @($directory -split "/")
+        $limit = [Math]::Min($common.Count, $parts.Count)
+        $matched = 0
+        while ($matched -lt $limit -and $common[$matched] -ieq $parts[$matched]) {
+            $matched++
+        }
+        if ($matched -eq 0) {
+            return "."
+        }
+        $common = @($common | Select-Object -First $matched)
+    }
+    $common -join "/"
+}
+
 function Resolve-CheckTargets {
     if ($Changed -and $Files.Count -gt 0) {
         throw "Use either -Changed or -Files, not both."
@@ -91,18 +117,17 @@ function Resolve-CheckTargets {
 
     if ($Changed) {
         $changedFiles = @(Get-ChangedLuaFiles | Sort-Object -Unique)
-        if ($changedFiles.Count -le 1) {
+        if ($changedFiles.Count -eq 0) {
             return $changedFiles
         }
-        $directories = foreach ($file in $changedFiles) {
-            $directory = Split-Path -Parent $file
-            if ([string]::IsNullOrWhiteSpace($directory)) {
-                "."
-            } else {
-                $directory -replace "\\", "/"
-            }
+        if ($changedFiles.Count -eq 1) {
+            return $changedFiles
         }
-        return @($directories | Sort-Object -Unique)
+        $commonDirectory = Get-CommonCheckDirectory $changedFiles
+        if ($commonDirectory -eq ".") {
+            return @($repoRoot.Path)
+        }
+        return @($commonDirectory)
     }
 
     if ($Files.Count -gt 0) {

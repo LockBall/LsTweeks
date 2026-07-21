@@ -480,9 +480,12 @@ function frame_methods:SetDrawBling() end
 function frame_methods:SetDrawSwipe() end
 
 -- GameTooltip methods
-function frame_methods:SetOwner(owner, anchor) record(self, "SetOwner", owner, anchor) end
-function frame_methods:GetOwner() return nil end
-function frame_methods:IsOwned() return false end
+function frame_methods:SetOwner(owner, anchor)
+    self.__owner = owner
+    record(self, "SetOwner", owner, anchor)
+end
+function frame_methods:GetOwner() return self.__owner end
+function frame_methods:IsOwned(owner) return self.__owner == owner end
 function frame_methods:AddLine(...) record(self, "AddLine", ...) end
 function frame_methods:AddDoubleLine(...) record(self, "AddDoubleLine", ...) end
 function frame_methods:ClearLines() record(self, "ClearLines") end

@@ -45,7 +45,9 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 ## Running
 - All suites: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - One suite by substring: append the filter, e.g. `run_tests.ps1 pf_fade`.
-- `check_fast.ps1` runs all suites as its "Headless Lua tests" step by default; pass `-SkipTests` to opt out.
+- Several suites in one invocation: `run_tests.ps1 -Suite af_ranges,tooltip`.
+- Impact-selected suites for current staged, unstaged, and untracked files: `run_tests.ps1 -Changed`; add `-ListOnly` to inspect the selection without executing it.
+- `check_fast.ps1 -Changed` runs impact-selected suites by default. Use `-SkipTests` after the relevant suites already passed, or `-AllTests` only when full coverage is justified. Packaging runs all suites unless tests are explicitly skipped.
 - Requires a Lua 5.1 interpreter; the runner checks `C:\Program Files (x86)\Lua\5.1\lua.exe` first, then PATH (`lua5.1`, `lua51`, `lua`, `luajit`).
 - Each `tests/test_*.lua` file runs in its own Lua process so addon global state never leaks between suites. Exit code 0 = all passed, 1 = at least one suite failed, 2 = runner setup problem.
 
@@ -53,7 +55,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 ## Folder Layout
 - `wow_stub.lua`: the fake WoW client API. Loading it (via `require`) installs frames, timers, events, and globals into the process environment.
 - `harness.lua`: addon loader plus test toolkit; every test file starts by requiring this.
-- `run_tests.ps1`: process-per-suite runner with substring filtering.
+- `run_tests.ps1`: process-per-suite runner with single/multiple-suite filtering and changed-file impact selection. The selector maps module/shared files to owning suites, maps changed test files directly, and narrows `wow_stub.lua` method changes to suites that reference those methods; unrecognized shared-stub changes fall back to all suites.
 - `tests/test_smoke_load_all.lua`: loads every TOC file, boots, exercises module toggles, `/lst status`, and 30s of simulated time.
 - `tests/test_pf_fade.lua`: Player Frame fade state machine scenarios (delay/fade/faded, combat interrupts, delayed-combat helper isolation, health gate, slider retargeting, timer-leak check).
 - `tests/test_ob_auto_collapse.lua`: Objectives Auto-Collapse combat deferral, including direct in-combat apply and queued timer recheck before tracker mutation.
@@ -61,7 +63,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
 - `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
-- `tests/test_af_ranges.lua`: Aura Frames numeric setting metadata, visible-icon ticker behavior, and Aura-tooltip integration, including direct shared native delegate use both outside and during combat plus the plain live-timing fallback.
+- `tests/test_af_ranges.lua`: Aura Frames numeric setting metadata, visible-icon ticker behavior, and Aura-tooltip integration, including direct shared native delegate use outside/during combat, owner-transfer-safe hiding, and the plain live-timing fallback.
 - `tests/test_table_utils.lua`: shared table/default utilities.
 - `tests/test_tooltip.lua`: centralized plain owned-tooltip renderer (`functions/tooltip.lua`) — rich left/right line rendering, right-only lines, width bounding and shrink-to-fit, native fonts, and quadrant anchoring. Aura-specific shared-native delegate integration and fallback behavior stay in `test_af_ranges.lua`.
 
@@ -136,7 +138,8 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 
 
 ## Workflow Integration
-- `check_fast.ps1` runs all suites by default (`-SkipTests` to opt out), so routine validation exercises them without a separate command.
+- Use the smallest meaningful red→green loop, then avoid duplicate execution: after a targeted suite passes, finish with `check_fast.ps1 -Changed -SkipTests`. When no suite has run yet, `check_fast.ps1 -Changed` selects and runs impacted suites once.
+- Full-suite runs are reserved for broad harness/core/load-order/profile-schema changes, uncertain impact, packaging/release validation, or explicit requests. A narrow stub-method change uses method references plus changed production/test ownership to select affected suites; `harness.lua` and unrecognized stub changes remain full-suite triggers.
 - Bug workflow (owned by `agent_start.md` Engineering Rules): reproduce a runtime-logic bug as a failing test here before fixing it when the bug is timer/event/state-machine/DB shaped; the fix keeps the test as permanent regression coverage.
 - Review notes under `ToDo/` may tag items `[headless-testable: <assertion sketch>]` or `[not headless-testable: <reason>]`; use the sketch as the starting point when picking an item up.
 - New suites are cheap once a module's stub surface exists; grow coverage when a module bites, not speculatively.

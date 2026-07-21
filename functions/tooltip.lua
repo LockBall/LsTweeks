@@ -8,7 +8,7 @@ local addon_name, addon = ...
 --#region OWNED TOOLTIP FACTORY ================================================
 
 local owned_tooltip
-local native_tooltip_active = false
+local native_tooltip_owner
 
 local TOOLTIP_MAX_TEXT_WIDTH = 224
 local TOOLTIP_MIN_WIDTH = 120
@@ -256,11 +256,11 @@ local function show_native_tooltip(owner, anchor, method, ...)
     local ok = pcall(method, GameTooltip, ...)
     if not ok then
         GameTooltip:Hide()
-        native_tooltip_active = false
+        native_tooltip_owner = nil
         return false
     end
 
-    native_tooltip_active = true
+    native_tooltip_owner = owner
     GameTooltip:Show()
     return true
 end
@@ -276,11 +276,12 @@ function addon.ShowNativeSpellTooltip(owner, spell_id, anchor)
     return show_native_tooltip(owner, anchor, method, spell_id)
 end
 
-function addon.HideNativeTooltip()
-    if native_tooltip_active and GameTooltip then
+function addon.HideNativeTooltip(owner)
+    if not (owner and native_tooltip_owner and owner == native_tooltip_owner) then return end
+    if GameTooltip and GameTooltip:GetOwner() == native_tooltip_owner then
         GameTooltip:Hide()
-        native_tooltip_active = false
     end
+    native_tooltip_owner = nil
 end
 
 --#endregion NATIVE TOOLTIP DELEGATES ==========================================

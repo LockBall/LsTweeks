@@ -38,19 +38,23 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
 - Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
-- Fast validation (includes headless Lua tests; add `-SkipTests` to skip them): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1`
-- Changed-file fast validation: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
+- Fast validation with impact-selected headless tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
+- Fast non-test validation after targeted suites already passed: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed -SkipTests`
+- Fast validation with every headless suite: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed -AllTests`
 - Region validation / source outline: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_regions.ps1 [-Outline <lua-file> [<lua-file> ...]]`; pass several files to one `-Outline` call instead of invoking per file
 - Memory section size check (flags oversized `proj_mem` `##`/`###` sections; included in fast validation): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_memory_sections.ps1`
 - Diff whitespace checks: `git diff --check` and `git diff --cached --check`
 - Fast validation plus package build/verify: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package`
 - Full LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1`
-- Targeted LuaLS/Ketho check for changed Lua files: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`
+- Changed-file LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`; multiple changed files use one smallest-common workspace so Ketho initializes once while retaining cross-file diagnostics.
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
 - Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 - Headless Lua tests (all suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - Headless Lua tests (one suite): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 <name-substring>`
+- Headless Lua tests (several named suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 -Suite <name>,<name>`
+- Headless Lua tests (impact-selected from current changes): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 -Changed`
+- List impacted suites without running them: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 -Changed -ListOnly`
 
 
 ## Public Surface
