@@ -1071,6 +1071,10 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     for iid in pairs(cur_map) do
         if not seen_iids[iid] then cur_map[iid] = nil end
     end
+
+    if M.prewarm_scanned_aura_tooltip_cache then
+        M.prewarm_scanned_aura_tooltip_cache(cur_map)
+    end
 end
 
 --#endregion UNIFIED SCAN ======================================================

@@ -43,6 +43,10 @@ Aura Frames replace and extend the default player buff and debuff display. The m
 Use **Test Aura** to preview a frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play.
 
 
+#### Tooltips
+Buff and debuff icons show detailed tooltips during combat whenever possible. Information seen before combat is remembered until you log out or reload the interface, helping descriptions and colors remain consistent. Effects first encountered during combat may use standard tooltip colors.
+
+
 #### WoW Cooldown Manager Frames
 Cooldown Manager-backed frames read live Blizzard Cooldown Manager viewer state:
 

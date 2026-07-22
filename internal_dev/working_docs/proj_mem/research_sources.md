@@ -43,6 +43,8 @@ Internal research and implementation references for coding agents. Public credit
 - UI Widget status bar template: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateStatusBar.lua
 - UI Widget manager: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua
 - GameTooltip runtime: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua
+- GameTooltip templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.xml
+- Private Aura tooltip template: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_PrivateAurasUI/Blizzard_PrivateAurasUI.xml
 - Area POI utility: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua
 - Area POI data provider: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua
 - Shared UI panel templates: https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml

@@ -270,20 +270,27 @@ local function is_usable_tooltip_text(value)
     return type(value) == "string" and not (issecretvalue and issecretvalue(value))
 end
 
-local function get_aura_tooltip_cache_keys(obj)
+local function get_aura_tooltip_cache_keys_for_identity(aura_instance_id, spell_id)
     local aura_key
-    if is_usable_tooltip_number(obj.aura_index) then
-        aura_key = "aura:" .. tostring(obj.aura_index)
+    if is_usable_tooltip_number(aura_instance_id) then
+        aura_key = "aura:" .. tostring(aura_instance_id)
     end
     local spell_key
-    if is_usable_tooltip_number(obj.aura_spell_id) then
-        spell_key = "spell:" .. tostring(obj.aura_spell_id)
+    if is_usable_tooltip_number(spell_id) then
+        spell_key = "spell:" .. tostring(spell_id)
     end
     return aura_key, spell_key
 end
 
 local function has_cacheable_tooltip_identity(obj)
     return is_usable_tooltip_number(obj.aura_index) or is_usable_tooltip_number(obj.aura_spell_id)
+end
+
+local tooltip_scan_cache_attempts = {}
+
+local function clear_tooltip_scan_attempts(aura_key, spell_key)
+    if aura_key then tooltip_scan_cache_attempts[aura_key] = nil end
+    if spell_key then tooltip_scan_cache_attempts[spell_key] = nil end
 end
 
 local function get_safe_basic_aura_name(obj)
@@ -384,50 +391,67 @@ local function copy_tooltip_data_lines(data)
     return copied
 end
 
-local function get_safe_tooltip_data(obj)
+local function get_safe_tooltip_data_for_identity(aura_instance_id, spell_id)
     if not C_TooltipInfo then return nil end
 
-    if is_usable_tooltip_number(obj.aura_index) and C_TooltipInfo.GetUnitAuraByAuraInstanceID then
-        local ok, data = pcall(C_TooltipInfo.GetUnitAuraByAuraInstanceID, "player", obj.aura_index)
+    if is_usable_tooltip_number(aura_instance_id) and C_TooltipInfo.GetUnitAuraByAuraInstanceID then
+        local ok, data = pcall(C_TooltipInfo.GetUnitAuraByAuraInstanceID, "player", aura_instance_id)
         if ok and data then
             return data
         end
     end
 
-    if is_usable_tooltip_number(obj.aura_spell_id) and C_TooltipInfo.GetSpellByID then
-        local ok, data = pcall(C_TooltipInfo.GetSpellByID, obj.aura_spell_id)
+    if is_usable_tooltip_number(spell_id) and C_TooltipInfo.GetSpellByID then
+        local ok, data = pcall(C_TooltipInfo.GetSpellByID, spell_id)
         if ok and data then
             return data
         end
     end
 end
 
-local function cache_tooltip_data_lines(obj)
-    local aura_key, spell_key = get_aura_tooltip_cache_keys(obj)
+local function cache_tooltip_data_lines_for_identity(aura_instance_id, spell_id)
+    local aura_key, spell_key = get_aura_tooltip_cache_keys_for_identity(aura_instance_id, spell_id)
     if not aura_key and not spell_key then return nil end
     M._tooltip_data_lines_cache = M._tooltip_data_lines_cache or {}
-    local cached = aura_key and M._tooltip_data_lines_cache[aura_key]
-        or spell_key and M._tooltip_data_lines_cache[spell_key]
-    if cached then return cached end
+    local aura_cached = aura_key and M._tooltip_data_lines_cache[aura_key]
+    local spell_cached = spell_key and M._tooltip_data_lines_cache[spell_key]
+    local cached = aura_cached or spell_cached
+    if cached then
+        if aura_key then M._tooltip_data_lines_cache[aura_key] = cached end
+        if spell_key then M._tooltip_data_lines_cache[spell_key] = cached end
+        clear_tooltip_scan_attempts(aura_key, spell_key)
+        return cached
+    end
 
     if InCombatLockdown and InCombatLockdown() then
         return nil
     end
 
-    local lines = copy_tooltip_data_lines(get_safe_tooltip_data(obj))
+    local lines = copy_tooltip_data_lines(get_safe_tooltip_data_for_identity(aura_instance_id, spell_id))
     if lines then
         if aura_key then M._tooltip_data_lines_cache[aura_key] = lines end
         if spell_key then M._tooltip_data_lines_cache[spell_key] = lines end
+        clear_tooltip_scan_attempts(aura_key, spell_key)
     end
     return lines
 end
 
+local function cache_tooltip_data_lines(obj)
+    return cache_tooltip_data_lines_for_identity(obj.aura_index, obj.aura_spell_id)
+end
+
 function M.clear_aura_tooltip_instance_cache()
     local cache = M._tooltip_data_lines_cache
-    if not cache then return end
-    for key in pairs(cache) do
+    if cache then
+        for key in pairs(cache) do
+            if type(key) == "string" and key:sub(1, 5) == "aura:" then
+                cache[key] = nil
+            end
+        end
+    end
+    for key in pairs(tooltip_scan_cache_attempts) do
         if type(key) == "string" and key:sub(1, 5) == "aura:" then
-            cache[key] = nil
+            tooltip_scan_cache_attempts[key] = nil
         end
     end
 end
@@ -475,6 +499,25 @@ function M.prewarm_aura_tooltip_cache(frame)
     end)
 end
 
+function M.prewarm_scanned_aura_tooltip_cache(aura_map)
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+    if InCombatLockdown and InCombatLockdown() then return end
+    if type(aura_map) ~= "table" then return end
+
+    for _, entry in pairs(aura_map) do
+        if type(entry) == "table" and not entry.is_test_preview then
+            local aura_key, spell_key = get_aura_tooltip_cache_keys_for_identity(entry.instance_id, entry.spell_id)
+            local attempt_key = aura_key or spell_key
+            if attempt_key and (tooltip_scan_cache_attempts[attempt_key] or 0) < 2 then
+                local lines = cache_tooltip_data_lines_for_identity(entry.instance_id, entry.spell_id)
+                if not lines then
+                    tooltip_scan_cache_attempts[attempt_key] = (tooltip_scan_cache_attempts[attempt_key] or 0) + 1
+                end
+            end
+        end
+    end
+end
+
 local function build_basic_aura_tooltip_lines(obj)
     local lines = {
         {
@@ -514,8 +557,15 @@ local function show_aura_icon_tooltip(obj)
         return
     end
 
+    local known_lines = cache_tooltip_data_lines(obj)
     if is_usable_tooltip_number(obj.aura_index)
         and addon.ShowNativeAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
+    then
+        return
+    end
+    if known_lines
+        and is_usable_tooltip_number(obj.aura_index)
+        and addon.ShowOpaqueAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT", known_lines)
     then
         return
     end
@@ -524,8 +574,13 @@ local function show_aura_icon_tooltip(obj)
     then
         return
     end
+    if is_usable_tooltip_number(obj.aura_index)
+        and addon.ShowOpaqueAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
+    then
+        return
+    end
 
-    local lines = cache_tooltip_data_lines(obj) or build_basic_aura_tooltip_lines(obj)
+    local lines = known_lines or build_basic_aura_tooltip_lines(obj)
     addon.ShowOwnedTooltipLines(obj, lines, "ANCHOR_BOTTOMRIGHT")
 end
 

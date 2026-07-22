@@ -636,6 +636,17 @@ function Mixin(target, ...)
     return target
 end
 function CreateFromMixins(...) return Mixin({}, ...) end
+
+GameTooltipDataMixin = {
+    OnEvent = function() end,
+}
+function GameTooltip_OnLoad() end
+function GameTooltip_OnShow() end
+function GameTooltip_OnHide() end
+function SharedTooltip_OnLoad() end
+function SharedTooltip_OnHide() end
+function SharedTooltip_ClearInsertedFrames() end
+
 function Clamp(value, lo, hi) return math.min(hi, math.max(lo, value)) end
 function Saturate(value) return Clamp(value, 0, 1) end
 function Lerp(a, b, t) return a + (b - a) * t end
@@ -849,6 +860,13 @@ C_CVar = {
     end,
     GetCVarDefault = function() return "1" end,
 }
+
+C_Secrets = {
+    ShouldUnitAuraInstanceBeSecret = function()
+        return false
+    end,
+}
+
 function GetCVar(name) return C_CVar.GetCVar(name) end
 function SetCVar(name, value) return C_CVar.SetCVar(name, value) end
 function GetCVarBool(name) return C_CVar.GetCVarBool(name) end

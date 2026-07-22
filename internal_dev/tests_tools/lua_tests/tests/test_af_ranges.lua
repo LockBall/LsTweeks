@@ -438,6 +438,66 @@ h.test("world-entry tooltip cache eviction retains reusable spell lines", functi
     h.eq(M._tooltip_data_lines_cache["spell:303"], spell_lines, "spell entry survives world entry")
 end)
 
+h.test("out-of-combat prewarm caches scanned Auras beyond visible icons once", function()
+    local M = load_aura_frames()
+    M._tooltip_data_lines_cache = {}
+    local query_count = 0
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function(unit, aura_instance_id)
+            query_count = query_count + 1
+            h.eq(unit, "player", "scanned Aura prewarm uses the player unit")
+            h.eq(aura_instance_id, 606, "hidden scanned Aura identity reaches TooltipInfo")
+            return {
+                lines = {
+                    {
+                        leftText = "Hidden detailed Aura",
+                        leftColor = { r = 0.2, g = 0.4, b = 0.6 },
+                    },
+                },
+            }
+        end,
+    }
+    local scanned = {
+        [606] = {
+            instance_id = 606,
+            spell_id = 707,
+            name = "Hidden detailed Aura",
+        },
+    }
+
+    M.prewarm_scanned_aura_tooltip_cache(scanned)
+    M.prewarm_scanned_aura_tooltip_cache(scanned)
+    C_TooltipInfo = previous_tooltip_info
+
+    h.eq(query_count, 1, "cached scanned Aura is not queried again")
+    h.eq(M._tooltip_data_lines_cache["aura:606"][1].left_text, "Hidden detailed Aura", "Aura instance caches rich lines")
+    h.eq(M._tooltip_data_lines_cache["spell:707"][1].left_color.g, 0.4, "spell alias caches reusable presentation")
+end)
+
+h.test("scanned Aura prewarm caps misses to avoid repeated TooltipInfo work", function()
+    local M = load_aura_frames()
+    M._tooltip_data_lines_cache = {}
+    local query_count = 0
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            query_count = query_count + 1
+            return nil
+        end,
+    }
+    local scanned = {
+        [808] = { instance_id = 808, spell_id = 909 },
+    }
+
+    M.prewarm_scanned_aura_tooltip_cache(scanned)
+    M.prewarm_scanned_aura_tooltip_cache(scanned)
+    M.prewarm_scanned_aura_tooltip_cache(scanned)
+    C_TooltipInfo = previous_tooltip_info
+
+    h.eq(query_count, 2, "unavailable hidden Aura is queried at most twice")
+end)
+
 h.test("Aura icon hover uses an isolated native tooltip delegate outside combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
@@ -476,6 +536,82 @@ h.test("Aura icon hover uses an isolated native tooltip delegate in combat", fun
     local call = h.addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
     h.eq(call[1], "player", "combat Aura tooltip uses the player unit")
     h.eq(call[2], 101, "combat Aura tooltip receives the rendered Aura instance")
+end)
+
+h.test("secret Aura hover uses the rich spell tooltip without touching Aura data", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    local icon = frame.icons[1]
+    icon.aura_index = 303
+    icon.aura_spell_id = 404
+    icon.aura_name = "Secret Aura"
+    icon.tooltip_enabled = true
+    local previous_secrets = C_Secrets
+    C_Secrets = {
+        ShouldUnitAuraInstanceBeSecret = function()
+            return true
+        end,
+    }
+
+    icon:GetScript("OnEnter")(icon)
+    local tooltip = h.addon.GetNativeTooltip()
+    local aura_call = tooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    local spell_call = tooltip:GetLastCall("SetSpellByID")
+    C_Secrets = previous_secrets
+
+    h.is_nil(aura_call, "secret Aura never enters the native Aura processor")
+    h.eq(spell_call[1], 404, "secret Aura retains the full native spell description")
+    h.eq(tooltip:IsShown(), true, "rich spell tooltip is shown")
+end)
+
+h.test("secret Aura without readable spell identity forwards its full description", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    local icon = frame.icons[1]
+    icon.aura_index = 505
+    icon.aura_name = "Aura"
+    icon.tooltip_enabled = true
+    local previous_secrets = C_Secrets
+    local previous_tooltip_info = C_TooltipInfo
+    C_Secrets = {
+        ShouldUnitAuraInstanceBeSecret = function()
+            return true
+        end,
+    }
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            return {
+                lines = {
+                    { leftText = "Secret combat buff" },
+                    { leftText = "Increases useful tooltip information by 100%." },
+                },
+            }
+        end,
+    }
+    M._tooltip_data_lines_cache = {
+        ["aura:505"] = {
+            { left_text = "Known title", left_color = { r = 0.3, g = 0.5, b = 0.7 } },
+            { left_text = "Known description", left_color = { r = 0.8, g = 0.6, b = 0.4 } },
+        },
+    }
+
+    icon:GetScript("OnEnter")(icon)
+    local tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
+    local rendered = tooltip:GetCalls("AddLine")
+    C_Secrets = previous_secrets
+    C_TooltipInfo = previous_tooltip_info
+
+    h.eq(rendered[1][1], "Secret combat buff", "opaque fallback retains the Aura title")
+    h.eq(rendered[2][1], "Increases useful tooltip information by 100%.", "opaque fallback retains the description")
+    h.eq(rendered[1][2], 0.3, "opaque title retains its known safe red component")
+    h.eq(rendered[1][3], 0.5, "opaque title retains its known safe green component")
+    h.eq(rendered[1][4], 0.7, "opaque title retains its known safe blue component")
+    h.eq(rendered[2][2], 0.8, "opaque description retains its known safe red component")
+    h.eq(rendered[2][3], 0.6, "opaque description retains its known safe green component")
+    h.eq(rendered[2][4], 0.4, "opaque description retains its known safe blue component")
+    h.eq(tooltip:IsShown(), true, "opaque rich tooltip is shown")
 end)
 
 h.test("Aura icon leave hides only the native tooltip it still owns", function()
