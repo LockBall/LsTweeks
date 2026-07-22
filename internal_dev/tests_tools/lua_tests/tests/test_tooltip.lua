@@ -86,6 +86,27 @@ h.test("non-secret Aura data retains the exact native tooltip", function()
     h.eq(setter_call[2], 808, "non-secret Aura reaches the native setter")
 end)
 
+h.test("secret Aura spell data never enters the native spell processor", function()
+    local addon = load_tooltip()
+    local owner = CreateFrame("Frame", nil, UIParent)
+    local checked_spell
+    local previous_secrets = C_Secrets
+    C_Secrets = {
+        ShouldSpellAuraBeSecret = function(spell_id)
+            checked_spell = spell_id
+            return true
+        end,
+    }
+
+    local shown = addon.ShowNativeSpellTooltip(owner, 909, "ANCHOR_RIGHT")
+    local setter_call = addon.GetNativeTooltip():GetLastCall("SetSpellByID")
+    C_Secrets = previous_secrets
+
+    h.eq(shown, false, "secret Aura spell declines the native spell path")
+    h.eq(checked_spell, 909, "spell secret check receives the spell identity")
+    h.is_nil(setter_call, "secret Aura spell cannot enter the colored-line processor")
+end)
+
 h.test("opaque Aura renderer forwards secret text without reading secret formatting", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
@@ -124,6 +145,28 @@ h.test("opaque Aura renderer forwards secret text without reading secret formatt
     h.eq(rendered[6], 0.7, "known safe right red is retained")
     h.eq(rendered[7], 0.8, "known safe right green is retained")
     h.eq(rendered[8], 0.9, "known safe right blue is retained")
+end)
+
+h.test("centralized tooltip data copier rejects secret containers", function()
+    local addon = load_tooltip()
+    local secret_data = setmetatable({
+        __lstweeks_test_secret_table = true,
+    }, {
+        __index = function()
+            error("secret tooltip data was inspected")
+        end,
+    })
+    local secret_lines = {
+        __lstweeks_test_secret_table = true,
+        setmetatable({}, {
+            __index = function()
+                error("secret tooltip line was inspected")
+            end,
+        }),
+    }
+
+    h.is_nil(addon.CopySafeTooltipDataLines(secret_data), "secret outer tooltip data is rejected")
+    h.is_nil(addon.CopySafeTooltipDataLines({ lines = secret_lines }), "secret tooltip lines are rejected")
 end)
 
 h.test("centralized tooltip renderer shows right-text-only cached lines", function()

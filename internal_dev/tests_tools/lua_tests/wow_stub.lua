@@ -862,6 +862,9 @@ C_CVar = {
 }
 
 C_Secrets = {
+    ShouldSpellAuraBeSecret = function()
+        return false
+    end,
     ShouldUnitAuraInstanceBeSecret = function()
         return false
     end,
@@ -941,7 +944,9 @@ function GetMouseFoci() return {} end
 WOW_PROJECT_ID = 1
 WOW_PROJECT_MAINLINE = 1
 function securecallfunction(fn, ...) return fn(...) end
-function issecrettable() return false end
+function issecrettable(value)
+    return type(value) == "table" and rawget(value, "__lstweeks_test_secret_table") == true
+end
 function issecretvalue(value)
     return type(value) == "table" and value.__lstweeks_test_secret_value == true
 end

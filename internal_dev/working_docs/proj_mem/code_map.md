@@ -69,18 +69,18 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `core/init.lua`: addon table bootstrap, saved-variable defaults entry points, slash command, feature module registry, timing buckets.
 - `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior.
 - `core/minimap_button.lua`: LibDataBroker/LibDBIcon minimap launcher.
-- `functions/checkbox.lua`: shared checkbox factory, including container APIs for checked/enabled state and checked-change hooks.
-- `functions/buttons.lua`: shared text-fit button helpers, `addon.CreateMoveResetButton()`, `addon.ApplyStandardButtonStyle()` for standard gold-normal/white-hover button text, and `addon.CreatePlayPauseButton()` for native-art media play/pause controls (asset details in `media/media_notes.md`).
-- `functions/color_picker.lua`: shared color picker plus reset button.
-- `functions/dropdown.lua`: shared dropdown factory.
+- `functions/checkbox.lua`: shared checkbox factory. Memory: `proj_mem/functions/controls.md`.
+- `functions/buttons.lua`: shared button style, text-fit, play/pause, and Move Reset helpers. Memory: `proj_mem/functions/controls.md`; assets: `media/media_notes.md`.
+- `functions/color_picker.lua`: shared color-picker/session factory. Memory: `proj_mem/functions/controls.md`.
+- `functions/dropdown.lua`: shared dropdown factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/group_column.lua`: shared Aura-style grouped selector column factory with section outlines, selected-group border highlighting, optional row delete buttons, and optional group actions.
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
-- `functions/profiles.lua`: shared profile mechanics via `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`; each module keeps its own profile file for snapshot contents and post-load refresh.
-- `functions/layout_grid.lua`: shared row/column settings grid helpers, including row divider lines: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()` with `grid:place()`, `grid:place_at()`, and `grid:center()` methods.
-- `functions/slider_with_box.lua`: shared slider plus numeric edit box, including `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`.
+- `functions/profiles.lua`: shared profile manager and Profiles-tab UI. Memory: `proj_mem/functions/profiles.md`.
+- `functions/layout_grid.lua`: shared settings-grid geometry and composition. Memory: `proj_mem/functions/layout_grid.md`.
+- `functions/slider_with_box.lua`: shared slider/edit-box/reset factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops and gold outlined settings groups.
-- `functions/tooltip.lua`: centralized tooltip factory. The owned path uses `addon.CreateOwnedTooltip()` (plain frame skinned with native `TooltipBackdropTemplate` nine-slice, auto-sized width, quadrant anchoring), `addon.ShowOwnedTooltipLines()`, `addon.ShowOwnedTooltip()`, and `addon.AttachTooltip()`; restricted Auras use the secret-gated lightweight native Aura/spell tooltip or the data-mixin-free opaque `C_TooltipInfo` text renderer. Never mutate Blizzard's shared global `GameTooltip` or inherit full `GameTooltipTemplate` for restricted Aura data (see project.md Tooltip APIs rule).
+- `functions/tooltip.lua`: centralized tooltip factory and secret-data boundary. Memory: `proj_mem/functions/tooltip.md`.
 - `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 
 
@@ -102,6 +102,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `internal_dev/tests_tools/aura_frames_cdm_regression.md`: manual in-game CDM regression matrix for Aura Frames.
 - `internal_dev/tests_tools/powershell.md`: PowerShell newline rules, safe write notes, and region-helper usage.
 - `proj_mem/modules/*.md`: module memory files.
+- `proj_mem/functions/*.md`: non-obvious shared-function subsystem contracts; created only when durable lessons justify one.
 - `ToDo/`: temporary focused TODO/review notes; read only when the task touches that area.
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `internal_dev/tests_tools/lua_tests/`: headless Lua 5.1 tests against a stubbed WoW API; see `lua_tests/tests_nfo.md` for the stub, harness, and test-writing rules.

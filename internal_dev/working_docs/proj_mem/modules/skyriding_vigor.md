@@ -42,7 +42,7 @@ Important `skyriding_vigor` keys:
 
 ## Position And GUI
 - `position`: UIParent-center-relative saved position; Reset Position restores true screen center (`x = 0`, `y = 0`).
-- Skyriding Vigor uses General, Vigor Bar, and Profiles tabs. General owns the root-DB ARM reset with checked-by-default **Keep Profiles**; Profiles use the shared profile manager and save both normal and race configuration.
+- Skyriding Vigor uses General, Vigor Bar, and Profiles tabs. General owns the root-DB ARM reset with checked-by-default **Keep Profiles**; module snapshots save both normal and race configuration through the shared contract in `../functions/profiles.md`.
 - `sv_profiles.lua` loads before `sv_main.lua`; its profile manager must resolve `M.get_root_db()` through a call-time closure instead of capturing the not-yet-defined function.
 - The active settings file is `modules/skyriding_vigor/sv_gui.lua`, which owns control construction and control synchronization. Add a one-off `sv_gui_sync.lua` split only if a broader cross-module GUI-sync file pattern is introduced.
 - `M.BuildVigorTab()` coordinates local Vigor Bar builders (`build_top_row`, `build_position_row`, `build_decor_row`, `build_fade_row`, `build_race_profile_panel`, and `build_spark_row`) while `ROWS` / `CONTROL_GRID` remain local static placement data. Do not expose local GUI constants through `M` solely to share implementation details.
@@ -53,12 +53,11 @@ Important `skyriding_vigor` keys:
   rules compose with the flight lock.
 - Local style synchronization for registered controls must call the registry gate again; do not directly enable a Node Color or Decor Color dropdown, because the broad flight-lock sync intentionally skips unchanged lock writes.
 - `sync_settings_controls_enabled()` writes the flight-lock registry only when the lock changes; force a sync after rebuilding the Vigor Bar tab so new controls receive the current state.
-- Skyriding's Move Mode cell is a three-control stack: Move Mode, Snap to Grid, and Reset Position. The first control is grid-placed and the secondary controls use `grid:stack_below()` so the row/column cell owns the repeated vertical-stack math.
-- Vigor Bar Scale uses the shared slider factory's immediate callback mode for continuous drag preview. End Decor Scale is already immediate through its DB proxy and must not add a second slider callback; other Skyriding sliders retain the default debounce unless their callback path is separately reviewed.
+- Skyriding follows `../functions/layout_grid.md`; its Move Mode cell is a module-owned three-control stack: Move Mode, Snap to Grid, and Reset Position.
+- Under the shared callback contract in `../functions/controls.md`, Vigor Bar Scale uses immediate mode for continuous preview; End Decor Scale is already immediate through its DB proxy and must not add a second callback; other Skyriding sliders retain debounce.
 - `sv_gui.lua` dropdown `get_value` closures that depend on the active profile must read `M.get_db()` at call time, not capture the `db` local from `BuildSettings()`. Race Profile Test can switch the active DB after the settings page is built.
 - X/Y position sliders intentionally use `HookScript("OnValueChanged", ...)` and `M.set_position_axis()` instead of the generic `set_setting_from_slider()` wrapper. The slider binding and position setter both write DB state, but this is harmless and keeps position behavior centralized.
-- `sync_slider_controls()` intentionally uses both the module-level `_syncing_slider_controls` guard and per-control `_suppress_callback` flags. The module guard prevents Skyriding's local setting writes during programmatic sync, while `CreateSliderWithBox()` consumes `_suppress_callback` before debouncing the supplied callback. Decor sliders use the generic slider callback path and need `_suppress_callback`; X/Y position sliders use `_syncing_position_controls` because they attach direct `OnValueChanged` hooks.
-- Programmatic slider and position synchronization must clear their module guard even when a control setter errors, then rethrow the error. A stuck guard silently mutes later user callbacks.
+- `sync_slider_controls()` intentionally composes the shared control suppression contract with module guards: Decor sliders use the generic callback path, while X/Y sliders use `_syncing_position_controls` around direct `OnValueChanged` hooks. Module guards must clear and rethrow on setter failure.
 
 
 ## Assets And Credits

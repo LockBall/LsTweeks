@@ -28,6 +28,10 @@ Internal research and implementation references for coding agents. Public credit
 
 ## Blizzard UI Source
 - WoW UI source mirror: https://github.com/Gethe/wow-ui-source
+- WoW UI source recursive tree API (unauthenticated path discovery when hosted code search is unavailable): https://api.github.com/repos/Gethe/wow-ui-source/git/trees/live?recursive=1
+- Secret predicate generated API docs: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/SecretPredicateAPIDocumentation.lua
+- Secret predicate behavior docs: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/SecretPredicatesDocumentation.lua
+- Tooltip data handler runtime: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua
 - Objective Tracker folder: https://github.com/Gethe/wow-ui-source/tree/live/Interface/AddOns/Blizzard_ObjectiveTracker
 - Objective Tracker runtime: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTracker.lua
 - Objective Tracker container runtime: https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerContainer.lua

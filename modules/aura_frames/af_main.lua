@@ -327,70 +327,6 @@ local function get_safe_basic_aura_remaining(obj)
     return nil
 end
 
-local function get_safe_color_component(value)
-    if is_usable_tooltip_number(value) then
-        return value
-    end
-    return nil
-end
-
-local function copy_tooltip_color(color)
-    if type(color) ~= "table" then
-        return nil
-    end
-    if issecrettable and issecrettable(color) then
-        return nil
-    end
-    local r = get_safe_color_component(color.r)
-    local g = get_safe_color_component(color.g)
-    local b = get_safe_color_component(color.b)
-    if not (r and g and b) then
-        return nil
-    end
-    return {
-        r = r,
-        g = g,
-        b = b,
-    }
-end
-
-local function copy_tooltip_data_lines(data)
-    local lines = data and data.lines
-    if type(lines) ~= "table" or #lines == 0 then
-        return nil
-    end
-
-    local copied = {}
-    for i = 1, #lines do
-        local line = lines[i]
-        if line and not (issecrettable and issecrettable(line)) then
-            local left_text = line.leftText
-            local right_text = line.rightText
-            if left_text and not is_usable_tooltip_text(left_text) then
-                left_text = nil
-            end
-            if right_text and not is_usable_tooltip_text(right_text) then
-                right_text = nil
-            end
-            if left_text or right_text then
-                local wrap_text = line.wrapText
-                copied[#copied + 1] = {
-                    left_text = left_text,
-                    right_text = right_text,
-                    left_color = copy_tooltip_color(line.leftColor),
-                    right_color = copy_tooltip_color(line.rightColor),
-                    wrap_text = not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true,
-                }
-            end
-        end
-    end
-
-    if #copied == 0 then
-        return nil
-    end
-    return copied
-end
-
 local function get_safe_tooltip_data_for_identity(aura_instance_id, spell_id)
     if not C_TooltipInfo then return nil end
 
@@ -427,7 +363,9 @@ local function cache_tooltip_data_lines_for_identity(aura_instance_id, spell_id)
         return nil
     end
 
-    local lines = copy_tooltip_data_lines(get_safe_tooltip_data_for_identity(aura_instance_id, spell_id))
+    local lines = addon.CopySafeTooltipDataLines(
+        get_safe_tooltip_data_for_identity(aura_instance_id, spell_id)
+    )
     if lines then
         if aura_key then M._tooltip_data_lines_cache[aura_key] = lines end
         if spell_key then M._tooltip_data_lines_cache[spell_key] = lines end

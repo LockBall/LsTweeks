@@ -336,6 +336,12 @@ function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
 end
 
 function addon.ShowNativeSpellTooltip(owner, spell_id, anchor)
+    local secret_check = C_Secrets and C_Secrets.ShouldSpellAuraBeSecret
+    if not secret_check then return false end
+
+    local checked, should_be_secret = pcall(secret_check, spell_id)
+    if not checked or should_be_secret ~= false then return false end
+
     return show_native_tooltip(owner, anchor, "SetSpellByID", spell_id)
 end
 
@@ -363,7 +369,14 @@ function addon.ShowOpaqueAuraTooltip(owner, unit, aura_instance_id, anchor, know
     if not owner or not getter then return false end
 
     local ok, data = pcall(getter, unit or "player", aura_instance_id)
-    local lines = ok and data and data.lines
+    if not ok
+        or type(data) ~= "table"
+        or (issecrettable and issecrettable(data))
+    then
+        return false
+    end
+
+    local lines = data.lines
     if type(lines) ~= "table"
         or (issecrettable and issecrettable(lines))
         or #lines == 0
@@ -485,41 +498,124 @@ end
 --#endregion NATIVE TOOLTIP DELEGATES ==========================================
 
 
+--#region GUARDED TOOLTIP DATA =================================================
+
+local function get_safe_tooltip_text(value)
+    if type(value) ~= "string" or (issecretvalue and issecretvalue(value)) then
+        return nil
+    end
+    return value
+end
+
+local function get_safe_tooltip_color_components(color)
+    if type(color) ~= "table" or (issecrettable and issecrettable(color)) then
+        return nil
+    end
+
+    local r, g, b = color.r, color.g, color.b
+    if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number"
+        or (issecretvalue and (issecretvalue(r) or issecretvalue(g) or issecretvalue(b)))
+    then
+        return nil
+    end
+    return r, g, b
+end
+
+local function copy_safe_tooltip_color(color)
+    local r, g, b = get_safe_tooltip_color_components(color)
+    if r == nil then return nil end
+    return { r = r, g = g, b = b }
+end
+
+local function get_owned_tooltip_color_components(color)
+    local r, g, b = get_safe_tooltip_color_components(color)
+    if r ~= nil then return r, g, b end
+
+    local fallback = NORMAL_FONT_COLOR or {}
+    return fallback.r or 1, fallback.g or 1, fallback.b or 1
+end
+
+function addon.CopySafeTooltipDataLines(data)
+    if type(data) ~= "table" or (issecrettable and issecrettable(data)) then
+        return nil
+    end
+
+    local lines = data.lines
+    if type(lines) ~= "table"
+        or (issecrettable and issecrettable(lines))
+        or #lines == 0
+    then
+        return nil
+    end
+
+    local copied = {}
+    for i = 1, #lines do
+        local line = lines[i]
+        if type(line) == "table" and not (issecrettable and issecrettable(line)) then
+            local left_text = get_safe_tooltip_text(line.leftText)
+            local right_text = get_safe_tooltip_text(line.rightText)
+            if left_text or right_text then
+                local wrap_text = line.wrapText
+                copied[#copied + 1] = {
+                    left_text = left_text,
+                    right_text = right_text,
+                    left_color = copy_safe_tooltip_color(line.leftColor),
+                    right_color = copy_safe_tooltip_color(line.rightColor),
+                    wrap_text = not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true,
+                }
+            end
+        end
+    end
+
+    return #copied > 0 and copied or nil
+end
+
+--#endregion GUARDED TOOLTIP DATA ==============================================
+
+
 --#region OWNED TOOLTIP DISPLAY ================================================
 
 function addon.AddOwnedTooltipLines(tooltip, lines)
-    if not tooltip or type(lines) ~= "table" then return false end
+    if not tooltip
+        or type(lines) ~= "table"
+        or (issecrettable and issecrettable(lines))
+    then
+        return false
+    end
     local added = false
     for i = 1, #lines do
         local line = lines[i]
-        local left_text = line and line.left_text
-        local right_text = line and line.right_text
-        local has_left = left_text and left_text ~= ""
-        local has_right = right_text and right_text ~= ""
-        if has_left or has_right then
-            local left_color = line.left_color or NORMAL_FONT_COLOR or {}
-            if has_right then
-                local right_color = line.right_color or NORMAL_FONT_COLOR or {}
-                tooltip:AddDoubleLine(
-                    left_text or "",
-                    right_text,
-                    left_color.r or 1,
-                    left_color.g or 1,
-                    left_color.b or 1,
-                    right_color.r or 1,
-                    right_color.g or 1,
-                    right_color.b or 1
-                )
-            else
-                tooltip:AddLine(
-                    left_text,
-                    left_color.r or 1,
-                    left_color.g or 1,
-                    left_color.b or 1,
-                    line.wrap_text == true
-                )
+        if type(line) == "table" and not (issecrettable and issecrettable(line)) then
+            local left_text = get_safe_tooltip_text(line.left_text)
+            local right_text = get_safe_tooltip_text(line.right_text)
+            local has_left = left_text and left_text ~= ""
+            local has_right = right_text and right_text ~= ""
+            if has_left or has_right then
+                local left_r, left_g, left_b = get_owned_tooltip_color_components(line.left_color)
+                if has_right then
+                    local right_r, right_g, right_b = get_owned_tooltip_color_components(line.right_color)
+                    tooltip:AddDoubleLine(
+                        left_text or "",
+                        right_text,
+                        left_r,
+                        left_g,
+                        left_b,
+                        right_r,
+                        right_g,
+                        right_b
+                    )
+                else
+                    local wrap_text = line.wrap_text
+                    tooltip:AddLine(
+                        left_text,
+                        left_r,
+                        left_g,
+                        left_b,
+                        not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true
+                    )
+                end
+                added = true
             end
-            added = true
         end
     end
     return added
@@ -533,7 +629,13 @@ function addon.HideOwnedTooltip()
 end
 
 function addon.ShowOwnedTooltipLines(owner, lines, anchor)
-    if not owner or type(lines) ~= "table" or #lines == 0 then return end
+    if not owner
+        or type(lines) ~= "table"
+        or (issecrettable and issecrettable(lines))
+        or #lines == 0
+    then
+        return
+    end
     local tooltip = addon.GetOwnedTooltip()
     addon.ResetOwnedTooltip(tooltip)
     tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")

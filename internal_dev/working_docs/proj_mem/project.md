@@ -1,5 +1,5 @@
 # LsTweeks Project Memory
-Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives in `proj_mem/modules/`.
+Shared memory for coding agents. Keep this file concise and durable: architecture, ownership, defaults, workflow rules, and hard-won debugging notes only. Module-specific memory lives in `proj_mem/modules/`; non-obvious shared-function contracts live in `proj_mem/functions/`.
 
 
 ## Table of Contents
@@ -21,6 +21,11 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - [Agent Start](agent_start.md)
 - [Code Map](code_map.md)
 - [Research Sources](research_sources.md)
+- [Function Memory](#function-memory)
+  - [Tooltip](functions/tooltip.md)
+  - [Profiles](functions/profiles.md)
+  - [Controls](functions/controls.md)
+  - [Layout Grid](functions/layout_grid.md)
 - [Performance Profiling](../../tests_tools/cpu_profiles/profiling_workflow.md)
 - [PowerShell Tool Notes](../../tests_tools/powershell.md)
 - [Module Memory](#module-memory)
@@ -33,11 +38,11 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 
 ## Project Operations
 ### Workflow
-- Source of truth: this file plus module files under `proj_mem/modules/`.
-- Durable changes: update this file or the relevant module file for architecture, defaults, APIs, or debugging lessons.
+- Source of truth: this file plus relevant memory under `proj_mem/modules/` and `proj_mem/functions/`.
+- Durable changes: update the owning project, module, or shared-function memory for architecture, defaults, APIs, or debugging lessons.
 - Session start: read `agent_start.md` first, then only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
-- Active working docs: `working_docs/`; project/module memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
+- Active working docs: `working_docs/`; project/module/function memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
 - Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Add unresolved addon-wide checks to `ToDo/cross_module_followups.md` immediately; keep only durable generalized lessons in this file.
 - Public docs: root markdown.
@@ -55,6 +60,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - `agent_start.md`: single entry point.
 - `project.md`: project-wide architecture, workflow, file maps, packaging, LuaLS/Ketho notes, durable cross-module lessons.
 - `code_map.md`: compact file ownership, command routing, token-saving context shortcuts.
+- Function memory files: non-obvious shared subsystem architecture, cross-module contracts, regressions, and validation; one file per meaningful subsystem, not per Lua function, and only when durable lessons justify it.
 - Module memory files: module-specific settings, runtime lessons, regressions, ownership details.
 - Project read-in docs: repo-local tools, validation commands, known failure modes, project-specific command rules. Keep tool-owned notes under `internal_dev/tests_tools/`; exclude platform-provided session tools.
 - Memory/doc size: do not split files for token savings; use markdown headings, source responsibility headers, and `--#region` markers.
@@ -161,7 +167,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Keep high-frequency runtime paths narrow. If code runs every frame/tick or many times per second, avoid repeated DB/style/layout/atlas/config resolution there; do that work in a lower-frequency refresh/setup path and pass or store the resolved state for the hot path. Make the mutability boundary explicit first, such as disabling settings edits during an active runtime state while still allowing controlled test modes.
 - When a settings control has both a broad runtime lock and a local eligibility rule, register the local rule with the centralized gate. Local state synchronization must reapply that composite gate rather than directly enabling the control.
 - Give each direct `OnUpdate` assignment one owning subsystem. Use `HookScript` when extending a Blizzard-owned frame, or a dedicated driver frame when independent addon lifecycles need concurrent updates; only the owner may clear its callback.
-- Programmatic control synchronization may suppress callbacks only for the setter call. Restore the prior suppression state through a protected cleanup path and rethrow setter errors, so a failed sync cannot mute later user input.
+- Shared control callback suppression, synchronization, and gating contracts live in `functions/controls.md`.
 - Release initialization-only listeners such as `ADDON_LOADED` as soon as their own initialization completes. Retain one only for a named later-load dependency and document that dependency beside the listener.
 - Never call protected Blizzard frame methods such as `UpdateAuras` or `UpdateLayout` from addon context. Restore addon-owned suppression state and let Blizzard handlers run; module-specific stricter rules such as Aura Frames' `BuffFrame` / `DebuffFrame` handling take precedence.
 - Defer layout/geometry changes in combat. `update_auras()` skips scale, anchors, size, layout setup, and height changes during combat or while `frame._is_user_positioning`.
@@ -172,8 +178,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.
 - Keep setting ranges, shared widget footprints, runtime clamp metadata, and tolerance constants single-owned and domain-named.
-- Reusable profile mechanics live in `functions/profiles.lua` through `addon.CreateProfileManager()` and `addon.BuildProfilesTab()`. Each module keeps its own profile file for its explicit snapshot contents and post-load runtime refresh. The addon is unreleased: do not add saved-data migrations or schema-version handling; replace incompatible local profiles instead.
-- Profile/default imports must select a fallback only when the source key is `nil`; explicit `false` is saved data and must survive the copy.
+- Shared profile storage/UI contracts live in `functions/profiles.md`; modules own snapshot contents and post-load runtime refresh.
 - When a reset, profile system, preview workflow, or shared UI factory changes, review five cross-module concerns before handoff: live DB references after table replacement; ownership and cancellation of delayed restores; symmetry between normal and temporary-state reads/writes; reset/profile-load synchronization of controls, runtime, and session flags; and every consumer of the changed shared factory. Keep the durable rule here and record only unresolved module-specific work in a ToDo review.
 - Normalize persisted RGBA tables at each module startup/profile-import boundary. Clamp readable components to 0–1 before cached or runtime visual paths use them; do not rely solely on a color picker to sanitize manually edited or malformed saved variables.
 
@@ -186,35 +191,31 @@ Violations here can create invisible or unstable controls.
 - Do not use `frame:GetWidth()` at build time; it can be 0 before render.
 - Factory functions should not place controls externally when the caller owns placement.
 - Before adding settings UI, check `code_map.md` `## Core And Shared Helpers` for an existing shared factory/helper. Use the shared factory's public control API when one exists instead of hand-building equivalent controls, reaching into inner widgets, or rediscovering the owner by broad search.
-- Standard button text styling lives in `functions/buttons.lua` via `addon.ApplyStandardButtonStyle()`. Use it for raw `UIPanelButtonTemplate` buttons instead of setting normal/highlight fonts directly; `addon.CreateTextButton()`, `addon.CreateMoveResetButton()`, dropdowns, sliders, and color-picker reset buttons route through it.
-- Media play/pause controls use `addon.CreatePlayPauseButton()` in `functions/buttons.lua`: native Blizzard play/pause art swapped per state with a self-ADD hover glow, `SetPaused()` for state, and `show_pause = false` for play-only preview buttons. Texture paths and highlight gotchas are owned by `media/media_notes.md`.
-- Shared color controls live in `functions/color_picker.lua` via `addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb)`. Use that factory for settings color pickers instead of hand-building ColorPickerFrame wiring. The shared system picker clears its live swatch/opacity callbacks when a session cancels or hides, so a later picker session cannot write the closed control state.
-- Shared dropdown hover arrows are owned by `functions/dropdown.lua` through `addon.CreateDropdown()`. They use `Interface\ChatFrame\ChatFrameExpandArrow` at `15x15`, anchored directly below the dropdown with `0` px vertical offset and rotated 90 degrees clockwise via `Texture:SetTexCoord()`. Reusable asset details live in `media_notes.md`.
+- Shared button, checkbox, slider, color-picker, and dropdown contracts live in `functions/controls.md`; reusable asset details remain in `media_notes.md`.
 - Shared grouped selector columns live in `functions/group_column.lua` through `addon.CreateGroupColumn()`. It is based on Aura Frames' grouped tree structure: thin-border outer frame, thin-border group boxes, centered titles inside group outlines, outlined row labels, one selected-row highlight, and a gold border on the selected row's group. Use it for left-side grouped list/tree columns that need selectable rows, optional row delete buttons, and optional group actions. Group boxes are clickable and select the header `default_key` or first row, so clicking empty space/title inside a section activates that section. For Audio Volumes, Triggered is the fixed primary group equivalent to Aura Frames' Buffs group, and Quick Picks is the custom group with the same Aura-style group title/outline presentation.
 - Shared settings UI chrome lives in `functions/ui_helpers.lua`: use `addon.CreateControlPanel()` / `addon.ApplyControlPanelBackdrop()` for the standard dark framed control background, and `addon.CreateSettingsGroup()` / `addon.ApplySettingsGroupOutline()` / `addon.CreateSettingsGroupTitleBar()` for the gold outlined settings group style with a 24px grey title bar used by Audio Volumes and Objectives.
-- Centralized tooltip handling lives in `functions/tooltip.lua`: general help/line callers use the owned display and attachment helpers; restricted Aura/spell callers use the native show/hide helpers. The complete global-isolation and taint contract lives in `### Key WoW APIs And Lessons` below.
+- Centralized tooltip handling lives in `functions/tooltip.lua`; architecture, secret-data boundaries, and taint evidence are owned in `functions/tooltip.md`.
 - Repeated standard control-panel backdrops are consolidated into `functions/ui_helpers.lua` and tooltip hooks into `functions/tooltip.lua`. Remaining repeated-looking UI code is mostly specialized composition: Aura Frames runtime/tooltips, main-frame chrome, Audio Volumes custom panels, and feature-specific list/tree rendering.
-- Shared grid placement helpers live in `functions/layout_grid.lua`: `addon.GetGridOffset()`, `addon.SetGridPoint()`, `addon.CenterGridControl()`, and `addon.CreateSettingsGrid()`. Use `addon.CreateSettingsGrid()` for row/column settings panels, including row divider lines through `row_separators`; keep divider rows explicit so sparse layouts do not draw empty separators. Prefer the grid object's `grid:place(control, placement)` and `grid:center(control, placement)` helpers when using module-local placement tables, so modules do not duplicate alignment/y-offset/width option mapping.
-- Treat module-local grid placement tables as static source data. Pass dynamic widths or centering details through grid placement options instead of writing derived runtime values back into placement tables.
-- Make non-additive `CreateSettingsGrid()` changes only when current consumers are reviewed together. Player Frame, Skyriding Vigor, and Aura Frames rely on tuned row-height, separator, centering, and column-offset behavior.
-- Settings grid cells may contain a small vertical stack of related controls. Use `grid:stack_below()` for secondary controls in the same cell instead of hand-anchoring repeated checkbox/button stacks; keep the first control placed through `grid:place()` or `grid:place_at()`.
+- Shared settings-grid geometry, composition, consumer-audit, and validation contracts live in `functions/layout_grid.md`.
 - When splitting a long settings builder into local section-builder functions, pass a small local `context` table for repeated build inputs such as config, DB handles, defaults, grid helpers, and reused proxies. Keep layout constants and private builders local unless another file genuinely needs them; do not expand a module's public `M` surface just to share implementation details inside one settings file.
-- `CreateSliderWithBox` debounces callbacks at `addon.UPDATE_INTERVALS.tenth_sec` by default. Use `opts.immediate_callback` only for direct visual previews whose callback is safe and inexpensive at every drag step; retain debounce for scans, reconstruction, external API work, and other costly processing. Use its public control API for routine value handling: `slider:GetValue()`, `slider:SetValue(value)`, `slider:SetValueSilently(value)`, and `slider:HookValueChanged(fn[, opts])`. Reach into `slider.slider` only for template-specific behavior not exposed by the factory.
-- `CreateCheckbox` exposes container-level state APIs: `checkbox:GetChecked()`, `checkbox:SetChecked(value)`, `checkbox:SetCheckedSilently(value)`, `checkbox:SetEnabled(value)`, `checkbox:Enable()`, `checkbox:Disable()`, and `checkbox:HookCheckedChanged(fn[, opts])`. Store the returned container in module control tables for routine sync, use `SetCheckedSilently()` for programmatic reset/profile/reload sync, and use the raw returned button/label only for specialized layout or tooltip targets.
-- Module reset preserve checkboxes also follow the shared checkbox container rule; read preserve state through the container API instead of the raw CheckButton.
+- Module reset preserve checkboxes follow the shared container contract in `functions/controls.md`; read preserve state through the container API.
 
 
 ### Key WoW APIs And Lessons
 - Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
 - Spell APIs: legacy globals `GetSpellInfo`, `GetSpellTexture`, and similar are removed on modern retail (11.0+); use `C_Spell.GetSpellInfo(spellId)` (returns an info table with `name`, `iconID`, etc.), `C_Spell.GetSpellTexture`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`. Never cache the legacy globals; caching captures `nil` and fails at call time.
-- Tooltip APIs: route every tooltip through `functions/tooltip.lua`. Useful live combat Aura details, including descriptions, are a product requirement; name/duration-only and cache-only output are final fallbacks, not acceptable target behavior. Error suppression is valid only when the underlying failure cannot wedge or disable later tooltips. Use the addon-owned plain renderer for addon-authored or guarded `C_TooltipInfo` line data; it owns native fonts, nine-slice skin, content sizing, quadrant anchoring, and screen clamping. The native delegate uses one lightweight LsTweeks `GameTooltip`: `SharedTooltipArtTemplate` plus `GameTooltipDataMixin`, with `SharedTooltip_OnHide` instead of the full `GameTooltipTemplate` widget cleanup path. Gate Aura-instance setters through `C_Secrets.ShouldUnitAuraInstanceBeSecret`: only an explicit non-secret result may enter `SetUnitAuraByAuraInstanceID`. Secret or indeterminate Auras with an out-of-combat cache use a separate data-mixin-free `SharedTooltipArtTemplate`: live `C_TooltipInfo` left/right text passes opaquely into native lines while safe cached colors are reapplied by line position. With no known palette, use readable `SetSpellByID` when possible, then opaque live text with neutral colors; guarded cached lines remain the fallback. The runtime-only cache prewarms every safely identified entry in the bounded shared Aura scan outside combat, aliases Aura and spell keys, makes cached rescans lookup-only, and caps unavailable-entry probes at two. Never inspect secret text, colors, wrap flags, or measurements, put Aura data onto Blizzard's shared global `GameTooltip`, inherit full `GameTooltipTemplate` for Aura data, or wrap native setters in `securecallfunction`. Shared-global, full-template, and unguarded lightweight delegates all failed under delayed or direct secret-data paths on 2026-07-20 and 2026-07-21; the secret predicate and template isolation are required regression contracts.
+- Tooltip APIs: route every tooltip through `functions/tooltip.lua`; the complete renderer, secret-data, taint, and validation contract is owned in `functions/tooltip.md`. Aura Frames' live-detail requirement and cache/fallback policy remain module-owned.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.
 - Combat/taint: `InCombatLockdown()` guards protected paths. If Blizzard's blocked-action dialog appears, treat it as taint first.
-- Secret API values: guard only known restricted API outputs before comparisons, arithmetic, string construction, table keys, cache writes, or ordinary UI calls. Keep the safe local result through the path; direct pass-through is acceptable only to a Blizzard display API that supports the value, without inspecting or caching it.
+- Secret API values: guard only known restricted API outputs before comparisons, arithmetic, string construction, table keys, cache writes, or ordinary UI calls. Validate each containing table before reading a field, length, or index; do not assume an outer result/container is safe merely because only its nested values are documented as secret. Keep the safe local result through the path; direct pass-through is acceptable only to a Blizzard display API that supports the value, without inspecting or caching it.
 - Sound APIs: `PlaySoundFile(fileDataID_or_path, channel?)` returns `(willPlay, soundHandle)`. `C_Sound.PlaySound(soundKitID, uiSoundSubType?)` returns `(success, soundHandle)`, though in-game testing confirmed `PlaySound(soundKitID, "SFX")` works on this client. `MuteSoundFile` / `UnmuteSoundFile` accept `number|string`; Ketho lists them as globals, not `C_Sound` members. Resolve sound API upvalues at file load.
 - Objective Tracker APIs: `ObjectiveTrackerFrame`, `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker` expose `SetCollapsed`/`IsCollapsed`. Objective module frames also inherit `ToggleCollapsed` and `MarkDirty`; apply startup/default state with `SetCollapsed`, but do not hook re-collapse behavior when the user must retain normal manual expand/collapse control.
 - Lua operator precedence trap: `and` binds tighter than `or`, so `a and b ~= nil or false` parses as `(a and (b ~= nil)) or false`. The trailing `or false` is always a no-op when the left side already evaluates to a boolean. Write `a and b ~= nil` directly.
 - Lua ternary trap: do not use `condition and value_if_true or value_if_false` when `value_if_true` can be `nil` or `false`; Lua will take the false branch. Use an explicit `if` block for optional override values, especially when `nil` means "fall through to default behavior".
+
+
+## Function Memory
+Shared-function subsystem memory files are linked in the table of contents above. Current owners cover tooltips, profiles, standard controls, and settings-grid layout. Create another only for a meaningful subsystem with non-obvious durable contracts; do not create one per exported Lua function.
 
 
 ## Module Memory

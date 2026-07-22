@@ -23,7 +23,7 @@ Important `player_frame` keys:
 ### File Ownership And Settings UI
 - `modules/player_frame/pf_defaults.lua` owns Player Frame defaults. `modules/player_frame/pf_gui.lua` owns the settings panel. `modules/player_frame/pf_main.lua` owns portrait combat text hiding, controller hooks, and event routing. `modules/player_frame/pf_fade.lua` owns OOC fade runtime state, combat transitions, fade timers, and the health curve gate. The old health API probe is archived at `tests_tools/player_frame_health_probe.lua` and is not loaded by the addon.
 - `pf_main.lua` registers the Player Frame settings category with `module_key`, so the Settings Module Enabler leaves its sidebar button visible but greyed out/locked when disabled. Runtime side effects route through `M.update_player_frame()` / `M.set_module_enabled()` and stop at the module gate.
-- Player Frame settings layout uses the shared `addon.CreateSettingsGrid()` helper from `functions/layout_grid.lua`; keep checkbox rows, fade slider columns, and per-row heights parameterized there instead of chaining row frames by hand. The OOC Fade checkbox and fade sliders share one taller grid row.
+- Player Frame uses the shared grid contract in `../functions/layout_grid.md`; its checkbox rows, fade slider columns, and one taller OOC Fade row remain module-owned layout data.
 - Portrait combat text suppression must use `HitIndicator:SetAlpha(0)` plus the HitIndicator `OnShow` hook, never `Hide()`, to stay taint-safe on the Blizzard PlayerFrame.
 
 

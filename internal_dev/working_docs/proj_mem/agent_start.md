@@ -17,7 +17,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Request trigger | Required targeted read |
 | --- | --- |
 | Module code or module behavior | Matching module memory section (list `##` headings first on large files) and source outline before broad source reads |
-| Shared helper, core, settings factory, or shared widget (button, checkbox, slider, dropdown, color picker, panel, grid) | `code_map.md` `## Core And Shared Helpers`, then source outline |
+| Shared helper, core, settings factory, or shared widget (button, checkbox, slider, dropdown, color picker, panel, grid) | Matching `proj_mem/functions/` memory when present, then `code_map.md` `## Core And Shared Helpers` and source outline |
 | Session/doc workflow, ownership, or scratchpad rules | `project.md` `### Workflow` |
 | Editing, creating, or reorganizing any doc/memory markdown | `project.md` `### Documentation Rules` |
 | Adding media, referencing external code, or Blizzard assets | `project.md` `### Asset And Reference Rules` |
@@ -42,17 +42,18 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |
 | PowerShell file-writing or newline issue | `internal_dev/tests_tools/powershell.md` |
 
+- Shared-function memory index: `functions/tooltip.md`, `functions/profiles.md`, `functions/controls.md`, and `functions/layout_grid.md`. Read only the file matched by the task.
 - Start investigation or editing after the baseline and directly matched reads are complete. Do not read adjacent modules, whole large memory files, public docs, or review notes merely for familiarity unless truly necessary.
 - Before changing a known LuaLS/Ketho suppression, read the relevant module memory `## Ketho / LuaLS` section.
 - Use `code_map.md` `## Fast Commands` for command strings, source outlines, routine validation, package validation, and repo search.
-- Update `project.md` for durable architecture/defaults/tooling changes and the relevant module memory for durable module changes.
-- File scope: routing and session-start guidance only; project facts belong in `project.md`, feature facts in module memory.
+- Update the owning project, module, or shared-function memory for durable architecture, defaults, APIs, and debugging lessons.
+- File scope: routing and session-start guidance only; project facts belong in `project.md`, feature facts in module memory, and non-obvious shared-subsystem contracts in function memory.
 
 
 ## Collaboration Rules
 - Treat user statements as hypotheses until code, docs, runtime behavior, or API annotations confirm them. Correct wrong assumptions directly.
 - Prefer concrete evidence over memory or inference, especially for WoW APIs, taint/combat behavior, packaging contents, and generated diagnostics.
-- Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Example: short testing initially appeared to validate shared-native Aura delegates, but delayed taint evidence required a dedicated native tooltip instead (2026-07-20).
+- Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Tooltip evidence is owned in `functions/tooltip.md` `## Incident Evidence`.
 - Preserve user changes. Do not revert unrelated edits while cleaning, refactoring, or packaging.
 - After significant changes, provide a concise git commit message.
 - When suggesting a commit message, provide one complete combined message for the current work batch unless the user explicitly asks for multiple separate commits or alternatives. Do not show both a short and long option.

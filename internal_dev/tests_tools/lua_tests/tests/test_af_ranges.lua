@@ -498,6 +498,45 @@ h.test("scanned Aura prewarm caps misses to avoid repeated TooltipInfo work", fu
     h.eq(query_count, 2, "unavailable hidden Aura is queried at most twice")
 end)
 
+h.test("Aura prewarm rejects secret tooltip containers before inspection", function()
+    local M = load_aura_frames()
+    M._tooltip_data_lines_cache = {}
+    local previous_tooltip_info = C_TooltipInfo
+    local secret_data = setmetatable({
+        __lstweeks_test_secret_table = true,
+    }, {
+        __index = function()
+            error("secret tooltip data was inspected")
+        end,
+    })
+    local secret_lines = {
+        __lstweeks_test_secret_table = true,
+        setmetatable({}, {
+            __index = function()
+                error("secret tooltip line was inspected")
+            end,
+        }),
+    }
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function(_, aura_instance_id)
+            if aura_instance_id == 1001 then
+                return secret_data
+            end
+            return { lines = secret_lines }
+        end,
+    }
+
+    local ok = pcall(M.prewarm_scanned_aura_tooltip_cache, {
+        [1001] = { instance_id = 1001 },
+        [1002] = { instance_id = 1002 },
+    })
+    C_TooltipInfo = previous_tooltip_info
+
+    h.eq(ok, true, "secret tooltip containers are rejected without field reads")
+    h.is_nil(M._tooltip_data_lines_cache["aura:1001"], "secret tooltip data is not cached")
+    h.is_nil(M._tooltip_data_lines_cache["aura:1002"], "secret tooltip lines are not cached")
+end)
+
 h.test("Aura icon hover uses an isolated native tooltip delegate outside combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
@@ -538,7 +577,7 @@ h.test("Aura icon hover uses an isolated native tooltip delegate in combat", fun
     h.eq(call[2], 101, "combat Aura tooltip receives the rendered Aura instance")
 end)
 
-h.test("secret Aura hover uses the rich spell tooltip without touching Aura data", function()
+h.test("secret Aura spell identity still uses the live opaque Aura description", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -548,21 +587,40 @@ h.test("secret Aura hover uses the rich spell tooltip without touching Aura data
     icon.aura_name = "Secret Aura"
     icon.tooltip_enabled = true
     local previous_secrets = C_Secrets
+    local previous_tooltip_info = C_TooltipInfo
     C_Secrets = {
+        ShouldSpellAuraBeSecret = function()
+            return true
+        end,
         ShouldUnitAuraInstanceBeSecret = function()
             return true
         end,
     }
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            return {
+                lines = {
+                    { leftText = "Live secret combat buff" },
+                    { leftText = "Live effect description." },
+                },
+            }
+        end,
+    }
 
     icon:GetScript("OnEnter")(icon)
-    local tooltip = h.addon.GetNativeTooltip()
-    local aura_call = tooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
-    local spell_call = tooltip:GetLastCall("SetSpellByID")
+    local native_tooltip = h.addon.GetNativeTooltip()
+    local aura_call = native_tooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    local spell_call = native_tooltip:GetLastCall("SetSpellByID")
+    local opaque_tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
+    local rendered = opaque_tooltip:GetCalls("AddLine")
     C_Secrets = previous_secrets
+    C_TooltipInfo = previous_tooltip_info
 
     h.is_nil(aura_call, "secret Aura never enters the native Aura processor")
-    h.eq(spell_call[1], 404, "secret Aura retains the full native spell description")
-    h.eq(tooltip:IsShown(), true, "rich spell tooltip is shown")
+    h.is_nil(spell_call, "secret Aura spell never enters the native spell processor")
+    h.eq(rendered[1][1], "Live secret combat buff", "live Aura title is retained")
+    h.eq(rendered[2][1], "Live effect description.", "live Aura description is retained")
+    h.eq(opaque_tooltip:IsShown(), true, "rich opaque Aura tooltip is shown")
 end)
 
 h.test("secret Aura without readable spell identity forwards its full description", function()
