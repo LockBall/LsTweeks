@@ -25,10 +25,26 @@ Color precedence:
 ## Suggested Settings
 - `Use one color across all modules`
 - Global RGBA color picker
+- Preset selector composed from a left arrow, dropdown, and right arrow
 - One entry for each participating module
 - `Use one color for this module`
 - Module RGBA color picker
 - Aura Frames target choices: `Frame backgrounds` and `Bar backgrounds`
+
+
+## Color Presets
+Offer the same ordered preset selector beside each global or module color picker:
+
+`Red -> Orange -> Yellow -> Green -> Blue -> Indigo -> Violet -> Black -> White -> Grey`
+
+- Match WoW's native cycling-dropdown layout: a previous-page art button, a wide clickable dropdown that opens the full option list and retains its own hover arrow below, and a next-page art button.
+- Use Blizzard's Spellbook previous/next page texture family. The existing shared play button already uses the next-page art; add a focused shared page-arrow button helper instead of using text glyphs or giving the selector play/pause semantics.
+- The dropdown selects a preset directly.
+- Left and right arrows cycle through the ordered list and wrap at either end.
+- Presets replace RGB while preserving the current alpha.
+- Manual color-picker edits that do not match a preset display as `Custom`.
+- From `Custom`, the right arrow starts at Red and the left arrow starts at Grey.
+- Preset selection changes only the active override color; it does not enable that override.
 
 
 ## Architecture
@@ -36,10 +52,8 @@ Calculate an effective runtime color instead of copying the selected color into 
 
 Expose a small shared color-resolution service. Aura Frames and Objectives should request their effective background color while retaining responsibility for applying it. Objectives must retain its combat-safe deferred update behavior, and Aura Frames must invalidate or refresh its runtime configuration cache when the effective color changes.
 
+Synchronization changes color only. It must not enable a background that its owning module currently hides.
 
-## Open Decision
-Decide what `all backgrounds` means inside Aura Frames:
-- Frame backgrounds only
-- Frame backgrounds and bar-track backgrounds
 
-Recommended: support both as separate target checkboxes.
+## Aura Frames Participation
+Support frame backgrounds and bar-track backgrounds as separate target checkboxes.
