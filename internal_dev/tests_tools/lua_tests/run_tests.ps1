@@ -121,6 +121,7 @@ function Get-ImpactedSuiteNames {
         }
 
         switch -Regex ($path) {
+            '^modules/background_color_sync/' { & $add 'bcs_sync'; continue }
             '^modules/aura_frames/af_logic_native_visibility\.lua$' { & $add 'af_native_visibility'; continue }
             '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_ranges'); continue }
             '^modules/aura_frames/' { & $add 'af_ranges'; continue }

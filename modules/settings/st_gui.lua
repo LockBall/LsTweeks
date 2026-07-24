@@ -94,7 +94,8 @@ function M.build_settings_page(parent)
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
 
     local modules_group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    modules_group:SetSize(1, cfg.modules_group_height)
+    local extra_module_rows = math_max(0, #addon.FEATURE_MODULES - 5)
+    modules_group:SetSize(1, cfg.modules_group_height + (extra_module_rows * cfg.modules_checkbox_step_y))
     modules_group:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, cfg.modules_group_offset_y)
     modules_group:SetBackdrop({
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",

@@ -1,4 +1,5 @@
--- Shared button helpers for text-fit sizing and simple UIPanel buttons.
+-- Shared button helpers for text-fit sizing, native page arrows, media controls,
+-- and simple UIPanel buttons.
 
 
 local _, addon = ...
@@ -130,6 +131,48 @@ function addon.CreateTextButton(parent, text, on_click, opts)
 end
 
 --#endregion TEXT BUTTONS ======================================================
+
+
+--#region PAGE ARROW BUTTONS ==================================================
+
+local PAGE_ARROW_TEXTURES = {
+    previous = {
+        normal = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up",
+        pushed = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down",
+        disabled = "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled",
+    },
+    next = {
+        normal = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up",
+        pushed = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down",
+        disabled = "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled",
+    },
+}
+
+function addon.CreatePageArrowButton(parent, direction, on_click, opts)
+    opts = opts or {}
+    direction = direction == "previous" and "previous" or "next"
+    local art = PAGE_ARROW_TEXTURES[direction]
+
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(opts.width or 32, opts.height or 32)
+    button:SetNormalTexture(art.normal)
+    button:SetPushedTexture(art.pushed)
+    button:SetDisabledTexture(art.disabled)
+    button:SetHighlightTexture(art.normal, "ADD")
+
+    local highlight = button:GetHighlightTexture()
+    if highlight then
+        highlight:SetVertexColor(1, 1, 1, opts.highlight_alpha or 0.7)
+    end
+
+    button.direction = direction
+    if type(on_click) == "function" then
+        button:SetScript("OnClick", on_click)
+    end
+    return button
+end
+
+--#endregion PAGE ARROW BUTTONS ===============================================
 
 
 --#region PLAY / PAUSE BUTTONS ================================================

@@ -58,6 +58,7 @@ addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket = addon.UPDATE_INTERVALS.ten
 addon.FEATURE_MODULES = {
     { key = "player_frame", label = "Player Frame" },
     { key = "objectives", label = "Objectives" },
+    { key = "background_color_sync", label = "Background Colors" },
     { key = "aura_frames", label = "Buffs & Debuffs" },
     { key = "audio_volumes", label = "Audio Volumes" },
     { key = "skyriding_vigor", label = "Skyriding Vigor" },

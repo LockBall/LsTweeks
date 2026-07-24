@@ -986,6 +986,10 @@ function M.create_custom_frame(entry)
     if not entry or not entry.id then return end
     local id       = entry.id
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
+    local custom_order = 1000 + (tonumber(id:match("(%d+)$")) or 0)
+    if M.register_background_color_targets then
+        M.register_background_color_targets(id, entry.name or id, custom_order)
+    end
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
     if entry.fade_ooc == nil then entry.fade_ooc = false end
@@ -1064,6 +1068,9 @@ function M.destroy_custom_frame(id)
     end
     if M.clear_custom_aura_scan_cache then
         M.clear_custom_aura_scan_cache()
+    end
+    if M.unregister_background_color_targets then
+        M.unregister_background_color_targets(id)
     end
 end
 

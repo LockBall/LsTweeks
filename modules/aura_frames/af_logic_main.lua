@@ -29,6 +29,22 @@ function M.invalidate_all_frame_runtime_config()
     end
 end
 
+function M.on_background_color_sync_changed()
+    M.invalidate_all_frame_runtime_config()
+    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+
+    local frames_list = M.frames_list
+    if not frames_list then return end
+    for i = 1, #frames_list do
+        local frame = frames_list[i]
+        local params = frame and frame.update_params
+        if params then
+            M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
+                params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
+        end
+    end
+end
+
 -- A long helpful aura changes category when its remaining time reaches the
 -- short threshold.  The visible-icon ticker detects that boundary; this
 -- deferred refresh rebuilds the shared scan once, outside the ticker loop.
@@ -77,6 +93,19 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_color then
+        bar_bg_color = color_sync.resolve_color(
+            M.MODULE_KEY,
+            M.get_background_color_target_key(category, "bar"),
+            bar_bg_color
+        )
+        bg_color = color_sync.resolve_color(
+            M.MODULE_KEY,
+            M.get_background_color_target_key(category, "frame"),
+            bg_color
+        )
+    end
 
     cache = {
         bar_mode = bar_mode,
@@ -528,6 +557,14 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local is_bg_enabled = cfg_db[bg_key]
     if is_bg_enabled == nil then
         is_bg_enabled = cfg_db["bg"]
+    end
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_visibility then
+        is_bg_enabled = color_sync.resolve_visibility(
+            M.MODULE_KEY,
+            M.get_background_color_target_key(category, "frame"),
+            is_bg_enabled
+        )
     end
     local bg_r, bg_g, bg_b, bg_a
     local br_r, br_g, br_b, br_a

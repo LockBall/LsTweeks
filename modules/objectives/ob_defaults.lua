@@ -93,6 +93,30 @@ M.SETTINGS_LAYOUT = {
     },
 }
 
+local color_sync = addon.background_color_sync
+if color_sync and color_sync.register_consumer then
+    color_sync.register_consumer(M.MODULE_KEY, {
+        label = "Objectives",
+        order = 200,
+        default_color = M.defaults.objectives.background_color,
+        refresh = function()
+            if M.on_background_color_sync_changed then
+                M.on_background_color_sync_changed()
+            end
+        end,
+    })
+    color_sync.register_target(M.MODULE_KEY, "custom_background", {
+        label = "Custom Background",
+        row_key = "custom_background",
+        row_label = "Custom Background",
+        column = 2,
+        column_label = "Background",
+        order = 1,
+        default_enabled = true,
+        supports_visibility = true,
+    })
+end
+
 return M
 
 --#endregion FILE CONTENTS ===================================================

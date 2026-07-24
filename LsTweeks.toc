@@ -42,6 +42,11 @@ modules\about.lua
 modules\settings\st_defaults.lua
 modules\settings\st_gui.lua
 modules\settings\st_main.lua
+modules\background_color_sync\bcs_defaults.lua
+modules\background_color_sync\bcs_logic.lua
+modules\background_color_sync\bcs_profiles.lua
+modules\background_color_sync\bcs_gui.lua
+modules\background_color_sync\bcs_main.lua
 modules\player_frame\pf_defaults.lua
 modules\player_frame\pf_gui.lua
 modules\player_frame\pf_main.lua

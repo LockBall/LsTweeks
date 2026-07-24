@@ -437,6 +437,10 @@ function M.build_frames_tab(p, frames_data)
     M.on_custom_frame_renamed = function(id, new_name)
         local fs = id and node_fs_map[id]
         if fs then fs:SetText(new_name) end
+        if id and M.register_background_color_targets then
+            local custom_order = 1000 + (tonumber(id:match("(%d+)$")) or 0)
+            M.register_background_color_targets(id, new_name, custom_order)
+        end
     end
 
     -- ----------------------------------------------------------------

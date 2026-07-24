@@ -24,6 +24,7 @@ Slash command: `/lst`
 - [Aura Frames](#aura-frames): configurable player aura frames for buffs, debuffs, and WoW Cooldown Manager groups.
 - [Player Frame](#player-frame): optional Player Frame combat-text hiding and out-of-combat fade controls.
 - [Objectives](#objectives): position, background, auto-collapse, and section-count controls for the Objective Tracker.
+- [Background Colors](#background-colors): reversible global or per-module background color overrides.
 - [Skyriding Vigor](#skyriding-vigor): restored compact player vigor display with adjustable style and behavior.
 - [Audio Volumes](#audio-volumes): quieter replacement sounds and temporary channel-volume situations.
 - [Settings](#settings): minimap button, open-on-reload, and main panel transparency.
@@ -71,7 +72,7 @@ The `IMPORTANT` AuraFilter was added in WoW 12.0.1 and is described as spells th
 #### Profiles
 Profiles save the full Aura Frames setup, including preset frame settings, Cooldown Manager-backed frame presentation, positions, colors, timer styling, and custom filtered frames. Loading a profile replaces the current Aura Frames setup and recreates missing custom frames. Profile loading is blocked during combat.
 
-Aura Frames, Audio Volumes, Objectives, and Skyriding Vigor reset panels include a checked **Keep Profiles** option so saved profiles can survive a module reset.
+Aura Frames, Audio Volumes, Objectives, Background Colors, and Skyriding Vigor reset panels include a checked **Keep Profiles** option so saved profiles can survive a module reset.
 
 
 ### Player Frame
@@ -89,6 +90,17 @@ Objectives extends and restyles the Blizzard Objective Tracker (All Objectives, 
 - **Auto-Collapse**: optional group to start All Objectives, Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior.
 - **Section Count**: optional checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - **Profiles**: saving and loading complete Objective Tracker setups, plus a module reset that can preserve saved profiles.
+
+
+### Background Colors
+Background Colors applies reversible runtime color overrides without replacing the individual colors saved by participating modules.
+
+- **Global Color**: one RGBA color across all participating backgrounds.
+- **Enable All Backgrounds**: temporarily shows participating backgrounds independently of the global color override without changing their saved module settings.
+- **Module Colors**: one override per registered module when the global override is off.
+- **Aura Targets**: every built-in and custom Aura frame has independent **Frame BG** and **Bar BG** participation checkboxes. Custom rows appear and disappear with their Aura frame.
+- **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
+- Color overrides alone do not enable a locally hidden background. **Enable All Backgrounds** is the explicit reversible visibility override; neither setting changes the Objectives border or Blizzard Objective Tracker opacity.
 
 
 ### Skyriding Vigor

@@ -47,6 +47,7 @@ Important `aura_frames` keys:
 - Use `M.get_frame_activity_state()` for activity decisions and `M.cdm_category_needs_viewer()` for CDM prep.
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 - General CPU profiling workflow lives in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`; this file keeps only Aura Frames-specific profiling conclusions.
+- Aura Frames registers separate `frame:<id>` and `bar:<id>` Background Colors targets for every built-in and custom frame. Custom targets register on create/load, update labels on rename, and unregister on deletion. Resolution occurs while building cached runtime configuration; `M.on_background_color_sync_changed()` invalidates every frame cache and refreshes enabled frames without dirtying the shared aura scan.
 - Focused Aura profile history and generated comparisons live in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`; regenerate the normalized comparison with `internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1`.
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
 - Visible-icon ticker cost scales with `aura_visible_icon_tick`; treat the three measured choices (`0.10s`, `0.15s`, `0.20s`) as a CPU/visual-cadence tradeoff, not a per-tick optimization win.

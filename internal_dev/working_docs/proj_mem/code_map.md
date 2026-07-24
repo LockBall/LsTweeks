@@ -70,9 +70,9 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior.
 - `core/minimap_button.lua`: LibDataBroker/LibDBIcon minimap launcher.
 - `functions/checkbox.lua`: shared checkbox factory. Memory: `proj_mem/functions/controls.md`.
-- `functions/buttons.lua`: shared button style, text-fit, play/pause, and Move Reset helpers. Memory: `proj_mem/functions/controls.md`; assets: `media/media_notes.md`.
+- `functions/buttons.lua`: shared button style, text-fit, page-arrow, play/pause, and Move Reset helpers. Memory: `proj_mem/functions/controls.md`; assets: `media/media_notes.md`.
 - `functions/color_picker.lua`: shared color-picker/session factory. Memory: `proj_mem/functions/controls.md`.
-- `functions/dropdown.lua`: shared dropdown factory. Memory: `proj_mem/functions/controls.md`.
+- `functions/dropdown.lua`: shared dropdown and native-style cycling-dropdown factories. Memory: `proj_mem/functions/controls.md`.
 - `functions/group_column.lua`: shared Aura-style grouped selector column factory with section outlines, selected-group border highlighting, optional row delete buttons, and optional group actions.
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.

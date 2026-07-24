@@ -19,6 +19,7 @@ end
 h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
+h.load_file("functions/dropdown.lua")
 
 h.test("play pause button swaps native texture states", function()
     local button = addon.CreatePlayPauseButton(UIParent, nil)
@@ -31,6 +32,38 @@ h.test("play pause button swaps native texture states", function()
 
     local play_only = addon.CreatePlayPauseButton(UIParent, nil, { show_pause = false })
     h.eq(play_only.current_glyph, "play", "play-only button always shows the play triangle")
+end)
+
+h.test("cycling dropdown uses page arrows, wraparound, and Custom entry points", function()
+    local selected = "custom"
+    local options = {
+        { value = "red", text = "Red" },
+        { value = "green", text = "Green" },
+        { value = "grey", text = "Grey" },
+    }
+    local control = addon.CreateCyclingDropdown("CyclingDropdownTest", UIParent, "Preset", options, {
+        get_value = function() return selected end,
+        get_unknown_text = function() return "Custom" end,
+        on_select = function(value) selected = value end,
+    })
+
+    h.eq(control:GetValue(), "custom", "unknown initial value remains Custom")
+    h.eq(control.previous_button.direction, "previous", "left button uses previous-page direction")
+    h.eq(control.next_button.direction, "next", "right button uses next-page direction")
+
+    control.next_button:Click()
+    h.eq(selected, "red", "right from Custom starts at first rainbow color")
+    control.previous_button:Click()
+    h.eq(selected, "grey", "left wraps from first to last preset")
+
+    control:SetValue("custom")
+    control.previous_button:Click()
+    h.eq(selected, "grey", "left from Custom starts at last preset")
+
+    control:SetEnabled(false)
+    h.ok(not control.dropdown.button:IsEnabled(), "dropdown disables with composite control")
+    h.ok(not control.previous_button:IsEnabled(), "previous button disables with composite control")
+    h.ok(not control.next_button:IsEnabled(), "next button disables with composite control")
 end)
 
 h.test("silent checkbox setter restores callback state after an error", function()

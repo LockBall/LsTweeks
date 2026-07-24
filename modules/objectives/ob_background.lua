@@ -290,18 +290,27 @@ M.get_background_aware_position_default = get_background_aware_position_default
 
 --#region COLOR AND OPACITY ====================================================
 
-local function get_background_color_alpha()
-    local db = M.get_db()
-    local color = db and db.background_color
-    return addon.clamp_number(type(color) == "table" and color.a, DEFAULT_BACKGROUND_COLOR.a or 0.5, COLOR_RANGE)
-end
-
-local function get_background_color_values()
+local function get_effective_background_color()
     local db = M.get_db()
     local color = db and db.background_color or DEFAULT_BACKGROUND_COLOR
     if type(color) ~= "table" then
         color = DEFAULT_BACKGROUND_COLOR
     end
+
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_color then
+        color = color_sync.resolve_color("objectives", "custom_background", color)
+    end
+    return color
+end
+
+local function get_background_color_alpha()
+    local color = get_effective_background_color()
+    return addon.clamp_number(color.a, DEFAULT_BACKGROUND_COLOR.a or 0.5, COLOR_RANGE)
+end
+
+local function get_background_color_values()
+    local color = get_effective_background_color()
 
     return addon.clamp_number(color.r, DEFAULT_BACKGROUND_COLOR.r, COLOR_RANGE),
         addon.clamp_number(color.g, DEFAULT_BACKGROUND_COLOR.g, COLOR_RANGE),
@@ -401,7 +410,14 @@ end
 
 local function should_show_background_color()
     local db = M.get_db()
-    return M.is_runtime_enabled() and is_background_color_enabled(db)
+    if not M.is_runtime_enabled() then return false end
+
+    local local_enabled = is_background_color_enabled(db)
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_visibility then
+        return color_sync.resolve_visibility("objectives", "custom_background", local_enabled)
+    end
+    return local_enabled
 end
 
 local function get_color_signature(r, g, b, a)
@@ -940,6 +956,10 @@ end
 
 --#region PUBLIC API ===========================================================
 
+function M.on_background_color_sync_changed()
+    apply_configured_background_color(true)
+end
+
 function M.apply_background()
     ensure_background_hooks()
     if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
@@ -1041,7 +1061,8 @@ end
 
 local function sync_background_controls()
     local wow_enabled = should_customize_background()
-    local color_enabled = should_show_background_color()
+    local db = M.get_db()
+    local color_enabled = is_background_color_enabled(db)
     if M.controls.background_color_picker and M.controls.background_color_picker.SetEnabled then
         M.controls.background_color_picker:SetEnabled(color_enabled)
     end

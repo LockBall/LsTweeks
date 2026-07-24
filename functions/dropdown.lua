@@ -1,6 +1,6 @@
--- Custom dropdown widget (NOT UIDropDownMenu): addon.CreateDropdown(name, parent, label, options, cfg).
--- Uses a shared click-blocker frame to close the open popup when the user clicks outside it
--- one blocker instance is reused by all dropdowns on the page.
+-- Custom dropdown widgets (NOT UIDropDownMenu): addon.CreateDropdown() and the
+-- native-style addon.CreateCyclingDropdown() wrapper with previous/next buttons.
+-- A shared click-blocker closes the active popup when the user clicks outside it.
 
 
 local addon_name, addon = ...
@@ -108,8 +108,8 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     end
 
     local width = cfg.width or 180
-    if (cfg.fit_to_text or cfg.fit_width_to_text) and addon.GetTextFitWidth then
-        local text_values = { label_text }
+    if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
+        local text_values = cfg.fit_to_options and {} or { label_text }
         for i, option in ipairs(options) do
             text_values[#text_values + 1] = get_option_text(option)
         end
@@ -166,6 +166,17 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
             if option.value == value then
                 btn:SetText(get_option_text(option))
                 apply_button_style(option)
+                return
+            end
+        end
+
+        if cfg.get_unknown_text then
+            local unknown_text = cfg.get_unknown_text(value)
+            if unknown_text ~= nil then
+                btn:SetText(unknown_text)
+                if btn_text then
+                    btn_text:SetFontObject(GameFontNormalSmall)
+                end
                 return
             end
         end
@@ -249,7 +260,116 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     end
 
     set_button_text(selected)
+    container.button = btn
     return container
 end
 
 --#endregion DROPDOWN FACTORY =================================================
+
+
+--#region CYCLING DROPDOWN FACTORY ============================================
+
+function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
+    cfg = cfg or {}
+    options = options or {}
+
+    local arrow_size = cfg.arrow_size or 32
+    local arrow_gap = cfg.arrow_gap or 4
+    local dropdown_width = cfg.width or 180
+    if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
+        local text_values = cfg.fit_to_options and {} or { label_text }
+        for i, option in ipairs(options) do
+            local option_text = cfg.get_option_text and cfg.get_option_text(option)
+                or option.text
+                or tostring(option.value or "")
+            text_values[#text_values + 1] = option_text
+        end
+        dropdown_width = addon.GetTextFitWidth(
+            text_values,
+            cfg.text_padding_x,
+            cfg.min_width,
+            cfg.max_width,
+            cfg.font_object
+        )
+    end
+    local container = CreateFrame("Frame", nil, parent)
+    container:SetSize(dropdown_width + ((arrow_size + arrow_gap) * 2), math.max(22, arrow_size))
+
+    local dropdown_cfg = {}
+    for key, value in pairs(cfg) do
+        dropdown_cfg[key] = value
+    end
+    dropdown_cfg.width = dropdown_width
+
+    local external_on_select = cfg.on_select
+    local dropdown
+    dropdown_cfg.on_select = function(value, option)
+        if external_on_select then
+            external_on_select(value, option)
+        end
+    end
+
+    dropdown = addon.CreateDropdown(name, container, label_text, options, dropdown_cfg)
+    dropdown:SetPoint("CENTER", container, "CENTER", 0, 0)
+
+    local function find_selected_index()
+        local selected = dropdown:GetValue()
+        for index, option in ipairs(options) do
+            if option.value == selected then
+                return index
+            end
+        end
+        return nil
+    end
+
+    local function cycle(step)
+        if #options == 0 then return end
+        local index = find_selected_index()
+        if not index then
+            index = step > 0 and 1 or #options
+        else
+            index = ((index - 1 + step) % #options) + 1
+        end
+        local option = options[index]
+        dropdown:SetValue(option.value)
+        if external_on_select then
+            external_on_select(option.value, option)
+        end
+    end
+
+    local previous_button = addon.CreatePageArrowButton(container, "previous", function()
+        cycle(-1)
+    end, {
+        width = arrow_size,
+        height = arrow_size,
+    })
+    previous_button:SetPoint("RIGHT", dropdown, "LEFT", -arrow_gap, 0)
+
+    local next_button = addon.CreatePageArrowButton(container, "next", function()
+        cycle(1)
+    end, {
+        width = arrow_size,
+        height = arrow_size,
+    })
+    next_button:SetPoint("LEFT", dropdown, "RIGHT", arrow_gap, 0)
+
+    container.SetValue = function(_, value)
+        dropdown:SetValue(value)
+    end
+    container.GetValue = function()
+        return dropdown:GetValue()
+    end
+    container.SetEnabled = function(_, enabled)
+        enabled = enabled == true
+        dropdown:SetEnabled(enabled)
+        previous_button:SetEnabled(enabled)
+        next_button:SetEnabled(enabled)
+    end
+
+    container.dropdown = dropdown
+    container.previous_button = previous_button
+    container.next_button = next_button
+    return container
+end
+
+--#endregion CYCLING DROPDOWN FACTORY =========================================

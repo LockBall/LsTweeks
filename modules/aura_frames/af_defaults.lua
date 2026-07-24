@@ -126,6 +126,64 @@ for _, frame_def in ipairs(M.FRAME_DEFS) do
     end
 end
 
+local color_sync = addon.background_color_sync
+
+function M.get_background_color_target_key(category, target_type)
+    return tostring(target_type) .. ":" .. tostring(category)
+end
+
+function M.register_background_color_targets(category, label, order)
+    if not color_sync or not color_sync.register_target then return end
+    local row_label = label or category
+    color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"), {
+        label = row_label .. " Frame Background",
+        row_key = category,
+        row_label = row_label,
+        column = 2,
+        column_label = "Frame BG",
+        order = order,
+        default_enabled = true,
+        supports_visibility = true,
+        defer_notify = true,
+    })
+    color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"), {
+        label = row_label .. " Bar Background",
+        row_key = category,
+        row_label = row_label,
+        column = 3,
+        column_label = "Bar BG",
+        order = order,
+        default_enabled = false,
+        supports_visibility = false,
+    })
+end
+
+function M.unregister_background_color_targets(category)
+    if not color_sync or not color_sync.unregister_target then return end
+    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"), true)
+    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"))
+end
+
+if color_sync and color_sync.register_consumer then
+    color_sync.register_consumer(M.MODULE_KEY, {
+        label = "Aura Frames",
+        order = 100,
+        default_color = { r = 0, g = 0, b = 0, a = 0.5 },
+        refresh = function()
+            if M.on_background_color_sync_changed then
+                M.on_background_color_sync_changed()
+            end
+        end,
+    })
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
+        M.register_background_color_targets(
+            frame_def.key,
+            frame_def.frame_label or frame_def.label,
+            frame_def.tree_order
+        )
+    end
+end
+
 function M.get_frame_def(category)
     return M.FRAME_DEFS_BY_KEY[category]
 end

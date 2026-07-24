@@ -344,6 +344,37 @@ h.test("background color sync skips unchanged overlay writes", function()
     h.eq(#(overlay:GetCalls("Show") or {}), show_calls, "second apply skips overlay show")
 end)
 
+h.test("shared color override changes RGB without enabling the custom background", function()
+    reset_runtime()
+    local addon = h.addon
+    local original_sync = addon.background_color_sync
+    addon.background_color_sync = {
+        resolve_color = function(module_key, target_key)
+            h.eq(module_key, "objectives", "Objectives requests its module color")
+            h.eq(target_key, "custom_background", "Objectives requests its custom background target")
+            return { r = 0.81, g = 0.62, b = 0.43, a = 0.54 }
+        end,
+    }
+
+    fresh_db({ background_color_enabled = true })
+    M.on_background_color_sync_changed()
+    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "color overlay created")
+    local calls = overlay:GetCalls("SetVertexColor") or {}
+    local applied = calls[#calls]
+
+    fresh_db({ background_color_enabled = false })
+    M.on_background_color_sync_changed()
+    local overlay_frame = nine_slice._lstweeks_center_color_overlay_frame
+    local hidden_when_local_off = overlay_frame and not overlay_frame:IsShown()
+    addon.background_color_sync = original_sync
+
+    h.eq(applied[1], 0.81, "override red applied")
+    h.eq(applied[2], 0.62, "override green applied")
+    h.eq(applied[3], 0.43, "override blue applied")
+    h.eq(applied[4], 0.54, "override alpha applied")
+    h.ok(hidden_when_local_off, "override does not enable a locally hidden custom background")
+end)
+
 h.test("background color overlay renders behind Blizzard line art", function()
     reset_runtime()
     fresh_db({ background_color_enabled = true })

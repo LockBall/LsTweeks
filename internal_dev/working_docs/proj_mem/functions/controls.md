@@ -38,6 +38,7 @@ Durable contracts for shared buttons, checkboxes, sliders, color pickers, and dr
 
 ## Control-Specific Rules
 - Raw `UIPanelButtonTemplate` buttons use `addon.ApplyStandardButtonStyle()`. `CreateTextButton()`, Move Reset, dropdowns, sliders, color-picker reset, and Profiles-tab buttons already route through it.
+- `CreatePageArrowButton()` owns Blizzard Spellbook previous/next page art. `CreateCyclingDropdown()` composes those buttons around the standard dropdown, retains its hover arrow, wraps through its ordered options, and enters the first/last option when cycling forward/backward from an unknown value such as `Custom`.
 - `CreatePlayPauseButton()` uses Blizzard play/pause art; `SetPaused()` swaps the offered action, while `show_pause = false` creates a play-only control. Asset details remain in `media_notes.md`.
 - `CreateColorPicker()` owns the single live system-picker session. Clear prior swatch/opacity callbacks when a session closes, cancels, or hides so a later picker cannot write the previous control. Reset/cancel callbacks apply immediately; live previews are coalesced.
 - Dropdown `cfg.get_value` initializes selection, `cfg.on_select` owns external writes, and `SetEnabled(false)` closes the popup and hover arrow. Hover-arrow art/rotation remains asset-owned in `media_notes.md`.
