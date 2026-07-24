@@ -14,16 +14,6 @@ local COLOR_RANGE = { min = 0, max = 1 }
 local PRESET_TOLERANCE = 0.001
 local FALLBACK_COLOR = { r = 0, g = 0, b = 0, a = 0.5 }
 
-local function copy_color(color)
-    color = type(color) == "table" and color or FALLBACK_COLOR
-    return {
-        r = color.r,
-        g = color.g,
-        b = color.b,
-        a = color.a,
-    }
-end
-
 local function normalize_color(color, defaults)
     if type(color) ~= "table" then
         color = {}
@@ -324,15 +314,14 @@ function M.get_color_preset(color)
     return "custom"
 end
 
-function M.get_color_binding(module_key)
-    if module_key then return nil, nil, nil end
+function M.get_color_binding()
     local db = M.get_db()
     return db, "global_color", M.defaults.background_color_sync
 end
 
-function M.set_color_preset(module_key, preset_key)
+function M.set_color_preset(preset_key)
     local preset = M.COLOR_PRESETS[preset_key]
-    local db_table, color_key, defaults = M.get_color_binding(module_key)
+    local db_table, color_key, defaults = M.get_color_binding()
     if not preset or not db_table or not color_key or not defaults then return false end
 
     local current = db_table[color_key]

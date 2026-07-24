@@ -100,7 +100,9 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     )
     h.eq(M.resolve_visibility("aura_frames", "bar:static", false), false, "bar target cannot force visibility")
     db.global_enable_all_backgrounds = true
-    db.global_disable_ooc_fade = true
+    h.ok(M.set_disable_ooc_fade(true), "dedicated fade policy setter accepts the value")
+    h.eq(M.get_disable_ooc_fade(), true, "dedicated fade policy getter returns saved state")
+    h.eq(M.is_ooc_fade_disabled(), true, "effective fade policy reports active")
     h.eq(M.resolve_ooc_fade("aura_frames", true), false, "global policy suppresses registered OOC fade")
     db.global_enable_all_backgrounds = false
     h.eq(M.resolve_ooc_fade("aura_frames", true), false, "fade policy is independent from Enable All Backgrounds")
@@ -131,7 +133,7 @@ h.test("preset selection preserves global alpha", function()
     db.global_color = { r = 0.13, g = 0.24, b = 0.35, a = 0.42 }
     h.eq(M.get_color_preset(db.global_color), "custom", "manual RGB reports Custom")
 
-    h.ok(M.set_color_preset(nil, "violet"), "known preset applies")
+    h.ok(M.set_color_preset("violet"), "known preset applies")
     h.eq(M.get_color_preset(db.global_color), "violet", "applied RGB matches preset")
     h.eq(db.global_color.a, 0.42, "preset preserves alpha")
 end)
@@ -170,6 +172,8 @@ h.test("settings page exposes only global controls for consumer-owned settings",
     )
     h.is_nil(M.color_groups.aura_frames, "consumer-owned Aura controls stay out of the global page")
     h.is_nil(M.color_groups.objectives, "global-only consumer omits a separate section")
+    h.is_nil(M.BuildColorsTab, "obsolete Colors tab builder is removed")
+    h.ok(M.rebuild_general_tab, "registry rebuilds target the consolidated General tab")
 end)
 
 h.test("global-only consumer falls back to its local color", function()

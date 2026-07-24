@@ -15,7 +15,7 @@ local COLUMN_WIDTH = 140
 local COLUMN_GAP = 165
 local HEADER_BAR_WIDTH = ((COLUMN_COUNT - 1) * COLUMN_GAP) + COLUMN_WIDTH
 local HEADER_BAR_HEIGHT = 24
-local HEADER_TITLE_Y_OFFSET = -6
+local HEADER_BAR_Y_OFFSET = 12
 
 
 --#region SHARED COLOR STATE ===================================================
@@ -194,6 +194,15 @@ end
 
 --#region TAB BUILDER ==========================================================
 
+local function create_header_title(panel, header_grid, text, column)
+    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    title:SetText(text)
+    title:SetHeight(HEADER_BAR_HEIGHT)
+    title:SetJustifyV("MIDDLE")
+    header_grid:place_at(title, 1, column, nil, { y_offset = HEADER_BAR_Y_OFFSET })
+    return title
+end
+
 local function build_color_controls(parent, color_sync)
     local content_height = math.max(360, (parent:GetHeight() or 0) - 20)
     local content = CreateFrame("Frame", nil, parent)
@@ -323,9 +332,7 @@ local function create_participation_slot(parent, grid, index)
 end
 
 local function build_shared_color_column(panel, header_grid, color_sync, title_text, target_type, column, db_key)
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    title:SetText(title_text)
-    header_grid:place_at(title, 1, column, nil, { y_offset = HEADER_TITLE_Y_OFFSET })
+    create_header_title(panel, header_grid, title_text, column)
 
     local preset_control = addon.CreateCyclingDropdown(
         addon_name .. (target_type == "frame" and "AuraSharedFrameBackgroundPreset"
@@ -393,11 +400,9 @@ local function build_participation_matrix(content, content_height, color_sync)
     local header_bar = panel:CreateTexture(nil, "BACKGROUND")
     header_bar:SetSize(HEADER_BAR_WIDTH, HEADER_BAR_HEIGHT)
     header_bar:SetColorTexture(0.22, 0.22, 0.22, 0.8)
-    header_grid:place_at(header_bar, 1, 1)
+    header_grid:place_at(header_bar, 1, 1, nil, { y_offset = HEADER_BAR_Y_OFFSET })
 
-    local name_header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    name_header:SetText("Frame Name")
-    header_grid:place_at(name_header, 1, 1, nil, { y_offset = HEADER_TITLE_Y_OFFSET })
+    create_header_title(panel, header_grid, "Frame Name", 1)
     build_shared_color_column(
         panel,
         header_grid,
@@ -416,9 +421,7 @@ local function build_participation_matrix(content, content_height, color_sync)
         3,
         "shared_bar_background_color"
     )
-    local test_header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    test_header:SetText("Test Aura")
-    header_grid:place_at(test_header, 1, 4, nil, { y_offset = HEADER_TITLE_Y_OFFSET })
+    create_header_title(panel, header_grid, "Test Aura", 4)
 
     local rows_parent = CreateFrame("Frame", nil, panel)
     rows_parent:SetSize(GROUP_WIDTH - 50, 1)

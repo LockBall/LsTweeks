@@ -137,7 +137,7 @@ local function create_bound_checkbox(
 end
 
 local function select_preset(preset_key)
-    if not M.set_color_preset(nil, preset_key) then return end
+    if not M.set_color_preset(preset_key) then return end
     sync_global_color_controls()
     M.refresh_consumers()
 end

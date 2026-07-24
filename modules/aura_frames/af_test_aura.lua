@@ -257,7 +257,7 @@ end
 
 function M.set_test_aura_enabled(category, enabled)
     local value_table, test_key, show_storage_key, show_key = M.get_test_aura_binding(category)
-    if not value_table then return false end
+    if not (value_table and test_key and show_storage_key and show_key) then return false end
     enabled = enabled == true
     value_table[test_key] = enabled
     if enabled then

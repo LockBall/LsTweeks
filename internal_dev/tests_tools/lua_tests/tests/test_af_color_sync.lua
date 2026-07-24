@@ -25,6 +25,7 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(M.controls.background_color_sync_bar_preset, "bar preset is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_bar_picker, "bar color picker is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_enabled, "shared color section exposes its enable checkbox")
+    h.ok(M.controls.background_color_sync_disable_ooc_fade, "shared tab exposes the linked global fade policy")
     h.eq(M.db.shared_background_color_enabled, false, "shared color defaults disabled")
     h.ok(M.shared_background_color_group, "tab exposes shared color controls")
     h.ok(M.background_color_matrix_group, "tab exposes the participation matrix")
@@ -53,6 +54,14 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.eq(M.db.sync_frame_bg_static, true, "frame background starts selected in Aura DB")
     h.eq(M.db.sync_bar_bg_static, false, "bar background starts deselected in Aura DB")
 
+    color_sync.set_disable_ooc_fade(false)
+    M.sync_background_color_controls()
+    local fade_control = M.controls.background_color_sync_disable_ooc_fade
+    h.eq(fade_control:GetChecked(), false, "linked fade control reads Background Colors state")
+    fade_control:SetChecked(true)
+    fade_control.checkbox:Click()
+    h.eq(color_sync.get_disable_ooc_fade(), true, "linked fade control writes Background Colors state")
+
     M.controls.background_color_sync_enabled:SetChecked(true)
     M.controls.background_color_sync_enabled.checkbox:Click()
     h.ok(frame_control.checkbox:IsEnabled(), "enabling shared color activates participation")
@@ -70,6 +79,20 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     test_control:SetChecked(true)
     test_control.checkbox:Click()
     h.eq(M.db.test_aura_static, true, "shared tab test control re-enables the same setting")
+
+    consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.get_db().global_enabled = true
+    consumer_db.global_enabled = true
+    M.sync_background_color_controls()
+    h.ok(
+        not M.controls.background_color_sync_enabled.checkbox:IsEnabled(),
+        "global color disables Aura-specific shared controls"
+    )
+    h.ok(test_control.checkbox:IsEnabled(), "global color does not disable the independent test-aura control")
+    h.ok(fade_control.checkbox:IsEnabled(), "global color does not disable its linked global fade control")
+    color_sync.get_db().global_enabled = false
+    color_sync.set_disable_ooc_fade(false)
+    M.sync_background_color_controls()
 end)
 
 h.test("shared color matrix tracks custom frame lifecycle", function()
@@ -100,6 +123,15 @@ h.test("Aura Frames resolves shared color before the global override", function(
 
     resolved = M.resolve_background_color("static", "bar", local_color)
     h.eq(resolved, local_color, "deselected target keeps its local Aura color")
+    M.db.sync_bar_bg_static = true
+    resolved = M.resolve_background_color("static", "bar", local_color)
+    h.eq(resolved, M.db.shared_bar_background_color, "selected bar target uses its independent shared color")
+
+    h.eq(
+        M.resolve_background_visibility("static", "frame", false),
+        true,
+        "selected shared frame background becomes visible even when its local background is off"
+    )
 
     db.global_enabled = true
     consumer_db.global_enabled = true

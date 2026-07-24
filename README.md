@@ -33,7 +33,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides a default-off shared frame background color plus a row list of every built-in and custom frame with independent **Frame BG** and **Bar BG** participation checkboxes. The participation rows are inactive while shared color is disabled. These settings are included in Aura Frames profiles and resets.
+The Aura Frames **Shared BG Colors** tab provides default-off, independent shared colors for frame and bar backgrounds. Every built-in and custom frame has separate **Frame BG** and **Bar BG** participation checkboxes plus linked **Test Aura** controls. Background participation is inactive while shared color is disabled; Test Aura and the globally linked **Disable OOC Fade** remain available. Aura-owned shared colors and participation are included in Aura Frames profiles and resets.
 
 
 #### Preset Frames
@@ -102,7 +102,8 @@ Background Colors applies reversible runtime color overrides without replacing t
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings.
 - **Global Participation**: Objectives and Buffs & Debuffs have whole-module checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
-- **Enable All Backgrounds** remains the independent reversible visibility override for every registered module, even when global color is off. Neither visibility path changes the Objectives border or Blizzard Objective Tracker opacity.
+
+Neither global visibility path changes the Objectives border or Blizzard Objective Tracker opacity.
 
 
 ### Skyriding Vigor
