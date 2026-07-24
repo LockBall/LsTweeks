@@ -166,8 +166,12 @@ end
 
 if color_sync and color_sync.register_consumer then
     color_sync.register_consumer(M.MODULE_KEY, {
-        label = "Aura Frames",
+        label = "Buffs & Debuffs",
         order = 100,
+        global_toggle = true,
+        global_order = 200,
+        default_global_enabled = true,
+        supports_ooc_fade = true,
         default_color = { r = 0, g = 0, b = 0, a = 0.5 },
         refresh = function()
             if M.on_background_color_sync_changed then

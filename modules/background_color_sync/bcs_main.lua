@@ -48,7 +48,7 @@ if addon.register_module_status then
                     selected = selected + 1
                 end
             end
-            fields[#fields + 1] = consumer.key .. "=" .. tostring(consumer_db.enabled == true)
+            fields[#fields + 1] = consumer.key .. "_global=" .. tostring(consumer_db.global_enabled == true)
             fields[#fields + 1] = consumer.key .. "_targets=" .. tostring(selected)
                 .. "/" .. tostring(#M.get_registered_targets(consumer.key))
         end

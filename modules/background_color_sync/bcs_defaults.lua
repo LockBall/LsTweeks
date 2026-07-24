@@ -64,6 +64,7 @@ M.defaults = {
     background_color_sync = {
         global_enabled = false,
         global_enable_all_backgrounds = false,
+        global_disable_ooc_fade = false,
         global_color = { r = 0, g = 0, b = 0, a = 0.5 },
         consumers = {},
         last_tab_index = 1,
@@ -73,4 +74,3 @@ M.defaults = {
 }
 
 --#endregion DEFAULTS ==========================================================
-

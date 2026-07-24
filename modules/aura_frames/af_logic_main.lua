@@ -282,6 +282,10 @@ function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
 
     local category = frame.category
     local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_ooc_fade then
+        fade_ooc = color_sync.resolve_ooc_fade(M.MODULE_KEY, fade_ooc)
+    end
     if not fade_ooc
         and not frame._ooc_fade_timer
         and not frame._ooc_fade_state

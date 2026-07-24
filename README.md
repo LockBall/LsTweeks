@@ -96,8 +96,10 @@ Objectives extends and restyles the Blizzard Objective Tracker (All Objectives, 
 Background Colors applies reversible runtime color overrides without replacing the individual colors saved by participating modules.
 
 - **Global Color**: one RGBA color across all participating backgrounds.
-- **Enable All Backgrounds**: temporarily shows participating backgrounds independently of the global color override without changing their saved module settings.
-- **Module Colors**: one override per registered module when the global override is off.
+- **Enable All Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
+- **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings.
+- **Module Colors**: registered multi-background modules use one shared override for selected targets whenever the global override is not applying; per-target checkboxes provide granular opt-in/out.
+- **Global Participation**: Objectives and Buffs & Debuffs have module checkboxes beneath **Enable Global Color**. Objectives keeps local color customization on its own page; Buffs & Debuffs retains its module override and per-background selections.
 - **Aura Targets**: every built-in and custom Aura frame has independent **Frame BG** and **Bar BG** participation checkboxes. Custom rows appear and disappear with their Aura frame.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
 - Color overrides alone do not enable a locally hidden background. **Enable All Backgrounds** is the explicit reversible visibility override; neither setting changes the Objectives border or Blizzard Objective Tracker opacity.

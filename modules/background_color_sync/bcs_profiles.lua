@@ -12,6 +12,7 @@ local M = addon.background_color_sync
 local PROFILE_KEYS = {
     "global_enabled",
     "global_enable_all_backgrounds",
+    "global_disable_ooc_fade",
     "global_color",
     "consumers",
 }
@@ -66,4 +67,3 @@ M.profile_manager = addon.CreateProfileManager({
 })
 
 --#endregion PROFILE SCHEMA ====================================================
-

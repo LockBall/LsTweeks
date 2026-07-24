@@ -64,6 +64,10 @@ local function target_control_key(module_key, target_key)
     return "target:" .. module_key .. ":" .. target_key
 end
 
+local function global_consumer_control_key(module_key)
+    return "global_consumer:" .. module_key
+end
+
 local function sync_color_controls(module_key)
     local db_table, color_key = M.get_color_binding(module_key)
     if not db_table then return end
@@ -93,6 +97,11 @@ function M.sync_controls()
         visibility_control:SetCheckedSilently(db.global_enable_all_backgrounds == true)
         visibility_control:SetEnabled(true)
     end
+    local fade_control = M.controls.global_disable_ooc_fade
+    if fade_control and fade_control.SetCheckedSilently then
+        fade_control:SetCheckedSilently(db.global_disable_ooc_fade == true)
+        fade_control:SetEnabled(db.global_enable_all_backgrounds == true)
+    end
     sync_color_controls(nil)
     local global_picker = M.controls.global_color_picker
     local global_selector = M.controls.global_color_preset
@@ -101,15 +110,14 @@ function M.sync_controls()
 
     for _, consumer in ipairs(M.get_registered_consumers()) do
         local consumer_db = M.ensure_consumer_db(consumer.key)
-        local enabled_key = consumer_control_key(consumer.key, "enabled")
-        local enabled_control = M.controls[enabled_key]
-        if enabled_control and enabled_control.SetCheckedSilently then
-            enabled_control:SetCheckedSilently(consumer_db.enabled == true)
-            enabled_control:SetEnabled(not global_enabled)
+        local global_applies = global_enabled and consumer_db.global_enabled == true
+        local global_consumer_control = M.controls[global_consumer_control_key(consumer.key)]
+        if global_consumer_control and global_consumer_control.SetCheckedSilently then
+            global_consumer_control:SetCheckedSilently(consumer_db.global_enabled == true)
+            global_consumer_control:SetEnabled(global_enabled)
         end
-
         sync_color_controls(consumer.key)
-        local color_enabled = not global_enabled and consumer_db.enabled == true
+        local color_enabled = not global_applies
         local color_prefix = consumer_control_key(consumer.key, "color")
         local picker = M.controls[color_prefix .. "_picker"]
         local selector = M.controls[color_prefix .. "_preset"]
@@ -120,7 +128,7 @@ function M.sync_controls()
             local control = M.controls[target_control_key(consumer.key, target.key)]
             if control and control.SetCheckedSilently then
                 control:SetCheckedSilently(consumer_db.targets[target.key] == true)
-                control:SetEnabled(true)
+                control:SetEnabled(consumer.global_only ~= true or global_enabled)
             end
         end
     end
@@ -149,7 +157,10 @@ local function create_bound_checkbox(
         M.refresh_consumers()
     end)
     if placement and placement.below then
-        grid:stack_below(control, placement.below, { y = placement.y or 0 })
+        grid:stack_below(control, placement.below, {
+            x = placement.x or 0,
+            y = placement.y or 0,
+        })
     else
         grid:place_at(control, row, column)
     end
@@ -252,38 +263,52 @@ local function get_column_labels(consumer)
     return labels
 end
 
+local function get_global_toggle_consumers()
+    local consumers = {}
+    for _, consumer in ipairs(M.get_registered_consumers()) do
+        if consumer.global_toggle == true then
+            consumers[#consumers + 1] = consumer
+        end
+    end
+    table.sort(consumers, function(left, right)
+        local left_order = left.global_order or left.order or 100
+        local right_order = right.global_order or right.order or 100
+        if left_order == right_order then
+            return (left._registered_index or 0) < (right._registered_index or 0)
+        end
+        return left_order < right_order
+    end)
+    return consumers
+end
+
 local function build_consumer_group(parent, consumer, group_width, offset_y)
     local rows = get_target_rows(consumer)
-    local row_heights = { 45, 50, 32 }
+    local row_heights = { 50, 32 }
     for _ = 1, #rows do
         row_heights[#row_heights + 1] = TARGET_ROW_HEIGHT
     end
-    local group_height = 180 + (#rows * TARGET_ROW_HEIGHT)
+    local group_height = 135 + (#rows * TARGET_ROW_HEIGHT)
     local group = addon.CreateSettingsGroup(parent, consumer.label, group_width, group_height, GROUP_OFFSET_X, offset_y)
     local grid = create_group_grid(group, row_heights)
     local consumer_db = M.ensure_consumer_db(consumer.key)
 
-    create_bound_checkbox(
-        group,
-        grid,
-        consumer_control_key(consumer.key, "enabled"),
-        "Use one color for this module",
-        function() return consumer_db.enabled end,
-        function(value) consumer_db.enabled = value end,
-        1,
-        1
-    )
-    create_color_controls(group, grid, consumer.key, "Module", 2)
+    create_color_controls(group, grid, consumer.key, "Module", 1, {
+        selector_column = 2,
+        selector_label = "Preset Colors",
+        selector_fit_to_options = true,
+        picker_column = 3,
+        picker_label = "Custom Color",
+    })
 
     local column_labels = get_column_labels(consumer)
     for column = 2, 3 do
         if column_labels[column] then
-            create_grid_label(group, grid, column_labels[column], 3, column, "GameFontNormal")
+            create_grid_label(group, grid, column_labels[column], 2, column, "GameFontNormal")
         end
     end
 
     for row_index, row in ipairs(rows) do
-        local grid_row = row_index + 3
+        local grid_row = row_index + 2
         create_grid_label(group, grid, row.label, grid_row, 1, "GameFontNormalSmall")
         for column = 2, 3 do
             local target = row.targets[column]
@@ -343,7 +368,8 @@ function M.BuildColorsTab(parent)
 
     local group_width = child_width - GROUP_OFFSET_X - GROUP_RIGHT_MARGIN
     local offset_y = -10
-    local global_height = 110
+    local global_consumers = get_global_toggle_consumers()
+    local global_height = 136 + (#global_consumers * 26)
     local global_group = addon.CreateSettingsGroup(
         scroll_child,
         "Global",
@@ -352,28 +378,9 @@ function M.BuildColorsTab(parent)
         GROUP_OFFSET_X,
         offset_y
     )
-    local global_grid = create_group_grid(global_group, { 80 })
+    local global_grid = create_group_grid(global_group, { 26, 26, 80 })
     local db = M.get_db()
-    local global_enable = create_bound_checkbox(
-        global_group,
-        global_grid,
-        "global_enabled",
-        "Enable Global Color",
-        function() return db.global_enabled end,
-        function(value) db.global_enabled = value end,
-        1,
-        1,
-        "Use one color across all modules"
-    )
-    create_color_controls(global_group, global_grid, nil, "Global", 1, {
-        selector_column = 2,
-        selector_label = "Preset Colors",
-        selector_fit_to_options = true,
-        picker_row = 1,
-        picker_column = 3,
-        picker_label = "Custom Color",
-    })
-    create_bound_checkbox(
+    local visibility_control = create_bound_checkbox(
         global_group,
         global_grid,
         "global_enable_all_backgrounds",
@@ -381,16 +388,65 @@ function M.BuildColorsTab(parent)
         function() return db.global_enable_all_backgrounds end,
         function(value) db.global_enable_all_backgrounds = value end,
         1,
-        1,
-        nil,
-        { below = global_enable, y = -4 }
+        1
     )
+    create_bound_checkbox(
+        global_group,
+        global_grid,
+        "global_disable_ooc_fade",
+        "Disable OOC Fade",
+        function() return db.global_disable_ooc_fade end,
+        function(value) db.global_disable_ooc_fade = value end,
+        1,
+        1,
+        "Prevents registered backgrounds from fading out of combat.",
+        { below = visibility_control, x = 18, y = -2 }
+    )
+    local global_color_row = 3
+    local global_enable = create_bound_checkbox(
+        global_group,
+        global_grid,
+        "global_enabled",
+        "Enable Global Color",
+        function() return db.global_enabled end,
+        function(value) db.global_enabled = value end,
+        global_color_row,
+        1,
+        "Use one color across all modules"
+    )
+    create_color_controls(global_group, global_grid, nil, "Global", 1, {
+        selector_row = global_color_row,
+        selector_column = 2,
+        selector_label = "Preset Colors",
+        selector_fit_to_options = true,
+        picker_row = global_color_row,
+        picker_column = 3,
+        picker_label = "Custom Color",
+    })
+    local previous_global_control = global_enable
+    for index, consumer in ipairs(global_consumers) do
+        local consumer_db = M.ensure_consumer_db(consumer.key)
+        previous_global_control = create_bound_checkbox(
+            global_group,
+            global_grid,
+            global_consumer_control_key(consumer.key),
+            consumer.label,
+            function() return consumer_db.global_enabled end,
+            function(value) consumer_db.global_enabled = value end,
+            1,
+            1,
+            "Include " .. consumer.label .. " in the global color override.",
+            { below = previous_global_control, x = index == 1 and 18 or 0, y = -2 }
+        )
+    end
     M.color_groups.global = global_group
     offset_y = offset_y - global_height - GROUP_GAP_Y
 
     for _, consumer in ipairs(M.get_registered_consumers()) do
-        local group_height = build_consumer_group(scroll_child, consumer, group_width, offset_y)
-        offset_y = offset_y - group_height - GROUP_GAP_Y
+        if consumer.global_only ~= true then
+            local group_height = build_consumer_group(scroll_child, consumer, group_width, offset_y)
+            offset_y = offset_y - group_height - GROUP_GAP_Y
+        end
     end
     scroll_child:SetHeight(math.max(1, math.abs(offset_y) + 10))
     M.sync_controls()
@@ -399,7 +455,7 @@ end
 function M.BuildProfilesTab(parent)
     M.refresh_profiles_tab = addon.BuildProfilesTab(parent, M.profile_manager, {
         label = M.CATEGORY_NAME,
-        note = "Profiles save global policy plus every registered module color and target selection.",
+        note = "Profiles save global policy plus registered participation and module color selections.",
     })
 end
 

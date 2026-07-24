@@ -98,6 +98,10 @@ if color_sync and color_sync.register_consumer then
     color_sync.register_consumer(M.MODULE_KEY, {
         label = "Objectives",
         order = 200,
+        global_toggle = true,
+        global_order = 100,
+        default_global_enabled = true,
+        global_only = true,
         default_color = M.defaults.objectives.background_color,
         refresh = function()
             if M.on_background_color_sync_changed then
