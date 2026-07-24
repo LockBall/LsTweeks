@@ -170,8 +170,6 @@ h.test("settings page exposes only global controls for consumer-owned settings",
         not M.controls["global_consumer:objectives"].checkbox:IsEnabled(),
         "global consumer toggles are disabled without global color"
     )
-    h.is_nil(M.color_groups.aura_frames, "consumer-owned Aura controls stay out of the global page")
-    h.is_nil(M.color_groups.objectives, "global-only consumer omits a separate section")
     h.is_nil(M.BuildColorsTab, "obsolete Colors tab builder is removed")
     h.ok(M.rebuild_general_tab, "registry rebuilds target the consolidated General tab")
 end)

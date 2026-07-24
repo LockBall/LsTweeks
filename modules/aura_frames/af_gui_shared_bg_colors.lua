@@ -200,7 +200,6 @@ local function create_header_title(panel, header_grid, text, column)
     title:SetHeight(HEADER_BAR_HEIGHT)
     title:SetJustifyV("MIDDLE")
     header_grid:place_at(title, 1, column, nil, { y_offset = HEADER_BAR_Y_OFFSET })
-    return title
 end
 
 local function build_color_controls(parent, color_sync)

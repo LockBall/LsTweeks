@@ -6,7 +6,6 @@ local addon_name, addon = ...
 addon.background_color_sync = addon.background_color_sync or {}
 local M = addon.background_color_sync
 M.controls = M.controls or {}
-M.color_groups = M.color_groups or {}
 
 
 --#region LAYOUT ===============================================================
@@ -214,7 +213,6 @@ end
 
 local function build_global_group(parent)
     M.controls = {}
-    M.color_groups = {}
 
     local group_width = get_content_width() - GROUP_OFFSET_X - GROUP_RIGHT_MARGIN
     local global_consumers = get_global_toggle_consumers()
@@ -287,7 +285,6 @@ local function build_global_group(parent)
             { below = previous_global_control, x = index == 1 and 18 or 0, y = -2 }
         )
     end
-    M.color_groups.global = global_group
     M.sync_controls()
     return global_group, global_height, group_width
 end

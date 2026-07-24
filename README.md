@@ -9,6 +9,7 @@ Slash command: `/lst`
   - [Aura Frames](#aura-frames)
   - [Player Frame](#player-frame)
   - [Objectives](#objectives)
+  - [Background Colors](#background-colors)
   - [Skyriding Vigor](#skyriding-vigor)
   - [Audio Volumes](#audio-volumes)
   - [Settings](#settings)
