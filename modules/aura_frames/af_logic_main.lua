@@ -31,6 +31,9 @@ end
 
 function M.on_background_color_sync_changed()
     M.invalidate_all_frame_runtime_config()
+    if M.sync_background_color_controls then
+        M.sync_background_color_controls()
+    end
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
 
     local frames_list = M.frames_list
@@ -76,6 +79,51 @@ function M.queue_threshold_reclassification()
     end
 end
 
+function M.resolve_background_color(category, target_type, local_color)
+    local resolved = local_color
+    local shared_color = target_type == "bar"
+        and M.db and M.db.shared_bar_background_color
+        or M.db and M.db.shared_frame_background_color
+    if M.db
+        and M.db.shared_background_color_enabled == true
+        and M.get_background_color_sync_enabled(category, target_type)
+        and shared_color
+    then
+        resolved = shared_color
+    end
+
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_color then
+        return color_sync.resolve_color(
+            M.MODULE_KEY,
+            M.get_background_color_target_key(category, target_type),
+            resolved
+        )
+    end
+    return resolved
+end
+
+function M.resolve_background_visibility(category, target_type, local_enabled)
+    local resolved = local_enabled == true
+    if target_type == "frame"
+        and M.db
+        and M.db.shared_background_color_enabled == true
+        and M.get_background_color_sync_enabled(category, target_type)
+    then
+        resolved = true
+    end
+
+    local color_sync = addon.background_color_sync
+    if color_sync and color_sync.resolve_visibility then
+        return color_sync.resolve_visibility(
+            M.MODULE_KEY,
+            M.get_background_color_target_key(category, target_type),
+            resolved
+        )
+    end
+    return resolved
+end
+
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
     local cache = frame._runtime_config_cache
     if cache then return cache end
@@ -93,19 +141,8 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
-    local color_sync = addon.background_color_sync
-    if color_sync and color_sync.resolve_color then
-        bar_bg_color = color_sync.resolve_color(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, "bar"),
-            bar_bg_color
-        )
-        bg_color = color_sync.resolve_color(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, "frame"),
-            bg_color
-        )
-    end
+    bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
+    bg_color = M.resolve_background_color(category, "frame", bg_color)
 
     cache = {
         bar_mode = bar_mode,
@@ -562,14 +599,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if is_bg_enabled == nil then
         is_bg_enabled = cfg_db["bg"]
     end
-    local color_sync = addon.background_color_sync
-    if color_sync and color_sync.resolve_visibility then
-        is_bg_enabled = color_sync.resolve_visibility(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, "frame"),
-            is_bg_enabled
-        )
-    end
+    is_bg_enabled = M.resolve_background_visibility(category, "frame", is_bg_enabled)
     local bg_r, bg_g, bg_b, bg_a
     local br_r, br_g, br_b, br_a
     if is_moving then

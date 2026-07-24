@@ -121,10 +121,10 @@ function Get-ImpactedSuiteNames {
         }
 
         switch -Regex ($path) {
-            '^modules/background_color_sync/' { & $add 'bcs_sync'; continue }
+            '^modules/background_color_sync/' { & $add @('bcs_sync', 'af_color_sync'); continue }
             '^modules/aura_frames/af_logic_native_visibility\.lua$' { & $add 'af_native_visibility'; continue }
-            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_ranges'); continue }
-            '^modules/aura_frames/' { & $add 'af_ranges'; continue }
+            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_ranges', 'af_color_sync'); continue }
+            '^modules/aura_frames/' { & $add @('af_ranges', 'af_color_sync'); continue }
             '^modules/audio_volumes/' { & $add 'av_situations'; continue }
             '^modules/objectives/ob_auto_collapse\.lua$' { & $add 'ob_auto_collapse'; continue }
             '^modules/objectives/ob_(background|functions|main)\.lua$' { & $add @('ob_background', 'ob_auto_collapse'); continue }

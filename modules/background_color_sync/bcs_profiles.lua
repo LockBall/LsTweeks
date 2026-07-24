@@ -14,7 +14,6 @@ local PROFILE_KEYS = {
     "global_enable_all_backgrounds",
     "global_disable_ooc_fade",
     "global_color",
-    "consumers",
 }
 
 local function copy(value)
@@ -33,6 +32,13 @@ function M.export_profile_data()
     for _, key in ipairs(PROFILE_KEYS) do
         data[key] = copy(db[key])
     end
+    data.consumers = {}
+    for _, consumer in ipairs(M.get_registered_consumers()) do
+        local consumer_db = M.ensure_consumer_db(consumer.key)
+        data.consumers[consumer.key] = {
+            global_enabled = consumer_db and consumer_db.global_enabled == true,
+        }
+    end
     return data
 end
 
@@ -49,6 +55,17 @@ function M.apply_profile_data(data)
         else
             db[key] = copy(defaults[key])
         end
+    end
+    db.consumers = {}
+    for _, consumer in ipairs(M.get_registered_consumers()) do
+        local saved = type(data.consumers) == "table" and data.consumers[consumer.key]
+        local global_enabled = consumer.default_global_enabled == true
+        if type(saved) == "table" and saved.global_enabled ~= nil then
+            global_enabled = saved.global_enabled == true
+        end
+        db.consumers[consumer.key] = {
+            global_enabled = global_enabled,
+        }
     end
     M.normalize_db()
     if M.on_reset_complete then

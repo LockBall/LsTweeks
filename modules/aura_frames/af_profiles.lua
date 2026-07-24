@@ -11,18 +11,19 @@ local M = addon.aura_frames
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "cancel_modifier", "short_threshold", "aura_visible_icon_tick",
     "timer_number_font", "timer_number_font_size", "timer_number_font_bold",
+    "shared_frame_background_color", "shared_bar_background_color", "shared_background_color_enabled",
 }
 local PROFILE_CATEGORY_PREFIXES = {
     "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode", "color",
     "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color", "max_icons", "growth", "sort",
     "test_aura", "bar_text_color", "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_color",
-    "cooldown_mode", "hide_blizz_cdm",
+    "cooldown_mode", "hide_blizz_cdm", "sync_frame_bg", "sync_bar_bg",
 }
 local CUSTOM_PROFILE_KEYS = {
     "id", "name", "aura_base_filter", "aura_modifier", "show", "move", "timer", "timer_swipe", "tooltip", "bg",
     "scale", "spacing", "width", "bar_mode", "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay",
     "fade_length", "bg_color", "max_icons", "growth", "test_aura", "bar_text_color", "timer_number_font",
-    "timer_number_font_size", "timer_number_font_bold", "timer_color", "position",
+    "timer_number_font_size", "timer_number_font_bold", "timer_color", "position", "sync_frame_bg", "sync_bar_bg",
 }
 
 local function copy(value)

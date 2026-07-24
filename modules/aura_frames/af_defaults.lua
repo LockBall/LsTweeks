@@ -132,35 +132,55 @@ function M.get_background_color_target_key(category, target_type)
     return tostring(target_type) .. ":" .. tostring(category)
 end
 
+local function get_custom_frame_entry(category)
+    for _, entry in ipairs(M.db and M.db.custom_frames or {}) do
+        if entry.id == category then return entry end
+    end
+    return nil
+end
+
+function M.get_background_color_sync_enabled(category, target_type)
+    local key = "sync_" .. tostring(target_type) .. "_bg"
+    if M.FRAME_DEFS_BY_KEY[category] then
+        return M.db ~= nil and M.db[key .. "_" .. category] == true
+    end
+    local entry = get_custom_frame_entry(category)
+    return entry ~= nil and entry[key] == true
+end
+
+function M.set_background_color_sync_enabled(category, target_type, enabled)
+    local key = "sync_" .. tostring(target_type) .. "_bg"
+    if M.FRAME_DEFS_BY_KEY[category] then
+        if not M.db then return false end
+        M.db[key .. "_" .. category] = enabled == true
+        return true
+    end
+    local entry = get_custom_frame_entry(category)
+    if not entry then return false end
+    entry[key] = enabled == true
+    return true
+end
+
 function M.register_background_color_targets(category, label, order)
     if not color_sync or not color_sync.register_target then return end
     local row_label = label or category
     color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"), {
         label = row_label .. " Frame Background",
-        row_key = category,
-        row_label = row_label,
-        column = 2,
-        column_label = "Frame BG",
         order = order,
         default_enabled = true,
         supports_visibility = true,
-        defer_notify = true,
     })
     color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"), {
         label = row_label .. " Bar Background",
-        row_key = category,
-        row_label = row_label,
-        column = 3,
-        column_label = "Bar BG",
         order = order,
-        default_enabled = false,
+        default_enabled = true,
         supports_visibility = false,
     })
 end
 
 function M.unregister_background_color_targets(category)
     if not color_sync or not color_sync.unregister_target then return end
-    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"), true)
+    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"))
     color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"))
 end
 
@@ -172,7 +192,6 @@ if color_sync and color_sync.register_consumer then
         global_order = 200,
         default_global_enabled = true,
         supports_ooc_fade = true,
-        default_color = { r = 0, g = 0, b = 0, a = 0.5 },
         refresh = function()
             if M.on_background_color_sync_changed then
                 M.on_background_color_sync_changed()
@@ -545,6 +564,14 @@ M.defaults = {
     }
 }
 
+M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
+M.defaults.shared_bar_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
+M.defaults.shared_background_color_enabled = false
+for _, category in ipairs(M.CATEGORIES) do
+    M.defaults["sync_frame_bg_" .. category] = true
+    M.defaults["sync_bar_bg_" .. category] = false
+end
+
 --#endregion FRAME DEFINITIONS AND DEFAULTS ===================================
 --#region CUSTOM FRAME TEMPLATE ================================================
 -- Default values for a newly created custom filtered frame.
@@ -575,6 +602,8 @@ M.CUSTOM_FRAME_TEMPLATE = {
     fade_delay = M.DEFAULT_OOC_FADE_DELAY,
     fade_length = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color     = default_bg_color(),
+    sync_frame_bg = true,
+    sync_bar_bg = false,
     max_icons    = M.DEFAULT_MAX_ICONS,
     growth       = "DOWN",
     test_aura    = true,

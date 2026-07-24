@@ -24,7 +24,7 @@ Slash command: `/lst`
 - [Aura Frames](#aura-frames): configurable player aura frames for buffs, debuffs, and WoW Cooldown Manager groups.
 - [Player Frame](#player-frame): optional Player Frame combat-text hiding and out-of-combat fade controls.
 - [Objectives](#objectives): position, background, auto-collapse, and section-count controls for the Objective Tracker.
-- [Background Colors](#background-colors): reversible global or per-module background color overrides.
+- [Background Colors](#background-colors): reversible global background color policy with whole-module participation.
 - [Skyriding Vigor](#skyriding-vigor): restored compact player vigor display with adjustable style and behavior.
 - [Audio Volumes](#audio-volumes): quieter replacement sounds and temporary channel-volume situations.
 - [Settings](#settings): minimap button, open-on-reload, and main panel transparency.
@@ -32,6 +32,8 @@ Slash command: `/lst`
 
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
+
+The Aura Frames **Shared BG Colors** tab provides a default-off shared frame background color plus a row list of every built-in and custom frame with independent **Frame BG** and **Bar BG** participation checkboxes. The participation rows are inactive while shared color is disabled. These settings are included in Aura Frames profiles and resets.
 
 
 #### Preset Frames
@@ -95,14 +97,12 @@ Objectives extends and restyles the Blizzard Objective Tracker (All Objectives, 
 ### Background Colors
 Background Colors applies reversible runtime color overrides without replacing the individual colors saved by participating modules.
 
-- **Global Color**: one RGBA color across all participating backgrounds.
+- **Global Color**: one RGBA color across checked modules; visibility-capable backgrounds in those modules are shown while the override is active.
 - **Enable All Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings.
-- **Module Colors**: registered multi-background modules use one shared override for selected targets whenever the global override is not applying; per-target checkboxes provide granular opt-in/out.
-- **Global Participation**: Objectives and Buffs & Debuffs have module checkboxes beneath **Enable Global Color**. Objectives keeps local color customization on its own page; Buffs & Debuffs retains its module override and per-background selections.
-- **Aura Targets**: every built-in and custom Aura frame has independent **Frame BG** and **Bar BG** participation checkboxes. Custom rows appear and disappear with their Aura frame.
+- **Global Participation**: Objectives and Buffs & Debuffs have whole-module checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
-- Color overrides alone do not enable a locally hidden background. **Enable All Backgrounds** is the explicit reversible visibility override; neither setting changes the Objectives border or Blizzard Objective Tracker opacity.
+- **Enable All Backgrounds** remains the independent reversible visibility override for every registered module, even when global color is off. Neither visibility path changes the Objectives border or Blizzard Objective Tracker opacity.
 
 
 ### Skyriding Vigor

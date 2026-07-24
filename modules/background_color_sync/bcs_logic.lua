@@ -90,13 +90,8 @@ function M.ensure_consumer_db(module_key)
     if consumer_db.global_enabled == nil then
         consumer_db.global_enabled = consumer.default_global_enabled == true
     end
-    consumer_db.color = normalize_color(consumer_db.color, consumer.default_color)
-    consumer_db.targets = consumer_db.targets or {}
-    for _, target in ipairs(M.get_registered_targets(module_key)) do
-        if consumer_db.targets[target.key] == nil then
-            consumer_db.targets[target.key] = target.default_enabled == true
-        end
-    end
+    consumer_db.color = nil
+    consumer_db.targets = nil
     return consumer_db
 end
 
@@ -123,7 +118,6 @@ function M.register_consumer(module_key, opts)
     end
     consumer.label = opts.label or consumer.label or module_key
     consumer.order = opts.order or consumer.order or 100
-    consumer.default_color = copy_color(opts.default_color or consumer.default_color)
     consumer.refresh = opts.refresh or consumer.refresh
     consumer.supports_ooc_fade = opts.supports_ooc_fade == true
     if opts.global_toggle ~= nil then
@@ -164,11 +158,8 @@ function M.register_target(module_key, target_key, opts)
     end
     target.label = opts.label or target.label or target_key
     target.order = opts.order or target.order or 100
-    target.row_key = opts.row_key or target.row_key or target_key
-    target.row_label = opts.row_label or target.row_label or target.label
-    target.column = opts.column or target.column or 2
-    target.column_label = opts.column_label or target.column_label or "Background"
     target.supports_visibility = opts.supports_visibility == true
+    target.get_enabled = opts.get_enabled or target.get_enabled
     if opts.default_enabled ~= nil then
         target.default_enabled = opts.default_enabled == true
     elseif target.default_enabled == nil then
@@ -176,13 +167,10 @@ function M.register_target(module_key, target_key, opts)
     end
 
     M.ensure_consumer_db(module_key)
-    if opts.defer_notify ~= true then
-        notify_registry_changed()
-    end
     return target
 end
 
-function M.unregister_target(module_key, target_key, defer_notify)
+function M.unregister_target(module_key, target_key)
     local consumer = M.consumers[module_key]
     if not consumer or not consumer.targets[target_key] then return end
     consumer.targets[target_key] = nil
@@ -192,15 +180,16 @@ function M.unregister_target(module_key, target_key, defer_notify)
             break
         end
     end
+end
 
-    local db = M.get_db()
-    local consumer_db = db and db.consumers and db.consumers[module_key]
-    if consumer_db and consumer_db.targets then
-        consumer_db.targets[target_key] = nil
+function M.get_target_enabled(module_key, target_key)
+    local consumer = M.consumers[module_key]
+    local target = consumer and consumer.targets[target_key]
+    if not target then return false end
+    if type(target.get_enabled) == "function" then
+        return target.get_enabled() == true
     end
-    if defer_notify ~= true then
-        notify_registry_changed()
-    end
+    return target.default_enabled == true
 end
 
 function M.normalize_db()
@@ -224,10 +213,10 @@ local function get_target_state(module_key, target_key)
     local consumer = M.consumers[module_key]
     local target = consumer and consumer.targets[target_key]
     local consumer_db = target and db and db.consumers and db.consumers[module_key]
-    if not target or not consumer_db or not consumer_db.targets then
+    if not target or not consumer_db then
         return db, consumer, target, nil
     end
-    if consumer.global_only ~= true and consumer_db.targets[target_key] ~= true then
+    if consumer.global_only ~= true and not M.get_target_enabled(module_key, target_key) then
         return db, consumer, target, nil
     end
     return db, consumer, target, consumer_db
@@ -245,9 +234,6 @@ function M.resolve_color(module_key, target_key, local_color)
     if db.global_enabled == true and consumer_db.global_enabled == true then
         return db.global_color or local_color, "global"
     end
-    if consumer.global_only ~= true then
-        return consumer_db.color or local_color, "module"
-    end
     return local_color, "local"
 end
 
@@ -259,10 +245,34 @@ function M.resolve_visibility(module_key, target_key, local_enabled)
     local db = M.get_db()
     local consumer = M.consumers[module_key]
     local target = consumer and consumer.targets[target_key]
+    local consumer_db = consumer and db and db.consumers and db.consumers[module_key]
     return db ~= nil
         and target ~= nil
         and target.supports_visibility == true
-        and db.global_enable_all_backgrounds == true
+        and (
+            db.global_enable_all_backgrounds == true
+            or (
+                db.global_enabled == true
+                and consumer_db ~= nil
+                and consumer_db.global_enabled == true
+            )
+        )
+end
+
+function M.get_disable_ooc_fade()
+    local db = M.get_db()
+    return db ~= nil and db.global_disable_ooc_fade == true
+end
+
+function M.set_disable_ooc_fade(enabled)
+    local db = M.get_db()
+    if not db then return false end
+    db.global_disable_ooc_fade = enabled == true
+    return true
+end
+
+function M.is_ooc_fade_disabled()
+    return M.is_runtime_enabled() and M.get_disable_ooc_fade()
 end
 
 function M.resolve_ooc_fade(module_key, local_enabled)
@@ -274,12 +284,21 @@ function M.resolve_ooc_fade(module_key, local_enabled)
     if db
         and consumer
         and consumer.supports_ooc_fade == true
-        and db.global_enable_all_backgrounds == true
-        and db.global_disable_ooc_fade == true
+        and M.is_ooc_fade_disabled()
     then
         return false
     end
     return true
+end
+
+function M.is_global_color_active(module_key)
+    if not M.is_runtime_enabled() then return false end
+    local db = M.get_db()
+    local consumer_db = M.ensure_consumer_db(module_key)
+    return db ~= nil
+        and consumer_db ~= nil
+        and db.global_enabled == true
+        and consumer_db.global_enabled == true
 end
 
 --#endregion POLICY RESOLUTION =================================================
@@ -306,18 +325,9 @@ function M.get_color_preset(color)
 end
 
 function M.get_color_binding(module_key)
-    if not module_key then
-        local db = M.get_db()
-        return db, "global_color", M.defaults.background_color_sync
-    end
-
-    local consumer = M.consumers[module_key]
-    local consumer_db = M.ensure_consumer_db(module_key)
-    if not consumer or not consumer_db then return nil, nil, nil end
-    consumer.color_defaults = consumer.color_defaults or {
-        color = copy_color(consumer.default_color),
-    }
-    return consumer_db, "color", consumer.color_defaults
+    if module_key then return nil, nil, nil end
+    local db = M.get_db()
+    return db, "global_color", M.defaults.background_color_sync
 end
 
 function M.set_color_preset(module_key, preset_key)

@@ -11,8 +11,8 @@ local M = addon.background_color_sync
 
 function M.on_reset_complete()
     M.normalize_db()
-    if M.rebuild_colors_tab then
-        M.rebuild_colors_tab()
+    if M.rebuild_general_tab then
+        M.rebuild_general_tab()
     elseif M.sync_controls then
         M.sync_controls()
     end
@@ -44,7 +44,7 @@ if addon.register_module_status then
             local consumer_db = M.ensure_consumer_db(consumer.key)
             local selected = 0
             for _, target in ipairs(M.get_registered_targets(consumer.key)) do
-                if consumer_db.targets[target.key] == true then
+                if M.get_target_enabled(consumer.key, target.key) then
                     selected = selected + 1
                 end
             end

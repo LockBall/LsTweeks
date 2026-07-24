@@ -48,6 +48,7 @@ Important `aura_frames` keys:
 - UNIT_AURA is batched at `UPDATE_INTERVALS.aura_event_bucket`; timer text/bar updates tick at `UPDATE_INTERVALS.aura_visible_icon_tick`.
 - General CPU profiling workflow lives in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`; this file keeps only Aura Frames-specific profiling conclusions.
 - Aura Frames registers separate `frame:<id>` and `bar:<id>` Background Colors targets for every built-in and custom frame. Custom targets register on create/load, update labels on rename, and unregister on deletion. Resolution occurs while building cached runtime configuration; `M.on_background_color_sync_changed()` invalidates every frame cache and refreshes enabled frames without dirtying the shared aura scan.
+- Aura Frames owns the default-off `shared_background_color_enabled`, independent `shared_frame_background_color` and `shared_bar_background_color` values, and `sync_frame_bg*`/`sync_bar_bg*` selections. `M.resolve_background_color()` applies the selected target type's Aura-owned shared color only while shared color is enabled, then asks Background Colors for an independent whole-module global override. The tab's Disable OOC Fade checkbox is a linked view of Background Colors' single global fade policy, not Aura-owned profile state.
 - Aura Frames also registers `supports_ooc_fade = true`; each frame's saved Fade OOC value passes through Background Colors so global `Disable OOC Fade` can temporarily restore full alpha without changing frame settings.
 - Focused Aura profile history and generated comparisons live in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`; regenerate the normalized comparison with `internal_dev/tests_tools/cpu_profiles/analyze_af_cpu_profiles.ps1`.
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
@@ -131,15 +132,18 @@ Important `aura_frames` keys:
 - If reset replaces `custom_frames`, remove orphan runtime frames and stale controls, then rebuild the Frames tree/content if present.
 - Custom-frame deletion removes its runtime frame/events/fades, DB entry, controls, and custom aura scan cache; the Frames tree chooses the visible fallback selection.
 - Aura Frame profiles follow the shared unreleased-profile policy in `../functions/profiles.md`; incompatible local snapshots are replaced, not migrated.
+- Profiles and reset include the Aura-owned shared background color and every built-in/custom frame/bar participation selection.
 
 
 ## GUI
-- `af_gui.lua` owns the shell: tabs are **General**, **Frames**, **Profiles**.
+- `af_gui.lua` owns the shell: tabs are **General**, **Frames**, **Shared BG Colors**, **Profiles**.
 - `M.BuildSettings()` stays as the tab-shell coordinator and routes through local helpers plus a small `context` table.
 - `af_gui.lua` routes its Profiles tab through the shared Profiles-tab factory. Timer-font dropdown construction is local to `af_gui_frame_builders.lua`. `M.build_general_tab` and `M.build_frames_tab` remain exported because they live in separate Aura Frames GUI files and are called by the shell.
 - `af_gui_tree.lua` owns the Frames sidebar groups: **Buffs**, **WoW Cooldown**, **Filters**.
 - `af_gui_frame_builders.lua` owns General, preset/CDM, custom settings, and custom filter panels.
+- `af_gui_shared_bg_colors.lua` owns the Aura-shared color controls and reusable participation matrix rows.
 - Aura Frames follows `../functions/layout_grid.md`; its frame settings use repeated in-cell stacks and keep color pickers in dedicated grid columns with module-owned placement data.
+- The Shared BG Colors tab uses a flat left-aligned 700px grid with no title or outer frame: Enable in column one and the globally linked Disable OOC Fade in column two, divider, then a muted gray title bar spanning **Frame Name**/**Frame BG**/**Bar BG**/**Test Aura** columns. Frame BG and Bar BG each stack their own Preset and Custom color controls beneath the column title before the accent divider and fixed participation rows. Test Aura reproduces each frame's existing checkbox and play/pause button using the same saved flag and preview clock; either location updates the other. Because Test Aura and Disable OOC Fade are not Aura-shared color policy, they remain active when Shared BG Colors is disabled or globally overridden. When **Enable** is off, both color-control pairs and background participation controls are inactive. The entire module-specific background control set is also inactive while Background Colors has both Enable Global Color and Buffs & Debuffs participation checked. When Aura-shared controls are active, selecting a frame's **Frame BG** participation also makes that background visible even if its local Frame BG setting is off. Slots refresh on custom create, rename, delete, profile load, and reset without rebuilding frames.
 - Aura Frames tab and tree heights derive from `addon.main_frame:GetContentAreaSize()`, so the main settings window height in `core/main_frame.lua` is the single height knob.
 - CDM controls are source-specific additions layered through `opts.build_source_controls`.
 - Shared presentation controls stay in the common builder; use hooks only for real source-specific behavior.

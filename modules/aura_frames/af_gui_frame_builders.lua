@@ -646,6 +646,9 @@ function M.update_custom_frame_title(entry)
     if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
         frame.bottom_title_bar.label_text:SetText(entry.name or entry.id)
     end
+    if M.rebuild_shared_background_color_group then
+        M.rebuild_shared_background_color_group()
+    end
 end
 
 local function create_frame_name_control(parent, entry)
@@ -792,22 +795,28 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end
 
     local test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
-        if is_checked then
-            value_table[frame_setting_key(frame_config, "show")] = true
-            if enable_container and enable_container.SetCheckedSilently then enable_container:SetCheckedSilently(true) end
-            -- Start the fresh preview paused so the user must click Play.
-            if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
-        elseif M.stop_test_preview_clock then
-            M.stop_test_preview_clock(preview_show_key)
+        if M.set_test_aura_enabled then
+            M.set_test_aura_enabled(frame_config.id, is_checked)
+        else
+            if is_checked then
+                value_table[frame_setting_key(frame_config, "show")] = true
+                if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
+            elseif M.stop_test_preview_clock then
+                M.stop_test_preview_clock(preview_show_key)
+            end
+            update()
         end
         if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
         refresh_pause_test_aura_button()
-        update()
     end)
     pause_test_aura_button = addon.CreatePlayPauseButton(parent, function()
-        M.toggle_test_preview_pause(preview_show_key)
+        if M.toggle_test_aura_preview then
+            M.toggle_test_aura_preview(frame_config.id)
+        else
+            M.toggle_test_preview_pause(preview_show_key)
+            update()
+        end
         refresh_pause_test_aura_button()
-        update()
     end, { width = 32, height = 32 })
     pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 6, 0)
     M.controls[control_key("test_aura") .. "_pause"] = pause_test_aura_button
@@ -816,7 +825,9 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
     grid:stack_below(tooltip_container, test_aura_container)
 
-    local frame_bg_container = bound_cb("Frame BG", "bg", 1, 2)
+    local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2)
+    local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared BG Colors."
+    add_label_tooltip(frame_bg_container, frame_bg_label, frame_bg_tooltip)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)
     grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
 

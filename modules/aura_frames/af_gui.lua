@@ -2,7 +2,8 @@
 -- BuildSettings() creates three tabs:
 -- 1) General (global toggles and thresholds)
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
--- 3) Profiles (save/load complete Aura Frames setups across characters).
+-- 3) Shared BG Colors (shared Aura color and per-frame participation).
+-- 4) Profiles (save/load complete Aura Frames setups across characters).
 
 
 --#region FILE CONTENTS ======================================================
@@ -88,6 +89,8 @@ local function build_tab_panel(parent, context, data, index)
         M.build_general_tab(p)
     elseif data.is_frames then
         M.build_frames_tab(p, context.frames_data)
+    elseif data.is_shared_bg_colors then
+        M.build_shared_bg_colors_tab(p)
     elseif data.is_profiles then
         build_profiles_tab(p)
     end
@@ -114,6 +117,7 @@ function M.BuildSettings(parent)
     local tab_data = {
         { name = "General", is_general  = true },
         { name = "Frames",  is_frames   = true },
+        { name = "Shared BG Colors", is_shared_bg_colors = true },
         { name = "Profiles", is_profiles = true },
     }
 
@@ -208,6 +212,11 @@ function M.sync_general_controls_from_db()
     end
 
     set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
+    if M.rebuild_shared_background_color_group then
+        M.rebuild_shared_background_color_group()
+    elseif M.sync_background_color_controls then
+        M.sync_background_color_controls()
+    end
 
 end
 

@@ -436,6 +436,17 @@ end
 function M.normalize_saved_colors(db)
     if type(db) ~= "table" then return end
 
+    db.shared_frame_background_color = normalize_saved_color(
+        db.shared_frame_background_color,
+        M.defaults and M.defaults.shared_frame_background_color,
+        true
+    )
+    db.shared_bar_background_color = normalize_saved_color(
+        db.shared_bar_background_color,
+        M.defaults and M.defaults.shared_bar_background_color,
+        true
+    )
+
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, color_def in ipairs(COLOR_KEYS) do
             local key = color_def.key .. "_" .. category

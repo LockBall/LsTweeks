@@ -230,6 +230,56 @@ function M.stop_test_preview_clock(show_key)
     M._test_preview_started[show_key] = nil
 end
 
+function M.get_test_aura_binding(category)
+    if not (category and M.db) then return nil end
+    local show_key = "show_" .. category
+    if M.FRAME_DEFS_BY_KEY and M.FRAME_DEFS_BY_KEY[category] then
+        return M.db, "test_aura_" .. category, show_key, show_key
+    end
+    for _, entry in ipairs(M.db.custom_frames or {}) do
+        if entry.id == category then
+            return entry, "test_aura", "show", show_key
+        end
+    end
+    return nil
+end
+
+function M.refresh_test_aura_category(category)
+    local _, _, _, show_key = M.get_test_aura_binding(category)
+    local frame = show_key and M.frames and M.frames[show_key]
+    local params = frame and frame.update_params
+    if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() end
+    if params then
+        M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
+            params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
+    end
+end
+
+function M.set_test_aura_enabled(category, enabled)
+    local value_table, test_key, show_storage_key, show_key = M.get_test_aura_binding(category)
+    if not value_table then return false end
+    enabled = enabled == true
+    value_table[test_key] = enabled
+    if enabled then
+        value_table[show_storage_key] = true
+        M.start_test_preview_paused(show_key)
+    else
+        M.stop_test_preview_clock(show_key)
+    end
+    M.refresh_test_aura_category(category)
+    if M.sync_test_aura_controls then M.sync_test_aura_controls(category) end
+    return true
+end
+
+function M.toggle_test_aura_preview(category)
+    local value_table, test_key, _, show_key = M.get_test_aura_binding(category)
+    if not (value_table and value_table[test_key] == true) then return false end
+    M.toggle_test_preview_pause(show_key)
+    M.refresh_test_aura_category(category)
+    if M.sync_test_aura_controls then M.sync_test_aura_controls(category) end
+    return true
+end
+
 local function normalize_preview_remaining(remaining, allow_zero, compensate_boundary)
     local minimum = allow_zero and 0 or CFG.min_remaining
     remaining = M.normalize_aura_timer_remaining(remaining, allow_zero, compensate_boundary)
