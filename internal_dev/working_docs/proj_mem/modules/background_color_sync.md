@@ -24,6 +24,7 @@ Durable ownership and runtime contracts for `modules/background_color_sync/`.
 - Non-global-only targets expose consumer-owned participation through `get_enabled`; Background Colors does not persist or edit that state.
 - Fade-capable consumers register with `supports_ooc_fade = true` and resolve their saved local fade flag through `M.resolve_ooc_fade(module_key, local_enabled)`. `M.get_disable_ooc_fade()`, `M.set_disable_ooc_fade()`, and `M.is_ooc_fade_disabled()` provide the single policy API used by Background Colors and linked consumer UI. Global `Disable OOC Fade` is independent, does not depend on `Enable All Backgrounds`, and never rewrites consumer settings.
 - Consumers registered with `global_toggle = true` expose a module participation checkbox as an indented child of `Enable Global Color`. `global_order` controls those checkbox positions; Objectives precedes Buffs & Debuffs.
+- Re-registering a consumer refreshes an open General tab only when its displayed global-toggle membership, label, or `global_order` changes; repeated unchanged registrations do not rebuild the panel.
 - Consumers registered with `global_only = true` bypass target participation for global color. Objectives uses this mode and owns local customization.
 - Buffs & Debuffs registers as fade-capable, so the global policy suppresses OOC fading across its built-in and custom frames.
 - Registration is independent from local visibility. Built-in targets register at module load; dynamic targets register when created/loaded and unregister when deleted.

@@ -299,7 +299,7 @@ local function get_effective_background_color()
 
     local color_sync = addon.background_color_sync
     if color_sync and color_sync.resolve_color then
-        color = color_sync.resolve_color("objectives", "custom_background", color)
+        color = color_sync.resolve_color(M.MODULE_KEY, "custom_background", color)
     end
     return color
 end
@@ -415,7 +415,7 @@ local function should_show_background_color()
     local local_enabled = is_background_color_enabled(db)
     local color_sync = addon.background_color_sync
     if color_sync and color_sync.resolve_visibility then
-        return color_sync.resolve_visibility("objectives", "custom_background", local_enabled)
+        return color_sync.resolve_visibility(M.MODULE_KEY, "custom_background", local_enabled)
     end
     return local_enabled
 end

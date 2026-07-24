@@ -174,6 +174,40 @@ h.test("settings page exposes only global controls for consumer-owned settings",
     h.ok(M.rebuild_general_tab, "registry rebuilds target the consolidated General tab")
 end)
 
+h.test("consumer re-registration rebuilds only when the Global list changes", function()
+    local original_on_registry_changed = M.on_registry_changed
+    local rebuild_calls = 0
+    M.on_registry_changed = function() rebuild_calls = rebuild_calls + 1 end
+
+    M.register_consumer("registry_refresh_test", {
+        label = "Registry Refresh Test",
+        global_toggle = true,
+        global_order = 300,
+    })
+    h.eq(rebuild_calls, 1, "new displayed consumer rebuilds the Global list")
+
+    M.register_consumer("registry_refresh_test", {
+        label = "Registry Refresh Test",
+        global_toggle = true,
+        global_order = 300,
+    })
+    h.eq(rebuild_calls, 1, "unchanged consumer registration skips the rebuild")
+
+    M.register_consumer("registry_refresh_test", {
+        label = "Renamed Registry Refresh Test",
+        global_toggle = true,
+        global_order = 300,
+    })
+    h.eq(rebuild_calls, 2, "displayed consumer label change rebuilds the Global list")
+
+    M.register_consumer("registry_refresh_test", { global_toggle = false })
+    h.eq(rebuild_calls, 3, "removing a displayed consumer rebuilds the Global list")
+
+    M.register_consumer("registry_refresh_test", { global_toggle = false })
+    h.eq(rebuild_calls, 3, "unchanged hidden consumer registration skips the rebuild")
+    M.on_registry_changed = original_on_registry_changed
+end)
+
 h.test("global-only consumer falls back to its local color", function()
     local db = M.get_db()
     local consumer_db = M.ensure_consumer_db("objectives")

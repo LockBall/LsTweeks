@@ -96,6 +96,9 @@ function M.register_consumer(module_key, opts)
     opts = opts or {}
 
     local consumer = M.consumers[module_key]
+    local was_global_toggle = consumer and consumer.global_toggle == true
+    local previous_label = consumer and consumer.label
+    local previous_global_order = consumer and consumer.global_order
     if not consumer then
         consumer = {
             key = module_key,
@@ -127,7 +130,12 @@ function M.register_consumer(module_key, opts)
         consumer.global_only = false
     end
     M.ensure_consumer_db(module_key)
-    notify_registry_changed()
+    local is_global_toggle = consumer.global_toggle == true
+    if was_global_toggle ~= is_global_toggle
+        or (is_global_toggle and (previous_label ~= consumer.label or previous_global_order ~= consumer.global_order))
+    then
+        notify_registry_changed()
+    end
     return consumer
 end
 
