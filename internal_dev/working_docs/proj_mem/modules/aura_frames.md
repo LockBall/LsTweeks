@@ -70,6 +70,7 @@ Important `aura_frames` keys:
 
 ## Scanning, Rendering, Timers
 - Aura classification uses live timing plus scan-local old-map fallback for secret fields. Do not reintroduce learned static/long spell tables.
+- Fresh-session in-game checks displayed two new timed debuffs correctly. Do not change the rare no-live-duration secret-debuff fallback without a concrete failing in-game case; the headless stub's synthetic nil result alone is not production proof.
 - `update_auras()` still owns the necessary scan/render pipeline for enabled frames. Live aura data, CDM child state, custom filter results, test previews, timer/bar metadata, display count, height, and ticker eligibility can change independently, so do not skip the whole update path without a new narrow proof.
 - If Aura performance work reopens, start with a focused profile around the regressed row. For render cost, profile `render_aura_map()` and the conservative display-signature skip. For scan/map cost, focus on `unified_scan`, `add_cooldown_viewer_category_entries`, and `scan_custom_aura_map`; preset bucket copying was below the focused-profile report cutoff and should not be treated as the next meaningful CPU target.
 - `M._aura_map` remains the master auraInstanceID map. `M.unified_scan()` rebuilds `M._aura_maps_by_category` as derived preset buckets each scan.
