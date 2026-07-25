@@ -1,7 +1,12 @@
 -- Color picker widget that wraps the system ColorPickerFrame with an integrated reset button.
--- addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb) returns a 95x45 container;
+-- addon.CreateColorPicker(parent, db, key, has_alpha, label, defaults, cb, opts) returns a container;
 -- the reset button restores the default color from the defaults table.
 -- The callback reason is one of open/reset/swatch/alpha/cancel.
+-- has_alpha is always forced true; every picker exposes opacity regardless of the argument passed.
+-- Every picker also injects a row of preset swatches into the system ColorPickerFrame popup itself
+-- (not a separate widget), defaulting to addon.all_the_colors.PRESET_OPTIONS / COLOR_PRESETS unless
+-- opts.presets / opts.color_presets override the source. opts.on_select(value) overrides the default
+-- apply-RGB-preserve-alpha behavior when a preset swatch is clicked; it must write db_table[db_key] itself.
 
 
 local addon_name, addon = ...
@@ -19,6 +24,12 @@ local POPUP_ALPHA_BOX_W = 40
 local POPUP_ALPHA_BOX_H = 16
 local POPUP_BUTTON_W = 64
 local POPUP_BUTTON_GAP = 8
+local POPUP_PRESET_SWATCH_SIZE = 16
+local POPUP_PRESET_SWATCH_GAP = 4
+-- Distance from ColorPickerFrame's true bottom edge to the swatch row's bottom edge; must clear
+-- the native Okay/Cancel buttons, which sit ~38px tall from that same edge.
+local POPUP_PRESET_BOTTOM_OFFSET = 50
+local POPUP_PRESET_ROW_HEIGHT = POPUP_PRESET_SWATCH_SIZE + POPUP_PRESET_BOTTOM_OFFSET
 local AUTO_VISIBLE_DEFAULT = 0.75
 local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec or 0.1
 
@@ -34,6 +45,28 @@ end
 local function color_alpha_or_default(a, default)
     if a == nil then return default end
     return a
+end
+
+-- Standard RGB->HSV conversion; ColorPickerFrame exposes GetColorRGB but no live RGB setter in the
+-- 10.2.5+ picker, only the inner wheel widget's SetColorHSV. The native ColorSelect widget's
+-- SetColorHSV/GetColorHSV take hue in degrees (0-360), not a 0-1 fraction.
+local function rgb_to_hsv(r, g, b)
+    local max_v, min_v = math.max(r, g, b), math.min(r, g, b)
+    local delta = max_v - min_v
+    local h = 0
+    if delta > 0 then
+        if max_v == r then
+            h = ((g - b) / delta) % 6
+        elseif max_v == g then
+            h = ((b - r) / delta) + 2
+        else
+            h = ((r - g) / delta) + 4
+        end
+        h = h * 60
+        if h < 0 then h = h + 360 end
+    end
+    local s = max_v > 0 and (delta / max_v) or 0
+    return h, s, max_v
 end
 
 --#endregion COLOR VALUE HELPERS ==============================================
@@ -171,6 +204,15 @@ local function set_color_picker_value_midpoint()
     return false
 end
 
+local function set_color_picker_rgb(r, g, b)
+    local picker = get_color_picker_widget()
+    if picker and picker.SetColorHSV then
+        picker:SetColorHSV(rgb_to_hsv(r, g, b))
+        return true
+    end
+    return false
+end
+
 --#endregion POPUP FRAME HELPERS ==============================================
 
 --#region POPUP ALPHA INPUT ===================================================
@@ -253,9 +295,109 @@ end
 
 --#endregion POPUP ALPHA INPUT ================================================
 
+--#region POPUP PRESET SWATCHES ================================================
+
+local function ensure_popup_presets(count)
+    local frame = ColorPickerFrame._lstweeks_presets
+    if frame and frame.swatches and #frame.swatches >= count then
+        return frame
+    end
+
+    if not frame then
+        frame = CreateFrame("Frame", nil, ColorPickerFrame)
+        frame:SetFrameLevel((ColorPickerFrame:GetFrameLevel() or 1) + 10)
+        frame.swatches = {}
+        ColorPickerFrame._lstweeks_presets = frame
+    end
+
+    for index = #frame.swatches + 1, count do
+        local swatch = CreateFrame("Button", nil, frame, "BackdropTemplate")
+        swatch:SetSize(POPUP_PRESET_SWATCH_SIZE, POPUP_PRESET_SWATCH_SIZE)
+        swatch:SetPoint("LEFT", frame, "LEFT", (index - 1) * (POPUP_PRESET_SWATCH_SIZE + POPUP_PRESET_SWATCH_GAP), 0)
+        swatch:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            edgeSize = 6,
+        })
+        local highlight = swatch:CreateTexture(nil, "OVERLAY")
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(1, 1, 1, 0.35)
+        highlight:Hide()
+        swatch:SetScript("OnEnter", function() highlight:Show() end)
+        swatch:SetScript("OnLeave", function() highlight:Hide() end)
+        frame.swatches[index] = swatch
+    end
+
+    return frame
+end
+
+local function place_popup_presets(frame, count)
+    frame:SetSize(count * POPUP_PRESET_SWATCH_SIZE + math.max(0, count - 1) * POPUP_PRESET_SWATCH_GAP, POPUP_PRESET_SWATCH_SIZE)
+    frame:ClearAllPoints()
+    -- Anchored to the frame's own bottom-left, inside the extra height resize_popup_for_presets
+    -- reserves; independent of sibling widget positions so it can't drift into their space.
+    frame:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", 24, POPUP_PRESET_BOTTOM_OFFSET)
+end
+
+local function ensure_base_popup_height()
+    if not ColorPickerFrame._lstweeks_base_height then
+        ColorPickerFrame._lstweeks_base_height = ColorPickerFrame:GetHeight()
+    end
+    return ColorPickerFrame._lstweeks_base_height
+end
+
+local function resize_popup_for_presets(expand)
+    local base_height = ensure_base_popup_height()
+    ColorPickerFrame:SetHeight(expand and (base_height + POPUP_PRESET_ROW_HEIGHT) or base_height)
+end
+
+local function hide_popup_presets()
+    local frame = ColorPickerFrame and ColorPickerFrame._lstweeks_presets
+    if frame then
+        frame:Hide()
+    end
+    if ColorPickerFrame then
+        resize_popup_for_presets(false)
+    end
+end
+
+local function show_popup_presets(presets, color_presets_lookup, on_pick)
+    resize_popup_for_presets(true)
+    local frame = ensure_popup_presets(#presets)
+    place_popup_presets(frame, #presets)
+
+    for index, swatch in ipairs(frame.swatches) do
+        local option = presets[index]
+        if option then
+            local preset = color_presets_lookup[option.value]
+            if preset then
+                swatch:SetBackdropColor(preset.r, preset.g, preset.b, 1)
+            end
+            if addon.AttachTooltip then
+                addon.AttachTooltip(swatch, nil, option.text or tostring(option.value))
+            end
+            swatch:SetScript("OnClick", function()
+                on_pick(option.value)
+            end)
+            swatch:Show()
+        else
+            swatch:Hide()
+        end
+    end
+
+    frame:Show()
+end
+
+--#endregion POPUP PRESET SWATCHES =============================================
+
 --#region COLOR PICKER FACTORY ===============================================
 
-function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback)
+function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback, opts)
+    has_alpha = true
+    opts = opts or {}
+    local presets = opts.presets or (addon.all_the_colors and addon.all_the_colors.PRESET_OPTIONS)
+    local color_presets_lookup = opts.color_presets or (addon.all_the_colors and addon.all_the_colors.COLOR_PRESETS)
+    local has_presets = type(presets) == "table" and #presets > 0 and type(color_presets_lookup) == "table"
     local container = addon.CreateControlPanel(parent, CONTAINER_W, CONTAINER_H)
 
     -- Label
@@ -389,6 +531,26 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
             update_alpha(alpha, false)
             set_popup_alpha_percent_text(alpha)
         end
+        local function pick_preset(value)
+            if opts.on_select then
+                opts.on_select(value)
+                local updated = db_table[db_key]
+                if updated then
+                    set_color_picker_rgb(updated.r, updated.g, updated.b)
+                    if has_alpha then set_color_picker_alpha(color_alpha_or_default(updated.a, 1)) end
+                    apply_and_refresh(updated.r, updated.g, updated.b, updated.a, "swatch", false)
+                    set_popup_alpha_percent_text(color_alpha_or_default(updated.a, 1))
+                end
+                return
+            end
+            local preset = color_presets_lookup[value]
+            if not preset then return end
+            local alpha = has_alpha and ColorPickerFrame:GetColorAlpha() or 1
+            set_color_picker_rgb(preset.r, preset.g, preset.b)
+            db_table[db_key] = has_alpha and { r = preset.r, g = preset.g, b = preset.b, a = alpha }
+                or { r = preset.r, g = preset.g, b = preset.b }
+            apply_and_refresh(preset.r, preset.g, preset.b, alpha, "swatch", false)
+        end
 
         ColorPickerFrame:SetupColorPickerAndShow({
             r = current.r, g = current.g, b = current.b,
@@ -401,6 +563,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
                 apply_and_refresh(current.r, current.g, current.b, current.a, "cancel", true)
                 clear_live_picker_callbacks(session)
                 hide_popup_alpha_percent()
+                hide_popup_presets()
             end
         })
         ColorPickerFrame._lstweeks_live_session = session
@@ -417,6 +580,11 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
             end)
         else
             hide_popup_alpha_percent()
+        end
+        if has_presets then
+            show_popup_presets(presets, color_presets_lookup, pick_preset)
+        else
+            hide_popup_presets()
         end
         C_Timer.After(0, function()
             auto_visible_ready = true

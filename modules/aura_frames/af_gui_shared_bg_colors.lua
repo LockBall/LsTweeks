@@ -140,16 +140,8 @@ function M.sync_background_color_controls()
     local color_sync = get_background_color_sync()
     if not (color_sync and M.controls and M.db) then return end
 
-    local frame_preset = M.controls.background_color_sync_frame_preset
-    if frame_preset and frame_preset.SetValue and color_sync.get_color_preset then
-        frame_preset:SetValue(color_sync.get_color_preset(M.db.shared_frame_background_color))
-    end
     local frame_picker = M.controls.background_color_sync_frame_picker
     if frame_picker and frame_picker.SetValue then frame_picker:SetValue(M.db.shared_frame_background_color) end
-    local bar_preset = M.controls.background_color_sync_bar_preset
-    if bar_preset and bar_preset.SetValue and color_sync.get_color_preset then
-        bar_preset:SetValue(color_sync.get_color_preset(M.db.shared_bar_background_color))
-    end
     local bar_picker = M.controls.background_color_sync_bar_picker
     if bar_picker and bar_picker.SetValue then bar_picker:SetValue(M.db.shared_bar_background_color) end
     local enabled_control = M.controls.background_color_sync_enabled
@@ -167,9 +159,7 @@ function M.sync_background_color_controls()
     local module_controls_enabled = not global_active
     local shared_controls_enabled = shared_enabled and module_controls_enabled
     if enabled_control then enabled_control:SetEnabled(module_controls_enabled) end
-    if frame_preset then frame_preset:SetEnabled(shared_controls_enabled) end
     if frame_picker then frame_picker:SetEnabled(shared_controls_enabled) end
-    if bar_preset then bar_preset:SetEnabled(shared_controls_enabled) end
     if bar_picker then bar_picker:SetEnabled(shared_controls_enabled) end
     if fade_control then fade_control:SetEnabled(true) end
     if M.background_color_matrix_group then M.background_color_matrix_group:SetAlpha(1) end
@@ -333,35 +323,6 @@ end
 local function build_shared_color_column(panel, header_grid, color_sync, title_text, target_type, column, db_key)
     create_header_title(panel, header_grid, title_text, column)
 
-    local preset_control = addon.CreateCyclingDropdown(
-        addon_name .. (target_type == "frame" and "AuraSharedFrameBackgroundPreset"
-            or "AuraSharedBarBackgroundPreset"),
-        panel,
-        "Preset",
-        color_sync.PRESET_OPTIONS,
-        {
-            fit_to_options = true,
-            get_value = function()
-                return color_sync.get_color_preset(M.db[db_key])
-            end,
-            get_unknown_text = function() return "Custom" end,
-            on_select = function(value)
-                local preset = color_sync.COLOR_PRESETS[value]
-                if not preset then return end
-                local current = M.db[db_key] or M.defaults[db_key]
-                M.db[db_key] = {
-                    r = preset.r,
-                    g = preset.g,
-                    b = preset.b,
-                    a = current.a,
-                }
-                refresh_background_color_sync()
-            end,
-        }
-    )
-    header_grid:place_at(preset_control, 1, column, nil, { y_offset = -28 })
-    M.controls["background_color_sync_" .. target_type .. "_preset"] = preset_control
-
     local picker_control = addon.CreateColorPicker(
         panel,
         M.db,
@@ -373,7 +334,7 @@ local function build_shared_color_column(panel, header_grid, color_sync, title_t
             if reason ~= "open" then refresh_background_color_sync() end
         end
     )
-    header_grid:place_at(picker_control, 1, column, "picker", { y_offset = -72 })
+    header_grid:place_at(picker_control, 1, column, "picker", { y_offset = -40 })
     M.controls["background_color_sync_" .. target_type .. "_picker"] = picker_control
 end
 

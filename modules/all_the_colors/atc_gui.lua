@@ -18,7 +18,6 @@ local GRID_COLUMN_GAP = 185
 local GLOBAL_ROW_HEIGHTS = { 28, 64, 56, 56 }
 local GLOBAL_BASE_HEIGHT = 257
 local GLOBAL_INCLUDED_CONSUMERS = 2
-local FRAME_PRESET_ROW_OFFSET_Y = 6
 
 local function get_content_width()
     if addon.main_frame and addon.main_frame.GetContentAreaSize then
@@ -61,10 +60,6 @@ local function sync_global_color_controls()
     if picker and picker.SetValue then
         picker:SetValue(db_table[color_key])
     end
-    local selector = M.controls.global_color_preset
-    if selector and selector.SetValue then
-        selector:SetValue(M.get_color_preset(db_table[color_key]))
-    end
 
     for _, color_def in ipairs({
         { control_key = "aura_bar_color", db_key = "aura_bar_color" },
@@ -98,9 +93,7 @@ function M.sync_controls()
     end
     sync_global_color_controls()
     local global_picker = M.controls.global_color_picker
-    local global_selector = M.controls.global_color_preset
     if global_picker then global_picker:SetEnabled(global_enabled) end
-    if global_selector then global_selector:SetEnabled(global_enabled) end
     for _, control_key in ipairs({ "aura_bar_color", "aura_bar_text_color", "aura_bar_bg_color", "aura_timer_text_color" }) do
         local control = M.controls[control_key]
         if control then control:SetEnabled(global_enabled) end
@@ -153,41 +146,10 @@ local function create_bound_checkbox(
     return control
 end
 
-local function select_preset(preset_key)
-    if not M.set_color_preset(preset_key) then return end
-    sync_global_color_controls()
-    M.refresh_consumers()
-end
-
 local function create_global_color_controls(parent, grid, label, row, opts)
     opts = opts or {}
     local db_table, color_key, defaults = M.get_color_binding()
     if not db_table then return end
-    local selector = addon.CreateCyclingDropdown(
-        addon_name .. "global_colorPreset",
-        parent,
-        opts.selector_label or (label .. " Preset"),
-        M.PRESET_OPTIONS,
-        {
-            width = opts.selector_width or 160,
-            fit_to_options = opts.selector_fit_to_options,
-            get_value = function()
-                return M.get_color_preset(db_table[color_key])
-            end,
-            get_unknown_text = function()
-                return "Custom"
-            end,
-            on_select = function(value)
-                select_preset(value)
-            end,
-        }
-    )
-    grid:place_at(selector, opts.selector_row or row, opts.selector_column or 1, nil, {
-        align = opts.align,
-        y_offset = opts.selector_y_offset,
-    })
-    M.controls.global_color_preset = selector
-
     local picker = addon.CreateColorPicker(
         parent,
         db_table,
@@ -306,14 +268,7 @@ local function build_global_group(parent)
     local timer_text_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     timer_text_title:SetText("Timer Text")
     global_grid:place_at(timer_text_title, 1, 4, nil, { align = "center" })
-    create_global_color_controls(global_group, global_grid, "Frame BG", 1, {
-        selector_row = 2,
-        selector_column = 2,
-        selector_label = "Preset Colors",
-        selector_fit_to_options = true,
-        selector_y_offset = FRAME_PRESET_ROW_OFFSET_Y,
-        outlined = true,
-        picker_row = 3,
+    create_global_color_controls(global_group, global_grid, "Frame BG", 2, {
         picker_column = 2,
         picker_label = "Custom Color",
         align = "center",

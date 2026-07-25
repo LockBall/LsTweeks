@@ -6,6 +6,8 @@
 local addon_name, addon = ...
 
 local OUTLINED_CONTROL_GAP = 5
+local OUTLINED_SIDE_PADDING = 10
+local OUTLINED_LABEL_HEIGHT = 26
 
 local CreateFrame = CreateFrame
 local UIParent = UIParent
@@ -299,7 +301,7 @@ function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
     local container
     local outlined = cfg.outlined == true and addon.CreateControlPanel ~= nil
     if outlined then
-        container = addon.CreateControlPanel(parent, container_width, control_height + 26)
+        container = addon.CreateControlPanel(parent, container_width + OUTLINED_SIDE_PADDING * 2, control_height + OUTLINED_LABEL_HEIGHT)
     else
         container = CreateFrame("Frame", nil, parent)
         container:SetSize(container_width, control_height)
