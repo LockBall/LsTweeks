@@ -198,12 +198,6 @@ local function set_icon_position(obj, frame, layout, col_idx, row_idx, icon_foot
     end
 end
 
-local function get_timer_text_alignment(category, frame)
-    -- A fixed right edge prevents visible horizontal shifts when a countdown
-    -- changes format (for example, 10.1m -> 9m59s).
-    return "RIGHT"
-end
-
 function M.setup_layout(self, show_key, spacing_key, bar_mode)
     if not self or not self.icons then return end
     if InCombatLockdown() then return end
@@ -231,8 +225,10 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
     local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
     local bar_layout = M.get_bar_layout_params(timer_font_size)
-    local timer_text_align = get_timer_text_alignment(category, self)
-    local timer_anchor_point = (timer_text_align == "CENTER") and "CENTER" or "RIGHT"
+    -- A fixed right edge prevents visible horizontal shifts when a countdown
+    -- changes format (for example, 10.1m -> 9m59s).
+    local timer_text_align = "RIGHT"
+    local timer_anchor_point = "RIGHT"
     local bar_timer_slot_width = bar_layout.timer_slot_width
     local bar_timer_slot_right_pad = bar_layout.timer_slot_right_pad
 

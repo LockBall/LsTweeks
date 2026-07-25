@@ -151,7 +151,7 @@ Important `aura_frames` keys:
 
 
 ## Debug, Grid, Style
-- Debug outlines: `M.db.show_bar_section_outlines`; remove tagged textures with `Hide()` + `SetTexture(nil)`, not `SetParent(nil)`.
+- Debug outlines: `M.db.show_bar_section_outlines`; lazily allocate four textures per slot only while enabled, then reuse and `Hide()` them. Do not create/scan outline regions during normal runtime or detach them with `SetParent(nil)`.
 - Screen grid: `M.snap_to_grid()`, `M.snap_frame_position()`, `M.set_grid_visible()`. Grid preserves flush screen-edge positions before rounding.
 - Riveted panel style: `addon.ApplyRivetedPanelStyle()` / `addon.AddRivetCorners()`.
 - `addon.CreateRivetedPanel()` owns default text padding through `addon.RIVETED_PANEL_STYLE.padding`; callers should not clear/reanchor returned text just to avoid rivets.

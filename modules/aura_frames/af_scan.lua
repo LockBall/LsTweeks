@@ -1009,9 +1009,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
             -- Secret fields: use DoesAuraHaveExpirationTime.
             local expires = C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
             local expires_known
-            if type(expires) ~= "boolean" then
-                expires_known = false
-            elseif issecretvalue(expires) then
+            if type(expires) ~= "boolean" or issecretvalue(expires) then
                 expires_known = nil
             else
                 expires_known = expires

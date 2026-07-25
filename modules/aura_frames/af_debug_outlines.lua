@@ -1,5 +1,5 @@
 -- Debug helper that draws 1px border outlines on aura icon slot frames to visualize layout boundaries.
--- refresh_section_outlines() reads M.db.show_bar_section_outlines and adds or removes outlines accordingly; outlines are tagged ._is_outline for safe cleanup.
+-- Outlines are allocated only while explicitly enabled, then reused and hidden so normal gameplay has no outline work.
 
 
 --#region FILE CONTENTS ======================================================
@@ -20,25 +20,33 @@ local OUTLINE_DEFS = {
 
 local function remove_debug_outlines(frame)
     if not frame then return end
-    for i = 1, select("#", frame:GetRegions()) do
-        local region = select(i, frame:GetRegions())
-        if region and region._is_outline then
-            region:Hide()
-            region:SetTexture(nil)
-        end
+    local outlines = frame._lstweeks_debug_outlines
+    if not outlines then return end
+    for _, texture in ipairs(outlines) do
+        texture:Hide()
     end
 end
 
 local function add_debug_outline(frame, r, g, b, a)
     if not is_outline_enabled() or not frame then return end
-    remove_debug_outlines(frame)
-    for _, def in ipairs(OUTLINE_DEFS) do
-        local tex = frame:CreateTexture(nil, "OVERLAY")
+    local outlines = frame._lstweeks_debug_outlines
+    if not outlines then
+        outlines = {}
+        frame._lstweeks_debug_outlines = outlines
+    end
+    for index, def in ipairs(OUTLINE_DEFS) do
+        local tex = outlines[index]
+        if not tex then
+            tex = frame:CreateTexture(nil, "OVERLAY")
+            tex._is_outline = true
+            outlines[index] = tex
+        end
+        tex:ClearAllPoints()
         tex:SetColorTexture(r, g, b, a)
         tex:SetPoint(def.points[1][1], frame, def.points[1][1], def.points[1][2], def.points[1][3])
         tex:SetPoint(def.points[2][1], frame, def.points[2][1], def.points[2][2], def.points[2][3])
         tex["Set"..def.size[1]](tex, def.size[2])
-        tex._is_outline = true
+        tex:Show()
     end
     M._debug_outlines_active = true
 end

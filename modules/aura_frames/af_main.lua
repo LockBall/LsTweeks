@@ -1123,6 +1123,13 @@ local function create_startup_aura_frames()
     end
 end
 
+local function ensure_module_started()
+    if M._module_started then return end
+    prepare_aura_frame_db()
+    create_startup_aura_frames()
+    M._module_started = true
+end
+
 local function register_aura_frame_settings()
     if addon.register_category and M.BuildSettings then
         addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
@@ -1211,11 +1218,7 @@ function M.set_module_enabled(enabled)
             M._aura_scan_dirty = true
         end
 
-        if not M._module_started then
-            prepare_aura_frame_db()
-            create_startup_aura_frames()
-            M._module_started = true
-        end
+        ensure_module_started()
         start_aura_frame_runtime_services()
         rebind_existing_aura_frames()
         return
@@ -1284,9 +1287,7 @@ loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
         register_aura_frame_settings()
         if M.is_runtime_enabled and M.is_runtime_enabled() then
-            prepare_aura_frame_db()
-            create_startup_aura_frames()
-            M._module_started = true
+            ensure_module_started()
             start_aura_frame_runtime_services()
         else
             M.stop_runtime()

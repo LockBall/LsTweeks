@@ -989,6 +989,69 @@ h.test("unified scan refreshes an Aura order key when identity changes", functio
     h.stub.auras.player = nil
 end)
 
+h.test("secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", function()
+    local M = load_aura_frames()
+    M.db = {
+        max_icons_static = 1,
+        max_icons_short = 1,
+        max_icons_long = 1,
+        max_icons_debuff = 1,
+    }
+    local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
+    h.stub.auras.player = {
+        buffs = {
+            { auraInstanceID = 601, spellId = 6001, name = "Secret Permanent", icon = 1 },
+        },
+        debuffs = {},
+    }
+    M._aura_map = {}
+
+    C_UnitAuras.DoesAuraHaveExpirationTime = function() return false end
+    M.unified_scan(nil, 5, 1, 1)
+    h.eq(M._aura_map[601].category, "static", "known non-expiring secret Aura classifies as static")
+
+    h.stub.auras.player.buffs[1] = { auraInstanceID = 602, spellId = 6002, name = "Secret Timed", icon = 1 }
+    C_UnitAuras.DoesAuraHaveExpirationTime = function() return true end
+    M.unified_scan(nil, 5, 1, 1)
+    h.eq(M._aura_map[602].category, "short", "known expiring secret Aura with no history classifies as short")
+
+    h.stub.auras.player.buffs[1] = { auraInstanceID = 603, spellId = 6003, name = "Unavailable Result", icon = 1 }
+    C_UnitAuras.DoesAuraHaveExpirationTime = function() return nil end
+    M.unified_scan(nil, 5, 1, 1)
+    h.eq(M._aura_map[603].category, "short", "unreadable expiration result with no history falls back to short")
+
+    C_UnitAuras.DoesAuraHaveExpirationTime = previous_expiration_check
+    h.stub.auras.player = nil
+end)
+
+h.test("secret-timing debuff always joins the debuff bucket regardless of expiration readability", function()
+    local M = load_aura_frames()
+    M.db = {
+        max_icons_static = 1,
+        max_icons_short = 1,
+        max_icons_long = 1,
+        max_icons_debuff = 1,
+    }
+    local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
+    M._aura_map = {}
+
+    for _, result in ipairs({ false, true, nil }) do
+        h.stub.auras.player = {
+            buffs = {},
+            debuffs = {
+                { auraInstanceID = 701, spellId = 7001, name = "Secret Debuff", icon = 1 },
+            },
+        }
+        C_UnitAuras.DoesAuraHaveExpirationTime = function() return result end
+        M.unified_scan(nil, 5, 1, 1)
+        h.eq(M._aura_map[701].category, "debuff",
+            "debuff belongs to the debuff frame when expiration readability is " .. tostring(result))
+    end
+
+    C_UnitAuras.DoesAuraHaveExpirationTime = previous_expiration_check
+    h.stub.auras.player = nil
+end)
+
 h.run("af_ranges")
 
 --#endregion FILE CONTENTS ===================================================
