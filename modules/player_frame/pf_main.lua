@@ -233,7 +233,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
 
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.build_options_panel, { module_key = MODULE_KEY })
+            addon.register_category(M.CATEGORY_NAME, M.build_options_panel, { order = 700, module_key = MODULE_KEY })
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         M.update_player_frame()

@@ -62,11 +62,11 @@ addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket = addon.UPDATE_INTERVALS.tenth_sec
 
 addon.FEATURE_MODULES = {
-    { key = "player_frame", label = "Player Frame" },
-    { key = "objectives", label = "Objectives" },
     { key = "all_the_colors", label = "All the Colors" },
-    { key = "aura_frames", label = "Buffs & Debuffs" },
     { key = "audio_volumes", label = "Audio Volumes" },
+    { key = "aura_frames", label = "Buffs & Debuffs" },
+    { key = "objectives", label = "Objectives" },
+    { key = "player_frame", label = "Player Frame" },
     { key = "skyriding_vigor", label = "Skyriding Vigor" },
 }
 

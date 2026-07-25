@@ -19,11 +19,12 @@ local UI_CONFIG = {
     title_offset_y = -20,
     section_offset_y = -20,
     modules_group_offset_y = -28,
-    modules_group_height = 190,
+    modules_group_bottom_padding = 10,
     modules_group_padding_x = 12,
+    checkbox_height = 24,
     modules_group_title_offset_y = -8,
     modules_first_checkbox_offset_y = -32,
-    modules_checkbox_step_y = -32,
+    modules_checkbox_gap_y = 2,
 }
 
 local STRINGS = {
@@ -94,8 +95,12 @@ function M.build_settings_page(parent)
     alpha_slider:SetPoint("TOPLEFT", reload_container, "BOTTOMLEFT", 0, cfg.section_offset_y)
 
     local modules_group = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    local extra_module_rows = math_max(0, #addon.FEATURE_MODULES - 5)
-    modules_group:SetSize(1, cfg.modules_group_height + (extra_module_rows * cfg.modules_checkbox_step_y))
+    local module_row_count = #addon.FEATURE_MODULES
+    local modules_checkbox_step_y = -(cfg.checkbox_height + cfg.modules_checkbox_gap_y)
+    local last_row_offset_y = cfg.modules_first_checkbox_offset_y
+        + math_max(0, module_row_count - 1) * modules_checkbox_step_y
+    local modules_group_height = -last_row_offset_y + cfg.checkbox_height + cfg.modules_group_bottom_padding
+    modules_group:SetSize(1, modules_group_height)
     modules_group:SetPoint("TOPLEFT", alpha_slider, "BOTTOMLEFT", 0, cfg.modules_group_offset_y)
     modules_group:SetBackdrop({
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -125,7 +130,7 @@ function M.build_settings_page(parent)
             end
         )
         M.controls["module_" .. row_module_def.key] = module_container
-        local offset_y = cfg.modules_first_checkbox_offset_y + ((index - 1) * cfg.modules_checkbox_step_y)
+        local offset_y = cfg.modules_first_checkbox_offset_y + ((index - 1) * modules_checkbox_step_y)
         module_container:SetPoint("TOPLEFT", modules_group, "TOPLEFT", cfg.modules_group_padding_x, offset_y)
         widest_content = math_max(widest_content, module_container:GetWidth() or 0)
     end

@@ -1126,6 +1126,7 @@ end
 local function register_aura_frame_settings()
     if addon.register_category and M.BuildSettings then
         addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
+            order = 500,
             module_key = M.MODULE_KEY,
         })
     end

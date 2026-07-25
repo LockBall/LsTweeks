@@ -795,7 +795,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         local root_db = get_root_db()
         update_race_active_state(root_db)
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 901, module_key = M.MODULE_KEY })
+            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 800, module_key = M.MODULE_KEY })
         end
         M.refresh()
         return

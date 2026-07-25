@@ -55,7 +55,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         local defaults = addon.module_defaults.st
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
         if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.build_settings_page)
+            addon.register_category(M.CATEGORY_NAME, M.build_settings_page, { order = 200 })
         end
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)

@@ -97,7 +97,7 @@ loader:SetScript("OnEvent", function(self, event, name)
 
         -- Register the GUI Category
         if addon.register_category then
-            addon.register_category(STRINGS.category_name, build_about_page)
+            addon.register_category(STRINGS.category_name, build_about_page, { order = 100 })
         end
 
         self:UnregisterEvent("ADDON_LOADED")

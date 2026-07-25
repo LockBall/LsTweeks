@@ -71,7 +71,7 @@ loader:SetScript("OnEvent", function(self, event, name)
     M.normalize_db()
     if addon.register_category then
         addon.register_category(M.CATEGORY_NAME, M.BuildSettings, {
-            order = 700,
+            order = 300,
             module_key = M.MODULE_KEY,
         })
     end

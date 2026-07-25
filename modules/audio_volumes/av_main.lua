@@ -133,7 +133,7 @@ loader:SetScript("OnEvent", function(self, event, name)
             M.sync_manual_situation_profile()
         end
         if addon.register_category and M.BuildSettings then
-            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 900, module_key = M.MODULE_KEY })
+            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 400, module_key = M.MODULE_KEY })
         end
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then
