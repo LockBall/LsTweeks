@@ -92,11 +92,17 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     resolved, source = M.resolve_color("aura_frames", "frame:static", original)
     h.eq(resolved, db.global_color, "global override wins")
     h.eq(source, "global", "global source reported")
-    db.aura_bar_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
+    db.aura_buff_bar_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
+    db.aura_debuff_bar_color = { r = 0.7, g = 0.2, b = 0.1, a = 0.5 }
     h.eq(
-        M.resolve_module_color("aura_frames", "aura_bar_color", original),
-        db.aura_bar_color,
-        "Aura Bar Color uses the enabled All the Colors override"
+        M.resolve_module_color("aura_frames", "aura_buff_bar_color", original),
+        db.aura_buff_bar_color,
+        "Aura Buff Bar Color uses the enabled All the Colors override"
+    )
+    h.eq(
+        M.resolve_module_color("aura_frames", "aura_debuff_bar_color", original),
+        db.aura_debuff_bar_color,
+        "Aura Debuff Bar Color uses the enabled All the Colors override"
     )
     db.global_enable_all_backgrounds = false
     h.eq(
@@ -148,28 +154,46 @@ h.test("profile restores whole-module participation without owning target select
     local consumer_db = M.ensure_consumer_db("aura_frames")
     consumer_db.global_enabled = false
     target_state["frame:static"] = false
+    local db = M.get_db()
+    db.aura_buff_bar_color = { r = 0.2, g = 0.4, b = 0.6, a = 0.8 }
+    db.aura_debuff_bar_color = { r = 0.8, g = 0.2, b = 0.1, a = 0.7 }
 
     local ok = M.profile_manager:save("Test", false)
     h.ok(ok, "profile saves")
     consumer_db.global_enabled = true
     target_state["frame:static"] = true
+    db.aura_buff_bar_color.r = 0.9
+    db.aura_debuff_bar_color.r = 0.9
 
     ok = M.profile_manager:load("Test")
     h.ok(ok, "profile loads")
     consumer_db = M.ensure_consumer_db("aura_frames")
     h.eq(consumer_db.global_enabled, false, "explicit false module participation restored")
     h.eq(target_state["frame:static"], true, "module-owned target selection is untouched")
+    h.eq(db.aura_buff_bar_color.r, 0.2, "profile restores Buff bar color")
+    h.eq(db.aura_debuff_bar_color.r, 0.8, "profile restores Debuff bar color")
 end)
 
 h.test("settings page exposes only global controls for consumer-owned settings", function()
     local db = M.get_db()
     db.global_enabled = false
     db.global_enable_all_backgrounds = true
+    db.global_enable_test_auras = true
 
     local parent = CreateFrame("Frame", nil, UIParent)
     parent:SetSize(900, 700)
     M.BuildSettings(parent)
 
+    h.ok(M.controls.aura_buff_bar_color, "Global exposes the Buff bar color picker")
+    h.ok(M.controls.aura_debuff_bar_color, "Global exposes the Debuff bar color picker")
+    h.ok(M.controls.aura_bar_bg_color, "Global retains the bar background picker")
+    h.ok(M.controls.global_enable_test_auras, "Global exposes the Test Aura preview override")
+    h.ok(M.controls.global_test_aura_play_pause, "Global exposes the Test Aura play button")
+    h.ok(M.get_test_auras_enabled(), "Test Aura preview override reads the saved setting")
+    h.eq(M.defaults.all_the_colors.aura_buff_bar_color.r, 0,
+        "Buff bar override uses the standard Buff bar default")
+    h.eq(M.defaults.all_the_colors.aura_debuff_bar_color.r, 1,
+        "Debuff bar override uses the standard Debuff bar default")
     h.ok(M.controls["global_consumer:objectives"], "Objectives global toggle appears in Global")
     h.ok(M.controls["global_consumer:aura_frames"], "Buffs & Debuffs global toggle appears in Global")
     h.ok(
@@ -227,7 +251,7 @@ h.test("global-only consumer falls back to its local color", function()
     consumer_db.global_enabled = true
     db.global_enabled = true
     resolved, source = M.resolve_color("objectives", "custom_background", original)
-    h.eq(resolved, db.global_color, "global-only consumer ignores obsolete hidden target state")
+    h.eq(resolved, db.global_color, "global-only consumer needs no target state")
     h.eq(source, "global", "enabled global-only consumer reports global source")
 end)
 

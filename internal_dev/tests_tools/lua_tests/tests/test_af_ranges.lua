@@ -232,6 +232,37 @@ h.test("rechecking test aura after a silent uncheck restarts paused at zero", fu
     h.eq(preview.aura_remaining, 365 * 86400, "recheck discards the stale clock and shows the initial value")
 end)
 
+h.test("global test Aura playback keeps enabled preview clocks synchronized", function()
+    local M = load_aura_frames()
+    M.db = {
+        show_static = true,
+        show_short = false,
+        show_debuff = true,
+        custom_frames = {
+            { id = "custom_1", show = true },
+            { id = "custom_2", show = false },
+        },
+    }
+    M._test_preview_time_offsets = {}
+    M._test_preview_paused_times = {}
+    M._test_preview_started = {}
+    M.refresh_test_aura_category = function() end
+
+    M.start_global_test_aura_previews_paused()
+    h.ok(M.is_test_preview_paused("show_static"), "enabled preset starts paused")
+    h.ok(M.is_test_preview_paused("show_debuff"), "second enabled preset starts paused")
+    h.ok(M.is_test_preview_paused("show_custom_1"), "enabled custom frame starts paused")
+    h.ok(not M._test_preview_started.show_short, "disabled preset has no preview clock")
+    h.ok(not M._test_preview_started.show_custom_2, "disabled custom frame has no preview clock")
+
+    h.eq(M.toggle_global_test_aura_previews(), false, "Play starts every enabled preview")
+    h.ok(not M.is_test_preview_paused("show_static"), "preset preview is playing")
+    h.ok(not M.is_test_preview_paused("show_custom_1"), "custom preview is playing")
+
+    h.eq(M.toggle_global_test_aura_previews(), true, "Pause stops every enabled preview")
+    h.ok(M.are_global_test_aura_previews_paused(), "all enabled previews report paused")
+end)
+
 h.test("test preview stacks tick live with the timer", function()
     local M = load_aura_frames()
     M._test_preview_time_offsets = {}
@@ -836,7 +867,11 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
             if target_key == "frame:short" then
                 return { r = 0.21, g = 0.31, b = 0.41, a = 0.51 }
             end
-            if target_key == "bar:short" then
+            return color
+        end,
+        resolve_module_color = function(module_key, color_key, color)
+            h.eq(module_key, "aura_frames", "Aura Frames requests its module style color")
+            if color_key == "aura_bar_bg_color" then
                 return { r = 0.61, g = 0.71, b = 0.81, a = 0.91 }
             end
             return color

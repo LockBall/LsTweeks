@@ -60,21 +60,68 @@ M.COLOR_PRESETS = {
 
 --#region DEFAULTS =============================================================
 
-M.defaults = {
-    all_the_colors = {
-        global_enabled = false,
-        global_enable_all_backgrounds = false,
-        global_disable_ooc_fade = false,
-        global_color = { r = 0, g = 0, b = 0, a = 0.5 },
-        aura_bar_color = { r = 1, g = 1, b = 1, a = 1 },
-        aura_bar_text_color = { r = 1, g = 1, b = 1 },
-        aura_bar_bg_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
-        aura_timer_text_color = { r = 1, g = 1, b = 1 },
-        consumers = {},
-        last_tab_index = 1,
-        last_profile_name = nil,
-        profiles = {},
+local function copy_color(color)
+    return { r = color.r, g = color.g, b = color.b, a = color.a }
+end
+
+M.AURA_COLOR_DEFS = {
+    {
+        key = "aura_bar_bg_color",
+        label = "Bar BG",
+        has_alpha = true,
+        row = 3,
+        column = 2,
+        default = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 },
+    },
+    {
+        key = "aura_buff_bar_color",
+        label = "Buff Bar",
+        has_alpha = true,
+        row = 2,
+        column = 3,
+        default = addon.AURA_BAR_COLOR_DEFAULTS.buff,
+    },
+    {
+        key = "aura_debuff_bar_color",
+        label = "Debuff Bar",
+        has_alpha = true,
+        row = 3,
+        column = 3,
+        default = addon.AURA_BAR_COLOR_DEFAULTS.debuff,
+    },
+    {
+        key = "aura_timer_text_color",
+        label = "Timer Text",
+        has_alpha = false,
+        row = 3,
+        column = 4,
+        default = { r = 1, g = 1, b = 1, a = 1 },
+    },
+    {
+        key = "aura_bar_text_color",
+        label = "Bar Text",
+        has_alpha = false,
+        row = 2,
+        column = 4,
+        default = { r = 1, g = 1, b = 1, a = 1 },
     },
 }
+
+local defaults = {
+    global_enabled = false,
+    global_enable_all_backgrounds = false,
+    global_enable_test_auras = false,
+    global_disable_ooc_fade = false,
+    global_color = { r = 0, g = 0, b = 0, a = 0.5 },
+    consumers = {},
+    last_tab_index = 1,
+    last_profile_name = nil,
+    profiles = {},
+}
+for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+    defaults[color_def.key] = copy_color(color_def.default)
+end
+
+M.defaults = { all_the_colors = defaults }
 
 --#endregion DEFAULTS ==========================================================

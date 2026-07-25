@@ -61,14 +61,9 @@ local function sync_global_color_controls()
         picker:SetValue(db_table[color_key])
     end
 
-    for _, color_def in ipairs({
-        { control_key = "aura_bar_color", db_key = "aura_bar_color" },
-        { control_key = "aura_bar_text_color", db_key = "aura_bar_text_color" },
-        { control_key = "aura_bar_bg_color", db_key = "aura_bar_bg_color" },
-        { control_key = "aura_timer_text_color", db_key = "aura_timer_text_color" },
-    }) do
-        local control = M.controls[color_def.control_key]
-        if control and control.SetValue then control:SetValue(db_table[color_def.db_key]) end
+    for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+        local control = M.controls[color_def.key]
+        if control and control.SetValue then control:SetValue(db_table[color_def.key]) end
     end
 end
 
@@ -86,6 +81,14 @@ function M.sync_controls()
         visibility_control:SetCheckedSilently(db.global_enable_all_backgrounds == true)
         visibility_control:SetEnabled(true)
     end
+    local test_aura_control = M.controls.global_enable_test_auras
+    if test_aura_control and test_aura_control.SetState then
+        test_aura_control:SetState(
+            M.get_test_auras_enabled(),
+            M.are_test_aura_previews_paused(),
+            true
+        )
+    end
     local fade_control = M.controls.global_disable_ooc_fade
     if fade_control and fade_control.SetCheckedSilently then
         fade_control:SetCheckedSilently(M.get_disable_ooc_fade())
@@ -94,8 +97,8 @@ function M.sync_controls()
     sync_global_color_controls()
     local global_picker = M.controls.global_color_picker
     if global_picker then global_picker:SetEnabled(global_enabled) end
-    for _, control_key in ipairs({ "aura_bar_color", "aura_bar_text_color", "aura_bar_bg_color", "aura_timer_text_color" }) do
-        local control = M.controls[control_key]
+    for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+        local control = M.controls[color_def.key]
         if control then control:SetEnabled(global_enabled) end
     end
 
@@ -236,7 +239,7 @@ local function build_global_group(parent)
         1,
         1
     )
-    create_bound_checkbox(
+    local fade_control = create_bound_checkbox(
         global_group,
         global_grid,
         "global_disable_ooc_fade",
@@ -247,6 +250,33 @@ local function build_global_group(parent)
         1,
         "Prevents registered backgrounds from fading out of combat."
     )
+    local test_aura_control, test_aura_button = addon.CreateTestAuraControl(
+        global_group,
+        M.get_test_auras_enabled(),
+        function(checked)
+            if M.set_test_auras_enabled(checked) then
+                M.sync_controls()
+                M.refresh_consumers()
+            end
+        end,
+        function()
+            if M.toggle_test_aura_previews() then
+                M.sync_controls()
+                M.refresh_consumers()
+            end
+        end,
+        { paused = M.are_test_aura_previews_paused() }
+    )
+    global_grid:stack_below(test_aura_control, fade_control, { y = -2 })
+    if addon.AttachTooltip then
+        addon.AttachTooltip(
+            test_aura_control.label,
+            nil,
+            "Shows test auras on enabled Aura Frames without changing their individual Test Aura settings."
+        )
+    end
+    M.controls.global_enable_test_auras = test_aura_control
+    M.controls.global_test_aura_play_pause = test_aura_button
     local global_color_row = 3
     local global_enable = create_bound_checkbox(
         global_group,
@@ -260,23 +290,31 @@ local function build_global_group(parent)
         "Use one color across all modules"
     )
     local frame_bg_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    frame_bg_title:SetText("Frame BG")
+    frame_bg_title:SetText("BG Colors")
     global_grid:place_at(frame_bg_title, 1, 2, nil, { align = "center" })
     local bar_colors_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     bar_colors_title:SetText("Bar Colors")
     global_grid:place_at(bar_colors_title, 1, 3, nil, { align = "center" })
-    local timer_text_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    timer_text_title:SetText("Timer Text")
-    global_grid:place_at(timer_text_title, 1, 4, nil, { align = "center" })
+    local text_colors_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    text_colors_title:SetText("Text Colors")
+    global_grid:place_at(text_colors_title, 1, 4, nil, { align = "center" })
     create_global_color_controls(global_group, global_grid, "Frame BG", 2, {
         picker_column = 2,
-        picker_label = "Custom Color",
+        picker_label = "Frame BG",
         align = "center",
     })
-    create_aura_color_picker(global_group, global_grid, db, "aura_bar_color", "Bar Color", true, 2, 3)
-    create_aura_color_picker(global_group, global_grid, db, "aura_bar_text_color", "Bar Text Color", false, 3, 3)
-    create_aura_color_picker(global_group, global_grid, db, "aura_bar_bg_color", "Bar BG Color", true, 4, 3)
-    create_aura_color_picker(global_group, global_grid, db, "aura_timer_text_color", "Timer Text Color", false, 2, 4)
+    for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+        create_aura_color_picker(
+            global_group,
+            global_grid,
+            db,
+            color_def.key,
+            color_def.label,
+            color_def.has_alpha,
+            color_def.row,
+            color_def.column
+        )
+    end
     local previous_global_control = global_enable
     for index, consumer in ipairs(global_consumers) do
         local consumer_db = M.ensure_consumer_db(consumer.key)

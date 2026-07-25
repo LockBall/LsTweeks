@@ -29,7 +29,7 @@ function M.invalidate_all_frame_runtime_config()
     end
 end
 
-function M.on_background_color_sync_changed()
+function M.on_shared_color_changed()
     M.invalidate_all_frame_runtime_config()
     if M.sync_background_color_controls then
         M.sync_background_color_controls()
@@ -94,6 +94,9 @@ function M.resolve_background_color(category, target_type, local_color)
     end
 
     local color_sync = addon.all_the_colors
+    if target_type == "bar" and color_sync and color_sync.resolve_module_color then
+        return color_sync.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", resolved)
+    end
     if color_sync and color_sync.resolve_color then
         return color_sync.resolve_color(
             M.MODULE_KEY,
@@ -125,6 +128,50 @@ function M.resolve_background_visibility(category, target_type, local_enabled)
     return resolved
 end
 
+function M.resolve_bar_color(category, local_color)
+    local resolved = local_color
+    if M.db
+        and M.db.shared_background_color_enabled == true
+        and M.get_bar_color_sync_enabled(category)
+    then
+        resolved = M.is_debuff_frame_category(category)
+            and M.db.shared_debuff_bar_color
+            or M.db.shared_buff_bar_color
+        resolved = resolved or local_color
+    end
+
+    local color_sync = addon.all_the_colors
+    if color_sync and color_sync.resolve_module_color then
+        local color_key = M.is_debuff_frame_category(category)
+            and "aura_debuff_bar_color"
+            or "aura_buff_bar_color"
+        resolved = color_sync.resolve_module_color(M.MODULE_KEY, color_key, resolved)
+    end
+    return resolved
+end
+
+function M.resolve_text_color(category, text_type, local_color)
+    local resolved = local_color
+    if M.db
+        and M.db.shared_background_color_enabled == true
+        and M.get_text_color_sync_enabled(category)
+    then
+        resolved = text_type == "timer"
+            and M.db.shared_timer_text_color
+            or M.db.shared_bar_text_color
+        resolved = resolved or local_color
+    end
+
+    local color_sync = addon.all_the_colors
+    if color_sync and color_sync.resolve_module_color then
+        local color_key = text_type == "timer"
+            and "aura_timer_text_color"
+            or "aura_bar_text_color"
+        resolved = color_sync.resolve_module_color(M.MODULE_KEY, color_key, resolved)
+    end
+    return resolved
+end
+
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
     local cache = frame._runtime_config_cache
     if cache then return cache end
@@ -142,12 +189,8 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
-    local all_the_colors = addon.all_the_colors
-    if all_the_colors and all_the_colors.resolve_module_color then
-        color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_color", color)
-        bar_text_color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_text_color", bar_text_color)
-        bar_bg_color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", bar_bg_color)
-    end
+    color = M.resolve_bar_color(category, color)
+    bar_text_color = M.resolve_text_color(category, "bar", bar_text_color)
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
     bg_color = M.resolve_background_color(category, "frame", bg_color)
 

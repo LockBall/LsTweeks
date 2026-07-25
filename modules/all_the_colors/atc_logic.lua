@@ -80,8 +80,6 @@ function M.ensure_consumer_db(module_key)
     if consumer_db.global_enabled == nil then
         consumer_db.global_enabled = consumer.default_global_enabled == true
     end
-    consumer_db.color = nil
-    consumer_db.targets = nil
     return consumer_db
 end
 
@@ -195,10 +193,9 @@ function M.normalize_db()
     if not db then return end
     local defaults = M.defaults.all_the_colors
     db.global_color = normalize_color(db.global_color, defaults.global_color)
-    db.aura_bar_color = normalize_color(db.aura_bar_color, defaults.aura_bar_color)
-    db.aura_bar_text_color = normalize_color(db.aura_bar_text_color, defaults.aura_bar_text_color)
-    db.aura_bar_bg_color = normalize_color(db.aura_bar_bg_color, defaults.aura_bar_bg_color)
-    db.aura_timer_text_color = normalize_color(db.aura_timer_text_color, defaults.aura_timer_text_color)
+    for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+        db[color_def.key] = normalize_color(db[color_def.key], defaults[color_def.key])
+    end
     db.consumers = db.consumers or {}
     for _, consumer in ipairs(M.get_registered_consumers()) do
         M.ensure_consumer_db(consumer.key)
@@ -264,6 +261,39 @@ end
 function M.get_disable_ooc_fade()
     local db = M.get_db()
     return db ~= nil and db.global_disable_ooc_fade == true
+end
+
+function M.get_test_auras_enabled()
+    local db = M.get_db()
+    return M.is_runtime_enabled() and db ~= nil and db.global_enable_test_auras == true
+end
+
+function M.set_test_auras_enabled(enabled)
+    local db = M.get_db()
+    if not db then return false end
+    db.global_enable_test_auras = enabled == true
+    local aura_frames = addon.aura_frames
+    if enabled and aura_frames and aura_frames.start_global_test_aura_previews_paused then
+        aura_frames.start_global_test_aura_previews_paused()
+    end
+    return true
+end
+
+function M.are_test_aura_previews_paused()
+    local aura_frames = addon.aura_frames
+    if not (aura_frames and aura_frames.are_global_test_aura_previews_paused) then
+        return true
+    end
+    return aura_frames.are_global_test_aura_previews_paused()
+end
+
+function M.toggle_test_aura_previews()
+    local aura_frames = addon.aura_frames
+    if not (M.get_test_auras_enabled() and aura_frames and aura_frames.toggle_global_test_aura_previews) then
+        return false
+    end
+    aura_frames.toggle_global_test_aura_previews()
+    return true
 end
 
 function M.set_disable_ooc_fade(enabled)

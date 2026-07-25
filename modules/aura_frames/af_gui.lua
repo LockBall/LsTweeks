@@ -139,6 +139,50 @@ function M.BuildSettings(parent)
     PanelTemplates_UpdateTabs(parent)
 end
 
+local function get_frame_test_control_keys(category)
+    if M.FRAME_DEFS_BY_KEY and M.FRAME_DEFS_BY_KEY[category] then
+        local test_key = "test_aura_" .. category
+        return test_key, test_key .. "_pause", "show_" .. category
+    end
+    local prefix = "custom_" .. tostring(category) .. "_"
+    return prefix .. "test_aura", prefix .. "test_aura_pause", prefix .. "show"
+end
+
+local function sync_test_aura_category(category)
+    local value_table, test_key, show_storage_key, show_key = M.get_test_aura_binding(category)
+    local enabled = value_table and value_table[test_key] == true
+    local frame_test_key, frame_pause_key, frame_show_key = get_frame_test_control_keys(category)
+    local frame_test_control = M.controls[frame_test_key]
+    if frame_test_control and frame_test_control.SetCheckedSilently then
+        frame_test_control:SetCheckedSilently(enabled)
+    end
+    local frame_pause_control = M.controls[frame_pause_key]
+    if frame_pause_control then
+        frame_pause_control:SetEnabled(enabled)
+        frame_pause_control:SetPaused(M.is_test_preview_paused(show_key))
+    end
+    if enabled then
+        local frame_show_control = M.controls[frame_show_key]
+        if frame_show_control and frame_show_control.SetCheckedSilently then
+            frame_show_control:SetCheckedSilently(value_table[show_storage_key] == true)
+        end
+    end
+end
+
+function M.sync_test_aura_controls(category)
+    if not (M.controls and M.db and M.get_test_aura_binding) then return end
+    if category ~= nil then
+        sync_test_aura_category(category)
+        return
+    end
+    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+        sync_test_aura_category(frame_def.key)
+    end
+    for _, entry in ipairs(M.db.custom_frames or {}) do
+        if entry.id then sync_test_aura_category(entry.id) end
+    end
+end
+
 -- Sync GUI control states from DB (used after reset flows).
 function M.sync_general_controls_from_db()
     if not M.controls or not M.db then return end

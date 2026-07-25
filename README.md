@@ -34,7 +34,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides default-off, independent shared colors for frame and bar backgrounds. Every built-in and custom frame has separate **Frame BG** and **Bar BG** participation checkboxes plus linked **Test Aura** controls. Background participation is inactive while shared color is disabled; Test Aura and the globally linked **Disable OOC Fade** remain available. Aura-owned shared colors and participation are included in Aura Frames profiles and resets.
+The Aura Frames **Shared BG Colors** tab provides default-off shared colors for frame backgrounds, bar backgrounds, and bar fills. **BG Colors** contains Frame BG and Bar BG pickers; **Bar Colors** contains separate Buff Bar and Debuff Bar pickers derived from their standard bar defaults. Every built-in and custom frame has independent Frame BG, Bar BG, and Bar Color participation plus linked **Test Aura** controls. Shared-color participation is inactive while shared color is disabled; the global Enable Test Auras/Play/Pause control and globally linked **Disable OOC Fade** remain available. Aura-owned shared colors and participation are included in Aura Frames profiles and resets.
 
 
 #### Preset Frames
@@ -101,7 +101,9 @@ All the Colors applies reversible runtime color overrides without replacing the 
 - **Global Color**: one RGBA color across checked modules; visibility-capable backgrounds in those modules are shown while the override is active.
 - **Show Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings.
+- **Enable Test Auras**: temporarily previews test auras on every enabled Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
 - **Global Participation**: Objectives and Buffs & Debuffs have whole-module checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
+- **Aura Colors**: the Global page groups the independent Frame BG and Bar BG overrides under **BG Colors**, Buff Bar and Debuff Bar fills under **Bar Colors**, and Timer Text and Bar Text under **Text Colors**.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
 
 Neither global visibility path changes the Objectives border or Blizzard Objective Tracker opacity.

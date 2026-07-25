@@ -1,4 +1,4 @@
--- Addon entry point: initializes the shared addon table, defines UI_THEME constants,
+-- Addon entry point: initializes the shared addon table, defines shared constants,
 -- sets up SavedVariables (Ls_Tweeks_DB), and registers the /lst slash command.
 -- Loads first; every other file reads addon.UI_THEME and writes into Ls_Tweeks_DB through the patterns established here.
 
@@ -15,6 +15,12 @@ addon.UI_THEME = {
     font_title    = "GameFontHighlight",
     font_subtitle = "GameFontHighlightSmall",
     font_body     = "GameFontNormal",
+}
+
+-- Shared by Aura Frames local defaults and All the Colors global overrides.
+addon.AURA_BAR_COLOR_DEFAULTS = {
+    buff = { r = 0, g = 0.5, b = 1, a = 1 },
+    debuff = { r = 1, g = 0.2, b = 0.2, a = 1 },
 }
 
 -- Shared timing buckets. Runtime code should choose a named bucket/profile

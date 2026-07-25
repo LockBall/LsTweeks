@@ -436,16 +436,15 @@ end
 function M.normalize_saved_colors(db)
     if type(db) ~= "table" then return end
 
-    db.shared_frame_background_color = normalize_saved_color(
-        db.shared_frame_background_color,
-        M.defaults and M.defaults.shared_frame_background_color,
-        true
-    )
-    db.shared_bar_background_color = normalize_saved_color(
-        db.shared_bar_background_color,
-        M.defaults and M.defaults.shared_bar_background_color,
-        true
-    )
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+        for _, picker in ipairs(column.pickers) do
+            db[picker.db_key] = normalize_saved_color(
+                db[picker.db_key],
+                M.defaults and M.defaults[picker.db_key],
+                picker.has_alpha
+            )
+        end
+    end
 
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, color_def in ipairs(COLOR_KEYS) do
@@ -512,6 +511,14 @@ local function read_frame_bool(cfg_db, key)
     return cfg_db[key] == true
 end
 
+function M.is_global_test_aura_enabled()
+    local color_sync = addon.all_the_colors
+    return color_sync
+        and color_sync.get_test_auras_enabled
+        and color_sync.get_test_auras_enabled()
+        or false
+end
+
 function M.get_frame_activity_state(frame, show_key, move_key)
     local category = frame and frame.category
     local cfg_db = M.get_frame_config_db(frame)
@@ -530,7 +537,7 @@ function M.get_frame_activity_state(frame, show_key, move_key)
 
     activity.enabled = enabled
     activity.moving = enabled and read_frame_bool(cfg_db, moving_key)
-    activity.test_aura = enabled and read_frame_bool(cfg_db, test_key)
+    activity.test_aura = enabled and (read_frame_bool(cfg_db, test_key) or M.is_global_test_aura_enabled())
     activity.is_custom = is_custom
     activity.is_cdm = is_cdm
     activity.needs_shared_scan = enabled and not is_custom

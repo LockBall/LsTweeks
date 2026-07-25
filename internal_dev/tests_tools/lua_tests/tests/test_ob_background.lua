@@ -70,18 +70,30 @@ end
 
 local function install_color_picker_frame()
     ColorPickerFrame = CreateFrame("Frame", "ColorPickerFrame", UIParent)
+    ColorPickerFrame:SetSize(388, 210)
     ColorPickerFrame.Footer = {
         OkayButton = CreateFrame("Button", nil, ColorPickerFrame),
         CancelButton = CreateFrame("Button", nil, ColorPickerFrame),
     }
+    ColorPickerFrame.Footer.OkayButton:SetSize(154, 22)
+    ColorPickerFrame.Footer.OkayButton:SetPoint("RIGHT", ColorPickerFrame.Footer.CancelButton, "LEFT")
+    ColorPickerFrame.Footer.CancelButton:SetSize(154, 22)
+    ColorPickerFrame.Footer.CancelButton:SetPoint("BOTTOMRIGHT", ColorPickerFrame, "BOTTOMRIGHT", -11.5, 12)
     local color_picker = CreateFrame("Frame", nil, ColorPickerFrame)
     color_picker.GetColorHSV = function() return 0, 0 end
     color_picker.SetColorHSV = function() end
     local opacity_slider = CreateFrame("Slider", nil, ColorPickerFrame)
-    ColorPickerFrame.Content = {
-        ColorPicker = color_picker,
-        OpacitySlider = opacity_slider,
-    }
+    local hex_box = CreateFrame("EditBox", nil, ColorPickerFrame)
+    hex_box:SetSize(73, 22)
+    local content = CreateFrame("Frame", nil, ColorPickerFrame)
+    content:SetSize(388, 210)
+    content:SetPoint("TOPLEFT", ColorPickerFrame, "TOPLEFT")
+    content:SetPoint("BOTTOMRIGHT", ColorPickerFrame, "BOTTOMRIGHT")
+    hex_box:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -23, 44)
+    content.ColorPicker = color_picker
+    content.OpacitySlider = opacity_slider
+    content.HexBox = hex_box
+    ColorPickerFrame.Content = content
     ColorPickerFrame.__r = 0.25
     ColorPickerFrame.__g = 0.25
     ColorPickerFrame.__b = 0.25
@@ -238,6 +250,17 @@ h.test("color picker clears live callbacks after its session closes", function()
     ColorPickerFrame:Show()
     ColorPickerFrame:Hide()
     h.is_nil(ColorPickerFrame._lstweeks_live_swatch_func, "hide clears accepted-session callback")
+    h.eq(ColorPickerFrame:GetWidth(), 388, "hide restores native picker width")
+    h.eq(ColorPickerFrame:GetHeight(), 210, "hide restores native picker height")
+    h.eq(ColorPickerFrame.Content:GetNumPoints(), 2, "hide restores native content anchors")
+    h.eq(ColorPickerFrame.Footer.OkayButton:GetWidth(), 154, "hide restores native Okay width")
+    h.eq(ColorPickerFrame.Footer.CancelButton:GetWidth(), 154, "hide restores native Cancel width")
+    h.eq(ColorPickerFrame.Footer.OkayButton:GetPoint(), "RIGHT", "hide restores native Okay anchor")
+    h.eq(ColorPickerFrame.Footer.CancelButton:GetPoint(), "BOTTOMRIGHT", "hide restores native Cancel anchor")
+    h.eq(ColorPickerFrame.Content.HexBox:GetPoint(), "BOTTOMRIGHT", "hide restores native hex anchor")
+    h.ok(not ColorPickerFrame._lstweeks_alpha_percent:IsShown(), "hide removes custom alpha input")
+    h.ok(not ColorPickerFrame._lstweeks_presets or not ColorPickerFrame._lstweeks_presets:IsShown(),
+        "hide removes custom preset row")
 end)
 
 h.test("background color picker live preview is debounced", function()

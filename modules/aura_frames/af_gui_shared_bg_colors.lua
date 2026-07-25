@@ -1,4 +1,4 @@
--- Aura Frames background color settings and per-frame participation matrix.
+-- Aura Frames shared background/bar colors and per-frame participation matrix.
 
 
 local addon_name, addon = ...
@@ -8,14 +8,18 @@ local M = addon.aura_frames
 
 local GROUP_WIDTH = 700
 local GROUP_OFFSET_X = 20
-local CONTROL_ROW_HEIGHT = 65
+local CONTROL_ROW_HEIGHT = 50
 local MATRIX_OFFSET_Y = CONTROL_ROW_HEIGHT + 10
 local COLUMN_COUNT = 4
-local COLUMN_WIDTH = 140
+local COLUMN_WIDTH = 120
 local COLUMN_GAP = 165
 local HEADER_BAR_WIDTH = ((COLUMN_COUNT - 1) * COLUMN_GAP) + COLUMN_WIDTH
 local HEADER_BAR_HEIGHT = 24
-local HEADER_BAR_Y_OFFSET = 12
+local HEADER_BAR_Y_OFFSET = 15
+-- Top edge of both color pickers in each row, measured from the panel top.
+local COLOR_PICKER_ROW_1_Y = -20
+local COLOR_PICKER_ROW_2_Y = -70
+local COLOR_PICKER_ROW_Y = { COLOR_PICKER_ROW_1_Y, COLOR_PICKER_ROW_2_Y }
 
 
 --#region SHARED COLOR STATE ===================================================
@@ -26,11 +30,10 @@ local function get_background_color_sync()
     return color_sync
 end
 
-local function refresh_background_color_sync()
+local function refresh_shared_colors()
     local color_sync = get_background_color_sync()
-    if not color_sync then return end
-    if color_sync.sync_controls then color_sync.sync_controls() end
-    if color_sync.refresh_consumers then color_sync.refresh_consumers() end
+    if color_sync and color_sync.sync_controls then color_sync.sync_controls() end
+    if M.on_shared_color_changed then M.on_shared_color_changed() end
 end
 
 local function get_participation_rows()
@@ -60,7 +63,8 @@ local function clear_participation_control_keys()
         if type(key) == "string"
             and (
                 key:match("^background_color_sync:[^:]+:")
-                or key:match("^shared_test_aura:")
+                or key:match("^bar_color_sync:")
+                or key:match("^text_color_sync:")
             )
         then
             M.controls[key] = nil
@@ -81,69 +85,36 @@ local function refresh_participation_rows()
         slot.display_label = row and row.label or nil
         if row then
             slot.label:SetText(row.label)
-            slot.frame_control:SetCheckedSilently(M.get_background_color_sync_enabled(row.category, "frame"))
-            slot.bar_control:SetCheckedSilently(M.get_background_color_sync_enabled(row.category, "bar"))
-            M.controls["background_color_sync:" .. M.get_background_color_target_key(row.category, "frame")] =
-                slot.frame_control
-            M.controls["background_color_sync:" .. M.get_background_color_target_key(row.category, "bar")] =
-                slot.bar_control
-            M.controls["shared_test_aura:" .. row.category] = slot.test_control
-            M.controls["shared_test_aura:" .. row.category .. ":pause"] = slot.test_button
+            slot.background_control:SetCheckedSilently(M.get_background_color_sync_enabled(row.category))
+            slot.bar_color_control:SetCheckedSilently(M.get_bar_color_sync_enabled(row.category))
+            slot.text_color_control:SetCheckedSilently(M.get_text_color_sync_enabled(row.category))
+            M.controls["background_color_sync:bg:" .. row.category] = slot.background_control
+            M.controls["bar_color_sync:" .. row.category] = slot.bar_color_control
+            M.controls["text_color_sync:" .. row.category] = slot.text_color_control
             slot.frame:Show()
         else
             slot.frame:Hide()
         end
     end
     rows_parent:SetHeight(math.max(1, #rows * 30))
-    if M.sync_test_aura_controls then M.sync_test_aura_controls() end
-end
-
-local function get_frame_test_control_keys(category)
-    if M.FRAME_DEFS_BY_KEY and M.FRAME_DEFS_BY_KEY[category] then
-        local test_key = "test_aura_" .. category
-        return test_key, test_key .. "_pause", "show_" .. category
-    end
-    local prefix = "custom_" .. tostring(category) .. "_"
-    return prefix .. "test_aura", prefix .. "test_aura_pause", prefix .. "show"
-end
-
-function M.sync_test_aura_controls(category)
-    for _, slot in ipairs(M.background_color_row_slots or {}) do
-        if slot.category and (category == nil or slot.category == category) then
-            local value_table, test_key, show_storage_key, show_key = M.get_test_aura_binding(slot.category)
-            local enabled = value_table and value_table[test_key] == true
-            slot.test_control:SetCheckedSilently(enabled)
-            slot.test_button:SetEnabled(enabled)
-            slot.test_button:SetPaused(M.is_test_preview_paused(show_key))
-
-            local frame_test_key, frame_pause_key, frame_show_key = get_frame_test_control_keys(slot.category)
-            local frame_test_control = M.controls[frame_test_key]
-            if frame_test_control and frame_test_control.SetCheckedSilently then
-                frame_test_control:SetCheckedSilently(enabled)
-            end
-            local frame_pause_control = M.controls[frame_pause_key]
-            if frame_pause_control then
-                frame_pause_control:SetEnabled(enabled)
-                frame_pause_control:SetPaused(M.is_test_preview_paused(show_key))
-            end
-            if enabled then
-                local frame_show_control = M.controls[frame_show_key]
-                if frame_show_control and frame_show_control.SetCheckedSilently then
-                    frame_show_control:SetCheckedSilently(value_table[show_storage_key] == true)
-                end
-            end
-        end
-    end
 end
 
 function M.sync_background_color_controls()
     local color_sync = get_background_color_sync()
     if not (color_sync and M.controls and M.db) then return end
 
-    local frame_picker = M.controls.background_color_sync_frame_picker
-    if frame_picker and frame_picker.SetValue then frame_picker:SetValue(M.db.shared_frame_background_color) end
-    local bar_picker = M.controls.background_color_sync_bar_picker
-    if bar_picker and bar_picker.SetValue then bar_picker:SetValue(M.db.shared_bar_background_color) end
+    local global_active = color_sync.is_global_color_active
+        and color_sync.is_global_color_active(M.MODULE_KEY)
+    local shared_enabled = M.db.shared_background_color_enabled == true
+    local module_controls_enabled = not global_active
+    local shared_controls_enabled = shared_enabled and module_controls_enabled
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+        for _, picker_def in ipairs(column.pickers) do
+            local picker = M.controls[picker_def.control_key]
+            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.db_key]) end
+            if picker then picker:SetEnabled(shared_controls_enabled) end
+        end
+    end
     local enabled_control = M.controls.background_color_sync_enabled
     if enabled_control and enabled_control.SetCheckedSilently then
         enabled_control:SetCheckedSilently(M.db.shared_background_color_enabled == true)
@@ -152,24 +123,27 @@ function M.sync_background_color_controls()
     if fade_control and fade_control.SetCheckedSilently then
         fade_control:SetCheckedSilently(color_sync.get_disable_ooc_fade())
     end
+    local test_aura_control = M.controls.background_color_sync_test_auras
+    if test_aura_control and test_aura_control.SetState then
+        test_aura_control:SetState(
+            color_sync.get_test_auras_enabled(),
+            color_sync.are_test_aura_previews_paused(),
+            true
+        )
+    end
 
-    local global_active = color_sync.is_global_color_active
-        and color_sync.is_global_color_active(M.MODULE_KEY)
-    local shared_enabled = M.db.shared_background_color_enabled == true
-    local module_controls_enabled = not global_active
-    local shared_controls_enabled = shared_enabled and module_controls_enabled
     if enabled_control then enabled_control:SetEnabled(module_controls_enabled) end
-    if frame_picker then frame_picker:SetEnabled(shared_controls_enabled) end
-    if bar_picker then bar_picker:SetEnabled(shared_controls_enabled) end
     if fade_control then fade_control:SetEnabled(true) end
     if M.background_color_matrix_group then M.background_color_matrix_group:SetAlpha(1) end
 
     for _, slot in ipairs(M.background_color_row_slots or {}) do
         if slot.category then
-            slot.frame_control:SetCheckedSilently(M.get_background_color_sync_enabled(slot.category, "frame"))
-            slot.bar_control:SetCheckedSilently(M.get_background_color_sync_enabled(slot.category, "bar"))
-            slot.frame_control:SetEnabled(shared_controls_enabled)
-            slot.bar_control:SetEnabled(shared_controls_enabled)
+            slot.background_control:SetCheckedSilently(M.get_background_color_sync_enabled(slot.category))
+            slot.background_control:SetEnabled(shared_controls_enabled)
+            slot.bar_color_control:SetCheckedSilently(M.get_bar_color_sync_enabled(slot.category))
+            slot.bar_color_control:SetEnabled(shared_controls_enabled)
+            slot.text_color_control:SetCheckedSilently(M.get_text_color_sync_enabled(slot.category))
+            slot.text_color_control:SetEnabled(shared_controls_enabled)
         end
     end
 end
@@ -216,7 +190,7 @@ local function build_color_controls(parent, color_sync)
         function(is_checked)
             M.db.shared_background_color_enabled = is_checked == true
             M.sync_background_color_controls()
-            refresh_background_color_sync()
+            refresh_shared_colors()
         end
     )
     grid:place_at(enabled_control, 1, 1)
@@ -228,12 +202,33 @@ local function build_color_controls(parent, color_sync)
         color_sync.get_disable_ooc_fade(),
         function(is_checked)
             if color_sync.set_disable_ooc_fade(is_checked) then
-                refresh_background_color_sync()
+                refresh_shared_colors()
             end
         end
     )
     grid:place_at(fade_control, 1, 2)
     M.controls.background_color_sync_disable_ooc_fade = fade_control
+
+    local test_aura_control, test_aura_button = addon.CreateTestAuraControl(
+        content,
+        color_sync.get_test_auras_enabled(),
+        function(checked)
+            if color_sync.set_test_auras_enabled(checked) then
+                M.sync_background_color_controls()
+                refresh_shared_colors()
+            end
+        end,
+        function()
+            if color_sync.toggle_test_aura_previews() then
+                M.sync_background_color_controls()
+                refresh_shared_colors()
+            end
+        end,
+        { paused = color_sync.are_test_aura_previews_paused() }
+    )
+    grid:place_at(test_aura_control, 1, 3)
+    M.controls.background_color_sync_test_auras = test_aura_control
+    M.controls.background_color_sync_test_auras_play_pause = test_aura_button
 
     return content, content_height
 end
@@ -241,7 +236,11 @@ end
 local function attach_slot_tooltip(slot, control, target_type)
     control.checkbox:SetScript("OnEnter", function(self)
         if not slot.display_label then return end
-        local target_label = target_type == "frame" and "frame background" or "bar background"
+        local target_label = ({
+            background = "frame and bar background",
+            bar_color = "bar color",
+            text_color = "bar and timer text colors",
+        })[target_type]
         addon.ShowOwnedTooltip(self, "Apply the shared " .. target_label .. " color to "
             .. slot.display_label .. ".", nil)
     end)
@@ -273,72 +272,75 @@ local function create_participation_slot(parent, grid, index)
     slot_grid:place_at(label, 1, 1)
     slot.label = label
 
-    local frame_control = addon.CreateCheckbox(frame, "", false, function(is_checked)
-        if slot.category and M.set_background_color_sync_enabled(slot.category, "frame", is_checked) then
-            refresh_background_color_sync()
-        end
-    end)
-    slot_grid:place_at(frame_control, 1, 2)
-    slot.frame_control = frame_control
-
-    local bar_control = addon.CreateCheckbox(frame, "", false, function(is_checked)
-        if slot.category and M.set_background_color_sync_enabled(slot.category, "bar", is_checked) then
-            refresh_background_color_sync()
-        end
-    end)
-    slot_grid:place_at(bar_control, 1, 3)
-    slot.bar_control = bar_control
-
-    local test_group = CreateFrame("Frame", nil, frame)
-    test_group:SetSize(68, 30)
-    slot_grid:place_at(test_group, 1, 4)
-    local test_grid = addon.CreateSettingsGrid(test_group, {
-        column_count = 2,
+    local background_group = CreateFrame("Frame", nil, frame)
+    background_group:SetSize(30, 30)
+    slot_grid:place_at(background_group, 1, 2)
+    local background_grid = addon.CreateSettingsGrid(background_group, {
+        column_count = 1,
         col_width = 24,
-        col_gap = 36,
+        col_gap = 24,
         col_offset = 0,
-        col_align = { "center", "center" },
+        col_align = { "center" },
         row_start = 0,
         row_heights = { 30 },
         row_gap = 0,
         content_rows = 1,
     })
-    local test_control = addon.CreateCheckbox(test_group, "", false, function(is_checked)
-        if slot.category then M.set_test_aura_enabled(slot.category, is_checked) end
+
+    local background_control = addon.CreateCheckbox(background_group, "", false, function(is_checked)
+        if slot.category and M.set_background_color_sync_enabled(slot.category, is_checked) then
+            refresh_shared_colors()
+        end
     end)
-    test_grid:place_at(test_control, 1, 1)
-    slot.test_control = test_control
+    background_grid:place_at(background_control, 1, 1)
+    slot.background_control = background_control
 
-    local test_button = addon.CreatePlayPauseButton(test_group, function()
-        if slot.category then M.toggle_test_aura_preview(slot.category) end
-    end, { width = 28, height = 28 })
-    test_grid:place_at(test_button, 1, 2)
-    slot.test_button = test_button
+    local bar_color_control = addon.CreateCheckbox(frame, "", false, function(is_checked)
+        if slot.category and M.set_bar_color_sync_enabled(slot.category, is_checked) then
+            refresh_shared_colors()
+        end
+    end)
+    slot_grid:place_at(bar_color_control, 1, 3)
+    slot.bar_color_control = bar_color_control
 
-    attach_slot_tooltip(slot, frame_control, "frame")
-    attach_slot_tooltip(slot, bar_control, "bar")
+    local text_color_control = addon.CreateCheckbox(frame, "", false, function(is_checked)
+        if slot.category and M.set_text_color_sync_enabled(slot.category, is_checked) then
+            refresh_shared_colors()
+        end
+    end)
+    slot_grid:place_at(text_color_control, 1, 4)
+    slot.text_color_control = text_color_control
+
+    attach_slot_tooltip(slot, background_control, "background")
+    attach_slot_tooltip(slot, bar_color_control, "bar_color")
+    attach_slot_tooltip(slot, text_color_control, "text_color")
     return slot
 end
 
-local function build_shared_color_column(panel, header_grid, color_sync, title_text, target_type, column, db_key)
+local function build_shared_color_column(panel, header_grid, title_text, column, picker_defs)
     create_header_title(panel, header_grid, title_text, column)
 
-    local picker_control = addon.CreateColorPicker(
-        panel,
-        M.db,
-        db_key,
-        true,
-        "Custom",
-        M.defaults,
-        function(reason)
-            if reason ~= "open" then refresh_background_color_sync() end
-        end
-    )
-    header_grid:place_at(picker_control, 1, column, "picker", { y_offset = -40 })
-    M.controls["background_color_sync_" .. target_type .. "_picker"] = picker_control
+    for index, picker_def in ipairs(picker_defs) do
+        local picker_control = addon.CreateColorPicker(
+            panel,
+            M.db,
+            picker_def.db_key,
+            picker_def.has_alpha,
+            picker_def.label,
+            M.defaults,
+            function(reason)
+                if reason ~= "open" then refresh_shared_colors() end
+            end
+        )
+        header_grid:place_at(picker_control, 1, column, nil, {
+            align = "center",
+            y_offset = COLOR_PICKER_ROW_Y[index],
+        })
+        M.controls[picker_def.control_key] = picker_control
+    end
 end
 
-local function build_participation_matrix(content, content_height, color_sync)
+local function build_participation_matrix(content, content_height)
     local panel = CreateFrame("Frame", nil, content)
     panel:SetSize(GROUP_WIDTH, content_height - MATRIX_OFFSET_Y)
     panel:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -MATRIX_OFFSET_Y)
@@ -363,26 +365,9 @@ local function build_participation_matrix(content, content_height, color_sync)
     header_grid:place_at(header_bar, 1, 1, nil, { y_offset = HEADER_BAR_Y_OFFSET })
 
     create_header_title(panel, header_grid, "Frame Name", 1)
-    build_shared_color_column(
-        panel,
-        header_grid,
-        color_sync,
-        "Frame BG Color",
-        "frame",
-        2,
-        "shared_frame_background_color"
-    )
-    build_shared_color_column(
-        panel,
-        header_grid,
-        color_sync,
-        "Bar BG Color",
-        "bar",
-        3,
-        "shared_bar_background_color"
-    )
-    create_header_title(panel, header_grid, "Test Aura", 4)
-
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+        build_shared_color_column(panel, header_grid, column.title, column.column, column.pickers)
+    end
     local rows_parent = CreateFrame("Frame", nil, panel)
     rows_parent:SetSize(GROUP_WIDTH - 50, 1)
     rows_parent:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -133)
@@ -414,7 +399,7 @@ function M.build_shared_bg_colors_tab(parent)
     M.shared_background_color_parent = parent
     local content, content_height = build_color_controls(parent, color_sync)
     M.shared_background_color_group = content
-    M.background_color_matrix_group = build_participation_matrix(content, content_height, color_sync)
+    M.background_color_matrix_group = build_participation_matrix(content, content_height)
     M.sync_background_color_controls()
 end
 

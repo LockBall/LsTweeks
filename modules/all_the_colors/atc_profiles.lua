@@ -12,13 +12,13 @@ local M = addon.all_the_colors
 local PROFILE_KEYS = {
     "global_enabled",
     "global_enable_all_backgrounds",
+    "global_enable_test_auras",
     "global_disable_ooc_fade",
     "global_color",
-    "aura_bar_color",
-    "aura_bar_text_color",
-    "aura_bar_bg_color",
-    "aura_timer_text_color",
 }
+for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
+    PROFILE_KEYS[#PROFILE_KEYS + 1] = color_def.key
+end
 
 local function copy(value)
     if type(value) ~= "table" then return value end

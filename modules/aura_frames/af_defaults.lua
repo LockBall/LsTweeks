@@ -139,17 +139,15 @@ local function get_custom_frame_entry(category)
     return nil
 end
 
-function M.get_background_color_sync_enabled(category, target_type)
-    local key = "sync_" .. tostring(target_type) .. "_bg"
+local function get_participation_setting(category, key)
     if M.FRAME_DEFS_BY_KEY[category] then
-        return M.db ~= nil and M.db[key .. "_" .. category] == true
+        return M.db and M.db[key .. "_" .. category]
     end
     local entry = get_custom_frame_entry(category)
-    return entry ~= nil and entry[key] == true
+    return entry and entry[key]
 end
 
-function M.set_background_color_sync_enabled(category, target_type, enabled)
-    local key = "sync_" .. tostring(target_type) .. "_bg"
+local function set_participation_setting(category, key, enabled)
     if M.FRAME_DEFS_BY_KEY[category] then
         if not M.db then return false end
         M.db[key .. "_" .. category] = enabled == true
@@ -159,6 +157,37 @@ function M.set_background_color_sync_enabled(category, target_type, enabled)
     if not entry then return false end
     entry[key] = enabled == true
     return true
+end
+
+function M.get_background_color_sync_enabled(category)
+    return get_participation_setting(category, "sync_bar_bg") == true
+end
+
+function M.set_background_color_sync_enabled(category, enabled)
+    return set_participation_setting(category, "sync_bar_bg", enabled)
+end
+
+function M.get_bar_color_sync_enabled(category)
+    return get_participation_setting(category, "sync_bar_color") == true
+end
+
+function M.set_bar_color_sync_enabled(category, enabled)
+    return set_participation_setting(category, "sync_bar_color", enabled)
+end
+
+function M.get_text_color_sync_enabled(category)
+    return get_participation_setting(category, "sync_text_color") == true
+end
+
+function M.set_text_color_sync_enabled(category, enabled)
+    return set_participation_setting(category, "sync_text_color", enabled)
+end
+
+function M.is_debuff_frame_category(category)
+    local frame_def = M.FRAME_DEFS_BY_KEY[category]
+    if frame_def then return frame_def.is_debuff == true end
+    local entry = get_custom_frame_entry(category)
+    return entry ~= nil and entry.aura_base_filter == "HARMFUL"
 end
 
 function M.register_background_color_targets(category, label, order)
@@ -193,8 +222,8 @@ if color_sync and color_sync.register_consumer then
         default_global_enabled = true,
         supports_ooc_fade = true,
         refresh = function()
-            if M.on_background_color_sync_changed then
-                M.on_background_color_sync_changed()
+            if M.on_shared_color_changed then
+                M.on_shared_color_changed()
             end
         end,
     })
@@ -303,6 +332,11 @@ local function default_bg_color()
     }
 end
 
+local function shared_bar_color_default(kind)
+    local color = addon.AURA_BAR_COLOR_DEFAULTS[kind]
+    return { r = color.r, g = color.g, b = color.b }
+end
+
 -- The Data: strictly default values
 M.defaults = {
     last_frames_node = "static",
@@ -331,7 +365,7 @@ M.defaults = {
     spacing_static  = 2.0,
     width_static    = M.DEFAULT_FRAME_WIDTH,
     bar_mode_static = false,
-    color_static    = { r = 0, g = 0.5, b = 1 },
+    color_static    = shared_bar_color_default("buff"),
     bar_bg_color_static = default_bg_color(),
     fade_ooc_static = false,
     ooc_alpha_static = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
@@ -366,11 +400,11 @@ M.defaults = {
     growth_short = "DOWN",
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
-    test_aura_short = true,
     timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_short = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_short = false,
     timer_color_short = { r = 1, g = 1, b = 1 },
+    test_aura_short = true,
     bar_text_color_short = { r = 1, g = 1, b = 1 },
 
     -- LONG
@@ -394,11 +428,11 @@ M.defaults = {
     growth_long = "RIGHT",
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
-    test_aura_long = true,
     timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_long = false,
     timer_color_long = { r = 1, g = 1, b = 1 },
+    test_aura_long = true,
     bar_text_color_long = { r = 1, g = 1, b = 1 },
 
     -- ESSENTIAL
@@ -424,11 +458,11 @@ M.defaults = {
     growth_essential = "RIGHT",
     bg_color_essential = default_bg_color(),
     sort_essential = "timeleft",
-    test_aura_essential = false,
     timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_essential = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_essential = false,
     timer_color_essential = { r = 1, g = 1, b = 1 },
+    test_aura_essential = false,
     bar_text_color_essential = { r = 1, g = 1, b = 1 },
 
     -- UTILITY
@@ -454,11 +488,11 @@ M.defaults = {
     growth_utility = "RIGHT",
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
-    test_aura_utility = false,
     timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_utility = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_utility = false,
     timer_color_utility = { r = 1, g = 1, b = 1 },
+    test_aura_utility = false,
     bar_text_color_utility = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BUFFS
@@ -483,11 +517,11 @@ M.defaults = {
     growth_tracked_buffs = "RIGHT",
     bg_color_tracked_buffs = default_bg_color(),
     sort_tracked_buffs = "timeleft",
-    test_aura_tracked_buffs = false,
     timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_buffs = false,
     timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
+    test_aura_tracked_buffs = false,
     bar_text_color_tracked_buffs = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BARS
@@ -512,11 +546,11 @@ M.defaults = {
     growth_tracked_bars = "DOWN",
     bg_color_tracked_bars = default_bg_color(),
     sort_tracked_bars = "timeleft",
-    test_aura_tracked_bars = false,
     timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_bars = false,
     timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
+    test_aura_tracked_bars = false,
     bar_text_color_tracked_bars = { r = 1, g = 1, b = 1 },
 
     -- DEBUFFS
@@ -530,7 +564,7 @@ M.defaults = {
     spacing_debuff  = 1.0,
     width_debuff    = M.DEFAULT_FRAME_WIDTH,
     bar_mode_debuff = true,
-    color_debuff    = { r = 1, g = 0.2, b = 0.2 },
+    color_debuff    = shared_bar_color_default("debuff"),
     bar_bg_color_debuff = default_bg_color(),
     fade_ooc_debuff = false,
     ooc_alpha_debuff = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
@@ -540,11 +574,11 @@ M.defaults = {
     growth_debuff = "UP",
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
-    test_aura_debuff = true,
     timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size_debuff = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_debuff = false,
     timer_color_debuff = { r = 1, g = 1, b = 1 },
+    test_aura_debuff = true,
     bar_text_color_debuff = { r = 1, g = 1, b = 1 },
 
     -- Custom filtered frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
@@ -565,11 +599,80 @@ M.defaults = {
 }
 
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
-M.defaults.shared_bar_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
+M.defaults.shared_bar_background_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 }
+M.defaults.shared_buff_bar_color = {
+    r = M.defaults.color_static.r,
+    g = M.defaults.color_static.g,
+    b = M.defaults.color_static.b,
+}
+M.defaults.shared_debuff_bar_color = {
+    r = M.defaults.color_debuff.r,
+    g = M.defaults.color_debuff.g,
+    b = M.defaults.color_debuff.b,
+}
+M.defaults.shared_bar_text_color = { r = 1, g = 1, b = 1 }
+M.defaults.shared_timer_text_color = { r = 1, g = 1, b = 1 }
+M.SHARED_COLOR_COLUMNS = {
+    {
+        title = "BG Colors",
+        column = 2,
+        pickers = {
+            {
+                label = "Frame BG",
+                db_key = "shared_frame_background_color",
+                control_key = "background_color_sync_frame_picker",
+                has_alpha = true,
+            },
+            {
+                label = "Bar BG",
+                db_key = "shared_bar_background_color",
+                control_key = "background_color_sync_bar_picker",
+                has_alpha = true,
+            },
+        },
+    },
+    {
+        title = "Bar Colors",
+        column = 3,
+        pickers = {
+            {
+                label = "Buff Bar",
+                db_key = "shared_buff_bar_color",
+                control_key = "background_color_sync_buff_bar_picker",
+                has_alpha = true,
+            },
+            {
+                label = "Debuff Bar",
+                db_key = "shared_debuff_bar_color",
+                control_key = "background_color_sync_debuff_bar_picker",
+                has_alpha = true,
+            },
+        },
+    },
+    {
+        title = "Text Colors",
+        column = 4,
+        pickers = {
+            {
+                label = "Bar Text",
+                db_key = "shared_bar_text_color",
+                control_key = "background_color_sync_bar_text_picker",
+                has_alpha = false,
+            },
+            {
+                label = "Timer Text",
+                db_key = "shared_timer_text_color",
+                control_key = "background_color_sync_timer_text_picker",
+                has_alpha = false,
+            },
+        },
+    },
+}
 M.defaults.shared_background_color_enabled = false
 for _, category in ipairs(M.CATEGORIES) do
-    M.defaults["sync_frame_bg_" .. category] = true
-    M.defaults["sync_bar_bg_" .. category] = false
+    M.defaults["sync_bar_bg_" .. category] = true
+    M.defaults["sync_bar_color_" .. category] = true
+    M.defaults["sync_text_color_" .. category] = true
 end
 
 --#endregion FRAME DEFINITIONS AND DEFAULTS ===================================
@@ -602,8 +705,9 @@ M.CUSTOM_FRAME_TEMPLATE = {
     fade_delay = M.DEFAULT_OOC_FADE_DELAY,
     fade_length = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color     = default_bg_color(),
-    sync_frame_bg = true,
-    sync_bar_bg = false,
+    sync_bar_bg = true,
+    sync_bar_color = true,
+    sync_text_color = true,
     max_icons    = M.DEFAULT_MAX_ICONS,
     growth       = "DOWN",
     test_aura    = true,

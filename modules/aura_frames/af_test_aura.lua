@@ -230,6 +230,43 @@ function M.stop_test_preview_clock(show_key)
     M._test_preview_started[show_key] = nil
 end
 
+local function for_each_enabled_test_preview(callback)
+    if not (M.db and callback) then return end
+    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+        local show_key = "show_" .. frame_def.key
+        if M.db[show_key] == true then callback(frame_def.key, show_key) end
+    end
+    for _, entry in ipairs(M.db.custom_frames or {}) do
+        if entry.show == true and entry.id then callback(entry.id, "show_" .. entry.id) end
+    end
+end
+
+function M.start_global_test_aura_previews_paused()
+    for_each_enabled_test_preview(function(_, show_key)
+        M.start_test_preview_paused(show_key)
+    end)
+end
+
+function M.are_global_test_aura_previews_paused()
+    local all_paused = true
+    for_each_enabled_test_preview(function(_, show_key)
+        if not M.is_test_preview_paused(show_key) then all_paused = false end
+    end)
+    return all_paused
+end
+
+function M.toggle_global_test_aura_previews()
+    local pause_previews = not M.are_global_test_aura_previews_paused()
+    for_each_enabled_test_preview(function(category, show_key)
+        if M.is_test_preview_paused(show_key) ~= pause_previews then
+            M.toggle_test_preview_pause(show_key)
+        end
+        M.refresh_test_aura_category(category)
+    end)
+    if M.sync_test_aura_controls then M.sync_test_aura_controls() end
+    return pause_previews
+end
+
 function M.get_test_aura_binding(category)
     if not (category and M.db) then return nil end
     local show_key = "show_" .. category
@@ -373,7 +410,9 @@ local function build_test_aura_entry(show_key, filter)
 end
 
 function M.is_shared_long_test_preview_active()
-    return M.db and M.db.show_long == true and M.db.test_aura_long == true
+    return M.db
+        and M.db.show_long == true
+        and (M.db.test_aura_long == true or M.is_global_test_aura_enabled())
 end
 
 -- The long preview joins the normal helpful-aura category buckets so it can

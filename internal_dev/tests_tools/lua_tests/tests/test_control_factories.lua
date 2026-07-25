@@ -34,6 +34,33 @@ h.test("play pause button swaps native texture states", function()
     h.eq(play_only.current_glyph, "play", "play-only button always shows the play triangle")
 end)
 
+h.test("test Aura control synchronizes its checkbox and play button", function()
+    local checked_value
+    local play_clicks = 0
+    local control, button = addon.CreateTestAuraControl(
+        UIParent,
+        false,
+        function(checked) checked_value = checked end,
+        function() play_clicks = play_clicks + 1 end
+    )
+
+    h.ok(not button:IsEnabled(), "unchecked test Aura disables playback")
+    control.checkbox:SetChecked(true)
+    control.checkbox:Click()
+    h.eq(checked_value, true, "checkbox callback receives enabled state")
+    h.ok(button:IsEnabled(), "checked test Aura enables playback")
+
+    control:SetState(true, false, true)
+    h.eq(button.current_glyph, "pause", "playing state offers Pause")
+    button:Click()
+    h.eq(play_clicks, 1, "playback callback is forwarded")
+
+    control:SetState(false, true, true)
+    h.eq(control:GetChecked(), false, "silent state sync updates checkbox")
+    h.ok(not button:IsEnabled(), "state sync disables playback when unchecked")
+    h.eq(button.current_glyph, "play", "paused state offers Play")
+end)
+
 h.test("cycling dropdown uses page arrows, wraparound, and Custom entry points", function()
     local selected = "custom"
     local options = {

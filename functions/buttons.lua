@@ -246,6 +246,63 @@ function addon.CreatePlayPauseButton(parent, on_click, opts)
     return button
 end
 
+function addon.CreateTestAuraControl(parent, is_checked, on_checked, on_play_pause, opts)
+    opts = opts or {}
+    local button
+    local control = CreateFrame("Frame", nil, parent)
+    local checkbox_control = addon.CreateCheckbox(
+        control,
+        opts.label or "Enable Test Auras",
+        is_checked == true,
+        function(checked)
+            if button then button:SetEnabled(checked == true) end
+            if type(on_checked) == "function" then on_checked(checked == true) end
+        end
+    )
+    checkbox_control:SetPoint("LEFT", control, "LEFT")
+
+    local button_size = opts.button_size or 28
+    button = addon.CreatePlayPauseButton(control, on_play_pause, {
+        width = button_size,
+        height = button_size,
+        paused = opts.paused ~= false,
+    })
+    button:SetPoint("LEFT", checkbox_control, "RIGHT", opts.gap or 6, 0)
+    control:SetSize(checkbox_control:GetWidth() + (opts.gap or 6) + button_size, math.max(24, button_size))
+
+    function control:SetState(checked, paused, enabled)
+        enabled = enabled ~= false
+        checkbox_control:SetCheckedSilently(checked == true)
+        checkbox_control:SetEnabled(enabled)
+        button:SetEnabled(enabled and checked == true)
+        button:SetPaused(paused == true)
+    end
+
+    function control:SetCheckedSilently(checked)
+        checkbox_control:SetCheckedSilently(checked)
+    end
+
+    function control:GetChecked()
+        return checkbox_control:GetChecked()
+    end
+
+    function control:SetEnabled(enabled)
+        checkbox_control:SetEnabled(enabled)
+        button:SetEnabled(enabled and checkbox_control:GetChecked() == true)
+    end
+
+    function control:SetPaused(paused)
+        button:SetPaused(paused)
+    end
+
+    control.checkbox = checkbox_control.checkbox
+    control.label = checkbox_control.label
+    control.checkbox_control = checkbox_control
+    control.play_pause_button = button
+    control:SetState(is_checked, opts.paused ~= false, opts.enabled ~= false)
+    return control, button
+end
+
 --#endregion PLAY / PAUSE BUTTONS =============================================
 
 

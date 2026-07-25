@@ -66,7 +66,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 
 ## Core And Shared Helpers
-- `core/init.lua`: addon table bootstrap, saved-variable defaults entry points, slash command, feature module registry, timing buckets.
+- `core/init.lua`: addon table bootstrap, saved-variable defaults entry points, slash command, feature module registry, timing buckets, shared Aura bar-color defaults.
 - `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior.
 - `core/minimap_button.lua`: LibDataBroker/LibDBIcon minimap launcher.
 - `functions/checkbox.lua`: shared checkbox factory. Memory: `proj_mem/functions/controls.md`.

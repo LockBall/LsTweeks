@@ -13,6 +13,7 @@ local addon_name, addon = ...
 
 --#region COLOR PICKER CONSTANTS =============================================
 
+-- Button / reset
 local control_gap = 5
 local CONTAINER_W  = 95
 local CONTAINER_H  = 45
@@ -20,18 +21,41 @@ local BTN_SIZE     = 18
 local RESET_W      = 45
 local RESET_H      = 16
 local GROUP_W      = BTN_SIZE + control_gap + RESET_W
-local POPUP_ALPHA_BOX_W = 40
-local POPUP_ALPHA_BOX_H = 16
-local POPUP_BUTTON_W = 64
-local POPUP_BUTTON_GAP = 8
-local POPUP_PRESET_SWATCH_SIZE = 16
-local POPUP_PRESET_SWATCH_GAP = 4
--- Distance from ColorPickerFrame's true bottom edge to the swatch row's bottom edge; must clear
--- the native Okay/Cancel buttons, which sit ~38px tall from that same edge.
-local POPUP_PRESET_BOTTOM_OFFSET = 50
-local POPUP_PRESET_ROW_HEIGHT = POPUP_PRESET_SWATCH_SIZE + POPUP_PRESET_BOTTOM_OFFSET
 local AUTO_VISIBLE_DEFAULT = 0.75
 local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec or 0.1
+
+-- Popup
+-- All X/Y values position the element's bottom-left corner from the popup's bottom-left corner.
+
+-- Frame
+local POPUP_WIDTH = 360
+local POPUP_HEIGHT = 245
+
+-- Alpha
+local POPUP_ALPHA_FRAME_W = 90
+local POPUP_ALPHA_FRAME_H = 36
+local POPUP_ALPHA_BOX_W = 40
+local POPUP_ALPHA_BOX_H = 16
+local POPUP_ALPHA_TITLE_GAP = 4
+local POPUP_ALPHA_X = 268
+local POPUP_ALPHA_Y = 110
+
+-- Hex
+local POPUP_HEX_X = 245
+local POPUP_HEX_Y = 48
+
+-- Okay / Cancel
+local POPUP_BUTTON_W = 64
+local POPUP_OKAY_X = 114.5
+local POPUP_OKAY_Y = 20
+local POPUP_CANCEL_X = 186.5
+local POPUP_CANCEL_Y = 20
+
+-- Preset row
+local POPUP_PRESET_SWATCH_SIZE = 16
+local POPUP_PRESET_SWATCH_GAP = 4
+local POPUP_PRESET_ROW_X = 25
+local POPUP_PRESET_ROW_Y = 50
 
 --#endregion COLOR PICKER CONSTANTS ===========================================
 
@@ -73,7 +97,7 @@ end
 
 --#region POPUP FRAME HELPERS =================================================
 
-local function resize_popup_action_buttons()
+local function get_popup_action_buttons()
     local footer = ColorPickerFrame and ColorPickerFrame["Footer"]
     local okay = (footer and footer["OkayButton"])
         or (ColorPickerFrame and ColorPickerFrame["OkayButton"])
@@ -81,7 +105,35 @@ local function resize_popup_action_buttons()
     local cancel = (footer and footer["CancelButton"])
         or (ColorPickerFrame and ColorPickerFrame["CancelButton"])
         or _G["ColorPickerCancelButton"]
+    return okay, cancel
+end
 
+local function capture_frame_layout(frame)
+    if not (frame and frame.GetNumPoints and frame.GetPoint) then return nil end
+
+    local layout = {
+        width = frame:GetWidth(),
+        height = frame:GetHeight(),
+        points = {},
+    }
+    for index = 1, frame:GetNumPoints() do
+        layout.points[index] = { frame:GetPoint(index) }
+    end
+    return layout
+end
+
+local function restore_frame_layout(frame, layout)
+    if not (frame and layout) then return end
+
+    frame:SetSize(layout.width, layout.height)
+    frame:ClearAllPoints()
+    for _, point in ipairs(layout.points) do
+        frame:SetPoint(unpack(point))
+    end
+end
+
+local function place_popup_action_buttons()
+    local okay, cancel = get_popup_action_buttons()
     local candidates = { okay, cancel }
 
     for _, button in ipairs(candidates) do
@@ -93,8 +145,8 @@ local function resize_popup_action_buttons()
     if okay and cancel and okay.ClearAllPoints and cancel.ClearAllPoints then
         okay:ClearAllPoints()
         cancel:ClearAllPoints()
-        okay:SetPoint("BOTTOMRIGHT", ColorPickerFrame, "BOTTOM", -(POPUP_BUTTON_GAP / 2), 16)
-        cancel:SetPoint("LEFT", okay, "RIGHT", POPUP_BUTTON_GAP, 0)
+        okay:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_OKAY_X, POPUP_OKAY_Y)
+        cancel:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_CANCEL_X, POPUP_CANCEL_Y)
     end
 end
 
@@ -111,6 +163,40 @@ local function find_color_picker_hex_box()
         or valid_edit_box(content and content["HexBox"])
         or valid_edit_box(content and content["HexBoxEditBox"])
         or valid_edit_box(_G["ColorPickerFrameHexBox"])
+end
+
+local function place_color_picker_hex_box()
+    local hex_box = find_color_picker_hex_box()
+    if not hex_box then return end
+
+    hex_box:ClearAllPoints()
+    hex_box:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_HEX_X, POPUP_HEX_Y)
+end
+
+local function capture_native_popup_layout()
+    local okay, cancel = get_popup_action_buttons()
+    local hex_box = find_color_picker_hex_box()
+    local content = ColorPickerFrame["Content"]
+    ColorPickerFrame._lstweeks_native_layout = {
+        popup_width = ColorPickerFrame:GetWidth(),
+        popup_height = ColorPickerFrame:GetHeight(),
+        content = { frame = content, layout = capture_frame_layout(content) },
+        okay = { frame = okay, layout = capture_frame_layout(okay) },
+        cancel = { frame = cancel, layout = capture_frame_layout(cancel) },
+        hex = { frame = hex_box, layout = capture_frame_layout(hex_box) },
+    }
+end
+
+local function restore_native_popup_layout()
+    local native_layout = ColorPickerFrame and ColorPickerFrame._lstweeks_native_layout
+    if not native_layout then return end
+
+    ColorPickerFrame:SetSize(native_layout.popup_width, native_layout.popup_height)
+    restore_frame_layout(native_layout.content.frame, native_layout.content.layout)
+    restore_frame_layout(native_layout.okay.frame, native_layout.okay.layout)
+    restore_frame_layout(native_layout.cancel.frame, native_layout.cancel.layout)
+    restore_frame_layout(native_layout.hex.frame, native_layout.hex.layout)
+    ColorPickerFrame._lstweeks_native_layout = nil
 end
 
 local get_color_picker_alpha_slider
@@ -157,11 +243,16 @@ local function clear_live_picker_callbacks(session)
     ColorPickerFrame._lstweeks_live_opacity_func = nil
 end
 
+local cleanup_popup_layout
+
 local function ensure_live_picker_session_cleanup()
     if not (ColorPickerFrame and ColorPickerFrame.HookScript) or ColorPickerFrame._lstweeks_live_session_hooked then return end
 
     ColorPickerFrame:HookScript("OnHide", function()
         clear_live_picker_callbacks()
+        if cleanup_popup_layout then
+            cleanup_popup_layout()
+        end
     end)
     ColorPickerFrame._lstweeks_live_session_hooked = true
 end
@@ -223,16 +314,16 @@ local function ensure_popup_alpha_percent()
     end
 
     local frame = CreateFrame("Frame", nil, ColorPickerFrame)
-    frame:SetSize(90, 20)
+    frame:SetSize(POPUP_ALPHA_FRAME_W, POPUP_ALPHA_FRAME_H)
     frame:SetFrameLevel((ColorPickerFrame:GetFrameLevel() or 1) + 10)
 
     local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    label:SetPoint("LEFT", frame, "LEFT", 0, 0)
     label:SetText("Alpha %")
 
     local box = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     box:SetSize(POPUP_ALPHA_BOX_W, POPUP_ALPHA_BOX_H)
-    box:SetPoint("LEFT", label, "RIGHT", 8, 0)
+    box:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0)
+    label:SetPoint("BOTTOM", box, "TOP", 0, POPUP_ALPHA_TITLE_GAP)
     box:SetAutoFocus(false)
     box:SetJustifyH("CENTER")
     box:SetTextInsets(-3, 0, 0, 0)
@@ -243,13 +334,8 @@ local function ensure_popup_alpha_percent()
 end
 
 local function place_popup_alpha_percent(frame)
-    local hex_box = find_color_picker_hex_box()
     frame:ClearAllPoints()
-    if hex_box then
-        frame:SetPoint("TOPRIGHT", hex_box, "BOTTOMRIGHT", 0, -6)
-    else
-        frame:SetPoint("BOTTOM", ColorPickerFrame, "BOTTOM", 0, 72)
-    end
+    frame:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_ALPHA_X, POPUP_ALPHA_Y)
 end
 
 local function hide_popup_alpha_percent()
@@ -334,21 +420,19 @@ end
 local function place_popup_presets(frame, count)
     frame:SetSize(count * POPUP_PRESET_SWATCH_SIZE + math.max(0, count - 1) * POPUP_PRESET_SWATCH_GAP, POPUP_PRESET_SWATCH_SIZE)
     frame:ClearAllPoints()
-    -- Anchored to the frame's own bottom-left, inside the extra height resize_popup_for_presets
-    -- reserves; independent of sibling widget positions so it can't drift into their space.
-    frame:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", 24, POPUP_PRESET_BOTTOM_OFFSET)
+    frame:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_PRESET_ROW_X, POPUP_PRESET_ROW_Y)
 end
 
-local function ensure_base_popup_height()
-    if not ColorPickerFrame._lstweeks_base_height then
-        ColorPickerFrame._lstweeks_base_height = ColorPickerFrame:GetHeight()
+local function apply_custom_popup_size()
+    local native_layout = ColorPickerFrame._lstweeks_native_layout
+    local content = ColorPickerFrame["Content"]
+
+    ColorPickerFrame:SetSize(POPUP_WIDTH, POPUP_HEIGHT)
+    if content and native_layout then
+        content:ClearAllPoints()
+        content:SetPoint("TOPLEFT", ColorPickerFrame, "TOPLEFT")
+        content:SetSize(native_layout.popup_width, native_layout.popup_height)
     end
-    return ColorPickerFrame._lstweeks_base_height
-end
-
-local function resize_popup_for_presets(expand)
-    local base_height = ensure_base_popup_height()
-    ColorPickerFrame:SetHeight(expand and (base_height + POPUP_PRESET_ROW_HEIGHT) or base_height)
 end
 
 local function hide_popup_presets()
@@ -356,13 +440,9 @@ local function hide_popup_presets()
     if frame then
         frame:Hide()
     end
-    if ColorPickerFrame then
-        resize_popup_for_presets(false)
-    end
 end
 
 local function show_popup_presets(presets, color_presets_lookup, on_pick)
-    resize_popup_for_presets(true)
     local frame = ensure_popup_presets(#presets)
     place_popup_presets(frame, #presets)
 
@@ -386,6 +466,14 @@ local function show_popup_presets(presets, color_presets_lookup, on_pick)
     end
 
     frame:Show()
+end
+
+cleanup_popup_layout = function()
+    hide_popup_alpha_percent()
+    hide_popup_presets()
+    if ColorPickerFrame then
+        restore_native_popup_layout()
+    end
 end
 
 --#endregion POPUP PRESET SWATCHES =============================================
@@ -491,6 +579,9 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     -- Color Picker Dialog
     button:SetScript("OnClick", function()
         clear_live_picker_callbacks()
+        if cleanup_popup_layout then
+            cleanup_popup_layout()
+        end
         local current = db_table[db_key]
         local session = {}
         if type(callback) == "function" then callback("open") end
@@ -562,8 +653,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
                 db_table[db_key] = current
                 apply_and_refresh(current.r, current.g, current.b, current.a, "cancel", true)
                 clear_live_picker_callbacks(session)
-                hide_popup_alpha_percent()
-                hide_popup_presets()
+                cleanup_popup_layout()
             end
         })
         ColorPickerFrame._lstweeks_live_session = session
@@ -571,7 +661,10 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         ColorPickerFrame._lstweeks_live_opacity_func = has_alpha and update_opacity or nil
         ensure_live_picker_session_cleanup()
         ensure_live_picker_hooks()
-        resize_popup_action_buttons()
+        capture_native_popup_layout()
+        apply_custom_popup_size()
+        place_popup_action_buttons()
+        place_color_picker_hex_box()
         if has_alpha then
             show_popup_alpha_percent(function()
                 return color_alpha_or_default(db_table[db_key].a, 1)
