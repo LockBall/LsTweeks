@@ -8,11 +8,11 @@
 package.path = arg[0]:gsub("[\\/][^\\/]+$", "") .. "/../?.lua;" .. package.path
 local h = require("harness")
 
-h.load_addon("modules/background_color_sync")
+h.load_addon("modules/all_the_colors")
 h.boot({})
 
 local addon = h.addon
-local M = addon.background_color_sync
+local M = addon.all_the_colors
 local refresh_calls = 0
 local target_state = {
     ["frame:static"] = true,
@@ -92,6 +92,12 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     resolved, source = M.resolve_color("aura_frames", "frame:static", original)
     h.eq(resolved, db.global_color, "global override wins")
     h.eq(source, "global", "global source reported")
+    db.aura_bar_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
+    h.eq(
+        M.resolve_module_color("aura_frames", "aura_bar_color", original),
+        db.aura_bar_color,
+        "Aura Bar Color uses the enabled All the Colors override"
+    )
     db.global_enable_all_backgrounds = false
     h.eq(
         M.resolve_visibility("aura_frames", "frame:static", false),
@@ -105,7 +111,7 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     h.eq(M.is_ooc_fade_disabled(), true, "effective fade policy reports active")
     h.eq(M.resolve_ooc_fade("aura_frames", true), false, "global policy suppresses registered OOC fade")
     db.global_enable_all_backgrounds = false
-    h.eq(M.resolve_ooc_fade("aura_frames", true), false, "fade policy is independent from Enable All Backgrounds")
+    h.eq(M.resolve_ooc_fade("aura_frames", true), false, "fade policy is independent from Show Backgrounds")
     db.global_enable_all_backgrounds = true
 
     consumer_db.global_enabled = false
@@ -244,6 +250,6 @@ h.test("consumer refresh uses registered callback", function()
     h.eq(refresh_calls, 1, "registered consumer notified once")
 end)
 
-h.run("bcs_sync")
+h.run("atc")
 
 --#endregion FILE CONTENTS ===================================================

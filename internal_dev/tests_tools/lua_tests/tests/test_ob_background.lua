@@ -347,8 +347,8 @@ end)
 h.test("shared color override changes RGB without enabling the custom background", function()
     reset_runtime()
     local addon = h.addon
-    local original_sync = addon.background_color_sync
-    addon.background_color_sync = {
+    local original_sync = addon.all_the_colors
+    addon.all_the_colors = {
         resolve_color = function(module_key, target_key)
             h.eq(module_key, "objectives", "Objectives requests its module color")
             h.eq(target_key, "custom_background", "Objectives requests its custom background target")
@@ -366,7 +366,7 @@ h.test("shared color override changes RGB without enabling the custom background
     M.on_background_color_sync_changed()
     local overlay_frame = nine_slice._lstweeks_center_color_overlay_frame
     local hidden_when_local_off = overlay_frame and not overlay_frame:IsShown()
-    addon.background_color_sync = original_sync
+    addon.all_the_colors = original_sync
 
     h.eq(applied[1], 0.81, "override red applied")
     h.eq(applied[2], 0.62, "override green applied")

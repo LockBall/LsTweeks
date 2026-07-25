@@ -5,6 +5,8 @@
 
 local addon_name, addon = ...
 
+local OUTLINED_CONTROL_GAP = 5
+
 local CreateFrame = CreateFrame
 local UIParent = UIParent
 
@@ -292,8 +294,16 @@ function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
             cfg.font_object
         )
     end
-    local container = CreateFrame("Frame", nil, parent)
-    container:SetSize(dropdown_width + ((arrow_size + arrow_gap) * 2), math.max(22, arrow_size))
+    local control_height = math.max(22, arrow_size)
+    local container_width = dropdown_width + ((arrow_size + arrow_gap) * 2)
+    local container
+    local outlined = cfg.outlined == true and addon.CreateControlPanel ~= nil
+    if outlined then
+        container = addon.CreateControlPanel(parent, container_width, control_height + 26)
+    else
+        container = CreateFrame("Frame", nil, parent)
+        container:SetSize(container_width, control_height)
+    end
 
     local dropdown_cfg = {}
     for key, value in pairs(cfg) do
@@ -309,8 +319,23 @@ function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
         end
     end
 
-    dropdown = addon.CreateDropdown(name, container, label_text, options, dropdown_cfg)
-    dropdown:SetPoint("CENTER", container, "CENTER", 0, 0)
+    local dropdown_parent = container
+    if outlined then
+        local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetPoint("TOP", container, "TOP", 0, -OUTLINED_CONTROL_GAP)
+        label:SetJustifyH("CENTER")
+        label:SetText(label_text)
+
+        dropdown_parent = CreateFrame("Frame", nil, container)
+        dropdown_parent:SetSize(container_width, control_height)
+        dropdown_parent:SetPoint("BOTTOM", container, "BOTTOM", 0, OUTLINED_CONTROL_GAP)
+    end
+    dropdown = addon.CreateDropdown(name, dropdown_parent, outlined and "" or label_text, options, dropdown_cfg)
+    if outlined then
+        dropdown:SetPoint("CENTER", dropdown_parent, "CENTER", 0, 0)
+    else
+        dropdown:SetPoint("CENTER", container, "CENTER", 0, 0)
+    end
 
     local function find_selected_index()
         local selected = dropdown:GetValue()

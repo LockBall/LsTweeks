@@ -1,10 +1,10 @@
--- Registry-driven General and Profiles settings for Background Colors.
+-- Registry-driven General and Profiles settings for Shared Colors.
 
 
 local addon_name, addon = ...
 
-addon.background_color_sync = addon.background_color_sync or {}
-local M = addon.background_color_sync
+addon.all_the_colors = addon.all_the_colors or {}
+local M = addon.all_the_colors
 M.controls = M.controls or {}
 
 
@@ -13,8 +13,12 @@ M.controls = M.controls or {}
 local DEFAULT_CONTENT_WIDTH = 787
 local GROUP_OFFSET_X = 20
 local GROUP_RIGHT_MARGIN = 20
-local GRID_COLUMN_WIDTH = 220
-local GRID_COLUMN_GAP = 235
+local GRID_COLUMN_WIDTH = 170
+local GRID_COLUMN_GAP = 185
+local GLOBAL_ROW_HEIGHTS = { 28, 64, 56, 56 }
+local GLOBAL_BASE_HEIGHT = 257
+local GLOBAL_INCLUDED_CONSUMERS = 2
+local FRAME_PRESET_ROW_OFFSET_Y = 6
 
 local function get_content_width()
     if addon.main_frame and addon.main_frame.GetContentAreaSize then
@@ -28,7 +32,7 @@ end
 
 local function create_group_grid(group, row_heights)
     return addon.CreateSettingsGrid(group, {
-        column_count = 3,
+        column_count = 4,
         col_offset = 16,
         row_start = -42,
         col_width = GRID_COLUMN_WIDTH,
@@ -61,6 +65,16 @@ local function sync_global_color_controls()
     if selector and selector.SetValue then
         selector:SetValue(M.get_color_preset(db_table[color_key]))
     end
+
+    for _, color_def in ipairs({
+        { control_key = "aura_bar_color", db_key = "aura_bar_color" },
+        { control_key = "aura_bar_text_color", db_key = "aura_bar_text_color" },
+        { control_key = "aura_bar_bg_color", db_key = "aura_bar_bg_color" },
+        { control_key = "aura_timer_text_color", db_key = "aura_timer_text_color" },
+    }) do
+        local control = M.controls[color_def.control_key]
+        if control and control.SetValue then control:SetValue(db_table[color_def.db_key]) end
+    end
 end
 
 function M.sync_controls()
@@ -87,6 +101,10 @@ function M.sync_controls()
     local global_selector = M.controls.global_color_preset
     if global_picker then global_picker:SetEnabled(global_enabled) end
     if global_selector then global_selector:SetEnabled(global_enabled) end
+    for _, control_key in ipairs({ "aura_bar_color", "aura_bar_text_color", "aura_bar_bg_color", "aura_timer_text_color" }) do
+        local control = M.controls[control_key]
+        if control then control:SetEnabled(global_enabled) end
+    end
 
     for _, consumer in ipairs(M.get_registered_consumers()) do
         local consumer_db = M.ensure_consumer_db(consumer.key)
@@ -164,7 +182,10 @@ local function create_global_color_controls(parent, grid, label, row, opts)
             end,
         }
     )
-    grid:place_at(selector, opts.selector_row or row, opts.selector_column or 1)
+    grid:place_at(selector, opts.selector_row or row, opts.selector_column or 1, nil, {
+        align = opts.align,
+        y_offset = opts.selector_y_offset,
+    })
     M.controls.global_color_preset = selector
 
     local picker = addon.CreateColorPicker(
@@ -180,8 +201,24 @@ local function create_global_color_controls(parent, grid, label, row, opts)
             M.refresh_consumers()
         end
     )
-    grid:place_at(picker, opts.picker_row or row, opts.picker_column or 2, "picker")
+    grid:place_at(picker, opts.picker_row or row, opts.picker_column or 2, "picker", { align = opts.align })
     M.controls.global_color_picker = picker
+end
+
+local function create_aura_color_picker(parent, grid, db, db_key, label, has_alpha, row, column)
+    local picker = addon.CreateColorPicker(
+        parent,
+        db,
+        db_key,
+        has_alpha,
+        label,
+        M.defaults.all_the_colors,
+        function(reason)
+            if reason ~= "open" then M.refresh_consumers() end
+        end
+    )
+    grid:place_at(picker, row, column, "picker", { align = "center" })
+    M.controls[db_key] = picker
 end
 
 --#endregion CONTROL BUILDERS ==================================================
@@ -216,7 +253,7 @@ local function build_global_group(parent)
 
     local group_width = get_content_width() - GROUP_OFFSET_X - GROUP_RIGHT_MARGIN
     local global_consumers = get_global_toggle_consumers()
-    local global_height = 136 + (#global_consumers * 26)
+    local global_height = GLOBAL_BASE_HEIGHT + math.max(0, #global_consumers - GLOBAL_INCLUDED_CONSUMERS) * 26
     local global_group = addon.CreateSettingsGroup(
         parent,
         "Global",
@@ -225,13 +262,13 @@ local function build_global_group(parent)
         0,
         0
     )
-    local global_grid = create_group_grid(global_group, { 26, 26, 80 })
+    local global_grid = create_group_grid(global_group, GLOBAL_ROW_HEIGHTS)
     local db = M.get_db()
     create_bound_checkbox(
         global_group,
         global_grid,
         "global_enable_all_backgrounds",
-        "Enable All Backgrounds",
+        "Show Backgrounds",
         function() return db.global_enable_all_backgrounds end,
         function(value) db.global_enable_all_backgrounds = value end,
         1,
@@ -253,22 +290,38 @@ local function build_global_group(parent)
         global_group,
         global_grid,
         "global_enabled",
-        "Enable Global Color",
+        "Enable All The Colors",
         function() return db.global_enabled end,
         function(value) db.global_enabled = value end,
         global_color_row,
         1,
         "Use one color across all modules"
     )
-    create_global_color_controls(global_group, global_grid, "Global", 1, {
-        selector_row = global_color_row,
+    local frame_bg_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    frame_bg_title:SetText("Frame BG")
+    global_grid:place_at(frame_bg_title, 1, 2, nil, { align = "center" })
+    local bar_colors_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    bar_colors_title:SetText("Bar Colors")
+    global_grid:place_at(bar_colors_title, 1, 3, nil, { align = "center" })
+    local timer_text_title = global_group:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    timer_text_title:SetText("Timer Text")
+    global_grid:place_at(timer_text_title, 1, 4, nil, { align = "center" })
+    create_global_color_controls(global_group, global_grid, "Frame BG", 1, {
+        selector_row = 2,
         selector_column = 2,
         selector_label = "Preset Colors",
         selector_fit_to_options = true,
-        picker_row = global_color_row,
-        picker_column = 3,
+        selector_y_offset = FRAME_PRESET_ROW_OFFSET_Y,
+        outlined = true,
+        picker_row = 3,
+        picker_column = 2,
         picker_label = "Custom Color",
+        align = "center",
     })
+    create_aura_color_picker(global_group, global_grid, db, "aura_bar_color", "Bar Color", true, 2, 3)
+    create_aura_color_picker(global_group, global_grid, db, "aura_bar_text_color", "Bar Text Color", false, 3, 3)
+    create_aura_color_picker(global_group, global_grid, db, "aura_bar_bg_color", "Bar BG Color", true, 4, 3)
+    create_aura_color_picker(global_group, global_grid, db, "aura_timer_text_color", "Timer Text Color", false, 2, 4)
     local previous_global_control = global_enable
     for index, consumer in ipairs(global_consumers) do
         local consumer_db = M.ensure_consumer_db(consumer.key)
@@ -292,7 +345,7 @@ end
 function M.BuildGeneralTab(parent)
     local global_group, global_height, group_width = build_global_group(parent)
 
-    local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.background_color_sync, {
+    local reset = addon.CreateModuleReset(parent, M.get_db(), M.defaults.all_the_colors, {
         preserve_label = "Keep Profiles",
         preserve_default = true,
         preserve_keys = { "profiles", "last_profile_name" },

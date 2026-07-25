@@ -21,7 +21,7 @@ local HEADER_BAR_Y_OFFSET = 12
 --#region SHARED COLOR STATE ===================================================
 
 local function get_background_color_sync()
-    local color_sync = addon.background_color_sync
+    local color_sync = addon.all_the_colors
     if not (color_sync and color_sync.ensure_consumer_db) then return nil end
     return color_sync
 end

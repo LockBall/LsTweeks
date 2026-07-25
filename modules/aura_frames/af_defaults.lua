@@ -126,7 +126,7 @@ for _, frame_def in ipairs(M.FRAME_DEFS) do
     end
 end
 
-local color_sync = addon.background_color_sync
+local color_sync = addon.all_the_colors
 
 function M.get_background_color_target_key(category, target_type)
     return tostring(target_type) .. ":" .. tostring(category)

@@ -13,7 +13,7 @@ h.boot({})
 
 local addon = h.addon
 local M = addon.aura_frames
-local color_sync = addon.background_color_sync
+local color_sync = addon.all_the_colors
 
 h.test("Shared BG Colors tab owns the Aura frame participation matrix", function()
     local parent = CreateFrame("Frame", nil, UIParent)

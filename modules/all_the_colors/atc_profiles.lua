@@ -1,10 +1,10 @@
--- Generic registered-consumer profile schema for Background Colors.
+-- Generic registered-consumer profile schema for Shared Colors.
 
 
 local _, addon = ...
 
-addon.background_color_sync = addon.background_color_sync or {}
-local M = addon.background_color_sync
+addon.all_the_colors = addon.all_the_colors or {}
+local M = addon.all_the_colors
 
 
 --#region PROFILE SCHEMA =======================================================
@@ -14,6 +14,10 @@ local PROFILE_KEYS = {
     "global_enable_all_backgrounds",
     "global_disable_ooc_fade",
     "global_color",
+    "aura_bar_color",
+    "aura_bar_text_color",
+    "aura_bar_bg_color",
+    "aura_timer_text_color",
 }
 
 local function copy(value)
@@ -48,7 +52,7 @@ function M.apply_profile_data(data)
     end
 
     local db = M.get_db()
-    local defaults = M.defaults.background_color_sync
+    local defaults = M.defaults.all_the_colors
     for _, key in ipairs(PROFILE_KEYS) do
         if data[key] ~= nil then
             db[key] = copy(data[key])
@@ -77,7 +81,7 @@ function M.apply_profile_data(data)
 end
 
 M.profile_manager = addon.CreateProfileManager({
-    label = "Background Colors",
+    label = "All the Colors",
     get_db = M.get_db,
     export_data = M.export_profile_data,
     apply_data = M.apply_profile_data,

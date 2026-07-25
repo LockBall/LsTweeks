@@ -1,11 +1,11 @@
 -- Generic participant registry, policy resolution, presets, and consumer refresh
--- for the Background Colors module.
+-- for the Shared Colors module.
 
 
 local _, addon = ...
 
-addon.background_color_sync = addon.background_color_sync or {}
-local M = addon.background_color_sync
+addon.all_the_colors = addon.all_the_colors or {}
+local M = addon.all_the_colors
 
 
 --#region COLOR NORMALIZATION ==================================================
@@ -193,8 +193,12 @@ end
 function M.normalize_db()
     local db = M.get_db()
     if not db then return end
-    local defaults = M.defaults.background_color_sync
+    local defaults = M.defaults.all_the_colors
     db.global_color = normalize_color(db.global_color, defaults.global_color)
+    db.aura_bar_color = normalize_color(db.aura_bar_color, defaults.aura_bar_color)
+    db.aura_bar_text_color = normalize_color(db.aura_bar_text_color, defaults.aura_bar_text_color)
+    db.aura_bar_bg_color = normalize_color(db.aura_bar_bg_color, defaults.aura_bar_bg_color)
+    db.aura_timer_text_color = normalize_color(db.aura_timer_text_color, defaults.aura_timer_text_color)
     db.consumers = db.consumers or {}
     for _, consumer in ipairs(M.get_registered_consumers()) do
         M.ensure_consumer_db(consumer.key)
@@ -299,6 +303,12 @@ function M.is_global_color_active(module_key)
         and consumer_db.global_enabled == true
 end
 
+function M.resolve_module_color(module_key, color_key, local_color)
+    if not M.is_global_color_active(module_key) then return local_color end
+    local db = M.get_db()
+    return db and db[color_key] or local_color
+end
+
 --#endregion POLICY RESOLUTION =================================================
 
 
@@ -324,7 +334,7 @@ end
 
 function M.get_color_binding()
     local db = M.get_db()
-    return db, "global_color", M.defaults.background_color_sync
+    return db, "global_color", M.defaults.all_the_colors
 end
 
 function M.set_color_preset(preset_key)

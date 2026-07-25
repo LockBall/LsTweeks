@@ -158,6 +158,10 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
     if cfg_db or M.db then
         -- Custom frames store timer_color directly; preset frames use timer_color_<cat>.
         local c = M.get_setting(cfg_db, category, "timer_color")
+        local all_the_colors = addon.all_the_colors
+        if c and all_the_colors and all_the_colors.resolve_module_color then
+            c = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_timer_text_color", c)
+        end
         if c then
             font_string:SetTextColor(c.r or 1, c.g or 1, c.b or 1, 1)
         end

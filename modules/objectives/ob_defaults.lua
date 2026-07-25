@@ -93,7 +93,7 @@ M.SETTINGS_LAYOUT = {
     },
 }
 
-local color_sync = addon.background_color_sync
+local color_sync = addon.all_the_colors
 if color_sync and color_sync.register_consumer then
     color_sync.register_consumer(M.MODULE_KEY, {
         label = "Objectives",

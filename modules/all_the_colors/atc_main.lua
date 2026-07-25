@@ -1,10 +1,10 @@
--- Background Colors module lifecycle, settings registration, resets, and status.
+-- Shared Colors module lifecycle, settings registration, resets, and status.
 
 
 local addon_name, addon = ...
 
-addon.background_color_sync = addon.background_color_sync or {}
-local M = addon.background_color_sync
+addon.all_the_colors = addon.all_the_colors or {}
+local M = addon.all_the_colors
 
 
 --#region MODULE LIFECYCLE =====================================================

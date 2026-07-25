@@ -34,6 +34,7 @@ function M.on_background_color_sync_changed()
     if M.sync_background_color_controls then
         M.sync_background_color_controls()
     end
+    if M.apply_number_font_to_all then M.apply_number_font_to_all() end
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
 
     local frames_list = M.frames_list
@@ -92,7 +93,7 @@ function M.resolve_background_color(category, target_type, local_color)
         resolved = shared_color
     end
 
-    local color_sync = addon.background_color_sync
+    local color_sync = addon.all_the_colors
     if color_sync and color_sync.resolve_color then
         return color_sync.resolve_color(
             M.MODULE_KEY,
@@ -113,7 +114,7 @@ function M.resolve_background_visibility(category, target_type, local_enabled)
         resolved = true
     end
 
-    local color_sync = addon.background_color_sync
+    local color_sync = addon.all_the_colors
     if color_sync and color_sync.resolve_visibility then
         return color_sync.resolve_visibility(
             M.MODULE_KEY,
@@ -141,6 +142,12 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
+    local all_the_colors = addon.all_the_colors
+    if all_the_colors and all_the_colors.resolve_module_color then
+        color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_color", color)
+        bar_text_color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_text_color", bar_text_color)
+        bar_bg_color = all_the_colors.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", bar_bg_color)
+    end
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
     bg_color = M.resolve_background_color(category, "frame", bg_color)
 
@@ -319,7 +326,7 @@ function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
 
     local category = frame.category
     local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
-    local color_sync = addon.background_color_sync
+    local color_sync = addon.all_the_colors
     if color_sync and color_sync.resolve_ooc_fade then
         fade_ooc = color_sync.resolve_ooc_fade(M.MODULE_KEY, fade_ooc)
     end
