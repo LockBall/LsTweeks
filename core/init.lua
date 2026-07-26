@@ -238,6 +238,14 @@ SlashCmdList["LSTWEEKS"] = function(msg)
         addon.print_module_status(status_filter)
         return
     end
+    if msg:lower() == "tooltipdebug" then
+        if addon.PrintTooltipRendererHistory then
+            addon.PrintTooltipRendererHistory()
+        else
+            print("|cff33ff99LsTweeks tooltip trace|r: tooltip helpers are unavailable")
+        end
+        return
+    end
     if addon.main_frame then
         if addon.main_frame:IsShown() then
             addon.main_frame:Hide()

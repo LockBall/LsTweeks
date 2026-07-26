@@ -12,12 +12,39 @@ local native_tooltip
 local native_tooltip_owner
 local opaque_aura_tooltip
 local opaque_aura_tooltip_owner
+local tooltip_renderer_history = {}
+
+local TOOLTIP_RENDERER_HISTORY_LIMIT = 6
 
 local TOOLTIP_MAX_TEXT_WIDTH = 224
 local TOOLTIP_MIN_WIDTH = 120
 local TOOLTIP_TEXT_INSET = 8
 local TOOLTIP_COLUMN_GAP = 10
 local TOOLTIP_MIN_COLUMN_WIDTH = 40
+
+local function record_tooltip_renderer(renderer)
+    tooltip_renderer_history[#tooltip_renderer_history + 1] = renderer
+    if #tooltip_renderer_history > TOOLTIP_RENDERER_HISTORY_LIMIT then
+        table.remove(tooltip_renderer_history, 1)
+    end
+end
+
+function addon.GetTooltipRendererHistory()
+    local history = {}
+    for i = 1, #tooltip_renderer_history do
+        history[i] = tooltip_renderer_history[i]
+    end
+    return history
+end
+
+function addon.PrintTooltipRendererHistory()
+    local history = addon.GetTooltipRendererHistory()
+    if #history == 0 then
+        print("|cff33ff99LsTweeks tooltip trace|r: no Aura tooltip renderer has completed this session")
+        return
+    end
+    print("|cff33ff99LsTweeks tooltip trace|r: " .. table.concat(history, " -> "))
+end
 
 local function get_safe_string_width(font_string)
     local width = font_string.GetStringWidth and font_string:GetStringWidth()
@@ -293,7 +320,7 @@ local function get_opaque_aura_tooltip()
     return opaque_aura_tooltip
 end
 
-local function show_native_tooltip(owner, anchor, method_name, ...)
+local function show_native_tooltip(owner, anchor, method_name, renderer_name, ...)
     if not owner then return false end
 
     local tooltip = addon.GetNativeTooltip()
@@ -315,6 +342,7 @@ local function show_native_tooltip(owner, anchor, method_name, ...)
 
     native_tooltip_owner = owner
     tooltip:Show()
+    record_tooltip_renderer(renderer_name)
     return true
 end
 
@@ -330,6 +358,7 @@ function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
         owner,
         anchor,
         "SetUnitAuraByAuraInstanceID",
+        "native-aura",
         unit,
         aura_instance_id
     )
@@ -342,7 +371,7 @@ function addon.ShowNativeSpellTooltip(owner, spell_id, anchor)
     local checked, should_be_secret = pcall(secret_check, spell_id)
     if not checked or should_be_secret ~= false then return false end
 
-    return show_native_tooltip(owner, anchor, "SetSpellByID", spell_id)
+    return show_native_tooltip(owner, anchor, "SetSpellByID", "native-spell", spell_id)
 end
 
 local function get_known_opaque_color(known_line, key, default_r, default_g, default_b)
@@ -477,6 +506,7 @@ function addon.ShowOpaqueAuraTooltip(owner, unit, aura_instance_id, anchor, know
 
     opaque_aura_tooltip_owner = owner
     tooltip:Show()
+    record_tooltip_renderer("opaque-aura")
     return true
 end
 

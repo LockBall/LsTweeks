@@ -84,6 +84,7 @@ h.test("non-secret Aura data retains the exact native tooltip", function()
 
     h.eq(shown, true, "non-secret Aura keeps the exact native path")
     h.eq(setter_call[2], 808, "non-secret Aura reaches the native setter")
+    h.eq(addon.GetTooltipRendererHistory()[1], "native-aura", "native Aura route is retained in the diagnostic trace")
 end)
 
 h.test("secret Aura spell data never enters the native spell processor", function()
@@ -145,6 +146,8 @@ h.test("opaque Aura renderer forwards secret text without reading secret formatt
     h.eq(rendered[6], 0.7, "known safe right red is retained")
     h.eq(rendered[7], 0.8, "known safe right green is retained")
     h.eq(rendered[8], 0.9, "known safe right blue is retained")
+    local history = addon.GetTooltipRendererHistory()
+    h.eq(history[#history], "opaque-aura", "opaque Aura route is retained in the diagnostic trace")
 end)
 
 h.test("centralized tooltip data copier rejects secret containers", function()

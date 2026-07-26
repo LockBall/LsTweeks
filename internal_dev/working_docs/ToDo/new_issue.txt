@@ -1,110 +1,89 @@
-# WoW Lua Error Export
-# Agent workflow: run internal_dev/tests_tools/condense_lua_errors.ps1 on this file before analysis.
-
-Message: ...UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua:1030: attempt to perform arithmetic on local 'barWidth' (a secret number value, while execution tainted by 'LsTweeks')
-Time: Sun Jul 26 15:12:59 2026
-Count: 2
+Message: .../Mainline/Blizzard_UIWidgetTemplateTextWithState.lua:35: attempt to perform arithmetic on local 'textHeight' (a secret number value, while execution tainted by 'LsTweeks')
+Time: Sun Jul 26 17:35:11 2026
+Count: 1
 Stack:
-[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua]:1030: in function 'InitPartitions'
-[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua]:847: in function 'Setup'
-[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateStatusBar.lua]:109: in function 'Setup'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateTextWithState.lua]:35: in function 'Setup'
 [Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:526: in function 'ProcessWidget'
 [Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:562: in function 'ProcessAllWidgets'
 [Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:275: in function 'RegisterForWidgetSet'
 [Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:598: in function 'GameTooltip_AddWidgetSet'
 [Interface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua]:44: in function <...terface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua:3>
 [tail call]: ?
-[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua]:166: in function 'OnMouseEnter'
-[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIEventDataProvider.lua]:76: in function <..._SharedMapDataProviders/AreaPOIEventDataProvider.lua:74>
+[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua]:166: in function <...zzard_SharedMapDataProviders/AreaPOIDataProvider.lua:159>
 
 Locals:
-self=StatusBar <Blizzard_UIWidgetTemplateStatusBar.xml:5>{
- Label=FontString <Blizzard_UIWidgetTemplateStatusBar.xml:69>
- BGLeft=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:19>
- GlowCenter=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:86>
- BackgroundGlow=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:12>
- tooltipYOffset=0
- value=525000
- disableTooltip=true
- GlowLeft=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:76>
+self=Frame <Blizzard_UIWidgetManager.lua:432>{
  tooltipLoc=0
+ tooltipYOffset=0
+ widgetType=8
  tooltipContainsHyperLink=false
- Spark=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:54>
- SparkMask=MaskTexture <Blizzard_UIWidgetTemplateStatusBar.xml:60>
- barMin=0
  tooltip=""
- barTextSizeType=4
- barValueTextType=1
- barMinFillAlpha=1
- overrideBarText=""
- barText="75%"
- partitionValues=<table>
- BorderLeft=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:37>
- partitionPool=<table>
- BorderCenter=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:47>
- barTextFontType=1
- range=1000000
- barMaxFillAlpha=1
- barMax=1000000
- textureKit="white"
- lastFillAtlas="widgetstatusbar-fill-white"
- overrideBarTextShownType=0
- GlowRight=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:81>
- GlowPulseAnim=AnimationGroup <Blizzard_UIWidgetTemplateStatusBar.xml:95>
+ widgetID=7427
+ widgetContainer=Frame <GameTooltip.lua:590>
  tooltipAnchor="ANCHOR_BOTTOMLEFT"
- BGRight=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:24>
+ FadeInAnim=AnimationGroup <Blizzard_UIWidgetTemplateBase.xml:16>
+ disableTooltip=true
+ scriptedAnimationEffectID=0
+ modelSceneLayer=0
+ layoutDirection=0
+ outAnimType=0
+ inAnimType=0
+ widgetTag=""
+ orderIndex=0
+ widgetSetID=1803
  defaultTooltipAnchor="ANCHOR_BOTTOMLEFT"
+ hasTimer=false
+ FadeOutAnim=AnimationGroup <Blizzard_UIWidgetTemplateBase.xml:23>
+ Text=FontString <Blizzard_UIWidgetTemplateTextWithState.xml:7>
  tooltipXOffset=0
- BGCenter=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:29>
- barTextEnabledState=3
- frameTextureKit="widgetstatusbar"
- barTextHasStyleSettings=4
- BorderRight=Texture <Blizzard_UIWidgetTemplateStatusBar.xml:42>
 }
-partitionValues=<table>{
- 1=250
+widgetInfo=<table>{
+ scriptedAnimationEffectID=0
+ modelSceneLayer=0
+ widgetScale=0
+ tooltipLoc=0
+ fontType=0
+ shownState=1
+ widgetSizeSetting=250
+ bottomPadding=0
+ enabledState=1
+ textSizeType=0
+ text="Story Variant: Alnmoth Munchies"
+ orderIndex=0
+ layoutDirection=0
+ inAnimType=0
+ widgetTag=""
+ hasTimer=false
+ outAnimType=0
+ tooltip=""
+ hAlign=0
 }
-textureKit="widgetstatusbar"
-paritionAtlasName="widgetstatusbar-BorderTick"
-partitionAtlasInfo=<table>{
- rightTexCoord=0.359375
- rawSize=<table>
- elementName="widgetstatusbar-bordertick"
- topTexCoord=0.671875
- width=17
- leftTexCoord=0.292969
- tilesVertically=false
- height=31
- file=4352554
- bottomTexCoord=0.792969
- tilesHorizontally=false
+widgetContainer=Frame <GameTooltip.lua:590>{
+ horizontalAnchorXOffset=2
+ verticalAnchorPoint="TOPLEFT"
+ disableWidgetTooltips=true
+ widgetFrames=<table>
+ horizontalRelativePoint="RIGHT"
+ verticalAnchorYOffset=0
+ shownWidgetCount=0
+ dirty=false
+ widgetSetLayoutDirection=0
+ numWidgetsShowing=0
+ numTimers=0
+ timerWidgets=<table>
+ horizontalRowContainerPool=<table>
+ widgetPools=<table>
+ BackModelScene=ModelScene <Blizzard_UIWidgetManager.xml:46>
+ FrontModelScene=ModelScene <Blizzard_UIWidgetManager.xml:33>
+ verticalRelativePoint="BOTTOMLEFT"
+ widgetSetID=1803
+ horizontalAnchorPoint="LEFT"
+ showAndHideOnWidgetSetRegistration=false
 }
-barWidth=<secret number>
-(for state)=<table>{
- 1=250
-}
-(for control)=1
-_=1
-partitionValue=250
-partitionFrame=Frame <Blizzard_UIWidgetTemplateBase.lua:1026>{
- fullAtlasName="widgetstatusbar-BorderTick-Full"
- textureKit="widgetstatusbar"
- hasFullAtlas=false
- emptyAtlasName="widgetstatusbar-BorderTick"
- wasFull=false
- FlashOverlay=Texture <Blizzard_UIWidgetTemplateBase.xml:208>
- FlashAnim=AnimationGroup <Blizzard_UIWidgetTemplateBase.xml:216>
- value=250
- Tex=Texture <Blizzard_UIWidgetTemplateBase.xml:201>
-}
-partitionPercent=0.000250
-(*temporary)=0.000250
+textHeight=<secret number>
+(*temporary)=0
+(*temporary)=0
 (*temporary)=0
 (*temporary)=1
 (*temporary)=0
-(*temporary)=1
-(*temporary)=nil
-(*temporary)=nil
-(*temporary)=nil
-(*temporary)="attempt to perform arithmetic on local 'barWidth' (a secret number value, while execution tainted by 'LsTweeks')"
-partitionTextureKitString="%s-BorderTick"
+(*temporary)="attempt to perform arithmetic on local 'textHeight' (a secret number value, while execution tainted by 'LsTweeks')"
