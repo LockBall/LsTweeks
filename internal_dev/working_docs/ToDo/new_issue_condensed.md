@@ -1,75 +1,46 @@
 # Condensed Lua Errors
 
-- Source: `internal_dev\working_docs\ToDo\new_issue.txt`
+- Source: `internal_dev/working_docs/ToDo/new_issue.txt`
 - Parsed records: 1
 - Reported occurrences: 2
 - Unique messages: 1
 - Distinct stack variants: 1
-- Locals: representative excerpts included
+- Locals: omitted; consult the source export when needed
 
 
 ## Error 1
 
 ```text
-...AddOns/Blizzard_SharedXML/SharedTooltipTemplates.lua:167: attempt to index local 'color' (a secret table value, while execution tainted by 'LsTweeks')
+...UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua:1030: attempt to perform arithmetic on local 'barWidth' (a secret number value, while execution tainted by 'LsTweeks')
 ```
 
 - Reported occurrences: 2 across 1 record(s)
 - Stack variants: 1
-- Message origin: Blizzard UI (Blizzard_SharedXML)
-- Captured: Tue Jul 21 19:10:18 2026
+- Message origin: Blizzard UI (Blizzard_UIWidgetTemplateBase.lua)
+- Captured: Sun Jul 26 15:12:59 2026
 - Explicit taint attribution: LsTweeks
-- Project frames in captured stacks: yes
-- Addons appearing in stacks: Blizzard_SharedXML, Blizzard_SharedXMLGame, LsTweeks
+- Project frames in captured stacks: none
+- Addons appearing in stacks: Blizzard_UIWidgets, Blizzard_GameTooltip, Blizzard_FrameXMLUtil, Blizzard_SharedMapDataProviders
 
 ### Common stack prefix
 
 ```text
-[Interface/AddOns/Blizzard_SharedXML/SharedTooltipTemplates.lua]:167: in function 'GameTooltip_AddColoredLine'
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:348: in function 'AddLineDataText'
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:329: in function 'ProcessLineData'
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:315: in function 'ProcessLines'
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:292: in function <...lizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua:245>
-[C]: in function 'securecallfunction'
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:242: in function <...lizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua:241>
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua]:1030: in function 'InitPartitions'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateBase.lua]:847: in function 'Setup'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetTemplateStatusBar.lua]:109: in function 'Setup'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:526: in function 'ProcessWidget'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:562: in function 'ProcessAllWidgets'
+[Interface/AddOns/Blizzard_UIWidgets/Mainline/Blizzard_UIWidgetManager.lua]:275: in function 'RegisterForWidgetSet'
+[Interface/AddOns/Blizzard_GameTooltip/Mainline/GameTooltip.lua]:598: in function 'GameTooltip_AddWidgetSet'
+[Interface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua]:44: in function <...terface/AddOns/Blizzard_FrameXMLUtil/AreaPoiUtil.lua:3>
 [tail call]: ?
-[C]: ?
-[Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua]:517: in function <...lizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua:506>
-[C]: in function 'pcall'
-[Interface/AddOns/LsTweeks/functions/tooltip.lua]:282: in function <Interface/AddOns/LsTweeks/functions/tooltip.lua:273>
-[tail call]: ?
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:518: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:511>
-... 1 more line(s) omitted
+[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIDataProvider.lua]:166: in function 'OnMouseEnter'
+[Interface/AddOns/Blizzard_SharedMapDataProviders/AreaPOIEventDataProvider.lua]:76: in function <..._SharedMapDataProviders/AreaPOIEventDataProvider.lua:74>
 ```
 
 ### Stack variants
 
-#### Variant 1: 2x; Tue Jul 21 19:10:18 2026
+#### Variant 1: 2x; Sun Jul 26 15:12:59 2026
 ```text
 (no caller tail; stack matches the common prefix)
-```
-
-Representative locals:
-```text
-tooltip=LsTweeksNativeTooltip <tooltip.lua:255>{
- processingInfo=<table>
- infoList=<table>
- updateTooltipTimer=0.200000
- supportsDataRefresh=true
- BottomOverlay=Texture <SharedTooltipTemplates.xml:28>
- NineSlice=Frame <SharedTooltipTemplates.xml:19>
- textLeft1Font="GameTooltipHeaderText"
- TextRight1=LsTweeksNativeTooltipTextRight1 <SharedTooltipTemplates.xml:36>
- TopOverlay=Texture <SharedTooltipTemplates.xml:23>
- layoutType="TooltipDefaultLayout"
- TextLeft1=LsTweeksNativeTooltipTextLeft1 <SharedTooltipTemplates.xml:35>
- textRight1Font="GameTooltipHeaderText"
- textLeft2Font="GameTooltipText"
- textRight2Font="GameTooltipText"
- TextRight2=LsTweeksNativeTooltipTextRight2 <SharedTooltipTemplates.xml:42>
- TextLeft2=LsTweeksNativeTooltipTextLeft2 <SharedTooltipTemplates.xml:41>
-}
-text=<secret string>
-color=<secret table>
-... 14 more line(s) omitted
 ```

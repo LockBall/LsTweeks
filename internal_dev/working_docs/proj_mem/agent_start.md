@@ -39,6 +39,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Public Settings behavior, names, or terminology | `README.md` `### Settings` via `doc_section.ps1` |
 | Full public capability overview across modules, or unclear which module a README request routes to | `README.md` `## Modules` via `doc_section.ps1`, then the matching row above |
 | Focused active review or follow-up | Matching `ToDo/` note |
+| Raw WoW Lua error export (including a directed `ToDo/new_issue.txt`) | First run `condense_lua_errors.ps1 -Path <error-export.txt>` from `code_map.md` `## Fast Commands`; use raw locals only for follow-up |
 | Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |
 | PowerShell file-writing or newline issue | `internal_dev/tests_tools/powershell.md` |
 
