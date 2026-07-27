@@ -33,6 +33,13 @@ h.test("/lst status runs for every module without error", function()
     SlashCmdList["LSTWEEKS"]("status")
 end)
 
+h.test("/lst tooltipdebug switches only the opaque Aura test path", function()
+    SlashCmdList["LSTWEEKS"]("tooltipdebug opaque-off")
+    h.eq(h.addon.IsOpaqueAuraTooltipTestDisabled(), true, "opaque renderer test switch enabled")
+    SlashCmdList["LSTWEEKS"]("tooltipdebug opaque-on")
+    h.eq(h.addon.IsOpaqueAuraTooltipTestDisabled(), false, "opaque renderer test switch restored")
+end)
+
 h.test("advancing simulated time drives pending timers without error", function()
     h.advance(30)
 end)

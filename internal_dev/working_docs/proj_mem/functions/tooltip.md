@@ -16,6 +16,7 @@ Durable architecture and safety contracts for the shared tooltip subsystem in `f
 - Guarded conversion: `addon.CopySafeTooltipDataLines()` converts readable `C_TooltipInfo` data into the owned line schema after validating every container and value.
 - Restricted display: `addon.ShowNativeAuraTooltip()`, `addon.ShowNativeSpellTooltip()`, `addon.ShowOpaqueAuraTooltip()`, and `addon.HideNativeTooltip()`.
 - Diagnostics: `/lst tooltipdebug` prints the last six successful Aura renderer labels only (`native-aura`, `native-spell`, or `opaque-aura`); it stores no Aura data and does not alter rendering.
+- Causality test: `/lst tooltipdebug opaque-off` bypasses only opaque live-Aura rendering for the current session; `/lst tooltipdebug opaque-on` restores it. Reload also restores it. Use only to compare a known failing route; the regular cached/basic fallback remains available.
 - Tests: `test_tooltip.lua` owns factory/data-boundary contracts; module suites own caller order and feature-specific fallback behavior.
 
 

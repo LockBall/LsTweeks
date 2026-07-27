@@ -150,6 +150,24 @@ h.test("opaque Aura renderer forwards secret text without reading secret formatt
     h.eq(history[#history], "opaque-aura", "opaque Aura route is retained in the diagnostic trace")
 end)
 
+h.test("opaque Aura test switch bypasses only its live renderer", function()
+    local addon = load_tooltip()
+    local owner = CreateFrame("Frame", nil, UIParent)
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            return { lines = { { leftText = "Live Aura description" } } }
+        end,
+    }
+
+    addon.SetOpaqueAuraTooltipTestDisabled(true)
+    local shown = addon.ShowOpaqueAuraTooltip(owner, "player", 1001, "ANCHOR_RIGHT")
+    addon.SetOpaqueAuraTooltipTestDisabled(false)
+    C_TooltipInfo = previous_tooltip_info
+
+    h.eq(shown, false, "test switch bypasses only the opaque live renderer")
+end)
+
 h.test("centralized tooltip data copier rejects secret containers", function()
     local addon = load_tooltip()
     local secret_data = setmetatable({

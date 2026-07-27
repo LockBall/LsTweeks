@@ -13,6 +13,7 @@ local native_tooltip_owner
 local opaque_aura_tooltip
 local opaque_aura_tooltip_owner
 local tooltip_renderer_history = {}
+local opaque_aura_tooltip_test_disabled = false
 
 local TOOLTIP_RENDERER_HISTORY_LIMIT = 6
 
@@ -44,6 +45,14 @@ function addon.PrintTooltipRendererHistory()
         return
     end
     print("|cff33ff99LsTweeks tooltip trace|r: " .. table.concat(history, " -> "))
+end
+
+function addon.SetOpaqueAuraTooltipTestDisabled(disabled)
+    opaque_aura_tooltip_test_disabled = disabled == true
+end
+
+function addon.IsOpaqueAuraTooltipTestDisabled()
+    return opaque_aura_tooltip_test_disabled
 end
 
 local function get_safe_string_width(font_string)
@@ -394,6 +403,8 @@ local function get_known_opaque_color(known_line, key, default_r, default_g, def
 end
 
 function addon.ShowOpaqueAuraTooltip(owner, unit, aura_instance_id, anchor, known_lines)
+    if opaque_aura_tooltip_test_disabled then return false end
+
     local getter = C_TooltipInfo and C_TooltipInfo.GetUnitAuraByAuraInstanceID
     if not owner or not getter then return false end
 

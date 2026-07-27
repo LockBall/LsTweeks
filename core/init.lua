@@ -238,6 +238,7 @@ SlashCmdList["LSTWEEKS"] = function(msg)
         addon.print_module_status(status_filter)
         return
     end
+    local tooltip_debug_action = msg:match("^[Tt][Oo][Oo][Ll][Tt][Ii][Pp][Dd][Ee][Bb][Uu][Gg]%s+(.+)$")
     if msg:lower() == "tooltipdebug" then
         if addon.PrintTooltipRendererHistory then
             addon.PrintTooltipRendererHistory()
@@ -245,6 +246,19 @@ SlashCmdList["LSTWEEKS"] = function(msg)
             print("|cff33ff99LsTweeks tooltip trace|r: tooltip helpers are unavailable")
         end
         return
+    end
+    if tooltip_debug_action then
+        tooltip_debug_action = tooltip_debug_action:lower()
+        if tooltip_debug_action == "opaque-off" or tooltip_debug_action == "opaque-on" then
+            if addon.SetOpaqueAuraTooltipTestDisabled then
+                local disabled = tooltip_debug_action == "opaque-off"
+                addon.SetOpaqueAuraTooltipTestDisabled(disabled)
+                print("|cff33ff99LsTweeks tooltip trace|r: opaque Aura renderer " .. (disabled and "disabled for this session" or "enabled"))
+            else
+                print("|cff33ff99LsTweeks tooltip trace|r: tooltip helpers are unavailable")
+            end
+            return
+        end
     end
     if addon.main_frame then
         if addon.main_frame:IsShown() then
