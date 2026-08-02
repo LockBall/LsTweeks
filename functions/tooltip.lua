@@ -25,14 +25,20 @@ local TOOLTIP_TEXT_INSET = 8
 local TOOLTIP_COLUMN_GAP = 10
 local TOOLTIP_MIN_COLUMN_WIDTH = 40
 
-local function record_tooltip_trace(event_name, renderer)
+local function record_tooltip_trace(event_name, renderer, forced_combat_state)
     local elapsed = GetTime and GetTime() or 0
     if type(elapsed) ~= "number" or (issecretvalue and issecretvalue(elapsed)) then
         elapsed = 0
     end
-    local in_combat = InCombatLockdown and InCombatLockdown() == true
+    local wall_time = date and date("%H:%M:%S") or "--:--:--"
+    if type(wall_time) ~= "string" then wall_time = "--:--:--" end
+    local in_combat = forced_combat_state
+    if in_combat == nil then
+        in_combat = InCombatLockdown and InCombatLockdown() == true
+    end
     tooltip_debug_trace[#tooltip_debug_trace + 1] = format(
-        "%06.1f %s %s %s",
+        "%s %06.1f %s %s %s",
+        wall_time,
         elapsed,
         in_combat and "combat" or "ooc",
         event_name,
@@ -56,9 +62,9 @@ tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 tooltip_debug_event_frame:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_REGEN_DISABLED" then
-        record_tooltip_trace("enter-combat", "session")
+        record_tooltip_trace("enter-combat", "session", true)
     elseif event == "PLAYER_REGEN_ENABLED" then
-        record_tooltip_trace("leave-combat", "session")
+        record_tooltip_trace("leave-combat", "session", false)
     end
 end)
 
