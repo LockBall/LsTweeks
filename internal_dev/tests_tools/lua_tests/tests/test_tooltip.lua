@@ -45,67 +45,26 @@ h.test("native tooltip keeps rich data rendering without the widget cleanup temp
     h.eq(tooltip:GetScript("OnEvent"), GameTooltipDataMixin.OnEvent, "native tooltip data can refresh")
 end)
 
-h.test("secret Aura data never enters the native tooltip processor", function()
+h.test("Aura data never enters the native Aura tooltip processor", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
-    local checked_unit, checked_instance
-    local previous_secrets = C_Secrets
-    C_Secrets = {
-        ShouldUnitAuraInstanceBeSecret = function(unit, aura_instance_id)
-            checked_unit = unit
-            checked_instance = aura_instance_id
-            return true
-        end,
-    }
-
-    local shown = addon.ShowNativeAuraTooltip(owner, "player", 707, "ANCHOR_RIGHT")
-    local setter_call = addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
-    C_Secrets = previous_secrets
-
-    h.eq(shown, false, "secret Aura declines the native Aura path")
-    h.eq(checked_unit, "player", "secret check receives the Aura unit")
-    h.eq(checked_instance, 707, "secret check receives the Aura instance")
-    h.is_nil(setter_call, "secret Aura cannot wedge the native tooltip processor")
-end)
-
-h.test("non-secret Aura data retains the exact native tooltip", function()
-    local addon = load_tooltip()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    local previous_secrets = C_Secrets
-    C_Secrets = {
-        ShouldUnitAuraInstanceBeSecret = function()
-            return false
-        end,
-    }
-
     local shown = addon.ShowNativeAuraTooltip(owner, "player", 808, "ANCHOR_RIGHT")
     local setter_call = addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
-    C_Secrets = previous_secrets
 
-    h.eq(shown, true, "non-secret Aura keeps the exact native path")
-    h.eq(setter_call[2], 808, "non-secret Aura reaches the native setter")
-    h.eq(addon.GetTooltipRendererHistory()[1], "native-aura", "native Aura route is retained in the diagnostic trace")
+    h.eq(shown, false, "native Aura rendering is disabled")
+    h.is_nil(setter_call, "Aura data never reaches the native Aura setter")
+    h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-aura"), "trace records the disabled native route")
 end)
 
-h.test("secret Aura spell data never enters the native spell processor", function()
+h.test("Aura spell data never enters the native spell processor", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
-    local checked_spell
-    local previous_secrets = C_Secrets
-    C_Secrets = {
-        ShouldSpellAuraBeSecret = function(spell_id)
-            checked_spell = spell_id
-            return true
-        end,
-    }
-
     local shown = addon.ShowNativeSpellTooltip(owner, 909, "ANCHOR_RIGHT")
     local setter_call = addon.GetNativeTooltip():GetLastCall("SetSpellByID")
-    C_Secrets = previous_secrets
 
-    h.eq(shown, false, "secret Aura spell declines the native spell path")
-    h.eq(checked_spell, 909, "spell secret check receives the spell identity")
-    h.is_nil(setter_call, "secret Aura spell cannot enter the colored-line processor")
+    h.eq(shown, false, "native Aura spell rendering is disabled")
+    h.is_nil(setter_call, "Aura spell data never reaches the native spell setter")
+    h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-spell"), "trace records the disabled native spell route")
 end)
 
 h.test("opaque Aura renderer forwards secret text without reading secret formatting", function()

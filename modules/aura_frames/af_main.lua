@@ -498,23 +498,7 @@ local function show_aura_icon_tooltip(obj)
 
     local known_lines = cache_tooltip_data_lines(obj)
     if is_usable_tooltip_number(obj.aura_index)
-        and addon.ShowNativeAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
-    then
-        return
-    end
-    if known_lines
-        and is_usable_tooltip_number(obj.aura_index)
         and addon.ShowOpaqueAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT", known_lines)
-    then
-        return
-    end
-    if is_usable_tooltip_number(obj.aura_spell_id)
-        and addon.ShowNativeSpellTooltip(obj, obj.aura_spell_id, "ANCHOR_BOTTOMRIGHT")
-    then
-        return
-    end
-    if is_usable_tooltip_number(obj.aura_index)
-        and addon.ShowOpaqueAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
     then
         return
     end

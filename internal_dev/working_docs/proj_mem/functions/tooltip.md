@@ -14,9 +14,9 @@ Durable architecture and safety contracts for the shared tooltip subsystem in `f
 - `functions/tooltip.lua` is the only project-owned tooltip factory and secret-tooltip-data boundary. Route general help, guarded line rendering, native Aura/spell rendering, and tooltip hiding through it instead of creating module-local tooltip machinery.
 - Owned display: `addon.CreateOwnedTooltip()`, `addon.ShowOwnedTooltipLines()`, `addon.ShowOwnedTooltip()`, `addon.AttachTooltip()`, and `addon.HideOwnedTooltip()`.
 - Guarded conversion: `addon.CopySafeTooltipDataLines()` converts readable `C_TooltipInfo` data into the owned line schema after validating every container and value.
-- Restricted display: `addon.ShowNativeAuraTooltip()`, `addon.ShowNativeSpellTooltip()`, `addon.ShowOpaqueAuraTooltip()`, and `addon.HideNativeTooltip()`.
-- Diagnostics: `/lst tooltipdebug` prints the last six successful Aura renderer labels only (`native-aura`, `native-spell`, or `opaque-aura`); it stores no Aura data and does not alter rendering.
-- Causality test: `/lst tooltipdebug opaque-off` bypasses only opaque live-Aura rendering for the current session; `/lst tooltipdebug opaque-on` restores it. Reload also restores it. Use only to compare a known failing route; the regular cached/basic fallback remains available.
+- Restricted display: Aura hover uses `addon.ShowOpaqueAuraTooltip()` and `addon.HideNativeTooltip()`; the native Aura/spell APIs remain disabled after live secret-color processing tainted their dedicated tooltip.
+- Diagnostics: `/lst tooltipdebug` prints a 64-event Aura renderer trace with session-relative time, combat state, combat entry/exit, route attempt/completion/fallback, and test-toggle state. It continuously retains the latest events for post-incident inspection and stores no Aura IDs, names, text, lines, or raw tooltip data. `/lst tooltipdebug mark` adds a visible boundary without discarding earlier evidence; `clear` is retained as a non-destructive alias.
+- Causality tests: `/lst tooltipdebug opaque-off`/`opaque-on` and `native-aura-off`/`native-aura-on` bypass or restore only the named live renderer for the current session. Reload restores both. Use one toggle per controlled comparison; the regular cached/basic fallback remains available.
 - Tests: `test_tooltip.lua` owns factory/data-boundary contracts; module suites own caller order and feature-specific fallback behavior.
 
 
@@ -28,7 +28,7 @@ Durable architecture and safety contracts for the shared tooltip subsystem in `f
 
 
 ## Secret Data Contract
-- Only call `SetUnitAuraByAuraInstanceID` when `C_Secrets.ShouldUnitAuraInstanceBeSecret(unit, auraInstanceID)` succeeds and returns explicit `false`.
+- Do not call native Aura or Aura-spell setters for Aura hover. Even an explicit non-secret predicate can later yield secret line colors in Blizzard's native tooltip processor; opaque live forwarding is the only live renderer.
 - Only call the Aura spell fallback `SetSpellByID` when `C_Secrets.ShouldSpellAuraBeSecret(spellID)` succeeds and returns explicit `false`. A readable spell ID does not itself prove its Aura tooltip data is safe.
 - `CopySafeTooltipDataLines()` validates outer data, `lines`, each line, text, color tables/components, and wrap flags before field-dependent use or caching. Validate every containing table before field, length, or index access; individual spells may remain secret outside combat.
 - Opaque rendering may type-check and forward live text values supported by Blizzard tooltip controls, but must not compare, concatenate, measure, cache, recolor from live data, or inspect secret formatting fields.
@@ -43,7 +43,8 @@ Durable architecture and safety contracts for the shared tooltip subsystem in `f
 - 2026-07-19: an isolated tooltip plus `securecallfunction` and rendered-line inspection still contaminated later map POI layout.
 - 2026-07-20: direct delegation through shared `GameTooltip` caused delayed Area POI `LayoutFrame.lua` secret comparison failures.
 - 2026-07-21: a dedicated full-template tooltip failed later in `GameTooltip_ClearWidgetSet`; a lightweight unguarded Aura setter then failed immediately when Blizzard indexed a secret line-color table and left `processingInfo` active, disabling later tooltips.
-- These incidents establish three independent requirements: global isolation, no full widget template/cleanup path, and secret predicates before native data processing.
+- 2026-08-01: with opaque forwarding disabled, the isolated `LsTweeksNativeTooltip` processed a secret Aura text color table after multiple OOC `native-aura` hovers. Predicate-approved native Aura data is therefore unsafe too.
+- These incidents establish three independent requirements: global isolation, no full widget template/cleanup path, and no native Aura data processing.
 
 
 ## Validation

@@ -23,8 +23,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Adding media, referencing external code, or Blizzard assets | `project.md` `### Asset And Reference Rules` |
 | Ketho/LuaLS setup or annotation lookup | `project.md` `### Ketho / LuaLS` |
 | Packaging, release zip, or `package-policy.json` | `project.md` `### Packaging / Release` |
-| AddOn identity, slash command, SavedVariables name, or version edit point | `project.md` `### AddOn Summary` |
-| Top-level file/folder ownership | `project.md` `### File Map` |
+| AddOn identity, slash command, SavedVariables, version edit point, or top-level file/folder ownership | `project.md` `### AddOn Summary` or `### File Map` |
 | Module pattern, file naming, registration, or module toggles | `project.md` `### Module Structure And Registration` |
 | Runtime contracts, events/timers/hot paths, taint, or combat guards | `project.md` `### Runtime And Performance Rules` |
 | Defaults, DB handling, resets, or profiles | `project.md` `### Data, Resets, And Profiles` |
@@ -44,7 +43,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | PowerShell file-writing or newline issue | `internal_dev/tests_tools/powershell.md` |
 
 - Shared-function memory index: `functions/tooltip.md`, `functions/profiles.md`, `functions/controls.md`, and `functions/layout_grid.md`. Read only the file matched by the task.
-- Start investigation or editing after the baseline and directly matched reads are complete. Do not read adjacent modules, whole large memory files, public docs, or review notes merely for familiarity unless truly necessary.
+- After baseline and matched reads, avoid adjacent modules, whole large memory files, public docs, or review notes unless necessary.
 - Before changing a known LuaLS/Ketho suppression, read the relevant module memory `## Ketho / LuaLS` section.
 - Use `code_map.md` `## Fast Commands` for command strings, source outlines, routine validation, package validation, and repo search.
 - Update the owning project, module, or shared-function memory for durable architecture, defaults, APIs, and debugging lessons.
@@ -54,6 +53,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 ## Collaboration Rules
 - Treat user statements as hypotheses until code, docs, runtime behavior, or API annotations confirm them. Correct wrong assumptions directly.
 - Prefer concrete evidence over memory or inference, especially for WoW APIs, taint/combat behavior, packaging contents, and generated diagnostics.
+- Proactively volunteer concise, evidence-grounded improvements noticed during work—even when not explicitly requested—when they would materially improve correctness, observability, maintainability, performance, or user experience. State the benefit, tradeoff, and required authority; suggest rather than expand implementation scope without authorization. For uncertain runtime causes, include the smallest safe diagnostic and avoid collecting secret, user, or unnecessary data.
 - Documented rules are guidelines encoding past evidence, not immutable law. When a request conflicts with a rule, examine what the rule protects against, whether that applies here, and what verification would justify an exception, instead of citing the rule and stopping. Prohibitions with live incident logs (taint, combat) deserve the most caution, yet even those get revised when validated evidence arrives; update the owning doc when they do. Tooltip evidence is owned in `functions/tooltip.md` `## Incident Evidence`.
 - Preserve user changes. Do not revert unrelated edits while cleaning, refactoring, or packaging.
 - After significant changes, provide a concise git commit message.

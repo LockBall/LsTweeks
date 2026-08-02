@@ -568,7 +568,7 @@ h.test("Aura prewarm rejects secret tooltip containers before inspection", funct
     h.is_nil(M._tooltip_data_lines_cache["aura:1002"], "secret tooltip lines are not cached")
 end)
 
-h.test("Aura icon hover uses an isolated native tooltip delegate outside combat", function()
+h.test("Aura icon hover uses opaque live forwarding outside combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -578,18 +578,21 @@ h.test("Aura icon hover uses an isolated native tooltip delegate outside combat"
     icon.aura_name = "Test Aura"
     icon.tooltip_enabled = true
 
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = { GetUnitAuraByAuraInstanceID = function() return { lines = { { leftText = "Test Aura" }, { leftText = "Live effect description." } } } end }
     icon:GetScript("OnEnter")(icon)
+    C_TooltipInfo = previous_tooltip_info
 
-    local tooltip = h.addon.GetNativeTooltip()
-    local call = tooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
-    h.eq(call[1], "player", "native Aura tooltip uses the player unit")
-    h.eq(call[2], 101, "native Aura tooltip receives the rendered Aura instance")
-    h.eq(tooltip:IsShown(), true, "native Aura tooltip is shown")
+    local call = h.addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
+    local opaque_tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
+    h.is_nil(call, "Aura hover never enters the native Aura processor")
+    h.eq(opaque_tooltip:GetCalls("AddLine")[2][1], "Live effect description.", "live Aura description is retained")
+    h.eq(opaque_tooltip:IsShown(), true, "opaque Aura tooltip is shown")
     h.is_nil(GameTooltip:GetLastCall("SetOwner"), "Aura hover does not mutate Blizzard's shared GameTooltip")
     h.is_nil(GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID"), "Aura data never enters Blizzard's shared GameTooltip")
 end)
 
-h.test("Aura icon hover uses an isolated native tooltip delegate in combat", function()
+h.test("Aura icon hover keeps its live description off the native Aura delegate in combat", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -599,13 +602,29 @@ h.test("Aura icon hover uses an isolated native tooltip delegate in combat", fun
     icon.aura_name = "Combat Aura"
     icon.tooltip_enabled = true
     h.stub.in_combat = true
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            return {
+                lines = {
+                    { leftText = "Combat Aura" },
+                    { leftText = "Live combat effect description." },
+                },
+            }
+        end,
+    }
 
     icon:GetScript("OnEnter")(icon)
 
     h.stub.in_combat = false
+    C_TooltipInfo = previous_tooltip_info
     local call = h.addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
-    h.eq(call[1], "player", "combat Aura tooltip uses the player unit")
-    h.eq(call[2], 101, "combat Aura tooltip receives the rendered Aura instance")
+    local opaque_tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
+    local rendered = opaque_tooltip:GetCalls("AddLine")
+    h.is_nil(call, "combat Aura never enters the native Aura processor")
+    h.eq(rendered[1][1], "Combat Aura", "combat Aura title remains live")
+    h.eq(rendered[2][1], "Live combat effect description.", "combat Aura description remains live")
+    h.eq(opaque_tooltip:IsShown(), true, "live combat Aura tooltip is shown")
 end)
 
 h.test("secret Aura spell identity still uses the live opaque Aura description", function()
@@ -703,7 +722,7 @@ h.test("secret Aura without readable spell identity forwards its full descriptio
     h.eq(tooltip:IsShown(), true, "opaque rich tooltip is shown")
 end)
 
-h.test("Aura icon leave hides only the native tooltip it still owns", function()
+h.test("Aura icon leave hides only the opaque tooltip it still owns", function()
     local M = load_aura_frames()
     M.db = { max_icons = 1 }
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
@@ -711,10 +730,12 @@ h.test("Aura icon leave hides only the native tooltip it still owns", function()
     icon.aura_index = 404
     icon.aura_name = "Owned Aura"
     icon.tooltip_enabled = true
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = { GetUnitAuraByAuraInstanceID = function() return { lines = { { leftText = "Owned Aura" } } } end }
 
     icon:GetScript("OnEnter")(icon)
-    local tooltip = h.addon.GetNativeTooltip()
-    h.eq(tooltip:GetOwner(), icon, "Aura icon owns the native tooltip after enter")
+    local tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
+    h.eq(tooltip:GetOwner(), icon, "Aura icon owns the opaque tooltip after enter")
     local hide_count = #(tooltip:GetCalls("Hide") or {})
     icon:GetScript("OnLeave")(icon)
     h.eq(#(tooltip:GetCalls("Hide") or {}), hide_count + 1, "leaving current owner hides its native tooltip")
@@ -725,6 +746,7 @@ h.test("Aura icon leave hides only the native tooltip it still owns", function()
     hide_count = #(tooltip:GetCalls("Hide") or {})
     icon:GetScript("OnLeave")(icon)
     h.eq(#(tooltip:GetCalls("Hide") or {}), hide_count, "stale Aura leave preserves a replacement tooltip")
+    C_TooltipInfo = previous_tooltip_info
 end)
 
 h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()
