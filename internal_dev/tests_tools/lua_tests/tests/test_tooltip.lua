@@ -53,6 +53,7 @@ h.test("Aura data never enters the native Aura tooltip processor", function()
 
     h.eq(shown, false, "native Aura rendering is disabled")
     h.is_nil(setter_call, "Aura data never reaches the native Aura setter")
+    h.ok(addon.GetTooltipDebugTrace()[1]:find("instance=world"), "trace records coarse instance context")
     h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-aura"), "trace records the disabled native route")
 end)
 

@@ -100,6 +100,7 @@ C_Timer = {
 function GetTime() return stub.now end
 function GetTimePreciseSec() return stub.now end
 function date() return "12:00:00" end
+function IsInInstance() return false, "none" end
 function debugprofilestop() return stub.now * 1000 end
 
 --#endregion clock and C_Timer

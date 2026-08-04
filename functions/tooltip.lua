@@ -25,6 +25,16 @@ local TOOLTIP_TEXT_INSET = 8
 local TOOLTIP_COLUMN_GAP = 10
 local TOOLTIP_MIN_COLUMN_WIDTH = 40
 
+local function get_tooltip_debug_instance_context()
+    if not IsInInstance then return "unknown" end
+    local is_instance, instance_type = IsInInstance()
+    if type(instance_type) ~= "string" or (issecretvalue and issecretvalue(instance_type)) then
+        return "unknown"
+    end
+    if is_instance == true then return instance_type end
+    return "world"
+end
+
 local function record_tooltip_trace(event_name, renderer, forced_combat_state)
     local elapsed = GetTime and GetTime() or 0
     if type(elapsed) ~= "number" or (issecretvalue and issecretvalue(elapsed)) then
@@ -36,11 +46,13 @@ local function record_tooltip_trace(event_name, renderer, forced_combat_state)
     if in_combat == nil then
         in_combat = InCombatLockdown and InCombatLockdown() == true
     end
+    local instance_context = get_tooltip_debug_instance_context()
     tooltip_debug_trace[#tooltip_debug_trace + 1] = format(
-        "%s %06.1f %s %s %s",
+        "%s %06.1f %s instance=%s %s %s",
         wall_time,
         elapsed,
         in_combat and "combat" or "ooc",
+        instance_context,
         event_name,
         renderer
     )
@@ -60,11 +72,14 @@ end
 local tooltip_debug_event_frame = CreateFrame("Frame")
 tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+tooltip_debug_event_frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 tooltip_debug_event_frame:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_REGEN_DISABLED" then
         record_tooltip_trace("enter-combat", "session", true)
     elseif event == "PLAYER_REGEN_ENABLED" then
         record_tooltip_trace("leave-combat", "session", false)
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        record_tooltip_trace("instance-context", "session")
     end
 end)
 

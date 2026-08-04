@@ -50,6 +50,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
 - Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
 - Condense repeated WoW Lua errors: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path <error-export.txt> [-OutputPath <report.md>]`; add `-IncludeLocals` only for deeper follow-up.
+- Archive a processed error inbox: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/archive_lua_error_batch.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -Label <short-label> -ClearInbox`; preserves raw export and `condensed.md` under `ToDo/error_batches/` before resetting the inbox.
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 - Headless Lua tests (all suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - Headless Lua tests (one suite): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1 <name-substring>`
