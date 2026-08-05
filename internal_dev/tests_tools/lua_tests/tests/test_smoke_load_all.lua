@@ -33,7 +33,7 @@ h.test("/lst status runs for every module without error", function()
     SlashCmdList["LSTWEEKS"]("status")
 end)
 
-h.test("/lst tooltipdebug controls isolated Aura renderer tests and trace clearing", function()
+h.test("/lst tooltipdebug controls opaque Aura testing and trace markers", function()
     SlashCmdList["LSTWEEKS"]("tooltipdebug opaque-off")
     h.eq(h.addon.IsOpaqueAuraTooltipTestDisabled(), true, "opaque renderer test switch enabled")
     SlashCmdList["LSTWEEKS"]("tooltipdebug opaque-on")
