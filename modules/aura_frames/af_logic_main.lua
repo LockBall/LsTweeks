@@ -484,6 +484,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
+        if M.update_combat_background then
+            M.update_combat_background(self, 0, false, nil, InCombatLockdown and InCombatLockdown(), false)
+        end
         cancel_frame_ooc_fade(self)
         set_alpha_if_changed(self, 1)
         set_shown_if_changed(self, false)
@@ -650,6 +653,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         is_bg_enabled = cfg_db["bg"]
     end
     is_bg_enabled = M.resolve_background_visibility(category, "frame", is_bg_enabled)
+    local combat_background_active = M.update_combat_background
+        and M.update_combat_background(self, display_count, is_bg_enabled, bgC, in_combat, is_moving)
     local bg_r, bg_g, bg_b, bg_a
     local br_r, br_g, br_b, br_a
     if is_moving then
@@ -668,6 +673,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
             bg_r, bg_g, bg_b, bg_a = 0, 0, 0, 0
             br_r, br_g, br_b, br_a = 0, 0, 0, 0
         end
+    end
+    if combat_background_active then
+        bg_a = 0
+        br_a = 0
     end
     set_backdrop_state_if_changed(self, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
 end

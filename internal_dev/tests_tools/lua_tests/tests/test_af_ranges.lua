@@ -365,6 +365,41 @@ h.test("icon timer slots reserve width for long duration labels", function()
     h.eq(frame._layout_cache.icons_per_row, 2, "horizontal layout keeps compact timer spacing")
 end)
 
+h.test("combat background switches pre-sized Aura frame variants without geometry writes", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 3 }
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
+    frame._runtime_config_cache = {
+        frame_width = 120,
+        spacing = 2,
+        growth = "DOWN",
+        show_timer_text = false,
+        layout_show_timer_text = false,
+        cooldown_icon_overlay = false,
+    }
+
+    M.setup_layout(frame, "show_short", "spacing_short", false)
+    local variants = frame._combat_background_variants
+    h.eq(#variants, 4, "one pre-sized background exists for every display count")
+
+    local color = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 }
+    M.update_combat_background(frame, 0, true, color, false, false)
+    h.ok(#(variants[4]:GetCalls("SetColorTexture") or {}) > 0, "maximum-count background receives the cached color")
+    local size_calls_before = #(variants[3]:GetCalls("SetSize") or {})
+
+    h.stub.in_combat = true
+    local active = M.update_combat_background(frame, 2, true, color, true, false)
+    h.ok(active, "combat background activates when frame background is enabled")
+    h.ok(variants[3]:IsShown(), "two displayed auras select the two-aura background")
+    h.ok(not variants[1]:IsShown(), "empty background remains hidden")
+    h.eq(#(variants[3]:GetCalls("SetSize") or {}), size_calls_before, "combat selection does not resize the background")
+
+    M.update_combat_background(frame, 1, true, color, true, false)
+    h.ok(variants[2]:IsShown(), "count changes switch to the matching pre-sized background")
+    h.ok(not variants[3]:IsShown(), "previous background is hidden")
+    h.stub.in_combat = false
+end)
+
 h.test("saved preset and custom colors normalize to readable RGBA", function()
     local M = load_aura_frames()
     M.db = {
