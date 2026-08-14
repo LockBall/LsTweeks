@@ -1,12 +1,12 @@
+## Interface: 120007, 120100
 ## Title: L's Tweeks
 ## Title-enUS: L's Tweeks
+## Version: 00.22.02
 ## Author: LockBall
 ## Notes: Configurable aura frames, sound controls, and UI tweaks
 ## Notes-enUS: Configurable aura frames, sound controls, and UI tweaks
 ## Category: User Interface
 ## Category-enUS: User Interface
-## Interface: 120007
-## Version: 00.22.02
 
 ## IconTexture: Interface\AddOns\LsTweeks\media\icon.blp
 ## SavedVariables: Ls_Tweeks_DB

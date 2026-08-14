@@ -496,13 +496,13 @@ local function show_aura_icon_tooltip(obj)
         return
     end
 
-    local known_lines = cache_tooltip_data_lines(obj)
     if is_usable_tooltip_number(obj.aura_index)
-        and addon.ShowOpaqueAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT", known_lines)
+        and addon.ShowNativeAuraTooltip(obj, "player", obj.aura_index, "ANCHOR_BOTTOMRIGHT")
     then
         return
     end
 
+    local known_lines = cache_tooltip_data_lines(obj)
     local lines = known_lines or build_basic_aura_tooltip_lines(obj)
     addon.ShowOwnedTooltipLines(obj, lines, "ANCHOR_BOTTOMRIGHT")
 end
@@ -1109,7 +1109,7 @@ end
 
 local function ensure_module_started()
     if M._module_started then return end
-    prepare_aura_frame_db()
+    if not M.db then prepare_aura_frame_db() end
     create_startup_aura_frames()
     M._module_started = true
 end
@@ -1269,6 +1269,9 @@ local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", function(self, event, name)
     if name == addon_name then
+        -- Settings remain available while the module is disabled, so attach and
+        -- normalize their saved data independently from frame/runtime startup.
+        prepare_aura_frame_db()
         register_aura_frame_settings()
         if M.is_runtime_enabled and M.is_runtime_enabled() then
             ensure_module_started()

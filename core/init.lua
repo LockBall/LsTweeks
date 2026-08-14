@@ -258,11 +258,14 @@ SlashCmdList["LSTWEEKS"] = function(msg)
             end
             return
         end
-        if tooltip_debug_action == "opaque-off" or tooltip_debug_action == "opaque-on" then
-            if addon.SetOpaqueAuraTooltipTestDisabled then
-                local disabled = tooltip_debug_action == "opaque-off"
-                addon.SetOpaqueAuraTooltipTestDisabled(disabled)
-                print("|cff33ff99LsTweeks tooltip trace|r: opaque Aura renderer " .. (disabled and "disabled for this session" or "enabled"))
+        if tooltip_debug_action == "native-on" or tooltip_debug_action == "native-off" then
+            if addon.SetNativeAuraTooltipTestEnabled then
+                local enabled = tooltip_debug_action == "native-on"
+                addon.SetNativeAuraTooltipTestEnabled(enabled)
+                print(
+                    "|cff33ff99LsTweeks tooltip trace|r: native Aura experiment "
+                        .. (enabled and "enabled until reload" or "disabled")
+                )
             else
                 print("|cff33ff99LsTweeks tooltip trace|r: tooltip helpers are unavailable")
             end

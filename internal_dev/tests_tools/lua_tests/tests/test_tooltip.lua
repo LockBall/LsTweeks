@@ -32,100 +32,75 @@ h.test("centralized tooltip renderer preserves rich left and right text", functi
     h.eq(tooltip.right_lines[1]:GetText(), "1 min", "right text retained")
 end)
 
-h.test("native tooltip keeps rich data rendering without the widget cleanup template", function()
-    local addon = load_tooltip()
-    local tooltip = addon.GetNativeTooltip()
-
-    h.eq(tooltip.__kind, "GameTooltip", "native tooltip retains Blizzard tooltip data rendering")
-    h.eq(tooltip.__template, "SharedTooltipArtTemplate", "native tooltip uses only the lightweight art template")
-    h.ok(not tooltip.__template:find("GameTooltipTemplate", 1, true), "widget cleanup template is not inherited")
-    h.eq(tooltip:GetScript("OnHide"), SharedTooltip_OnHide, "hide uses lightweight shared cleanup")
-    h.ok(tooltip:GetScript("OnHide") ~= GameTooltip_OnHide, "hide cannot enter GameTooltip widget cleanup")
-    h.eq(tooltip:GetScript("OnTooltipCleared"), SharedTooltip_ClearInsertedFrames, "inserted text frames still clear")
-    h.eq(tooltip:GetScript("OnEvent"), GameTooltipDataMixin.OnEvent, "native tooltip data can refresh")
-end)
-
 h.test("Aura data never enters the native Aura tooltip processor", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
     local shown = addon.ShowNativeAuraTooltip(owner, "player", 808, "ANCHOR_RIGHT")
-    local setter_call = addon.GetNativeTooltip():GetLastCall("SetUnitAuraByAuraInstanceID")
 
     h.eq(shown, false, "native Aura rendering is disabled")
-    h.is_nil(setter_call, "Aura data never reaches the native Aura setter")
+    h.is_nil(rawget(_G, "LsTweeksNativeTooltip"), "Aura data creates no native GameTooltip")
     h.ok(addon.GetTooltipDebugTrace()[1]:find("instance=world"), "trace records coarse instance context")
     h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-aura"), "trace records the disabled native route")
+end)
+
+h.test("experimental native Aura route uses only Blizzard's secure global setter", function()
+    local addon = load_tooltip()
+    local owner = CreateFrame("Frame", nil, UIParent)
+    local setter_count = #(GameTooltip:GetCalls("SetUnitAuraByAuraInstanceID") or {})
+    local show_count = #(GameTooltip:GetCalls("Show") or {})
+    local tooltip_info_calls = 0
+    local previous_tooltip_info = C_TooltipInfo
+    C_TooltipInfo = {
+        GetUnitAuraByAuraInstanceID = function()
+            tooltip_info_calls = tooltip_info_calls + 1
+        end,
+    }
+
+    addon.SetNativeAuraTooltipTestEnabled(true)
+    local shown = addon.ShowNativeAuraTooltip(owner, "player", 818, "ANCHOR_RIGHT")
+    addon.SetNativeAuraTooltipTestEnabled(false)
+    C_TooltipInfo = previous_tooltip_info
+
+    local setter = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
+    h.eq(shown, true, "enabled experimental route owns the hover")
+    h.eq(#(GameTooltip:GetCalls("SetUnitAuraByAuraInstanceID") or {}), setter_count + 1,
+        "native route calls the secure setter exactly once")
+    h.eq(setter[1], "player", "secure setter receives the unit directly")
+    h.eq(setter[2], 818, "secure setter receives the Aura instance directly")
+    h.eq(tooltip_info_calls, 0, "addon code never fetches live TooltipInfo")
+    h.eq(#(GameTooltip:GetCalls("Show") or {}), show_count, "addon code never manually shows GameTooltip")
+    h.is_nil(rawget(_G, "LsTweeksNativeTooltip"), "native route creates no custom GameTooltip")
 end)
 
 h.test("Aura spell data never enters the native spell processor", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
     local shown = addon.ShowNativeSpellTooltip(owner, 909, "ANCHOR_RIGHT")
-    local setter_call = addon.GetNativeTooltip():GetLastCall("SetSpellByID")
 
     h.eq(shown, false, "native Aura spell rendering is disabled")
-    h.is_nil(setter_call, "Aura spell data never reaches the native spell setter")
+    h.is_nil(rawget(_G, "LsTweeksNativeTooltip"), "Aura spell data creates no native GameTooltip")
     h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-spell"), "trace records the disabled native spell route")
 end)
 
-h.test("opaque Aura renderer forwards secret text without reading secret formatting", function()
+h.test("opaque Aura entry point never queries or renders live data", function()
     local addon = load_tooltip()
     local owner = CreateFrame("Frame", nil, UIParent)
-    local line = setmetatable({
-        leftText = "Full secret Aura description",
-        rightText = "12 sec",
-    }, {
-        __index = function(_, key)
-            error("opaque renderer inspected forbidden field " .. tostring(key))
-        end,
-    })
+    local getter_calls = 0
     local previous_tooltip_info = C_TooltipInfo
     C_TooltipInfo = {
         GetUnitAuraByAuraInstanceID = function()
-            return { lines = { line } }
-        end,
-    }
-
-    local shown = addon.ShowOpaqueAuraTooltip(owner, "player", 909, "ANCHOR_RIGHT", {
-        {
-            left_color = { r = 0.2, g = 0.4, b = 0.6 },
-            right_color = { r = 0.7, g = 0.8, b = 0.9 },
-        },
-    })
-    local tooltip = rawget(_G, "LsTweeksOpaqueAuraTooltip")
-    local rendered = tooltip:GetLastCall("AddDoubleLine")
-    C_TooltipInfo = previous_tooltip_info
-
-    h.eq(shown, true, "opaque Aura text is shown")
-    h.eq(tooltip.__template, "SharedTooltipArtTemplate", "opaque renderer has no data-processing template")
-    h.eq(rendered[1], "Full secret Aura description", "left text passes through unchanged")
-    h.eq(rendered[2], "12 sec", "right text passes through unchanged")
-    h.eq(rendered[3], 0.2, "known safe left red is retained")
-    h.eq(rendered[4], 0.4, "known safe left green is retained")
-    h.eq(rendered[5], 0.6, "known safe left blue is retained")
-    h.eq(rendered[6], 0.7, "known safe right red is retained")
-    h.eq(rendered[7], 0.8, "known safe right green is retained")
-    h.eq(rendered[8], 0.9, "known safe right blue is retained")
-    local history = addon.GetTooltipRendererHistory()
-    h.eq(history[#history], "opaque-aura", "opaque Aura route is retained in the diagnostic trace")
-end)
-
-h.test("opaque Aura test switch bypasses only its live renderer", function()
-    local addon = load_tooltip()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    local previous_tooltip_info = C_TooltipInfo
-    C_TooltipInfo = {
-        GetUnitAuraByAuraInstanceID = function()
+            getter_calls = getter_calls + 1
             return { lines = { { leftText = "Live Aura description" } } }
         end,
     }
 
-    addon.SetOpaqueAuraTooltipTestDisabled(true)
-    local shown = addon.ShowOpaqueAuraTooltip(owner, "player", 1001, "ANCHOR_RIGHT")
-    addon.SetOpaqueAuraTooltipTestDisabled(false)
+    local shown = addon.ShowOpaqueAuraTooltip(owner, "player", 909, "ANCHOR_RIGHT")
     C_TooltipInfo = previous_tooltip_info
 
-    h.eq(shown, false, "test switch bypasses only the opaque live renderer")
+    h.eq(shown, false, "opaque live rendering is permanently disabled")
+    h.eq(getter_calls, 0, "disabled renderer never queries live Aura data")
+    h.is_nil(rawget(_G, "LsTweeksOpaqueAuraTooltip"), "disabled renderer creates no GameTooltip")
+    h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled opaque%-aura"), "trace records the disabled route")
 end)
 
 h.test("centralized tooltip data copier rejects secret containers", function()

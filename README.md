@@ -48,7 +48,7 @@ Use **Test Aura** to preview a frame. Its adjacent Play/Pause button controls th
 
 
 #### Tooltips
-Buff and debuff icons show detailed tooltips during combat whenever possible. Information seen before combat is remembered until you log out or reload the interface, helping descriptions and colors remain consistent. Effects first encountered during combat may use standard tooltip colors.
+Buff and debuff icons show detailed tooltips when their information can be safely read. Information seen before combat is remembered until you log out or reload the interface, helping descriptions and colors remain consistent. Restricted effects first encountered during combat may show only their readable name and timing.
 
 #### Aura Cancellation
 Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Debuffs and Cooldown Manager entries cannot be cancelled.

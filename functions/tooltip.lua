@@ -1,5 +1,5 @@
 -- Centralized tooltip helpers: a plain addon-owned renderer for guarded line data, plus a
--- lightweight native renderer for secret Aura and spell content.
+-- reload-scoped experiment using Blizzard's secure global Aura tooltip accessor directly.
 
 
 local addon_name, addon = ...
@@ -8,15 +8,10 @@ local addon_name, addon = ...
 --#region OWNED TOOLTIP FACTORY ================================================
 
 local owned_tooltip
-local native_tooltip
-local native_tooltip_owner
-local opaque_aura_tooltip
-local opaque_aura_tooltip_owner
-local tooltip_renderer_history = {}
 local tooltip_debug_trace = {}
-local opaque_aura_tooltip_test_disabled = false
+local native_aura_tooltip_test_enabled = false
+local native_aura_tooltip_owner
 
-local TOOLTIP_RENDERER_HISTORY_LIMIT = 6
 local TOOLTIP_DEBUG_TRACE_LIMIT = 64
 
 local TOOLTIP_MAX_TEXT_WIDTH = 224
@@ -61,14 +56,6 @@ local function record_tooltip_trace(event_name, renderer, forced_combat_state)
     end
 end
 
-local function record_tooltip_renderer(renderer)
-    tooltip_renderer_history[#tooltip_renderer_history + 1] = renderer
-    if #tooltip_renderer_history > TOOLTIP_RENDERER_HISTORY_LIMIT then
-        table.remove(tooltip_renderer_history, 1)
-    end
-    record_tooltip_trace("complete", renderer)
-end
-
 local tooltip_debug_event_frame = CreateFrame("Frame")
 tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 tooltip_debug_event_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -83,22 +70,14 @@ tooltip_debug_event_frame:SetScript("OnEvent", function(_, event)
     end
 end)
 
-function addon.GetTooltipRendererHistory()
-    local history = {}
-    for i = 1, #tooltip_renderer_history do
-        history[i] = tooltip_renderer_history[i]
-    end
-    return history
-end
-
 function addon.PrintTooltipRendererHistory()
     if #tooltip_debug_trace == 0 then
         print("|cff33ff99LsTweeks tooltip trace|r: no Aura tooltip events this session")
         return
     end
     print(
-        "|cff33ff99LsTweeks tooltip trace|r: opaque="
-            .. (opaque_aura_tooltip_test_disabled and "off" or "on")
+        "|cff33ff99LsTweeks tooltip trace|r: native Aura experiment="
+            .. (native_aura_tooltip_test_enabled and "on" or "off")
     )
     for i = 1, #tooltip_debug_trace do
         print("  " .. tooltip_debug_trace[i])
@@ -117,15 +96,22 @@ function addon.MarkTooltipDebugTrace()
     record_tooltip_trace("marker", "session")
 end
 
-function addon.SetOpaqueAuraTooltipTestDisabled(disabled)
-    opaque_aura_tooltip_test_disabled = disabled == true
-    record_tooltip_trace(opaque_aura_tooltip_test_disabled and "toggle-off" or "toggle-on", "opaque-aura")
+function addon.SetNativeAuraTooltipTestEnabled(enabled)
+    native_aura_tooltip_test_enabled = enabled == true
+    if not native_aura_tooltip_test_enabled
+        and native_aura_tooltip_owner
+        and GameTooltip
+        and GameTooltip:IsOwned(native_aura_tooltip_owner)
+    then
+        GameTooltip:Hide()
+        native_aura_tooltip_owner = nil
+    end
+    record_tooltip_trace(native_aura_tooltip_test_enabled and "toggle-on" or "toggle-off", "native-aura")
 end
 
-function addon.IsOpaqueAuraTooltipTestDisabled()
-    return opaque_aura_tooltip_test_disabled
+function addon.IsNativeAuraTooltipTestEnabled()
+    return native_aura_tooltip_test_enabled
 end
-
 
 local function get_safe_string_width(font_string)
     local width = font_string.GetStringWidth and font_string:GetStringWidth()
@@ -352,264 +338,50 @@ end
 --#endregion OWNED TOOLTIP FACTORY =============================================
 
 
---#region NATIVE TOOLTIP DELEGATES =============================================
+--#region NATIVE TOOLTIP EXPERIMENT ============================================
 
--- Aura data can contain secret values that only native GameTooltip setters can
--- render. Keep that state on one dedicated tooltip so addon-tainted Aura data
--- never enters Blizzard's shared GameTooltip and cannot contaminate later map
--- POI widget layout. The lightweight art template retains native line rendering
--- without inheriting GameTooltipTemplate's widget container and OnHide cleanup
--- path. Do not inspect or measure the rendered native lines.
-function addon.GetNativeTooltip()
-    if not native_tooltip then
-        native_tooltip = CreateFrame(
-            "GameTooltip",
-            addon_name .. "NativeTooltip",
-            UIParent,
-            "SharedTooltipArtTemplate"
-        )
-        Mixin(native_tooltip, GameTooltipDataMixin)
-        native_tooltip.supportsDataRefresh = true
-        GameTooltip_OnLoad(native_tooltip)
-        native_tooltip:SetScript("OnShow", GameTooltip_OnShow)
-        native_tooltip:SetScript("OnHide", SharedTooltip_OnHide)
-        native_tooltip:SetScript("OnTooltipCleared", SharedTooltip_ClearInsertedFrames)
-        native_tooltip:SetScript("OnEvent", native_tooltip.OnEvent)
-        native_tooltip:Hide()
+function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
+    if not native_aura_tooltip_test_enabled then
+        record_tooltip_trace("skip-disabled", "native-aura")
+        return false
     end
-    return native_tooltip
-end
-
--- Secret TooltipData line text may be passed to tooltip controls but cannot be
--- inspected or combined in addon Lua. Render it on a data-mixin-free tooltip;
--- only previously copied safe colors may replace its neutral defaults.
-local function get_opaque_aura_tooltip()
-    if not opaque_aura_tooltip then
-        opaque_aura_tooltip = CreateFrame(
-            "GameTooltip",
-            addon_name .. "OpaqueAuraTooltip",
-            UIParent,
-            "SharedTooltipArtTemplate"
-        )
-        SharedTooltip_OnLoad(opaque_aura_tooltip)
-        opaque_aura_tooltip:SetScript("OnHide", SharedTooltip_OnHide)
-        opaque_aura_tooltip:SetScript("OnTooltipCleared", SharedTooltip_ClearInsertedFrames)
-        opaque_aura_tooltip:SetPadding(6, 6, 6, 6)
-        opaque_aura_tooltip:SetMinimumWidth(240, true)
-        opaque_aura_tooltip:Hide()
-    end
-    return opaque_aura_tooltip
-end
-
-local function show_native_tooltip(owner, anchor, method_name, renderer_name, ...)
-    if not owner then
-        record_tooltip_trace("fail-owner", renderer_name)
+    if not owner or not GameTooltip or GameTooltip:IsForbidden() then
+        record_tooltip_trace("fail-unavailable", "native-aura")
         return false
     end
 
-    local tooltip = addon.GetNativeTooltip()
-    local method = tooltip and tooltip[method_name]
-    if not method then
-        record_tooltip_trace("fail-method", renderer_name)
-        return false
-    end
-
-    record_tooltip_trace("attempt", renderer_name)
+    record_tooltip_trace("attempt", "native-aura")
     addon.HideOwnedTooltip()
-    if opaque_aura_tooltip then
-        opaque_aura_tooltip:Hide()
-        opaque_aura_tooltip_owner = nil
-    end
-    tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
-    local ok = pcall(method, tooltip, ...)
-    if not ok then
-        tooltip:Hide()
-        native_tooltip_owner = nil
-        record_tooltip_trace("fail-setter", renderer_name)
-        return false
-    end
-
-    native_tooltip_owner = owner
-    tooltip:Show()
-    record_tooltip_renderer(renderer_name)
+    GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
+    ---@diagnostic disable-next-line: undefined-field
+    GameTooltip:SetUnitAuraByAuraInstanceID(unit or "player", aura_instance_id)
+    native_aura_tooltip_owner = owner
+    record_tooltip_trace("complete", "native-aura")
     return true
 end
 
-function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
-    record_tooltip_trace("skip-disabled", "native-aura")
-    return false
-end
-
-function addon.ShowNativeSpellTooltip(owner, spell_id, anchor)
+function addon.ShowNativeSpellTooltip()
     record_tooltip_trace("skip-disabled", "native-spell")
     return false
 end
 
-local function get_known_opaque_color(known_line, key, default_r, default_g, default_b)
-    if type(known_line) ~= "table" or (issecrettable and issecrettable(known_line)) then
-        return default_r, default_g, default_b
-    end
-
-    local color = known_line[key]
-    if type(color) ~= "table" or (issecrettable and issecrettable(color)) then
-        return default_r, default_g, default_b
-    end
-
-    local r, g, b = color.r, color.g, color.b
-    if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number"
-        or (issecretvalue and (issecretvalue(r) or issecretvalue(g) or issecretvalue(b)))
-    then
-        return default_r, default_g, default_b
-    end
-    return r, g, b
-end
-
-function addon.ShowOpaqueAuraTooltip(owner, unit, aura_instance_id, anchor, known_lines)
-    if opaque_aura_tooltip_test_disabled then
-        record_tooltip_trace("skip-test-off", "opaque-aura")
-        return false
-    end
-
-    local getter = C_TooltipInfo and C_TooltipInfo.GetUnitAuraByAuraInstanceID
-    if not owner or not getter then
-        record_tooltip_trace("fail-unavailable", "opaque-aura")
-        return false
-    end
-
-    record_tooltip_trace("attempt", "opaque-aura")
-    local ok, data = pcall(getter, unit or "player", aura_instance_id)
-    if not ok
-        or type(data) ~= "table"
-        or (issecrettable and issecrettable(data))
-    then
-        record_tooltip_trace("fail-data", "opaque-aura")
-        return false
-    end
-
-    local lines = data.lines
-    if type(lines) ~= "table"
-        or (issecrettable and issecrettable(lines))
-        or #lines == 0
-    then
-        record_tooltip_trace("fail-lines", "opaque-aura")
-        return false
-    end
-
-    addon.HideOwnedTooltip()
-    if native_tooltip then
-        native_tooltip:Hide()
-        native_tooltip_owner = nil
-    end
-
-    local tooltip = get_opaque_aura_tooltip()
-    tooltip:ClearLines()
-    tooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
-
-    local known_palette = type(known_lines) == "table"
-        and not (issecrettable and issecrettable(known_lines))
-        and known_lines
-        or nil
-    local added = false
-    for i = 1, #lines do
-        local line = lines[i]
-        if type(line) == "table" and not (issecrettable and issecrettable(line)) then
-            local left_text = line.leftText
-            local right_text = line.rightText
-            local left_is_text = type(left_text) == "string"
-            local right_is_text = type(right_text) == "string"
-            local line_ok = true
-            local known_line = known_palette and known_palette[i] or nil
-            local left_r, left_g, left_b = get_known_opaque_color(
-                known_line,
-                "left_color",
-                i == 1 and 1 or 0.95,
-                i == 1 and 0.82 or 0.95,
-                i == 1 and 0 or 0.95
-            )
-            local right_r, right_g, right_b = get_known_opaque_color(
-                known_line,
-                "right_color",
-                0.95,
-                0.95,
-                0.95
-            )
-
-            if left_is_text and right_is_text then
-                line_ok = pcall(
-                    tooltip.AddDoubleLine,
-                    tooltip,
-                    left_text,
-                    right_text,
-                    left_r,
-                    left_g,
-                    left_b,
-                    right_r,
-                    right_g,
-                    right_b
-                )
-            elseif left_is_text then
-                line_ok = pcall(
-                    tooltip.AddLine,
-                    tooltip,
-                    left_text,
-                    left_r,
-                    left_g,
-                    left_b,
-                    true
-                )
-            elseif right_is_text then
-                line_ok = pcall(
-                    tooltip.AddDoubleLine,
-                    tooltip,
-                    "",
-                    right_text,
-                    1,
-                    1,
-                    1,
-                    right_r,
-                    right_g,
-                    right_b
-                )
-            end
-
-            if not line_ok then
-                tooltip:Hide()
-                opaque_aura_tooltip_owner = nil
-                record_tooltip_trace("fail-line", "opaque-aura")
-                return false
-            end
-            added = added or left_is_text or right_is_text
-        end
-    end
-
-    if not added then
-        tooltip:Hide()
-        record_tooltip_trace("fail-empty", "opaque-aura")
-        return false
-    end
-
-    opaque_aura_tooltip_owner = owner
-    tooltip:Show()
-    record_tooltip_renderer("opaque-aura")
-    return true
-end
-
-local function hide_tooltip_for_owner(tooltip, current_owner, leaving_owner)
-    if not leaving_owner or current_owner ~= leaving_owner then
-        return current_owner
-    end
-    if tooltip and tooltip:GetOwner() == current_owner then
-        tooltip:Hide()
-    end
-    return nil
+function addon.ShowOpaqueAuraTooltip()
+    -- Even direct pass-through of live Aura text into an isolated GameTooltip
+    -- can taint later Blizzard widget layout. Keep this legacy entry point inert
+    -- so stale callers cannot reopen that data path.
+    record_tooltip_trace("skip-disabled", "opaque-aura")
+    return false
 end
 
 function addon.HideNativeTooltip(owner)
-    native_tooltip_owner = hide_tooltip_for_owner(native_tooltip, native_tooltip_owner, owner)
-    opaque_aura_tooltip_owner = hide_tooltip_for_owner(opaque_aura_tooltip, opaque_aura_tooltip_owner, owner)
+    if not owner or owner ~= native_aura_tooltip_owner then return end
+    if GameTooltip and GameTooltip:IsOwned(owner) then
+        GameTooltip:Hide()
+    end
+    native_aura_tooltip_owner = nil
 end
 
---#endregion NATIVE TOOLTIP DELEGATES ==========================================
+--#endregion NATIVE TOOLTIP EXPERIMENT =========================================
 
 
 --#region GUARDED TOOLTIP DATA =================================================

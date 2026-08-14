@@ -200,10 +200,14 @@ function addon.init_main_frame()
         local text = btn:GetFontString()
         if not text or not text.SetTextColor then return end
 
-        if btn == selected_button then
-            text:SetTextColor(1, 1, 1, 1)
-        elseif is_category_locked(btn._category) then
+        if is_category_locked(btn._category) then
+            -- Locked categories stay clickable so their read-only panel can be
+            -- selected. Dark grey keeps the disabled state visible while the
+            -- standard button highlight marks the currently viewed category.
+            if btn ~= selected_button then btn:UnlockHighlight() end
             text:SetTextColor(0.45, 0.45, 0.45, 1)
+        elseif btn == selected_button then
+            text:SetTextColor(1, 1, 1, 1)
         else
             text:SetTextColor(1, 0.82, 0, 1)
         end

@@ -1,3 +1,144 @@
-# Error Inbox
+Message: ...Tweeks/modules/aura_frames/af_gui_frame_builders.lua:523: attempt to index field 'db' (a nil value)
+Time: Fri Aug 14 16:24:55 2026
+Count: 3
+Stack:
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_gui_frame_builders.lua]:523: in function 'build_general_tab'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_gui.lua]:89: in function <...rface/AddOns/LsTweeks/modules/aura_frames/af_gui.lua:57>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_gui.lua]:125: in function 'BuildSettings'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1119: in function 'builder'
+[Interface/AddOns/LsTweeks/core/main_frame.lua]:234: in function <Interface/AddOns/LsTweeks/core/main_frame.lua:213>
+[Interface/AddOns/LsTweeks/core/main_frame.lua]:275: in function <Interface/AddOns/LsTweeks/core/main_frame.lua:274>
 
-Paste the next unprocessed WoW Lua error export here.
+Locals:
+p=Frame <af_gui.lua:83>
+enable_panel=Frame <af_gui_frame_builders.lua:513>{
+ Center=Texture <NineSlice.lua:52>
+ RightEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ BottomEdge=Texture <NineSlice.lua:52>
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ TopEdge=Texture <NineSlice.lua:52>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+}
+panel_title=FontString <af_gui_frame_builders.lua:518>
+(*temporary)=Frame <af_gui_frame_builders.lua:513>{
+ Center=Texture <NineSlice.lua:52>
+ RightEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ BottomEdge=Texture <NineSlice.lua:52>
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ TopEdge=Texture <NineSlice.lua:52>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+}
+(*temporary)="Buff"
+(*temporary)=nil
+(*temporary)="TOP"
+(*temporary)=0
+(*temporary)=-5
+(*temporary)=1
+(*temporary)=Frame <af_gui_frame_builders.lua:513>{
+ Center=Texture <NineSlice.lua:52>
+ RightEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ BottomEdge=Texture <NineSlice.lua:52>
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ TopEdge=Texture <NineSlice.lua:52>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+}
+(*temporary)=0.300000
+(*temporary)=0.300000
+(*temporary)=0.300000
+(*temporary)=1
+(*temporary)="attempt to index field 'db' (a nil value)"
+M=<table>{
+ defaults=<table>
+ MAX_ICONS_LIMIT=40
+ CDM_VIEWER_FRAMES=<table>
+ BAR_BG_GRAY_DEFAULT=0.500000
+ FRAME_DEFS_BY_KEY=<table>
+ MIN_VISIBLE_ICON_TICK=0.100000
+ WOW_COOLDOWN_OOC_ALPHA_STEP=0.050000
+ _cd_child_state=<table>
+ MAX_FRAME_WIDTH=800
+ CUSTOM_AURA_MODIFIERS_BY_VALUE=<table>
+ DEFAULT_TIMER_NUMBER_FONT_SIZE=10
+ DEFAULT_MAX_ICONS=20
+ FRAME_DEFS=<table>
+ _module_runtime_enabled=false
+ _cd_hook_cache=<table>
+ DEFAULT_TIMER_NUMBER_FONT_KEY="source_code_pro"
+ DEFAULT_WOW_COOLDOWN_OOC_ALPHA=0.350000
+ controls=<table>
+ WOW_COOLDOWN_CATEGORIES=<table>
+ NUMBER_FONT_BOLD_PATHS=<table>
+ MAX_WOW_COOLDOWN_OOC_ALPHA=1
+ TIMER_CATEGORIES=<table>
+ MAX_CUSTOM_FRAMES=4
+ NUMBER_FONT_OPTIONS_BY_KEY=<table>
+ NUMBER_FONT_OPTIONS=<table>
+ BAR_BG_ALPHA_DEFAULT=0.500000
+ frames=<table>
+ MIN_FRAME_WIDTH=180
+ SETTING_RANGES=<table>
+ frames_list=<table>
+ UPDATE_INTERVALS=<table>
+ _test_preview_paused_times=<table>
+ _test_preview_started=<table>
+ DEFAULT_SHORT_THRESHOLD=60
+ CUSTOM_AURA_MODIFIERS=<table>
+ CUSTOM_AURA_BASE_FILTERS=<table>
+ _test_preview_time_offsets=<table>
+ profile_manager=<table>
+ AURA_TIMER_EPSILON=0.000001
+ MAX_VISIBLE_ICON_TICK=0.200000
+ VISIBLE_ICON_TICK_STEP=0.050000
+ SHARED_COLOR_COLUMNS=<table>
+ DEFAULT_FRAME_WIDTH=200
+ MIN_FRAME_HEIGHT=44
+ MODULE_KEY="aura_frames"
+ DEFAULT_OOC_FADE_LENGTH=3
+ MIN_WOW_COOLDOWN_OOC_ALPHA=0
+ CUSTOM_FRAME_TEMPLATE=<table>
+ CDM_CATEGORIES=<table>
+ CATEGORIES=<table>
+ DEFAULT_OOC_FADE_DELAY=2
+}
+addon=<table>{
+ AURA_BAR_COLOR_DEFAULTS=<table>
+ FEATURE_MODULES=<table>
+ RIVETED_PANEL_STYLE=<table>
+ module_defaults=<table>
+ about=<table>
+ module_status_builders=<table>
+ audio_volumes=<table>
+ aura_frames=<table>
+ version="00.22.02"
+ name="LsTweeks"
+ player_frame=<table>
+ all_the_colors=<table>
+ objectives=<table>
+ categories=<table>
+ st=<table>
+ UPDATE_INTERVALS=<table>
+ data_object=<table>
+ main_frame=Ls_Tweeks_main_frame <main_frame.lua:31>
+ skyriding_vigor=<table>
+ UI_THEME=<table>
+ SLIDER_WITH_BOX_SIZE=<table>
+}
+addon_name="LsTweeks"
+CANCEL_MODIFIER_OPTIONS=<table>{
+ 1=<table>
+ 2=<table>
+ 3=<table>
+ 4=<table>
+}
