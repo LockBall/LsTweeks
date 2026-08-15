@@ -72,7 +72,7 @@ redesign.
 
 ### AF12-01 — Preset live Aura frames
 
-**Features:** Static, Short, Long, and Debuffs.
+**Features:** Static, Short, Long, Combined Buffs, and Debuffs.
 
 **Assessment:** Partially migrated. Debuffs and the new, independent Combined
 Buffs frame now use managed AuraContainers. Static, Short, and Long retain their
@@ -134,20 +134,20 @@ permanence from secret timing values.
 
 **Assessment:** Fully preservable after a backend rewrite.
 
-**Status:** AF12-05.1 transport and AF12-05.2 native bar presentation verified
-in game. The
+**Status:** Core transport and bar/icon presentation are verified in game. The
 first live checks exposed two framework requirements: a shown `AuraContainer`
 does not process Auras until `SetEnabled(true)` is also applied, and its
 auto-sizing flow layout must be seeded from one corner rather than stretched
 over the owner with `SetAllPoints`. The lifecycle now synchronizes engine
 processing and visibility, and the Debuff capability explicitly owns its flow
 axis, anchor, growth, wrap width, and group spacing. Regressions cover both
-contracts. The current slice creates managed `HARMFUL` bar/icon presentation groups with native
-icon binding, removes the Debuff frame from legacy `UNIT_AURA` handling and
-indexed scanning, and preserves basic frame/module enable state.
-Appearance parity, icon-mode duration presentation, previews, live
-presentation switching, and full settings parity remain
-later increments.
+contracts. Debuffs now creates managed `HARMFUL` bar/icon groups with native
+icon, duration, stack, spell-name, and duration-bar bindings; it owns no legacy
+`UNIT_AURA` handler or indexed scan. Bar/icon switching, growth, spacing,
+maximum count, width, position, OOC fade transitions, timer font/size/bold/color,
+bar foreground color, native OOC tooltips, and resize refresh are implemented.
+Synthetic previews, cancellation, cooldown swipe, custom timer formatting,
+sorting parity, and full live color/background parity remain separate work.
 
 The first visible managed result was an icon-only cell even though Debuffs was
 configured for bar mode. Native tooltip verification proved that Blizzard had
@@ -192,9 +192,9 @@ A managed Aura group can use the standard `HARMFUL` filter. Managed candidate
 filters additionally support dispel types and several Blizzard-defined Aura
 properties if they become useful later.
 
-**Direction:** Treat this as the simplest production migration and an initial
-validation target for managed layout, appearance, timers, stacks, tooltips, and
-combat behavior.
+**Direction:** Keep Debuffs as the proven managed baseline. Add remaining
+presentation features only through native bindings or accessible OOC updates;
+never restore AuraData inspection.
 
 ### AF12-06 — Custom Filtered Frames
 
@@ -218,16 +218,22 @@ live 12.1 API before keeping it enabled.
 **Assessment:** Preservable through native AuraButton bindings.
 
 AuraButton supports engine-driven icon textures, application counts, duration
-cooldowns, duration text, and duration/status bars. These continue updating
-without exposing their values to addon code.
+cooldowns, duration text, and duration/status bars. Combined Buffs and Debuffs
+now use native icon, stack, duration text, spell-name, and duration-bar sinks.
+Icon cooldown swipe is not yet bound for these managed presets.
 
-**Direction:** Create all child textures, FontStrings, Cooldown widgets, and
-StatusBars inside `initializeFrame`, then bind them to the AuraButton. Remove the
-manual live-Aura ticker and manual protected-duration reads for migrated frames.
+**Direction:** Add any cooldown swipe inside `initializeFrame` and bind it
+natively. Migrated frames must remain independent of the manual live-Aura ticker
+and protected-duration reads.
 
 ### AF12-08 — Bar mode, fonts, colors, and backgrounds
 
 **Assessment:** Mostly preservable, with stricter lifecycle rules.
+
+**Status:** Managed bar/icon switching, timer font/size/bold/color, bar
+foreground color, shell backgrounds, and resizing are implemented. Bar
+background and non-duration bar text are still initialized from settings and do
+not yet have a complete accessible OOC refresh path.
 
 Configured appearance can be applied while the AuraButton is initialized.
 Static frame-level and group-level colors are safe because they come from addon
@@ -246,6 +252,11 @@ their meaning remains valid.
 
 **Assessment:** Likely preservable, including compact custom formats.
 
+**Status:** Managed duration text and its visibility/font styling are working,
+but the native binding currently uses Blizzard's default formatter. LsTweeks'
+legacy compact/decimal formatter behavior has not been translated to a native
+numeric rule formatter.
+
 The managed duration-text binding accepts Blizzard numeric rule formatters.
 TellMeWhen already uses `C_StringUtil.CreateNumericRuleFormatter()` to format a
 secret duration without reading it. LsTweeks' current duration ranges and
@@ -258,6 +269,11 @@ with headless formatter tests and in-game secret Aura testing.
 ### AF12-10 — Maximum icons, growth, spacing, columns, and positioning
 
 **Assessment:** Preservable through managed Aura group layout.
+
+**Status:** Combined Buffs and Debuffs implement maximum count, spacing,
+UP/DOWN bar growth, four-way icon growth, wrapping, addon-owned positioning, and
+width resizing. AuraContainer remains corner-anchored and owns its child flow;
+the shell never reads managed content size or shown state.
 
 Managed groups support maximum frame count, direction, spacing, columns, and
 group ordering. Containers resize themselves around their Aura groups.
@@ -288,6 +304,10 @@ sort choice that cannot be represented by the live enum.
 **Assessment:** Native detailed tooltips are preservable and should replace the
 custom Aura tooltip stack.
 
+**Status:** Combined Buffs and Debuffs use native AuraButton tooltips with mouse
+motion enabled and combat tooltips hidden. Their managed path installs no addon
+hover scripts and performs no Aura tooltip lookup or reconstruction.
+
 AuraButtons provide engine-owned Aura tooltips, tooltip anchoring, and an option
 to hide tooltips in combat. This avoids exposing protected Aura data and is the
 community-standard safe path.
@@ -317,8 +337,12 @@ cancellation through protected scans or addon click handlers.
 
 ### AF12-14 — Out-of-combat fade and hover restoration
 
-**Assessment:** Whole-frame fading should remain possible. Icon-hover restoration
-needs redesign and may not be exactly preservable.
+**Assessment:** Whole-frame fading is preserved. Icon-hover restoration needs
+redesign and may not be exactly preservable.
+
+**Status:** Managed shells use addon-owned combat transitions and OOC fade state.
+Move-border and resize-grip hover restore full alpha; managed AuraButton hover is
+left native and is not polled by LsTweeks.
 
 The current code polls visible icons with `IsShown()` and `IsMouseOver()` to
 restore full alpha while hovered. Managed AuraButtons restrict shown-state and
@@ -343,6 +367,13 @@ sharing presentation configuration and formatter definitions wherever safe.
 ### AF12-16 — Profiles, shared colors, move mode, and settings
 
 **Assessment:** Preservable.
+
+**Status:** Combined Buffs has independent saved settings, position, profile
+fields, shared-color participation, four-way icon growth, vertical bar growth,
+move border, and resize grip. OOC changes update container layout and accessible
+presentation state without rebuilding managed groups. Fields tied to unfinished
+sorting, preview, cancellation, or legacy Static/Short/Long semantics remain
+subject to migration decisions.
 
 These features manage addon-owned configuration and positioning. Saved fields
 whose underlying feature changes meaning, especially the Short threshold,
@@ -411,13 +442,13 @@ unrelated modules without new evidence.
 
 ## Recommended review order
 
-1. Resolve the product model for AF12-02, AF12-03, and AF12-04 before coding the
-   managed backend.
-2. Build AF12-05 as the first managed live frame and validate it in combat.
-3. Establish common presentation support through AF12-07 to AF12-12.
-4. Migrate supported custom frames under AF12-06.
-5. Resolve cancellation and fade edge cases in AF12-13 and AF12-14.
-6. Preserve preview/configuration infrastructure under AF12-15 and AF12-16.
-7. Audit CDM-backed frames independently under AF12-17.
-8. Re-test native-frame suppression and the rest of the addon under AF12-18 and
-   AF12-19.
+1. Keep Combined Buffs and Debuffs as the validated managed baseline while
+   resolving the Static/Short/Long product model in AF12-02 through AF12-04.
+2. Finish managed presentation gaps in AF12-07 through AF12-12: cooldown swipe,
+   live color/background refresh parity, native timer formatting, and sorting.
+3. Add managed-safe synthetic previews under AF12-15, then decide native buff
+   cancellation and hover behavior under AF12-13 and AF12-14.
+4. Migrate supported custom filters under AF12-06 without arbitrary AuraData
+   predicates.
+5. Audit CDM-backed frames independently under AF12-17, then complete the wider
+   in-game regression checks in AF12-18 and AF12-19.

@@ -133,7 +133,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             max_icons_debuff = 2,
             width_debuff = 120,
             bar_mode_debuff = true,
-            growth_debuff = "UP",
+            growth_icon_debuff = "UP",
+            growth_bar_debuff = "UP",
             fade_ooc_debuff = true,
             ooc_alpha_debuff = 0.35,
             fade_delay_debuff = 0,
@@ -144,7 +145,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             max_icons_combined = 3,
             width_combined = 140,
             bar_mode_combined = true,
-            growth_combined = "DOWN",
+            growth_icon_combined = "DOWN",
+            growth_bar_combined = "DOWN",
         },
     })
 
@@ -337,7 +339,7 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         UP = { AnchorUtil.FlowLayoutAxis.Vertical, "BOTTOMLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Up },
     }
     for growth, expected in pairs(growth_cases) do
-        M.db.growth_combined = growth
+        M.db.growth_icon_combined = growth
         M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
             "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
         h.eq(buffs_backend.container.__flow_axis, expected[1], growth .. " uses its canonical flow axis")
@@ -346,17 +348,35 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         h.eq(buffs_backend.container.__flow_growth[2], expected[4], growth .. " uses its vertical direction")
     end
 
+    M.db.growth_icon_combined = "LEFT"
+    M.db.growth_bar_combined = "UP"
+    M.db.bar_mode_combined = false
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.container.__flow_anchor, "TOPRIGHT",
+        "Icon Mode restores its remembered LEFT growth")
     M.db.bar_mode_combined = true
-    M.db.growth_combined = "LEFT"
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.container.__flow_anchor, "BOTTOMLEFT",
+        "Bar Mode restores its independently remembered UP growth")
+    M.db.bar_mode_combined = false
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.container.__flow_anchor, "TOPRIGHT",
+        "returning to Icon Mode does not inherit Bar Mode growth")
+
+    M.db.bar_mode_combined = true
+    M.db.growth_bar_combined = "LEFT"
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     h.eq(buffs_backend.presentation_mode, "bar", "combined Buffs return to bar presentation")
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
-        "horizontal saved growth normalizes to vertical flow in Bar Mode")
+        "malformed horizontal Bar growth normalizes to vertical flow")
     h.eq(buffs_backend.container.__flow_anchor, "TOPLEFT",
-        "horizontal saved growth falls back to the DOWN bar anchor")
+        "malformed horizontal Bar growth falls back to the DOWN anchor")
     h.eq(buffs_backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Down,
-        "horizontal saved growth falls back to DOWN bar growth")
+        "malformed horizontal Bar growth falls back to DOWN")
     M.set_managed_aura_runtime_enabled(false)
 end)
 

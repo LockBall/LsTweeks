@@ -133,9 +133,12 @@ local function objective_border_frame()
     return nil
 end
 
+---@return TestFrame?, TestTexture?
 local function background_color_overlay()
     for _, child in ipairs({ ObjectiveTrackerFrame:GetChildren() }) do
+        ---@cast child TestFrame
         for _, region in ipairs({ child:GetRegions() }) do
+            ---@cast region TestTexture
             if region.GetCalls and #(region:GetCalls("SetTexture") or {}) > 0 then
                 return child, region
             end

@@ -195,12 +195,7 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
     bg_color = M.resolve_background_color(category, "frame", bg_color)
 
-    local growth_layout = addon.GetGrowthDirection(
-        cfg_db["growth_" .. category] or cfg_db["growth"]
-    )
-    if bar_mode and not growth_layout.vertical then
-        growth_layout = addon.GetGrowthDirection("DOWN")
-    end
+    local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
 
     cache = {
         bar_mode = bar_mode,

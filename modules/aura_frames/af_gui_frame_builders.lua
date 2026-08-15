@@ -157,7 +157,8 @@ local function make_preset_frame_settings_config(data)
             fade_delay = "fade_delay_" .. cat,
             fade_length = "fade_length_" .. cat,
             bar_mode = "bar_mode_" .. cat,
-            growth = "growth_" .. cat,
+            growth_icon = "growth_icon_" .. cat,
+            growth_bar = "growth_bar_" .. cat,
             max_icons = "max_icons_" .. cat,
             test_aura = "test_aura_" .. cat,
             timer_number_font = "timer_number_font_" .. cat,
@@ -211,7 +212,8 @@ local function make_custom_frame_settings_config(entry)
             fade_delay = "fade_delay",
             fade_length = "fade_length",
             bar_mode = "bar_mode",
-            growth = "growth",
+            growth_icon = "growth_icon",
+            growth_bar = "growth_bar",
             max_icons = "max_icons",
             test_aura = "test_aura",
             timer_number_font = "timer_number_font",
@@ -681,15 +683,19 @@ end
 
 local function create_growth_dropdown(parent, frame_config, update, vertical_only)
     local id = frame_config.id
+    local function get_growth_key()
+        local bar_mode = frame_config.value_table[frame_setting_key(frame_config, "bar_mode")] == true
+        return frame_setting_key(frame_config, M.get_growth_logical_key(bar_mode))
+    end
     return addon.CreateGrowthDirectionDropdown(addon_name .. id .. "Growth", parent, {
         width = 106,
         get_value = function()
             return addon.GetGrowthDirection(
-                frame_config.value_table[frame_setting_key(frame_config, "growth")]
+                frame_config.value_table[get_growth_key()]
             ).value
         end,
         on_select = function(value)
-            frame_config.value_table[frame_setting_key(frame_config, "growth")] = value
+            frame_config.value_table[get_growth_key()] = value
             update()
         end,
         vertical_only = vertical_only,
@@ -898,13 +904,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local function refresh_growth_control()
         if not growth_dropdown then return end
         local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
-        local growth_key = frame_setting_key(frame_config, "growth")
-        local growth = addon.GetGrowthDirection(value_table[growth_key])
-        if bar_mode_enabled and not growth.vertical then
-            value_table[growth_key] = "DOWN"
-            growth_dropdown:SetValue("DOWN")
-        end
         growth_dropdown:RefreshOptions()
+        growth_dropdown:SetValue(M.get_mode_growth(value_table, frame_config.id, bar_mode_enabled))
     end
     local function refresh_timer_swipe_control()
         if not timer_swipe_container then return end
@@ -937,6 +938,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     growth_dropdown = create_growth_dropdown(parent, frame_config, update, function()
         return value_table[frame_setting_key(frame_config, "bar_mode")] == true
     end)
+    M.controls["growth_dropdown_" .. frame_config.id] = growth_dropdown
     refresh_growth_control()
     grid:stack_below(growth_dropdown, timer_swipe_container or bar_mode_container, { y = -25 })
 

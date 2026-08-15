@@ -497,6 +497,7 @@ end
 
 local function apply_center_color_overlay(background, r, g, b, a, enabled)
     local state = get_background_overlay_state(background, enabled)
+    if enabled and not state then return false end
     local overlay = state and state.overlay
     local overlay_frame = state and state.frame
     if not enabled then
@@ -525,6 +526,7 @@ local function apply_center_color_overlay(background, r, g, b, a, enabled)
         state.overlay = overlay
         state.anchor = nil
     end
+    if not (state and overlay_frame and overlay) then return false end
     sync_center_color_overlay_frame_order(background, overlay_frame)
     set_background_center_fill_visible(background, false)
 

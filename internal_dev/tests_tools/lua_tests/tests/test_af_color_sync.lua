@@ -15,6 +15,11 @@ local addon = h.addon
 local M = addon.aura_frames
 local color_sync = addon.all_the_colors
 
+---@class TestButton : Button
+---@field __kind string
+
+---@class TestFontString : FontString
+
 local function find_button(frame, text)
     if frame and frame.__kind == "Button" and frame:GetText() == text then return frame end
     for _, child in ipairs({ frame:GetChildren() }) do
@@ -27,8 +32,10 @@ local function click_open_dropdown_option(text)
     for _, popup in ipairs({ UIParent:GetChildren() }) do
         if popup:IsShown() then
             for _, row in ipairs({ popup:GetChildren() }) do
+                ---@cast row TestButton
                 if row.__kind == "Button" then
                     for _, region in ipairs({ row:GetRegions() }) do
+                        ---@cast region TestFontString
                         if region:GetText() == text then
                             row:Click()
                             return true
@@ -45,7 +52,21 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     local parent = CreateFrame("Frame", nil, UIParent)
     parent:SetSize(925, 700)
     M.db.last_frames_node = "combined"
+    M.db.bar_mode_combined = false
+    M.db.growth_icon_combined = "LEFT"
+    M.db.growth_bar_combined = "UP"
     M.BuildSettings(parent)
+
+    local bar_mode = M.controls.bar_mode_combined
+    local growth = M.controls.growth_dropdown_combined
+    h.eq(growth:GetValue(), "LEFT", "Combined Buffs opens with its saved Icon Mode growth")
+    bar_mode.checkbox:SetChecked(true)
+    bar_mode.checkbox:Click()
+    h.eq(growth:GetValue(), "UP", "Bar Mode restores its independent growth")
+    h.eq(M.db.growth_icon_combined, "LEFT", "Bar Mode does not overwrite Icon Mode growth")
+    bar_mode.checkbox:SetChecked(false)
+    bar_mode.checkbox:Click()
+    h.eq(growth:GetValue(), "LEFT", "Icon Mode restores its prior growth after toggling")
 
     local timer_font = M.controls.timer_number_font_dropdown_combined
     local timer_bold = M.controls.timer_number_font_bold_combined

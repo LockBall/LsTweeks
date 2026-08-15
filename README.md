@@ -41,17 +41,20 @@ The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Co
 - `Static`: permanent player buffs.
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
-- `Debuffs`: harmful player auras.
+- `Combined Buffs`: all helpful player auras through WoW's managed Aura display.
+- `Debuffs`: harmful player auras through WoW's managed Aura display.
+
+After WoW 12.1, **Combined Buffs** and **Debuffs** are the current combat-safe live Aura paths. Static, Short, and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those three frames for combat Aura display yet.
 
 #### Test Aura Preview
-Use **Test Aura** to preview a frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play.
+Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Combined Buffs and Debuffs do not yet have synthetic previews.
 
 
 #### Tooltips
-Buff and debuff icons show detailed tooltips when their information can be safely read. Information seen before combat is remembered until you log out or reload the interface, helping descriptions and colors remain consistent. Restricted effects first encountered during combat may show only their readable name and timing.
+Managed Combined Buffs and Debuffs use Blizzard's native detailed Aura tooltips outside combat and intentionally hide them in combat. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
-Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Debuffs and Cooldown Manager entries cannot be cancelled.
+Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Combined Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
 
 
 #### WoW Cooldown Manager Frames

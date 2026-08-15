@@ -176,6 +176,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 
 
 ### Data, Resets, And Profiles
+- LsTweeks currently has one developer/user. Do not add saved-data or profile schema migrations unless the user explicitly asks to preserve existing local values; prefer direct new defaults and a one-time manual reconfiguration for breaking development changes.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
 - Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
 - Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.

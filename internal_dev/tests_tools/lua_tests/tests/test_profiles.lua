@@ -83,6 +83,19 @@ h.test("Aura Frames profile import preserves an explicit false category setting"
     h.eq(AF.db.bar_mode_short, false, "explicit false survives profile fallback")
 end)
 
+h.test("Aura Frames profiles preserve independent mode growth settings", function()
+    local AF = h.addon.aura_frames
+
+    local ok = AF.apply_aura_frame_profile_data({
+        growth_icon_combined = "LEFT",
+        growth_bar_combined = "UP",
+    })
+
+    h.ok(ok, "Aura Frames profile data applies")
+    h.eq(AF.db.growth_icon_combined, "LEFT", "profile restores Icon Mode growth")
+    h.eq(AF.db.growth_bar_combined, "UP", "profile restores Bar Mode growth")
+end)
+
 h.test("Objectives profile import preserves an explicit false setting", function()
     local OB = h.addon.objectives
     local db = OB.get_db()

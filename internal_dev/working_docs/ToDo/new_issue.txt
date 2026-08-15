@@ -1,14 +1,3 @@
-Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
-Lua Taint: LsTweeks
-Time: Sat Aug 15 10:01:55 2026
-Count: 1
-Stack:
-[Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ScenarioObjectiveTracker.lua]:187: in function 'LayoutContents'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerModule.lua]:147: in function 'Update'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerContainer.lua]:64: in function <...ectiveTracker/Blizzard_ObjectiveTrackerContainer.lua:49>
-[tail call]: ?
-[tail call]: ?
-[Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua]:341: in function <Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua:340>
+# Error Inbox
 
-Locals:
+Paste the next unprocessed WoW Lua error export here.

@@ -34,11 +34,8 @@ local function configure_preset_layout(container, frame, cfg_db, category, max_f
     local flow_axis = AnchorUtil.FlowLayoutAxis
     local flow_direction = AnchorUtil.FlowDirection
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
-    local growth = get_preset_setting(cfg_db, category, "growth", "DOWN")
+    local growth = M.get_mode_growth(cfg_db, category, bar_mode)
     local growth_layout = addon.GetGrowthDirection(growth)
-    if bar_mode and not growth_layout.vertical then
-        growth_layout = addon.GetGrowthDirection("DOWN")
-    end
     local anchor = growth_layout.anchor
     local horizontal_direction = get_flow_direction(flow_direction, growth_layout.horizontal)
     local vertical_direction = get_flow_direction(flow_direction, growth_layout.vertical_direction)
@@ -254,12 +251,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local mode = bar_mode and "bar" or "icon"
     local max_frame_count = get_preset_setting(cfg_db, category, "max_icons", M.DEFAULT_MAX_ICONS)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
-    local growth_layout = addon.GetGrowthDirection(
-        get_preset_setting(cfg_db, category, "growth", "DOWN")
-    )
-    if bar_mode and not growth_layout.vertical then
-        growth_layout = addon.GetGrowthDirection("DOWN")
-    end
+    local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
     local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end

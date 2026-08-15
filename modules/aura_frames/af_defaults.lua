@@ -24,6 +24,7 @@ M.FRAME_DEFS = {
         cdm = false,
         is_debuff = false,
         tree_order = 1,
+        growth = { icon = "RIGHT", bar = "DOWN" },
         test_label = "Test Static Buff",
         test_sort_id = 1,
     },
@@ -34,6 +35,7 @@ M.FRAME_DEFS = {
         cdm = false,
         is_debuff = false,
         tree_order = 3,
+        growth = { icon = "DOWN", bar = "DOWN" },
         test_label = "Test Short Buff",
         test_sort_id = 2,
     },
@@ -44,6 +46,7 @@ M.FRAME_DEFS = {
         cdm = false,
         is_debuff = false,
         tree_order = 4,
+        growth = { icon = "RIGHT", bar = "DOWN" },
         test_label = "Test Long Buff",
         test_sort_id = 3,
     },
@@ -54,6 +57,7 @@ M.FRAME_DEFS = {
         cdm = false,
         is_debuff = false,
         tree_order = 4.5,
+        growth = { icon = "DOWN", bar = "DOWN" },
         test_label = "Test Combined Buff",
         test_sort_id = 4,
     },
@@ -65,6 +69,7 @@ M.FRAME_DEFS = {
         is_debuff = false,
         cdm_viewer = "EssentialCooldownViewer",
         tree_order = 5,
+        growth = { icon = "RIGHT", bar = "DOWN" },
         test_label = "Test Essential Buff",
         test_sort_id = 5,
     },
@@ -76,6 +81,7 @@ M.FRAME_DEFS = {
         is_debuff = false,
         cdm_viewer = "UtilityCooldownViewer",
         tree_order = 6,
+        growth = { icon = "RIGHT", bar = "DOWN" },
         test_label = "Test Utility Buff",
         test_sort_id = 6,
     },
@@ -87,6 +93,7 @@ M.FRAME_DEFS = {
         is_debuff = false,
         cdm_viewer = "BuffIconCooldownViewer",
         tree_order = 7,
+        growth = { icon = "RIGHT", bar = "DOWN" },
         test_label = "Test Tracked Buff",
         test_sort_id = 7,
     },
@@ -98,6 +105,7 @@ M.FRAME_DEFS = {
         is_debuff = false,
         cdm_viewer = "BuffBarCooldownViewer",
         tree_order = 8,
+        growth = { icon = "DOWN", bar = "DOWN" },
         test_label = "Test Tracked Bar",
         test_sort_id = 8,
     },
@@ -109,6 +117,7 @@ M.FRAME_DEFS = {
         cdm = false,
         is_debuff = true,
         tree_order = 2,
+        growth = { icon = "UP", bar = "UP" },
         test_label = "Test DeBuff",
         test_sort_id = 9,
     },
@@ -382,7 +391,6 @@ M.defaults = {
     fade_delay_static = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_static = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_static = M.DEFAULT_MAX_ICONS,
-    growth_static = "RIGHT",
     bg_color_static = default_bg_color(),
     sort_static  = "name",
     test_aura_static = true,
@@ -407,7 +415,6 @@ M.defaults = {
     fade_delay_short = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_short = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_short = M.DEFAULT_MAX_ICONS,
-    growth_short = "DOWN",
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
     timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -435,7 +442,6 @@ M.defaults = {
     fade_delay_long = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_long = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_long  = M.DEFAULT_MAX_ICONS,
-    growth_long = "RIGHT",
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
     timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -463,7 +469,6 @@ M.defaults = {
     fade_delay_combined = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_combined = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_combined  = M.DEFAULT_MAX_ICONS,
-    growth_combined = "DOWN",
     bg_color_combined = default_bg_color(),
     sort_combined = "timeleft",
     timer_number_font_combined = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -493,7 +498,6 @@ M.defaults = {
     fade_delay_essential = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_essential = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_essential = M.DEFAULT_MAX_ICONS,
-    growth_essential = "RIGHT",
     bg_color_essential = default_bg_color(),
     sort_essential = "timeleft",
     timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -523,7 +527,6 @@ M.defaults = {
     fade_delay_utility = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_utility = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_utility = M.DEFAULT_MAX_ICONS,
-    growth_utility = "RIGHT",
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
     timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -552,7 +555,6 @@ M.defaults = {
     fade_delay_tracked_buffs = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_buffs = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_tracked_buffs = M.DEFAULT_MAX_ICONS,
-    growth_tracked_buffs = "RIGHT",
     bg_color_tracked_buffs = default_bg_color(),
     sort_tracked_buffs = "timeleft",
     timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -581,7 +583,6 @@ M.defaults = {
     fade_delay_tracked_bars = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_bars = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_tracked_bars = M.DEFAULT_MAX_ICONS,
-    growth_tracked_bars = "DOWN",
     bg_color_tracked_bars = default_bg_color(),
     sort_tracked_bars = "timeleft",
     timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -609,7 +610,6 @@ M.defaults = {
     fade_delay_debuff = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_debuff = M.DEFAULT_OOC_FADE_LENGTH,
     max_icons_debuff = M.DEFAULT_MAX_ICONS,
-    growth_debuff = "UP",
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
     timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -636,6 +636,8 @@ M.defaults = {
         tracked_bars = { point = "TOPLEFT", x = -100, y = -125 },
     }
 }
+
+M.apply_presentation_growth_defaults(M.defaults, M.FRAME_DEFS)
 
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
 M.defaults.shared_bar_background_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 }
@@ -748,7 +750,6 @@ M.CUSTOM_FRAME_TEMPLATE = {
     sync_bar_color = true,
     sync_text_color = true,
     max_icons    = M.DEFAULT_MAX_ICONS,
-    growth       = "DOWN",
     test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
@@ -761,6 +762,8 @@ M.CUSTOM_FRAME_TEMPLATE = {
     -- Position
     position = { point = "TOPLEFT", x = 0, y = 50 },
 }
+
+M.apply_custom_presentation_growth_defaults(M.CUSTOM_FRAME_TEMPLATE)
 
 -- Max number of custom frames the user can create.
 M.MAX_CUSTOM_FRAMES = 4

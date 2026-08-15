@@ -82,6 +82,7 @@ modules\skyriding_vigor\sv_gui_tabs.lua
 modules\skyriding_vigor\sv_main.lua
 
 # --- Aura Frames Module ---
+modules\aura_frames\af_frame_config.lua
 modules\aura_frames\af_defaults.lua
 modules\aura_frames\af_functions.lua
 modules\aura_frames\af_managed.lua

@@ -18,19 +18,13 @@ for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
         PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
     end
 end
-local PROFILE_CATEGORY_PREFIXES = {
-    "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode", "color",
-    "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color", "max_icons", "growth", "sort",
-    "test_aura", "bar_text_color", "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_color",
-    "cooldown_mode", "hide_blizz_cdm", "sync_bar_bg", "sync_bar_color", "sync_text_color",
-}
+local PROFILE_CATEGORY_PREFIXES = M.PRESENTATION_PROFILE_CATEGORY_PREFIXES
 local CUSTOM_PROFILE_KEYS = {
-    "id", "name", "aura_base_filter", "aura_modifier", "show", "move", "timer", "timer_swipe", "tooltip", "bg",
-    "scale", "spacing", "width", "bar_mode", "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay",
-    "fade_length", "bg_color", "max_icons", "growth", "test_aura", "bar_text_color", "timer_number_font",
-    "timer_number_font_size", "timer_number_font_bold", "timer_color", "position", "sync_bar_bg",
-    "sync_bar_color", "sync_text_color",
+    "id", "name", "aura_base_filter", "aura_modifier", "position",
 }
+for _, key in ipairs(M.CUSTOM_PRESENTATION_PROFILE_KEYS) do
+    CUSTOM_PROFILE_KEYS[#CUSTOM_PROFILE_KEYS + 1] = key
+end
 
 local function copy(value)
     if type(value) ~= "table" then return value end

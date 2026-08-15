@@ -259,7 +259,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local runtime_config = self._runtime_config_cache
     local frame_width = (runtime_config and runtime_config.frame_width) or db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing = (runtime_config and runtime_config.spacing) or db[spacing_key] or db["spacing"] or 6
-    local growth = (runtime_config and runtime_config.growth) or db["growth_"..category] or db["growth"] or "DOWN"
+    local growth = (runtime_config and runtime_config.growth) or M.get_mode_growth(db, category, bar_mode)
     local growth_layout = addon.GetGrowthDirection(growth)
 
     local show_timer_text = runtime_config and runtime_config.show_timer_text
