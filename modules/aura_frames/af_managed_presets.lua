@@ -92,6 +92,33 @@ local function apply_duration_font(duration_text, duration_font, category)
     end
 end
 
+local function get_preset_bar_color(cfg_db, category)
+    return M.resolve_bar_color(category, get_preset_setting(cfg_db, category, "color"))
+end
+
+local function set_managed_bar_color(duration_bar, color)
+    if not (duration_bar and color) then return end
+    local r, g, b, a = color.r or 1, color.g or 1, color.b or 1, color.a or 1
+    if duration_bar._lstweeks_color_r == r
+        and duration_bar._lstweeks_color_g == g
+        and duration_bar._lstweeks_color_b == b
+        and duration_bar._lstweeks_color_a == a
+    then
+        return
+    end
+    duration_bar._lstweeks_color_r = r
+    duration_bar._lstweeks_color_g = g
+    duration_bar._lstweeks_color_b = b
+    duration_bar._lstweeks_color_a = a
+    duration_bar:SetStatusBarColor(r, g, b, a)
+end
+
+local function set_managed_bar_width(aura_button, width)
+    if not aura_button or aura_button._lstweeks_width == width then return end
+    aura_button._lstweeks_width = width
+    aura_button:SetWidth(width)
+end
+
 local function initialize_preset_icon(aura_button, category, duration_font)
     aura_button:SetSize(ICON_SIZE, ICON_CELL_HEIGHT)
 
@@ -115,10 +142,11 @@ local function initialize_preset_icon(aura_button, category, duration_font)
     bind_native_tooltip(aura_button)
 end
 
-local function initialize_preset_bar(aura_button, cfg_db, category, duration_font)
+local function initialize_preset_bar(aura_button, cfg_db, category, duration_font, bar_regions)
     local row_width = get_preset_setting(cfg_db, category, "width", M.DEFAULT_FRAME_WIDTH)
         - (BAR_FRAME_INSET * 2)
     aura_button:SetSize(row_width, BAR_ROW_HEIGHT)
+    aura_button._lstweeks_width = row_width
 
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(BAR_ROW_HEIGHT, BAR_ROW_HEIGHT)
@@ -132,8 +160,8 @@ local function initialize_preset_bar(aura_button, cfg_db, category, duration_fon
     duration_bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
     duration_bar:SetMinMaxValues(0, 1)
 
-    local bar_color = M.resolve_bar_color(category, get_preset_setting(cfg_db, category, "color"))
-    duration_bar:SetStatusBarColor(bar_color.r, bar_color.g, bar_color.b, bar_color.a or 1)
+    local bar_color = get_preset_bar_color(cfg_db, category)
+    set_managed_bar_color(duration_bar, bar_color)
     local background_color = M.get_bar_bg_color(cfg_db, category, bar_color)
     local background = duration_bar:CreateTexture(nil, "BACKGROUND")
     background:SetAllPoints(duration_bar)
@@ -181,14 +209,15 @@ local function initialize_preset_bar(aura_button, cfg_db, category, duration_fon
     aura_button:SetDurationBar(duration_bar, {
         direction = Enum.StatusBarTimerDirection.RemainingTime,
     })
+    bar_regions[aura_button] = duration_bar
 
     bind_native_tooltip(aura_button)
 end
 
-local function create_preset_initializer(cfg_db, category, bar_mode, duration_font)
+local function create_preset_initializer(cfg_db, category, bar_mode, duration_font, bar_regions)
     if bar_mode == true then
         return function(aura_button)
-            initialize_preset_bar(aura_button, cfg_db, category, duration_font)
+            initialize_preset_bar(aura_button, cfg_db, category, duration_font, bar_regions)
         end
     end
     return function(aura_button)
@@ -204,9 +233,24 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
     local bar_mode = get_preset_setting(cfg_db, category, "bar_mode", false) == true
     local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
+    local width = math.max(
+        M.MIN_FRAME_WIDTH,
+        get_preset_setting(cfg_db, category, "width", M.DEFAULT_FRAME_WIDTH)
+    )
+    if backend.owner:GetWidth() ~= width then
+        backend.owner:SetWidth(width)
+    end
     if backend.duration_font and M.apply_number_font_style then
         M.apply_number_font_style(backend.duration_font, category, cfg_db, show_timer_text and 1 or 0)
     end
+    local bar_color = get_preset_bar_color(cfg_db, category)
+    local bar_width = width - (BAR_FRAME_INSET * 2)
+    M.for_each_accessible_managed_aura_button(backend, function(aura_button, group_key)
+        if group_key == backend.presentation_group_keys.bar then
+            set_managed_bar_width(aura_button, bar_width)
+            set_managed_bar_color(backend.bar_regions[aura_button], bar_color)
+        end
+    end)
     local mode = bar_mode and "bar" or "icon"
     local max_frame_count = get_preset_setting(cfg_db, category, "max_icons", M.DEFAULT_MAX_ICONS)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
@@ -216,7 +260,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     if bar_mode and not growth_layout.vertical then
         growth_layout = addon.GetGrowthDirection("DOWN")
     end
-    local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value,
+    local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
 
@@ -256,6 +300,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         managed_duration_fonts[category] = duration_font
     end
     backend.duration_font = duration_font
+    backend.bar_regions = {}
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",
         icon = group_key .. ":icon",
@@ -274,7 +319,8 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         filter_string,
         {
             maxFrameCount = max_frame_count,
-            initializeFrame = create_preset_initializer(cfg_db, category, true, duration_font),
+            initializeFrame = create_preset_initializer(
+                cfg_db, category, true, duration_font, backend.bar_regions),
         },
         bar_layout
     )
@@ -292,7 +338,8 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         filter_string,
         {
             maxFrameCount = max_frame_count,
-            initializeFrame = create_preset_initializer(cfg_db, category, false, duration_font),
+            initializeFrame = create_preset_initializer(
+                cfg_db, category, false, duration_font, backend.bar_regions),
         },
         icon_layout
     )

@@ -197,6 +197,11 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "addon mover remains parented to its safe shell, never the managed AuraContainer")
     local _, resize_relative_to = frame.resizer:GetPoint(1)
     h.eq(resize_relative_to, frame, "managed resize grip overlays the shell border corner")
+    h.eq(frame.resizer:IsMouseEnabled(), true, "managed resize grip accepts mouse input")
+    local _, _, _, bottom_right_x = frame.move_handle.hit_areas[2]:GetPoint(2)
+    local _, _, _, _, right_bottom_y = frame.move_handle.hit_areas[4]:GetPoint(2)
+    h.eq(bottom_right_x, -16, "bottom mover edge leaves the resize corner clear")
+    h.eq(right_bottom_y, 16, "right mover edge leaves the resize corner clear")
     M.db.move_debuff = false
     M.update_managed_preset_frame(frame, "show_debuff", "move_debuff")
     h.eq(frame:GetAlpha(), 0.35, "managed Debuff shell applies its saved out-of-combat alpha")
@@ -241,6 +246,36 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "combined Buff bar group is active")
     h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 0,
         "combined Buff icon group is parked")
+
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        aura_button.CanBeAccessedInContext = function() return true end
+    end
+    M.db.color_combined = { r = 0.15, g = 0.25, b = 0.35, a = 0.45 }
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        local color_call = aura_button.__duration_bar_region:GetLastCall("SetStatusBarColor")
+        h.eq(color_call[1], 0.15, "managed Buff bar applies an OOC red color change")
+        h.eq(color_call[2], 0.25, "managed Buff bar applies an OOC green color change")
+        h.eq(color_call[3], 0.35, "managed Buff bar applies an OOC blue color change")
+        h.eq(color_call[4], 0.45, "managed Buff bar applies an OOC alpha change")
+    end
+    local unchanged_color_call_count = #buffs_backend.container.__groups["buffs:bar"].buttons[1]
+        .__duration_bar_region:GetCalls("SetStatusBarColor")
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(#buffs_backend.container.__groups["buffs:bar"].buttons[1]
+        .__duration_bar_region:GetCalls("SetStatusBarColor"), unchanged_color_call_count,
+        "unchanged managed bar color does not write again")
+
+    buffs_frame.resizer.__scripts.OnMouseDown()
+    buffs_frame:SetWidth(200)
+    buffs_frame.resizer.__scripts.OnMouseUp()
+    h.eq(M.db.width_combined, 200, "managed frame resize saves the shell width")
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        h.eq(aura_button.__width, 188,
+            "managed frame resize reapplies the saved inner width to Buff bars")
+    end
 
     M.db.bar_mode_combined = false
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",

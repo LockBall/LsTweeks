@@ -472,7 +472,7 @@ h.test("background color overlay renders behind Blizzard line art", function()
     h.eq(nine_slice.Center:GetAlpha(), 1, "Blizzard center fill restores when custom color is disabled")
 end)
 
-h.test("priority background anchors force-expand without scratch state", function()
+h.test("priority background anchors remain Blizzard-owned without forcing layout", function()
     reset_runtime()
     fresh_db()
     local tracker = ObjectiveTrackerFrame
@@ -493,8 +493,11 @@ h.test("priority background anchors force-expand without scratch state", functio
     ObjectiveTrackerFrame.NineSlice:SetPoint("BOTTOM", priority_child, "BOTTOM")
 
     local fields = M.get_background_status()
-    h.ok(tContains(fields, "bg_force_expand=background:PriorityObjectiveModule"), "priority force-expand status")
-    h.eq(#(tracker:GetCalls("ForceExpand") or {}), 1, "force expand called")
+    h.ok(tContains(fields, "bg_force_expand=suppressed:PriorityObjectiveModule"),
+        "priority layout suppression status")
+    h.ok(tContains(fields, "bg_anchor=blizzard_priority"), "priority anchor remains Blizzard-owned")
+    h.eq(#(tracker:GetCalls("ForceExpand") or {}), 0,
+        "addon does not re-enter Blizzard's secret-sensitive layout")
 end)
 
 h.test("background collapse followups coalesce", function()

@@ -424,11 +424,14 @@ function frame_methods:GetFrameLevel() return self.__level or 0 end
 function frame_methods:SetToplevel() end
 function frame_methods:Raise() end
 function frame_methods:Lower() end
-function frame_methods:EnableMouse() end
+function frame_methods:EnableMouse(enabled)
+    record(self, "EnableMouse", enabled)
+    self.__mouse_enabled = enabled == true
+end
 function frame_methods:EnableMouseWheel() end
 function frame_methods:EnableKeyboard() end
 function frame_methods:IsMouseOver() return false end
-function frame_methods:IsMouseEnabled() return false end
+function frame_methods:IsMouseEnabled() return self.__mouse_enabled == true end
 function frame_methods:SetMovable() end
 function frame_methods:IsMovable() return false end
 function frame_methods:SetResizable() end

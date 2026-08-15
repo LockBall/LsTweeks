@@ -677,23 +677,17 @@ local function get_priority_module_for_anchor(tracker, anchor)
     return nil
 end
 
-local function force_expand_for_background_anchor(tracker, anchor)
+local function yield_to_priority_background_anchor(tracker, anchor)
     local priority_module = get_priority_module_for_anchor(tracker, anchor)
     if not priority_module then
         background_last_blocked_anchor = get_frame_name(anchor, "unknown")
         return false
     end
 
-    background_last_force_expand = "background:" .. get_frame_name(priority_module, "priority_module")
+    background_last_force_expand = "suppressed:" .. get_frame_name(priority_module, "priority_module")
     background_last_blocked_anchor = "none"
-    background_last_state = "force_expand_background_anchor"
-    background_last_anchor = "blizzard"
-
-    if tracker.ForceExpand then
-        tracker:ForceExpand()
-    elseif tracker.SetCollapsed then
-        tracker:SetCollapsed(false)
-    end
+    background_last_state = "blizzard_owned_priority"
+    background_last_anchor = "blizzard_priority"
 
     return true
 end
@@ -715,7 +709,7 @@ local function check_collapsed_background_anchor(reason)
     if anchor and anchor ~= tracker.Header then
         background_last_reason = reason or "background anchor changed"
         if not is_in_force_expand_grace() then
-            if force_expand_for_background_anchor(tracker, anchor) then
+            if yield_to_priority_background_anchor(tracker, anchor) then
                 return
             end
         end
@@ -752,7 +746,7 @@ local function sync_objective_background(reason)
 
     if is_tracker_collapsed(tracker) then
         if not background_points_to_header(tracker, background) and not is_in_force_expand_grace() then
-            if force_expand_for_background_anchor(tracker, get_background_bottom_anchor(background)) then
+            if yield_to_priority_background_anchor(tracker, get_background_bottom_anchor(background)) then
                 return
             end
             show_background_to_header(tracker, background, "shown_container_collapsed_blocked_anchor")

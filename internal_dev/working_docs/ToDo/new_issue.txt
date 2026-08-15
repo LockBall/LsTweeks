@@ -1,6 +1,6 @@
 Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
 Lua Taint: LsTweeks
-Time: Sat Aug 15 09:33:49 2026
+Time: Sat Aug 15 10:01:55 2026
 Count: 1
 Stack:
 [Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'

@@ -703,6 +703,7 @@ end
 -- the drag handle, resize handle, saved width updates, and resize refresh so
 -- icon creation/rendering can stay separate from frame interaction behavior.
 local MOVE_BORDER_HIT_WIDTH = 8
+local RESIZE_HANDLE_SIZE = 16
 
 local function set_move_border_edge_points(edge, parent, side)
     if side == "TOP" then
@@ -711,7 +712,7 @@ local function set_move_border_edge_points(edge, parent, side)
         edge:SetHeight(MOVE_BORDER_HIT_WIDTH)
     elseif side == "BOTTOM" then
         edge:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT")
-        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT")
+        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -RESIZE_HANDLE_SIZE, 0)
         edge:SetHeight(MOVE_BORDER_HIT_WIDTH)
     elseif side == "LEFT" then
         edge:SetPoint("TOPLEFT", parent, "TOPLEFT")
@@ -719,7 +720,7 @@ local function set_move_border_edge_points(edge, parent, side)
         edge:SetWidth(MOVE_BORDER_HIT_WIDTH)
     else
         edge:SetPoint("TOPRIGHT", parent, "TOPRIGHT")
-        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT")
+        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, RESIZE_HANDLE_SIZE)
         edge:SetWidth(MOVE_BORDER_HIT_WIDTH)
     end
 end
@@ -818,7 +819,8 @@ end
 
 local function create_aura_frame_resizer(frame, category)
     frame.resizer = CreateFrame("Button", nil, frame)
-    frame.resizer:SetSize(16, 16)
+    frame.resizer:EnableMouse(true)
+    frame.resizer:SetSize(RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE)
     frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     frame.resizer:SetScript("OnEnter", function()
