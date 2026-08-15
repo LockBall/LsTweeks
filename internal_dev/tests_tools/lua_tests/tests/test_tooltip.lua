@@ -48,6 +48,7 @@ h.test("experimental native Aura route uses only Blizzard's secure global setter
     local owner = CreateFrame("Frame", nil, UIParent)
     local setter_count = #(GameTooltip:GetCalls("SetUnitAuraByAuraInstanceID") or {})
     local show_count = #(GameTooltip:GetCalls("Show") or {})
+    local hide_count = #(GameTooltip:GetCalls("Hide") or {})
     local tooltip_info_calls = 0
     local previous_tooltip_info = C_TooltipInfo
     C_TooltipInfo = {
@@ -69,7 +70,27 @@ h.test("experimental native Aura route uses only Blizzard's secure global setter
     h.eq(setter[2], 818, "secure setter receives the Aura instance directly")
     h.eq(tooltip_info_calls, 0, "addon code never fetches live TooltipInfo")
     h.eq(#(GameTooltip:GetCalls("Show") or {}), show_count, "addon code never manually shows GameTooltip")
+    h.eq(#(GameTooltip:GetCalls("Hide") or {}), hide_count + 1,
+        "disabling the experiment hides its matching native tooltip")
     h.is_nil(rawget(_G, "LsTweeksNativeTooltip"), "native route creates no custom GameTooltip")
+end)
+
+h.test("disabling the native Aura experiment clears stale owner tracking", function()
+    local addon = load_tooltip()
+    local aura_owner = CreateFrame("Frame", nil, UIParent)
+    local other_owner = CreateFrame("Frame", nil, UIParent)
+
+    addon.SetNativeAuraTooltipTestEnabled(true)
+    addon.ShowNativeAuraTooltip(aura_owner, "player", 828, "ANCHOR_RIGHT")
+    GameTooltip:SetOwner(other_owner, "ANCHOR_RIGHT")
+    local hide_count = #(GameTooltip:GetCalls("Hide") or {})
+
+    addon.SetNativeAuraTooltipTestEnabled(false)
+    GameTooltip:SetOwner(aura_owner, "ANCHOR_RIGHT")
+    addon.HideNativeTooltip(aura_owner)
+
+    h.eq(#(GameTooltip:GetCalls("Hide") or {}), hide_count,
+        "a superseded Aura owner cannot hide a later tooltip after toggle-off")
 end)
 
 h.test("Aura spell data never enters the native spell processor", function()

@@ -80,9 +80,10 @@ end
 
 local function bind_native_tooltip(aura_button)
     -- AuraButton owns this tooltip path and can identify its secret Aura
-    -- without addon AuraData reads or addon-owned hover scripts.
+    -- without addon AuraData reads or addon-owned hover scripts, including
+    -- while Aura access is restricted in combat.
     aura_button:SetMouseMotionEnabled(true)
-    aura_button:SetHideTooltipInCombat(true)
+    aura_button:SetHideTooltipInCombat(false)
 end
 
 local function apply_duration_font(duration_text, duration_font, category)

@@ -185,8 +185,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         h.ok(aura_button.__application_count_region, "managed Debuff AuraButton binds native stack text")
         h.ok(aura_button.__duration_bar_region, "managed Debuff AuraButton binds a native duration bar")
         h.eq(aura_button.__mouse_motion_enabled, true, "managed Debuff AuraButton enables native hover")
-        h.eq(aura_button.__hide_tooltip_in_combat, true,
-            "managed Debuff AuraButton hides its native tooltip in combat")
+        h.eq(aura_button.__hide_tooltip_in_combat, false,
+            "managed Debuff AuraButton allows its native tooltip in combat")
     end
 
     h.ok(frame:IsShown(), "runtime startup shows the enabled managed Debuff shell")
@@ -264,8 +264,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         h.ok(aura_button.__duration_text_region, "combined Buff bars bind native duration text")
         h.ok(aura_button.__application_count_region, "combined Buff bars bind native stack text")
         h.ok(aura_button.__duration_bar_region, "combined Buff bars bind a native duration bar")
-        h.eq(aura_button.__hide_tooltip_in_combat, true,
-            "combined Buffs AuraButtons use the combat-safe native tooltip policy")
+        h.eq(aura_button.__hide_tooltip_in_combat, false,
+            "combined Buffs AuraButtons allow native tooltips in combat")
     end
     h.eq(buffs_backend.presentation_mode, "bar", "saved Bar Mode activates the combined Buff bar group")
     h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, M.AURA_FRAME_LIMIT,

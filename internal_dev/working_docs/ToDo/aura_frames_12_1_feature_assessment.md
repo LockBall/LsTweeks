@@ -81,7 +81,7 @@ redesign.
 ## Status summary
 - [x] **AF12-05 — Debuff frame:** managed transport and baseline presentation verified in game; shared presentation gaps remain owned by AF12-07 through AF12-15.
 - [x] **AF12-10 — Layout and positioning:** fixed safety limit, growth, wrapping, spacing, positioning, and resize behavior are implemented for Combined Buffs and Debuffs.
-- [x] **AF12-12 — Aura tooltips:** managed frames use Blizzard-owned native tooltips out of combat and install no addon Aura hover scripts.
+- [x] **AF12-12 — Aura tooltips:** managed frames use Blizzard-owned native tooltips in and out of combat and install no addon Aura hover scripts.
 - [x] **AF12-16 — Profiles, shared colors, move mode, and settings:** implemented and regression-covered for the current managed presets; settings belonging to unfinished capabilities remain tracked by their owning items.
 - [x] **AF12-19 — Other modules:** the full automated regression suite passes and extended in-game use has produced no remaining cross-module 12.1 regression.
 - **Partial:** AF12-01, AF12-07, AF12-08, AF12-14, and AF12-18.
@@ -169,7 +169,7 @@ contracts. Debuffs now creates managed `HARMFUL` bar/icon groups with native
 icon, duration, stack, spell-name, and duration-bar bindings; it owns no legacy
 `UNIT_AURA` handler or indexed scan. Bar/icon switching, growth, spacing,
 the fixed internal safety limit, width, position, OOC fade transitions, timer font/size/bold/color,
-bar foreground color, native OOC tooltips, and resize refresh are implemented.
+bar foreground color, native tooltips, and resize refresh are implemented.
 Synthetic previews, cancellation, cooldown swipe, custom timer formatting,
 sorting parity, and full live color/background parity remain separate work.
 
@@ -331,13 +331,13 @@ sort choice that cannot be represented by the live enum.
 custom Aura tooltip stack.
 
 **Status:** Complete for managed frames. Combined Buffs and Debuffs use native
-AuraButton tooltips with mouse motion enabled and combat tooltips hidden. Their
+AuraButton tooltips with mouse motion enabled in and out of combat. Their
 managed path installs no addon hover scripts and performs no Aura tooltip lookup
 or reconstruction.
 
-AuraButtons provide engine-owned Aura tooltips, tooltip anchoring, and an option
-to hide tooltips in combat. This avoids exposing protected Aura data and is the
-community-standard safe path.
+AuraButtons provide engine-owned Aura tooltips, tooltip anchoring, and native
+restricted-data handling in combat. Keeping combat tooltips enabled avoids
+exposing protected Aura data to addon code and is the supported safe path.
 
 The existing instance-ID tooltip lookup, prewarm cache, reconstructed fallback
 lines, and direct `GameTooltip:SetUnitAuraByAuraInstanceID` experiment should not

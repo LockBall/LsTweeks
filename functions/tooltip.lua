@@ -104,6 +104,8 @@ function addon.SetNativeAuraTooltipTestEnabled(enabled)
         and GameTooltip:IsOwned(native_aura_tooltip_owner)
     then
         GameTooltip:Hide()
+    end
+    if not native_aura_tooltip_test_enabled then
         native_aura_tooltip_owner = nil
     end
     record_tooltip_trace(native_aura_tooltip_test_enabled and "toggle-on" or "toggle-off", "native-aura")

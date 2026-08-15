@@ -719,13 +719,16 @@ h.test("experimental Aura hover delegates directly to Blizzard's global tooltip"
 
     h.addon.SetNativeAuraTooltipTestEnabled(true)
     icon:GetScript("OnEnter")(icon)
+    local hide_count = #(GameTooltip:GetCalls("Hide") or {})
     h.addon.SetNativeAuraTooltipTestEnabled(false)
+    icon:GetScript("OnLeave")(icon)
     C_TooltipInfo = previous_tooltip_info
 
     local setter = GameTooltip:GetLastCall("SetUnitAuraByAuraInstanceID")
     h.eq(setter[1], "player", "hover delegates the unit directly")
     h.eq(setter[2], 3101, "hover delegates the Aura instance directly")
-    h.eq(GameTooltip:GetOwner(), icon, "Blizzard tooltip remains owned by the Aura icon")
+    h.eq(#(GameTooltip:GetCalls("Hide") or {}), hide_count + 1,
+        "toggle-off hides the matching tooltip and clears hover ownership")
 end)
 
 h.test("Aura icon hover uses guarded basic data in combat", function()

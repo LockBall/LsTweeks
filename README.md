@@ -55,7 +55,7 @@ Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adja
 
 
 #### Tooltips
-Managed Combined Buffs and Debuffs use Blizzard's native detailed Aura tooltips outside combat and intentionally hide them in combat. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
+Managed Combined Buffs and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
 Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Combined Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
