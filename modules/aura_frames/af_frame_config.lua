@@ -13,8 +13,8 @@ M.PRESENTATION_PROFILE_CATEGORY_PREFIXES = {
     "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
     "growth_icon", "growth_bar", "sort", "test_aura", "bar_text_color", "timer_number_font",
-    "timer_number_font_size", "timer_number_font_bold", "timer_color", "cooldown_mode", "hide_blizz_cdm",
-    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_color",
+    "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline", "timer_color", "cooldown_mode", "hide_blizz_cdm",
+    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_number_font_outline", "stack_color",
     "sync_bar_bg", "sync_bar_color", "sync_text_color",
 }
 
@@ -22,8 +22,8 @@ M.CUSTOM_PRESENTATION_PROFILE_KEYS = {
     "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
     "growth_icon", "growth_bar", "test_aura", "bar_text_color", "timer_number_font", "timer_number_font_size",
-    "timer_number_font_bold", "timer_color", "sync_bar_bg", "sync_bar_color", "sync_text_color",
-    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_color",
+    "timer_number_font_bold", "timer_number_font_outline", "timer_color", "sync_bar_bg", "sync_bar_color", "sync_text_color",
+    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_number_font_outline", "stack_color",
 }
 
 --#endregion PROFILE SCHEMA ===================================================

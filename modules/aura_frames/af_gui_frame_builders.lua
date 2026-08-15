@@ -7,52 +7,6 @@ addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 --#region SHARED FRAME PANEL HELPERS ===========================================
-local function get_timer_font_options()
-    local options = {}
-    local defs = M.get_number_font_options()
-    for _, def in ipairs(defs) do
-        options[#options + 1] = {
-            value = def.key,
-            text = def.label,
-            font_path = def.path,
-            font_size = def.size,
-            font_flags = def.flags,
-        }
-    end
-    return options
-end
-
-local function create_list_dropdown(name, parent, labelText, options, get_value, on_select, width)
-    local function get_option_text(option)
-        return option.text or tostring(option.value or "")
-    end
-
-    local function apply_button_style(btn_text, option)
-        if not btn_text then return end
-        if option.font_path then
-            btn_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
-        else
-            btn_text:SetFontObject(GameFontNormalSmall)
-        end
-    end
-
-    local function apply_row_style(row_text, option)
-        if option.font_path then
-            row_text:SetFont(option.font_path, option.font_size or 9, option.font_flags or "")
-        end
-    end
-
-    return addon.CreateDropdown(name, parent, labelText, options, {
-        width = width or 180,
-        get_value = get_value,
-        on_select = function(value)
-            if on_select then on_select(value) end
-        end,
-        get_option_text = get_option_text,
-        apply_button_style = apply_button_style,
-        apply_row_style = apply_row_style,
-    })
-end
 
 local CANCEL_MODIFIER_OPTIONS = {
     { value = "OFF", text = "OFF" },
@@ -163,10 +117,12 @@ local function make_preset_frame_settings_config(data)
             timer_number_font = "timer_number_font_" .. cat,
             timer_number_font_size = "timer_number_font_size_" .. cat,
             timer_number_font_bold = "timer_number_font_bold_" .. cat,
+            timer_number_font_outline = "timer_number_font_outline_" .. cat,
             timer_color = "timer_color_" .. cat,
             stack_number_font = "stack_number_font_" .. cat,
             stack_number_font_size = "stack_number_font_size_" .. cat,
             stack_number_font_bold = "stack_number_font_bold_" .. cat,
+            stack_number_font_outline = "stack_number_font_outline_" .. cat,
             stack_color = "stack_color_" .. cat,
         },
     }
@@ -221,10 +177,12 @@ local function make_custom_frame_settings_config(entry)
             timer_number_font = "timer_number_font",
             timer_number_font_size = "timer_number_font_size",
             timer_number_font_bold = "timer_number_font_bold",
+            timer_number_font_outline = "timer_number_font_outline",
             timer_color = "timer_color",
             stack_number_font = "stack_number_font",
             stack_number_font_size = "stack_number_font_size",
             stack_number_font_bold = "stack_number_font_bold",
+            stack_number_font_outline = "stack_number_font_outline",
             stack_color = "stack_color",
         },
     }
@@ -269,6 +227,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     local timer_font_key = frame_setting_key(frame_config, "timer_number_font")
     local timer_font_size_key = frame_setting_key(frame_config, "timer_number_font_size")
     local timer_bold_key = frame_setting_key(frame_config, "timer_number_font_bold")
+    local timer_outline_key = frame_setting_key(frame_config, "timer_number_font_outline")
     local timer_color_key = frame_setting_key(frame_config, "timer_color")
 
     local function get_selected_timer_font()
@@ -309,19 +268,35 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     )
     grid:stack_below(timer_bold_container, timer_text_container, { y = -4 })
 
+    local timer_outline_container = create_bound_checkbox_control(
+        parent,
+        labels.outline_label or "Outline",
+        frame_config.value_table,
+        timer_outline_key,
+        grid,
+        row,
+        1,
+        labels.outline_control_key or ("timer_number_font_outline_" .. control_prefix),
+        refresh_fonts,
+        update
+    )
+    grid:stack_below(timer_outline_container, timer_bold_container, { y = -4 })
+
     local function refresh_bold_availability()
-        timer_bold_container:SetEnabled(M.is_number_font_bold_available(get_selected_timer_font()))
+        timer_bold_container:SetEnabled(addon.IsFontBoldAvailable(get_selected_timer_font()))
     end
 
-    local timer_font = create_list_dropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
-        get_selected_timer_font,
-        function(value)
+    local timer_font = addon.CreateFontDropdown(dropdown_name, parent, {
+        label = labels.font_label or "Font",
+        role = "timer",
+        width = labels.font_dropdown_width or 120,
+        get_value = get_selected_timer_font,
+        on_select = function(value)
             frame_config.value_table[timer_font_key] = value
             refresh_bold_availability()
             refresh_fonts()
         end,
-        labels.font_dropdown_width or 120
-    )
+    })
     grid:place_at(timer_font, row, 3, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
     M.controls[labels.font_control_key or ("timer_number_font_dropdown_" .. control_prefix)] = timer_font
     refresh_bold_availability()
@@ -366,6 +341,7 @@ local function create_frame_stack_text_controls(parent, frame_config, grid, upda
     local stack_font_key = frame_setting_key(frame_config, "stack_number_font")
     local stack_font_size_key = frame_setting_key(frame_config, "stack_number_font_size")
     local stack_bold_key = frame_setting_key(frame_config, "stack_number_font_bold")
+    local stack_outline_key = frame_setting_key(frame_config, "stack_number_font_outline")
     local stack_color_key = frame_setting_key(frame_config, "stack_color")
 
     local function get_selected_stack_font()
@@ -378,19 +354,17 @@ local function create_frame_stack_text_controls(parent, frame_config, grid, upda
     end
 
     local refresh_bold_availability
-    local stack_font = create_list_dropdown(
-        addon_name .. id .. "StackFont",
-        parent,
-        "Stack Font",
-        get_timer_font_options(),
-        get_selected_stack_font,
-        function(value)
+    local stack_font = addon.CreateFontDropdown(addon_name .. id .. "StackFont", parent, {
+        label = "Stack Font",
+        role = "stack",
+        width = 120,
+        get_value = get_selected_stack_font,
+        on_select = function(value)
             frame_config.value_table[stack_font_key] = value
             if refresh_bold_availability then refresh_bold_availability() end
             refresh_stack_fonts()
         end,
-        120
-    )
+    })
     grid:place_at(stack_font, 6, 3, nil, { width = 120, y_offset = -15 })
     M.controls["stack_number_font_dropdown_" .. id] = stack_font
 
@@ -408,8 +382,22 @@ local function create_frame_stack_text_controls(parent, frame_config, grid, upda
     )
     grid:stack_below(stack_bold_container, stack_font, { y = -4 })
 
+    local stack_outline_container = create_bound_checkbox_control(
+        parent,
+        "Outline",
+        frame_config.value_table,
+        stack_outline_key,
+        grid,
+        6,
+        3,
+        "stack_number_font_outline_" .. id,
+        refresh_stack_fonts,
+        update
+    )
+    grid:stack_below(stack_outline_container, stack_bold_container, { y = -4 })
+
     refresh_bold_availability = function()
-        stack_bold_container:SetEnabled(M.is_number_font_bold_available(get_selected_stack_font()))
+        stack_bold_container:SetEnabled(addon.IsFontBoldAvailable(get_selected_stack_font()))
     end
     M.controls["stack_number_font_bold_refresh_" .. id] = refresh_bold_availability
     refresh_bold_availability()

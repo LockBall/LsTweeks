@@ -97,74 +97,32 @@ local function unregister_runtime_frame(show_key)
     return frame
 end
 
-M.NUMBER_FONT_OPTIONS = {
-    {
-        key = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
-        label = "Source Code Pro",
-        path = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Regular.ttf",
-        size = 9,
-        flags = "",
-    },
-    {
-        key = "game_default",
-        label = "Game Default",
-        path = nil,
-        size = nil,
-        flags = nil,
-    },
-}
-
-M.NUMBER_FONT_OPTIONS_BY_KEY = {}
-for _, def in ipairs(M.NUMBER_FONT_OPTIONS) do
-    M.NUMBER_FONT_OPTIONS_BY_KEY[def.key] = def
-end
-
-M.NUMBER_FONT_BOLD_PATHS = {
-    [M.DEFAULT_TIMER_NUMBER_FONT_KEY] = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
-}
-
-local function get_number_font_def(key, category, cfg_db, setting_prefix)
-    local selected_key = key or M.get_setting(
+local function apply_number_text_style(font_target, category, cfg_db, setting_prefix, alpha)
+    if not font_target or not font_target.SetFont then return end
+    local selected_key = M.get_setting(
         cfg_db,
         category,
         setting_prefix .. "_number_font",
-        M.DEFAULT_TIMER_NUMBER_FONT_KEY
+        addon.DEFAULT_FONT_KEY
     )
-    return M.NUMBER_FONT_OPTIONS_BY_KEY[selected_key] or M.NUMBER_FONT_OPTIONS[1]
-end
-
-function M.get_number_font_options()
-    return M.NUMBER_FONT_OPTIONS
-end
-
-function M.is_number_font_bold_available(key)
-    return M.NUMBER_FONT_BOLD_PATHS[key] ~= nil
-end
-
-local function apply_number_text_style(font_target, category, cfg_db, setting_prefix, alpha)
-    if not font_target or not font_target.SetFont then return end
-    local def = get_number_font_def(nil, category, cfg_db, setting_prefix)
     local size = setting_prefix == "stack"
         and M.get_stack_number_font_size(category, cfg_db)
         or M.get_timer_number_font_size(category, cfg_db)
-    local flags = def.flags or ""
-
-    -- Always pass an integer size to SetFont. WoW/FreeType rounds fractional
-    -- sizes inconsistently; doing it ourselves keeps rendering deterministic.
-    size = math.floor(size + 0.5)
-
-    if size < 6 then size = 6 end
-    if size > 18 then size = 18 end
-
-    if def.path then
-        local use_bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true
-        local bold_path = use_bold and M.NUMBER_FONT_BOLD_PATHS[def.key]
-        font_target:SetFont(bold_path or def.path, size, flags)
-    elseif STANDARD_TEXT_FONT then
-        font_target:SetFont(STANDARD_TEXT_FONT, size, flags)
-    else
-        font_target:SetFontObject(GameFontHighlightSmall)
-    end
+    local use_outline = M.get_setting(
+        cfg_db,
+        category,
+        setting_prefix .. "_number_font_outline",
+        true
+    ) ~= false
+    addon.ApplySelectedFont(font_target, {
+        key = selected_key,
+        role = setting_prefix,
+        size = size,
+        bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true,
+        outline = use_outline,
+        min_size = 6,
+        max_size = 18,
+    })
 
     if cfg_db or M.db then
         local color_key = setting_prefix .. "_color"

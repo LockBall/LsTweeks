@@ -29,7 +29,7 @@ Important `aura_frames` keys:
 ## Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
 - `M.AURA_FRAME_LIMIT = 40` is the fixed internal ceiling for managed groups, legacy/custom pools, rendering, and scans. Aura count is not adjustable, saved, or profiled; frame implementations own selection and layout beneath that ceiling.
-- Stack-count typography uses the per-frame `stack_number_font`, `stack_number_font_size`, `stack_number_font_bold`, and `stack_color` settings. `M.apply_stack_font_style` is the shared application path for managed and legacy/custom AuraButtons.
+- Stack-count typography uses the per-frame `stack_number_font`, `stack_number_font_size`, `stack_number_font_bold`, `stack_number_font_outline`, and `stack_color` settings. Timer typography has the corresponding `timer_number_font_outline` setting. Both outline settings default on and use WoW's native black `OUTLINE` font flag; `M.apply_stack_font_style` is the shared stack application path for managed and legacy/custom AuraButtons. Selectable fonts, bold faces, dropdown previews, and semantic `Game Default` roles come from the addon-wide `functions/font_catalog.lua`: Timer uses Blizzard `GameFontNormalSmall`, while Stack uses `NumberFontNormal`; both resolve the native face through `GetFont()` while configured size and outline remain independent. Icon stack anchors consume `M.ICON_STACK_INSET` (`right=2`, `bottom=2`), matching Blizzard's BuffFrame while keeping future adjustment centralized; bar stacks remain centered in their dedicated slot.
 - The rounded/chamfered background investigation remains in `ToDo/background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
 - Preset categories: `static`, `debuff`, `short`, `long`, `combined`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
@@ -71,7 +71,7 @@ Important `aura_frames` keys:
 - `aura_event_bucket` remains `0.20s`. Raising it would reduce scan/render frequency only by delaying real aura appearance/removal updates, so treat any future increase as a visible-latency experiment, not a low-risk CPU cleanup.
 - Visible-icon ticker cost scales with `aura_visible_icon_tick`; treat the three measured choices (`0.10s`, `0.15s`, `0.20s`) as a CPU/visual-cadence tradeoff, not a per-tick optimization win.
 - `render_aura_map()` stores `frame._display_count`; `tick_visible_icons()` should tick only displayed pooled icons, not the full pool.
-- Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking.
+- Aura Frames visible-icon ticker is managed on demand by `M.refresh_visible_icon_ticker()` / `M.ensure_visible_icon_ticker()`. It starts only when visible rendered icons need timer/bar/preview/CDM cooldown updates and cancels itself when no frame needs ticking. The ticker must recheck `frame.icons` on every callback because a visible frame can transition to a managed backend without a legacy icon pool while a previously started ticker is still alive.
 - CDM refresh scheduling is centralized in `M.queue_wow_cooldown_refresh(profile)` (`af_main.lua`). Use profiles `"immediate"`, `"startup"`, `"settings"`, `"hook"` instead of local timer chains.
 - CDM viewer frames are alpha-hidden with mouse disabled; do not `Hide()` them or they stop producing useful child state.
 - Enabled LsTweeks CDM frames require the matching Blizzard CDM Edit Mode Visibility to be `Always`. `M.prepare_blizz_cdm_viewer(category)` enforces this outside combat before showing/prepping the viewer, then `M.update_blizz_cdm_visibility(category)` applies the user-facing alpha hide if requested. Capture the prior visibility only when LsTweeks overrides it; module disable restores it through `UpdateSystemSettingValue` after combat when needed, without overwriting an external setting change made while active.
@@ -169,7 +169,7 @@ Important `aura_frames` keys:
 - Aura Frames tab and tree heights derive from `addon.main_frame:GetContentAreaSize()`, so the main settings window height in `core/main_frame.lua` is the single height knob.
 - CDM controls are source-specific additions layered through `opts.build_source_controls`.
 - Shared presentation controls stay in the common builder; use hooks only for real source-specific behavior.
-- Timer Bold availability derives from `M.NUMBER_FONT_BOLD_PATHS`: **Game Default** is disabled and grey because it has no registered bold face, while selecting a capable font re-enables the control without discarding the saved Bold preference.
+- Timer and Stack selectors use the addon-wide font catalog in `functions/font_catalog.lua`. Bold availability comes from each shared font definition: **Game Default** is disabled and grey because it has no registered bold face, while selecting a capable font re-enables the control without discarding the saved Bold preference.
 
 
 ## Debug, Grid, Style

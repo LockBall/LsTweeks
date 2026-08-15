@@ -747,6 +747,10 @@ SOUNDKIT = setmetatable({}, { __index = function() return 0 end })
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall,
     GameTooltipHeaderText, GameTooltipText = {}, {}, {}, {}, {}, {}, {}, {}, {}
+GameFontNormalSmall = CreateFont("GameFontNormalSmall")
+function GameFontNormalSmall:GetFont() return "Fonts\\FRIZQT__.TTF", 10, "" end
+NumberFontNormal = CreateFont("NumberFontNormal")
+function NumberFontNormal:GetFont() return "Fonts\\ARIALN.TTF", 14, "OUTLINE" end
 
 UIParent = CreateFrame("Frame", "UIParent")
 UIParent:SetSize(1920, 1080)

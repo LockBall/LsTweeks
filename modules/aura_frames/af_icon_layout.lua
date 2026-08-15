@@ -391,7 +391,13 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
             end
 
             obj.count_text:ClearAllPoints()
-            obj.count_text:SetPoint("BOTTOMRIGHT", obj, "BOTTOMRIGHT", 0, 1)
+            obj.count_text:SetPoint(
+                "BOTTOMRIGHT",
+                obj,
+                "BOTTOMRIGHT",
+                -M.ICON_STACK_INSET.right,
+                M.ICON_STACK_INSET.bottom
+            )
         end
     end
 

@@ -496,6 +496,18 @@ h.test("visible icon ticker refresh stops idle ticker immediately", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
 end)
 
+h.test("visible icon ticker skips managed frames without legacy icon pools", function()
+    local M = load_aura_frames()
+    M.db = { short_threshold = M.DEFAULT_SHORT_THRESHOLD }
+    local managed_frame = CreateFrame("Frame", nil, UIParent)
+    managed_frame:Show()
+    managed_frame.icons = nil
+    M.frames_list = { managed_frame }
+
+    h.eq(M.tick_visible_icons(GetTime()), false,
+        "managed frame transition leaves no legacy icon work to tick")
+end)
+
 h.test("shared Aura bar range helper skips unchanged writes", function()
     local M = load_aura_frames()
     local writes = 0

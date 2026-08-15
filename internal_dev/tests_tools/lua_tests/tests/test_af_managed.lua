@@ -345,6 +345,10 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             "combined Buff icon stack text uses the managed stack font")
         h.eq(aura_button.__application_count_region.__points[1][1], "BOTTOMRIGHT",
             "combined Buff icon stack text remains anchored to the icon")
+        h.eq(aura_button.__application_count_region.__points[1][4], -M.ICON_STACK_INSET.right,
+            "combined Buff icon stack text uses the shared right inset")
+        h.eq(aura_button.__application_count_region.__points[1][5], M.ICON_STACK_INSET.bottom,
+            "combined Buff icon stack text uses the shared bottom inset")
     end
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Horizontal,
         "wrapped combined Buff icons retain horizontal growth")
@@ -367,27 +371,66 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     local font_call = buffs_backend.duration_font:GetLastCall("SetFont")
     local color_call = buffs_backend.duration_font:GetLastCall("SetTextColor")
-    h.eq(font_call[1], M.NUMBER_FONT_BOLD_PATHS[M.DEFAULT_TIMER_NUMBER_FONT_KEY],
+    h.eq(font_call[1], h.addon.GetFontDefinition(M.DEFAULT_TIMER_NUMBER_FONT_KEY).bold_path,
         "managed timer font applies the saved bold face")
     h.eq(font_call[2], 14, "managed timer font applies the saved size")
+    h.eq(font_call[3], "OUTLINE", "managed timer font applies the default outline")
     h.eq(color_call[1], 0.2, "managed timer font applies the saved red component")
     h.eq(color_call[2], 0.3, "managed timer font applies the saved green component")
     h.eq(color_call[3], 0.4, "managed timer font applies the saved blue component")
     h.eq(color_call[4], 1, "enabling managed timer text restores its opacity")
 
-    M.db.stack_number_font_size_combined = 13
+    M.db.stack_number_font_size_combined = 13.5
     M.db.stack_number_font_bold_combined = true
     M.db.stack_color_combined = { r = 0.7, g = 0.6, b = 0.5 }
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     local stack_font_call = buffs_backend.stack_font:GetLastCall("SetFont")
     local stack_color_call = buffs_backend.stack_font:GetLastCall("SetTextColor")
-    h.eq(stack_font_call[1], M.NUMBER_FONT_BOLD_PATHS[M.DEFAULT_TIMER_NUMBER_FONT_KEY],
+    h.eq(stack_font_call[1], h.addon.GetFontDefinition(M.DEFAULT_TIMER_NUMBER_FONT_KEY).bold_path,
         "managed stack font applies the saved bold face")
-    h.eq(stack_font_call[2], 13, "managed stack font applies the saved size")
+    h.eq(stack_font_call[2], 13.5, "managed stack font preserves the saved half-step size")
+    h.eq(stack_font_call[3], "OUTLINE", "managed stack font applies the default outline")
     h.eq(stack_color_call[1], 0.7, "managed stack font applies the saved red component")
     h.eq(stack_color_call[2], 0.6, "managed stack font applies the saved green component")
     h.eq(stack_color_call[3], 0.5, "managed stack font applies the saved blue component")
+
+    M.db.timer_number_font_outline_combined = false
+    M.db.stack_number_font_outline_combined = false
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.duration_font:GetLastCall("SetFont")[3], "",
+        "managed timer font removes its outline when disabled")
+    h.eq(buffs_backend.stack_font:GetLastCall("SetFont")[3], "",
+        "managed stack font removes its outline when disabled")
+
+    M.db.stack_number_font_combined = "game_default"
+    M.db.stack_number_font_outline_combined = true
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    stack_font_call = buffs_backend.stack_font:GetLastCall("SetFont")
+    h.eq(stack_font_call[1], "Fonts\\ARIALN.TTF",
+        "managed Game Default stack text uses Blizzard NumberFontNormal's face")
+    h.eq(stack_font_call[2], 13.5,
+        "managed Game Default stack text preserves the configured size")
+    h.eq(stack_font_call[3], "OUTLINE",
+        "managed Game Default stack text preserves the configured outline")
+
+    M.db.timer_number_font_combined = "game_default"
+    M.db.timer_number_font_outline_combined = true
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    font_call = buffs_backend.duration_font:GetLastCall("SetFont")
+    h.eq(h.addon.GetGameDefaultFontObject("timer"), GameFontNormalSmall,
+        "Timer Game Default maps to Blizzard GameFontNormalSmall")
+    h.eq(h.addon.GetGameDefaultFontObject("stack"), NumberFontNormal,
+        "Stack Game Default maps to Blizzard NumberFontNormal")
+    h.eq(font_call[1], "Fonts\\FRIZQT__.TTF",
+        "managed Game Default timer text uses Blizzard GameFontNormalSmall's face")
+    h.eq(font_call[2], 14,
+        "managed Game Default timer text preserves the configured size")
+    h.eq(font_call[3], "OUTLINE",
+        "managed Game Default timer text preserves the configured outline")
 
     local growth_cases = {
         RIGHT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },

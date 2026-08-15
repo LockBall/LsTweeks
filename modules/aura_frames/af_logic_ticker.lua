@@ -142,18 +142,19 @@ function M.tick_visible_icons(now)
     local needs_tick = false
     for frame_index = 1, #frames_list do
         local frame = frames_list[frame_index]
-        if frame:IsVisible() then
+        local icons = frame and frame.icons
+        if icons and frame:IsVisible() then
             local is_static_frame = (frame.category == "static")
             local show_timer_text = frame._show_timer_text
             local bar_mode = frame._bar_mode
             local show_cooldown_overlay = frame._show_cooldown_overlay == true
             local display_count = frame._display_count or 0
-            local icon_count = #frame.icons
+            local icon_count = #icons
             if display_count > icon_count then
                 display_count = icon_count
             end
             for i = 1, display_count do
-                local obj = frame.icons[i]
+                local obj = icons[i]
                     if obj:IsShown() then
                     if obj.is_test_preview and M.update_test_preview_state then
                         M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), now)

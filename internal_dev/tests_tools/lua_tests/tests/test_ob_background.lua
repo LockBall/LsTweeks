@@ -157,6 +157,20 @@ h.test("disabled border does not create an unused frame", function()
     h.is_nil(objective_border_frame(), "disabled border does not create a frame")
     h.eq(#(ObjectiveTrackerFrame:GetCalls("SetPoint") or {}), 0,
         "zero saved offsets leave Blizzard tracker positioning untouched")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("HookScript") or {}), 0,
+        "disabled move mode installs no Blizzard tracker script hooks")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("EnableMouse") or {}), 0,
+        "disabled move mode leaves Blizzard tracker mouse state untouched")
+
+    Ls_Tweeks_DB.objectives.objective_tracker_move_mode = true
+    M.apply_objective_move_mode()
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("HookScript") or {}), 3,
+        "explicit move mode initializes its three tracker script hooks")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("EnableMouse") or {}), 1,
+        "explicit move mode enables tracker mouse input")
+
+    Ls_Tweeks_DB.objectives.objective_tracker_move_mode = false
+    M.apply_objective_move_mode()
     Ls_Tweeks_DB.objectives.customize_background = true
     M.apply_background()
     h.advance(h.addon.UPDATE_INTERVALS.next_frame)

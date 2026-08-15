@@ -253,6 +253,7 @@ function M.sync_general_controls_from_db()
 
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
         set_checked("timer_number_font_bold_"..cat, M.db["timer_number_font_bold_"..cat])
+        set_checked("timer_number_font_outline_" .. cat, M.db["timer_number_font_outline_" .. cat])
     end
 
     for _, cat in ipairs(M.CATEGORIES) do
@@ -270,6 +271,7 @@ function M.sync_general_controls_from_db()
             )
         end
         set_checked("stack_number_font_bold_" .. cat, M.db["stack_number_font_bold_" .. cat])
+        set_checked("stack_number_font_outline_" .. cat, M.db["stack_number_font_outline_" .. cat])
         local refresh_stack_bold = M.controls["stack_number_font_bold_refresh_" .. cat]
         if refresh_stack_bold then refresh_stack_bold() end
     end

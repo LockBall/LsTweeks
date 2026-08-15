@@ -10,7 +10,7 @@ local M = addon.aura_frames
 
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "cancel_modifier", "short_threshold", "aura_visible_icon_tick",
-    "timer_number_font", "timer_number_font_size", "timer_number_font_bold",
+    "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline",
     "shared_background_color_enabled",
 }
 for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do

@@ -48,7 +48,7 @@ After WoW 12.1, **Combined Buffs** and **Debuffs** are the current combat-safe l
 
 Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the owning frame implementation selects and arranges the displayed auras; there is no adjustable pool-size setting.
 
-Each Aura frame can configure stack-count color, font, bold face, and font size independently from its timer and bar text.
+Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
 
 #### Test Aura Preview
 Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Combined Buffs and Debuffs do not yet have synthetic previews.

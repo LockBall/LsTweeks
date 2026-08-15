@@ -304,10 +304,17 @@ local function apply_objective_move_mode()
     local tracker = get_objective_tracker()
     if not tracker then return end
 
-    capture_objective_position_base(tracker)
-    ensure_objective_move_hooks(tracker)
-    if tracker.EnableMouse then
-        tracker:EnableMouse(is_objective_move_mode_enabled() or objective_move_original_mouse_enabled == true)
+    if is_objective_move_mode_enabled() then
+        capture_objective_position_base(tracker)
+        ensure_objective_move_hooks(tracker)
+        if tracker.EnableMouse then
+            tracker:EnableMouse(true)
+        end
+    else
+        objective_drag_state[tracker] = nil
+        if objective_move_hooks_installed and tracker.EnableMouse and objective_move_original_mouse_enabled ~= nil then
+            tracker:EnableMouse(objective_move_original_mouse_enabled == true)
+        end
     end
     sync_objective_move_header_highlight()
 end

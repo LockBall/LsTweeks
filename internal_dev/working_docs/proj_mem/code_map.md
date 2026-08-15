@@ -74,6 +74,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/buttons.lua`: shared button style, text-fit, page-arrow, play/pause, and Move Reset helpers. Memory: `proj_mem/functions/controls.md`; assets: `media/media_notes.md`.
 - `functions/color_picker.lua`: shared color-picker/session factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/dropdown.lua`: shared dropdown and native-style cycling-dropdown factories. Memory: `proj_mem/functions/controls.md`.
+- `functions/font_catalog.lua`: addon-wide selectable-font catalog, semantic Blizzard defaults, font application, and font-dropdown factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/group_column.lua`: shared Aura-style grouped selector column factory with section outlines, selected-group border highlighting, optional row delete buttons, and optional group actions.
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.

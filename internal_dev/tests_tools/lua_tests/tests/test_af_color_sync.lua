@@ -73,10 +73,18 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(timer_bold.checkbox:IsEnabled(), "Source Code Pro enables its available Bold option")
     timer_font.button:Click()
     h.ok(click_open_dropdown_option("Game Default"), "Game Default timer font option is selectable")
+    h.eq(timer_font.button:GetFontString():GetFontObject(), GameFontNormalSmall,
+        "Game Default timer selector previews Blizzard GameFontNormalSmall")
     h.ok(not timer_bold.checkbox:IsEnabled(), "Game Default greys and disables the unavailable Bold option")
     timer_font.button:Click()
     h.ok(click_open_dropdown_option("Source Code Pro"), "Source Code Pro timer font option is selectable")
     h.ok(timer_bold.checkbox:IsEnabled(), "selecting a font with a bold face re-enables Bold")
+
+    local stack_font = M.controls.stack_number_font_dropdown_combined
+    stack_font.button:Click()
+    h.ok(click_open_dropdown_option("Game Default"), "Game Default stack font option is selectable")
+    h.eq(stack_font.button:GetFontString():GetFontObject(), NumberFontNormal,
+        "Game Default stack selector previews Blizzard NumberFontNormal")
 
     h.ok(M.controls.background_color_sync_frame_picker, "frame background picker is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_bar_picker, "bar background picker is on Shared BG Colors")

@@ -281,8 +281,9 @@ M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 M.DEFAULT_FRAME_WIDTH = 200
 M.MIN_FRAME_HEIGHT = 44
 M.AURA_FRAME_LIMIT = 40
+M.ICON_STACK_INSET = { right = 2, bottom = 2 }
 M.DEFAULT_SHORT_THRESHOLD = 60
-M.DEFAULT_TIMER_NUMBER_FONT_KEY = "source_code_pro"
+M.DEFAULT_TIMER_NUMBER_FONT_KEY = addon.DEFAULT_FONT_KEY
 M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
 M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
 M.DEFAULT_OOC_FADE_DELAY = 2
@@ -372,6 +373,7 @@ M.defaults = {
     timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
+    timer_number_font_outline = true,
 
     -- STATIC
     show_static     = true,
@@ -633,7 +635,11 @@ for _, category in ipairs(M.CATEGORIES) do
     M.defaults["stack_number_font_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_KEY
     M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
     M.defaults["stack_number_font_bold_" .. category] = false
+    M.defaults["stack_number_font_outline_" .. category] = true
     M.defaults["stack_color_" .. category] = { r = 1, g = 1, b = 1 }
+end
+for _, category in ipairs(M.TIMER_CATEGORIES) do
+    M.defaults["timer_number_font_outline_" .. category] = true
 end
 
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
@@ -752,10 +758,12 @@ M.CUSTOM_FRAME_TEMPLATE = {
     timer_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
+    timer_number_font_outline = true,
     timer_color     = { r = 1, g = 1, b = 1 },
     stack_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
     stack_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     stack_number_font_bold = false,
+    stack_number_font_outline = true,
     stack_color     = { r = 1, g = 1, b = 1 },
     bar_text_color  = { r = 1, g = 1, b = 1 },
 

@@ -34,6 +34,7 @@ functions\module_reset.lua
 functions\color_picker.lua
 functions\panel_riveted.lua
 functions\dropdown.lua
+functions\font_catalog.lua
 functions\growth_direction.lua
 functions\group_column.lua
 functions\profiles.lua

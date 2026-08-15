@@ -136,7 +136,13 @@ local function initialize_preset_icon(aura_button, cfg_db, category, duration_fo
     apply_duration_font(duration_text, duration_font, category)
 
     local stack_text = aura_button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-    stack_text:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0, 1)
+    stack_text:SetPoint(
+        "BOTTOMRIGHT",
+        icon,
+        "BOTTOMRIGHT",
+        -M.ICON_STACK_INSET.right,
+        M.ICON_STACK_INSET.bottom
+    )
     if stack_font then
         stack_text:SetFontObject(stack_font)
     else

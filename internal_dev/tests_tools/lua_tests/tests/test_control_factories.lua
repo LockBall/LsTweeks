@@ -20,7 +20,40 @@ h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
 h.load_file("functions/dropdown.lua")
+h.load_file("functions/font_catalog.lua")
 h.load_file("functions/growth_direction.lua")
+
+h.test("font catalog shares role-aware selection across modules", function()
+    h.eq(addon.GetGameDefaultFontObject("timer"), GameFontNormalSmall,
+        "timer role resolves Blizzard's timer font")
+    h.eq(addon.GetGameDefaultFontObject("stack"), NumberFontNormal,
+        "stack role resolves Blizzard's number font")
+    h.ok(addon.IsFontBoldAvailable(addon.DEFAULT_FONT_KEY),
+        "bundled default exposes its registered bold face")
+    h.ok(not addon.IsFontBoldAvailable("game_default"),
+        "semantic Game Default does not claim an unavailable bold face")
+
+    local selected = "game_default"
+    local control = addon.CreateFontDropdown("FontFactoryTest", UIParent, {
+        role = "stack",
+        get_value = function() return selected end,
+        on_select = function(value) selected = value end,
+    })
+    h.eq(control.button:GetFontString():GetFontObject(), NumberFontNormal,
+        "shared font dropdown previews the requested semantic role")
+
+    local target = UIParent:CreateFontString(nil, "OVERLAY")
+    addon.ApplySelectedFont(target, {
+        key = "game_default",
+        role = "stack",
+        size = 13.5,
+        outline = true,
+    })
+    local font_call = target:GetLastCall("SetFont")
+    h.eq(font_call[1], "Fonts\\ARIALN.TTF", "shared application uses the role's native face")
+    h.eq(font_call[2], 13.5, "shared application preserves a requested half-step size")
+    h.eq(font_call[3], "OUTLINE", "shared application composes the requested outline")
+end)
 
 h.test("growth direction factory shares canonical metadata and control options", function()
     h.eq(addon.GetGrowthDirection("LEFT").anchor, "TOPRIGHT", "LEFT resolves its canonical anchor")

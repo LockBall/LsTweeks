@@ -16,6 +16,7 @@ Durable contracts for shared buttons, checkboxes, sliders, color pickers, and dr
 - `slider_with_box.lua`: DB-bound slider/edit-box/reset composition, callback scheduling, silent synchronization, and value-change hooks.
 - `color_picker.lua`: DB-bound swatch/reset control plus the shared Blizzard `ColorPickerFrame` session, alpha input, preview, cancel, and cleanup behavior.
 - `dropdown.lua`: styled dropdown button/popup/options, dynamic value access, hover arrow, and container state.
+- `font_catalog.lua`: addon-wide selectable-font definitions, bold faces, semantic Blizzard-default roles, font application, previews, and `CreateFontDropdown()` composition over the standard dropdown.
 - `growth_direction.lua`: canonical RIGHT/LEFT/DOWN/UP metadata, fallback normalization, and `CreateGrowthDirectionDropdown()` composition over the standard dropdown. Its `vertical_only` provider dynamically limits consumers to DOWN/UP.
 - `group_column.lua`, `module_reset.lua`, and `ui_helpers.lua` remain separately indexed shared composites; this file owns their underlying standard control contracts only when they consume these factories.
 
@@ -45,10 +46,11 @@ Durable contracts for shared buttons, checkboxes, sliders, color pickers, and dr
 - Dropdown `cfg.get_value` initializes selection, `cfg.on_select` owns external writes, and `SetEnabled(false)` closes the popup and hover arrow. Hover-arrow art/rotation remains asset-owned in `media_notes.md`.
 - Dropdown `cfg.is_option_visible` supports dynamic option filtering; callers refresh through `RefreshOptions()` and may inspect `GetVisibleOptionCount()` in tests. Hidden rows are reflowed and the popup height follows the visible count.
 - Growth-direction consumers use `addon.GetGrowthDirection()` for axis, anchor, and flow semantics and `addon.CreateGrowthDirectionDropdown()` for the control. Modules translate that shared result into their layout API; they do not define their own direction list or normalization table.
+- Configurable-font consumers use `addon.CreateFontDropdown()` and `addon.ApplySelectedFont()`. Font paths, labels, bold faces, and previews stay in `font_catalog.lua`; modules own only saved keys, size/color settings, and the semantic role (`body`, `timer`, or `stack`). `Game Default` must remain role-aware because Blizzard timer and stack text use different font objects. Font application preserves fractional sizes so a consumer offering 0.5 increments does not silently collapse them to whole-number steps.
 - A control with both a broad runtime lock and a narrower eligibility rule must reapply the composed gate during local synchronization; do not directly enable the inner widget and bypass another owner.
 
 
 ## Validation
-- `test_control_factories.lua` owns silent-setter recovery, play/pause state, slider throttling, callback-free timer regressions, and shared growth-direction factory coverage. Extend it when changing shared callback/container behavior.
+- `test_control_factories.lua` owns silent-setter recovery, play/pause state, slider throttling, callback-free timer regressions, and shared growth-direction/font factory coverage. Extend it when changing shared callback/container behavior.
 - Color-picker and dropdown changes require targeted module tests where behavior is modelable plus in-game verification of popup lifecycle, cancel/reset, alpha, enabled state, and dynamic DB switching.
 - Shared factory changes require an impact audit of every consumer named by changed-file test selection and `rg`; visual layout remains an in-game check.
