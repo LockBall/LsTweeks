@@ -233,7 +233,7 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     local function get_selected_timer_font()
         return frame_config.value_table[timer_font_key]
             or M.db.timer_number_font
-            or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+            or addon.DEFAULT_FONT_KEY
     end
 
     local function refresh_fonts()
@@ -345,7 +345,7 @@ local function create_frame_stack_text_controls(parent, frame_config, grid, upda
     local stack_color_key = frame_setting_key(frame_config, "stack_color")
 
     local function get_selected_stack_font()
-        return frame_config.value_table[stack_font_key] or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+        return frame_config.value_table[stack_font_key] or addon.DEFAULT_FONT_KEY
     end
 
     local function refresh_stack_fonts()

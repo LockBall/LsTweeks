@@ -1,5 +1,14 @@
 # Aura Frames 12.1 Feature Assessment
 
+## Table of Contents
+- [Purpose](#purpose)
+- [Confirmed platform change](#confirmed-platform-change)
+- [Scope conclusion](#scope-conclusion)
+- [Status summary](#status-summary)
+- [Numbered feature assessment](#numbered-feature-assessment)
+- [Recommended review order](#recommended-review-order)
+
+
 ## Purpose
 
 Track the feature-level impact of World of Warcraft 12.1's Aura API restrictions
@@ -68,6 +77,17 @@ assessment. Other modules still require normal regression testing after a game
 patch, but there is currently no evidence that this Aura change requires their
 redesign.
 
+
+## Status summary
+- [x] **AF12-05 — Debuff frame:** managed transport and baseline presentation verified in game; shared presentation gaps remain owned by AF12-07 through AF12-15.
+- [x] **AF12-10 — Layout and positioning:** fixed safety limit, growth, wrapping, spacing, positioning, and resize behavior are implemented for Combined Buffs and Debuffs.
+- [x] **AF12-12 — Aura tooltips:** managed frames use Blizzard-owned native tooltips out of combat and install no addon Aura hover scripts.
+- [x] **AF12-16 — Profiles, shared colors, move mode, and settings:** implemented and regression-covered for the current managed presets; settings belonging to unfinished capabilities remain tracked by their owning items.
+- [x] **AF12-19 — Other modules:** the full automated regression suite passes and extended in-game use has produced no remaining cross-module 12.1 regression.
+- **Partial:** AF12-01, AF12-07, AF12-08, AF12-14, and AF12-18.
+- **Open/design decision:** AF12-02, AF12-03, AF12-04, AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
+
+
 ## Numbered feature assessment
 
 ### AF12-01 — Preset live Aura frames
@@ -134,7 +154,11 @@ permanence from secret timing values.
 
 **Assessment:** Fully preservable after a backend rewrite.
 
-**Status:** Core transport and bar/icon presentation are verified in game. The
+**Status:** Complete for the managed Debuff baseline and verified in game.
+Presentation capabilities shared with other managed frames remain tracked under
+their own numbered items rather than keeping the Debuff transport item open.
+
+Core transport and bar/icon presentation are verified in game. The
 first live checks exposed two framework requirements: a shown `AuraContainer`
 does not process Auras until `SetEnabled(true)` is also applied, and its
 auto-sizing flow layout must be seeded from one corner rather than stretched
@@ -144,7 +168,7 @@ axis, anchor, growth, wrap width, and group spacing. Regressions cover both
 contracts. Debuffs now creates managed `HARMFUL` bar/icon groups with native
 icon, duration, stack, spell-name, and duration-bar bindings; it owns no legacy
 `UNIT_AURA` handler or indexed scan. Bar/icon switching, growth, spacing,
-maximum count, width, position, OOC fade transitions, timer font/size/bold/color,
+the fixed internal safety limit, width, position, OOC fade transitions, timer font/size/bold/color,
 bar foreground color, native OOC tooltips, and resize refresh are implemented.
 Synthetic previews, cancellation, cooldown swipe, custom timer formatting,
 sorting parity, and full live color/background parity remain separate work.
@@ -230,8 +254,9 @@ and protected-duration reads.
 
 **Assessment:** Mostly preservable, with stricter lifecycle rules.
 
-**Status:** Managed bar/icon switching, timer font/size/bold/color, bar
-foreground color, shell backgrounds, and resizing are implemented. Bar
+**Status:** Managed bar/icon switching, timer and Stack font/size/bold/color,
+black outlines, fractional font sizes, bar foreground color, shell backgrounds,
+and resizing are implemented. Bar
 background and non-duration bar text are still initialized from settings and do
 not yet have a complete accessible OOC refresh path.
 
@@ -270,10 +295,11 @@ with headless formatter tests and in-game secret Aura testing.
 
 **Assessment:** Preservable through managed Aura group layout.
 
-**Status:** Combined Buffs and Debuffs implement maximum count, spacing,
-UP/DOWN bar growth, four-way icon growth, wrapping, addon-owned positioning, and
-width resizing. AuraContainer remains corner-anchored and owns its child flow;
-the shell never reads managed content size or shown state.
+**Status:** Complete for Combined Buffs and Debuffs. They use one fixed internal
+safety limit rather than a user-adjustable maximum, and implement spacing,
+UP/DOWN bar growth, independent four-way icon growth, wrapping, addon-owned
+positioning, and width resizing. AuraContainer remains corner-anchored and owns
+its child flow; the shell never reads managed content size or shown state.
 
 Managed groups support maximum frame count, direction, spacing, columns, and
 group ordering. Containers resize themselves around their Aura groups.
@@ -304,9 +330,10 @@ sort choice that cannot be represented by the live enum.
 **Assessment:** Native detailed tooltips are preservable and should replace the
 custom Aura tooltip stack.
 
-**Status:** Combined Buffs and Debuffs use native AuraButton tooltips with mouse
-motion enabled and combat tooltips hidden. Their managed path installs no addon
-hover scripts and performs no Aura tooltip lookup or reconstruction.
+**Status:** Complete for managed frames. Combined Buffs and Debuffs use native
+AuraButton tooltips with mouse motion enabled and combat tooltips hidden. Their
+managed path installs no addon hover scripts and performs no Aura tooltip lookup
+or reconstruction.
 
 AuraButtons provide engine-owned Aura tooltips, tooltip anchoring, and an option
 to hide tooltips in combat. This avoids exposing protected Aura data and is the
@@ -368,24 +395,26 @@ sharing presentation configuration and formatter definitions wherever safe.
 
 **Assessment:** Preservable.
 
-**Status:** Combined Buffs has independent saved settings, position, profile
-fields, shared-color participation, four-way icon growth, vertical bar growth,
-move border, and resize grip. OOC changes update container layout and accessible
-presentation state without rebuilding managed groups. Fields tied to unfinished
-sorting, preview, cancellation, or legacy Static/Short/Long semantics remain
-subject to migration decisions.
+**Status:** Complete for the current managed presets. Combined Buffs and Debuffs
+have independent saved settings, positions, profile fields, shared-color
+participation, four-way icon growth, vertical bar growth, move borders, and
+resize grips. OOC changes update container layout and accessible presentation
+state without rebuilding managed groups. Fields tied to unfinished sorting,
+preview, cancellation, or legacy Static/Short/Long semantics remain owned by
+those numbered feature decisions.
 
-These features manage addon-owned configuration and positioning. Saved fields
-whose underlying feature changes meaning, especially the Short threshold,
-Static, Long, modifier cancellation, and unsupported sorting choices, need an
-explicit migration policy.
+These features manage addon-owned configuration and positioning. This project
+has one developer/user and does not carry migration code: obsolete fields can
+be removed when the Short, Static, Long, cancellation, and sorting decisions are
+final, while module reset remains the clean recovery path.
 
 Some live appearance changes may need to be deferred while managed buttons are
 forbidden. Profile loading is already blocked during combat, which is helpful
 but is not a complete substitute for checking AuraButton accessibility.
 
-**Direction:** Retain profile structure where possible and version the Aura
-Frames schema when final category decisions are made.
+**Direction:** Retain the current profile structure where its capabilities
+remain valid. Remove obsolete fields directly after the remaining feature
+decisions and keep reset/default behavior authoritative.
 
 ### AF12-17 — Cooldown Manager-backed frames
 
@@ -412,6 +441,10 @@ viewer bridge or migrate only its Aura-backed portions.
 **Assessment:** BuffFrame and DebuffFrame now have a reversible, test-covered
 hidden-parent path. Cooldown Manager suppression remains a separate concern.
 
+**Status:** Partial. The General-tab Blizzard Buff/Debuff toggles now work in
+game, and automated coverage verifies deferred changes plus module-disable
+restoration. Cooldown Manager suppression remains part of the AF12-17 audit.
+
 BuffFrame and DebuffFrame inherit Blizzard's Aura Frame Edit Mode behavior, but
 `UpdateSystemSettingValue` silently does nothing before the system has
 `systemInfo`; the first native-setting attempt therefore passed headless tests
@@ -432,6 +465,10 @@ viewer from producing state needed by LsTweeks.
 **Assessment:** No direct incompatibility found from the 12.1 Aura restrictions
 or the specifically reviewed removed APIs.
 
+**Status:** Complete for the current patch review. The full automated suite
+passes, and extended in-game use has not produced another unresolved 12.1
+regression outside Aura Frames.
+
 Player Frame, Objectives, Audio Volumes, All the Colors, Skyriding Vigor, core
 navigation, and ordinary settings tooltips do not use the indexed Aura APIs
 identified in this failure.
@@ -444,7 +481,7 @@ unrelated modules without new evidence.
 
 1. Keep Combined Buffs and Debuffs as the validated managed baseline while
    resolving the Static/Short/Long product model in AF12-02 through AF12-04.
-2. Finish managed presentation gaps in AF12-07 through AF12-12: cooldown swipe,
+2. Finish managed presentation gaps in AF12-07 through AF12-11: cooldown swipe,
    live color/background refresh parity, native timer formatting, and sorting.
 3. Add managed-safe synthetic previews under AF12-15, then decide native buff
    cancellation and hover behavior under AF12-13 and AF12-14.

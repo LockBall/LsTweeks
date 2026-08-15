@@ -371,7 +371,7 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     local font_call = buffs_backend.duration_font:GetLastCall("SetFont")
     local color_call = buffs_backend.duration_font:GetLastCall("SetTextColor")
-    h.eq(font_call[1], h.addon.GetFontDefinition(M.DEFAULT_TIMER_NUMBER_FONT_KEY).bold_path,
+    h.eq(font_call[1], h.addon.GetFontDefinition(h.addon.DEFAULT_FONT_KEY).bold_path,
         "managed timer font applies the saved bold face")
     h.eq(font_call[2], 14, "managed timer font applies the saved size")
     h.eq(font_call[3], "OUTLINE", "managed timer font applies the default outline")
@@ -387,7 +387,7 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     local stack_font_call = buffs_backend.stack_font:GetLastCall("SetFont")
     local stack_color_call = buffs_backend.stack_font:GetLastCall("SetTextColor")
-    h.eq(stack_font_call[1], h.addon.GetFontDefinition(M.DEFAULT_TIMER_NUMBER_FONT_KEY).bold_path,
+    h.eq(stack_font_call[1], h.addon.GetFontDefinition(h.addon.DEFAULT_FONT_KEY).bold_path,
         "managed stack font applies the saved bold face")
     h.eq(stack_font_call[2], 13.5, "managed stack font preserves the saved half-step size")
     h.eq(stack_font_call[3], "OUTLINE", "managed stack font applies the default outline")

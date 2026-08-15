@@ -304,8 +304,15 @@ function frame_methods:SetFontObject(font_object)
     self.__font_object = font_object
 end
 function frame_methods:GetFontObject() return self.__font_object end
-function frame_methods:SetFont(...) record(self, "SetFont", ...) end
-function frame_methods:GetFont() return "Fonts\\FRIZQT__.TTF", 12, "" end
+function frame_methods:SetFont(path, size, flags)
+    record(self, "SetFont", path, size, flags)
+    self.__font_path = path
+    self.__font_size = size
+    self.__font_flags = flags
+end
+function frame_methods:GetFont()
+    return self.__font_path or "Fonts\\FRIZQT__.TTF", self.__font_size or 12, self.__font_flags or ""
+end
 function frame_methods:SetTextColor(...) record(self, "SetTextColor", ...) end
 function frame_methods:SetJustifyH() end
 function frame_methods:SetJustifyV() end
@@ -748,9 +755,9 @@ STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall,
     GameTooltipHeaderText, GameTooltipText = {}, {}, {}, {}, {}, {}, {}, {}, {}
 GameFontNormalSmall = CreateFont("GameFontNormalSmall")
-function GameFontNormalSmall:GetFont() return "Fonts\\FRIZQT__.TTF", 10, "" end
+GameFontNormalSmall:SetFont("Fonts\\FRIZQT__.TTF", 10, "")
 NumberFontNormal = CreateFont("NumberFontNormal")
-function NumberFontNormal:GetFont() return "Fonts\\ARIALN.TTF", 14, "OUTLINE" end
+NumberFontNormal:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
 
 UIParent = CreateFrame("Frame", "UIParent")
 UIParent:SetSize(1920, 1080)

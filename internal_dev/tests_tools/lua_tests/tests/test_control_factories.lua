@@ -49,7 +49,7 @@ h.test("font catalog shares role-aware selection across modules", function()
         size = 13.5,
         outline = true,
     })
-    local font_call = target:GetLastCall("SetFont")
+    local font_call = h.stub.FrameMethods.GetLastCall(target, "SetFont")
     h.eq(font_call[1], "Fonts\\ARIALN.TTF", "shared application uses the role's native face")
     h.eq(font_call[2], 13.5, "shared application preserves a requested half-step size")
     h.eq(font_call[3], "OUTLINE", "shared application composes the requested outline")

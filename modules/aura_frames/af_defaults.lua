@@ -283,7 +283,6 @@ M.MIN_FRAME_HEIGHT = 44
 M.AURA_FRAME_LIMIT = 40
 M.ICON_STACK_INSET = { right = 2, bottom = 2 }
 M.DEFAULT_SHORT_THRESHOLD = 60
-M.DEFAULT_TIMER_NUMBER_FONT_KEY = addon.DEFAULT_FONT_KEY
 M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
 M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
 M.DEFAULT_OOC_FADE_DELAY = 2
@@ -370,7 +369,7 @@ M.defaults = {
     cancel_modifier = "CTRL",
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
     aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
-    timer_number_font = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font = addon.DEFAULT_FONT_KEY,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_number_font_outline = true,
@@ -416,7 +415,7 @@ M.defaults = {
     fade_length_short = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
-    timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_short = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_short = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_short = false,
     timer_color_short = { r = 1, g = 1, b = 1 },
@@ -442,7 +441,7 @@ M.defaults = {
     fade_length_long = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
-    timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_long = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_long = false,
     timer_color_long = { r = 1, g = 1, b = 1 },
@@ -468,7 +467,7 @@ M.defaults = {
     fade_length_combined = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_combined = default_bg_color(),
     sort_combined = "timeleft",
-    timer_number_font_combined = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_combined = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_combined = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_combined = false,
     timer_color_combined = { r = 1, g = 1, b = 1 },
@@ -496,7 +495,7 @@ M.defaults = {
     fade_length_essential = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_essential = default_bg_color(),
     sort_essential = "timeleft",
-    timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_essential = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_essential = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_essential = false,
     timer_color_essential = { r = 1, g = 1, b = 1 },
@@ -524,7 +523,7 @@ M.defaults = {
     fade_length_utility = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
-    timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_utility = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_utility = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_utility = false,
     timer_color_utility = { r = 1, g = 1, b = 1 },
@@ -551,7 +550,7 @@ M.defaults = {
     fade_length_tracked_buffs = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_tracked_buffs = default_bg_color(),
     sort_tracked_buffs = "timeleft",
-    timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_tracked_buffs = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_buffs = false,
     timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
@@ -578,7 +577,7 @@ M.defaults = {
     fade_length_tracked_bars = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_tracked_bars = default_bg_color(),
     sort_tracked_bars = "timeleft",
-    timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_tracked_bars = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_tracked_bars = false,
     timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
@@ -604,7 +603,7 @@ M.defaults = {
     fade_length_debuff = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
-    timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font_debuff = addon.DEFAULT_FONT_KEY,
     timer_number_font_size_debuff = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_debuff = false,
     timer_color_debuff = { r = 1, g = 1, b = 1 },
@@ -632,7 +631,7 @@ M.defaults = {
 M.apply_presentation_growth_defaults(M.defaults, M.FRAME_DEFS)
 
 for _, category in ipairs(M.CATEGORIES) do
-    M.defaults["stack_number_font_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    M.defaults["stack_number_font_" .. category] = addon.DEFAULT_FONT_KEY
     M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
     M.defaults["stack_number_font_bold_" .. category] = false
     M.defaults["stack_number_font_outline_" .. category] = true
@@ -755,12 +754,12 @@ M.CUSTOM_FRAME_TEMPLATE = {
     test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
-    timer_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    timer_number_font      = addon.DEFAULT_FONT_KEY,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_number_font_outline = true,
     timer_color     = { r = 1, g = 1, b = 1 },
-    stack_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    stack_number_font      = addon.DEFAULT_FONT_KEY,
     stack_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     stack_number_font_bold = false,
     stack_number_font_outline = true,

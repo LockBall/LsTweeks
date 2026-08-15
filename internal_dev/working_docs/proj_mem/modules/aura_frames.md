@@ -159,7 +159,7 @@ Important `aura_frames` keys:
 ## GUI
 - `af_gui.lua` owns the shell: tabs are **General**, **Frames**, **Shared BG Colors**, **Profiles**.
 - `M.BuildSettings()` stays as the tab-shell coordinator and routes through local helpers plus a small `context` table.
-- `af_gui.lua` routes its Profiles tab through the shared Profiles-tab factory. Timer-font dropdown construction is local to `af_gui_frame_builders.lua`. `M.build_general_tab` and `M.build_frames_tab` remain exported because they live in separate Aura Frames GUI files and are called by the shell.
+- `af_gui.lua` routes its Profiles tab through the shared Profiles-tab factory. Timer and Stack font controls use the addon-wide catalog and dropdown factory in `functions/font_catalog.lua`. `M.build_general_tab` and `M.build_frames_tab` remain exported because they live in separate Aura Frames GUI files and are called by the shell.
 - `af_gui_tree.lua` owns the Frames sidebar groups: **Buffs**, **WoW Cooldown**, **Filters**.
 - `af_gui_frame_builders.lua` owns General, preset/CDM, custom settings, and custom filter panels.
 - `af_gui_shared_bg_colors.lua` owns the Aura-shared color controls and reusable participation matrix rows.
