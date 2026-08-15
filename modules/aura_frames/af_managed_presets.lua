@@ -16,6 +16,8 @@ local BAR_ICON_GAP = 5
 local BAR_STACK_WIDTH = 20
 local BAR_TIMER_WIDTH = 36
 local MOVE_OUTLINE_OVERLAP = 1
+local MOVE_HANDLE_EDGE_THICKNESS = 3
+local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
 local managed_duration_fonts = {}
 
 --#region MANAGED CONTAINER LAYOUT ============================================
@@ -272,6 +274,14 @@ local function position_container_move_outline(backend, width, bar_mode, growth_
     backend.move_outline_bar_mode = bar_mode
     backend.move_outline_growth_layout = growth_layout
     owner._managed_mover_edge = grows_up and "BOTTOM" or "TOP"
+    outline.TOP:SetHeight(grows_up and 1 or MOVE_HANDLE_EDGE_THICKNESS)
+    outline.BOTTOM:SetHeight(grows_up and MOVE_HANDLE_EDGE_THICKNESS or 1)
+    local active_side = grows_up and "BOTTOM" or "TOP"
+    local color = M.MOVE_BORDER_COLOR
+    for side, edge in pairs(outline) do
+        local alpha = side == active_side and color.a or MOVE_OUTLINE_PASSIVE_ALPHA
+        edge:SetColorTexture(color.r, color.g, color.b, alpha)
+    end
 
     if grows_up then
         outline.TOP:SetPoint("BOTTOMLEFT", container, "TOPLEFT", -inset, inset)
