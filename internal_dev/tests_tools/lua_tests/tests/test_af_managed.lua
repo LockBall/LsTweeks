@@ -145,6 +145,10 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             bar_mode_combined = true,
             growth_icon_combined = "DOWN",
             growth_bar_combined = "DOWN",
+            fade_ooc_combined = true,
+            ooc_alpha_combined = 0.25,
+            fade_delay_combined = 0,
+            fade_length_combined = 0,
         },
     })
 
@@ -231,10 +235,16 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(backend.move_outline.TOP:IsShown(), false,
         "leaving managed Move Mode hides the native-container outline")
     h.eq(frame:GetAlpha(), 0.35, "managed Debuff shell applies its saved out-of-combat alpha")
+    h.eq(backend.container:GetAlpha(), 0.35,
+        "managed Debuff container applies its saved out-of-combat alpha")
     h.fire_event("PLAYER_REGEN_DISABLED")
     h.eq(frame:GetAlpha(), 1, "combat-entry event makes the managed Debuff shell fully visible")
+    h.eq(backend.container:GetAlpha(), 1,
+        "combat-entry event makes the managed Debuff container fully visible")
     h.fire_event("PLAYER_REGEN_ENABLED")
     h.eq(frame:GetAlpha(), 0.35, "combat-exit event restores the managed Debuff shell OOC alpha")
+    h.eq(backend.container:GetAlpha(), 0.35,
+        "combat-exit event restores the managed Debuff container OOC alpha")
 
     local long_frame = M.frames.show_long
     h.eq(long_frame._managed_aura_backend, nil, "Long remains separate from the combined managed capability")
@@ -255,6 +265,10 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(buffs_frame.icons, nil, "combined Buffs frame creates no legacy icon pool")
     h.eq(buffs_frame.__events.UNIT_AURA, nil, "combined Buffs frame does not register UNIT_AURA")
     h.ok(buffs_frame:IsShown(), "runtime startup shows enabled combined Buffs")
+    h.eq(buffs_frame:GetAlpha(), 0.25,
+        "combined Buff shell applies its saved out-of-combat alpha")
+    h.eq(buffs_backend.container:GetAlpha(), 0.25,
+        "combined Buff container applies its saved out-of-combat alpha")
     for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
         h.eq(aura_button.__width, 128, "combined Buff bars use the saved inner frame width")
         h.eq(aura_button.__height, 18, "combined Buff bars use the shared native row height")

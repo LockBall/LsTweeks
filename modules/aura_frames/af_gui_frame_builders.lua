@@ -140,7 +140,7 @@ local function make_custom_frame_settings_config(entry)
     if entry.tooltip == nil then entry.tooltip = true end
     if entry.timer_swipe == nil then entry.timer_swipe = true end
     if entry.fade_ooc == nil then entry.fade_ooc = false end
-    if entry.ooc_alpha == nil then entry.ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA end
+    if entry.ooc_alpha == nil then entry.ooc_alpha = addon.DEFAULT_FADE_ALPHA end
     if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
     if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
     return {
@@ -452,7 +452,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         end
     end
 
-    local move_container, move_cb = create_bound_checkbox_control(
+    local move_container, move_cb, move_label = create_bound_checkbox_control(
         parent,
         "Move Mode",
         value_table,
@@ -473,6 +473,8 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         end,
         update
     )
+    add_label_tooltip(move_container, move_label, "Disables OOC Fade")
+    addon.AttachTooltip(move_cb, "Disables OOC Fade")
 
     local x_slider = addon.CreateSliderWithBox(
         addon_name .. id .. (options.x_name_suffix or "XPos"),
@@ -951,7 +953,27 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         })
     end
 
-    local fade_ooc_container, _, fade_ooc_label = bound_cb("Fade OOC", "fade_ooc", 4, 1)
+    local function on_fade_ooc_changed(is_checked)
+        local color_sync = addon.all_the_colors
+        if is_checked and color_sync and color_sync.set_disable_ooc_fade then
+            color_sync.set_disable_ooc_fade(false)
+            if color_sync.sync_controls then color_sync.sync_controls() end
+            if M.sync_background_color_controls then M.sync_background_color_controls() end
+            if color_sync.refresh_consumers then
+                color_sync.refresh_consumers()
+                return
+            end
+        end
+        update()
+    end
+
+    local fade_ooc_container, _, fade_ooc_label = bound_cb(
+        "Fade OOC",
+        "fade_ooc",
+        4,
+        1,
+        on_fade_ooc_changed
+    )
     add_label_tooltip(fade_ooc_container, fade_ooc_label, "Fade Out Of Combat")
     local ooc_alpha_slider = create_frame_slider(
         parent,

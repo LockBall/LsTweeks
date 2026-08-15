@@ -13,7 +13,7 @@ M.frames = M.frames or {}
 M.MODULE_KEY = "player_frame"
 
 M.FADE_DEFAULTS = {
-    fade_alpha = 0.5,
+    fade_alpha = addon.DEFAULT_FADE_ALPHA,
     fade_delay = 2.0,
     fade_length = 5.0,
     health_visible_threshold = 80,

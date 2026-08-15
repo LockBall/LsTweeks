@@ -251,9 +251,20 @@ end
 local function set_alpha_if_changed(frame, alpha)
     if not frame then return end
     alpha = alpha or 1
-    if frame._lstweeks_applied_alpha == alpha then return end
-    frame._lstweeks_applied_alpha = alpha
-    frame:SetAlpha(alpha)
+    if frame._lstweeks_applied_alpha ~= alpha then
+        frame._lstweeks_applied_alpha = alpha
+        frame:SetAlpha(alpha)
+    end
+
+    -- Blizzard managed AuraButtons do not reliably inherit visual alpha across
+    -- the constrained AuraContainer boundary.  Fade the addon-owned aggregate
+    -- container as well, without touching individual protected AuraButtons.
+    local backend = frame._managed_aura_backend
+    local container = backend and backend.container
+    if container and backend._lstweeks_applied_alpha ~= alpha then
+        backend._lstweeks_applied_alpha = alpha
+        container:SetAlpha(alpha)
+    end
 end
 
 local function cancel_frame_ooc_fade(frame)
@@ -270,7 +281,7 @@ end
 M.cancel_frame_ooc_fade = cancel_frame_ooc_fade
 
 local function clamp_ooc_alpha(value)
-    value = tonumber(value) or M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA
+    value = tonumber(value) or addon.DEFAULT_FADE_ALPHA
     local range = M.SETTING_RANGES.ooc_alpha
     local min_alpha = range.min
     local max_alpha = range.max
@@ -388,7 +399,7 @@ local function refresh_frame_ooc_fade_for_state(frame, in_combat, activity, cfg_
         fade_ooc,
         activity.moving == true,
         in_combat == true,
-        M.get_setting(cfg_db, category, "ooc_alpha", M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA),
+        M.get_setting(cfg_db, category, "ooc_alpha", addon.DEFAULT_FADE_ALPHA),
         M.get_setting(cfg_db, category, "fade_delay", M.DEFAULT_OOC_FADE_DELAY),
         M.get_setting(cfg_db, category, "fade_length", M.DEFAULT_OOC_FADE_LENGTH)
     )

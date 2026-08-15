@@ -11,7 +11,7 @@
 Important `player_frame` keys:
 - `hide_portrait_combat_text`: hides Player Frame portrait combat text.
 - `fade_out_of_combat`: enables Out Of Combat (OOC) Player Frame fading.
-- `fade_alpha`: target OOC alpha, default `0.5`.
+- `fade_alpha`: target OOC alpha, sourced from the project-wide `addon.DEFAULT_FADE_ALPHA` (`0.50`) so new settings and Reset match every fade consumer.
 - `fade_delay`: seconds to stay fully visible after combat, default `2.0`.
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `5.0`.
 - `health_visible_threshold`: health curve release point for OOC fade, default `80`. Below this point the pass-through curve keeps PlayerFrame fully visible; above it the curve eases toward the normal time-fade alpha instead of snapping.

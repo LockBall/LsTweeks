@@ -14,7 +14,7 @@
 Important `skyriding_vigor` keys:
 - `enabled`: toggles the restored vigor display.
 - `fade_when_full`: lowers alpha when vigor is full and move mode is off.
-- `fade_alpha`: alpha used by `fade_when_full`.
+- `fade_alpha`: alpha used by `fade_when_full`; normal and race-profile defaults use the project-wide `addon.DEFAULT_FADE_ALPHA` (`0.50`) for new settings and Reset.
 - `fade_length`: seconds to fade from full alpha to `fade_alpha`, default `3.0`.
 - `progress_update_hz`: Fill FPS slider value for the active filling-node progress driver. Defaults from `addon.UPDATE_INTERVALS.skyriding_vigor_progress` in `core/init.lua`, currently `20`.
 - `race_profile_enabled`: global Skyriding Vigor flag that enables the alternate race profile and race-detection events. When false, race item checks and race profile event registration stay disabled.

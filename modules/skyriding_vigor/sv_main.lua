@@ -77,7 +77,7 @@ local function normalize_db(db, include_race_controls)
         db.race_profile = nil
     end
     db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_RANGES.spacing)
-    db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or 0.25, SETTING_RANGES.fade_alpha)
+    db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or addon.DEFAULT_FADE_ALPHA, SETTING_RANGES.fade_alpha)
     db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_RANGES.fade_length)
     db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
     db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)

@@ -1096,7 +1096,7 @@ function M.create_custom_frame(entry)
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
     if entry.fade_ooc == nil then entry.fade_ooc = false end
-    if entry.ooc_alpha == nil then entry.ooc_alpha = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA end
+    if entry.ooc_alpha == nil then entry.ooc_alpha = addon.DEFAULT_FADE_ALPHA end
     if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
     if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
     local aura_filter = M.get_custom_aura_filter(entry)

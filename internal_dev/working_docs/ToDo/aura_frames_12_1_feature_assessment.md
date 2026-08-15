@@ -369,7 +369,11 @@ redesign and may not be exactly preservable.
 
 **Status:** Managed shells use addon-owned combat transitions and OOC fade state.
 Move-border and resize-grip hover restore full alpha; managed AuraButton hover is
-left native and is not polled by LsTweeks.
+left native and is not polled by LsTweeks. Frame-specific **Fade OOC** now clears
+the global **Disable OOC Fade** policy and synchronizes both linked controls;
+the fade alpha is also applied directly to the aggregate managed AuraContainer
+because its constrained AuraButtons did not visually inherit shell alpha. This
+container-alpha fix still needs the item 3 live recheck.
 
 The current code polls visible icons with `IsShown()` and `IsMouseOver()` to
 restore full alpha while hovered. Managed AuraButtons restrict shown-state and
@@ -443,7 +447,9 @@ hidden-parent path. Cooldown Manager suppression remains a separate concern.
 
 **Status:** Partial. The General-tab Blizzard Buff/Debuff toggles now work in
 game, and automated coverage verifies deferred changes plus module-disable
-restoration. Cooldown Manager suppression remains part of the AF12-17 audit.
+restoration. The 2026-08-15 in-game matrix passed checkbox changes, reload,
+combat deferral, module-disable restoration, and hidden-hitbox checks. Cooldown
+Manager suppression remains part of the AF12-17 audit.
 
 BuffFrame and DebuffFrame inherit Blizzard's Aura Frame Edit Mode behavior, but
 `UpdateSystemSettingValue` silently does nothing before the system has
@@ -453,12 +459,10 @@ frames under one hidden addon-owned parent and restores their captured original
 parents after combat. Blizzard shown state, events, scripts, and Aura processing
 remain untouched, while rendering and descendant hitboxes are both suppressed.
 
-**Direction:** In game, verify both Blizzard Aura enable toggles after reload and
-after module disable, including parent restoration and the absence of invisible
-Aura hitboxes. The approach is informed by BasicBuffHide's current maintained
-implementation but is independently implemented here.
-Continue avoiding `Hide()` for Cooldown Manager viewers where doing so stops the
-viewer from producing state needed by LsTweeks.
+**Direction:** BuffFrame/DebuffFrame suppression is complete. Continue avoiding
+`Hide()` for Cooldown Manager viewers where doing so stops the viewer from
+producing state needed by LsTweeks; remaining suppression work belongs to
+AF12-17.
 
 ### AF12-19 — Other LsTweeks modules
 

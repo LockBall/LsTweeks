@@ -57,6 +57,30 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     M.db.growth_bar_combined = "UP"
     M.BuildSettings(parent)
 
+    h.eq(addon.DEFAULT_FADE_ALPHA, 0.50,
+        "one shared Fade Alpha constant owns every module default")
+    h.eq(addon.player_frame.FADE_DEFAULTS.fade_alpha, addon.DEFAULT_FADE_ALPHA,
+        "Player Frame uses the shared Fade Alpha default")
+    h.eq(addon.module_defaults.sv.skyriding_vigor.fade_alpha, addon.DEFAULT_FADE_ALPHA,
+        "Skyriding Vigor uses the shared Fade Alpha default")
+    h.eq(addon.module_defaults.sv.skyriding_vigor.race_profile.fade_alpha, addon.DEFAULT_FADE_ALPHA,
+        "new Skyriding race profiles use the shared Fade Alpha default")
+    for _, category in ipairs(M.CATEGORIES) do
+        h.eq(M.defaults["ooc_alpha_" .. category], addon.DEFAULT_FADE_ALPHA,
+            category .. " reset uses the shared Fade Alpha default")
+    end
+    local new_custom_entry = M.new_custom_entry("custom_default_alpha", "Default Alpha")
+    h.eq(new_custom_entry.ooc_alpha, addon.DEFAULT_FADE_ALPHA,
+        "new custom frames use the shared Fade Alpha default")
+
+    local move_control = M.controls.move_combined
+    h.ok(move_control.checkbox:GetScript("OnEnter"),
+        "Move Mode checkbox exposes its OOC fade behavior")
+    move_control.checkbox:GetScript("OnEnter")(move_control.checkbox)
+    h.eq(addon.GetOwnedTooltip().lines[1]:GetText(), "Disables OOC Fade",
+        "Move Mode tooltip explains that it disables OOC Fade")
+    move_control.checkbox:GetScript("OnLeave")(move_control.checkbox)
+
     local bar_mode = M.controls.bar_mode_combined
     local growth = M.controls.growth_dropdown_combined
     h.eq(growth:GetValue(), "LEFT", "Combined Buffs opens with its saved Icon Mode growth")
@@ -148,6 +172,24 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     fade_control:SetChecked(true)
     fade_control.checkbox:Click()
     h.eq(color_sync.get_disable_ooc_fade(), true, "linked fade control writes Background Colors state")
+
+    local colors_parent = CreateFrame("Frame", nil, UIParent)
+    colors_parent:SetSize(925, 700)
+    color_sync.BuildSettings(colors_parent)
+    color_sync.sync_controls()
+    local global_fade_control = color_sync.controls.global_disable_ooc_fade
+    h.eq(global_fade_control:GetChecked(), true, "All the Colors reflects the shared disabled-fade policy")
+
+    local combined_fade_control = M.controls.fade_ooc_combined
+    combined_fade_control:SetChecked(true)
+    combined_fade_control.checkbox:Click()
+    h.eq(M.db.fade_ooc_combined, true, "Combined Buffs stores its local Fade OOC selection")
+    h.eq(color_sync.get_disable_ooc_fade(), false,
+        "enabling a local Fade OOC clears the global disable policy")
+    h.eq(fade_control:GetChecked(), false,
+        "enabling a local Fade OOC unchecks the linked Aura Frames control")
+    h.eq(global_fade_control:GetChecked(), false,
+        "enabling a local Fade OOC unchecks the All the Colors control")
 
     M.controls.background_color_sync_enabled:SetChecked(true)
     M.controls.background_color_sync_enabled.checkbox:Click()

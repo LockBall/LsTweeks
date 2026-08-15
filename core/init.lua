@@ -23,6 +23,9 @@ addon.AURA_BAR_COLOR_DEFAULTS = {
     debuff = { r = 1, g = 0.2, b = 0.2, a = 1 },
 }
 
+-- Shared by every fade control for new settings, missing-value fallback, and Reset.
+addon.DEFAULT_FADE_ALPHA = 0.50
+
 -- Shared timing buckets. Runtime code should choose a named bucket/profile
 -- instead of scattering raw debounce or refresh intervals.
 addon.UPDATE_INTERVALS = {

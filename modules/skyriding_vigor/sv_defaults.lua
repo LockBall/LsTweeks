@@ -17,7 +17,7 @@ local function build_profile_defaults()
     return {
         enabled = true,
         fade_when_full = true,
-        fade_alpha = 0.25,
+        fade_alpha = addon.DEFAULT_FADE_ALPHA,
         fade_length = 3,
         show_spark = false,
         spark_color = { r = 1, g = 1, b = 1, a = 1 },
