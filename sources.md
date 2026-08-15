@@ -13,6 +13,12 @@ Public credits, attribution, and embedded third-party library sources for L's Tw
   - Referenced for Aura Frames inspiration, especially buff/debuff bar presentation, grouping/bucketing, and configurable aura display behavior.
 - Angleur: https://www.curseforge.com/wow/addons/angleur
   - Referenced for Fishing Focus-style temporary audio profile behavior during fishing.
+- TellMeWhen: https://www.curseforge.com/wow/addons/tellmewhen
+  - Referenced as evidence for the community-tested WoW 12.1 managed AuraContainer/AuraButton approach.
+  - TellMeWhen is GPLv3. LsTweeks uses an independent implementation based on Blizzard's public API contract and contains no copied TellMeWhen code.
+- ArcUI: https://www.curseforge.com/wow/addons/arc-ui
+  - Referenced as evidence for the community-tested WoW 12.1 managed AuraContainer/AuraButton approach.
+  - ArcUI's installed distribution contains conflicting license files, including a restrictive study-only grant. LsTweeks treats it strictly as an implementation reference and contains no copied ArcUI code.
 
 
 ## Embedded Libraries

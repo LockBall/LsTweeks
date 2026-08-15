@@ -1,0 +1,397 @@
+# Aura Frames 12.1 Feature Assessment
+
+## Purpose
+
+Track the feature-level impact of World of Warcraft 12.1's Aura API restrictions
+and provide stable item numbers for design, implementation, and in-game review.
+
+This is an assessment, not an implementation plan. Each item should be resolved
+deliberately before its status is changed.
+
+## Confirmed platform change
+
+While Auras are secret:
+
+- Aura queries by index, slot, or Aura instance ID can Lua error when called by
+  addons.
+- The `UNIT_AURA` update payload is fully secret.
+- `AuraData` structures cannot be inspected safely by addon code.
+- Addons are expected to display protected Auras through managed
+  `AuraContainer` and `AuraButton` objects. The container owns Aura discovery,
+  filtering, sorting, assignment, and visibility; addon code controls only the
+  supported presentation bindings.
+- Managed AuraButtons can become forbidden. Their complete widget tree and
+  presentation bindings must therefore be established in `initializeFrame`.
+  Addon scripts cannot depend on later AuraButton visibility, focus, hover, or
+  Aura identity inspection.
+
+Primary references:
+
+- Blizzard announcement:
+  https://us.forums.blizzard.com/en/wow/t/addons-and-auras-in-curse-of-ula%E2%80%99tek/2317456
+- Patch 12.1 API change record:
+  https://warcraft.wiki.gg/wiki/Patch_12.1.0/API_changes
+
+Local community implementations inspected:
+
+- TellMeWhen:
+  `../TellMeWhen/Components/IconModules/IconModule_AuraContainer/AuraContainer.lua`
+- TellMeWhen managed filter construction:
+  `../TellMeWhen/Components/IconTypes/IconType_buffcontainer/buffcontainer.lua`
+- ArcUI:
+  `../ArcUI/CDM_Module/Arc_Auras/ArcUI_ArcAurasAuraIcons.lua`
+  and `../ArcUI/CDM_Module/Arc_Auras/ArcUI_ArcAurasAuraGroups.lua`
+
+Both addons use the same general pattern: create managed containers, completely
+build and style each AuraButton during `initializeFrame`, bind native icon,
+duration, stack, bar, and tooltip behavior, and do not inspect protected Aura
+data afterward.
+
+License and implementation boundary:
+
+- TellMeWhen is GPLv3. It may be studied as a working public example, but no
+  TellMeWhen code may be copied or adapted into the MIT-licensed LsTweeks code.
+- The installed ArcUI distribution contains both a BSD-3-Clause `LICENSE` and a
+  restrictive `LICENSE.txt` that permits study but requires prior permission to
+  use portions. Treat the stricter terms as controlling: study behavior only and
+  copy no ArcUI code.
+- LsTweeks must derive its implementation independently from Blizzard's public
+  API contract. Community addons are evidence that a supported API path works,
+  not code sources or dependencies.
+
+## Scope conclusion
+
+The confirmed blast radius is concentrated in Aura Frames. Repository searches
+found no use by other LsTweeks modules of the newly restricted indexed Aura
+queries or the other specifically removed 12.1 APIs reviewed during this
+assessment. Other modules still require normal regression testing after a game
+patch, but there is currently no evidence that this Aura change requires their
+redesign.
+
+## Numbered feature assessment
+
+### AF12-01 — Preset live Aura frames
+
+**Features:** Static, Short, Long, and Debuffs.
+
+**Assessment:** Broken under Aura secrecy in the current implementation.
+
+`af_scan.lua` discovers player Auras with `GetBuffDataByIndex` and
+`GetDebuffDataByIndex`. `af_render.lua` also requests and iterates Aura instance
+IDs for sorting. These operations are no longer safe while Auras are secret.
+The four captured errors are direct manifestations of this incompatibility.
+
+**Direction:** Replace the indexed scanner and addon-owned Aura map for these
+frames with managed AuraContainer groups. Debuffs and a general helpful-Aura
+display have direct supported replacements. The exact Static/Short/Long split
+is addressed separately below.
+
+### AF12-02 — Short frame threshold semantics
+
+**Assessment:** The current behavior cannot be reproduced exactly with the
+documented managed filters.
+
+LsTweeks classifies an Aura as Short using its *remaining* time. A Long Aura is
+therefore transferred into the Short frame when its countdown crosses the
+configured threshold. Managed candidate filters support `maxDuration`, but that
+means the Aura's total or maximum duration, not its current remaining time.
+
+**Direction:** Redefine Short as “total duration at or below the threshold,” or
+replace the Short/Long model with a different grouping. Do not silently retain
+the setting with changed semantics; make the change explicit in UI text and
+migration notes.
+
+### AF12-03 — Long frame filtering
+
+**Assessment:** No documented managed `minDuration` filter exists. A clean
+“duration greater than the Short threshold” group therefore cannot currently be
+created without inspecting protected Aura data.
+
+Using an unrestricted timed group alongside a `maxDuration` Short group may
+duplicate Short Auras, depending on group assignment behavior, and must not be
+assumed safe without a focused in-game probe.
+
+**Direction:** Redesign or consolidate Long rather than emulating it with
+addon-side Aura inspection.
+
+### AF12-04 — Static-only buffs
+
+**Assessment:** No documented “permanent Auras only” candidate filter exists.
+
+A nonzero `maxDuration` excludes permanent Auras, but there is no documented
+inverse that selects only permanent Auras. The old Static classification relies
+on expiration data that addons can no longer examine safely.
+
+**Direction:** Redesign or consolidate Static. Do not attempt to infer
+permanence from secret timing values.
+
+### AF12-05 — Debuff frame
+
+**Assessment:** Fully preservable after a backend rewrite.
+
+**Status:** AF12-05.1 implemented; awaiting repeat in-game verification. The
+first live checks exposed two framework requirements: a shown `AuraContainer`
+does not process Auras until `SetEnabled(true)` is also applied, and its
+auto-sizing flow layout must be seeded from one corner rather than stretched
+over the owner with `SetAllPoints`. The lifecycle now synchronizes engine
+processing and visibility, and the Debuff capability explicitly owns its flow
+axis, anchor, growth, wrap width, and group spacing. Regressions cover both
+contracts. The current slice creates one managed `HARMFUL` group with native
+icon binding, removes the Debuff frame from legacy `UNIT_AURA` handling and
+indexed scanning, and preserves basic frame/module enable state.
+Layout, stacks, duration, bars, appearance, combat-tooltip policy, fade,
+previews, and full settings parity remain later increments.
+
+The first visible managed result was an icon-only cell even though Debuffs was
+configured for bar mode, and its artwork did not match the expected debuff.
+Bar-mode parity is a separate presentation increment and must use native
+`SetSpellName`, duration, application-count, and duration-bar bindings. Before
+building that row, the native AuraButton tooltip is enabled out of combat and
+hidden in combat so Blizzard can identify what it actually bound without any
+addon AuraData inspection.
+
+The existing Test Aura preview is still a legacy-icon capability and does not
+render in AF12-05.1. A managed-safe synthetic preview must be implemented as a
+separate increment; its absence cannot be used to test live AuraContainer
+discovery.
+
+Live diagnostics must not inspect `AuraButton:IsShown()`: its result is a
+secret boolean and even comparison from tainted addon execution errors. They
+also must not attach visibility scripts to an AuraButton. Blizzard passes the
+secret state into `AuraButton:SetShown()`, which rejects the write when addon
+script handlers exist. Managed status therefore stops at non-secret creation
+and accessibility facts and makes no claim about active state.
+
+The first safe status record showed `frames=8, shown=0` while the managed
+container was enabled, shown, and had created ten accessible AuraButtons. This
+proved discovery was not the immediate blocker: removing the legacy events had
+also removed the Debuff shell's only initial update. Managed runtime startup now
+explicitly applies saved shell state after enabling the engine; native child
+activation must never be assumed to show an addon-owned parent.
+
+A managed Aura group can use the standard `HARMFUL` filter. Managed candidate
+filters additionally support dispel types and several Blizzard-defined Aura
+properties if they become useful later.
+
+**Direction:** Treat this as the simplest production migration and an initial
+validation target for managed layout, appearance, timers, stacks, tooltips, and
+combat behavior.
+
+### AF12-06 — Custom Filtered Frames
+
+**Assessment:** Preservable when the custom frame is defined by supported
+standard AuraFilter strings and managed candidate filters.
+
+Supported inputs include standard filters such as `HELPFUL`, `HARMFUL`,
+`PLAYER`, `RAID`, `IMPORTANT`, and their supported negations. Candidate filters
+can include or exclude spell IDs and dispel types and can filter several
+Blizzard-defined boolean properties and maximum duration.
+
+Arbitrary Lua predicates that require reading an Aura's name, identity, timing,
+or other protected data cannot be supported.
+
+**Direction:** Map current custom-filter settings directly to managed group
+filters. Validate every filter option accepted by the current UI against the
+live 12.1 API before keeping it enabled.
+
+### AF12-07 — Icon, stack, cooldown swipe, and duration-bar presentation
+
+**Assessment:** Preservable through native AuraButton bindings.
+
+AuraButton supports engine-driven icon textures, application counts, duration
+cooldowns, duration text, and duration/status bars. These continue updating
+without exposing their values to addon code.
+
+**Direction:** Create all child textures, FontStrings, Cooldown widgets, and
+StatusBars inside `initializeFrame`, then bind them to the AuraButton. Remove the
+manual live-Aura ticker and manual protected-duration reads for migrated frames.
+
+### AF12-08 — Bar mode, fonts, colors, and backgrounds
+
+**Assessment:** Mostly preservable, with stricter lifecycle rules.
+
+Configured appearance can be applied while the AuraButton is initialized.
+Static frame-level and group-level colors are safe because they come from addon
+settings rather than protected Aura data. Per-Aura decisions requiring Aura
+identity or live Aura fields are not safe.
+
+AuraButton children cannot be freely reparented or restyled after protection is
+applied. Some setting changes may need to update only accessible buttons, be
+deferred, or rebuild/rebind managed groups at a safe time.
+
+**Direction:** Split presentation into immutable initialization work and
+safe/deferred configuration updates. Preserve existing profile fields where
+their meaning remains valid.
+
+### AF12-09 — Timer text formats
+
+**Assessment:** Likely preservable, including compact custom formats.
+
+The managed duration-text binding accepts Blizzard numeric rule formatters.
+TellMeWhen already uses `C_StringUtil.CreateNumericRuleFormatter()` to format a
+secret duration without reading it. LsTweeks' current duration ranges and
+suffixes should be expressible as numeric formatter breakpoints and components.
+
+**Direction:** Build native numeric formatters corresponding to the current
+compact and decimal timer modes. Verify rounding and all boundary transitions
+with headless formatter tests and in-game secret Aura testing.
+
+### AF12-10 — Maximum icons, growth, spacing, columns, and positioning
+
+**Assessment:** Preservable through managed Aura group layout.
+
+Managed groups support maximum frame count, direction, spacing, columns, and
+group ordering. Containers resize themselves around their Aura groups.
+
+Addon `OnSizeChanged` handlers and size reads tied to managed Aura content are
+restricted. Current manual display-count sizing and unused-icon hiding should
+not be carried forward.
+
+**Direction:** Let the managed container own child layout and bounds. Keep an
+addon-owned outer shell for positioning and decoration only where it can be
+anchored safely without observing protected children.
+
+### AF12-11 — Aura sorting
+
+**Assessment:** Partially preservable.
+
+Expiration/time-left ordering and direction are supported by the managed sort
+API. Aura-instance ordering is also documented. Name sorting must be checked
+against the final live `AuraContainerSortMethod` enum before it is promised.
+Addon-defined comparators are impossible because protected Aura fields cannot be
+read.
+
+**Direction:** Map only to supported engine sort methods. Remove or migrate any
+sort choice that cannot be represented by the live enum.
+
+### AF12-12 — Aura tooltips
+
+**Assessment:** Native detailed tooltips are preservable and should replace the
+custom Aura tooltip stack.
+
+AuraButtons provide engine-owned Aura tooltips, tooltip anchoring, and an option
+to hide tooltips in combat. This avoids exposing protected Aura data and is the
+community-standard safe path.
+
+The existing instance-ID tooltip lookup, prewarm cache, reconstructed fallback
+lines, and direct `GameTooltip:SetUnitAuraByAuraInstanceID` experiment should not
+remain part of the managed live-Aura path.
+
+**Direction:** Use native AuraButton tooltips exclusively for managed Auras.
+Retain the shared addon-owned tooltip helper for ordinary LsTweeks controls and
+non-Aura content.
+
+### AF12-13 — Player-buff cancellation
+
+**Assessment:** Basic native click-to-cancel is supported. Exact parity with the
+current configurable modifier-plus-right-click behavior is uncertain.
+
+The current implementation discovers a cancelable buff by scanning indexes and
+then calls `CancelUnitBuff`. That discovery path is incompatible with Aura
+secrecy. AuraButton now has an initialization-time API that assigns mouse clicks
+used for native cancellation, but the available documentation does not confirm
+support for LsTweeks' configurable Ctrl/Shift/Alt modifier requirement.
+
+**Direction:** Prefer native right-click cancellation. Verify whether modifiers
+are supported; if not, retire the modifier setting rather than recreating
+cancellation through protected scans or addon click handlers.
+
+### AF12-14 — Out-of-combat fade and hover restoration
+
+**Assessment:** Whole-frame fading should remain possible. Icon-hover restoration
+needs redesign and may not be exactly preservable.
+
+The current code polls visible icons with `IsShown()` and `IsMouseOver()` to
+restore full alpha while hovered. Managed AuraButtons restrict shown-state and
+focus/hover queries while protected, and addon-installed scripts on them may not
+execute.
+
+**Direction:** Keep fade state on an addon-owned outer frame. Investigate whether
+an outer interaction layer can safely provide hover restoration without
+blocking native AuraButton tooltips or clicks. If not, preserve OOC fade without
+the icon-hover exception.
+
+### AF12-15 — Test Aura previews
+
+**Assessment:** Preservable as addon-owned mock visuals.
+
+Test Auras use generated addon data rather than protected live Aura data. They
+should not be injected into, or depend on, a managed live-Aura group.
+
+**Direction:** Keep preview widgets separate from managed AuraButtons while
+sharing presentation configuration and formatter definitions wherever safe.
+
+### AF12-16 — Profiles, shared colors, move mode, and settings
+
+**Assessment:** Preservable.
+
+These features manage addon-owned configuration and positioning. Saved fields
+whose underlying feature changes meaning, especially the Short threshold,
+Static, Long, modifier cancellation, and unsupported sorting choices, need an
+explicit migration policy.
+
+Some live appearance changes may need to be deferred while managed buttons are
+forbidden. Profile loading is already blocked during combat, which is helpful
+but is not a complete substitute for checking AuraButton accessibility.
+
+**Direction:** Retain profile structure where possible and version the Aura
+Frames schema when final category decisions are made.
+
+### AF12-17 — Cooldown Manager-backed frames
+
+**Features:** Essential, Utility, Tracked Buffs, and Tracked Bars.
+
+**Assessment:** Not implicated directly by the four captured Lua errors, but
+high-risk and not yet proven 12.1-safe.
+
+These frames do not use the ordinary preset Aura scanner as their primary
+source. They mirror Blizzard Cooldown Manager viewer children and hook their
+state. Some child state, Aura-backed duration information, or frame access may
+now become secret or forbidden during combat and encounters.
+
+Cooldown-only entries are not equivalent to active Auras, so a managed
+AuraContainer is not automatically a complete replacement for this backend.
+
+**Direction:** Audit and test this path separately in combat. Verify Essential,
+Utility, Tracked Buffs, and Tracked Bars in both active-Aura and cooldown phases,
+including reload during an encounter. Decide from evidence whether to retain the
+viewer bridge or migrate only its Aura-backed portions.
+
+### AF12-18 — Hiding Blizzard Aura and Cooldown Manager frames
+
+**Assessment:** Probably preservable, but requires regression testing.
+
+The feature manipulates Blizzard frame presentation rather than reading Aura
+data. Blizzard's BuffFrame and DebuffFrame now use the new container system,
+however, so their load timing, alpha behavior, mouse state, and Edit Mode
+integration may have changed.
+
+**Direction:** Re-test every hide toggle after the managed LsTweeks frames are
+working. Continue avoiding `Hide()` for Cooldown Manager viewers where doing so
+stops the viewer from producing state needed by LsTweeks.
+
+### AF12-19 — Other LsTweeks modules
+
+**Assessment:** No direct incompatibility found from the 12.1 Aura restrictions
+or the specifically reviewed removed APIs.
+
+Player Frame, Objectives, Audio Volumes, All the Colors, Skyriding Vigor, core
+navigation, and ordinary settings tooltips do not use the indexed Aura APIs
+identified in this failure.
+
+**Direction:** Run the normal complete regression suite and targeted in-game
+smoke checks after the Aura Frames rewrite. Do not broaden the migration into
+unrelated modules without new evidence.
+
+## Recommended review order
+
+1. Resolve the product model for AF12-02, AF12-03, and AF12-04 before coding the
+   managed backend.
+2. Build AF12-05 as the first managed live frame and validate it in combat.
+3. Establish common presentation support through AF12-07 to AF12-12.
+4. Migrate supported custom frames under AF12-06.
+5. Resolve cancellation and fade edge cases in AF12-13 and AF12-14.
+6. Preserve preview/configuration infrastructure under AF12-15 and AF12-16.
+7. Audit CDM-backed frames independently under AF12-17.
+8. Re-test native-frame suppression and the rest of the addon under AF12-18 and
+   AF12-19.

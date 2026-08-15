@@ -1,5 +1,5 @@
 # Agent Start
-Start here for a new coding-agent session. This file is the lead-in, not the project memory itself; follow the links instead of copying their contents here.
+Start here for a new coding-agent session. This file is the lead-in, not the project memory itself; follow the links instead of copying their contents here. Paths are relative to `internal_dev/working_docs/proj_mem/` unless they begin with another top-level repository directory.
 
 
 ## Table of Contents

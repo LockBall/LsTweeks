@@ -157,6 +157,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 
 ### Runtime And Performance Rules
 - Before adding a small feature with runtime side effects, define its runtime contract: owned events, hooks, timers, queued work, off-state behavior, module-disable behavior, and restore path.
+- When replacing an event-driven backend with an eventless managed service, audit every responsibility of the removed startup event. Add an explicit initial state application for addon-owned parents and controls; starting a native child service does not initialize its surrounding addon UI.
 - When adding or changing runtime work in a feature module, audit disabled behavior before finishing: events, hooks, timers, callbacks, tickers, queued `C_Timer` work, frames, and status fields must either stop at disable time or cheaply no-op before doing owned work.
 - Event, hook, timer, ticker, `OnUpdate`, scan, and layout paths must make unchanged state cheap first. Compare the smallest stable state before frame writes, Blizzard layout calls, follow-up scheduling, table rebuilds, or diagnostic string formatting. Use cached signatures, dirty flags, or explicit state fields for hot/noisy paths; keep one-shot settings-page code simple unless it fans out into runtime refresh work.
 - Filter early by default: use the narrowest event registration available, then reject disabled, irrelevant, invisible, stale, or unchanged work at the entry point before DB/config resolution, allocations, scheduling, scans, or frame writes. Add broader work only when the behavior requires it.
@@ -204,7 +205,7 @@ Violations here can create invisible or unstable controls.
 
 
 ### Key WoW APIs And Lessons
-- Aura APIs: `C_UnitAuras.GetBuffDataByIndex`, `GetDebuffDataByIndex`, `GetAuraDuration`, `GetUnitAuraInstanceIDs`, `DoesAuraHaveExpirationTime`, `GetAuraApplicationDisplayCount`.
+- Aura APIs: WoW 12.1 live Aura displays use managed `AuraContainer`/`AuraButton` objects. Indexed, slot, instance-ID, `AuraData`, and `UNIT_AURA` payload inspection can be secret and must not drive migrated capabilities. Blizzard-owned secret state must be rendered only through documented native bindings: do not infer it from widget state, compare secret widget-return values such as `AuraButton:IsShown()`, or attach script handlers to observe transitions. In particular, Blizzard passes a secret boolean into `AuraButton:SetShown()`, and existing addon `OnShow`/`OnHide` handlers make that native write illegal. `af_managed.lua` owns only the shared lifecycle/safety boundary; capability code keeps Blizzard group/layout/binding calls explicit.
 - Spell APIs: legacy globals `GetSpellInfo`, `GetSpellTexture`, and similar are removed on modern retail (11.0+); use `C_Spell.GetSpellInfo(spellId)` (returns an info table with `name`, `iconID`, etc.), `C_Spell.GetSpellTexture`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`. Never cache the legacy globals; caching captures `nil` and fails at call time.
 - Tooltip APIs: route every tooltip through `functions/tooltip.lua`; the complete renderer, secret-data, taint, and validation contract is owned in `functions/tooltip.md`. Aura Frames' cache/fallback policy remains module-owned.
 - CDM APIs/hooks: `CooldownViewerItemDataMixin`, `hooksecurefunc`, `Settings.OpenToCategory("Cooldown Viewer")`.

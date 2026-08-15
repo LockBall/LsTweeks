@@ -1,6 +1,6 @@
 -- Bootstrap and frame construction for the aura frames module
 -- loads last so all other af_* files have already populated M.
--- Creates preset and custom aura frames with their icon pools,
+-- Creates preset and custom aura frames with legacy icon pools or managed backends,
 -- buckets UNIT_AURA events, starts the timer ticker, and registers the settings tab.
 
 local addon_name, addon = ...
@@ -903,6 +903,11 @@ local function handle_aura_frame_event(frame, event, unit, info)
 end
 
 local function bind_aura_frame_events(frame, category)
+    if frame._managed_aura_backend then
+        frame:UnregisterAllEvents()
+        frame:SetScript("OnEvent", nil)
+        return
+    end
     register_aura_frame_events(frame, category)
     frame:SetScript("OnEvent", handle_aura_frame_event)
 end
@@ -938,8 +943,15 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     create_aura_frame_title_bars(frame, display_name, scale_key)
     create_aura_frame_resizer(frame, category)
 
-    -- Pre-create icons/bars so combat updates never need to create frames.
-    create_aura_icon_pool(frame, cfg_db, category)
+    local managed_backend
+    if category == "debuff" and M.create_managed_debuff_backend then
+        managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
+    end
+
+    if not managed_backend then
+        -- Pre-create legacy icons/bars so combat updates never create frames.
+        create_aura_icon_pool(frame, cfg_db, category)
+    end
 
     -- Map-based aura cache: auraInstanceID → entry table. Persists across events.
     frame._aura_map = {}
@@ -955,6 +967,15 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         category,
         frame_opts.aura_filter or (is_debuff and "HARMFUL" or "HELPFUL")
     )
+
+    -- New frames are shown by default. Keep every shell and move control hidden
+    -- until update_auras() applies the saved enabled/move state; disabled frames
+    -- intentionally skip their startup event work.
+    frame:Hide()
+    frame.title_bar:Hide()
+    frame.bottom_title_bar:Hide()
+    frame.resizer:Hide()
+
     bind_aura_frame_events(frame, category)
 
     register_runtime_frame(show_key, frame)
@@ -1125,6 +1146,14 @@ end
 
 local function start_aura_frame_runtime_services()
     M._module_runtime_enabled = true
+    if M.set_managed_aura_runtime_enabled then
+        M.set_managed_aura_runtime_enabled(true)
+    end
+    -- Managed frames own no PLAYER_ENTERING_WORLD handler, so startup must
+    -- explicitly apply their saved shell state after enabling the engine.
+    if M.refresh_managed_debuff_frames then
+        M.refresh_managed_debuff_frames()
+    end
     M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
     M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
     if M.update_all_blizz_cdm_visibility then
@@ -1153,6 +1182,9 @@ end
 
 local function stop_aura_frame_runtime_services()
     M._module_runtime_enabled = false
+    if M.set_managed_aura_runtime_enabled then
+        M.set_managed_aura_runtime_enabled(false)
+    end
     if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
     if M.set_grid_visible then M.set_grid_visible(false) end
     if M.toggle_blizz_buffs then M.toggle_blizz_buffs(false) end
@@ -1249,7 +1281,7 @@ if addon.register_module_status then
     addon.register_module_status(M.MODULE_KEY, function()
         local frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count =
             count_aura_runtime_status()
-        return {
+        local fields = {
             "runtime=" .. tostring(M._module_runtime_enabled == true),
             "frames=" .. tostring(frame_count),
             "shown=" .. tostring(shown_count),
@@ -1260,6 +1292,12 @@ if addon.register_module_status then
             "cdm_forced_hidden=" .. tostring(cdm_forced_hidden_count),
             "grid=" .. tostring(M.grid_frame and M.grid_frame:IsShown() == true),
         }
+        if M.get_managed_aura_status_fields then
+            for _, field in ipairs(M.get_managed_aura_status_fields()) do
+                fields[#fields + 1] = field
+            end
+        end
+        return fields
     end)
 end
 

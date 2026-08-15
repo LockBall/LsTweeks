@@ -83,6 +83,8 @@ modules\skyriding_vigor\sv_main.lua
 # --- Aura Frames Module ---
 modules\aura_frames\af_defaults.lua
 modules\aura_frames\af_functions.lua
+modules\aura_frames\af_managed.lua
+modules\aura_frames\af_managed_debuff.lua
 modules\aura_frames\af_test_aura.lua
 modules\aura_frames\af_scan.lua
 modules\aura_frames\af_render.lua

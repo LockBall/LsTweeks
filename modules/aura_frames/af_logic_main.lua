@@ -1,4 +1,5 @@
--- Main aura update logic for Aura Frames: runtime config cache, frame state helpers, OOC fade, and per-frame refresh.
+-- Main aura update logic for Aura Frames: managed-frame routing, runtime config cache,
+-- frame state helpers, OOC fade, and legacy per-frame refresh.
 -- update_auras() orchestrates scan, render, layout, sizing, and visibility for preset and custom aura frames.
 local addon_name, addon = ...
 
@@ -468,6 +469,10 @@ end
 
 function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter, info)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+    if self and self._managed_aura_backend and M.update_managed_debuff_frame then
+        M.update_managed_debuff_frame(self, show_key, move_key)
+        return
+    end
     if not self or not self.icons then return end
 
     local db       = M.db

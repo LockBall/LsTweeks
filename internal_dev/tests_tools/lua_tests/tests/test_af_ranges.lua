@@ -365,6 +365,26 @@ h.test("icon timer slots reserve width for long duration labels", function()
     h.eq(frame._layout_cache.icons_per_row, 2, "horizontal layout keeps compact timer spacing")
 end)
 
+h.test("disabled preset frame starts hidden before its first event", function()
+    local M = load_aura_frames()
+    M.db = {
+        show_short = false,
+        move_short = false,
+        max_icons_short = 1,
+        width_short = 120,
+    }
+
+    local frame = M.create_aura_frame(
+        "show_short", "move_short", "timer_short", "bg_short",
+        "scale_short", "spacing_short", "Short", false
+    )
+
+    h.eq(frame:IsShown(), false, "disabled frame shell is hidden at creation")
+    h.eq(frame.title_bar:IsShown(), false, "disabled frame title is hidden with shell")
+    h.eq(frame.bottom_title_bar:IsShown(), false, "disabled frame bottom title is hidden with shell")
+    h.eq(frame.resizer:IsShown(), false, "disabled frame resizer is hidden with shell")
+end)
+
 h.test("combat background switches pre-sized Aura frame variants without geometry writes", function()
     local M = load_aura_frames()
     M.db = { max_icons = 3 }
