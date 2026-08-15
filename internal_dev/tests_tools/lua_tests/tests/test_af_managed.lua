@@ -197,15 +197,38 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "managed Move Mode does not alter native AuraContainer layout")
     h.eq(frame.move_handle:GetParent(), frame,
         "addon mover remains parented to its safe shell, never the managed AuraContainer")
-    local _, resize_relative_to = frame.resizer:GetPoint(1)
+    local resize_point, resize_relative_to = frame.resizer:GetPoint(1)
+    h.eq(resize_point, "BOTTOMRIGHT", "upward managed growth keeps resize grip on its anchored edge")
     h.eq(resize_relative_to, frame, "managed resize grip overlays the shell border corner")
     h.eq(frame.resizer:IsMouseEnabled(), true, "managed resize grip accepts mouse input")
-    local _, _, _, bottom_right_x = frame.move_handle.hit_areas[2]:GetPoint(2)
-    local _, _, _, _, right_bottom_y = frame.move_handle.hit_areas[4]:GetPoint(2)
-    h.eq(bottom_right_x, -16, "bottom mover edge leaves the resize corner clear")
-    h.eq(right_bottom_y, 16, "right mover edge leaves the resize corner clear")
+    h.eq(#frame.resizer.grip_marks, 3, "resize grip uses three explicit overlay marks")
+    local grip_color = frame.resizer.grip_marks[1]:GetLastCall("SetColorTexture")
+    h.eq(grip_color[1], M.MOVE_BORDER_COLOR.r, "resize grip uses the mover border red")
+    h.eq(grip_color[2], M.MOVE_BORDER_COLOR.g, "resize grip uses the mover border green")
+    h.eq(grip_color[3], M.MOVE_BORDER_COLOR.b, "resize grip uses the mover border blue")
+    h.eq(grip_color[4], M.MOVE_BORDER_COLOR.a, "resize grip uses the mover border alpha")
+    local grip_background = frame.resizer:GetLastCall("SetBackdropColor")
+    h.eq(grip_background[1], 0.03, "resize grip uses a dark contrast background")
+    h.eq(grip_background[4], 0.95, "resize grip contrast background remains visible")
+    h.eq(frame.move_handle.hit_areas[2]:IsShown(), true,
+        "upward managed growth keeps one compact bottom drag edge")
+    local _, _, _, _, bottom_mover_y = frame.move_handle.hit_areas[2]:GetPoint(1)
+    h.eq(bottom_mover_y, -4, "managed drag strip extends across the visible bottom border")
+    h.eq(frame.move_handle.hit_areas[2]:GetHeight(), 12,
+        "managed drag strip provides a practical grab target")
+    for _, index in ipairs({ 1, 3, 4 }) do
+        h.eq(frame.move_handle.hit_areas[index]:IsShown(), false,
+            "managed mover hides shell edges that cannot follow secret content height")
+    end
+    h.eq(backend.move_outline.TOP:IsShown(), true,
+        "managed Move Mode shows the native-container outline")
+    local _, outline_relative_to = backend.move_outline.TOP:GetPoint(1)
+    h.eq(outline_relative_to, backend.container,
+        "managed outline follows native container geometry without reading it")
     M.db.move_debuff = false
     M.update_managed_preset_frame(frame, "show_debuff", "move_debuff")
+    h.eq(backend.move_outline.TOP:IsShown(), false,
+        "leaving managed Move Mode hides the native-container outline")
     h.eq(frame:GetAlpha(), 0.35, "managed Debuff shell applies its saved out-of-combat alpha")
     h.fire_event("PLAYER_REGEN_DISABLED")
     h.eq(frame:GetAlpha(), 1, "combat-entry event makes the managed Debuff shell fully visible")
@@ -280,13 +303,31 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     end
 
     M.db.bar_mode_combined = false
+    M.db.width_combined = 180
+    M.db.spacing_combined = 2
+    M.db.max_icons_combined = 6
+    M.db.growth_icon_combined = "RIGHT"
+    M.db.move_combined = true
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     h.eq(buffs_backend.presentation_mode, "icon", "OOC Bar Mode change activates icon presentation")
     h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, 0,
         "combined Buff bar group is parked after switching")
-    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 3,
+    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 6,
         "combined Buff icon group activates after switching")
+    h.eq(buffs_backend.move_outline.BOTTOM:IsShown(), true,
+        "wrapped combined Buffs use the native-container outline")
+    local _, top_relative_to = buffs_backend.move_outline.TOP:GetPoint(2)
+    h.eq(top_relative_to, buffs_frame,
+        "managed outline width remains connected to the resizable shell")
+    local _, _, _, bottom_right_x = buffs_backend.move_outline.BOTTOM:GetPoint(2)
+    h.eq(bottom_right_x, 181, "managed bottom outline overlaps the saved shell corner")
+    buffs_frame.__scripts.OnSizeChanged(buffs_frame, 240)
+    _, _, _, bottom_right_x = buffs_backend.move_outline.BOTTOM:GetPoint(2)
+    h.eq(bottom_right_x, 241, "managed bottom outline follows width changes before mouse release")
+    local combined_resize_point = buffs_frame.resizer:GetPoint(1)
+    h.eq(combined_resize_point, "TOPRIGHT",
+        "downward managed growth keeps resize grip on the outlined top edge")
     h.ok(buffs_backend.duration_font,
         "combined Buff managed presentations share an addon-owned duration font")
     for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:icon"].buttons) do
@@ -303,8 +344,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         h.eq(aura_button.__application_count_region.__points[1][1], "BOTTOMRIGHT",
             "combined Buff icon stack text remains anchored to the icon")
     end
-    h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
-        "combined Buff layout retains the saved DOWN growth after switching to icons")
+    h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Horizontal,
+        "wrapped combined Buff icons retain horizontal growth")
     h.eq(M.get_managed_aura_backend("preset:combined"), buffs_backend,
         "Bar Mode switching reuses the original managed backend")
 
@@ -377,6 +418,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "malformed horizontal Bar growth falls back to the DOWN anchor")
     h.eq(buffs_backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Down,
         "malformed horizontal Bar growth falls back to DOWN")
+    M.db.move_combined = false
+    M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
     M.set_managed_aura_runtime_enabled(false)
 end)
 

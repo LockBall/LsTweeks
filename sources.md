@@ -19,6 +19,9 @@ Public credits, attribution, and embedded third-party library sources for L's Tw
 - ArcUI: https://www.curseforge.com/wow/addons/arc-ui
   - Referenced as evidence for the community-tested WoW 12.1 managed AuraContainer/AuraButton approach.
   - ArcUI's installed distribution contains conflicting license files, including a restrictive study-only grant. LsTweeks treats it strictly as an implementation reference and contains no copied ArcUI code.
+- EllesmereUI: https://www.curseforge.com/wow/addons/ellesmereui
+  - Referenced as evidence for Blizzard-managed AuraContainer layout and addon-owned child-region behavior.
+  - EllesmereUI uses a custom license. LsTweeks treats it strictly as an implementation reference and contains no copied EllesmereUI code.
 - BasicBuffHide: https://github.com/funkydude/BasicBuffHide
   - Referenced as evidence for suppressing Blizzard's 12.1 BuffFrame through an addon-owned hidden parent while leaving Blizzard Aura processing intact.
   - BasicBuffHide is All Rights Reserved. LsTweeks uses an independent implementation of the general hidden-parent technique and contains no copied BasicBuffHide code.

@@ -287,6 +287,7 @@ M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
 M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA = 0.35
 M.DEFAULT_OOC_FADE_DELAY = 2
 M.DEFAULT_OOC_FADE_LENGTH = 3
+M.MOVE_BORDER_COLOR = { r = 1, g = 0.82, b = 0, a = 1 }
 
 M.SETTING_RANGES = {
     aura_visible_icon_tick = { min = 0.10, max = 0.20, step = 0.05 },

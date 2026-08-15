@@ -329,7 +329,7 @@ function frame_methods:SetVertexColor(...) record(self, "SetVertexColor", ...) e
 function frame_methods:GetVertexColor() return 1, 1, 1, 1 end
 function frame_methods:SetDesaturated() end
 function frame_methods:SetRotation() end
-function frame_methods:SetBlendMode() end
+function frame_methods:SetBlendMode(mode) record(self, "SetBlendMode", mode) end
 function frame_methods:SetGradient() end
 function frame_methods:SetDrawLayer() end
 function frame_methods:GetDrawLayer() return "ARTWORK", 0 end

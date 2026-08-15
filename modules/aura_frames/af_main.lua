@@ -703,7 +703,11 @@ end
 -- the drag handle, resize handle, saved width updates, and resize refresh so
 -- icon creation/rendering can stay separate from frame interaction behavior.
 local MOVE_BORDER_HIT_WIDTH = 8
+local MANAGED_MOVE_HIT_WIDTH = 12
+local MANAGED_MOVE_HIT_OUTSET = 4
 local RESIZE_HANDLE_SIZE = 16
+local RESIZE_HANDLE_BACKGROUND = { r = 0.03, g = 0.03, b = 0.03, a = 0.95 }
+local RESIZE_GRIP_MARK_SIZE = 3
 
 local function set_move_border_edge_points(edge, parent, side)
     if side == "TOP" then
@@ -730,7 +734,7 @@ local function create_aura_frame_move_handle(parent, label, scale_key)
     tb:SetAllPoints(parent)
     tb:SetFrameLevel(parent:GetFrameLevel() + 10)
     tb.title = label
-    M.apply_thin_border_backdrop(tb, nil, { r = 1, g = 0.82, b = 0, a = 1 })
+    M.apply_thin_border_backdrop(tb, nil, M.MOVE_BORDER_COLOR)
 
     tb.hit_areas = {}
     for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
@@ -766,10 +770,41 @@ local function position_aura_frame_move_handle(frame)
     local handle = frame and frame.move_handle
     if not handle then return end
 
+    if frame._managed_aura_backend then
+        handle:SetBackdropBorderColor(0, 0, 0, 0)
+        local mover_side = frame._managed_mover_edge == "BOTTOM" and 2 or 1
+        for index, edge in ipairs(handle.hit_areas or {}) do
+            edge:SetShown(index == mover_side)
+        end
+        local mover_edge = handle.hit_areas and handle.hit_areas[mover_side]
+        if mover_edge then
+            mover_edge:ClearAllPoints()
+            mover_edge:SetPoint(frame._managed_mover_edge .. "LEFT", handle,
+                frame._managed_mover_edge .. "LEFT", 0,
+                frame._managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
+                    or MANAGED_MOVE_HIT_OUTSET)
+            mover_edge:SetPoint(frame._managed_mover_edge .. "RIGHT", handle,
+                frame._managed_mover_edge .. "RIGHT", -RESIZE_HANDLE_SIZE,
+                frame._managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
+                    or MANAGED_MOVE_HIT_OUTSET)
+            mover_edge:SetHeight(MANAGED_MOVE_HIT_WIDTH)
+        end
+    end
+
     if frame.resizer then
         frame.resizer:ClearAllPoints()
-        frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        local point = "BOTTOMRIGHT"
+        if frame._managed_aura_backend and frame._managed_mover_edge ~= "BOTTOM" then
+            point = "TOPRIGHT"
+        end
+        frame.resizer:SetPoint(point, frame, point, 0, 0)
         frame.resizer:SetFrameLevel(handle:GetFrameLevel() + 1)
+        for index, mark in ipairs(frame.resizer.grip_marks or {}) do
+            local offset = 2 + ((index - 1) * 4)
+            mark:ClearAllPoints()
+            mark:SetPoint(point, frame.resizer, point, -offset,
+                point == "TOPRIGHT" and -offset or offset)
+        end
     end
 end
 
@@ -818,11 +853,21 @@ local function clamp_aura_frame_width(frame)
 end
 
 local function create_aura_frame_resizer(frame, category)
-    frame.resizer = CreateFrame("Button", nil, frame)
+    frame.resizer = CreateFrame("Button", nil, frame, "BackdropTemplate")
     frame.resizer:EnableMouse(true)
     frame.resizer:SetSize(RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE)
     frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    frame.resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    M.apply_thin_border_backdrop(frame.resizer, RESIZE_HANDLE_BACKGROUND, M.MOVE_BORDER_COLOR)
+    frame.resizer.grip_marks = {}
+    for index = 1, 3 do
+        local mark = frame.resizer:CreateTexture(nil, "OVERLAY")
+        local color = M.MOVE_BORDER_COLOR
+        local offset = 2 + ((index - 1) * 4)
+        mark:SetColorTexture(color.r, color.g, color.b, color.a)
+        mark:SetSize(RESIZE_GRIP_MARK_SIZE, RESIZE_GRIP_MARK_SIZE)
+        mark:SetPoint("BOTTOMRIGHT", frame.resizer, "BOTTOMRIGHT", -offset, offset)
+        frame.resizer.grip_marks[index] = mark
+    end
     frame.resizer:SetScript("OnEnter", function()
         handle_frame_mouse_enter(frame)
     end)
@@ -836,6 +881,10 @@ local function create_aura_frame_resizer(frame, category)
             s._clamping_size = true
             s:SetWidth(M.MIN_FRAME_WIDTH)
             s._clamping_size = nil
+            w = M.MIN_FRAME_WIDTH
+        end
+        if w and M.update_managed_move_outline_width then
+            M.update_managed_move_outline_width(s, w)
         end
     end)
 

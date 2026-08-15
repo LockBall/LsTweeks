@@ -15,6 +15,7 @@ local BAR_FRAME_INSET = 6
 local BAR_ICON_GAP = 5
 local BAR_STACK_WIDTH = 20
 local BAR_TIMER_WIDTH = 36
+local MOVE_OUTLINE_OVERLAP = 1
 local managed_duration_fonts = {}
 
 --#region MANAGED CONTAINER LAYOUT ============================================
@@ -226,6 +227,99 @@ end
 
 --#region BACKEND CREATION =====================================================
 
+local function create_container_move_outline(container)
+    local outline = {}
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local edge = container:CreateTexture(nil, "OVERLAY")
+        local color = M.MOVE_BORDER_COLOR
+        edge:SetColorTexture(color.r, color.g, color.b, color.a)
+        if side == "TOP" then
+            edge:SetPoint("BOTTOMLEFT", container, "TOPLEFT", -1, 0)
+            edge:SetPoint("BOTTOMRIGHT", container, "TOPRIGHT", 1, 0)
+            edge:SetHeight(1)
+        elseif side == "BOTTOM" then
+            edge:SetPoint("TOPLEFT", container, "BOTTOMLEFT", -1, 0)
+            edge:SetPoint("TOPRIGHT", container, "BOTTOMRIGHT", 1, 0)
+            edge:SetHeight(1)
+        elseif side == "LEFT" then
+            edge:SetPoint("TOPRIGHT", container, "TOPLEFT", 0, 1)
+            edge:SetPoint("BOTTOMRIGHT", container, "BOTTOMLEFT", 0, -1)
+            edge:SetWidth(1)
+        else
+            edge:SetPoint("TOPLEFT", container, "TOPRIGHT", 0, 1)
+            edge:SetPoint("BOTTOMLEFT", container, "BOTTOMRIGHT", 0, -1)
+            edge:SetWidth(1)
+        end
+        edge:Hide()
+        outline[side] = edge
+    end
+    return outline
+end
+
+local function position_container_move_outline(backend, width, bar_mode, growth_layout)
+    local outline = backend.move_outline
+    if not outline then return end
+
+    for _, edge in pairs(outline) do
+        edge:ClearAllPoints()
+    end
+
+    local container = backend.container
+    local owner = backend.owner
+    local inset = bar_mode and BAR_FRAME_INSET or 0
+    local grows_up = growth_layout.vertical_direction == "UP"
+    local grows_left = growth_layout.horizontal == "LEFT"
+    backend.move_outline_bar_mode = bar_mode
+    backend.move_outline_growth_layout = growth_layout
+    owner._managed_mover_edge = grows_up and "BOTTOM" or "TOP"
+
+    if grows_up then
+        outline.TOP:SetPoint("BOTTOMLEFT", container, "TOPLEFT", -inset, inset)
+        outline.TOP:SetPoint("BOTTOMRIGHT", container, "TOPLEFT", width - inset, inset)
+        outline.BOTTOM:SetPoint("TOPLEFT", owner, "BOTTOMLEFT", -MOVE_OUTLINE_OVERLAP, 0)
+        outline.BOTTOM:SetPoint("TOPRIGHT", owner, "BOTTOMRIGHT", MOVE_OUTLINE_OVERLAP, 0)
+        outline.LEFT:SetPoint("TOPRIGHT", container, "TOPLEFT", -inset, inset + MOVE_OUTLINE_OVERLAP)
+        outline.LEFT:SetPoint("BOTTOMRIGHT", owner, "BOTTOMLEFT", 0, -MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("TOPLEFT", container, "TOPLEFT", width - inset, inset + MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("BOTTOMLEFT", owner, "BOTTOMRIGHT", 0, -MOVE_OUTLINE_OVERLAP)
+    elseif grows_left then
+        outline.TOP:SetPoint("BOTTOMLEFT", owner, "TOPLEFT", -MOVE_OUTLINE_OVERLAP, 0)
+        outline.TOP:SetPoint("BOTTOMRIGHT", owner, "TOPRIGHT", MOVE_OUTLINE_OVERLAP, 0)
+        outline.BOTTOM:SetPoint("TOPLEFT", container, "BOTTOMRIGHT", -width - MOVE_OUTLINE_OVERLAP, 0)
+        outline.BOTTOM:SetPoint("TOPRIGHT", container, "BOTTOMRIGHT", MOVE_OUTLINE_OVERLAP, 0)
+        outline.LEFT:SetPoint("TOPRIGHT", owner, "TOPLEFT", 0, MOVE_OUTLINE_OVERLAP)
+        outline.LEFT:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -width, -MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("TOPLEFT", owner, "TOPRIGHT", 0, MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("BOTTOMLEFT", container, "BOTTOMRIGHT", 0, -MOVE_OUTLINE_OVERLAP)
+    else
+        outline.TOP:SetPoint("BOTTOMLEFT", owner, "TOPLEFT", -MOVE_OUTLINE_OVERLAP, 0)
+        outline.TOP:SetPoint("BOTTOMRIGHT", owner, "TOPRIGHT", MOVE_OUTLINE_OVERLAP, 0)
+        outline.BOTTOM:SetPoint("TOPLEFT", container, "BOTTOMLEFT",
+            -inset - MOVE_OUTLINE_OVERLAP, -inset)
+        outline.BOTTOM:SetPoint("TOPRIGHT", container, "BOTTOMLEFT",
+            width - inset + MOVE_OUTLINE_OVERLAP, -inset)
+        outline.LEFT:SetPoint("TOPRIGHT", owner, "TOPLEFT", 0, MOVE_OUTLINE_OVERLAP)
+        outline.LEFT:SetPoint("BOTTOMRIGHT", container, "BOTTOMLEFT",
+            -inset, -inset - MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("TOPLEFT", owner, "TOPRIGHT", 0, MOVE_OUTLINE_OVERLAP)
+        outline.RIGHT:SetPoint("BOTTOMLEFT", container, "BOTTOMLEFT",
+            width - inset, -inset - MOVE_OUTLINE_OVERLAP)
+    end
+end
+
+function M.update_managed_move_outline_width(frame, width)
+    local backend = frame and frame._managed_aura_backend
+    if not (backend and backend.move_outline_growth_layout) then return false end
+    if InCombatLockdown and InCombatLockdown() then return false end
+    position_container_move_outline(
+        backend,
+        math.max(M.MIN_FRAME_WIDTH, width or frame:GetWidth()),
+        backend.move_outline_bar_mode,
+        backend.move_outline_growth_layout
+    )
+    return true
+end
+
 local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
     local bar_mode = get_preset_setting(cfg_db, category, "bar_mode", false) == true
@@ -252,6 +346,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local max_frame_count = get_preset_setting(cfg_db, category, "max_icons", M.DEFAULT_MAX_ICONS)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
+    position_container_move_outline(backend, width, bar_mode, growth_layout)
     local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
@@ -293,6 +388,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
     end
     backend.duration_font = duration_font
     backend.bar_regions = {}
+    backend.move_outline = create_container_move_outline(backend.container)
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",
         icon = group_key .. ":icon",
@@ -359,6 +455,10 @@ end
 
 local function set_shell_controls_shown(frame, shown)
     M.update_aura_frame_move_controls(frame, shown)
+    local backend = frame and frame._managed_aura_backend
+    for _, edge in pairs(backend and backend.move_outline or {}) do
+        edge:SetShown(shown)
+    end
 end
 
 function M.update_managed_preset_frame(frame, show_key, move_key)
@@ -366,10 +466,10 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
     if not backend then return false end
 
     local activity = M.get_frame_activity_state(frame, show_key, move_key)
-    set_shell_controls_shown(frame, activity.enabled and activity.moving == true)
     if not InCombatLockdown or not InCombatLockdown() then
         apply_managed_preset_presentation(backend, backend.cfg_db)
     end
+    set_shell_controls_shown(frame, activity.enabled and activity.moving == true)
     M.set_managed_aura_backend_enabled(backend, activity.enabled)
     if M.refresh_frame_ooc_fade then
         M.refresh_frame_ooc_fade(frame, activity)
