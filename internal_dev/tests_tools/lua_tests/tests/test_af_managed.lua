@@ -250,10 +250,50 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "combined Buff bar group is parked after switching")
     h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 3,
         "combined Buff icon group activates after switching")
+    h.ok(buffs_backend.duration_font,
+        "combined Buff managed presentations share an addon-owned duration font")
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:icon"].buttons) do
+        h.eq(aura_button.__height, 46,
+            "combined Buff icon cells reserve a row below the icon for duration text")
+        h.ok(aura_button.__duration_text_region,
+            "combined Buff icons bind native duration text")
+        h.eq(aura_button.__duration_text_region.__points[1][1], "TOP",
+            "combined Buff icon duration text anchors below the icon")
+        h.eq(aura_button.__duration_text_region:GetFontObject(), buffs_backend.duration_font,
+            "combined Buff icon duration text uses the managed duration font")
+        h.ok(aura_button.__application_count_region,
+            "combined Buff icons bind native stack text")
+        h.eq(aura_button.__application_count_region.__points[1][1], "BOTTOMRIGHT",
+            "combined Buff icon stack text remains anchored to the icon")
+    end
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
         "combined Buff layout retains the saved DOWN growth after switching to icons")
     h.eq(M.get_managed_aura_backend("preset:combined"), buffs_backend,
         "Bar Mode switching reuses the original managed backend")
+
+    M.db.timer_combined = false
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.container.__groups["buffs:icon"].layout.elementHeight, 32,
+        "disabling managed icon timer text removes its layout row")
+    h.eq(buffs_backend.duration_font:GetLastCall("SetTextColor")[4], 0,
+        "disabling managed timer text hides the shared duration font")
+
+    M.db.timer_combined = true
+    M.db.timer_number_font_size_combined = 14
+    M.db.timer_number_font_bold_combined = true
+    M.db.timer_color_combined = { r = 0.2, g = 0.3, b = 0.4 }
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    local font_call = buffs_backend.duration_font:GetLastCall("SetFont")
+    local color_call = buffs_backend.duration_font:GetLastCall("SetTextColor")
+    h.eq(font_call[1], M.NUMBER_FONT_BOLD_PATHS[M.DEFAULT_TIMER_NUMBER_FONT_KEY],
+        "managed timer font applies the saved bold face")
+    h.eq(font_call[2], 14, "managed timer font applies the saved size")
+    h.eq(color_call[1], 0.2, "managed timer font applies the saved red component")
+    h.eq(color_call[2], 0.3, "managed timer font applies the saved green component")
+    h.eq(color_call[3], 0.4, "managed timer font applies the saved blue component")
+    h.eq(color_call[4], 1, "enabling managed timer text restores its opacity")
 
     local growth_cases = {
         RIGHT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },

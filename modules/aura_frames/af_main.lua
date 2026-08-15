@@ -132,8 +132,12 @@ function M.get_number_font_options()
     return M.NUMBER_FONT_OPTIONS
 end
 
-function M.apply_number_font_to_text(font_string, category, cfg_db)
-    if not font_string or not font_string.SetFont then return end
+function M.is_number_font_bold_available(key)
+    return M.NUMBER_FONT_BOLD_PATHS[key] ~= nil
+end
+
+function M.apply_number_font_style(font_target, category, cfg_db, alpha)
+    if not font_target or not font_target.SetFont then return end
     local def = get_number_font_def(nil, category, cfg_db)
     local size = M.get_timer_number_font_size(category, cfg_db) or def.size or 10
     local flags = def.flags or ""
@@ -148,11 +152,11 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
     if def.path then
         local use_bold = M.get_setting(cfg_db, category, "timer_number_font_bold", false) == true
         local bold_path = use_bold and M.NUMBER_FONT_BOLD_PATHS[def.key]
-        font_string:SetFont(bold_path or def.path, size, flags)
+        font_target:SetFont(bold_path or def.path, size, flags)
     elseif STANDARD_TEXT_FONT then
-        font_string:SetFont(STANDARD_TEXT_FONT, size, flags)
+        font_target:SetFont(STANDARD_TEXT_FONT, size, flags)
     else
-        font_string:SetFontObject(GameFontHighlightSmall)
+        font_target:SetFontObject(GameFontHighlightSmall)
     end
 
     if cfg_db or M.db then
@@ -160,9 +164,13 @@ function M.apply_number_font_to_text(font_string, category, cfg_db)
         local c = M.get_setting(cfg_db, category, "timer_color")
         if c and M.resolve_text_color then c = M.resolve_text_color(category, "timer", c) end
         if c then
-            font_string:SetTextColor(c.r or 1, c.g or 1, c.b or 1, 1)
+            font_target:SetTextColor(c.r or 1, c.g or 1, c.b or 1, alpha == nil and 1 or alpha)
         end
     end
+end
+
+function M.apply_number_font_to_text(font_string, category, cfg_db)
+    M.apply_number_font_style(font_string, category, cfg_db)
 end
 
 function M.apply_number_font_to_all()

@@ -299,9 +299,12 @@ function frame_methods:GetText() return self.__text end
 function frame_methods:SetFormattedText(fmt, ...) self.__text = string.format(fmt, ...) end
 function frame_methods:GetStringWidth() return (self.__text and #tostring(self.__text) or 0) * 7 end
 function frame_methods:GetStringHeight() return 12 end
-function frame_methods:SetFontObject() end
-function frame_methods:GetFontObject() return nil end
-function frame_methods:SetFont() end
+function frame_methods:SetFontObject(font_object)
+    record(self, "SetFontObject", font_object)
+    self.__font_object = font_object
+end
+function frame_methods:GetFontObject() return self.__font_object end
+function frame_methods:SetFont(...) record(self, "SetFont", ...) end
 function frame_methods:GetFont() return "Fonts\\FRIZQT__.TTF", 12, "" end
 function frame_methods:SetTextColor(...) record(self, "SetTextColor", ...) end
 function frame_methods:SetJustifyH() end
@@ -560,6 +563,10 @@ function CreateFrame(kind, name, parent, template)
         f.TextLeft1 = new_region("FontString", name and (name .. "TextLeft1") or nil, f)
     end
     return f
+end
+
+function CreateFont(name)
+    return new_region("Font", name)
 end
 
 stub.NewRegion = new_region

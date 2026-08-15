@@ -23,10 +23,39 @@ local function find_button(frame, text)
     end
 end
 
+local function click_open_dropdown_option(text)
+    for _, popup in ipairs({ UIParent:GetChildren() }) do
+        if popup:IsShown() then
+            for _, row in ipairs({ popup:GetChildren() }) do
+                if row.__kind == "Button" then
+                    for _, region in ipairs({ row:GetRegions() }) do
+                        if region:GetText() == text then
+                            row:Click()
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
 h.test("Shared BG Colors tab owns the Aura frame participation matrix", function()
     local parent = CreateFrame("Frame", nil, UIParent)
     parent:SetSize(925, 700)
+    M.db.last_frames_node = "combined"
     M.BuildSettings(parent)
+
+    local timer_font = M.controls.timer_number_font_dropdown_combined
+    local timer_bold = M.controls.timer_number_font_bold_combined
+    h.ok(timer_bold.checkbox:IsEnabled(), "Source Code Pro enables its available Bold option")
+    timer_font.button:Click()
+    h.ok(click_open_dropdown_option("Game Default"), "Game Default timer font option is selectable")
+    h.ok(not timer_bold.checkbox:IsEnabled(), "Game Default greys and disables the unavailable Bold option")
+    timer_font.button:Click()
+    h.ok(click_open_dropdown_option("Source Code Pro"), "Source Code Pro timer font option is selectable")
+    h.ok(timer_bold.checkbox:IsEnabled(), "selecting a font with a bold face re-enables Bold")
 
     h.ok(M.controls.background_color_sync_frame_picker, "frame background picker is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_bar_picker, "bar background picker is on Shared BG Colors")

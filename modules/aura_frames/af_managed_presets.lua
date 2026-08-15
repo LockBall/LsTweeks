@@ -7,11 +7,15 @@ local addon_name, addon = ...
 local M = addon.aura_frames
 
 local ICON_SIZE = 32
+local ICON_TIMER_HEIGHT = 12
+local ICON_TIMER_GAP = 2
+local ICON_CELL_HEIGHT = ICON_SIZE + ICON_TIMER_GAP + ICON_TIMER_HEIGHT
 local BAR_ROW_HEIGHT = 18
 local BAR_FRAME_INSET = 6
 local BAR_ICON_GAP = 5
 local BAR_STACK_WIDTH = 20
 local BAR_TIMER_WIDTH = 36
+local managed_duration_fonts = {}
 
 --#region MANAGED CONTAINER LAYOUT ============================================
 
@@ -26,7 +30,7 @@ local function get_flow_direction(flow_direction, direction)
     return flow_direction[enum_key]
 end
 
-local function configure_preset_layout(container, frame, cfg_db, category, max_frame_count, bar_mode)
+local function configure_preset_layout(container, frame, cfg_db, category, max_frame_count, bar_mode, show_timer_text)
     local flow_axis = AnchorUtil.FlowLayoutAxis
     local flow_direction = AnchorUtil.FlowDirection
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
@@ -54,7 +58,8 @@ local function configure_preset_layout(container, frame, cfg_db, category, max_f
     container:SetFlowLayoutAnchorPoint(anchor)
     container:SetFlowLayoutGrowthDirection(horizontal_direction, vertical_direction)
 
-    local element_extent = bar_mode and BAR_ROW_HEIGHT or ICON_SIZE
+    local icon_cell_height = show_timer_text and ICON_CELL_HEIGHT or ICON_SIZE
+    local element_extent = bar_mode and BAR_ROW_HEIGHT or icon_cell_height
     local line_size = growth_layout.vertical
         and (max_frame_count * (element_extent + spacing))
         or (bar_mode and (max_frame_count * ((width - (BAR_FRAME_INSET * 2)) + spacing)) or width)
@@ -64,6 +69,7 @@ local function configure_preset_layout(container, frame, cfg_db, category, max_f
         elementSpacing = spacing,
         lineSpacing = spacing,
         layoutIndex = 1,
+        elementHeight = (not bar_mode) and icon_cell_height or nil,
     }
 end
 
@@ -78,16 +84,38 @@ local function bind_native_tooltip(aura_button)
     aura_button:SetHideTooltipInCombat(true)
 end
 
-local function initialize_preset_icon(aura_button)
-    aura_button:SetSize(ICON_SIZE, ICON_SIZE)
+local function apply_duration_font(duration_text, duration_font, category)
+    if duration_font then
+        duration_text:SetFontObject(duration_font)
+    else
+        M.apply_number_font_to_text(duration_text, category)
+    end
+end
+
+local function initialize_preset_icon(aura_button, category, duration_font)
+    aura_button:SetSize(ICON_SIZE, ICON_CELL_HEIGHT)
 
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints(aura_button)
+    icon:SetSize(ICON_SIZE, ICON_SIZE)
+    icon:SetPoint("TOP", aura_button, "TOP")
     aura_button:SetIcon(icon)
+
+    local duration_text = aura_button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    duration_text:SetPoint("TOP", icon, "BOTTOM", 0, -ICON_TIMER_GAP)
+    duration_text:SetWidth(ICON_SIZE)
+    duration_text:SetHeight(ICON_TIMER_HEIGHT)
+    duration_text:SetJustifyH("CENTER")
+    apply_duration_font(duration_text, duration_font, category)
+
+    local stack_text = aura_button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    stack_text:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0, 1)
+
+    aura_button:SetDurationText(duration_text, {})
+    aura_button:SetApplicationCount(stack_text, {})
     bind_native_tooltip(aura_button)
 end
 
-local function initialize_preset_bar(aura_button, cfg_db, category)
+local function initialize_preset_bar(aura_button, cfg_db, category, duration_font)
     local row_width = get_preset_setting(cfg_db, category, "width", M.DEFAULT_FRAME_WIDTH)
         - (BAR_FRAME_INSET * 2)
     aura_button:SetSize(row_width, BAR_ROW_HEIGHT)
@@ -129,7 +157,7 @@ local function initialize_preset_bar(aura_button, cfg_db, category)
     duration_text:SetPoint("RIGHT", duration_bar, "RIGHT", -2, 0)
     duration_text:SetWidth(BAR_TIMER_WIDTH)
     duration_text:SetJustifyH("RIGHT")
-    M.apply_number_font_to_text(duration_text, category)
+    apply_duration_font(duration_text, duration_font, category)
 
     local spell_name = text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     spell_name:SetPoint("LEFT", stack_text, "RIGHT", 2, 0)
@@ -157,13 +185,15 @@ local function initialize_preset_bar(aura_button, cfg_db, category)
     bind_native_tooltip(aura_button)
 end
 
-local function create_preset_initializer(cfg_db, category, bar_mode)
+local function create_preset_initializer(cfg_db, category, bar_mode, duration_font)
     if bar_mode == true then
         return function(aura_button)
-            initialize_preset_bar(aura_button, cfg_db, category)
+            initialize_preset_bar(aura_button, cfg_db, category, duration_font)
         end
     end
-    return initialize_preset_icon
+    return function(aura_button)
+        initialize_preset_icon(aura_button, category, duration_font)
+    end
 end
 
 --#endregion MANAGED BUTTON INITIALIZATION =====================================
@@ -173,6 +203,10 @@ end
 local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
     local bar_mode = get_preset_setting(cfg_db, category, "bar_mode", false) == true
+    local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
+    if backend.duration_font and M.apply_number_font_style then
+        M.apply_number_font_style(backend.duration_font, category, cfg_db, show_timer_text and 1 or 0)
+    end
     local mode = bar_mode and "bar" or "icon"
     local max_frame_count = get_preset_setting(cfg_db, category, "max_icons", M.DEFAULT_MAX_ICONS)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
@@ -182,7 +216,8 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     if bar_mode and not growth_layout.vertical then
         growth_layout = addon.GetGrowthDirection("DOWN")
     end
-    local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value }, ":")
+    local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value,
+        tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
 
     local active_key = backend.presentation_group_keys[mode]
@@ -195,7 +230,8 @@ local function apply_managed_preset_presentation(backend, cfg_db)
         cfg_db,
         category,
         max_frame_count,
-        bar_mode
+        bar_mode,
+        show_timer_text
     )
     backend.container:SetAuraGroupLayout(active_key, layout)
     backend.presentation_mode = mode
@@ -214,20 +250,31 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
 
     backend.category = category
     backend.cfg_db = cfg_db
+    local duration_font = managed_duration_fonts[category]
+    if not duration_font and CreateFont then
+        duration_font = CreateFont(addon_name .. "ManagedAuraDurationFont" .. category)
+        managed_duration_fonts[category] = duration_font
+    end
+    backend.duration_font = duration_font
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",
         icon = group_key .. ":icon",
     }
 
     local max_frame_count = get_preset_setting(cfg_db, category, "max_icons", M.DEFAULT_MAX_ICONS)
-    local bar_layout = configure_preset_layout(backend.container, frame, cfg_db, category, max_frame_count, true)
+    local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
+    if duration_font and M.apply_number_font_style then
+        M.apply_number_font_style(duration_font, category, cfg_db, show_timer_text and 1 or 0)
+    end
+    local bar_layout = configure_preset_layout(
+        backend.container, frame, cfg_db, category, max_frame_count, true, show_timer_text)
     local bar_group, group_error = M.add_managed_aura_group(
         backend,
         backend.presentation_group_keys.bar,
         filter_string,
         {
             maxFrameCount = max_frame_count,
-            initializeFrame = create_preset_initializer(cfg_db, category, true),
+            initializeFrame = create_preset_initializer(cfg_db, category, true, duration_font),
         },
         bar_layout
     )
@@ -236,7 +283,8 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         return nil, group_error
     end
 
-    local icon_layout = configure_preset_layout(backend.container, frame, cfg_db, category, max_frame_count, false)
+    local icon_layout = configure_preset_layout(
+        backend.container, frame, cfg_db, category, max_frame_count, false, show_timer_text)
     local icon_group
     icon_group, group_error = M.add_managed_aura_group(
         backend,
@@ -244,7 +292,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         filter_string,
         {
             maxFrameCount = max_frame_count,
-            initializeFrame = create_preset_initializer(cfg_db, category, false),
+            initializeFrame = create_preset_initializer(cfg_db, category, false, duration_font),
         },
         icon_layout
     )

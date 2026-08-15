@@ -263,6 +263,12 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     local timer_bold_key = frame_setting_key(frame_config, "timer_number_font_bold")
     local timer_color_key = frame_setting_key(frame_config, "timer_color")
 
+    local function get_selected_timer_font()
+        return frame_config.value_table[timer_font_key]
+            or M.db.timer_number_font
+            or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    end
+
     local function refresh_fonts()
         M.apply_number_font_to_all()
         update()
@@ -295,18 +301,22 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
     )
     grid:stack_below(timer_bold_container, timer_text_container, { y = -4 })
 
+    local function refresh_bold_availability()
+        timer_bold_container:SetEnabled(M.is_number_font_bold_available(get_selected_timer_font()))
+    end
+
     local timer_font = create_list_dropdown(dropdown_name, parent, labels.font_label or "Font", get_timer_font_options(),
-        function()
-            return frame_config.value_table[timer_font_key] or M.db.timer_number_font or M.DEFAULT_TIMER_NUMBER_FONT_KEY
-        end,
+        get_selected_timer_font,
         function(value)
             frame_config.value_table[timer_font_key] = value
+            refresh_bold_availability()
             refresh_fonts()
         end,
         labels.font_dropdown_width or 120
     )
     grid:place_at(timer_font, row, 3, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
     M.controls[labels.font_control_key or ("timer_number_font_dropdown_" .. control_prefix)] = timer_font
+    refresh_bold_availability()
 
     local font_size_slider = addon.CreateSliderWithBox(
         font_size_name,
