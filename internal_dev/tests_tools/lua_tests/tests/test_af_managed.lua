@@ -138,6 +138,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             ooc_alpha_debuff = 0.35,
             fade_delay_debuff = 0,
             fade_length_debuff = 0,
+            bg_debuff = true,
+            bg_color_debuff = { r = 0.1, g = 0.2, b = 0.3, a = 0.4 },
             show_long = false,
             show_combined = true,
             move_combined = false,
@@ -149,6 +151,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             ooc_alpha_combined = 0.25,
             fade_delay_combined = 0,
             fade_length_combined = 0,
+            bg_combined = true,
+            bg_color_combined = { r = 0.4, g = 0.3, b = 0.2, a = 0.1 },
         },
     })
 
@@ -156,6 +160,13 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     local backend = frame._managed_aura_backend
 
     h.ok(backend, "Debuff frame owns a managed backend")
+    h.ok(backend.frame_background, "managed Debuff backend owns its frame background")
+    h.ok(backend.frame_background.texture:IsShown(), "enabled Debuff Frame BG is visible")
+    local debuff_bg_color = backend.frame_background.texture:GetLastCall("SetColorTexture")
+    h.eq(debuff_bg_color[1], 0.1, "managed Debuff Frame BG applies saved red")
+    h.eq(debuff_bg_color[2], 0.2, "managed Debuff Frame BG applies saved green")
+    h.eq(debuff_bg_color[3], 0.3, "managed Debuff Frame BG applies saved blue")
+    h.eq(debuff_bg_color[4], 0.4, "managed Debuff Frame BG applies saved alpha")
     h.eq(backend.container.__groups["debuffs:bar"].filter_string, "HARMFUL", "Debuff groups use HARMFUL")
     h.eq(backend.container.__groups["debuffs:bar"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
         "Debuff bar pool uses the fixed Aura limit")
@@ -254,6 +265,40 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     local buffs_frame = M.frames.show_combined
     local buffs_backend = buffs_frame._managed_aura_backend
     h.ok(buffs_backend, "combined Buffs frame owns a managed backend")
+    h.ok(buffs_backend.frame_background, "combined Buff backend owns its frame background")
+    h.ok(buffs_backend.frame_background.texture:IsShown(), "enabled combined Frame BG is visible")
+    local combined_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
+    h.eq(combined_bg_color[1], 0.4, "combined Frame BG applies saved red")
+    h.eq(combined_bg_color[4], 0.1, "combined Frame BG applies saved alpha")
+    M.db.bg_combined = false
+    M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
+    h.eq(buffs_backend.frame_background.texture:IsShown(), false,
+        "disabling combined Frame BG hides the managed background")
+
+    local color_sync = h.addon.all_the_colors
+    M.db.shared_background_color_enabled = true
+    M.db.sync_bar_bg_combined = true
+    M.db.shared_frame_background_color = { r = 0.6, g = 0.5, b = 0.4, a = 0.3 }
+    color_sync.get_db().global_enabled = false
+    M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
+    h.ok(buffs_backend.frame_background.texture:IsShown(),
+        "Shared BG Colors can show a managed background when local Frame BG is off")
+    combined_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
+    h.eq(combined_bg_color[1], 0.6, "managed Frame BG receives the Aura shared color")
+
+    color_sync.get_db().global_enabled = true
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
+    color_sync.get_db().global_color = { r = 0.9, g = 0.8, b = 0.7, a = 0.6 }
+    M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
+    combined_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
+    h.eq(combined_bg_color[1], 0.9, "All the Colors globally overrides managed Frame BG")
+    h.eq(combined_bg_color[4], 0.6, "managed Frame BG receives global override alpha")
+
+    color_sync.get_db().global_enabled = false
+    M.db.shared_background_color_enabled = false
+    M.db.bg_combined = true
+    M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
     h.eq(buffs_backend.container.__groups["buffs:bar"].filter_string, "HELPFUL",
         "combined Buff groups request every helpful Aura")
     h.eq(buffs_backend.container.__groups["buffs:bar"].options.maxFrameCount, M.AURA_FRAME_LIMIT,

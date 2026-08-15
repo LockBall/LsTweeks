@@ -25,7 +25,7 @@ Slash command: `/lst`
 - [Aura Frames](#aura-frames): configurable player aura frames for buffs, debuffs, and WoW Cooldown Manager groups.
 - [Player Frame](#player-frame): optional Player Frame combat-text hiding and out-of-combat fade controls.
 - [Objectives](#objectives): position, background, auto-collapse, and section-count controls for the Objective Tracker.
-- [All the Colors](#all-the-colors): reversible cross-module color policy with whole-module participation.
+- [All the Colors](#all-the-colors): reversible cross-module color policy with consumer participation.
 - [Skyriding Vigor](#skyriding-vigor): restored compact player vigor display with adjustable style and behavior.
 - [Audio Volumes](#audio-volumes): quieter replacement sounds and temporary channel-volume situations.
 - [Settings](#settings): minimap button, open-on-reload, and main panel transparency.
@@ -112,7 +112,7 @@ All the Colors applies reversible runtime color overrides without replacing the 
 - **Show Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings. Enabling **Fade OOC** on an individual Aura Frame clears this global override and synchronizes its linked controls.
 - **Enable Test Auras**: temporarily previews test auras on every enabled Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
-- **Global Participation**: Objectives and Buffs & Debuffs have whole-module checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
+- **Global Participation**: Objectives, Buffs, and Debuffs have independent checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
 - **Aura Colors**: the Global page groups the independent Frame BG and Bar BG overrides under **BG Colors**, Buff Bar and Debuff Bar fills under **Bar Colors**, and Bar Text and Timer Text under **Text Colors**.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.
 

@@ -48,7 +48,14 @@ if addon.register_module_status then
                     selected = selected + 1
                 end
             end
-            fields[#fields + 1] = consumer.key .. "_global=" .. tostring(consumer_db.global_enabled == true)
+            if consumer.global_group_order and #consumer.global_group_order > 0 then
+                for _, group_key in ipairs(consumer.global_group_order) do
+                    fields[#fields + 1] = consumer.key .. "_" .. group_key .. "="
+                        .. tostring(M.get_global_participation_enabled(consumer.key, group_key))
+                end
+            else
+                fields[#fields + 1] = consumer.key .. "_global=" .. tostring(consumer_db.global_enabled == true)
+            end
             fields[#fields + 1] = consumer.key .. "_targets=" .. tostring(selected)
                 .. "/" .. tostring(#M.get_registered_targets(consumer.key))
         end

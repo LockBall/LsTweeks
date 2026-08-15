@@ -17,6 +17,7 @@ local refresh_calls = 0
 local target_state = {
     ["frame:static"] = true,
     ["bar:static"] = false,
+    ["frame:debuff"] = true,
 }
 
 M.register_consumer("aura_frames", {
@@ -25,6 +26,10 @@ M.register_consumer("aura_frames", {
     global_toggle = true,
     global_order = 200,
     default_global_enabled = true,
+    global_groups = {
+        { key = "buffs", label = "Buffs", order = 1, default_enabled = true },
+        { key = "debuffs", label = "Debuffs", order = 2, default_enabled = true },
+    },
     supports_ooc_fade = true,
     refresh = function() refresh_calls = refresh_calls + 1 end,
 })
@@ -33,11 +38,20 @@ M.register_target("aura_frames", "frame:static", {
     default_enabled = true,
     supports_visibility = true,
     get_enabled = function() return target_state["frame:static"] end,
+    global_group = "buffs",
 })
 M.register_target("aura_frames", "bar:static", {
     label = "Static Bar Background",
     default_enabled = false,
     get_enabled = function() return target_state["bar:static"] end,
+    global_group = "buffs",
+})
+M.register_target("aura_frames", "frame:debuff", {
+    label = "Debuff Frame Background",
+    default_enabled = true,
+    supports_visibility = true,
+    get_enabled = function() return target_state["frame:debuff"] end,
+    global_group = "debuffs",
 })
 M.register_consumer("objectives", {
     label = "Objectives",
@@ -89,20 +103,25 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     target_state["frame:static"] = true
 
     db.global_enabled = true
+    M.set_global_participation_enabled("aura_frames", "buffs", true)
+    M.set_global_participation_enabled("aura_frames", "debuffs", false)
     resolved, source = M.resolve_color("aura_frames", "frame:static", original)
     h.eq(resolved, db.global_color, "global override wins")
     h.eq(source, "global", "global source reported")
+    resolved, source = M.resolve_color("aura_frames", "frame:debuff", original)
+    h.eq(resolved, original, "disabled Debuff participation preserves its local color")
+    h.eq(source, "local", "disabled Debuff participation reports local source")
     db.aura_buff_bar_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
     db.aura_debuff_bar_color = { r = 0.7, g = 0.2, b = 0.1, a = 0.5 }
     h.eq(
-        M.resolve_module_color("aura_frames", "aura_buff_bar_color", original),
+        M.resolve_module_color("aura_frames", "aura_buff_bar_color", original, "buffs"),
         db.aura_buff_bar_color,
         "Aura Buff Bar Color uses the enabled All the Colors override"
     )
     h.eq(
-        M.resolve_module_color("aura_frames", "aura_debuff_bar_color", original),
-        db.aura_debuff_bar_color,
-        "Aura Debuff Bar Color uses the enabled All the Colors override"
+        M.resolve_module_color("aura_frames", "aura_debuff_bar_color", original, "debuffs"),
+        original,
+        "Aura Debuff Bar Color stays local while Debuff participation is disabled"
     )
     db.global_enable_all_backgrounds = false
     h.eq(
@@ -120,7 +139,7 @@ h.test("registered global, target, and local precedence is non-destructive", fun
     h.eq(M.resolve_ooc_fade("aura_frames", true), false, "fade policy is independent from Show Backgrounds")
     db.global_enable_all_backgrounds = true
 
-    consumer_db.global_enabled = false
+    M.set_global_participation_enabled("aura_frames", "buffs", false)
     resolved, source = M.resolve_color("aura_frames", "frame:static", original)
     h.eq(resolved, original, "unchecked global consumer falls back to module-owned input")
     h.eq(source, "local", "unchecked global consumer reports local source")
@@ -131,7 +150,7 @@ h.test("registered global, target, and local precedence is non-destructive", fun
         "unchecked module does not gain visibility from global color"
     )
     db.global_enable_all_backgrounds = true
-    consumer_db.global_enabled = true
+    M.set_global_participation_enabled("aura_frames", "buffs", true)
 
     addon.set_module_enabled(M.MODULE_KEY, false)
     resolved, source = M.resolve_color("aura_frames", "frame:static", original)
@@ -150,9 +169,10 @@ h.test("preset selection preserves global alpha", function()
     h.eq(db.global_color.a, 0.42, "preset preserves alpha")
 end)
 
-h.test("profile restores whole-module participation without owning target selections", function()
+h.test("profile restores independent Buff and Debuff participation without owning target selections", function()
     local consumer_db = M.ensure_consumer_db("aura_frames")
-    consumer_db.global_enabled = false
+    M.set_global_participation_enabled("aura_frames", "buffs", false)
+    M.set_global_participation_enabled("aura_frames", "debuffs", true)
     target_state["frame:static"] = false
     local db = M.get_db()
     db.aura_buff_bar_color = { r = 0.2, g = 0.4, b = 0.6, a = 0.8 }
@@ -160,7 +180,8 @@ h.test("profile restores whole-module participation without owning target select
 
     local ok = M.profile_manager:save("Test", false)
     h.ok(ok, "profile saves")
-    consumer_db.global_enabled = true
+    M.set_global_participation_enabled("aura_frames", "buffs", true)
+    M.set_global_participation_enabled("aura_frames", "debuffs", false)
     target_state["frame:static"] = true
     db.aura_buff_bar_color.r = 0.9
     db.aura_debuff_bar_color.r = 0.9
@@ -168,7 +189,8 @@ h.test("profile restores whole-module participation without owning target select
     ok = M.profile_manager:load("Test")
     h.ok(ok, "profile loads")
     consumer_db = M.ensure_consumer_db("aura_frames")
-    h.eq(consumer_db.global_enabled, false, "explicit false module participation restored")
+    h.eq(consumer_db.global_groups.buffs, false, "disabled Buff participation restored")
+    h.eq(consumer_db.global_groups.debuffs, true, "enabled Debuff participation restored")
     h.eq(target_state["frame:static"], true, "module-owned target selection is untouched")
     h.eq(db.aura_buff_bar_color.r, 0.2, "profile restores Buff bar color")
     h.eq(db.aura_debuff_bar_color.r, 0.8, "profile restores Debuff bar color")
@@ -195,11 +217,31 @@ h.test("settings page exposes only global controls for consumer-owned settings",
     h.eq(M.defaults.all_the_colors.aura_debuff_bar_color.r, 1,
         "Debuff bar override uses the standard Debuff bar default")
     h.ok(M.controls["global_consumer:objectives"], "Objectives global toggle appears in Global")
-    h.ok(M.controls["global_consumer:aura_frames"], "Buffs & Debuffs global toggle appears in Global")
+    h.is_nil(M.controls["global_consumer:aura_frames"], "combined Buffs & Debuffs toggle is removed")
+    h.ok(M.controls["global_consumer:aura_frames:buffs"], "Buffs global toggle appears in Global")
+    h.ok(M.controls["global_consumer:aura_frames:debuffs"], "Debuffs global toggle appears in Global")
     h.ok(
         not M.controls["global_consumer:objectives"].checkbox:IsEnabled(),
         "global consumer toggles are disabled without global color"
     )
+    h.ok(
+        not M.controls["global_consumer:aura_frames:buffs"].checkbox:IsEnabled(),
+        "Buff participation is disabled without global color"
+    )
+    db.global_enabled = true
+    M.sync_controls()
+    local buffs_control = M.controls["global_consumer:aura_frames:buffs"]
+    local debuffs_control = M.controls["global_consumer:aura_frames:debuffs"]
+    buffs_control:SetChecked(false)
+    buffs_control.checkbox:Click()
+    h.eq(M.ensure_consumer_db("aura_frames").global_groups.buffs, false,
+        "Buff checkbox updates only Buff participation")
+    h.eq(M.ensure_consumer_db("aura_frames").global_groups.debuffs, true,
+        "Buff checkbox leaves Debuff participation enabled")
+    debuffs_control:SetChecked(false)
+    debuffs_control.checkbox:Click()
+    h.eq(M.ensure_consumer_db("aura_frames").global_groups.debuffs, false,
+        "Debuff checkbox independently updates Debuff participation")
     h.is_nil(M.BuildColorsTab, "obsolete Colors tab builder is removed")
     h.ok(M.rebuild_general_tab, "registry rebuilds target the consolidated General tab")
 end)
@@ -230,11 +272,33 @@ h.test("consumer re-registration rebuilds only when the Global list changes", fu
     })
     h.eq(rebuild_calls, 2, "displayed consumer label change rebuilds the Global list")
 
-    M.register_consumer("registry_refresh_test", { global_toggle = false })
-    h.eq(rebuild_calls, 3, "removing a displayed consumer rebuilds the Global list")
+    M.register_consumer("registry_refresh_test", {
+        label = "Renamed Registry Refresh Test",
+        global_toggle = true,
+        global_order = 300,
+        global_groups = {
+            { key = "first", label = "First", order = 1 },
+            { key = "second", label = "Second", order = 2 },
+        },
+    })
+    h.eq(rebuild_calls, 3, "adding a group schema rebuilds the Global list")
+
+    M.register_consumer("registry_refresh_test", {
+        label = "Renamed Registry Refresh Test",
+        global_toggle = true,
+        global_order = 300,
+        global_groups = {
+            { key = "first", label = "First", order = 1 },
+            { key = "second", label = "Second", order = 2 },
+        },
+    })
+    h.eq(rebuild_calls, 3, "unchanged group schema skips the rebuild")
 
     M.register_consumer("registry_refresh_test", { global_toggle = false })
-    h.eq(rebuild_calls, 3, "unchanged hidden consumer registration skips the rebuild")
+    h.eq(rebuild_calls, 4, "removing a displayed consumer rebuilds the Global list")
+
+    M.register_consumer("registry_refresh_test", { global_toggle = false })
+    h.eq(rebuild_calls, 4, "unchanged hidden consumer registration skips the rebuild")
     M.on_registry_changed = original_on_registry_changed
 end)
 

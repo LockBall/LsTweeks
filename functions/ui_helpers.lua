@@ -1,5 +1,5 @@
--- Shared UI helpers for common settings-panel chrome: control panel backdrops and
--- gold-outlined settings groups. Tooltip rendering lives in functions/tooltip.lua.
+-- Shared UI helpers for texture-backed runtime backgrounds and common settings-panel
+-- chrome: control panel backdrops and gold-outlined settings groups.
 
 
 local addon_name, addon = ...
@@ -33,6 +33,76 @@ function addon.CreateControlPanel(parent, width, height, opts)
 end
 
 --#endregion CONTROL PANELS ====================================================
+
+
+--#region BACKGROUND REGIONS ==================================================
+
+-- Creates one texture-backed background controller whose geometry follows its
+-- parent without reading parent dimensions. Callers own color/visibility policy
+-- and any combat restrictions imposed by the parent frame.
+function addon.CreateBackgroundRegion(parent, opts)
+    if not (parent and parent.CreateTexture) then return nil end
+    opts = opts or {}
+
+    local texture = parent:CreateTexture(
+        nil,
+        opts.layer or "BACKGROUND",
+        opts.template,
+        opts.sublevel or -8
+    )
+    local controller = { texture = texture }
+    local inset_left, inset_right, inset_top, inset_bottom
+    local color_r, color_g, color_b, color_a
+    local shown
+
+    function controller:SetInsets(insets)
+        insets = insets or {}
+        local left = tonumber(insets.left) or 0
+        local right = tonumber(insets.right) or 0
+        local top = tonumber(insets.top) or 0
+        local bottom = tonumber(insets.bottom) or 0
+        if inset_left == left and inset_right == right
+            and inset_top == top and inset_bottom == bottom
+        then
+            return
+        end
+        inset_left, inset_right, inset_top, inset_bottom = left, right, top, bottom
+        texture:ClearAllPoints()
+        texture:SetPoint("TOPLEFT", parent, "TOPLEFT", -left, top)
+        texture:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", right, -bottom)
+    end
+
+    function controller:SetColor(color)
+        if type(color) ~= "table" then return end
+        local r = tonumber(color.r or color[1]) or 0
+        local g = tonumber(color.g or color[2]) or 0
+        local b = tonumber(color.b or color[3]) or 0
+        local a = tonumber(color.a or color[4]) or 1
+        if color_r == r and color_g == g and color_b == b and color_a == a then return end
+        color_r, color_g, color_b, color_a = r, g, b, a
+        texture:SetColorTexture(r, g, b, a)
+    end
+
+    function controller:SetShown(is_shown)
+        is_shown = is_shown == true
+        if shown == is_shown then return end
+        shown = is_shown
+        texture:SetShown(is_shown)
+    end
+
+    function controller:Apply(is_shown, color, insets)
+        self:SetInsets(insets)
+        self:SetColor(color)
+        self:SetShown(is_shown)
+    end
+
+    controller:SetInsets(opts.insets)
+    if opts.color then controller:SetColor(opts.color) end
+    controller:SetShown(opts.shown == true)
+    return controller
+end
+
+--#endregion BACKGROUND REGIONS ===============================================
 
 
 --#region SETTINGS GROUPS ======================================================

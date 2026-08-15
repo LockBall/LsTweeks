@@ -41,6 +41,7 @@ function M.export_profile_data()
         local consumer_db = M.ensure_consumer_db(consumer.key)
         data.consumers[consumer.key] = {
             global_enabled = consumer_db and consumer_db.global_enabled == true,
+            global_groups = consumer_db and copy(consumer_db.global_groups) or nil,
         }
     end
     return data
@@ -69,6 +70,7 @@ function M.apply_profile_data(data)
         end
         db.consumers[consumer.key] = {
             global_enabled = global_enabled,
+            global_groups = type(saved) == "table" and copy(saved.global_groups) or nil,
         }
     end
     M.normalize_db()

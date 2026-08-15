@@ -103,8 +103,11 @@ function M.sync_background_color_controls()
     local color_sync = get_background_color_sync()
     if not (color_sync and M.controls and M.db) then return end
 
-    local global_active = color_sync.is_global_color_active
-        and color_sync.is_global_color_active(M.MODULE_KEY)
+    local buffs_global_active = color_sync.is_global_color_active
+        and color_sync.is_global_color_active(M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs)
+    local debuffs_global_active = color_sync.is_global_color_active
+        and color_sync.is_global_color_active(M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs)
+    local global_active = buffs_global_active and debuffs_global_active
     local shared_enabled = M.db.shared_background_color_enabled == true
     local module_controls_enabled = not global_active
     local shared_controls_enabled = shared_enabled and module_controls_enabled

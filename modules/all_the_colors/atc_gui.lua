@@ -48,8 +48,10 @@ end
 
 --#region CONTROL KEYS AND SYNCHRONIZATION =====================================
 
-local function global_consumer_control_key(module_key)
-    return "global_consumer:" .. module_key
+local function global_consumer_control_key(module_key, group_key)
+    local key = "global_consumer:" .. module_key
+    if group_key then key = key .. ":" .. group_key end
+    return key
 end
 
 local function sync_global_color_controls()
@@ -102,11 +104,14 @@ function M.sync_controls()
         if control then control:SetEnabled(global_enabled) end
     end
 
-    for _, consumer in ipairs(M.get_registered_consumers()) do
-        local consumer_db = M.ensure_consumer_db(consumer.key)
-        local global_consumer_control = M.controls[global_consumer_control_key(consumer.key)]
+    for _, entry in ipairs(M.get_global_toggle_entries()) do
+        local consumer = entry.consumer
+        local group_key = entry.group and entry.group.key or nil
+        local global_consumer_control = M.controls[global_consumer_control_key(consumer.key, group_key)]
         if global_consumer_control and global_consumer_control.SetCheckedSilently then
-            global_consumer_control:SetCheckedSilently(consumer_db.global_enabled == true)
+            global_consumer_control:SetCheckedSilently(
+                M.get_global_participation_enabled(consumer.key, group_key)
+            )
             global_consumer_control:SetEnabled(global_enabled)
         end
     end
@@ -190,24 +195,6 @@ end
 
 --#region GLOBAL CONSUMERS =====================================================
 
-local function get_global_toggle_consumers()
-    local consumers = {}
-    for _, consumer in ipairs(M.get_registered_consumers()) do
-        if consumer.global_toggle == true then
-            consumers[#consumers + 1] = consumer
-        end
-    end
-    table.sort(consumers, function(left, right)
-        local left_order = left.global_order or left.order or 100
-        local right_order = right.global_order or right.order or 100
-        if left_order == right_order then
-            return (left._registered_index or 0) < (right._registered_index or 0)
-        end
-        return left_order < right_order
-    end)
-    return consumers
-end
-
 --#endregion GLOBAL CONSUMERS ==================================================
 
 
@@ -217,8 +204,8 @@ local function build_global_group(parent)
     M.controls = {}
 
     local group_width = get_content_width() - GROUP_OFFSET_X - GROUP_RIGHT_MARGIN
-    local global_consumers = get_global_toggle_consumers()
-    local global_height = GLOBAL_BASE_HEIGHT + math.max(0, #global_consumers - GLOBAL_INCLUDED_CONSUMERS) * 26
+    local global_entries = M.get_global_toggle_entries()
+    local global_height = GLOBAL_BASE_HEIGHT + math.max(0, #global_entries - GLOBAL_INCLUDED_CONSUMERS) * 26
     local global_group = addon.CreateSettingsGroup(
         parent,
         "Global",
@@ -316,18 +303,19 @@ local function build_global_group(parent)
         )
     end
     local previous_global_control = global_enable
-    for index, consumer in ipairs(global_consumers) do
-        local consumer_db = M.ensure_consumer_db(consumer.key)
+    for index, entry in ipairs(global_entries) do
+        local consumer = entry.consumer
+        local group_key = entry.group and entry.group.key or nil
         previous_global_control = create_bound_checkbox(
             global_group,
             global_grid,
-            global_consumer_control_key(consumer.key),
-            consumer.label,
-            function() return consumer_db.global_enabled end,
-            function(value) consumer_db.global_enabled = value end,
+            global_consumer_control_key(consumer.key, group_key),
+            entry.label,
+            function() return M.get_global_participation_enabled(consumer.key, group_key) end,
+            function(value) M.set_global_participation_enabled(consumer.key, group_key, value) end,
             1,
             1,
-            "Include " .. consumer.label .. " in the global color override.",
+            "Include " .. entry.label .. " in the global color override.",
             { below = previous_global_control, x = index == 1 and 18 or 0, y = -2 }
         )
     end
@@ -363,7 +351,7 @@ end
 function M.BuildProfilesTab(parent)
     M.refresh_profiles_tab = addon.BuildProfilesTab(parent, M.profile_manager, {
         label = M.CATEGORY_NAME,
-        note = "Profiles save global policy plus whole-module participation.",
+        note = "Profiles save global policy plus consumer participation.",
     })
 end
 

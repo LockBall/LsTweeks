@@ -46,6 +46,7 @@ This is an implementation group rather than one pass/fail test.
 ### Migration And Presentation
 - Static, Short, and Long remain legacy Aura-scanning frames and should not be combat-validated as managed frames yet.
 - Managed icon cooldown swipe is not implemented; add and bind it natively before testing it.
+- Validate Frame BG on both Combined Buffs and Debuffs in Bar and Icon modes: local Frame BG should toggle immediately, Aura Shared BG Colors participation should force it visible and apply the shared Frame BG color, and an enabled All the Colors module override should replace the final RGBA. Repeat OOC, in combat, and after returning OOC; the background must follow the managed Aura bounds without Lua errors, blocked actions, or stale size/color.
 - Change Bar BG and non-duration bar-text settings while managed Auras are visible and out of combat. Record which changes apply immediately and which require reload or group rebuild.
 
 ### CDM Regression

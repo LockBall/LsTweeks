@@ -16,12 +16,41 @@ addon.CreateControlPanel = function(parent, width, height)
     return panel
 end
 
+h.load_file("functions/ui_helpers.lua")
 h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
 h.load_file("functions/dropdown.lua")
 h.load_file("functions/font_catalog.lua")
 h.load_file("functions/growth_direction.lua")
+
+h.test("background region controller follows its parent without geometry reads", function()
+    local parent = CreateFrame("Frame", nil, UIParent)
+    local background = addon.CreateBackgroundRegion(parent)
+    h.ok(background and background.texture, "shared background controller creates one texture")
+    h.eq(background.texture.__parent, parent, "background texture is owned by its target frame")
+
+    local color = { r = 0.1, g = 0.2, b = 0.3, a = 0.4 }
+    local insets = { left = 1, right = 2, top = 3, bottom = 4 }
+    background:Apply(true, color, insets)
+    h.ok(background.texture:IsShown(), "background controller shows an enabled region")
+    local applied_color = background.texture:GetLastCall("SetColorTexture")
+    h.eq(applied_color[1], 0.1, "background controller applies red")
+    h.eq(applied_color[4], 0.4, "background controller applies alpha")
+    local _, _, _, top_left_x, top_left_y = background.texture:GetPoint(1)
+    local _, _, _, bottom_right_x, bottom_right_y = background.texture:GetPoint(2)
+    h.eq(top_left_x, -1, "left inset expands without reading parent width")
+    h.eq(top_left_y, 3, "top inset expands without reading parent height")
+    h.eq(bottom_right_x, 2, "right inset expands without reading parent width")
+    h.eq(bottom_right_y, -4, "bottom inset expands without reading parent height")
+
+    local color_writes = #background.texture:GetCalls("SetColorTexture")
+    background:Apply(true, color, insets)
+    h.eq(#background.texture:GetCalls("SetColorTexture"), color_writes,
+        "unchanged background state performs no color write")
+    background:SetShown(false)
+    h.eq(background.texture:IsShown(), false, "background controller hides a disabled region")
+end)
 
 h.test("font catalog shares role-aware selection across modules", function()
     h.eq(addon.GetGameDefaultFontObject("timer"), GameFontNormalSmall,

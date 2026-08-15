@@ -209,7 +209,10 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
 
     consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
     color_sync.get_db().global_enabled = true
-    consumer_db.global_enabled = true
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs, true)
     M.sync_background_color_controls()
     h.ok(
         not M.controls.background_color_sync_enabled.checkbox:IsEnabled(),
@@ -264,14 +267,16 @@ h.test("Aura Frames resolves shared color before the global override", function(
     )
 
     db.global_enabled = true
-    consumer_db.global_enabled = true
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
     resolved, source = M.resolve_background_color("static", "frame", local_color)
     h.eq(resolved, db.global_color, "global color overrides selected Aura target")
     h.eq(source, "global", "global source reported")
     resolved = M.resolve_background_color("static", "bar", local_color)
     h.eq(resolved, db.aura_bar_bg_color, "Bar BG override stays independent from Frame BG")
 
-    consumer_db.global_enabled = false
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, false)
     resolved = M.resolve_background_color("static", "frame", local_color)
     h.eq(resolved, M.db.shared_frame_background_color, "unchecked module falls back to Aura shared frame color")
 end)
@@ -337,11 +342,25 @@ h.test("Aura Frames resolves shared Buff and Debuff bar colors before the global
         "harmful custom frame uses the shared Debuff bar color")
     M.destroy_custom_frame(custom.id)
 
+    M.db.sync_bar_color_static = true
     db.global_enabled = true
-    consumer_db.global_enabled = true
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, false)
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs, true)
     db.aura_debuff_bar_color = { r = 0.9, g = 0.8, b = 0.7 }
+    h.eq(M.resolve_bar_color("static", local_color), M.db.shared_buff_bar_color,
+        "disabled Buff participation keeps the Aura-owned Buff bar color")
     h.eq(M.resolve_bar_color("debuff", local_color), db.aura_debuff_bar_color,
         "global color overrides the Aura-owned Debuff bar color")
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs, false)
+    h.eq(M.resolve_bar_color("static", local_color), db.aura_buff_bar_color,
+        "Buff participation can be enabled independently")
+    h.eq(M.resolve_bar_color("debuff", local_color), M.db.shared_debuff_bar_color,
+        "disabled Debuff participation keeps the Aura-owned Debuff bar color")
     db.global_enabled = false
 end)
 
@@ -365,7 +384,8 @@ h.test("Aura Frames resolves shared Bar and Timer text colors before the global 
         "deselected text target keeps its local color")
 
     db.global_enabled = true
-    consumer_db.global_enabled = true
+    color_sync.set_global_participation_enabled(
+        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
     h.eq(M.resolve_text_color("short", "timer", local_color), db.aura_timer_text_color,
         "global Timer Text overrides the Aura-owned shared color")
     db.global_enabled = false

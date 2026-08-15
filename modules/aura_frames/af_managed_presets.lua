@@ -18,6 +18,13 @@ local BAR_TIMER_WIDTH = 36
 local MOVE_OUTLINE_OVERLAP = 1
 local MOVE_HANDLE_EDGE_THICKNESS = 3
 local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
+local NO_BACKGROUND_INSETS = { left = 0, right = 0, top = 0, bottom = 0 }
+local BAR_BACKGROUND_INSETS = {
+    left = BAR_FRAME_INSET,
+    right = BAR_FRAME_INSET,
+    top = BAR_FRAME_INSET,
+    bottom = BAR_FRAME_INSET,
+}
 local managed_duration_fonts = {}
 local managed_stack_fonts = {}
 
@@ -275,6 +282,14 @@ local function create_container_move_outline(container)
     return outline
 end
 
+local function apply_managed_frame_background(backend, cfg_db, bar_mode)
+    local background = backend and backend.frame_background
+    if not (background and M.resolve_frame_background) then return end
+
+    local enabled, color = M.resolve_frame_background(cfg_db, backend.category)
+    background:Apply(enabled, color, bar_mode and BAR_BACKGROUND_INSETS or NO_BACKGROUND_INSETS)
+end
+
 local function position_container_move_outline(backend, width, bar_mode, growth_layout)
     local outline = backend.move_outline
     if not outline then return end
@@ -377,6 +392,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
     position_container_move_outline(backend, width, bar_mode, growth_layout)
+    apply_managed_frame_background(backend, cfg_db, bar_mode)
     local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
@@ -424,6 +440,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
     end
     backend.stack_font = stack_font
     backend.bar_regions = {}
+    backend.frame_background = addon.CreateBackgroundRegion(backend.container)
     backend.move_outline = create_container_move_outline(backend.container)
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",

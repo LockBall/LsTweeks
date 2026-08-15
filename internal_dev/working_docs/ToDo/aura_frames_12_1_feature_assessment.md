@@ -255,8 +255,11 @@ and protected-duration reads.
 **Assessment:** Mostly preservable, with stricter lifecycle rules.
 
 **Status:** Managed bar/icon switching, timer and Stack font/size/bold/color,
-black outlines, fractional font sizes, bar foreground color, shell backgrounds,
-and resizing are implemented. Bar
+black outlines, fractional font sizes, bar foreground color, and resizing are
+implemented. Frame BG now uses a shared texture-backed controller on the
+auto-sized managed AuraContainer and consumes the same local, Shared BG Colors,
+and All the Colors policy pipeline as legacy frames; this API-safe replacement
+still needs an in-game visual check. Bar
 background and non-duration bar text are still initialized from settings and do
 not yet have a complete accessible OOC refresh path.
 

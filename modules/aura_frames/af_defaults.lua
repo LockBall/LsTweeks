@@ -9,6 +9,7 @@ local M = addon.aura_frames
 
 --#region FRAME DEFINITIONS AND DEFAULTS ======================================
 M.MODULE_KEY = "aura_frames"
+M.COLOR_CONSUMER_GROUPS = { buffs = "buffs", debuffs = "debuffs" }
 
 function M.is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
@@ -209,6 +210,12 @@ function M.is_debuff_frame_category(category)
     return entry ~= nil and entry.aura_base_filter == "HARMFUL"
 end
 
+function M.get_color_consumer_group(category)
+    return M.is_debuff_frame_category(category)
+        and M.COLOR_CONSUMER_GROUPS.debuffs
+        or M.COLOR_CONSUMER_GROUPS.buffs
+end
+
 function M.register_background_color_targets(category, label, order)
     if not color_sync or not color_sync.register_target then return end
     local row_label = label or category
@@ -217,12 +224,14 @@ function M.register_background_color_targets(category, label, order)
         order = order,
         default_enabled = true,
         supports_visibility = true,
+        get_global_group = function() return M.get_color_consumer_group(category) end,
     })
     color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"), {
         label = row_label .. " Bar Background",
         order = order,
         default_enabled = true,
         supports_visibility = false,
+        get_global_group = function() return M.get_color_consumer_group(category) end,
     })
 end
 
@@ -239,6 +248,10 @@ if color_sync and color_sync.register_consumer then
         global_toggle = true,
         global_order = 200,
         default_global_enabled = true,
+        global_groups = {
+            { key = M.COLOR_CONSUMER_GROUPS.buffs, label = "Buffs", order = 1, default_enabled = true },
+            { key = M.COLOR_CONSUMER_GROUPS.debuffs, label = "Debuffs", order = 2, default_enabled = true },
+        },
         supports_ooc_fade = true,
         refresh = function()
             if M.on_shared_color_changed then

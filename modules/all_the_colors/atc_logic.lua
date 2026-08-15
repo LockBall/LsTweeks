@@ -80,6 +80,17 @@ function M.ensure_consumer_db(module_key)
     if consumer_db.global_enabled == nil then
         consumer_db.global_enabled = consumer.default_global_enabled == true
     end
+    if consumer.global_group_order and #consumer.global_group_order > 0 then
+        if type(consumer_db.global_groups) ~= "table" then
+            consumer_db.global_groups = {}
+        end
+        for _, group_key in ipairs(consumer.global_group_order) do
+            if consumer_db.global_groups[group_key] == nil then
+                local group = consumer.global_groups[group_key]
+                consumer_db.global_groups[group_key] = group.default_enabled == true
+            end
+        end
+    end
     return consumer_db
 end
 
@@ -97,6 +108,7 @@ function M.register_consumer(module_key, opts)
     local was_global_toggle = consumer and consumer.global_toggle == true
     local previous_label = consumer and consumer.label
     local previous_global_order = consumer and consumer.global_order
+    local previous_group_signature = consumer and consumer.global_group_signature
     if not consumer then
         consumer = {
             key = module_key,
@@ -117,6 +129,37 @@ function M.register_consumer(module_key, opts)
         consumer.global_toggle = false
     end
     consumer.global_order = opts.global_order or consumer.global_order or consumer.order
+    if opts.global_groups ~= nil then
+        consumer.global_groups = {}
+        consumer.global_group_order = {}
+        local signature = {}
+        for index, group_opts in ipairs(opts.global_groups) do
+            local group_key = group_opts and group_opts.key
+            if type(group_key) == "string" and group_key ~= "" then
+                local group = {
+                    key = group_key,
+                    label = group_opts.label or group_key,
+                    order = group_opts.order or index,
+                    default_enabled = group_opts.default_enabled ~= false,
+                }
+                consumer.global_groups[group_key] = group
+                consumer.global_group_order[#consumer.global_group_order + 1] = group_key
+                signature[#signature + 1] = table.concat({
+                    group.key,
+                    group.label,
+                    tostring(group.order),
+                    tostring(group.default_enabled),
+                }, ":")
+            end
+        end
+        table.sort(consumer.global_group_order, function(left_key, right_key)
+            local left = consumer.global_groups[left_key]
+            local right = consumer.global_groups[right_key]
+            if left.order == right.order then return left.key < right.key end
+            return left.order < right.order
+        end)
+        consumer.global_group_signature = table.concat(signature, "|")
+    end
     if opts.default_global_enabled ~= nil then
         consumer.default_global_enabled = opts.default_global_enabled == true
     elseif consumer.default_global_enabled == nil then
@@ -130,7 +173,9 @@ function M.register_consumer(module_key, opts)
     M.ensure_consumer_db(module_key)
     local is_global_toggle = consumer.global_toggle == true
     if was_global_toggle ~= is_global_toggle
-        or (is_global_toggle and (previous_label ~= consumer.label or previous_global_order ~= consumer.global_order))
+        or (is_global_toggle and (previous_label ~= consumer.label
+            or previous_global_order ~= consumer.global_order
+            or previous_group_signature ~= consumer.global_group_signature))
     then
         notify_registry_changed()
     end
@@ -156,6 +201,8 @@ function M.register_target(module_key, target_key, opts)
     target.order = opts.order or target.order or 100
     target.supports_visibility = opts.supports_visibility == true
     target.get_enabled = opts.get_enabled or target.get_enabled
+    target.global_group = opts.global_group or target.global_group
+    target.get_global_group = opts.get_global_group or target.get_global_group
     if opts.default_enabled ~= nil then
         target.default_enabled = opts.default_enabled == true
     elseif target.default_enabled == nil then
@@ -164,6 +211,80 @@ function M.register_target(module_key, target_key, opts)
 
     M.ensure_consumer_db(module_key)
     return target
+end
+
+function M.get_global_toggle_entries()
+    local entries = {}
+    for _, consumer in ipairs(M.get_registered_consumers()) do
+        if consumer.global_toggle == true then
+            if consumer.global_group_order and #consumer.global_group_order > 0 then
+                for _, group_key in ipairs(consumer.global_group_order) do
+                    local group = consumer.global_groups[group_key]
+                    entries[#entries + 1] = {
+                        consumer = consumer,
+                        group = group,
+                        key = consumer.key .. ":" .. group.key,
+                        label = group.label,
+                    }
+                end
+            else
+                entries[#entries + 1] = {
+                    consumer = consumer,
+                    key = consumer.key,
+                    label = consumer.label,
+                }
+            end
+        end
+    end
+    table.sort(entries, function(left, right)
+        local left_order = left.consumer.global_order or left.consumer.order or 100
+        local right_order = right.consumer.global_order or right.consumer.order or 100
+        if left_order == right_order then
+            local left_group_order = left.group and left.group.order or 0
+            local right_group_order = right.group and right.group.order or 0
+            if left_group_order == right_group_order then return left.key < right.key end
+            return left_group_order < right_group_order
+        end
+        return left_order < right_order
+    end)
+    return entries
+end
+
+function M.get_global_participation_enabled(module_key, group_key)
+    local consumer = M.consumers[module_key]
+    local consumer_db = M.ensure_consumer_db(module_key)
+    if not (consumer and consumer_db) then return false end
+    if group_key and consumer.global_groups and consumer.global_groups[group_key] then
+        return consumer_db.global_groups and consumer_db.global_groups[group_key] == true
+    end
+    if consumer.global_group_order and #consumer.global_group_order > 0 then
+        for _, registered_group_key in ipairs(consumer.global_group_order) do
+            if consumer_db.global_groups and consumer_db.global_groups[registered_group_key] == true then
+                return true
+            end
+        end
+        return false
+    end
+    return consumer_db.global_enabled == true
+end
+
+function M.set_global_participation_enabled(module_key, group_key, enabled)
+    local consumer = M.consumers[module_key]
+    local consumer_db = M.ensure_consumer_db(module_key)
+    if not (consumer and consumer_db) then return false end
+    if consumer.global_group_order and #consumer.global_group_order > 0 then
+        if group_key then
+            if not consumer.global_groups[group_key] then return false end
+            consumer_db.global_groups[group_key] = enabled == true
+            return true
+        end
+        for _, registered_group_key in ipairs(consumer.global_group_order) do
+            consumer_db.global_groups[registered_group_key] = enabled == true
+        end
+        return true
+    end
+    consumer_db.global_enabled = enabled == true
+    return true
 end
 
 function M.unregister_target(module_key, target_key)
@@ -221,16 +342,25 @@ local function get_target_state(module_key, target_key)
     return db, consumer, target, consumer_db
 end
 
+local function get_target_global_group(target)
+    if target and type(target.get_global_group) == "function" then
+        return target.get_global_group()
+    end
+    return target and target.global_group or nil
+end
+
 function M.resolve_color(module_key, target_key, local_color)
     if not M.is_runtime_enabled() then
         return local_color, "local"
     end
 
-    local db, consumer, _, consumer_db = get_target_state(module_key, target_key)
+    local db, consumer, target, consumer_db = get_target_state(module_key, target_key)
     if not db or not consumer_db then
         return local_color, "local"
     end
-    if db.global_enabled == true and consumer_db.global_enabled == true then
+    if db.global_enabled == true
+        and M.get_global_participation_enabled(module_key, get_target_global_group(target))
+    then
         return db.global_color or local_color, "global"
     end
     return local_color, "local"
@@ -253,7 +383,7 @@ function M.resolve_visibility(module_key, target_key, local_enabled)
             or (
                 db.global_enabled == true
                 and consumer_db ~= nil
-                and consumer_db.global_enabled == true
+                and M.get_global_participation_enabled(module_key, get_target_global_group(target))
             )
         )
 end
@@ -323,18 +453,16 @@ function M.resolve_ooc_fade(module_key, local_enabled)
     return true
 end
 
-function M.is_global_color_active(module_key)
+function M.is_global_color_active(module_key, group_key)
     if not M.is_runtime_enabled() then return false end
     local db = M.get_db()
-    local consumer_db = M.ensure_consumer_db(module_key)
     return db ~= nil
-        and consumer_db ~= nil
         and db.global_enabled == true
-        and consumer_db.global_enabled == true
+        and M.get_global_participation_enabled(module_key, group_key)
 end
 
-function M.resolve_module_color(module_key, color_key, local_color)
-    if not M.is_global_color_active(module_key) then return local_color end
+function M.resolve_module_color(module_key, color_key, local_color, group_key)
+    if not M.is_global_color_active(module_key, group_key) then return local_color end
     local db = M.get_db()
     return db and db[color_key] or local_color
 end

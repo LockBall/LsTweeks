@@ -95,8 +95,9 @@ function M.resolve_background_color(category, target_type, local_color)
     end
 
     local color_sync = addon.all_the_colors
+    local consumer_group = M.get_color_consumer_group(category)
     if target_type == "bar" and color_sync and color_sync.resolve_module_color then
-        return color_sync.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", resolved)
+        return color_sync.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", resolved, consumer_group)
     end
     if color_sync and color_sync.resolve_color then
         return color_sync.resolve_color(
@@ -129,6 +130,13 @@ function M.resolve_background_visibility(category, target_type, local_enabled)
     return resolved
 end
 
+function M.resolve_frame_background(cfg_db, category)
+    local enabled = M.get_setting(cfg_db, category, "bg", false) == true
+    local color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
+    return M.resolve_background_visibility(category, "frame", enabled),
+        M.resolve_background_color(category, "frame", color)
+end
+
 function M.resolve_bar_color(category, local_color)
     local resolved = local_color
     if M.db
@@ -146,7 +154,8 @@ function M.resolve_bar_color(category, local_color)
         local color_key = M.is_debuff_frame_category(category)
             and "aura_debuff_bar_color"
             or "aura_buff_bar_color"
-        resolved = color_sync.resolve_module_color(M.MODULE_KEY, color_key, resolved)
+        resolved = color_sync.resolve_module_color(
+            M.MODULE_KEY, color_key, resolved, M.get_color_consumer_group(category))
     end
     return resolved
 end
@@ -168,7 +177,8 @@ function M.resolve_text_color(category, text_type, local_color)
         local color_key = text_type == "timer"
             and "aura_timer_text_color"
             or "aura_bar_text_color"
-        resolved = color_sync.resolve_module_color(M.MODULE_KEY, color_key, resolved)
+        resolved = color_sync.resolve_module_color(
+            M.MODULE_KEY, color_key, resolved, M.get_color_consumer_group(category))
     end
     return resolved
 end
@@ -189,11 +199,10 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local color = M.get_setting(cfg_db, category, "color", { r = 1, g = 1, b = 1 })
     local bar_bg_color = M.get_bar_bg_color(cfg_db, category, color)
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
-    local bg_color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
+    local frame_bg_enabled, bg_color = M.resolve_frame_background(cfg_db, category)
     color = M.resolve_bar_color(category, color)
     bar_text_color = M.resolve_text_color(category, "bar", bar_text_color)
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
-    bg_color = M.resolve_background_color(category, "frame", bg_color)
 
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
 
@@ -232,6 +241,7 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
             b = bg_color.b or 0,
             a = bg_color.a or 0.5,
         },
+        frame_bg_enabled = frame_bg_enabled,
     }
     frame._runtime_config_cache = cache
     return cache
@@ -664,11 +674,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         set_height_for_growth_if_changed(self, new_height, growth)
     end
 
-    local is_bg_enabled = cfg_db[bg_key]
-    if is_bg_enabled == nil then
-        is_bg_enabled = cfg_db["bg"]
-    end
-    is_bg_enabled = M.resolve_background_visibility(category, "frame", is_bg_enabled)
+    local is_bg_enabled = runtime_config.frame_bg_enabled
     local combat_background_active = M.update_combat_background
         and M.update_combat_background(self, display_count, is_bg_enabled, bgC, in_combat, is_moving)
     local bg_r, bg_g, bg_b, bg_a
