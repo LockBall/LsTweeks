@@ -46,6 +46,10 @@ The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Co
 
 After WoW 12.1, **Combined Buffs** and **Debuffs** are the current combat-safe live Aura paths. Static, Short, and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those three frames for combat Aura display yet.
 
+Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the owning frame implementation selects and arranges the displayed auras; there is no adjustable pool-size setting.
+
+Each Aura frame can configure stack-count color, font, bold face, and font size independently from its timer and bar text.
+
 #### Test Aura Preview
 Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Combined Buffs and Debuffs do not yet have synthetic previews.
 
@@ -174,7 +178,6 @@ For CurseForge/manual zip installs, the archive should extract to a single top-l
 - Open **Objectives** for Tracker settings, module reset, and saved profiles.
 - Open **Skyriding Vigor** for General module controls, Vigor Bar appearance and behavior, and saved profiles.
 - Open **Audio Volumes** to configure replacement sounds and temporary-volume situations, reset the module, or manage saved profiles.
-- Some Aura Frame pool-size changes require `/reload` because icon pools are created at load time.
 
 
 ## Embedded Libraries

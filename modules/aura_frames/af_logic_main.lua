@@ -207,7 +207,7 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
         cooldown_icon_overlay = cooldown_icon_overlay,
         layout_show_timer_text = show_timer_text and not cooldown_icon_overlay,
         growth = growth_layout.value,
-        max_limit = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or M.MAX_ICONS_LIMIT,
+        max_limit = M.AURA_FRAME_LIMIT,
         sort_mode = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil,
         color = {
             r = color.r or 1,
@@ -574,7 +574,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     -- Run the unified scan once per dirty event batch, then let the other
     -- preset frames in the same deferred batch reuse M._aura_map.
     if activity.needs_shared_scan and M._aura_scan_dirty then
-        M.unified_scan(info, short_threshold, 0, 0)
+        M.unified_scan(info, short_threshold)
         M._aura_scan_dirty = false
     end
 

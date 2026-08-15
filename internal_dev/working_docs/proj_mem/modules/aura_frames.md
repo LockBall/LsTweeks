@@ -28,6 +28,8 @@ Important `aura_frames` keys:
 
 ## Ownership
 - Built-in category metadata lives in `M.FRAME_DEFS` (`af_defaults.lua`). Derive category lists, labels, CDM viewer names, preset key names, and test labels from it.
+- `M.AURA_FRAME_LIMIT = 40` is the fixed internal ceiling for managed groups, legacy/custom pools, rendering, and scans. Aura count is not adjustable, saved, or profiled; frame implementations own selection and layout beneath that ceiling.
+- Stack-count typography uses the per-frame `stack_number_font`, `stack_number_font_size`, `stack_number_font_bold`, and `stack_color` settings. `M.apply_stack_font_style` is the shared application path for managed and legacy/custom AuraButtons.
 - The rounded/chamfered background investigation remains in `ToDo/background_shapes.md`. Do not re-add that option without a dedicated tintable asset or NineSlice plan.
 - Preset categories: `static`, `debuff`, `short`, `long`, `combined`, `essential`, `utility`, `tracked_buffs`, `tracked_bars`.
 - CDM-backed categories: `essential`, `utility`, `tracked_buffs`, `tracked_bars`.

@@ -1,3 +1,172 @@
-# Error Inbox
+Message: ...Ons/LsTweeks/modules/aura_frames/af_logic_ticker.lua:151: attempt to get length of field 'icons' (a nil value)
+Time: Sat Aug 15 15:16:33 2026
+Count: 63
+Stack:
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_ticker.lua]:151: in function 'tick_visible_icons'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_ticker.lua]:109: in function <...Ons/LsTweeks/modules/aura_frames/af_logic_ticker.lua:108>
 
-Paste the next unprocessed WoW Lua error export here.
+Locals:
+now=1754157.210000
+db=<table>{
+ width_static=386
+ timer_color_tracked_bars=<table>
+ fade_ooc_tracked_bars=true
+ sync_text_color_combined=true
+ growth_icon_short="DOWN"
+ show_tracked_bars=false
+ timer_number_font_tracked_buffs="source_code_pro"
+ stack_number_font_utility="source_code_pro"
+ sync_bar_color_combined=true
+ bar_bg_color_essential=<table>
+ stack_number_font_size_static=10
+ bg_color_utility=<table>
+ stack_color_long=<table>
+ bar_mode_static=false
+ stack_color_tracked_buffs=<table>
+ bg_chamfer_debuff=false
+ fade_delay_static=2
+ shared_frame_background_color=<table>
+ max_icons_static=20
+ timer_color_long=<table>
+ color_tracked_bars=<table>
+ move_static=false
+ fade_ooc_long=true
+ bar_bg_color_short=<table>
+ timer_swipe_debuff=true
+ tooltip_static=true
+ growth_debuff="UP"
+ stack_number_font_bold_static=false
+ positions=<table>
+ bg_utility=true
+ max_icons_tracked_buffs=20
+ fade_delay_debuff=2
+ timer_number_font_bold_utility=false
+ fade_length_long=3
+ timer_number_font_size_short=10
+ sync_bar_bg_utility=true
+ max_icons_long=20
+ show_essential=true
+ bg_color_essential=<table>
+ timer_swipe_short=true
+ show_static=false
+ move_essential=false
+ bar_bg_color_long=<table>
+ show_tracked_buffs=false
+ color_tracked_buffs=<table>
+ enable_blizz_buffs=false
+ color_utility=<table>
+ fade_length_static=3
+ move_short=false
+ timer_tracked_bars=true
+ sort_utility="timeleft"
+ sync_bar_color_tracked_bars=true
+ bg_color_combined=<table>
+ fade_ooc_combined=false
+ shared_bar_text_color=<table>
+ bar_mode_tracked_buffs=false
+ growth_combined="DOWN"
+ scale_utility=1
+ stack_number_font_tracked_bars="source_code_pro"
+ stack_color_essential=<table>
+ timer_color_utility=<table>
+ tooltip_essential=true
+ timer_number_font_essential="source_code_pro"
+ show_utility=false
+ wow_cooldown_ooc_alpha=0.350000
+ sort_short="timeleft"
+ aura_visible_icon_tick=0.150000
+ hide_blizz_cdm_tracked_buffs=true
+ growth_bar_short="DOWN"
+ bg_color_long=<table>
+ sync_bar_color_long=true
+ cooldown_swipe_color_tracked_bars=<table>
+ width_combined=373
+ test_aura_tracked_buffs=false
+ ooc_alpha_tracked_bars=0.150000
+ timer_color_essential=<table>
+ max_icons_utility=20
+ fade_ooc_essential=true
+ bar_bg_color_static=<table>
+ hide_blizz_cdm_tracked_bars=true
+ stack_number_font_size_essential=10
+ stack_number_font_bold_tracked_buffs=false
+ bar_mode_tracked_bars=true
+ test_aura_long=false
+ enable_blizz_debuffs=false
+ cooldown_swipe_color_utility=<table>
+ growth_icon_debuff="UP"
+ color_long=<table>
+ growth_icon_tracked_buffs="RIGHT"
+ stack_number_font_size_long=10
+ shared_bar_background_color=<table>
+ hide_blizz_cdm_utility=true
+ show_bar_section_outlines=false
+ bg_chamfer_utility=true
+ width_short=200
+ growth_icon_static="RIGHT"
+ spacing_combined=2
+ ooc_alpha_short=0.150000
+ timer_number_font_size=10
+ scale_long=1
+ spacing_static=2
+ tooltip_debuff=true
+ spacing_short=1.500000
+ ooc_alpha_debuff=0.150000
+ fade_ooc_utility=true
+ timer_utility=true
+ max_icons_tracked_bars=20
+ cooldown_mode_essential=true
+ tooltip_long=true
+ growth_short="DOWN"
+ color_essential=<table>
+ width_utility=200
+ fade_ooc_short=true
+ sync_frame_bg_short=true
+ timer_number_font_long="source_code_pro"
+ timer_number_font_size_long=10
+ test_aura_essential=false
+ ooc_alpha_essential=0.150000
+ timer_combined=true
+ bg_color_tracked_bars=<table>
+ scale_tracked_bars=1
+ stack_color_debuff=<table>
+ bg_chamfer_long=false
+ color_static=<table>
+ move_tracked_bars=false
+ cooldown_swipe_color_tracked_buffs=<table>
+ timer_number_font_tracked_bars="source_code_pro"
+ fade_delay_long=2
+ timer_number_font_bold_debuff=false
+ shared_timer_text_color=<table>
+ timer_number_font_size_debuff=10
+ timer_number_font_size_tracked_bars=10
+ growth_bar_tracked_bars="DOWN"
+ growth_utility="RIGHT"
+ tooltip_short=true
+ stack_color_utility=<table>
+ bg_color_tracked_buffs=<table>
+ spacing_utility=1.500000
+ timer_number_font_bold_combined=false
+ bar_bg_color_combined=<table>
+ timer_number_font_size_tracked_buffs=10
+ sync_frame_bg_tracked_buffs=true
+ fade_delay_essential=2
+ ooc_alpha_static=0.250000
+ max_icons_debuff=20
+ ooc_alpha_combined=0.350000
+ syn
+
+ Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
+Lua Taint: LsTweeks
+Time: Sat Aug 15 15:23:19 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ScenarioObjectiveTracker.lua]:187: in function 'LayoutContents'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerModule.lua]:147: in function 'Update'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerContainer.lua]:64: in function <...ectiveTracker/Blizzard_ObjectiveTrackerContainer.lua:49>
+[tail call]: ?
+[tail call]: ?
+[Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua]:341: in function <Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua:340>
+
+Locals:

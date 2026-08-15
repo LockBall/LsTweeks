@@ -417,6 +417,7 @@ local COLOR_KEYS = {
     { key = "bar_text_color", has_alpha = false },
     { key = "bg_color", has_alpha = true },
     { key = "timer_color", has_alpha = false },
+    { key = "stack_color", has_alpha = false },
 }
 
 local function normalize_saved_color(color, fallback, has_alpha)
@@ -575,6 +576,12 @@ function M.get_timer_number_font_size(category, cfg_db)
     local defaults = M.defaults or {}
     local value = M.get_setting(cfg_db, category, "timer_number_font_size", defaults.timer_number_font_size or 10)
     return tonumber(value) or 10
+end
+
+function M.get_stack_number_font_size(category, cfg_db)
+    local defaults = M.defaults or {}
+    local value = M.get_setting(cfg_db, category, "stack_number_font_size", defaults.stack_number_font_size or M.DEFAULT_TIMER_NUMBER_FONT_SIZE)
+    return tonumber(value) or M.DEFAULT_TIMER_NUMBER_FONT_SIZE
 end
 
 local function next_custom_slot(field, prefix, fallback)

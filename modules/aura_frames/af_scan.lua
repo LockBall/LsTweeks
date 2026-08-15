@@ -302,7 +302,7 @@ end
 function M.scan_custom_aura_map(frame, custom_entry, target_map, max_limit, short_threshold)
     if not (frame and custom_entry and target_map and C_UnitAuras.GetAuraDataByIndex) then return end
     local aura_filter = M.get_custom_aura_filter(custom_entry)
-    max_limit = max_limit or custom_entry.max_icons or M.MAX_ICONS_LIMIT
+    max_limit = max_limit or M.AURA_FRAME_LIMIT
     short_threshold = short_threshold or (M.db and M.db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
 
     local cache_key = aura_filter .. "|" .. tostring(short_threshold)
@@ -827,23 +827,13 @@ local function classify_helpful(classify_rem, short_threshold)
     return "long"
 end
 
-local function get_max_icons_for_frame_defs(db, hint, include_debuff)
-    local max_icons = hint or 0
-    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
-        if (frame_def.is_debuff == true) == include_debuff then
-            max_icons = math_max(max_icons, db["max_icons_" .. frame_def.key] or M.MAX_ICONS_LIMIT)
-        end
-    end
-    return max_icons
-end
-
 --#endregion HELPFUL AURA CLASSIFICATION =======================================
 
 --#region UNIFIED SCAN =========================================================
 -- Scans all player buffs and debuffs in one pass.
 -- Populates M._aura_map: iid -> entry with is_helpful and category fields.
 -- Preset frames filter by entry.category; custom frames use C_UnitAuras.GetAuraDataByIndex directly.
-function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint)
+function M.unified_scan(info, short_threshold)
     M._aura_map = M._aura_map or {}
     local cur_map = M._aura_map
     local category_buckets = reset_aura_category_buckets()
@@ -871,14 +861,13 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
         end
     end
 
-    local db = M.db
     local seen_iids = _scratch_seen_iids
     wipe(seen_iids)
 
     -- -------------------------------------------------------------------------
     -- PASS 1: HELPFUL (buffs)
     -- -------------------------------------------------------------------------
-    local max_helpful = get_max_icons_for_frame_defs(db, max_helpful_hint, false)
+    local max_helpful = M.AURA_FRAME_LIMIT
 
     local old_cat_by_spell = nil
     local function get_old_category_by_spell(spell_id)
@@ -984,7 +973,7 @@ function M.unified_scan(info, short_threshold, max_helpful_hint, max_debuff_hint
     -- -------------------------------------------------------------------------
     -- PASS 2: HARMFUL (debuffs)
     -- -------------------------------------------------------------------------
-    local max_debuff = get_max_icons_for_frame_defs(db, max_debuff_hint, true)
+    local max_debuff = M.AURA_FRAME_LIMIT
 
     i, count = 1, 0
     while count < max_debuff do

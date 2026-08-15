@@ -130,7 +130,6 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         aura_frames = {
             show_debuff = true,
             move_debuff = false,
-            max_icons_debuff = 2,
             width_debuff = 120,
             bar_mode_debuff = true,
             growth_icon_debuff = "UP",
@@ -142,7 +141,6 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             show_long = false,
             show_combined = true,
             move_combined = false,
-            max_icons_combined = 3,
             width_combined = 140,
             bar_mode_combined = true,
             growth_icon_combined = "DOWN",
@@ -155,8 +153,10 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
 
     h.ok(backend, "Debuff frame owns a managed backend")
     h.eq(backend.container.__groups["debuffs:bar"].filter_string, "HARMFUL", "Debuff groups use HARMFUL")
-    h.eq(backend.container.__groups["debuffs:bar"].options.maxFrameCount, 2, "Debuff bar pool uses saved maximum")
-    h.eq(backend.container.__groups["debuffs:icon"].options.maxFrameCount, 2, "Debuff icon pool uses saved maximum")
+    h.eq(backend.container.__groups["debuffs:bar"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
+        "Debuff bar pool uses the fixed Aura limit")
+    h.eq(backend.container.__groups["debuffs:icon"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
+        "Debuff icon pool uses the fixed Aura limit")
     h.eq(backend.container.__width, 1, "managed container starts at its auto-layout seed width")
     h.eq(backend.container.__height, 1, "managed container starts at its auto-layout seed height")
     h.eq(backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
@@ -166,7 +166,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "additional Debuff columns grow right")
     h.eq(backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Up,
         "Debuff rows grow up")
-    h.eq(backend.container.__flow_line_size, 38, "Debuff flow reserves one vertical line for every row")
+    h.eq(backend.container.__flow_line_size, M.AURA_FRAME_LIMIT * 19,
+        "Debuff flow reserves one vertical line for every allowed row")
     h.eq(backend.container.__groups["debuffs:bar"].layout.elementSpacing, 1,
         "Debuff bar group receives explicit element spacing")
     h.eq(frame.icons, nil, "managed Debuff frame creates no legacy icon pool")
@@ -245,10 +246,10 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.ok(buffs_backend, "combined Buffs frame owns a managed backend")
     h.eq(buffs_backend.container.__groups["buffs:bar"].filter_string, "HELPFUL",
         "combined Buff groups request every helpful Aura")
-    h.eq(buffs_backend.container.__groups["buffs:bar"].options.maxFrameCount, 3,
-        "combined Buff bar pool uses its own saved maximum")
-    h.eq(buffs_backend.container.__groups["buffs:icon"].options.maxFrameCount, 3,
-        "combined Buff icon pool uses its own saved maximum")
+    h.eq(buffs_backend.container.__groups["buffs:bar"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
+        "combined Buff bar pool uses the fixed Aura limit")
+    h.eq(buffs_backend.container.__groups["buffs:icon"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
+        "combined Buff icon pool uses the fixed Aura limit")
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
         "bar-mode combined Buffs use vertical flow")
     h.eq(buffs_frame.icons, nil, "combined Buffs frame creates no legacy icon pool")
@@ -267,7 +268,7 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             "combined Buffs AuraButtons use the combat-safe native tooltip policy")
     end
     h.eq(buffs_backend.presentation_mode, "bar", "saved Bar Mode activates the combined Buff bar group")
-    h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, 3,
+    h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, M.AURA_FRAME_LIMIT,
         "combined Buff bar group is active")
     h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 0,
         "combined Buff icon group is parked")
@@ -305,7 +306,6 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     M.db.bar_mode_combined = false
     M.db.width_combined = 180
     M.db.spacing_combined = 2
-    M.db.max_icons_combined = 6
     M.db.growth_icon_combined = "RIGHT"
     M.db.move_combined = true
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
@@ -313,7 +313,7 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(buffs_backend.presentation_mode, "icon", "OOC Bar Mode change activates icon presentation")
     h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, 0,
         "combined Buff bar group is parked after switching")
-    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 6,
+    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, M.AURA_FRAME_LIMIT,
         "combined Buff icon group activates after switching")
     h.eq(buffs_backend.move_outline.BOTTOM:IsShown(), true,
         "wrapped combined Buffs use the native-container outline")
@@ -341,6 +341,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             "combined Buff icon duration text uses the managed duration font")
         h.ok(aura_button.__application_count_region,
             "combined Buff icons bind native stack text")
+        h.eq(aura_button.__application_count_region:GetFontObject(), buffs_backend.stack_font,
+            "combined Buff icon stack text uses the managed stack font")
         h.eq(aura_button.__application_count_region.__points[1][1], "BOTTOMRIGHT",
             "combined Buff icon stack text remains anchored to the icon")
     end
@@ -372,6 +374,20 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(color_call[2], 0.3, "managed timer font applies the saved green component")
     h.eq(color_call[3], 0.4, "managed timer font applies the saved blue component")
     h.eq(color_call[4], 1, "enabling managed timer text restores its opacity")
+
+    M.db.stack_number_font_size_combined = 13
+    M.db.stack_number_font_bold_combined = true
+    M.db.stack_color_combined = { r = 0.7, g = 0.6, b = 0.5 }
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    local stack_font_call = buffs_backend.stack_font:GetLastCall("SetFont")
+    local stack_color_call = buffs_backend.stack_font:GetLastCall("SetTextColor")
+    h.eq(stack_font_call[1], M.NUMBER_FONT_BOLD_PATHS[M.DEFAULT_TIMER_NUMBER_FONT_KEY],
+        "managed stack font applies the saved bold face")
+    h.eq(stack_font_call[2], 13, "managed stack font applies the saved size")
+    h.eq(stack_color_call[1], 0.7, "managed stack font applies the saved red component")
+    h.eq(stack_color_call[2], 0.6, "managed stack font applies the saved green component")
+    h.eq(stack_color_call[3], 0.5, "managed stack font applies the saved blue component")
 
     local growth_cases = {
         RIGHT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },

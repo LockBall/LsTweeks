@@ -255,6 +255,25 @@ function M.sync_general_controls_from_db()
         set_checked("timer_number_font_bold_"..cat, M.db["timer_number_font_bold_"..cat])
     end
 
+    for _, cat in ipairs(M.CATEGORIES) do
+        local stack_font_dropdown = M.controls["stack_number_font_dropdown_" .. cat]
+        if stack_font_dropdown and stack_font_dropdown.SetValue then
+            stack_font_dropdown:SetValue(M.db["stack_number_font_" .. cat] or M.DEFAULT_TIMER_NUMBER_FONT_KEY)
+        end
+
+        local stack_font_size_slider = M.controls["stack_number_font_size_slider_" .. cat]
+        if stack_font_size_slider and stack_font_size_slider.SetValueSilently then
+            stack_font_size_slider:SetValueSilently(
+                M.db["stack_number_font_size_" .. cat]
+                    or M.defaults["stack_number_font_size_" .. cat]
+                    or M.DEFAULT_TIMER_NUMBER_FONT_SIZE
+            )
+        end
+        set_checked("stack_number_font_bold_" .. cat, M.db["stack_number_font_bold_" .. cat])
+        local refresh_stack_bold = M.controls["stack_number_font_bold_refresh_" .. cat]
+        if refresh_stack_bold then refresh_stack_bold() end
+    end
+
     set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
     if M.rebuild_shared_background_color_group then
         M.rebuild_shared_background_color_group()

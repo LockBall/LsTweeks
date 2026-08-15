@@ -292,7 +292,7 @@ h.test("long Aura test preview transfers to Short at the configured threshold", 
     M._test_preview_started = {}
     M.reset_test_preview_clock("show_long")
 
-    M.unified_scan(nil, M.DEFAULT_SHORT_THRESHOLD, 0, 0)
+    M.unified_scan(nil, M.DEFAULT_SHORT_THRESHOLD)
     h.ok(M._aura_maps_by_category.long.__test_preview__, "preview begins in the Long bucket")
 
     local threshold_time = phase_start.double_seconds
@@ -300,7 +300,7 @@ h.test("long Aura test preview transfers to Short at the configured threshold", 
         + (math.max(0, ranges.double_seconds.start - M.DEFAULT_SHORT_THRESHOLD)
             * (ranges.double_seconds.seconds_per_unit or 1)) + 0.001
     M._test_preview_time_offsets.show_long = GetTime() - threshold_time
-    M.unified_scan(nil, M.DEFAULT_SHORT_THRESHOLD, 0, 0)
+    M.unified_scan(nil, M.DEFAULT_SHORT_THRESHOLD)
     h.is_nil(M._aura_maps_by_category.long.__test_preview__, "preview leaves Long at the threshold")
     h.ok(M._aura_maps_by_category.short.__test_preview__, "preview enters Short at the threshold")
 end)
@@ -347,7 +347,7 @@ end)
 
 h.test("icon timer slots reserve width for long duration labels", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 2 }
+    M.db = {}
     local frame = M.create_aura_frame("show_long", "move_long", "timer_long", "bg_long", "scale_long", "spacing_long", "Long", false)
     frame._runtime_config_cache = {
         frame_width = 120,
@@ -370,7 +370,6 @@ h.test("disabled preset frame starts hidden before its first event", function()
     M.db = {
         show_short = false,
         move_short = false,
-        max_icons_short = 1,
         width_short = 120,
     }
 
@@ -386,7 +385,7 @@ end)
 
 h.test("move mode uses an inward border mover without changing aura layout", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1, width_long = 120 }
+    M.db = { width_long = 120 }
     local frame = M.create_aura_frame(
         "show_long", "move_long", "timer_long", "bg_long",
         "scale_long", "spacing_long", "Long", false
@@ -414,7 +413,7 @@ end)
 
 h.test("combat background switches pre-sized Aura frame variants without geometry writes", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 3 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     frame._runtime_config_cache = {
         frame_width = 120,
@@ -427,11 +426,13 @@ h.test("combat background switches pre-sized Aura frame variants without geometr
 
     M.setup_layout(frame, "show_short", "spacing_short", false)
     local variants = frame._combat_background_variants
-    h.eq(#variants, 4, "one pre-sized background exists for every display count")
+    h.eq(#variants, M.AURA_FRAME_LIMIT + 1,
+        "one pre-sized background exists for every display count")
 
     local color = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 }
     M.update_combat_background(frame, 0, true, color, false, false)
-    h.ok(#(variants[4]:GetCalls("SetColorTexture") or {}) > 0, "maximum-count background receives the cached color")
+    h.ok(#(variants[M.AURA_FRAME_LIMIT + 1]:GetCalls("SetColorTexture") or {}) > 0,
+        "maximum-count background receives the cached color")
     local size_calls_before = #(variants[3]:GetCalls("SetSize") or {})
 
     h.stub.in_combat = true
@@ -451,12 +452,14 @@ h.test("saved preset and custom colors normalize to readable RGBA", function()
     local M = load_aura_frames()
     M.db = {
         color_static = { r = -1, g = 2, b = "0.5", a = 9 },
+        stack_color_static = { r = 2, g = -1, b = "0.25" },
         bar_bg_color_static = "invalid",
         custom_frames = {
             {
                 id = "custom_color_test",
                 color = { r = 2, g = -1, b = 0.25 },
                 bg_color = { r = 0.5, g = 0.5, b = 0.5, a = -1 },
+                stack_color = { r = -1, g = "0.4", b = 2 },
             },
         },
     }
@@ -466,9 +469,15 @@ h.test("saved preset and custom colors normalize to readable RGBA", function()
     h.eq(M.db.color_static.g, 1, "preset green clamps to one")
     h.eq(M.db.color_static.b, 0.5, "preset blue coerces to a number")
     h.eq(M.db.color_static.a, 1, "preset alpha clamps to one")
+    h.eq(M.db.stack_color_static.r, 1, "preset stack red clamps to one")
+    h.eq(M.db.stack_color_static.g, 0, "preset stack green clamps to zero")
+    h.eq(M.db.stack_color_static.b, 0.25, "preset stack blue coerces to a number")
     h.eq(M.db.custom_frames[1].color.r, 1, "custom red clamps to one")
     h.eq(M.db.custom_frames[1].color.g, 0, "custom green clamps to zero")
     h.eq(M.db.custom_frames[1].bg_color.a, 0, "custom alpha clamps to zero")
+    h.eq(M.db.custom_frames[1].stack_color.r, 0, "custom stack red clamps to zero")
+    h.eq(M.db.custom_frames[1].stack_color.g, 0.4, "custom stack green coerces to a number")
+    h.eq(M.db.custom_frames[1].stack_color.b, 1, "custom stack blue clamps to one")
 end)
 
 h.test("visible icon ticker refresh stops idle ticker immediately", function()
@@ -652,7 +661,7 @@ end)
 
 h.test("Aura icon hover renders only copied safe tooltip data outside combat", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 1101
@@ -682,7 +691,7 @@ end)
 
 h.test("experimental Aura hover delegates directly to Blizzard's global tooltip", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 3101
@@ -709,7 +718,7 @@ end)
 
 h.test("Aura icon hover uses guarded basic data in combat", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 2101
@@ -744,7 +753,7 @@ end)
 
 h.test("secret Aura tooltip data falls back without live forwarding", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 303
@@ -769,7 +778,7 @@ end)
 
 h.test("cached safe Aura lines render without refreshing live data", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 505
@@ -799,7 +808,7 @@ end)
 
 h.test("Aura icon leave hides the owned tooltip", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_index = 404
@@ -819,7 +828,7 @@ end)
 
 h.test("combat Aura tooltip keeps live-only timed aura from reading as permanent", function()
     local M = load_aura_frames()
-    M.db = { max_icons = 1 }
+    M.db = {}
     local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     local icon = frame.icons[1]
     icon.aura_name = "Combat Aura"
@@ -897,7 +906,6 @@ h.test("category-specific false settings override flat Aura Frame fallbacks", fu
         spacing_short = 2,
         scale_short = 1,
         growth_icon_short = "DOWN",
-        max_icons_short = 1,
         color_short = { r = 1, g = 1, b = 1 },
         bar_bg_color_short = { r = 0, g = 0, b = 0, a = 1 },
         bar_text_color_short = { r = 1, g = 1, b = 1 },
@@ -975,7 +983,6 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
         spacing_short = 2,
         scale_short = 1,
         growth_bar_short = "DOWN",
-        max_icons_short = 1,
         color_short = { r = 1, g = 1, b = 1 },
         bar_bg_color_short = { r = 0, g = 0, b = 0, a = 1 },
         bar_text_color_short = { r = 1, g = 1, b = 1 },
@@ -1029,12 +1036,7 @@ end)
 
 h.test("unified scan continues after malformed helpful and debuff records", function()
     local M = load_aura_frames()
-    M.db = {
-        max_icons_static = 2,
-        max_icons_short = 2,
-        max_icons_long = 2,
-        max_icons_debuff = 2,
-    }
+    M.db = {}
     h.stub.auras.player = {
         buffs = {
             { spellId = 1001, name = "Malformed Buff", icon = 1, duration = 10, expirationTime = 10 },
@@ -1047,7 +1049,7 @@ h.test("unified scan continues after malformed helpful and debuff records", func
     }
     M._aura_map = {}
 
-    M.unified_scan(nil, 5, 2, 2)
+    M.unified_scan(nil, 5)
 
     h.ok(M._aura_map[101], "valid helpful record survives an earlier malformed record")
     h.ok(M._aura_map[202], "valid debuff record survives an earlier malformed record")
@@ -1056,12 +1058,7 @@ end)
 
 h.test("unified scan refreshes an Aura order key when identity changes", function()
     local M = load_aura_frames()
-    M.db = {
-        max_icons_static = 1,
-        max_icons_short = 1,
-        max_icons_long = 1,
-        max_icons_debuff = 1,
-    }
+    M.db = {}
     h.stub.auras.player = {
         buffs = {
             { auraInstanceID = 303, spellId = 3003, name = "Original", icon = 3, duration = 10, expirationTime = 10 },
@@ -1070,10 +1067,10 @@ h.test("unified scan refreshes an Aura order key when identity changes", functio
     }
     M._aura_map = {}
 
-    M.unified_scan(nil, 5, 1, 1)
+    M.unified_scan(nil, 5)
     local original_key = M._aura_map[303].order_key
     h.stub.auras.player.buffs[1].name = "Updated"
-    M.unified_scan(nil, 5, 1, 1)
+    M.unified_scan(nil, 5)
 
     h.ok(M._aura_map[303].order_key ~= original_key, "identity change refreshes ordering")
     h.stub.auras.player = nil
@@ -1081,12 +1078,7 @@ end)
 
 h.test("secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", function()
     local M = load_aura_frames()
-    M.db = {
-        max_icons_static = 1,
-        max_icons_short = 1,
-        max_icons_long = 1,
-        max_icons_debuff = 1,
-    }
+    M.db = {}
     local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
     h.stub.auras.player = {
         buffs = {
@@ -1097,17 +1089,17 @@ h.test("secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", 
     M._aura_map = {}
 
     rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return false end)
-    M.unified_scan(nil, 5, 1, 1)
+    M.unified_scan(nil, 5)
     h.eq(M._aura_map[601].category, "static", "known non-expiring secret Aura classifies as static")
 
     h.stub.auras.player.buffs[1] = { auraInstanceID = 602, spellId = 6002, name = "Secret Timed", icon = 1 }
     rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return true end)
-    M.unified_scan(nil, 5, 1, 1)
+    M.unified_scan(nil, 5)
     h.eq(M._aura_map[602].category, "short", "known expiring secret Aura with no history classifies as short")
 
     h.stub.auras.player.buffs[1] = { auraInstanceID = 603, spellId = 6003, name = "Unavailable Result", icon = 1 }
     rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return nil end)
-    M.unified_scan(nil, 5, 1, 1)
+    M.unified_scan(nil, 5)
     h.eq(M._aura_map[603].category, "short", "unreadable expiration result with no history falls back to short")
 
     C_UnitAuras.DoesAuraHaveExpirationTime = previous_expiration_check
@@ -1116,12 +1108,7 @@ end)
 
 h.test("secret-timing debuff always joins the debuff bucket regardless of expiration readability", function()
     local M = load_aura_frames()
-    M.db = {
-        max_icons_static = 1,
-        max_icons_short = 1,
-        max_icons_long = 1,
-        max_icons_debuff = 1,
-    }
+    M.db = {}
     local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
     M._aura_map = {}
 
@@ -1133,7 +1120,7 @@ h.test("secret-timing debuff always joins the debuff bucket regardless of expira
             },
         }
         rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return result end)
-        M.unified_scan(nil, 5, 1, 1)
+        M.unified_scan(nil, 5)
         h.eq(M._aura_map[701].category, "debuff",
             "debuff belongs to the debuff frame when expiration readability is " .. tostring(result))
     end

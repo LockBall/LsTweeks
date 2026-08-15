@@ -123,8 +123,13 @@ M.NUMBER_FONT_BOLD_PATHS = {
     [M.DEFAULT_TIMER_NUMBER_FONT_KEY] = "Interface\\AddOns\\LsTweeks\\media\\fonts\\SourceCodePro-Bold.ttf",
 }
 
-local function get_number_font_def(key, category, cfg_db)
-    local selected_key = key or M.get_setting(cfg_db, category, "timer_number_font", M.DEFAULT_TIMER_NUMBER_FONT_KEY)
+local function get_number_font_def(key, category, cfg_db, setting_prefix)
+    local selected_key = key or M.get_setting(
+        cfg_db,
+        category,
+        setting_prefix .. "_number_font",
+        M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    )
     return M.NUMBER_FONT_OPTIONS_BY_KEY[selected_key] or M.NUMBER_FONT_OPTIONS[1]
 end
 
@@ -136,10 +141,12 @@ function M.is_number_font_bold_available(key)
     return M.NUMBER_FONT_BOLD_PATHS[key] ~= nil
 end
 
-function M.apply_number_font_style(font_target, category, cfg_db, alpha)
+local function apply_number_text_style(font_target, category, cfg_db, setting_prefix, alpha)
     if not font_target or not font_target.SetFont then return end
-    local def = get_number_font_def(nil, category, cfg_db)
-    local size = M.get_timer_number_font_size(category, cfg_db) or def.size or 10
+    local def = get_number_font_def(nil, category, cfg_db, setting_prefix)
+    local size = setting_prefix == "stack"
+        and M.get_stack_number_font_size(category, cfg_db)
+        or M.get_timer_number_font_size(category, cfg_db)
     local flags = def.flags or ""
 
     -- Always pass an integer size to SetFont. WoW/FreeType rounds fractional
@@ -150,7 +157,7 @@ function M.apply_number_font_style(font_target, category, cfg_db, alpha)
     if size > 18 then size = 18 end
 
     if def.path then
-        local use_bold = M.get_setting(cfg_db, category, "timer_number_font_bold", false) == true
+        local use_bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true
         local bold_path = use_bold and M.NUMBER_FONT_BOLD_PATHS[def.key]
         font_target:SetFont(bold_path or def.path, size, flags)
     elseif STANDARD_TEXT_FONT then
@@ -160,13 +167,24 @@ function M.apply_number_font_style(font_target, category, cfg_db, alpha)
     end
 
     if cfg_db or M.db then
-        -- Custom frames store timer_color directly; preset frames use timer_color_<cat>.
-        local c = M.get_setting(cfg_db, category, "timer_color")
-        if c and M.resolve_text_color then c = M.resolve_text_color(category, "timer", c) end
+        local color_key = setting_prefix .. "_color"
+        local c = M.get_setting(cfg_db, category, color_key)
+        if c and setting_prefix == "timer" and M.resolve_text_color then
+            c = M.resolve_text_color(category, "timer", c)
+        end
         if c then
             font_target:SetTextColor(c.r or 1, c.g or 1, c.b or 1, alpha == nil and 1 or alpha)
         end
     end
+end
+
+
+function M.apply_number_font_style(font_target, category, cfg_db, alpha)
+    apply_number_text_style(font_target, category, cfg_db, "timer", alpha)
+end
+
+function M.apply_stack_font_style(font_target, category, cfg_db, alpha)
+    apply_number_text_style(font_target, category, cfg_db, "stack", alpha)
 end
 
 function M.apply_number_font_to_text(font_string, category, cfg_db)
@@ -184,6 +202,9 @@ function M.apply_number_font_to_all()
             for _, obj in ipairs(frame.icons) do
                 if obj and obj.time_text then
                     M.apply_number_font_to_text(obj.time_text, category, cfg_db)
+                end
+                if obj and obj.count_text then
+                    M.apply_stack_font_style(obj.count_text, category, cfg_db)
                 end
             end
         end
@@ -622,7 +643,7 @@ local function create_icon_bar(obj, bar_bg_default)
     return bar
 end
 
-local function create_icon_text_regions(obj, category)
+local function create_icon_text_regions(obj, category, cfg_db)
     -- Text overlay is created after the bar so labels render above bar fills.
     obj.text_overlay = CreateFrame("Frame", nil, obj)
     obj.text_overlay:EnableMouse(false)
@@ -645,13 +666,14 @@ local function create_icon_text_regions(obj, category)
     M.add_debug_outline(obj.timer_slot, 0, 1, 0.3, 0.9)
 
     obj.time_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    M.apply_number_font_to_text(obj.time_text, category)
+    M.apply_number_font_to_text(obj.time_text, category, cfg_db)
     obj.time_text:SetWordWrap(false)
     if obj.time_text.SetMaxLines then
         obj.time_text:SetMaxLines(1)
     end
 
     obj.count_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    M.apply_stack_font_style(obj.count_text, category, cfg_db)
     obj.count_text:Hide()
 end
 
@@ -672,14 +694,14 @@ local function bind_icon_tooltip(obj)
     end)
 end
 
-local function create_aura_icon(parent, category, bar_bg_default)
+local function create_aura_icon(parent, category, cfg_db, bar_bg_default)
     local obj = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     obj:Hide()
 
     obj.texture = obj:CreateTexture(nil, "ARTWORK")
     obj.cooldown = create_icon_cooldown(obj)
     obj.bar = create_icon_bar(obj, bar_bg_default)
-    create_icon_text_regions(obj, category)
+    create_icon_text_regions(obj, category, cfg_db)
     bind_icon_tooltip(obj)
 
     return obj
@@ -687,11 +709,11 @@ end
 
 local function create_aura_icon_pool(frame, cfg_db, category)
     frame.icons = {}
-    local pool_size = cfg_db["max_icons_"..category] or cfg_db["max_icons"] or M.DEFAULT_MAX_ICONS
+    local pool_size = M.AURA_FRAME_LIMIT
     local bar_bg_default = M.get_bar_bg_color(cfg_db, category)
 
     for i = 1, pool_size do
-        frame.icons[i] = create_aura_icon(frame, category, bar_bg_default)
+        frame.icons[i] = create_aura_icon(frame, category, cfg_db, bar_bg_default)
     end
 end
 

@@ -280,7 +280,7 @@ M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 M.DEFAULT_FRAME_WIDTH = 200
 M.MIN_FRAME_HEIGHT = 44
-M.DEFAULT_MAX_ICONS = 20
+M.AURA_FRAME_LIMIT = 40
 M.DEFAULT_SHORT_THRESHOLD = 60
 M.DEFAULT_TIMER_NUMBER_FONT_KEY = "source_code_pro"
 M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
@@ -294,7 +294,6 @@ M.SETTING_RANGES = {
     fade_delay = { min = 0, max = 10, step = 0.1 },
     fade_length = { min = 0, max = 10, step = 0.1 },
     frame_position = { min = -1000, max = 1000, step = 1 },
-    max_icons = { min = 5, max = 40, step = 1 },
     ooc_alpha = { min = 0, max = 1, step = 0.05 },
     scale = { min = 0.5, max = 2.5, step = 0.01 },
     short_threshold = { min = 10, max = 300, step = 10 },
@@ -305,7 +304,6 @@ M.SETTING_RANGES = {
 
 M.MIN_FRAME_WIDTH = M.SETTING_RANGES.width.min
 M.MAX_FRAME_WIDTH = M.SETTING_RANGES.width.max
-M.MAX_ICONS_LIMIT = M.SETTING_RANGES.max_icons.max
 M.MIN_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.min
 M.MAX_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.max
 M.WOW_COOLDOWN_OOC_ALPHA_STEP = M.SETTING_RANGES.ooc_alpha.step
@@ -391,7 +389,6 @@ M.defaults = {
     ooc_alpha_static = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_static = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_static = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_static = M.DEFAULT_MAX_ICONS,
     bg_color_static = default_bg_color(),
     sort_static  = "name",
     test_aura_static = true,
@@ -415,7 +412,6 @@ M.defaults = {
     ooc_alpha_short = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_short = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_short = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_short = M.DEFAULT_MAX_ICONS,
     bg_color_short = default_bg_color(),
     sort_short   = "timeleft",
     timer_number_font_short = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -442,7 +438,6 @@ M.defaults = {
     ooc_alpha_long = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_long = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_long = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_long  = M.DEFAULT_MAX_ICONS,
     bg_color_long = default_bg_color(),
     sort_long    = "timeleft",
     timer_number_font_long = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -469,7 +464,6 @@ M.defaults = {
     ooc_alpha_combined = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_combined = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_combined = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_combined  = M.DEFAULT_MAX_ICONS,
     bg_color_combined = default_bg_color(),
     sort_combined = "timeleft",
     timer_number_font_combined = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -498,7 +492,6 @@ M.defaults = {
     ooc_alpha_essential = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_essential = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_essential = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_essential = M.DEFAULT_MAX_ICONS,
     bg_color_essential = default_bg_color(),
     sort_essential = "timeleft",
     timer_number_font_essential = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -527,7 +520,6 @@ M.defaults = {
     ooc_alpha_utility = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_utility = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_utility = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_utility = M.DEFAULT_MAX_ICONS,
     bg_color_utility = default_bg_color(),
     sort_utility = "timeleft",
     timer_number_font_utility = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -555,7 +547,6 @@ M.defaults = {
     ooc_alpha_tracked_buffs = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_tracked_buffs = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_buffs = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_tracked_buffs = M.DEFAULT_MAX_ICONS,
     bg_color_tracked_buffs = default_bg_color(),
     sort_tracked_buffs = "timeleft",
     timer_number_font_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -583,7 +574,6 @@ M.defaults = {
     ooc_alpha_tracked_bars = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_tracked_bars = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_bars = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_tracked_bars = M.DEFAULT_MAX_ICONS,
     bg_color_tracked_bars = default_bg_color(),
     sort_tracked_bars = "timeleft",
     timer_number_font_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -610,7 +600,6 @@ M.defaults = {
     ooc_alpha_debuff = M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA,
     fade_delay_debuff = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_debuff = M.DEFAULT_OOC_FADE_LENGTH,
-    max_icons_debuff = M.DEFAULT_MAX_ICONS,
     bg_color_debuff = default_bg_color(),
     sort_debuff  = "timeleft",
     timer_number_font_debuff = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
@@ -639,6 +628,13 @@ M.defaults = {
 }
 
 M.apply_presentation_growth_defaults(M.defaults, M.FRAME_DEFS)
+
+for _, category in ipairs(M.CATEGORIES) do
+    M.defaults["stack_number_font_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
+    M.defaults["stack_number_font_bold_" .. category] = false
+    M.defaults["stack_color_" .. category] = { r = 1, g = 1, b = 1 }
+end
 
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
 M.defaults.shared_bar_background_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 }
@@ -750,7 +746,6 @@ M.CUSTOM_FRAME_TEMPLATE = {
     sync_bar_bg = true,
     sync_bar_color = true,
     sync_text_color = true,
-    max_icons    = M.DEFAULT_MAX_ICONS,
     test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
@@ -758,6 +753,10 @@ M.CUSTOM_FRAME_TEMPLATE = {
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_color     = { r = 1, g = 1, b = 1 },
+    stack_number_font      = M.DEFAULT_TIMER_NUMBER_FONT_KEY,
+    stack_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
+    stack_number_font_bold = false,
+    stack_color     = { r = 1, g = 1, b = 1 },
     bar_text_color  = { r = 1, g = 1, b = 1 },
 
     -- Position

@@ -89,11 +89,17 @@ h.test("Aura Frames profiles preserve independent mode growth settings", functio
     local ok = AF.apply_aura_frame_profile_data({
         growth_icon_combined = "LEFT",
         growth_bar_combined = "UP",
+        stack_number_font_size_combined = 13,
+        stack_number_font_bold_combined = true,
+        stack_color_combined = { r = 0.2, g = 0.4, b = 0.6 },
     })
 
     h.ok(ok, "Aura Frames profile data applies")
     h.eq(AF.db.growth_icon_combined, "LEFT", "profile restores Icon Mode growth")
     h.eq(AF.db.growth_bar_combined, "UP", "profile restores Bar Mode growth")
+    h.eq(AF.db.stack_number_font_size_combined, 13, "profile restores stack font size")
+    h.eq(AF.db.stack_number_font_bold_combined, true, "profile restores stack bold face")
+    h.eq(AF.db.stack_color_combined.g, 0.4, "profile restores stack color")
 end)
 
 h.test("Objectives profile import preserves an explicit false setting", function()

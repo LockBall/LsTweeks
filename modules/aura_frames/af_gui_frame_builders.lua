@@ -159,12 +159,15 @@ local function make_preset_frame_settings_config(data)
             bar_mode = "bar_mode_" .. cat,
             growth_icon = "growth_icon_" .. cat,
             growth_bar = "growth_bar_" .. cat,
-            max_icons = "max_icons_" .. cat,
             test_aura = "test_aura_" .. cat,
             timer_number_font = "timer_number_font_" .. cat,
             timer_number_font_size = "timer_number_font_size_" .. cat,
             timer_number_font_bold = "timer_number_font_bold_" .. cat,
             timer_color = "timer_color_" .. cat,
+            stack_number_font = "stack_number_font_" .. cat,
+            stack_number_font_size = "stack_number_font_size_" .. cat,
+            stack_number_font_bold = "stack_number_font_bold_" .. cat,
+            stack_color = "stack_color_" .. cat,
         },
     }
 end
@@ -214,12 +217,15 @@ local function make_custom_frame_settings_config(entry)
             bar_mode = "bar_mode",
             growth_icon = "growth_icon",
             growth_bar = "growth_bar",
-            max_icons = "max_icons",
             test_aura = "test_aura",
             timer_number_font = "timer_number_font",
             timer_number_font_size = "timer_number_font_size",
             timer_number_font_bold = "timer_number_font_bold",
             timer_color = "timer_color",
+            stack_number_font = "stack_number_font",
+            stack_number_font_size = "stack_number_font_size",
+            stack_number_font_bold = "stack_number_font_bold",
+            stack_color = "stack_color",
         },
     }
 end
@@ -353,6 +359,88 @@ local function create_frame_timer_controls(parent, frame_config, grid, update, l
         timer_font = timer_font,
         font_size_slider = font_size_slider,
     }
+end
+
+local function create_frame_stack_text_controls(parent, frame_config, grid, update)
+    local id = frame_config.id
+    local stack_font_key = frame_setting_key(frame_config, "stack_number_font")
+    local stack_font_size_key = frame_setting_key(frame_config, "stack_number_font_size")
+    local stack_bold_key = frame_setting_key(frame_config, "stack_number_font_bold")
+    local stack_color_key = frame_setting_key(frame_config, "stack_color")
+
+    local function get_selected_stack_font()
+        return frame_config.value_table[stack_font_key] or M.DEFAULT_TIMER_NUMBER_FONT_KEY
+    end
+
+    local function refresh_stack_fonts()
+        M.apply_number_font_to_all()
+        update()
+    end
+
+    local refresh_bold_availability
+    local stack_font = create_list_dropdown(
+        addon_name .. id .. "StackFont",
+        parent,
+        "Stack Font",
+        get_timer_font_options(),
+        get_selected_stack_font,
+        function(value)
+            frame_config.value_table[stack_font_key] = value
+            if refresh_bold_availability then refresh_bold_availability() end
+            refresh_stack_fonts()
+        end,
+        120
+    )
+    grid:place_at(stack_font, 6, 3, nil, { width = 120, y_offset = -15 })
+    M.controls["stack_number_font_dropdown_" .. id] = stack_font
+
+    local stack_bold_container = create_bound_checkbox_control(
+        parent,
+        "Bold",
+        frame_config.value_table,
+        stack_bold_key,
+        grid,
+        6,
+        3,
+        "stack_number_font_bold_" .. id,
+        refresh_stack_fonts,
+        update
+    )
+    grid:stack_below(stack_bold_container, stack_font, { y = -4 })
+
+    refresh_bold_availability = function()
+        stack_bold_container:SetEnabled(M.is_number_font_bold_available(get_selected_stack_font()))
+    end
+    M.controls["stack_number_font_bold_refresh_" .. id] = refresh_bold_availability
+    refresh_bold_availability()
+
+    local stack_color_picker = addon.CreateColorPicker(
+        parent,
+        frame_config.value_table,
+        stack_color_key,
+        false,
+        "Stack Color",
+        frame_config.defaults_table,
+        refresh_stack_fonts
+    )
+    grid:place_at(stack_color_picker, 6, 2, "picker")
+    M.controls["stack_color_picker_" .. id] = stack_color_picker
+
+    local stack_font_size_slider = addon.CreateSliderWithBox(
+        addon_name .. id .. "StackFontSize",
+        parent,
+        "Stack Font Size",
+        get_setting_range("timer_number_font_size").min,
+        get_setting_range("timer_number_font_size").max,
+        get_setting_range("timer_number_font_size").step,
+        frame_config.value_table,
+        stack_font_size_key,
+        frame_config.defaults_table,
+        refresh_stack_fonts,
+        { immediate_callback = true }
+    )
+    grid:place_at(stack_font_size_slider, 6, 4)
+    M.controls["stack_number_font_size_slider_" .. id] = stack_font_size_slider
 end
 
 local function create_frame_position_controls(parent, frame_config, grid, update, options)
@@ -953,10 +1041,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     if has_timer_controls then
         create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
     end
-
-    local max_icons_range = get_setting_range("max_icons")
-    local max_icons_slider = create_frame_slider(parent, frame_config, opts.max_icons_name_suffix or "MaxIcons", "Max Icons", max_icons_range.min, max_icons_range.max, max_icons_range.step, "max_icons", opts.on_max_icons_changed)
-    grid:place_at(max_icons_slider, 6, 4)
+    create_frame_stack_text_controls(parent, frame_config, grid, update)
 end
 
 --#endregion SHARED FRAME PANEL HELPERS ========================================
@@ -1006,10 +1091,6 @@ function M.build_preset_frame_panel(p, data)
             font_dropdown_width = 120,
             font_y_offset = -15,
         },
-        max_icons_name_suffix = "PoolSlider",
-        on_max_icons_changed = function()
-            print("|cFFFFFF00LsTweaks:|r Pool size for " .. cat .. " changed. Please /reload to apply.")
-        end,
         on_enable_changed = function(is_checked)
             if is_checked or not hide_blizz_cdm_label then return end
             local hide_key = "hide_blizz_cdm_" .. cat
@@ -1073,10 +1154,6 @@ function M.build_custom_settings_panel(p, entry)
             font_dropdown_width = 120,
             font_y_offset = -15,
         },
-        max_icons_name_suffix = "MaxIcons",
-        on_max_icons_changed = function()
-            print("|cFFFFFF00LsTweaks:|r Pool size for " .. (entry.name or id) .. " changed. Please /reload to apply.")
-        end,
         build_source_controls = function(ctx)
             ctx.grid:place_at(create_frame_name_control(ctx.parent, entry), 6, 1, nil, { width = 130, y_offset = -30 })
         end,
