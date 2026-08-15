@@ -194,6 +194,8 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         end
     end
 
+    local option_rows = {}
+    local visible_option_count = 0
     for i, option in ipairs(options) do
         local row = CreateFrame("Button", nil, popup)
         row:SetSize(width - 4, row_h)
@@ -218,12 +220,30 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
                 cfg.on_select(selected, option)
             end
         end)
+        option_rows[i] = { row = row, option = option }
+    end
+
+    local function refresh_options()
+        visible_option_count = 0
+        for _, entry in ipairs(option_rows) do
+            local visible = not cfg.is_option_visible or cfg.is_option_visible(entry.option) ~= false
+            if visible then
+                entry.row:ClearAllPoints()
+                entry.row:SetPoint("TOPLEFT", popup, "TOPLEFT", 2, -(2 + visible_option_count * row_h))
+                entry.row:Show()
+                visible_option_count = visible_option_count + 1
+            else
+                entry.row:Hide()
+            end
+        end
+        popup:SetHeight(visible_option_count * row_h + 4)
     end
 
     btn:SetScript("OnClick", function()
         if popup:IsShown() then
             _hide_dropdown(popup)
         else
+            refresh_options()
             _show_dropdown(popup, btn)
         end
         if dropdown_icon then
@@ -251,6 +271,11 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         return selected
     end
 
+    container.RefreshOptions = refresh_options
+    container.GetVisibleOptionCount = function()
+        return visible_option_count
+    end
+
     container.SetEnabled = function(_, enabled)
         enabled = enabled and true or false
         btn:SetEnabled(enabled)
@@ -263,6 +288,7 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
         end
     end
 
+    refresh_options()
     set_button_text(selected)
     container.button = btn
     return container

@@ -509,8 +509,9 @@ end
 
 local function aura_frame_contains_mouse(frame)
     if not frame then return false end
-    if frame.title_bar and frame.title_bar.IsMouseOver and frame.title_bar:IsMouseOver() then return true end
-    if frame.bottom_title_bar and frame.bottom_title_bar.IsMouseOver and frame.bottom_title_bar:IsMouseOver() then return true end
+    for _, edge in ipairs(frame.move_handle and frame.move_handle.hit_areas or {}) do
+        if edge.IsMouseOver and edge:IsMouseOver() then return true end
+    end
     if frame.resizer and frame.resizer.IsMouseOver and frame.resizer:IsMouseOver() then return true end
 
     local icons = frame.icons
@@ -691,47 +692,85 @@ end
 --#region AURA FRAME SHELL =====================================================
 
 -- The frame shell is the user-facing container around an aura icon pool. It owns
--- the drag title bars, resize handle, saved width updates, and resize refresh so
+-- the drag handle, resize handle, saved width updates, and resize refresh so
 -- icon creation/rendering can stay separate from frame interaction behavior.
-local TITLEBAR_ANCHORS = {
-    top =    { from = "BOTTOM", to = "TOP", offset = -2 },
-    bottom = { from = "TOP",    to = "BOTTOM", offset = 2 },
-}
+local MOVE_BORDER_HIT_WIDTH = 8
 
-local function create_title_bar(parent, label, scale_key, is_bottom)
-    local cfg = is_bottom and TITLEBAR_ANCHORS.bottom or TITLEBAR_ANCHORS.top
+local function set_move_border_edge_points(edge, parent, side)
+    if side == "TOP" then
+        edge:SetPoint("TOPLEFT", parent, "TOPLEFT")
+        edge:SetPoint("TOPRIGHT", parent, "TOPRIGHT")
+        edge:SetHeight(MOVE_BORDER_HIT_WIDTH)
+    elseif side == "BOTTOM" then
+        edge:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT")
+        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT")
+        edge:SetHeight(MOVE_BORDER_HIT_WIDTH)
+    elseif side == "LEFT" then
+        edge:SetPoint("TOPLEFT", parent, "TOPLEFT")
+        edge:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT")
+        edge:SetWidth(MOVE_BORDER_HIT_WIDTH)
+    else
+        edge:SetPoint("TOPRIGHT", parent, "TOPRIGHT")
+        edge:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT")
+        edge:SetWidth(MOVE_BORDER_HIT_WIDTH)
+    end
+end
+
+local function create_aura_frame_move_handle(parent, label, scale_key)
     local tb = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    tb:SetPoint(cfg.from.."LEFT",  parent, cfg.to.."LEFT",  0, cfg.offset)
-    tb:SetPoint(cfg.from.."RIGHT", parent, cfg.to.."RIGHT", 0, cfg.offset)
-    tb:SetHeight(20)
-    M.apply_title_bar_backdrop(tb)
+    tb:SetAllPoints(parent)
+    tb:SetFrameLevel(parent:GetFrameLevel() + 10)
+    tb.title = label
+    M.apply_thin_border_backdrop(tb, nil, { r = 1, g = 0.82, b = 0, a = 1 })
 
-    local text = tb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    text:SetPoint("CENTER")
-    text:SetText(label)
-    tb.label_text = text
-
-    tb:EnableMouse(true)
-    tb:RegisterForDrag("LeftButton")
-    tb:SetScript("OnEnter", function()
-        handle_frame_mouse_enter(parent)
-    end)
-    tb:SetScript("OnLeave", function()
-        handle_frame_mouse_leave(parent)
-    end)
-    tb:SetScript("OnDragStart", function()
-        M.start_frame_drag(parent)
-    end)
-    tb:SetScript("OnDragStop", function()
-        M.stop_frame_drag(parent, scale_key)
-    end)
+    tb.hit_areas = {}
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local edge = CreateFrame("Frame", nil, tb)
+        set_move_border_edge_points(edge, tb, side)
+        edge:EnableMouse(true)
+        edge:RegisterForDrag("LeftButton")
+        edge:SetScript("OnEnter", function(self)
+            handle_frame_mouse_enter(parent)
+            addon.ShowOwnedTooltip(self, tb.title, nil, "ANCHOR_RIGHT")
+        end)
+        edge:SetScript("OnLeave", function()
+            addon.HideOwnedTooltip()
+            handle_frame_mouse_leave(parent)
+        end)
+        edge:SetScript("OnDragStart", function()
+            addon.HideOwnedTooltip()
+            M.start_frame_drag(parent)
+        end)
+        edge:SetScript("OnDragStop", function()
+            M.stop_frame_drag(parent, scale_key)
+            if tb._lstweeks_sync_xy_sliders then
+                tb._lstweeks_sync_xy_sliders()
+            end
+        end)
+        tb.hit_areas[#tb.hit_areas + 1] = edge
+    end
 
     return tb
 end
 
-local function create_aura_frame_title_bars(frame, display_name, scale_key)
-    frame.title_bar = create_title_bar(frame, display_name, scale_key, false)
-    frame.bottom_title_bar = create_title_bar(frame, display_name, scale_key, true)
+local function position_aura_frame_move_handle(frame)
+    local handle = frame and frame.move_handle
+    if not handle then return end
+
+    if frame.resizer then
+        frame.resizer:ClearAllPoints()
+        frame.resizer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+        frame.resizer:SetFrameLevel(handle:GetFrameLevel() + 1)
+    end
+end
+
+function M.update_aura_frame_move_controls(frame, shown)
+    if not frame then return end
+    if shown then
+        position_aura_frame_move_handle(frame)
+    end
+    M.set_shown_if_changed(frame.move_handle, shown)
+    M.set_shown_if_changed(frame.resizer, shown)
 end
 
 local function save_aura_frame_width(frame, category, width)
@@ -955,12 +994,14 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
 
     M.apply_saved_frame_position(frame, scale_key, is_debuff and -25 or 75)
 
-    create_aura_frame_title_bars(frame, display_name, scale_key)
+    frame.move_handle = create_aura_frame_move_handle(frame, display_name, scale_key)
     create_aura_frame_resizer(frame, category)
 
     local managed_backend
     if category == "debuff" and M.create_managed_debuff_backend then
         managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
+    elseif category == "combined" and M.create_managed_combined_buff_backend then
+        managed_backend = M.create_managed_combined_buff_backend(frame, cfg_db)
     end
 
     if not managed_backend then
@@ -987,8 +1028,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     -- until update_auras() applies the saved enabled/move state; disabled frames
     -- intentionally skip their startup event work.
     frame:Hide()
-    frame.title_bar:Hide()
-    frame.bottom_title_bar:Hide()
+    frame.move_handle:Hide()
     frame.resizer:Hide()
 
     bind_aura_frame_events(frame, category)
@@ -1166,11 +1206,10 @@ local function start_aura_frame_runtime_services()
     end
     -- Managed frames own no PLAYER_ENTERING_WORLD handler, so startup must
     -- explicitly apply their saved shell state after enabling the engine.
-    if M.refresh_managed_debuff_frames then
-        M.refresh_managed_debuff_frames()
+    if M.refresh_managed_preset_frames then
+        M.refresh_managed_preset_frames()
     end
-    M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
-    M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+    M.apply_blizz_aura_frame_settings()
     if M.update_all_blizz_cdm_visibility then
         M.update_all_blizz_cdm_visibility()
     end
@@ -1202,8 +1241,9 @@ local function stop_aura_frame_runtime_services()
     end
     if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
     if M.set_grid_visible then M.set_grid_visible(false) end
-    if M.toggle_blizz_buffs then M.toggle_blizz_buffs(false) end
-    if M.toggle_blizz_debuffs then M.toggle_blizz_debuffs(false) end
+    if M.restore_blizz_aura_frame_settings then
+        M.restore_blizz_aura_frame_settings()
+    end
     if M.restore_blizz_cdm_viewer_settings then
         M.restore_blizz_cdm_viewer_settings()
     end
@@ -1216,8 +1256,7 @@ local function stop_aura_frame_runtime_services()
             frame:UnregisterAllEvents()
             frame:SetScript("OnEvent", nil)
             frame:Hide()
-            if frame.title_bar then frame.title_bar:Hide() end
-            if frame.bottom_title_bar then frame.bottom_title_bar:Hide() end
+            if frame.move_handle then frame.move_handle:Hide() end
             if frame.resizer then frame.resizer:Hide() end
             frame._display_count = 0
         end
@@ -1312,6 +1351,13 @@ if addon.register_module_status then
                 fields[#fields + 1] = field
             end
         end
+        if M.get_blizz_aura_suppression_status then
+            local suppressed, suppression_error = M.get_blizz_aura_suppression_status()
+            fields[#fields + 1] = "blizz_aura_suppressed=" .. tostring(suppressed)
+            if suppression_error then
+                fields[#fields + 1] = "blizz_aura_error=" .. suppression_error
+            end
+        end
         return fields
     end)
 end
@@ -1341,8 +1387,7 @@ end)
 --#region RESET ORCHESTRATION ==================================================
 
 local function apply_reset_runtime_state()
-    M.toggle_blizz_buffs(not M.db.enable_blizz_buffs)
-    M.toggle_blizz_debuffs(not M.db.enable_blizz_debuffs)
+    M.apply_blizz_aura_frame_settings()
     if M.update_all_blizz_cdm_visibility then
         M.update_all_blizz_cdm_visibility()
     end

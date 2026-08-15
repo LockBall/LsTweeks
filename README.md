@@ -192,8 +192,9 @@ Embedded libraries are stored in `libs/` and credited in `sources.md`. They are 
 
 ## Credits
 - LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge.
-- Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, TellMeWhen, ArcUI, and Angleur.
+- Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, TellMeWhen, ArcUI, BasicBuffHide, and Angleur.
 - TellMeWhen and ArcUI helped confirm the community-tested WoW 12.1 managed AuraContainer/AuraButton direction; LsTweeks uses its own implementation based on Blizzard's public API contract.
+- BasicBuffHide helped confirm hidden-parent suppression for Blizzard's 12.1 BuffFrame; LsTweeks uses an independent implementation and contains no copied BasicBuffHide code.
 - Fishing Focus was informed by Angleur's Ultra Focus audio-profile approach.
 - Skyriding Vigor was informed by DragonRider's restored vigor-display concept; this addon uses its own implementation and Blizzard UI assets.
 - Addon design and implementation by **LockBall**.

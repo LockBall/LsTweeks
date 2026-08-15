@@ -19,7 +19,7 @@ C_XMLUtil = {
 
 AnchorUtil = {
     FlowLayoutAxis = { Horizontal = 1, Vertical = 2 },
-    FlowDirection = { Right = 2, Down = 3, Up = 4 },
+    FlowDirection = { Left = 1, Right = 2, Down = 3, Up = 4 },
 }
 
 CreateFrame = function(kind, name, parent, template)
@@ -110,6 +110,7 @@ CreateFrame = function(kind, name, parent, template)
     end
 
     function frame:SetAuraGroupMaxFrameCount(key, value)
+        self.__groups[key].active_max_frame_count = value
         self.__group_calls[#self.__group_calls + 1] = { "max_frame_count", key, value }
     end
 
@@ -137,6 +138,13 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             ooc_alpha_debuff = 0.35,
             fade_delay_debuff = 0,
             fade_length_debuff = 0,
+            show_long = false,
+            show_combined = true,
+            move_combined = false,
+            max_icons_combined = 3,
+            width_combined = 140,
+            bar_mode_combined = true,
+            growth_combined = "DOWN",
         },
     })
 
@@ -144,8 +152,9 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     local backend = frame._managed_aura_backend
 
     h.ok(backend, "Debuff frame owns a managed backend")
-    h.eq(backend.container.__groups.debuffs.filter_string, "HARMFUL", "Debuff group uses HARMFUL")
-    h.eq(backend.container.__groups.debuffs.options.maxFrameCount, 2, "Debuff pool uses saved maximum")
+    h.eq(backend.container.__groups["debuffs:bar"].filter_string, "HARMFUL", "Debuff groups use HARMFUL")
+    h.eq(backend.container.__groups["debuffs:bar"].options.maxFrameCount, 2, "Debuff bar pool uses saved maximum")
+    h.eq(backend.container.__groups["debuffs:icon"].options.maxFrameCount, 2, "Debuff icon pool uses saved maximum")
     h.eq(backend.container.__width, 1, "managed container starts at its auto-layout seed width")
     h.eq(backend.container.__height, 1, "managed container starts at its auto-layout seed height")
     h.eq(backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
@@ -156,15 +165,15 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Up,
         "Debuff rows grow up")
     h.eq(backend.container.__flow_line_size, 38, "Debuff flow reserves one vertical line for every row")
-    h.eq(backend.container.__groups.debuffs.layout.elementSpacing, 1,
-        "Debuff group receives explicit element spacing")
+    h.eq(backend.container.__groups["debuffs:bar"].layout.elementSpacing, 1,
+        "Debuff bar group receives explicit element spacing")
     h.eq(frame.icons, nil, "managed Debuff frame creates no legacy icon pool")
     h.ok(frame:GetScript("OnEvent"), "managed Debuff shell owns its combat-state handler")
     h.eq(frame.__events.UNIT_AURA, nil, "managed Debuff frame does not register UNIT_AURA")
     h.eq(frame.__events.PLAYER_REGEN_DISABLED, true, "managed Debuff shell watches combat entry")
     h.eq(frame.__events.PLAYER_REGEN_ENABLED, true, "managed Debuff shell watches combat exit")
 
-    for _, aura_button in ipairs(backend.container.__groups.debuffs.buttons) do
+    for _, aura_button in ipairs(backend.container.__groups["debuffs:bar"].buttons) do
         h.eq(aura_button.__width, 108, "managed Debuff bar uses the saved inner frame width")
         h.eq(aura_button.__height, 18, "managed Debuff bar uses the legacy row height")
         h.eq(#(aura_button:GetCalls("SetIcon") or {}), 1, "managed Debuff AuraButton binds one native icon")
@@ -178,12 +187,101 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     end
 
     h.ok(frame:IsShown(), "runtime startup shows the enabled managed Debuff shell")
-    h.eq(frame.title_bar:IsShown(), false, "move controls follow saved off state")
+    h.eq(frame.move_handle:IsShown(), false, "move controls follow saved off state")
+    M.db.move_debuff = true
+    M.update_managed_preset_frame(frame, "show_debuff", "move_debuff")
+    h.eq(frame.move_handle:IsShown(), true, "managed Move Mode shows its mover border")
+    h.eq(backend.container.__flow_padding[3], 0,
+        "managed Move Mode does not alter native AuraContainer layout")
+    h.eq(frame.move_handle:GetParent(), frame,
+        "addon mover remains parented to its safe shell, never the managed AuraContainer")
+    local _, resize_relative_to = frame.resizer:GetPoint(1)
+    h.eq(resize_relative_to, frame, "managed resize grip overlays the shell border corner")
+    M.db.move_debuff = false
+    M.update_managed_preset_frame(frame, "show_debuff", "move_debuff")
     h.eq(frame:GetAlpha(), 0.35, "managed Debuff shell applies its saved out-of-combat alpha")
     h.fire_event("PLAYER_REGEN_DISABLED")
     h.eq(frame:GetAlpha(), 1, "combat-entry event makes the managed Debuff shell fully visible")
     h.fire_event("PLAYER_REGEN_ENABLED")
     h.eq(frame:GetAlpha(), 0.35, "combat-exit event restores the managed Debuff shell OOC alpha")
+
+    local long_frame = M.frames.show_long
+    h.eq(long_frame._managed_aura_backend, nil, "Long remains separate from the combined managed capability")
+    h.ok(long_frame.icons, "Long retains its existing frame implementation")
+    h.eq(long_frame.__events.UNIT_AURA, true, "Long retains its existing event route while disabled")
+
+    local buffs_frame = M.frames.show_combined
+    local buffs_backend = buffs_frame._managed_aura_backend
+    h.ok(buffs_backend, "combined Buffs frame owns a managed backend")
+    h.eq(buffs_backend.container.__groups["buffs:bar"].filter_string, "HELPFUL",
+        "combined Buff groups request every helpful Aura")
+    h.eq(buffs_backend.container.__groups["buffs:bar"].options.maxFrameCount, 3,
+        "combined Buff bar pool uses its own saved maximum")
+    h.eq(buffs_backend.container.__groups["buffs:icon"].options.maxFrameCount, 3,
+        "combined Buff icon pool uses its own saved maximum")
+    h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
+        "bar-mode combined Buffs use vertical flow")
+    h.eq(buffs_frame.icons, nil, "combined Buffs frame creates no legacy icon pool")
+    h.eq(buffs_frame.__events.UNIT_AURA, nil, "combined Buffs frame does not register UNIT_AURA")
+    h.ok(buffs_frame:IsShown(), "runtime startup shows enabled combined Buffs")
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        h.eq(aura_button.__width, 128, "combined Buff bars use the saved inner frame width")
+        h.eq(aura_button.__height, 18, "combined Buff bars use the shared native row height")
+        h.eq(#(aura_button:GetCalls("SetIcon") or {}), 1,
+            "combined Buffs AuraButtons bind their native icon")
+        h.ok(aura_button.__spell_name_region, "combined Buff bars bind native spell text")
+        h.ok(aura_button.__duration_text_region, "combined Buff bars bind native duration text")
+        h.ok(aura_button.__application_count_region, "combined Buff bars bind native stack text")
+        h.ok(aura_button.__duration_bar_region, "combined Buff bars bind a native duration bar")
+        h.eq(aura_button.__hide_tooltip_in_combat, true,
+            "combined Buffs AuraButtons use the combat-safe native tooltip policy")
+    end
+    h.eq(buffs_backend.presentation_mode, "bar", "saved Bar Mode activates the combined Buff bar group")
+    h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, 3,
+        "combined Buff bar group is active")
+    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 0,
+        "combined Buff icon group is parked")
+
+    M.db.bar_mode_combined = false
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.presentation_mode, "icon", "OOC Bar Mode change activates icon presentation")
+    h.eq(buffs_backend.container.__groups["buffs:bar"].active_max_frame_count, 0,
+        "combined Buff bar group is parked after switching")
+    h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 3,
+        "combined Buff icon group activates after switching")
+    h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
+        "combined Buff layout retains the saved DOWN growth after switching to icons")
+    h.eq(M.get_managed_aura_backend("preset:combined"), buffs_backend,
+        "Bar Mode switching reuses the original managed backend")
+
+    local growth_cases = {
+        RIGHT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },
+        LEFT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPRIGHT", AnchorUtil.FlowDirection.Left, AnchorUtil.FlowDirection.Down },
+        DOWN = { AnchorUtil.FlowLayoutAxis.Vertical, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },
+        UP = { AnchorUtil.FlowLayoutAxis.Vertical, "BOTTOMLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Up },
+    }
+    for growth, expected in pairs(growth_cases) do
+        M.db.growth_combined = growth
+        M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+            "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+        h.eq(buffs_backend.container.__flow_axis, expected[1], growth .. " uses its canonical flow axis")
+        h.eq(buffs_backend.container.__flow_anchor, expected[2], growth .. " uses its canonical anchor")
+        h.eq(buffs_backend.container.__flow_growth[1], expected[3], growth .. " uses its horizontal direction")
+        h.eq(buffs_backend.container.__flow_growth[2], expected[4], growth .. " uses its vertical direction")
+    end
+
+    M.db.bar_mode_combined = true
+    M.db.growth_combined = "LEFT"
+    M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
+        "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
+    h.eq(buffs_backend.presentation_mode, "bar", "combined Buffs return to bar presentation")
+    h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
+        "horizontal saved growth normalizes to vertical flow in Bar Mode")
+    h.eq(buffs_backend.container.__flow_anchor, "TOPLEFT",
+        "horizontal saved growth falls back to the DOWN bar anchor")
+    h.eq(buffs_backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Down,
+        "horizontal saved growth falls back to DOWN bar growth")
     M.set_managed_aura_runtime_enabled(false)
 end)
 

@@ -74,17 +74,20 @@ redesign.
 
 **Features:** Static, Short, Long, and Debuffs.
 
-**Assessment:** Broken under Aura secrecy in the current implementation.
+**Assessment:** Partially migrated. Debuffs and the new, independent Combined
+Buffs frame now use managed AuraContainers. Static, Short, and Long retain their
+existing saved settings and implementations for later separation work, but
+remain incompatible legacy paths and must not yet be used for combat validation.
 
 `af_scan.lua` discovers player Auras with `GetBuffDataByIndex` and
 `GetDebuffDataByIndex`. `af_render.lua` also requests and iterates Aura instance
 IDs for sorting. These operations are no longer safe while Auras are secret.
 The four captured errors are direct manifestations of this incompatibility.
 
-**Direction:** Replace the indexed scanner and addon-owned Aura map for these
-frames with managed AuraContainer groups. Debuffs and a general helpful-Aura
-display have direct supported replacements. The exact Static/Short/Long split
-is addressed separately below.
+**Direction:** Validate the unrestricted combined `HELPFUL` Buffs frame first.
+Then separate supported categories through managed filters without restoring
+addon AuraData inspection. The exact Static/Short split remains addressed
+separately below.
 
 ### AF12-02 — Short frame threshold semantics
 
@@ -111,7 +114,9 @@ Using an unrestricted timed group alongside a `maxDuration` Short group may
 duplicate Short Auras, depending on group assignment behavior, and must not be
 assumed safe without a focused in-game probe.
 
-**Direction:** Redesign or consolidate Long rather than emulating it with
+**Direction:** Preserve Long as its own feature. Use the separate Combined Buffs
+frame, with its own saved settings and unrestricted managed `HELPFUL` filter,
+as the safe baseline while investigating separation. Do not emulate Long with
 addon-side Aura inspection.
 
 ### AF12-04 — Static-only buffs
@@ -129,15 +134,15 @@ permanence from secret timing values.
 
 **Assessment:** Fully preservable after a backend rewrite.
 
-**Status:** AF12-05.1 transport verified in game; AF12-05.2 native bar
-presentation implemented and awaiting in-game verification. The
+**Status:** AF12-05.1 transport and AF12-05.2 native bar presentation verified
+in game. The
 first live checks exposed two framework requirements: a shown `AuraContainer`
 does not process Auras until `SetEnabled(true)` is also applied, and its
 auto-sizing flow layout must be seeded from one corner rather than stretched
 over the owner with `SetAllPoints`. The lifecycle now synchronizes engine
 processing and visibility, and the Debuff capability explicitly owns its flow
 axis, anchor, growth, wrap width, and group spacing. Regressions cover both
-contracts. The current slice creates one managed `HARMFUL` group with native
+contracts. The current slice creates managed `HARMFUL` bar/icon presentation groups with native
 icon binding, removes the Debuff frame from legacy `UNIT_AURA` handling and
 indexed scanning, and preserves basic frame/module enable state.
 Appearance parity, icon-mode duration presentation, previews, live
@@ -373,16 +378,23 @@ viewer bridge or migrate only its Aura-backed portions.
 
 ### AF12-18 — Hiding Blizzard Aura and Cooldown Manager frames
 
-**Assessment:** Probably preservable, but requires regression testing.
+**Assessment:** BuffFrame and DebuffFrame now have a reversible, test-covered
+hidden-parent path. Cooldown Manager suppression remains a separate concern.
 
-The feature manipulates Blizzard frame presentation rather than reading Aura
-data. Blizzard's BuffFrame and DebuffFrame now use the new container system,
-however, so their load timing, alpha behavior, mouse state, and Edit Mode
-integration may have changed.
+BuffFrame and DebuffFrame inherit Blizzard's Aura Frame Edit Mode behavior, but
+`UpdateSystemSettingValue` silently does nothing before the system has
+`systemInfo`; the first native-setting attempt therefore passed headless tests
+while the General-tab checkbox had no live effect. LsTweeks now places these
+frames under one hidden addon-owned parent and restores their captured original
+parents after combat. Blizzard shown state, events, scripts, and Aura processing
+remain untouched, while rendering and descendant hitboxes are both suppressed.
 
-**Direction:** Re-test every hide toggle after the managed LsTweeks frames are
-working. Continue avoiding `Hide()` for Cooldown Manager viewers where doing so
-stops the viewer from producing state needed by LsTweeks.
+**Direction:** In game, verify both Blizzard Aura enable toggles after reload and
+after module disable, including parent restoration and the absence of invisible
+Aura hitboxes. The approach is informed by BasicBuffHide's current maintained
+implementation but is independently implemented here.
+Continue avoiding `Hide()` for Cooldown Manager viewers where doing so stops the
+viewer from producing state needed by LsTweeks.
 
 ### AF12-19 — Other LsTweeks modules
 

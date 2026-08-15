@@ -1,5 +1,6 @@
 -- Native Blizzard aura-frame visibility logic for Aura Frames.
--- Suppresses Blizzard-owned BuffFrame, DebuffFrame, and CooldownViewer frames without calling Hide().
+-- Shelters BuffFrame and DebuffFrame under an addon-owned hidden parent, and visually suppresses
+-- CooldownViewer frames without stopping the child state consumed by Aura Frames.
 local addon_name, addon = ...
 
 local InCombatLockdown = InCombatLockdown
@@ -10,7 +11,8 @@ local M = addon.aura_frames
 --#region BLIZZARD BUFF/DEBUFF FRAME TOGGLES ===================================
 
 local blizz_aura_frame_state = setmetatable({}, { __mode = "k" })
-local cdm_setting_restore_frame
+local blizz_setting_restore_frame
+local blizz_aura_suppressor
 
 local function get_blizz_aura_frame_state(frame)
     local state = blizz_aura_frame_state[frame]
@@ -31,54 +33,106 @@ local function get_cdm_viewer_state(frame)
     return state
 end
 
-local function queue_cdm_setting_restore()
-    if cdm_setting_restore_frame then
-        cdm_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+local function get_blizz_aura_suppressor()
+    if blizz_aura_suppressor then return blizz_aura_suppressor end
+    blizz_aura_suppressor = CreateFrame("Frame", addon_name .. "AuraFrameSuppressor", UIParent)
+    blizz_aura_suppressor:Hide()
+    return blizz_aura_suppressor
+end
+
+local function queue_blizz_setting_restore()
+    if blizz_setting_restore_frame then
+        blizz_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
         return
     end
 
-    cdm_setting_restore_frame = CreateFrame("Frame")
-    cdm_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    cdm_setting_restore_frame:SetScript("OnEvent", function(self)
+    blizz_setting_restore_frame = CreateFrame("Frame")
+    blizz_setting_restore_frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    blizz_setting_restore_frame:SetScript("OnEvent", function(self)
         self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+        M.apply_blizz_aura_frame_settings()
         M.restore_blizz_cdm_viewer_settings()
     end)
 end
 
 local function set_blizz_frame_state(frame, hide)
-    if not frame then return end
+    if not (frame and frame.GetParent and frame.SetParent) then return end
     local state = get_blizz_aura_frame_state(frame)
 
     if hide then
-        state.forced_hidden = true
-        if not state.on_show_hooked and frame.HookScript then
-            state.on_show_hooked = true
-            frame:HookScript("OnShow", function(self)
-                local current_state = blizz_aura_frame_state[self]
-                if current_state and current_state.forced_hidden then
-                    if self.SetAlpha then self:SetAlpha(0) end
-                    if self.EnableMouse then self:EnableMouse(false) end
-                end
-            end)
+        if state.suppressed then return end
+        if InCombatLockdown and InCombatLockdown() then
+            queue_blizz_setting_restore()
+            return
         end
-        if frame.SetAlpha then frame:SetAlpha(0) end
-        if frame.EnableMouse then frame:EnableMouse(false) end
+
+        local original_parent = frame:GetParent() or UIParent
+        local suppressor = get_blizz_aura_suppressor()
+        local changed, err = pcall(frame.SetParent, frame, suppressor)
+        if not changed or frame:GetParent() ~= suppressor then
+            state.suppression_error = tostring(err or "parent unchanged")
+            return
+        end
+
+        state.suppressed = true
+        state.original_parent = original_parent
+        state.suppression_error = nil
         return
     end
 
-    if state.forced_hidden then
-        state.forced_hidden = nil
-        if frame.SetAlpha then frame:SetAlpha(1) end
-        if frame.EnableMouse then frame:EnableMouse(true) end
+    if not state.suppressed then return end
+    if InCombatLockdown and InCombatLockdown() then
+        queue_blizz_setting_restore()
+        return
     end
+
+    if frame:GetParent() == blizz_aura_suppressor then
+        local restored, err = pcall(frame.SetParent, frame, state.original_parent or UIParent)
+        if not restored then
+            state.suppression_error = tostring(err)
+            return
+        end
+    end
+
+    state.suppressed = nil
+    state.original_parent = nil
+    state.suppression_error = nil
 end
 
-function M.toggle_blizz_buffs(hide)
-    set_blizz_frame_state(BuffFrame, hide)
+function M.set_blizz_buffs_enabled(enabled)
+    set_blizz_frame_state(BuffFrame, not enabled)
 end
 
-function M.toggle_blizz_debuffs(hide)
-    set_blizz_frame_state(DebuffFrame, hide)
+function M.set_blizz_debuffs_enabled(enabled)
+    set_blizz_frame_state(DebuffFrame, not enabled)
+end
+
+function M.restore_blizz_aura_frame_settings()
+    set_blizz_frame_state(BuffFrame, false)
+    set_blizz_frame_state(DebuffFrame, false)
+end
+
+function M.apply_blizz_aura_frame_settings()
+    if M._module_runtime_enabled and M.db then
+        M.set_blizz_buffs_enabled(M.db.enable_blizz_buffs)
+        M.set_blizz_debuffs_enabled(M.db.enable_blizz_debuffs)
+        return
+    end
+    M.restore_blizz_aura_frame_settings()
+end
+
+function M.get_blizz_aura_suppression_status()
+    local count = 0
+    local last_error
+    for frame, state in pairs(blizz_aura_frame_state) do
+        if state.suppressed and frame:GetParent() == blizz_aura_suppressor then
+            count = count + 1
+        end
+        if state.suppression_error then
+            last_error = state.suppression_error
+        end
+    end
+    return count, last_error
 end
 
 function M.ensure_blizz_cdm_loaded()
@@ -122,7 +176,7 @@ end
 
 function M.restore_blizz_cdm_viewer_settings()
     if InCombatLockdown and InCombatLockdown() then
-        queue_cdm_setting_restore()
+        queue_blizz_setting_restore()
         return
     end
 

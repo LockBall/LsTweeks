@@ -1,14 +1,112 @@
-Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
+Message: Frame:SetPoint(): Anchoring disallowed as dependent object would inherit forbidden aspects: UntrustedLayoutScriptExecution
 Lua Taint: LsTweeks
-Time: Fri Aug 14 21:19:41 2026
+Time: Sat Aug 15 08:14:07 2026
 Count: 1
 Stack:
-[Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ScenarioObjectiveTracker.lua]:187: in function 'LayoutContents'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerModule.lua]:147: in function 'Update'
-[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerContainer.lua]:64: in function <...ectiveTracker/Blizzard_ObjectiveTrackerContainer.lua:49>
-[tail call]: ?
-[tail call]: ?
-[Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua]:341: in function <Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua:340>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:736: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:729>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:751: in function 'update_aura_frame_move_controls'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed_presets.lua]:277: in function <.../LsTweeks/modules/aura_frames/af_managed_presets.lua:276>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed_presets.lua]:285: in function 'update_managed_preset_frame'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed_presets.lua]:312: in function 'refresh_managed_preset_frames'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1191: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1183>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1351: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1343>
 
 Locals:
+frame=Frame <af_main.lua:954>{
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ _move_handle_anchor=Frame <af_managed.lua:67>
+ update_params=<table>
+ is_custom=false
+ _managed_aura_backend=<table>
+ resizer=Button <af_main.lua:793>
+ backdropInfo=<table>
+ _move_handle_active=true
+ _aura_map=<table>
+ Center=Texture <NineSlice.lua:52>
+ RightEdge=Texture <NineSlice.lua:52>
+ TopEdge=Texture <NineSlice.lua:52>
+ _activity_state=<table>
+ move_handle=Frame <af_main.lua:700>
+ category="combined"
+ TopRightCorner=Texture <NineSlice.lua:52>
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ BottomEdge=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+ BottomRightCorner=Texture <NineSlice.lua:52>
+}
+handle=Frame <af_main.lua:700>{
+ label_text=FontString <af_main.lua:704>
+ Center=Texture <NineSlice.lua:52>
+ RightEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ BottomEdge=Texture <NineSlice.lua:52>
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ TopEdge=Texture <NineSlice.lua:52>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+}
+anchor=Frame <af_managed.lua:67>
+inset=0
+M=<table>{
+ defaults=<table>
+ _managed_aura_backends=<table>
+ MAX_ICONS_LIMIT=40
+ CDM_VIEWER_FRAMES=<table>
+ BAR_BG_GRAY_DEFAULT=0.500000
+ MOVE_AURA_RESERVED_HEIGHT=22
+ FRAME_DEFS_BY_KEY=<table>
+ MIN_VISIBLE_ICON_TICK=0.100000
+ DEFAULT_OOC_FADE_LENGTH=3
+ _cd_child_state=<table>
+ MOVE_AURA_HEIGHT=18
+ _module_runtime_enabled=true
+ _module_started=true
+ db=<table>
+ _aura_scan_dirty=true
+ MAX_FRAME_WIDTH=800
+ MOVE_AURA_INSET=6
+ CUSTOM_AURA_MODIFIERS_BY_VALUE=<table>
+ DEFAULT_TIMER_NUMBER_FONT_SIZE=10
+ DEFAULT_MAX_ICONS=20
+ FRAME_DEFS=<table>
+ NUMBER_FONT_BOLD_PATHS=<table>
+ NUMBER_FONT_OPTIONS_BY_KEY=<table>
+ NUMBER_FONT_OPTIONS=<table>
+ _cd_hook_cache=<table>
+ frames=<table>
+ DEFAULT_TIMER_NUMBER_FONT_KEY="source_code_pro"
+ DEFAULT_WOW_COOLDOWN_OOC_ALPHA=0.350000
+ controls=<table>
+ MAX_WOW_COOLDOWN_OOC_ALPHA=1
+ TIMER_CATEGORIES=<table>
+ MAX_CUSTOM_FRAMES=4
+ WOW_COOLDOWN_CATEGORIES=<table>
+ BAR_BG_ALPHA_DEFAULT=0.500000
+ MIN_FRAME_WIDTH=180
+ MIN_FRAME_HEIGHT=44
+ SETTING_RANGES=<table>
+ profile_manager=<table>
+ frames_list=<table>
+ _test_preview_paused_times=<table>
+ _test_preview_started=<table>
+ DEFAULT_SHORT_THRESHOLD=60
+ CUSTOM_AURA_MODIFIERS=<table>
+ CUSTOM_AURA_BASE_FILTERS=<table>
+ _test_preview_time_offsets=<table>
+ AURA_TIMER_EPSILON=0.000001
+ SHARED_COLOR_COLUMNS=<table>
+ MAX_VISIBLE_ICON_TICK=0.200000
+ VISIBLE_ICON_TICK_STEP=0.050000
+ DEFAULT_FRAME_WIDTH=200
+ UPDATE_INTERVALS=<table>
+ _managed_aura_runtime_enabled=true
+ WOW_COOLDOWN_OOC_ALPHA_STEP=0.050000
+ MIN_WOW_COOLDOWN_OOC_ALPHA=0
+ CUSTOM_FRAME_TEMPLATE=<table>
+ CDM_CATEGORIES=<table>
+ MODULE_KEY="aura_frames"
+ CATEGORIES=<table>
+ DEFAULT_OOC_FADE_DELAY=2
+}

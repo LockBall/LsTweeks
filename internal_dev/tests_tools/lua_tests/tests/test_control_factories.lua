@@ -20,6 +20,26 @@ h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
 h.load_file("functions/dropdown.lua")
+h.load_file("functions/growth_direction.lua")
+
+h.test("growth direction factory shares canonical metadata and control options", function()
+    h.eq(addon.GetGrowthDirection("LEFT").anchor, "TOPRIGHT", "LEFT resolves its canonical anchor")
+    h.eq(addon.GetGrowthDirection("UP").vertical_direction, "UP", "UP resolves its canonical flow")
+    h.eq(addon.GetGrowthDirection("invalid").value, "DOWN", "unknown directions fall back to DOWN")
+
+    local selected = "RIGHT"
+    local vertical_only = false
+    local control = addon.CreateGrowthDirectionDropdown("GrowthDirectionFactoryTest", UIParent, {
+        get_value = function() return selected end,
+        on_select = function(value) selected = value end,
+        vertical_only = function() return vertical_only end,
+    })
+    h.eq(control:GetValue(), "RIGHT", "growth dropdown reads the shared selected value")
+    h.eq(control:GetVisibleOptionCount(), 4, "normal growth dropdown exposes all four directions")
+    vertical_only = true
+    control:RefreshOptions()
+    h.eq(control:GetVisibleOptionCount(), 2, "vertical-only growth dropdown exposes only DOWN and UP")
+end)
 
 h.test("play pause button swaps native texture states", function()
     local button = addon.CreatePlayPauseButton(UIParent, nil)

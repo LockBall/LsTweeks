@@ -655,17 +655,6 @@ function M.apply_tooltip_panel_backdrop(frame, r, g, b, a, br, bg, bb, ba)
     if br then frame:SetBackdropBorderColor(br, bg, bb, ba or 1) end
 end
 
-function M.apply_title_bar_backdrop(frame)
-    if not frame then return end
-    frame:SetBackdrop({
-        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-        tile = true, tileSize = 12, edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
-    })
-    frame:SetBackdropColor(0.2, 0.2, 0.2, 1)
-end
-
 function M.apply_thin_border_backdrop(frame, bg_color, border_color)
     if not frame then return end
     frame:SetBackdrop({

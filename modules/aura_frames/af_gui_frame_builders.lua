@@ -479,20 +479,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
 
     if options.sync_on_drag_stop then
         local f = M.frames[frame_show_key]
-        if f then
-            for _, tb in ipairs({ f.title_bar, f.bottom_title_bar }) do
-                if tb then
-                    tb._lstweeks_sync_xy_sliders = sync_xy_sliders_to_frame
-                    if not tb._lstweeks_sync_xy_sliders_hooked then
-                        tb._lstweeks_sync_xy_sliders_hooked = true
-                        tb:HookScript("OnDragStop", function(self)
-                            if self._lstweeks_sync_xy_sliders then
-                                self._lstweeks_sync_xy_sliders()
-                            end
-                        end)
-                    end
-                end
-            end
+        local handle = f and f.move_handle
+        if handle then
+            handle._lstweeks_sync_xy_sliders = sync_xy_sliders_to_frame
         end
     end
 
@@ -523,7 +512,7 @@ function M.build_general_tab(p)
     local enable_blizz_buffs_container = addon.CreateCheckbox(enable_panel, "Buff", M.db.enable_blizz_buffs,
         function(is_checked)
             M.db.enable_blizz_buffs = is_checked
-            M.toggle_blizz_buffs(not is_checked)
+            M.set_blizz_buffs_enabled(is_checked)
         end
     )
     enable_blizz_buffs_container:SetPoint("CENTER", enable_panel, "CENTER", -40, -5)
@@ -536,7 +525,7 @@ function M.build_general_tab(p)
         M.db.enable_blizz_debuffs,
         function(is_checked)
             M.db.enable_blizz_debuffs = is_checked
-            M.toggle_blizz_debuffs(not is_checked)
+            M.set_blizz_debuffs_enabled(is_checked)
         end
     )
     enable_blizz_debuffs_container:SetPoint("CENTER", enable_panel, "CENTER", 35, -5)
@@ -640,11 +629,8 @@ function M.update_custom_frame_title(entry)
     if not (entry and entry.id and M.frames) then return end
     local frame = M.frames["show_" .. entry.id]
     if not frame then return end
-    if frame.title_bar and frame.title_bar.label_text then
-        frame.title_bar.label_text:SetText(entry.name or entry.id)
-    end
-    if frame.bottom_title_bar and frame.bottom_title_bar.label_text then
-        frame.bottom_title_bar.label_text:SetText(entry.name or entry.id)
+    if frame.move_handle then
+        frame.move_handle.title = entry.name or entry.id
     end
     if M.rebuild_shared_background_color_group then
         M.rebuild_shared_background_color_group()
@@ -683,21 +669,20 @@ local function create_frame_name_control(parent, entry)
     return name_container
 end
 
-local function create_growth_dropdown(parent, frame_config, update)
+local function create_growth_dropdown(parent, frame_config, update, vertical_only)
     local id = frame_config.id
-    local options = {}
-    for _, dir in ipairs({ "RIGHT", "LEFT", "DOWN", "UP" }) do
-        options[#options + 1] = { value = dir, text = dir }
-    end
-    return addon.CreateDropdown(addon_name .. id .. "Growth", parent, "Growth Direction", options, {
+    return addon.CreateGrowthDirectionDropdown(addon_name .. id .. "Growth", parent, {
         width = 106,
         get_value = function()
-            return frame_config.value_table[frame_setting_key(frame_config, "growth")] or "DOWN"
+            return addon.GetGrowthDirection(
+                frame_config.value_table[frame_setting_key(frame_config, "growth")]
+            ).value
         end,
         on_select = function(value)
             frame_config.value_table[frame_setting_key(frame_config, "growth")] = value
             update()
         end,
+        vertical_only = vertical_only,
     })
 end
 
@@ -899,6 +884,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:place_at(fade_length_slider, 4, 4)
 
     local timer_swipe_container
+    local growth_dropdown
+    local function refresh_growth_control()
+        if not growth_dropdown then return end
+        local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
+        local growth_key = frame_setting_key(frame_config, "growth")
+        local growth = addon.GetGrowthDirection(value_table[growth_key])
+        if bar_mode_enabled and not growth.vertical then
+            value_table[growth_key] = "DOWN"
+            growth_dropdown:SetValue("DOWN")
+        end
+        growth_dropdown:RefreshOptions()
+    end
     local function refresh_timer_swipe_control()
         if not timer_swipe_container then return end
         local bar_mode_enabled = value_table[frame_setting_key(frame_config, "bar_mode")] == true
@@ -917,6 +914,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
 
     local bar_mode_container = bound_cb("Bar Mode", "bar_mode", 3, 1, function()
         refresh_timer_swipe_control()
+        refresh_growth_control()
         update()
     end)
     if has_timer_controls then
@@ -926,7 +924,10 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         refresh_timer_swipe_control()
     end
 
-    local growth_dropdown = create_growth_dropdown(parent, frame_config, update)
+    growth_dropdown = create_growth_dropdown(parent, frame_config, update, function()
+        return value_table[frame_setting_key(frame_config, "bar_mode")] == true
+    end)
+    refresh_growth_control()
     grid:stack_below(growth_dropdown, timer_swipe_container or bar_mode_container, { y = -25 })
 
     local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)

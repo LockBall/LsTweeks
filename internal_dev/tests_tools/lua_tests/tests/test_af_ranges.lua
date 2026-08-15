@@ -380,9 +380,36 @@ h.test("disabled preset frame starts hidden before its first event", function()
     )
 
     h.eq(frame:IsShown(), false, "disabled frame shell is hidden at creation")
-    h.eq(frame.title_bar:IsShown(), false, "disabled frame title is hidden with shell")
-    h.eq(frame.bottom_title_bar:IsShown(), false, "disabled frame bottom title is hidden with shell")
+    h.eq(frame.move_handle:IsShown(), false, "disabled frame move handle is hidden with shell")
     h.eq(frame.resizer:IsShown(), false, "disabled frame resizer is hidden with shell")
+end)
+
+h.test("move mode uses an inward border mover without changing aura layout", function()
+    local M = load_aura_frames()
+    M.db = { max_icons = 1, width_long = 120 }
+    local frame = M.create_aura_frame(
+        "show_long", "move_long", "timer_long", "bg_long",
+        "scale_long", "spacing_long", "Long", false
+    )
+
+    M.update_aura_frame_move_controls(frame, true)
+    M.setup_layout(frame, "show_long", "spacing_long", false)
+    h.eq(#frame.move_handle.hit_areas, 4, "border mover exposes four inward edge hit areas")
+    for _, edge in ipairs(frame.move_handle.hit_areas) do
+        h.ok(edge:GetScript("OnEnter"), "each border edge owns the title tooltip entry path")
+        h.ok(edge:GetScript("OnDragStart"), "each border edge starts the shared frame drag path")
+        h.ok(edge:GetScript("OnDragStop"), "each border edge stops the shared frame drag path")
+    end
+    h.eq(frame._layout_cache.move_mode, nil, "Move Mode does not alter aura layout state")
+
+    local _, resize_relative_to, resize_relative_point = frame.resizer:GetPoint(1)
+    h.eq(resize_relative_to, frame, "resize grip remains on the safe addon frame shell")
+    h.eq(resize_relative_point, "BOTTOMRIGHT", "resize grip overlays the border corner")
+
+    h.eq(frame.bottom_title_bar, nil, "aura frames no longer create a second drag handle")
+    M.update_aura_frame_move_controls(frame, false)
+    h.eq(frame.move_handle:IsShown(), false, "leaving move mode hides the mover border")
+    h.eq(frame.resizer:IsShown(), false, "leaving move mode hides the resize handle")
 end)
 
 h.test("combat background switches pre-sized Aura frame variants without geometry writes", function()

@@ -15,33 +15,6 @@ local InCombatLockdown = InCombatLockdown
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
-local GROWTH_LAYOUT = {
-    UP = {
-        vertical = true,
-        grows_up = true,
-        bar_anchor = "BOTTOMLEFT",
-        icon_anchor = "BOTTOMLEFT",
-    },
-    DOWN = {
-        vertical = true,
-        bar_anchor = "TOPLEFT",
-        icon_anchor = "TOPLEFT",
-    },
-    LEFT = {
-        vertical = false,
-        bar_anchor = "TOPLEFT",
-        icon_anchor = "TOPRIGHT",
-        x_sign = -1,
-    },
-    RIGHT = {
-        vertical = false,
-        bar_anchor = "TOPLEFT",
-        icon_anchor = "TOPLEFT",
-        x_sign = 1,
-    },
-}
-
-local DEFAULT_GROWTH_LAYOUT = GROWTH_LAYOUT.DOWN
 local BAR_ROW_HEIGHT = 18
 local ICON_SIZE = 32
 local MIN_TIMER_SLOT_WIDTH = 36
@@ -114,7 +87,8 @@ function M.get_aura_frame_height(layout, display_count, bar_mode, spacing, layou
     end
 
     local row_height = icon_size + spacing + timer_height
-    if has_layout and (layout.growth == "DOWN" or layout.growth == "UP") then
+    local growth_layout = layout.growth_layout or addon.GetGrowthDirection(layout.growth)
+    if has_layout and growth_layout.vertical then
         return display_count * row_height - spacing + bottom_padding
     end
     if has_layout and layout.icons_per_row then
@@ -152,13 +126,14 @@ function M.set_height_for_growth(self, new_height, growth)
     local p = tostring(point or "")
     local is_top    = p:find("TOP",    1, true) ~= nil
     local is_bottom = p:find("BOTTOM", 1, true) ~= nil
-    if growth == "DOWN" then
+    local growth_layout = addon.GetGrowthDirection(growth)
+    if growth_layout.vertical and not growth_layout.grows_up then
         if is_bottom then
             y = y - delta
         elseif not is_top then
             y = y - (delta * 0.5)
         end
-    elseif growth == "UP" then
+    elseif growth_layout.grows_up then
         if is_top then
             y = y + delta
         elseif not is_bottom then
@@ -187,7 +162,8 @@ function M.setup_combat_background_variants(self)
     self._combat_background_variants = variants
     self._combat_background_variant_count = max_count
 
-    local anchor = layout.growth == "UP" and "BOTTOMLEFT" or "TOPLEFT"
+    local growth_layout = layout.growth_layout or addon.GetGrowthDirection(layout.growth)
+    local anchor = growth_layout.anchor
     for count = 0, max_count do
         local variant = variants[count + 1]
         if not variant then
@@ -252,26 +228,22 @@ end
 
 --#region LAYOUT ENGINE ========================================================
 
-local function get_growth_layout(growth)
-    return GROWTH_LAYOUT[growth] or DEFAULT_GROWTH_LAYOUT
-end
-
 local function set_bar_icon_position(obj, frame, layout, index, step, inset)
     if layout.grows_up then
-        obj:SetPoint(layout.bar_anchor, frame, layout.bar_anchor, inset, (index - 1) * step + inset)
+        obj:SetPoint(layout.anchor, frame, layout.anchor, inset, (index - 1) * step + inset)
     else
-        obj:SetPoint(layout.bar_anchor, frame, layout.bar_anchor, inset, -((index - 1) * step + inset))
+        obj:SetPoint(layout.anchor, frame, layout.anchor, inset, -((index - 1) * step + inset))
     end
 end
 
 local function set_icon_position(obj, frame, layout, col_idx, row_idx, icon_footprint, row_height, up_offset, icon_inset)
     icon_inset = icon_inset or 6
     if layout.grows_up then
-        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, icon_inset, row_idx * row_height + up_offset)
+        obj:SetPoint(layout.anchor, frame, layout.anchor, icon_inset, row_idx * row_height + up_offset)
     elseif layout.vertical then
-        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor, icon_inset, -(row_idx * row_height + 6))
+        obj:SetPoint(layout.anchor, frame, layout.anchor, icon_inset, -(row_idx * row_height + 6))
     else
-        obj:SetPoint(layout.icon_anchor, frame, layout.icon_anchor,
+        obj:SetPoint(layout.anchor, frame, layout.anchor,
             (layout.x_sign or 1) * (col_idx * icon_footprint + icon_inset),
             -(row_idx * row_height + 6))
     end
@@ -288,7 +260,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     local frame_width = (runtime_config and runtime_config.frame_width) or db["width_"..category] or db["width"] or M.DEFAULT_FRAME_WIDTH
     local spacing = (runtime_config and runtime_config.spacing) or db[spacing_key] or db["spacing"] or 6
     local growth = (runtime_config and runtime_config.growth) or db["growth_"..category] or db["growth"] or "DOWN"
-    local growth_layout = get_growth_layout(growth)
+    local growth_layout = addon.GetGrowthDirection(growth)
 
     local show_timer_text = runtime_config and runtime_config.show_timer_text
     if show_timer_text == nil then

@@ -195,6 +195,13 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
     bg_color = M.resolve_background_color(category, "frame", bg_color)
 
+    local growth_layout = addon.GetGrowthDirection(
+        cfg_db["growth_" .. category] or cfg_db["growth"]
+    )
+    if bar_mode and not growth_layout.vertical then
+        growth_layout = addon.GetGrowthDirection("DOWN")
+    end
+
     cache = {
         bar_mode = bar_mode,
         frame_width = cfg_db["width_" .. category] or cfg_db["width"] or M.DEFAULT_FRAME_WIDTH,
@@ -204,7 +211,7 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
         show_tooltip = M.get_setting(cfg_db, category, "tooltip", true) ~= false,
         cooldown_icon_overlay = cooldown_icon_overlay,
         layout_show_timer_text = show_timer_text and not cooldown_icon_overlay,
-        growth = cfg_db["growth_" .. category] or cfg_db["growth"] or "DOWN",
+        growth = growth_layout.value,
         max_limit = cfg_db["max_icons_" .. category] or cfg_db["max_icons"] or M.MAX_ICONS_LIMIT,
         sort_mode = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil,
         color = {
@@ -478,8 +485,8 @@ end
 
 function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter, info)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
-    if self and self._managed_aura_backend and M.update_managed_debuff_frame then
-        M.update_managed_debuff_frame(self, show_key, move_key)
+    if self and self._managed_aura_backend and M.update_managed_preset_frame then
+        M.update_managed_preset_frame(self, show_key, move_key)
         return
     end
     if not self or not self.icons then return end
@@ -504,9 +511,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         cancel_frame_ooc_fade(self)
         set_alpha_if_changed(self, 1)
         set_shown_if_changed(self, false)
-        set_shown_if_changed(self.title_bar, false)
-        set_shown_if_changed(self.bottom_title_bar, false)
-        set_shown_if_changed(self.resizer, false)
+        M.update_aura_frame_move_controls(self, false)
         if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
         return
     end
@@ -560,18 +565,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         or self._layout_cache.cooldown_icon_overlay ~= cooldown_icon_overlay
         or self._layout_cache.spacing         ~= spacing
         or self._layout_cache.growth          ~= growth
+    M.update_aura_frame_move_controls(self, is_moving)
     if needs_layout and not in_combat and not is_user_positioning then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
-    end
-
-    if is_moving then
-        set_shown_if_changed(self.title_bar, true)
-        set_shown_if_changed(self.bottom_title_bar, true)
-        set_shown_if_changed(self.resizer, true)
-    else
-        set_shown_if_changed(self.title_bar, false)
-        set_shown_if_changed(self.bottom_title_bar, false)
-        set_shown_if_changed(self.resizer, false)
     end
 
     set_shown_if_changed(self, true)
