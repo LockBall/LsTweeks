@@ -5,7 +5,7 @@ local M = addon.objectives
 
 --#region PROFILE SCHEMA =======================================================
 
-local KEYS = { "collapse_all", "collapse_campaign", "collapse_quests", "collapse_achievements", "show_quest_log_count", "show_quest_log_count_on_hover", "show_tracked_achievement_count", "show_tracked_achievement_count_on_hover", "customize_background", "background_color_enabled", "background_color", "background_alpha", "objective_tracker_move_mode", "objective_tracker_snap_to_grid", "objective_tracker_offset_x", "objective_tracker_offset_y" }
+local KEYS = { "collapse_all", "collapse_campaign", "collapse_quests", "collapse_achievements", "show_quest_log_count", "show_quest_log_count_on_hover", "show_tracked_achievement_count", "show_tracked_achievement_count_on_hover", "customize_background", "background_color_enabled", "objective_tracker_border", "background_color", "background_alpha", "objective_tracker_move_mode", "objective_tracker_snap_to_grid", "objective_tracker_offset_x", "objective_tracker_offset_y" }
 local function copy(value)
     if type(value) ~= "table" then return value end
     local out = {}

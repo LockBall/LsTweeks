@@ -827,11 +827,15 @@ local function create_aura_frame_update_params(show_key, move_key, timer_key, bg
     }
 end
 
+local function register_combat_state_events(frame)
+    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+end
+
 local function register_aura_frame_events(frame, category)
     frame:RegisterUnitEvent("UNIT_AURA", "player")
     frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
-    frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    register_combat_state_events(frame)
     frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 
     if M.WOW_COOLDOWN_CATEGORIES[category] then
@@ -902,10 +906,21 @@ local function handle_aura_frame_event(frame, event, unit, info)
     queue_deferred_aura_scan(frame, params)
 end
 
+local function handle_managed_aura_shell_event(frame, event)
+    if M.refresh_frame_fade_for_combat_state then
+        M.refresh_frame_fade_for_combat_state(frame, event == "PLAYER_REGEN_DISABLED")
+    end
+end
+
+local function bind_managed_aura_shell_events(frame)
+    frame:UnregisterAllEvents()
+    register_combat_state_events(frame)
+    frame:SetScript("OnEvent", handle_managed_aura_shell_event)
+end
+
 local function bind_aura_frame_events(frame, category)
     if frame._managed_aura_backend then
-        frame:UnregisterAllEvents()
-        frame:SetScript("OnEvent", nil)
+        bind_managed_aura_shell_events(frame)
         return
     end
     register_aura_frame_events(frame, category)

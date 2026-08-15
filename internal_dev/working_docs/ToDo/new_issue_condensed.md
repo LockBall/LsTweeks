@@ -1,88 +1,41 @@
 # Condensed Lua Errors
 
 - Source: `internal_dev/working_docs/ToDo/new_issue.txt`
-- Parsed records: 2
-- Reported occurrences: 2
+- Parsed records: 1
+- Reported occurrences: 1
 - Unique messages: 1
-- Distinct stack variants: 2
-- Locals: representative excerpts included
+- Distinct stack variants: 1
+- Locals: omitted; consult the source export when needed
 
 
 ## Error 1
 
 ```text
-Button:SetShown(): Cannot be called with secrets due to existing script handlers.
+GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
 ```
 
-- Reported occurrences: 2 across 2 record(s)
-- Stack variants: 2
+- Reported occurrences: 1 across 1 record(s)
+- Stack variants: 1
 - Message origin: unknown
-- Captured: Fri Aug 14 20:20:54 2026
-- Project frames in captured stacks: yes
-- Addons appearing in stacks: Blizzard_AuraContainer, LsTweeks
+- Captured: Fri Aug 14 21:19:41 2026
+- Project frames in captured stacks: none
+- Addons appearing in stacks: Blizzard_MawBuffs, Blizzard_ObjectiveTracker, Blizzard_SharedXML
+
+### Common stack prefix
+
+```text
+[Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ScenarioObjectiveTracker.lua]:187: in function 'LayoutContents'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerModule.lua]:147: in function 'Update'
+[Interface/AddOns/Blizzard_ObjectiveTracker/Blizzard_ObjectiveTrackerContainer.lua]:64: in function <...ectiveTracker/Blizzard_ObjectiveTrackerContainer.lua:49>
+[tail call]: ?
+[tail call]: ?
+[Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua]:341: in function <Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua:340>
+```
 
 ### Stack variants
 
-#### Variant 1: 1x; Fri Aug 14 20:20:54 2026
+#### Variant 1: 1x; Fri Aug 14 21:19:41 2026
 ```text
-[Interface/AddOns/Blizzard_AuraContainer/Blizzard_AuraContainerFrameProviders.lua]:79: in function 'CreateFrame'
-[Interface/AddOns/Blizzard_AuraContainer/Blizzard_AuraContainerFrameProviders.lua]:98: in function 'CreateFrameBatch'
-[Interface/AddOns/Blizzard_AuraContainer/Blizzard_CustomAuraContainer.lua]:301: in function <...zzard_AuraContainer/Blizzard_CustomAuraContainer.lua:283>
-[C]: ?
-[C]: in function 'AddAuraGroup'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed.lua]:143: in function 'add_managed_aura_group'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed_debuff.lua]:64: in function 'create_managed_debuff_backend'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:948: in function 'create_aura_frame'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1112: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1109>
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1134: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1131>
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1310: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1303>
-```
-
-Representative locals:
-```text
-self=<table>{
- parent=<forbidden table>
- accessRestrictions=1
- templateString="CustomAuraButtonTemplate"
- availableFrames=<table>
- activeFrames=<table>
- batchSize=10
- ownedFrames=<table>
-}
-auraFrame=<forbidden table>
-```
-
-#### Variant 2: 1x; Fri Aug 14 20:20:54 2026
-```text
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed.lua]:143: in function 'add_managed_aura_group'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_managed_debuff.lua]:64: in function 'create_managed_debuff_backend'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:948: in function 'create_aura_frame'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1112: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1109>
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1134: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1131>
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:1310: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:1303>
-```
-
-Representative locals:
-```text
-backend=<table>{
- owner=Frame <af_main.lua:919>
- active_aura_button_count=0
- unit="player"
- key="preset:debuff"
- aura_button_activation_count=0
- groups=<table>
- aura_buttons=<table>
- feature_enabled=true
- container=Frame <af_managed.lua:68>
-}
-key="debuffs"
-filter_string="HARMFUL"
-options=<table>{
- maxFrameCount=20
-}
-layout=<table>{
- elementSpacing=1
- layoutIndex=1
- lineSpacing=1
-... 8 more line(s) omitted
+(no caller tail; stack matches the common prefix)
 ```

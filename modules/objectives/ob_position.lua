@@ -22,6 +22,7 @@ local objective_move_original_mouse_enabled = nil
 local objective_header_original_color
 local objective_position_state = "unavailable"
 local objective_position_base
+local objective_position_applied = false
 local objective_drag_state = setmetatable({}, { __mode = "k" })
 
 --#endregion RUNTIME STATE =====================================================
@@ -114,6 +115,18 @@ local function set_objective_center_position(tracker, offset_x, offset_y)
     tracker:SetPoint("CENTER", UIParent, "CENTER", base.center_x + (offset_x or 0), base.center_y + (offset_y or 0))
 end
 
+local function release_objective_position(tracker)
+    local base = objective_position_base
+    if not objective_position_applied or not tracker or not base then return false end
+    if not tracker.ClearAllPoints or not tracker.SetPoint then return false end
+
+    tracker:ClearAllPoints()
+    tracker:SetPoint(base.point, base.relative_to, base.relative_point, base.offset_x, base.offset_y)
+    objective_position_applied = false
+    objective_position_state = "restored"
+    return true
+end
+
 local function apply_objective_position()
     if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
         objective_position_state = "combat_deferred"
@@ -129,6 +142,15 @@ local function apply_objective_position()
         return
     end
 
+    local offset_x = get_objective_offset("x")
+    local offset_y = get_objective_offset("y")
+    if offset_x == 0 and offset_y == 0 then
+        if not release_objective_position(tracker) then
+            objective_position_state = "blizzard_owned"
+        end
+        return
+    end
+
     capture_objective_position_base(tracker)
     local base = objective_position_base
     if not base then
@@ -137,7 +159,8 @@ local function apply_objective_position()
     end
 
     if tracker.ClearAllPoints and tracker.SetPoint then
-        set_objective_center_position(tracker, get_objective_offset("x"), get_objective_offset("y"))
+        set_objective_center_position(tracker, offset_x, offset_y)
+        objective_position_applied = true
         objective_position_state = "applied"
     end
 end
@@ -153,13 +176,8 @@ local function restore_objective_position()
     end
 
     local tracker = get_objective_tracker()
-    local base = objective_position_base
-    if not tracker or not base then return end
-
-    if tracker.ClearAllPoints and tracker.SetPoint then
-        tracker:ClearAllPoints()
-        tracker:SetPoint(base.point, base.relative_to, base.relative_point, base.offset_x, base.offset_y)
-        objective_position_state = "restored"
+    if not release_objective_position(tracker) then
+        objective_position_state = "blizzard_owned"
     end
 end
 M.restore_objective_position = restore_objective_position

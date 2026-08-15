@@ -138,16 +138,19 @@ end
 h.test("disabled border does not create an unused frame", function()
     reset_runtime()
     fresh_db()
+    ObjectiveTrackerFrame.__calls = {}
 
     M.apply_background()
 
     h.is_nil(objective_border_frame(), "disabled border does not create a frame")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("SetPoint") or {}), 0,
+        "zero saved offsets leave Blizzard tracker positioning untouched")
     Ls_Tweeks_DB.objectives.customize_background = true
     M.apply_background()
     h.advance(h.addon.UPDATE_INTERVALS.next_frame)
 end)
 
-h.test("module disable restores objective opacity through Edit Mode", function()
+h.test("module disable leaves Blizzard opacity and tracker updates untouched", function()
     reset_runtime()
     fresh_db({ customize_background = false })
 
@@ -166,9 +169,25 @@ h.test("module disable restores objective opacity through Edit Mode", function()
 
     h.addon.set_module_enabled("objectives", false)
 
-    h.eq(ObjectiveTrackerManager:GetOpacity(), 100, "module disable restores full live opacity")
-    h.eq(edit_mode_calls()[2].percent, 100, "module disable restores full Edit Mode opacity")
+    h.eq(ObjectiveTrackerManager:GetOpacity(), 0, "module disable does not force Blizzard background opacity")
+    h.eq(#edit_mode_calls(), 1, "module disable writes no Blizzard Edit Mode setting")
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("Update") or {}), 0, "module disable does not call Blizzard tracker Update")
     h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "Edit Mode path skips duplicate manager writes")
+end)
+
+h.test("absent border clears only the legacy automatic position shift", function()
+    reset_runtime()
+    local db = fresh_db({
+        background_color = { r = 0.4, g = 0.3, b = 0.2, a = 0.7 },
+        objective_tracker_offset_x = -12,
+        objective_tracker_offset_y = -5,
+    })
+
+    M.apply_background()
+
+    h.is_nil(objective_border_frame(), "saved color alone does not imply an enabled border")
+    h.eq(db.objective_tracker_offset_x, 0, "absent border clears its legacy automatic X shift")
+    h.eq(db.objective_tracker_offset_y, 0, "absent border clears its legacy automatic Y shift")
 end)
 
 h.test("queued background sync rejects a disabled module before combat deferral", function()

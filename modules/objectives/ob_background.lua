@@ -181,13 +181,7 @@ end
 
 local function is_background_border_enabled()
     local db = M.get_db()
-    if not M.is_runtime_enabled() or not db then return false end
-    if db.objective_tracker_border ~= nil then
-        return db.objective_tracker_border == true
-    end
-
-    local color = db.background_color
-    return not is_background_color_default(color)
+    return M.is_runtime_enabled() and db and db.objective_tracker_border == true or false
 end
 M.is_background_border_enabled = is_background_border_enabled
 
@@ -275,6 +269,18 @@ local function set_background_border_position_offsets()
     db.objective_tracker_offset_y = OBJECTIVE_TRACKER_AUTO_SHIFT_Y
 end
 M.set_background_border_position_offsets = set_background_border_position_offsets
+
+local function clear_background_border_position_offsets()
+    local db = M.get_db()
+    if not db then return end
+    if db.objective_tracker_offset_x ~= OBJECTIVE_TRACKER_AUTO_SHIFT_X
+        or db.objective_tracker_offset_y ~= OBJECTIVE_TRACKER_AUTO_SHIFT_Y then
+        return
+    end
+
+    db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x or 0
+    db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y or 0
+end
 
 local function get_background_aware_position_default(key)
     if is_background_border_enabled() then
@@ -597,28 +603,6 @@ local function apply_configured_background_color(force)
         r, g, b, a = get_background_color_values()
     end
     apply_background_color(r, g, b, a, force, opacity, show_color_background)
-end
-
-local function restore_background_color()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
-        background_color_state = "combat_restore_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
-        return
-    end
-
-    background_regions_reset = false
-    apply_background_color(
-        DEFAULT_BACKGROUND_COLOR.r,
-        DEFAULT_BACKGROUND_COLOR.g,
-        DEFAULT_BACKGROUND_COLOR.b,
-        DEFAULT_BACKGROUND_COLOR.a,
-        true,
-        1,
-        false,
-        true
-    )
 end
 
 --#endregion COLOR AND OPACITY =================================================
@@ -970,6 +954,9 @@ function M.apply_background()
         return
     end
 
+    if not is_background_border_enabled() then
+        clear_background_border_position_offsets()
+    end
     if M.apply_objective_position then
         M.apply_objective_position()
     end
@@ -981,7 +968,6 @@ function M.apply_background()
 end
 
 function M.restore_background()
-    local tracker = get_objective_tracker()
     if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
         background_last_state = "combat_restore_deferred"
         if M.restore_objective_move_mode then
@@ -1007,10 +993,17 @@ function M.restore_background()
     end
     objective_border_anchor = nil
     objective_border_shown = nil
-    restore_background_color()
-    if tracker and tracker.Update then
-        tracker:Update()
+
+    local tracker = get_objective_tracker()
+    local background = tracker and tracker.NineSlice
+    local overlay_frame = background and background._lstweeks_center_color_overlay_frame
+    if overlay_frame then
+        overlay_frame:Hide()
     end
+    background_color_overlay_anchor = nil
+    background_last_overlay_enabled = false
+    background_color_state = "module_disabled"
+    background_edit_mode_state = "blizzard_owned"
 end
 
 --#endregion PUBLIC API ========================================================
@@ -1103,12 +1096,14 @@ local function set_objective_border(enabled)
     db.objective_tracker_border = enabled == true
     if enabled == true then
         set_background_border_position_offsets()
-        if M.apply_objective_position then
-            M.apply_objective_position()
-        end
-        if M.sync_objective_position_sliders then
-            M.sync_objective_position_sliders()
-        end
+    else
+        clear_background_border_position_offsets()
+    end
+    if M.apply_objective_position then
+        M.apply_objective_position()
+    end
+    if M.sync_objective_position_sliders then
+        M.sync_objective_position_sliders()
     end
     sync_objective_border()
 end

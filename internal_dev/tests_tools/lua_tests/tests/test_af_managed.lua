@@ -18,8 +18,8 @@ C_XMLUtil = {
 }
 
 AnchorUtil = {
-    FlowLayoutAxis = { Horizontal = 1 },
-    FlowDirection = { Right = 2, Down = 3 },
+    FlowLayoutAxis = { Horizontal = 1, Vertical = 2 },
+    FlowDirection = { Right = 2, Down = 3, Up = 4 },
 }
 
 CreateFrame = function(kind, name, parent, template)
@@ -72,11 +72,23 @@ CreateFrame = function(kind, name, parent, template)
 
         for index = 1, options.maxFrameCount do
             local aura_button = base_create_frame("AuraButton", nil, self, "CustomAuraButtonTemplate")
-            function aura_button:SetMouseMotionEnabled(enabled)
-                self.__mouse_motion_enabled = enabled == true
-            end
             function aura_button:SetHideTooltipInCombat(enabled)
                 self.__hide_tooltip_in_combat = enabled == true
+            end
+            function aura_button:SetSpellName(region)
+                self.__spell_name_region = region
+            end
+            function aura_button:SetDurationText(region, binding_options)
+                self.__duration_text_region = region
+                self.__duration_text_options = binding_options
+            end
+            function aura_button:SetApplicationCount(region, binding_options)
+                self.__application_count_region = region
+                self.__application_count_options = binding_options
+            end
+            function aura_button:SetDurationBar(region, binding_options)
+                self.__duration_bar_region = region
+                self.__duration_bar_options = binding_options
             end
             aura_button.__managed_group_key = key
             options.initializeFrame(aura_button)
@@ -119,6 +131,12 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
             move_debuff = false,
             max_icons_debuff = 2,
             width_debuff = 120,
+            bar_mode_debuff = true,
+            growth_debuff = "UP",
+            fade_ooc_debuff = true,
+            ooc_alpha_debuff = 0.35,
+            fade_delay_debuff = 0,
+            fade_length_debuff = 0,
         },
     })
 
@@ -130,22 +148,30 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.eq(backend.container.__groups.debuffs.options.maxFrameCount, 2, "Debuff pool uses saved maximum")
     h.eq(backend.container.__width, 1, "managed container starts at its auto-layout seed width")
     h.eq(backend.container.__height, 1, "managed container starts at its auto-layout seed height")
-    h.eq(backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Horizontal,
-        "Debuff container lays out horizontally")
-    h.eq(backend.container.__flow_anchor, "TOPLEFT", "Debuff flow starts at the frame corner")
+    h.eq(backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
+        "bar-mode Debuffs lay out vertically")
+    h.eq(backend.container.__flow_anchor, "BOTTOMLEFT", "upward Debuff flow starts at the bottom corner")
     h.eq(backend.container.__flow_growth[1], AnchorUtil.FlowDirection.Right,
-        "Debuff icons grow right")
-    h.eq(backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Down,
-        "Debuff rows grow down")
-    h.eq(backend.container.__flow_line_size, 120, "Debuff flow wraps at the saved frame width")
+        "additional Debuff columns grow right")
+    h.eq(backend.container.__flow_growth[2], AnchorUtil.FlowDirection.Up,
+        "Debuff rows grow up")
+    h.eq(backend.container.__flow_line_size, 38, "Debuff flow reserves one vertical line for every row")
     h.eq(backend.container.__groups.debuffs.layout.elementSpacing, 1,
         "Debuff group receives explicit element spacing")
     h.eq(frame.icons, nil, "managed Debuff frame creates no legacy icon pool")
-    h.eq(frame:GetScript("OnEvent"), nil, "managed Debuff frame owns no Aura event handler")
+    h.ok(frame:GetScript("OnEvent"), "managed Debuff shell owns its combat-state handler")
     h.eq(frame.__events.UNIT_AURA, nil, "managed Debuff frame does not register UNIT_AURA")
+    h.eq(frame.__events.PLAYER_REGEN_DISABLED, true, "managed Debuff shell watches combat entry")
+    h.eq(frame.__events.PLAYER_REGEN_ENABLED, true, "managed Debuff shell watches combat exit")
 
     for _, aura_button in ipairs(backend.container.__groups.debuffs.buttons) do
+        h.eq(aura_button.__width, 108, "managed Debuff bar uses the saved inner frame width")
+        h.eq(aura_button.__height, 18, "managed Debuff bar uses the legacy row height")
         h.eq(#(aura_button:GetCalls("SetIcon") or {}), 1, "managed Debuff AuraButton binds one native icon")
+        h.ok(aura_button.__spell_name_region, "managed Debuff AuraButton binds native spell text")
+        h.ok(aura_button.__duration_text_region, "managed Debuff AuraButton binds native duration text")
+        h.ok(aura_button.__application_count_region, "managed Debuff AuraButton binds native stack text")
+        h.ok(aura_button.__duration_bar_region, "managed Debuff AuraButton binds a native duration bar")
         h.eq(aura_button.__mouse_motion_enabled, true, "managed Debuff AuraButton enables native hover")
         h.eq(aura_button.__hide_tooltip_in_combat, true,
             "managed Debuff AuraButton hides its native tooltip in combat")
@@ -153,6 +179,11 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
 
     h.ok(frame:IsShown(), "runtime startup shows the enabled managed Debuff shell")
     h.eq(frame.title_bar:IsShown(), false, "move controls follow saved off state")
+    h.eq(frame:GetAlpha(), 0.35, "managed Debuff shell applies its saved out-of-combat alpha")
+    h.fire_event("PLAYER_REGEN_DISABLED")
+    h.eq(frame:GetAlpha(), 1, "combat-entry event makes the managed Debuff shell fully visible")
+    h.fire_event("PLAYER_REGEN_ENABLED")
+    h.eq(frame:GetAlpha(), 0.35, "combat-exit event restores the managed Debuff shell OOC alpha")
     M.set_managed_aura_runtime_enabled(false)
 end)
 

@@ -129,7 +129,8 @@ permanence from secret timing values.
 
 **Assessment:** Fully preservable after a backend rewrite.
 
-**Status:** AF12-05.1 implemented; awaiting repeat in-game verification. The
+**Status:** AF12-05.1 transport verified in game; AF12-05.2 native bar
+presentation implemented and awaiting in-game verification. The
 first live checks exposed two framework requirements: a shown `AuraContainer`
 does not process Auras until `SetEnabled(true)` is also applied, and its
 auto-sizing flow layout must be seeded from one corner rather than stretched
@@ -139,19 +140,32 @@ axis, anchor, growth, wrap width, and group spacing. Regressions cover both
 contracts. The current slice creates one managed `HARMFUL` group with native
 icon binding, removes the Debuff frame from legacy `UNIT_AURA` handling and
 indexed scanning, and preserves basic frame/module enable state.
-Layout, stacks, duration, bars, appearance, combat-tooltip policy, fade,
-previews, and full settings parity remain later increments.
+Appearance parity, icon-mode duration presentation, previews, live
+presentation switching, and full settings parity remain
+later increments.
 
 The first visible managed result was an icon-only cell even though Debuffs was
-configured for bar mode, and its artwork did not match the expected debuff.
-Bar-mode parity is a separate presentation increment and must use native
-`SetSpellName`, duration, application-count, and duration-bar bindings. Before
-building that row, the native AuraButton tooltip is enabled out of combat and
-hidden in combat so Blizzard can identify what it actually bound without any
-addon AuraData inspection.
+configured for bar mode. Native tooltip verification proved that Blizzard had
+matched Forbearance and bound its correct, unfamiliar-looking icon. AF12-05.2
+now honors saved bar mode with the legacy 18px row geometry and native
+`SetIcon`, `SetSpellName`, `SetDurationText`, `SetApplicationCount`, and
+`SetDurationBar` sinks. The container uses vertical flow and the saved UP/DOWN
+direction; every widget is created during `initializeFrame`. Native tooltips
+remain enabled out of combat and hidden in combat.
+
+The first native-bar combat check exposed a separate shell regression: the
+bar retained its faded out-of-combat alpha after combat began. Removing all
+legacy frame events had also removed the presentation-only combat transition.
+Managed parent shells now register only `PLAYER_REGEN_DISABLED/ENABLED` and
+route both through the existing OOC-fade helper with the explicit state carried
+by the event. The first attempt discarded that state and immediately queried
+`InCombatLockdown()`, which passed the desktop test but left the live bar faded;
+the regression now fires the transition events without pre-changing the stub's
+combat flag. Managed shells still have no `UNIT_AURA` handler and perform no
+Aura scan.
 
 The existing Test Aura preview is still a legacy-icon capability and does not
-render in AF12-05.1. A managed-safe synthetic preview must be implemented as a
+render in the managed Debuff path. A managed-safe synthetic preview must be implemented as a
 separate increment; its absence cannot be used to test live AuraContainer
 discovery.
 

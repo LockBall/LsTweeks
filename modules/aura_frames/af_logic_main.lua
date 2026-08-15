@@ -355,7 +355,7 @@ local function apply_ooc_fade(frame, enabled, is_moving, in_combat, target_alpha
     end
 end
 
-function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
+local function refresh_frame_ooc_fade_for_state(frame, in_combat, activity, cfg_db)
     if not frame then return end
     local params = frame.update_params
     cfg_db = cfg_db or M.get_frame_config_db(frame)
@@ -385,11 +385,20 @@ function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
         frame,
         fade_ooc,
         activity.moving == true,
-        InCombatLockdown and InCombatLockdown(),
+        in_combat == true,
         M.get_setting(cfg_db, category, "ooc_alpha", M.DEFAULT_WOW_COOLDOWN_OOC_ALPHA),
         M.get_setting(cfg_db, category, "fade_delay", M.DEFAULT_OOC_FADE_DELAY),
         M.get_setting(cfg_db, category, "fade_length", M.DEFAULT_OOC_FADE_LENGTH)
     )
+end
+
+function M.refresh_frame_ooc_fade(frame, activity, cfg_db)
+    local in_combat = InCombatLockdown and InCombatLockdown()
+    refresh_frame_ooc_fade_for_state(frame, in_combat, activity, cfg_db)
+end
+
+function M.refresh_frame_fade_for_combat_state(frame, in_combat)
+    refresh_frame_ooc_fade_for_state(frame, in_combat == true)
 end
 
 function M.set_aura_frame_hovered(frame, hovered)

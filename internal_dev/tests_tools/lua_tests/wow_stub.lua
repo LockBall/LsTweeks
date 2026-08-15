@@ -455,7 +455,10 @@ function frame_methods:GetBackdrop() return nil end
 function frame_methods:ApplyBackdrop() end
 function frame_methods:SetClipsChildren() end
 function frame_methods:SetMouseClickEnabled() end
-function frame_methods:SetMouseMotionEnabled() end
+function frame_methods:SetMouseMotionEnabled(enabled)
+    self.__mouse_motion_enabled = enabled == true
+    record(self, "SetMouseMotionEnabled", enabled)
+end
 function frame_methods:SetFlattensRenderLayers() end
 function frame_methods:DesaturateHierarchy() end
 function frame_methods:SetDontSavePosition() end
