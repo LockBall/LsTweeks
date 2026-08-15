@@ -22,8 +22,6 @@ local edit_mode_test_calls = {}
 ---@class TestObjectiveTrackerNineSlice : ObjectiveTrackerContainerTemplate_NineSlice
 ---@field __calls table<string, table[]>
 ---@field Center Texture?
----@field _lstweeks_center_color_overlay TestTexture?
----@field _lstweeks_center_color_overlay_frame TestFrame?
 
 ---@class TestFrame : Frame
 ---@field GetCalls fun(self: TestFrame, method: string): table[]?
@@ -135,6 +133,17 @@ local function objective_border_frame()
     return nil
 end
 
+local function background_color_overlay()
+    for _, child in ipairs({ ObjectiveTrackerFrame:GetChildren() }) do
+        for _, region in ipairs({ child:GetRegions() }) do
+            if region.GetCalls and #(region:GetCalls("SetTexture") or {}) > 0 then
+                return child, region
+            end
+        end
+    end
+    return nil, nil
+end
+
 h.test("disabled border does not create an unused frame", function()
     reset_runtime()
     fresh_db()
@@ -173,6 +182,21 @@ h.test("module disable leaves Blizzard opacity and tracker updates untouched", f
     h.eq(#edit_mode_calls(), 1, "module disable writes no Blizzard Edit Mode setting")
     h.eq(#(ObjectiveTrackerFrame:GetCalls("Update") or {}), 0, "module disable does not call Blizzard tracker Update")
     h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "Edit Mode path skips duplicate manager writes")
+end)
+
+h.test("WoW background toggle never invokes Blizzard tracker Update", function()
+    reset_runtime()
+    fresh_db({ customize_background = false })
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildBackgroundSettings(parent)
+    ObjectiveTrackerFrame.__calls = {}
+
+    local control = M.controls.customize_background_checkbox
+    control.checkbox:SetChecked(true)
+    control.checkbox:Click()
+
+    h.eq(#(ObjectiveTrackerFrame:GetCalls("Update") or {}), 0,
+        "owned background refresh does not execute Blizzard tracker Update")
 end)
 
 h.test("absent border clears only the legacy automatic position shift", function()
@@ -293,7 +317,8 @@ h.test("background color picker live preview is debounced", function()
 
     color_button:Click()
     h.ok(ColorPickerFrame.__opts and ColorPickerFrame.__opts.swatchFunc, "picker opened")
-    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "overlay created on open")
+    local _, overlay = background_color_overlay()
+    overlay = assert(overlay, "overlay created on open")
     local vertex_calls = #(overlay:GetCalls("SetVertexColor") or {})
 
     ColorPickerFrame.__r = 0.8
@@ -371,7 +396,8 @@ h.test("background color sync skips unchanged overlay writes", function()
     })
 
     M.apply_background()
-    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "color overlay created")
+    local _, overlay = background_color_overlay()
+    overlay = assert(overlay, "color overlay created")
     h.ok(
         tContains(M.get_background_status(), "bg_color_signature=0.31:0.41:0.51:0.61:bg_alpha=0:color_alpha=0.61:overlay=true"),
         "status keeps the background color signature"
@@ -400,13 +426,13 @@ h.test("shared color override changes RGB without enabling the custom background
 
     fresh_db({ background_color_enabled = true })
     M.on_background_color_sync_changed()
-    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "color overlay created")
+    local overlay_frame, overlay = background_color_overlay()
+    overlay = assert(overlay, "color overlay created")
     local calls = overlay:GetCalls("SetVertexColor") or {}
     local applied = calls[#calls]
 
     fresh_db({ background_color_enabled = false })
     M.on_background_color_sync_changed()
-    local overlay_frame = nine_slice._lstweeks_center_color_overlay_frame
     local hidden_when_local_off = overlay_frame and not overlay_frame:IsShown()
     addon.all_the_colors = original_sync
 
@@ -426,8 +452,13 @@ h.test("background color overlay renders behind Blizzard line art", function()
 
     M.apply_background()
 
-    local overlay_frame = assert(nine_slice._lstweeks_center_color_overlay_frame, "overlay frame created")
-    local overlay = assert(nine_slice._lstweeks_center_color_overlay, "overlay texture created")
+    local overlay_frame, overlay = background_color_overlay()
+    overlay_frame = assert(overlay_frame, "overlay frame created")
+    overlay = assert(overlay, "overlay texture created")
+    h.is_nil(rawget(nine_slice, "_lstweeks_center_color_overlay_frame"),
+        "custom background stores no frame metadata on Blizzard NineSlice")
+    h.is_nil(rawget(nine_slice, "_lstweeks_center_color_overlay"),
+        "custom background stores no texture metadata on Blizzard NineSlice")
     h.eq(overlay_frame:GetParent(), ObjectiveTrackerFrame, "overlay frame stays independent of NineSlice alpha")
     h.ok(
         overlay_frame:GetFrameLevel() < nine_slice:GetFrameLevel(),

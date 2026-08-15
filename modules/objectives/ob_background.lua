@@ -82,7 +82,7 @@ local background_last_color_a = nil
 local background_last_overlay_enabled = nil
 local background_alpha_applying = false
 local background_edit_mode_state = "unavailable"
-local background_color_overlay_anchor = nil
+local background_overlay_state = setmetatable({}, { __mode = "k" })
 local background_color_auto_enabled_border = false
 local objective_border_frame
 local objective_border_anchor
@@ -485,9 +485,20 @@ local function set_background_center_fill_visible(background, visible)
     end
 end
 
+local function get_background_overlay_state(background, create)
+    if not background then return nil end
+    local state = background_overlay_state[background]
+    if not state and create then
+        state = {}
+        background_overlay_state[background] = state
+    end
+    return state
+end
+
 local function apply_center_color_overlay(background, r, g, b, a, enabled)
-    local overlay = background and background._lstweeks_center_color_overlay
-    local overlay_frame = background and background._lstweeks_center_color_overlay_frame
+    local state = get_background_overlay_state(background, enabled)
+    local overlay = state and state.overlay
+    local overlay_frame = state and state.frame
     if not enabled then
         set_background_center_fill_visible(background, true)
         if overlay_frame then
@@ -495,7 +506,7 @@ local function apply_center_color_overlay(background, r, g, b, a, enabled)
         elseif overlay then
             overlay:Hide()
         end
-        background_color_overlay_anchor = nil
+        if state then state.anchor = nil end
         return false
     end
 
@@ -510,19 +521,19 @@ local function apply_center_color_overlay(background, r, g, b, a, enabled)
         overlay:SetTexture("Interface\\Buttons\\WHITE8X8")
         overlay:SetVertexColor(1, 1, 1, 1)
         overlay:SetAllPoints(overlay_frame)
-        background._lstweeks_center_color_overlay_frame = overlay_frame
-        background._lstweeks_center_color_overlay = overlay
-        background_color_overlay_anchor = nil
+        state.frame = overlay_frame
+        state.overlay = overlay
+        state.anchor = nil
     end
     sync_center_color_overlay_frame_order(background, overlay_frame)
     set_background_center_fill_visible(background, false)
 
     local anchor = background.Center or background
-    if background_color_overlay_anchor ~= anchor then
+    if state.anchor ~= anchor then
         overlay_frame:ClearAllPoints()
         overlay_frame:SetPoint("TOPLEFT", anchor, "TOPLEFT", COLOR_BLOCK_LEFT_X, COLOR_BLOCK_TOP_Y)
         overlay_frame:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", COLOR_BLOCK_RIGHT_X, COLOR_BLOCK_BOTTOM_Y)
-        background_color_overlay_anchor = anchor
+        state.anchor = anchor
     end
 
     overlay:SetVertexColor(r, g, b, a)
@@ -996,11 +1007,12 @@ function M.restore_background()
 
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
-    local overlay_frame = background and background._lstweeks_center_color_overlay_frame
+    local overlay_state = get_background_overlay_state(background, false)
+    local overlay_frame = overlay_state and overlay_state.frame
     if overlay_frame then
         overlay_frame:Hide()
     end
-    background_color_overlay_anchor = nil
+    if overlay_state then overlay_state.anchor = nil end
     background_last_overlay_enabled = false
     background_color_state = "module_disabled"
     background_edit_mode_state = "blizzard_owned"
@@ -1070,13 +1082,10 @@ local function set_customize_background(enabled)
     db.customize_background = enabled == true
     sync_background_controls()
     apply_configured_background_color(true)
-    local tracker = get_objective_tracker()
     if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
         if M.defer_objectives_combat_update then
             M.defer_objectives_combat_update()
         end
-    elseif tracker and tracker.Update then
-        tracker:Update()
     end
     queue_background_sync("background setting changed")
 end

@@ -59,7 +59,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_smoke_load_all.lua`: loads every TOC file, boots, exercises module toggles, `/lst status`, and 30s of simulated time.
 - `tests/test_pf_fade.lua`: Player Frame fade state machine scenarios (delay/fade/faded, combat interrupts, delayed-combat helper isolation, health gate, slider retargeting, timer-leak check).
 - `tests/test_ob_auto_collapse.lua`: Objectives Auto-Collapse combat deferral, including direct in-combat apply and queued timer recheck before tracker mutation.
-- `tests/test_ob_background.lua`: Objectives background behavior, including explicit border ownership and automatic-position cleanup plus the module-disable boundary that hides owned overlays without writing Blizzard opacity or calling tracker updates.
+- `tests/test_ob_background.lua`: Objectives background behavior, including addon-owned overlay state, explicit border ownership, automatic-position cleanup, and disable/toggle boundaries that avoid direct Blizzard tracker updates.
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
 - `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
