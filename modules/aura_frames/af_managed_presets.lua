@@ -19,12 +19,6 @@ local MOVE_OUTLINE_OVERLAP = 1
 local MOVE_HANDLE_EDGE_THICKNESS = 3
 local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
 local NO_BACKGROUND_INSETS = { left = 0, right = 0, top = 0, bottom = 0 }
-local BAR_BACKGROUND_INSETS = {
-    left = BAR_FRAME_INSET,
-    right = BAR_FRAME_INSET,
-    top = BAR_FRAME_INSET,
-    bottom = BAR_FRAME_INSET,
-}
 local managed_duration_fonts = {}
 local managed_stack_fonts = {}
 
@@ -128,8 +122,27 @@ local function set_managed_bar_width(aura_button, width)
     aura_button:SetWidth(width)
 end
 
-local function initialize_preset_icon(aura_button, cfg_db, category, duration_font, stack_font)
+local function register_frame_background_row(backend, aura_button, mode, index)
+    local background = addon.CreateBackgroundRegion(aura_button)
+    backend.frame_background_rows[aura_button] = {
+        aura_button = aura_button,
+        background = background,
+        mode = mode,
+        index = index,
+    }
+end
+
+local function initialize_preset_icon(
+    aura_button,
+    cfg_db,
+    category,
+    duration_font,
+    stack_font,
+    backend,
+    index
+)
     aura_button:SetSize(ICON_SIZE, ICON_CELL_HEIGHT)
+    register_frame_background_row(backend, aura_button, "icon", index)
 
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(ICON_SIZE, ICON_SIZE)
@@ -162,11 +175,21 @@ local function initialize_preset_icon(aura_button, cfg_db, category, duration_fo
     bind_native_tooltip(aura_button)
 end
 
-local function initialize_preset_bar(aura_button, cfg_db, category, duration_font, stack_font, bar_regions)
+local function initialize_preset_bar(
+    aura_button,
+    cfg_db,
+    category,
+    duration_font,
+    stack_font,
+    bar_regions,
+    backend,
+    index
+)
     local row_width = get_preset_setting(cfg_db, category, "width", M.DEFAULT_FRAME_WIDTH)
         - (BAR_FRAME_INSET * 2)
     aura_button:SetSize(row_width, BAR_ROW_HEIGHT)
     aura_button._lstweeks_width = row_width
+    register_frame_background_row(backend, aura_button, "bar", index)
 
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(BAR_ROW_HEIGHT, BAR_ROW_HEIGHT)
@@ -238,14 +261,39 @@ local function initialize_preset_bar(aura_button, cfg_db, category, duration_fon
     bind_native_tooltip(aura_button)
 end
 
-local function create_preset_initializer(cfg_db, category, bar_mode, duration_font, stack_font, bar_regions)
+local function create_preset_initializer(
+    cfg_db,
+    category,
+    bar_mode,
+    duration_font,
+    stack_font,
+    bar_regions,
+    backend
+)
     if bar_mode == true then
-        return function(aura_button)
-            initialize_preset_bar(aura_button, cfg_db, category, duration_font, stack_font, bar_regions)
+        return function(aura_button, index)
+            initialize_preset_bar(
+                aura_button,
+                cfg_db,
+                category,
+                duration_font,
+                stack_font,
+                bar_regions,
+                backend,
+                index
+            )
         end
     end
-    return function(aura_button)
-        initialize_preset_icon(aura_button, cfg_db, category, duration_font, stack_font)
+    return function(aura_button, index)
+        initialize_preset_icon(
+            aura_button,
+            cfg_db,
+            category,
+            duration_font,
+            stack_font,
+            backend,
+            index
+        )
     end
 end
 
@@ -282,12 +330,106 @@ local function create_container_move_outline(container)
     return outline
 end
 
-local function apply_managed_frame_background(backend, cfg_db, bar_mode)
+local function configure_managed_frame_background(
+    backend,
+    bar_mode,
+    width,
+    spacing,
+    show_timer_text,
+    growth_layout
+)
+    local mode = bar_mode and "bar" or "icon"
+    local cell_height = show_timer_text and ICON_CELL_HEIGHT or ICON_SIZE
+    local signature = table.concat({
+        mode,
+        width,
+        spacing,
+        cell_height,
+        growth_layout.value,
+    }, ":")
+    if backend.frame_background_signature == signature then return end
+    backend.frame_background_signature = signature
+
+    local minimum_height = bar_mode and (BAR_ROW_HEIGHT + (BAR_FRAME_INSET * 2)) or cell_height
+    local anchor = backend.frame_background_anchor
+    anchor:ClearAllPoints()
+    anchor:SetPoint(growth_layout.anchor, backend.owner, growth_layout.anchor)
+    anchor:SetSize(width, minimum_height)
+
+    local icons_per_row = growth_layout.vertical and 1
+        or math.max(1, math.floor((width + spacing) / (ICON_SIZE + spacing)))
+    local grows_up = growth_layout.vertical_direction == "UP"
+    local grows_left = growth_layout.horizontal == "LEFT"
+    for _, record in pairs(backend.frame_background_rows) do
+        local texture = record.background.texture
+        record.extends_background = false
+        texture:ClearAllPoints()
+        if record.mode == mode then
+            if bar_mode and record.index > 1 then
+                record.extends_background = true
+                texture:SetSize(width, BAR_ROW_HEIGHT + spacing)
+                if grows_up then
+                    texture:SetPoint(
+                        "BOTTOMLEFT",
+                        record.aura_button,
+                        "BOTTOMLEFT",
+                        -BAR_FRAME_INSET,
+                        BAR_FRAME_INSET - spacing
+                    )
+                else
+                    texture:SetPoint(
+                        "TOPLEFT",
+                        record.aura_button,
+                        "TOPLEFT",
+                        -BAR_FRAME_INSET,
+                        spacing - BAR_FRAME_INSET
+                    )
+                end
+            elseif not bar_mode
+                and record.index > icons_per_row
+                and ((record.index - 1) % icons_per_row) == 0
+            then
+                record.extends_background = true
+                texture:SetSize(width, cell_height + spacing)
+                local point
+                if grows_up then
+                    point = grows_left and "BOTTOMRIGHT" or "BOTTOMLEFT"
+                    texture:SetPoint(point, record.aura_button, point, 0, -spacing)
+                else
+                    point = grows_left and "TOPRIGHT" or "TOPLEFT"
+                    texture:SetPoint(point, record.aura_button, point, 0, spacing)
+                end
+            end
+        end
+    end
+end
+
+local function apply_managed_frame_background(
+    backend,
+    cfg_db,
+    bar_mode,
+    width,
+    spacing,
+    show_timer_text,
+    growth_layout
+)
     local background = backend and backend.frame_background
     if not (background and M.resolve_frame_background) then return end
 
+    configure_managed_frame_background(
+        backend,
+        bar_mode,
+        width,
+        spacing,
+        show_timer_text,
+        growth_layout
+    )
     local enabled, color = M.resolve_frame_background(cfg_db, backend.category)
-    background:Apply(enabled, color, bar_mode and BAR_BACKGROUND_INSETS or NO_BACKGROUND_INSETS)
+    background:Apply(enabled, color, NO_BACKGROUND_INSETS)
+    for _, record in pairs(backend.frame_background_rows) do
+        record.background:SetColor(color)
+        record.background:SetShown(enabled and record.extends_background)
+    end
 end
 
 local function position_container_move_outline(backend, width, bar_mode, growth_layout)
@@ -392,7 +534,15 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
     position_container_move_outline(backend, width, bar_mode, growth_layout)
-    apply_managed_frame_background(backend, cfg_db, bar_mode)
+    apply_managed_frame_background(
+        backend,
+        cfg_db,
+        bar_mode,
+        width,
+        spacing,
+        show_timer_text,
+        growth_layout
+    )
     local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
@@ -440,7 +590,11 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
     end
     backend.stack_font = stack_font
     backend.bar_regions = {}
-    backend.frame_background = addon.CreateBackgroundRegion(backend.container)
+    backend.frame_background_rows = {}
+    backend.frame_background_anchor = CreateFrame("Frame", nil, frame)
+    backend.frame_background = addon.CreateBackgroundRegion(frame, {
+        anchor_to = backend.frame_background_anchor,
+    })
     backend.move_outline = create_container_move_outline(backend.container)
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",
@@ -464,7 +618,14 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         {
             maxFrameCount = max_frame_count,
             initializeFrame = create_preset_initializer(
-                cfg_db, category, true, duration_font, stack_font, backend.bar_regions),
+                cfg_db,
+                category,
+                true,
+                duration_font,
+                stack_font,
+                backend.bar_regions,
+                backend
+            ),
         },
         bar_layout
     )
@@ -483,7 +644,14 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         {
             maxFrameCount = max_frame_count,
             initializeFrame = create_preset_initializer(
-                cfg_db, category, false, duration_font, stack_font, backend.bar_regions),
+                cfg_db,
+                category,
+                false,
+                duration_font,
+                stack_font,
+                backend.bar_regions,
+                backend
+            ),
         },
         icon_layout
     )

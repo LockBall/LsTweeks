@@ -124,7 +124,7 @@ function M.add_managed_aura_group(backend, key, filter_string, options, layout)
         if initialize_frame then
             -- This callback is the only unconditional write window. Blizzard
             -- applies the AuraButton access constraints after it returns.
-            initialize_frame(aura_button)
+            initialize_frame(aura_button, group.aura_button_count)
         end
     end
 

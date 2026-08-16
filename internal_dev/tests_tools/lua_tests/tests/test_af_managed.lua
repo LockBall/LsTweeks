@@ -162,6 +162,12 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     h.ok(backend, "Debuff frame owns a managed backend")
     h.ok(backend.frame_background, "managed Debuff backend owns its frame background")
     h.ok(backend.frame_background.texture:IsShown(), "enabled Debuff Frame BG is visible")
+    h.eq(backend.frame_background_anchor.__width, M.MIN_FRAME_WIDTH,
+        "empty Debuff background uses the effective configured frame width")
+    h.eq(backend.frame_background_anchor.__height, 30,
+        "empty Debuff background uses one inset bar-row footprint")
+    h.eq(backend.frame_background_anchor:GetPoint(1), "BOTTOMLEFT",
+        "empty Debuff background follows upward growth anchoring")
     local debuff_bg_color = backend.frame_background.texture:GetLastCall("SetColorTexture")
     h.eq(debuff_bg_color[1], 0.1, "managed Debuff Frame BG applies saved red")
     h.eq(debuff_bg_color[2], 0.2, "managed Debuff Frame BG applies saved green")
@@ -172,8 +178,8 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "Debuff bar pool uses the fixed Aura limit")
     h.eq(backend.container.__groups["debuffs:icon"].options.maxFrameCount, M.AURA_FRAME_LIMIT,
         "Debuff icon pool uses the fixed Aura limit")
-    h.eq(backend.container.__width, 1, "managed container starts at its auto-layout seed width")
-    h.eq(backend.container.__height, 1, "managed container starts at its auto-layout seed height")
+    h.eq(backend.container.__width, 1, "managed container retains its auto-layout seed width")
+    h.eq(backend.container.__height, 1, "managed container retains its auto-layout seed height")
     h.eq(backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
         "bar-mode Debuffs lay out vertically")
     h.eq(backend.container.__flow_anchor, "BOTTOMLEFT", "upward Debuff flow starts at the bottom corner")
@@ -203,6 +209,11 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         h.eq(aura_button.__hide_tooltip_in_combat, false,
             "managed Debuff AuraButton allows its native tooltip in combat")
     end
+    local debuff_bar_buttons = backend.container.__groups["debuffs:bar"].buttons
+    h.eq(backend.frame_background_rows[debuff_bar_buttons[1]].background.texture:IsShown(), false,
+        "fixed empty row replaces the first native row background without overlap")
+    h.ok(backend.frame_background_rows[debuff_bar_buttons[2]].background.texture:IsShown(),
+        "later native rows extend the frame background")
 
     h.ok(frame:IsShown(), "runtime startup shows the enabled managed Debuff shell")
     h.eq(frame.move_handle:IsShown(), false, "move controls follow saved off state")
@@ -274,6 +285,9 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
     M.update_managed_preset_frame(buffs_frame, "show_combined", "move_combined")
     h.eq(buffs_backend.frame_background.texture:IsShown(), false,
         "disabling combined Frame BG hides the managed background")
+    local combined_bar_buttons = buffs_backend.container.__groups["buffs:bar"].buttons
+    h.eq(buffs_backend.frame_background_rows[combined_bar_buttons[2]].background.texture:IsShown(), false,
+        "disabling combined Frame BG hides native row extensions")
 
     local color_sync = h.addon.all_the_colors
     M.db.shared_background_color_enabled = true
@@ -514,11 +528,17 @@ h.test("Debuff preset uses one managed HARMFUL group and no legacy Aura events",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     h.eq(buffs_backend.container.__flow_anchor, "TOPRIGHT",
         "Icon Mode restores its remembered LEFT growth")
+    h.eq(buffs_backend.frame_background_anchor.__width, M.MIN_FRAME_WIDTH,
+        "empty Icon Mode background uses the effective configured frame width")
+    h.eq(buffs_backend.frame_background_anchor.__height, 46,
+        "empty Icon Mode background uses one icon-and-timer row")
     M.db.bar_mode_combined = true
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")
     h.eq(buffs_backend.container.__flow_anchor, "BOTTOMLEFT",
         "Bar Mode restores its independently remembered UP growth")
+    h.eq(buffs_backend.frame_background_anchor.__height, 30,
+        "empty Bar Mode background returns to one inset bar-row footprint")
     M.db.bar_mode_combined = false
     M.update_auras(buffs_frame, "show_combined", "move_combined", "timer_combined",
         "bg_combined", "scale_combined", "spacing_combined", "HELPFUL")

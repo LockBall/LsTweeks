@@ -50,6 +50,7 @@ h.test("background region controller follows its parent without geometry reads",
         "unchanged background state performs no color write")
     background:SetShown(false)
     h.eq(background.texture:IsShown(), false, "background controller hides a disabled region")
+
 end)
 
 h.test("font catalog shares role-aware selection across modules", function()

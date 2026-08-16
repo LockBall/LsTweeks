@@ -43,6 +43,7 @@ end
 function addon.CreateBackgroundRegion(parent, opts)
     if not (parent and parent.CreateTexture) then return nil end
     opts = opts or {}
+    local anchor_to = opts.anchor_to or parent
 
     local texture = parent:CreateTexture(
         nil,
@@ -68,8 +69,8 @@ function addon.CreateBackgroundRegion(parent, opts)
         end
         inset_left, inset_right, inset_top, inset_bottom = left, right, top, bottom
         texture:ClearAllPoints()
-        texture:SetPoint("TOPLEFT", parent, "TOPLEFT", -left, top)
-        texture:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", right, -bottom)
+        texture:SetPoint("TOPLEFT", anchor_to, "TOPLEFT", -left, top)
+        texture:SetPoint("BOTTOMRIGHT", anchor_to, "BOTTOMRIGHT", right, -bottom)
     end
 
     function controller:SetColor(color)
