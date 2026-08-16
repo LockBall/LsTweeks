@@ -1,6 +1,6 @@
 -- Managed preset Aura capabilities (combined Buffs and Debuffs).
--- Owns native icon/bar presentation for the combined HELPFUL Buffs frame and
--- the HARMFUL Debuffs frame without reintroducing Aura data reads.
+-- Owns native icon/bar presentation, frame backgrounds, and move outlines for
+-- HELPFUL Buffs and HARMFUL Debuffs without reintroducing Aura data reads.
 
 local addon_name, addon = ...
 
@@ -299,7 +299,7 @@ end
 
 --#endregion MANAGED BUTTON INITIALIZATION =====================================
 
---#region BACKEND CREATION =====================================================
+--#region MANAGED MOVE OUTLINE CREATION ========================================
 
 local function create_container_move_outline(container)
     local outline = {}
@@ -329,6 +329,11 @@ local function create_container_move_outline(container)
     end
     return outline
 end
+
+--#endregion MANAGED MOVE OUTLINE CREATION =====================================
+
+
+--#region MANAGED FRAME BACKGROUNDS ============================================
 
 local function configure_managed_frame_background(
     backend,
@@ -432,6 +437,11 @@ local function apply_managed_frame_background(
     end
 end
 
+--#endregion MANAGED FRAME BACKGROUNDS =========================================
+
+
+--#region MANAGED MOVE OUTLINE =================================================
+
 local function position_container_move_outline(backend, width, bar_mode, growth_layout)
     local outline = backend.move_outline
     if not outline then return end
@@ -504,6 +514,11 @@ function M.update_managed_move_outline_width(frame, width)
     return true
 end
 
+--#endregion MANAGED MOVE OUTLINE ==============================================
+
+
+--#region MANAGED PRESENTATION =================================================
+
 local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
     local bar_mode = get_preset_setting(cfg_db, category, "bar_mode", false) == true
@@ -564,6 +579,11 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     backend.presentation_mode = mode
     backend.presentation_signature = signature
 end
+
+--#endregion MANAGED PRESENTATION ==============================================
+
+
+--#region BACKEND CREATION =====================================================
 
 local function create_managed_preset_backend(frame, cfg_db, category, group_key, filter_string)
     if not (frame and cfg_db and M.create_managed_aura_backend) then return nil end

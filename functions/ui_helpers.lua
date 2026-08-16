@@ -38,8 +38,8 @@ end
 --#region BACKGROUND REGIONS ==================================================
 
 -- Creates one texture-backed background controller whose geometry follows its
--- parent without reading parent dimensions. Callers own color/visibility policy
--- and any combat restrictions imposed by the parent frame.
+-- parent or an optional separate anchor target without reading dimensions.
+-- Callers own color/visibility policy and parent-specific combat restrictions.
 function addon.CreateBackgroundRegion(parent, opts)
     if not (parent and parent.CreateTexture) then return nil end
     opts = opts or {}

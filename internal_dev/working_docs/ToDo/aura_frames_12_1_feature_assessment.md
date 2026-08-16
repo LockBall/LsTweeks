@@ -257,9 +257,11 @@ and protected-duration reads.
 **Status:** Managed bar/icon switching, timer and Stack font/size/bold/color,
 black outlines, fractional font sizes, bar foreground color, and resizing are
 implemented. Frame BG now uses a shared texture-backed controller on the
-auto-sized managed AuraContainer and consumes the same local, Shared BG Colors,
-and All the Colors policy pipeline as legacy frames; this API-safe replacement
-still needs an in-game visual check. Bar
+addon-owned frame shell and consumes the same local, Shared BG Colors, and All
+the Colors policy pipeline as legacy frames. It keeps one configured-width row
+visible when empty and extends through non-overlapping regions whose visibility
+is inherited from native AuraButtons; the complete Bar/Icon and combat matrix
+still needs in-game validation. Bar
 background and non-duration bar text are still initialized from settings and do
 not yet have a complete accessible OOC refresh path.
 

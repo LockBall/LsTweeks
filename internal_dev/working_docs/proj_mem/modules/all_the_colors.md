@@ -13,7 +13,7 @@ Durable ownership and runtime contracts for `modules/all_the_colors/`.
 - Module key: `all_the_colors`; visible category: **All the Colors**.
 - `atc_defaults.lua` owns global policy defaults, the `M.AURA_COLOR_DEFS` schema used by Aura style-override defaults/UI/normalization/profiles, registry state, and the ordered global preset palette. Buff/Debuff bar defaults come from `addon.AURA_BAR_COLOR_DEFAULTS`, shared with Aura Frames.
 - Persisted consumer state is limited to `all_the_colors.consumers.<module_key>.global_enabled` and optional registered `global_groups`; consumer modules own shared/local colors and target selections. Aura Frames uses `global_groups.buffs` and `global_groups.debuffs`.
-- Normalize the global RGBA table and Aura style-override colors here. `ensure_consumer_db()` initializes each registered group from its own declared default; grouped consumers do not inherit the old combined `global_enabled` value.
+- Normalize the global RGBA table and Aura style-override colors here. `ensure_consumer_db()` initializes each registered group directly from its declared default.
 
 
 ## Resolution And Consumers

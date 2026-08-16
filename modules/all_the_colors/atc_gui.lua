@@ -193,11 +193,6 @@ end
 
 --#endregion CONTROL BUILDERS ==================================================
 
---#region GLOBAL CONSUMERS =====================================================
-
---#endregion GLOBAL CONSUMERS ==================================================
-
-
 --#region TAB BUILDERS =========================================================
 
 local function build_global_group(parent)
