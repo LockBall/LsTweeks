@@ -124,7 +124,7 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
         "combat-exit event restores the managed Debuff container OOC alpha")
 
     local long_frame = M.frames.show_long
-    h.eq(long_frame._managed_aura_backend, nil, "Long remains separate from the combined managed capability")
+    h.eq(long_frame._managed_aura_backend, nil, "legacy Long remains separate from the Static / Long managed capability")
     h.ok(long_frame.icons, "Long retains its existing frame implementation")
     h.eq(long_frame.__events.UNIT_AURA, true, "Long retains its existing event route while disabled")
     M.set_managed_aura_runtime_enabled(false)

@@ -51,11 +51,14 @@ end
 h.test("Shared BG Colors tab owns the Aura frame participation matrix", function()
     local parent = CreateFrame("Frame", nil, UIParent)
     parent:SetSize(925, 700)
-    M.db.last_frames_node = "combined"
-    M.db.bar_mode_combined = false
-    M.db.growth_icon_combined = "LEFT"
-    M.db.growth_bar_combined = "UP"
+    M.db.last_frames_node = "static_long"
+    M.db.bar_mode_static_long = false
+    M.db.growth_icon_static_long = "LEFT"
+    M.db.growth_bar_static_long = "UP"
     M.BuildSettings(parent)
+
+    h.ok(M.controls.clear_learned_buffs,
+        "Static / Long Buffs exposes the learned-duration cache control")
 
     h.eq(addon.DEFAULT_FADE_ALPHA, 0.50,
         "one shared Fade Alpha constant owns every module default")
@@ -73,7 +76,7 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.eq(new_custom_entry.ooc_alpha, addon.DEFAULT_FADE_ALPHA,
         "new custom frames use the shared Fade Alpha default")
 
-    local move_control = M.controls.move_combined
+    local move_control = M.controls.move_static_long
     h.ok(move_control.checkbox:GetScript("OnEnter"),
         "Move Mode checkbox exposes its OOC fade behavior")
     move_control.checkbox:GetScript("OnEnter")(move_control.checkbox)
@@ -81,19 +84,19 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
         "Move Mode tooltip explains that it disables OOC Fade")
     move_control.checkbox:GetScript("OnLeave")(move_control.checkbox)
 
-    local bar_mode = M.controls.bar_mode_combined
-    local growth = M.controls.growth_dropdown_combined
-    h.eq(growth:GetValue(), "LEFT", "Combined Buffs opens with its saved Icon Mode growth")
+    local bar_mode = M.controls.bar_mode_static_long
+    local growth = M.controls.growth_dropdown_static_long
+    h.eq(growth:GetValue(), "LEFT", "Static / Long Buffs opens with its saved Icon Mode growth")
     bar_mode.checkbox:SetChecked(true)
     bar_mode.checkbox:Click()
     h.eq(growth:GetValue(), "UP", "Bar Mode restores its independent growth")
-    h.eq(M.db.growth_icon_combined, "LEFT", "Bar Mode does not overwrite Icon Mode growth")
+    h.eq(M.db.growth_icon_static_long, "LEFT", "Bar Mode does not overwrite Icon Mode growth")
     bar_mode.checkbox:SetChecked(false)
     bar_mode.checkbox:Click()
     h.eq(growth:GetValue(), "LEFT", "Icon Mode restores its prior growth after toggling")
 
-    local timer_font = M.controls.timer_number_font_dropdown_combined
-    local timer_bold = M.controls.timer_number_font_bold_combined
+    local timer_font = M.controls.timer_number_font_dropdown_static_long
+    local timer_bold = M.controls.timer_number_font_bold_static_long
     h.ok(timer_bold.checkbox:IsEnabled(), "Source Code Pro enables its available Bold option")
     timer_font.button:Click()
     h.ok(click_open_dropdown_option("Game Default"), "Game Default timer font option is selectable")
@@ -104,7 +107,7 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(click_open_dropdown_option("Source Code Pro"), "Source Code Pro timer font option is selectable")
     h.ok(timer_bold.checkbox:IsEnabled(), "selecting a font with a bold face re-enables Bold")
 
-    local stack_font = M.controls.stack_number_font_dropdown_combined
+    local stack_font = M.controls.stack_number_font_dropdown_static_long
     stack_font.button:Click()
     h.ok(click_open_dropdown_option("Game Default"), "Game Default stack font option is selectable")
     h.eq(stack_font.button:GetFontString():GetFontObject(), NumberFontNormal,
@@ -180,10 +183,10 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     local global_fade_control = color_sync.controls.global_disable_ooc_fade
     h.eq(global_fade_control:GetChecked(), true, "All the Colors reflects the shared disabled-fade policy")
 
-    local combined_fade_control = M.controls.fade_ooc_combined
-    combined_fade_control:SetChecked(true)
-    combined_fade_control.checkbox:Click()
-    h.eq(M.db.fade_ooc_combined, true, "Combined Buffs stores its local Fade OOC selection")
+    local static_long_fade_control = M.controls.fade_ooc_static_long
+    static_long_fade_control:SetChecked(true)
+    static_long_fade_control.checkbox:Click()
+    h.eq(M.db.fade_ooc_static_long, true, "Static / Long Buffs stores its local Fade OOC selection")
     h.eq(color_sync.get_disable_ooc_fade(), false,
         "enabling a local Fade OOC clears the global disable policy")
     h.eq(fade_control:GetChecked(), false,

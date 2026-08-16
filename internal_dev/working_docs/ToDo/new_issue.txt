@@ -1,164 +1,6 @@
-Message: ...Ons/LsTweeks/modules/aura_frames/af_logic_ticker.lua:151: attempt to get length of field 'icons' (a nil value)
-Time: Sat Aug 15 15:16:33 2026
-Count: 63
-Stack:
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_ticker.lua]:151: in function 'tick_visible_icons'
-[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_ticker.lua]:109: in function <...Ons/LsTweeks/modules/aura_frames/af_logic_ticker.lua:108>
-
-Locals:
-now=1754157.210000
-db=<table>{
- width_static=386
- timer_color_tracked_bars=<table>
- fade_ooc_tracked_bars=true
- sync_text_color_combined=true
- growth_icon_short="DOWN"
- show_tracked_bars=false
- timer_number_font_tracked_buffs="source_code_pro"
- stack_number_font_utility="source_code_pro"
- sync_bar_color_combined=true
- bar_bg_color_essential=<table>
- stack_number_font_size_static=10
- bg_color_utility=<table>
- stack_color_long=<table>
- bar_mode_static=false
- stack_color_tracked_buffs=<table>
- bg_chamfer_debuff=false
- fade_delay_static=2
- shared_frame_background_color=<table>
- max_icons_static=20
- timer_color_long=<table>
- color_tracked_bars=<table>
- move_static=false
- fade_ooc_long=true
- bar_bg_color_short=<table>
- timer_swipe_debuff=true
- tooltip_static=true
- growth_debuff="UP"
- stack_number_font_bold_static=false
- positions=<table>
- bg_utility=true
- max_icons_tracked_buffs=20
- fade_delay_debuff=2
- timer_number_font_bold_utility=false
- fade_length_long=3
- timer_number_font_size_short=10
- sync_bar_bg_utility=true
- max_icons_long=20
- show_essential=true
- bg_color_essential=<table>
- timer_swipe_short=true
- show_static=false
- move_essential=false
- bar_bg_color_long=<table>
- show_tracked_buffs=false
- color_tracked_buffs=<table>
- enable_blizz_buffs=false
- color_utility=<table>
- fade_length_static=3
- move_short=false
- timer_tracked_bars=true
- sort_utility="timeleft"
- sync_bar_color_tracked_bars=true
- bg_color_combined=<table>
- fade_ooc_combined=false
- shared_bar_text_color=<table>
- bar_mode_tracked_buffs=false
- growth_combined="DOWN"
- scale_utility=1
- stack_number_font_tracked_bars="source_code_pro"
- stack_color_essential=<table>
- timer_color_utility=<table>
- tooltip_essential=true
- timer_number_font_essential="source_code_pro"
- show_utility=false
- wow_cooldown_ooc_alpha=0.350000
- sort_short="timeleft"
- aura_visible_icon_tick=0.150000
- hide_blizz_cdm_tracked_buffs=true
- growth_bar_short="DOWN"
- bg_color_long=<table>
- sync_bar_color_long=true
- cooldown_swipe_color_tracked_bars=<table>
- width_combined=373
- test_aura_tracked_buffs=false
- ooc_alpha_tracked_bars=0.150000
- timer_color_essential=<table>
- max_icons_utility=20
- fade_ooc_essential=true
- bar_bg_color_static=<table>
- hide_blizz_cdm_tracked_bars=true
- stack_number_font_size_essential=10
- stack_number_font_bold_tracked_buffs=false
- bar_mode_tracked_bars=true
- test_aura_long=false
- enable_blizz_debuffs=false
- cooldown_swipe_color_utility=<table>
- growth_icon_debuff="UP"
- color_long=<table>
- growth_icon_tracked_buffs="RIGHT"
- stack_number_font_size_long=10
- shared_bar_background_color=<table>
- hide_blizz_cdm_utility=true
- show_bar_section_outlines=false
- bg_chamfer_utility=true
- width_short=200
- growth_icon_static="RIGHT"
- spacing_combined=2
- ooc_alpha_short=0.150000
- timer_number_font_size=10
- scale_long=1
- spacing_static=2
- tooltip_debuff=true
- spacing_short=1.500000
- ooc_alpha_debuff=0.150000
- fade_ooc_utility=true
- timer_utility=true
- max_icons_tracked_bars=20
- cooldown_mode_essential=true
- tooltip_long=true
- growth_short="DOWN"
- color_essential=<table>
- width_utility=200
- fade_ooc_short=true
- sync_frame_bg_short=true
- timer_number_font_long="source_code_pro"
- timer_number_font_size_long=10
- test_aura_essential=false
- ooc_alpha_essential=0.150000
- timer_combined=true
- bg_color_tracked_bars=<table>
- scale_tracked_bars=1
- stack_color_debuff=<table>
- bg_chamfer_long=false
- color_static=<table>
- move_tracked_bars=false
- cooldown_swipe_color_tracked_buffs=<table>
- timer_number_font_tracked_bars="source_code_pro"
- fade_delay_long=2
- timer_number_font_bold_debuff=false
- shared_timer_text_color=<table>
- timer_number_font_size_debuff=10
- timer_number_font_size_tracked_bars=10
- growth_bar_tracked_bars="DOWN"
- growth_utility="RIGHT"
- tooltip_short=true
- stack_color_utility=<table>
- bg_color_tracked_buffs=<table>
- spacing_utility=1.500000
- timer_number_font_bold_combined=false
- bar_bg_color_combined=<table>
- timer_number_font_size_tracked_buffs=10
- sync_frame_bg_tracked_buffs=true
- fade_delay_essential=2
- ooc_alpha_static=0.250000
- max_icons_debuff=20
- ooc_alpha_combined=0.350000
- syn
-
- Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
+Message: GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
 Lua Taint: LsTweeks
-Time: Sat Aug 15 15:23:19 2026
+Time: Sun Aug 16 10:16:51 2026
 Count: 1
 Stack:
 [Interface/AddOns/Blizzard_MawBuffs/Blizzard_MawBuffs.lua]:4: in function 'ShouldShowMawBuffs'
@@ -170,3 +12,10 @@ Stack:
 [Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua]:341: in function <Interface/AddOns/Blizzard_SharedXML/MixinUtil.lua:340>
 
 Locals:
+
+10:20 Kul'amara the Fierce says: De ethereals will not gain any ground. We gonna' be there to stop 'em.
+10:24 Kul'amara the Fierce says: De ethereals seek to gather power. Remove them from our lands.
+10:24 Kul'amara the Fierce says: De Ethereals want to steal life from our lands? Hunt dem down and break their machines.
+LsTweeks module status (objectives)
+
+Objectives: enabled=true, all_available=true, all_auto_collapse=false, all_collapsed=false, all_queued=false, all_deferred=none, all_attempts=0, all_last_reason=none, campaign_available=true, campaign_auto_collapse=true, campaign_collapsed=true, campaign_queued=false, campaign_deferred=none, campaign_attempts=1, campaign_last_reason=apply, quests_available=true, quests_auto_collapse=true, quests_collapsed=true, quests_queued=false, quests_deferred=none, quests_attempts=1, quests_last_reason=apply, achievements_available=true, achievements_auto_collapse=true, achievements_collapsed=true, achievements_queued=false, achievements_deferred=none, achievements_attempts=1, achievements_last_reason=apply, bg_hooks=true, bg_point_hook=true, bg_state=blizzard_owned_expanded, bg_anchor=blizzard, bg_force_expand=none, bg_blocked_anchor=none, bg_force_expand_grace=false, bg_enabled=false, bg_wow_enabled=false, bg_color_enabled=false, bg_color_state=no_regions, bg_edit_mode_state=edit_mode:0, bg_color_signature=0.25:0.25:0.25:0.75:bg_alpha=0:color_alpha=0.75:overlay=false, bg_alpha=0.75, bg_color_alpha=0.75, bg_nineslice_alpha=0, objective_border=false, objective_border_shown=false, objective_move_mode=false, objective_move_header_highlight=false, objective_snap_to_grid=false, objective_position_state=blizzard_owned, objective_offset_x=0, objective_offset_y=0, bg_adjustments=0, bg_last_reason=hooks installed, bg_modules=11, bg_module_1_name=ScenarioObjectiveTracker, bg_module_1_priority=true, bg_module_1_shown=true, bg_module_1_collapsed=false, bg_module_1_displayable=true, bg_module_1_height=139.66665649414, bg_module_1_contents_height=139.66668128967, bg_module_1_raw_contents_height=139.66668128967, bg_module_1_has_contents=true, bg_module_1_has_tried_blocks=true, bg_module_1_has_skipped_blocks=false, bg_module_1_state=5, bg_module_1_last_block=none, bg_module_1_last_block_shown=true, bg_module_1_last_block_height=1.0000220537186, bg_module_2_name=UIWidgetObjectiveTracker, bg_module_2_priority=false, bg_module_2_shown=false, bg_module_2_collapsed=false, bg_module_2_displayable=false, bg_module_2_height=10.000001907349, bg_module_2_contents_height=0, bg_module_2_raw_contents_height=25, bg_module_2_has_contents=false, bg_module_2_has_tried_blocks=false, bg_module_2_has_skipped_blocks=false, bg_module_2_state=2, bg_module_2_last_block=none, bg_module_2_last_block_shown=true, bg_module_2_last_block_height=25.999990463257, bg_module_3_name=CampaignQuestObjectiveTracker, bg_module_3_priority=false, bg_module_3_shown=true, bg_module_3_collapsed=true, bg_module_3_displayable=true, bg_module_3_height=24.999967575073, bg_module_3_contents_height=25, bg_module_3_raw_contents_height=25, bg_module_3_has_contents=true, bg_module_3_has_tried_blocks=true, bg_module_3_has_skipped_blocks=true, bg_module_3_state=5, bg_module_3_last_block=none, bg_module_3_last_block_shown=true, bg_module_3_last_block_height=25.999990463257, bg_module_4_name=QuestObjectiveTracker, bg_module_4_priority=false, bg_module_4_shown=true, bg_module_4_collapsed=true, bg_module_4_displayable=true, bg_module_4_height=24.999967575073, bg_module_4_contents_height=25, bg_module_4_raw_contents_height=25, bg_module_4_has_contents=true, bg_module_4_has_tried_blocks=true, bg_module_4_has_skipped_blocks=true, bg_module_4_state=5, bg_module_4_last_block=none, bg_module_4_last_block_shown=true, bg_module_4_last_block_height=25.999990463257, bg_module_5_name=AdventureObjectiveTracker, bg_module_5_priority=false, bg_module_5_shown=false, bg_module_5_collapsed=false, bg_module_5_displayable=false, bg_module_5_height=10.000001907349, bg_module_5_contents_height=0, bg_module_5_raw_contents_height=25, bg_module_5_has_contents=false, bg_module_5_has_tried_blocks=false, bg_module_5_has_skipped_blocks=false, bg_module_5_state=2, bg_module_5_last_block=none, bg_module_5_last_block_shown=true, bg_module_5_last_block_height=25.999990463257, bg_module_6_name=AchievementObjectiveTracker, bg_module_6_priority=false, bg_module_6_shown=true, bg_module_6_collapsed=true, bg_module_6_displayable=true, bg_module_6_height=25.000007629395, bg_module_6_contents_height=25, bg_module_6_raw_contents_height=25, bg_module_6_has_contents=true, bg_module_6_has_tried_blocks=true, bg_module_6_has_skipped_blocks=true, bg_module_6_state=5, bg_module_6_last_block=none, bg_module_6_last_block_shown=true, bg_module_6_last_block_height=25.999990463257, bg_module_7_name=MonthlyActivitiesObjectiveTracker, bg_module_7_priority=false, bg_module_7_shown=false, bg_module_7_collapsed=false, bg_module_7_displayable=false, bg_module_7_height=10.000001907349, bg_module_7_contents_height=0, bg_module_7_raw_contents_height=25, bg_module_7_has_contents=false, bg_module_7_has_tried_blocks=false, bg_module_7_has_skipped_blocks=false, bg_module_7_state=2, bg_module_7_last_block=none, bg_module_7_last_block_shown=true, bg_module_7_last_block_height=25.999990463257, bg_module_8_name=InitiativeTasksObjectiveTracker, bg_module_8_priority=false, bg_module_8_shown=false, bg_module_8_collapsed=false, bg_module_8_displayable=false, bg_module_8_height=10.000001907349, bg_module_8_contents_height=0, bg_module_8_raw_contents_height=25, bg_module_8_has_contents=false, bg_module_8_has_tried_blocks=false, bg_module_8_has_skipped_blocks=false, bg_module_8_state=2, bg_module_8_last_block=none, bg_module_8_last_block_shown=true, bg_module_8_last_block_height=25.999990463257, bg_module_9_name=ProfessionsRecipeTracker, bg_module_9_priority=false, bg_module_9_shown=false, bg_module_9_collapsed=false, bg_module_9_displayable=false, bg_module_9_height=10.000001907349, bg_module_9_contents_height=0, bg_module_9_raw_contents_height=25, bg_module_9_has_contents=false, bg_module_9_has_tried_blocks=false, bg_module_9_has_skipped_blocks=false, bg_module_9_state=2, bg_module_9_last_block=none, bg_module_9_last_block_shown=true, bg_module_9_last_block_height=25.999990463257, bg_module_10_name=BonusObjectiveTracker, bg_module_10_priority=true, bg_module_10_shown=false, bg_module_10_collapsed=false, bg_module_10_displayable=false, bg_module_10_height=10.000001907349, bg_module_10_contents_height=0, bg_module_10_raw_contents_height=25, bg_module_10_has_contents=false, bg_module_10_has_tried_blocks=false, bg_module_10_has_skipped_blocks=false, bg_module_10_state=2, bg_module_10_last_block=none, bg_module_10_last_block_shown=true, bg_module_10_last_block_height=25.999990463257, bg_module_11_name=WorldQuestObjectiveTracker, bg_module_11_priority=true, bg_module_11_shown=false, bg_module_11_collapsed=false, bg_module_11_displayable=false, bg_module_11_height=10.000001907349, bg_module_11_contents_height=0, bg_module_11_raw_contents_height=25, bg_module_11_has_contents=false, bg_module_11_has_tried_blocks=false, bg_module_11_has_skipped_blocks=false, bg_module_11_state=2, bg_module_11_last_block=none, bg_module_11_last_block_shown=true, bg_module_11_last_block_height=25.999990463257, bg_regions=9, bg_region_1_name=unnamed, bg_region_1_type=Texture, bg_region_1_shown=true, bg_region_1_layer=BORDER:0, bg_region_1_size=11.999973297119x11.000023841858, bg_region_1_alpha=1, bg_region_1_vertex=1:1:1:1, bg_region_1_blend=BLEND, bg_region_1_desaturated=false, bg_region_1_texture=5147221, bg_region_1_atlas=Common-Opacity-Background-NineSlice-CornerTopLeft, bg_region_2_name=unnamed, bg_region_2_type=Texture, bg_region_2_shown=true, bg_region_2_layer=BORDER:0, bg_region_2_size=14.000017166138x11.000023841858, bg_region_2_alpha=1, bg_region_2_vertex=1:1:1:1, bg_region_2_blend=BLEND, bg_region_2_desaturated=false, bg_region_2_texture=5147221, bg_region_2_atlas=Common-Opacity-Background-NineSlice-CornerTopRight, bg_region_3_name=unnamed, bg_region_3_type=Texture, bg_region_3_shown=true, bg_region_3_layer=BORDER:0, bg_region_3_size=11.999973297119x13.000031471252, bg_region_3_alpha=1, bg_region_3_vertex=1:1:1:1, bg_region_3_blend=BLEND, bg_region_3_desaturated=false, bg_region_3_texture=5147221, bg_region_3_atlas=Common-Opacity-Background-NineSlice-CornerBottomLeft, bg_region_4_name=unnamed, bg_region_4_type=Texture, bg_region_4_shown=true, bg_region_4_layer=BORDER:0, bg_region_4_size=14.000017166138x13.000031471252, bg_region_4_alpha=1, bg_region_4_vertex=1:1:1:1, bg_region_4_blend=BLEND, bg_region_4_desaturated=false, bg_region_4_texture=5147221, bg_region_4_atlas=Common-Opacity-Background-NineSlice-CornerBottomRight, bg_region_5_name=unnamed, bg_region_5_type=Texture, bg_region_5_shown=true, bg_region_5_layer=BORDER:0, bg_region_5_size=269.00003051758x11.000023841858, bg_region_5_alpha=1, bg_region_5_vertex=1:1:1:1, bg_region_5_blend=BLEND, bg_region_5_desaturated=false, bg_region_5_texture=5147221, bg_region_5_atlas=_Common-Opacity-Background-NineSlice-EdgeTop, bg_region_6_name=unnamed, bg_region_6_type=Texture, bg_region_6_shown=true, bg_region_6_layer=BORDER:0, bg_region_6_size=269.00003051758x13.000031471252, bg_region_6_alpha=1, bg_region_6_vertex=1:1:1:1, bg_region_6_blend=BLEND, bg_region_6_desaturated=false, bg_region_6_texture=5147221, bg_region_6_atlas=_Common-Opacity-Background-NineSlice-EdgeBottom, bg_region_7_name=unnamed, bg_region_7_type=Texture, bg_region_7_shown=true, bg_region_7_layer=BORDER:0, bg_region_7_size=11.999973297119x268.66659545898, bg_region_7_alpha=1, bg_region_7_vertex=1:1:1:1, bg_region_7_blend=BLEND, bg_region_7_desaturated=false, bg_region_7_texture=5147228, bg_region_7_atlas=!Common-Opacity-Background-NineSlice-EdgeLeft, bg_region_8_name=unnamed, bg_region_8_type=Texture, bg_region_8_shown=true, bg_region_8_layer=BORDER:0, bg_region_8_size=14.000017166138x268.66659545898, bg_region_8_alpha=1, bg_region_8_vertex=1:1:1:1, bg_region_8_blend=BLEND, bg_region_8_desaturated=false, bg_region_8_texture=5147228, bg_region_8_atlas=!Common-Opacity-Background-NineSlice-EdgeRight, bg_region_9_name=unnamed, bg_region_9_type=Texture, bg_region_9_shown=true, bg_region_9_layer=BORDER:0, bg_region_9_size=269.00003051758x268.66659545898, bg_region_9_alpha=1, bg_region_9_vertex=1:1:1:1, bg_region_9_blend=BLEND, bg_region_9_desaturated=false, bg_region_9_texture=5147236, bg_region_9_atlas=Common-Opacity-Background-NineSlice-Center, title_counts=true, title_quest_events=true, title_achievement_events=true, title_quest_hover_only=true, title_achievement_hover_only=true, title_quest_hovered=false, title_achievement_hovered=false, title_state=restored, title_last_reason=QUEST_TURNED_IN

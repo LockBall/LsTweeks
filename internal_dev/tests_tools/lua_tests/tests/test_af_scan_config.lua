@@ -201,6 +201,34 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
     h.eq(bar_alpha, 0.91, "bar override preserves alpha")
 end)
 
+h.test("custom helpful frames retain per-entry static short and long timer classes", function()
+    local M = load_aura_frames()
+    M.db = { short_threshold = 300 }
+    M.clear_custom_aura_scan_cache()
+    h.stub.auras.player = {
+        buffs = {
+            { auraInstanceID = 801, spellId = 8001, name = "Custom Static", icon = 1, duration = 0, expirationTime = 0 },
+            { auraInstanceID = 802, spellId = 8002, name = "Custom Short", icon = 2, duration = 120, expirationTime = 120 },
+            { auraInstanceID = 803, spellId = 8003, name = "Custom Long", icon = 3, duration = 600, expirationTime = 600 },
+        },
+        debuffs = {},
+    }
+    local target_map = {}
+
+    M.scan_custom_aura_map(
+        CreateFrame("Frame", nil, UIParent),
+        { aura_base_filter = "HELPFUL", aura_modifier = "" },
+        target_map,
+        M.AURA_FRAME_LIMIT,
+        300
+    )
+
+    h.eq(target_map[801].category, "static", "custom permanent Aura retains static timer behavior")
+    h.eq(target_map[802].category, "short", "custom short Aura retains short timer behavior")
+    h.eq(target_map[803].category, "long", "custom long Aura retains long timer behavior")
+    h.stub.auras.player = nil
+end)
+
 h.test("unified scan continues after malformed helpful and debuff records", function()
     local M = load_aura_frames()
     M.db = {}

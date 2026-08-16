@@ -1,4 +1,4 @@
--- Managed preset Aura capabilities (Short, Combined, Timed Buffs, and Debuffs).
+-- Managed preset Aura capabilities (Short, learned Static / Long, Timed Buffs, and Debuffs).
 -- Owns native icon/bar presentation, frame backgrounds, and move outlines for
 -- HELPFUL Buffs and HARMFUL Debuffs without reintroducing Aura data reads.
 
@@ -528,6 +528,35 @@ end
 
 local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
+    if backend.uses_learned_buff_filter then
+        local revision = M._learned_buff_revision or 0
+        local short_max = tonumber(cfg_db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
+        if backend.learned_filter_revision ~= revision
+            or backend.learned_filter_short_max ~= short_max
+        then
+            local candidate_filters = {
+                includeSpellIDs = M.build_learned_long_static_spell_ids(cfg_db),
+            }
+            backend.container:SetAuraGroupCandidateFilters(
+                backend.presentation_group_keys.bar,
+                candidate_filters
+            )
+            backend.container:SetAuraGroupCandidateFilters(
+                backend.presentation_group_keys.icon,
+                candidate_filters
+            )
+            backend.learned_filter_revision = revision
+            backend.learned_filter_short_max = short_max
+        end
+        if backend.owner.move_handle then
+            local count = M.get_learned_long_static_count(cfg_db)
+            backend.owner.move_handle.body = string.format(
+                "Shows %d learned Static / Long buffs. Helpful Aura durations are learned only while readable outside combat; Short maximum: %s seconds.",
+                count,
+                tostring(short_max)
+            )
+        end
+    end
     if category == "short" then
         local max_duration = get_short_max_duration(cfg_db)
         if backend.short_max_duration ~= max_duration then
@@ -735,8 +764,19 @@ function M.create_managed_debuff_backend(frame, cfg_db)
     return create_managed_preset_backend(frame, cfg_db, "debuff", "debuffs", "HARMFUL")
 end
 
-function M.create_managed_combined_buff_backend(frame, cfg_db)
-    return create_managed_preset_backend(frame, cfg_db, "combined", "buffs", "HELPFUL")
+function M.create_managed_learned_buff_backend(frame, cfg_db)
+    local backend, backend_error = create_managed_preset_backend(
+        frame,
+        cfg_db,
+        "static_long",
+        "buffs",
+        "HELPFUL",
+        { includeSpellIDs = M.build_learned_long_static_spell_ids(cfg_db) }
+    )
+    if not backend then return nil, backend_error end
+    backend.uses_learned_buff_filter = true
+    apply_managed_preset_presentation(backend, cfg_db)
+    return backend
 end
 
 function M.create_managed_short_buff_backend(frame, cfg_db)
@@ -771,6 +811,15 @@ function M.create_managed_timed_buff_backend(frame, cfg_db)
         "HELPFUL",
         TIMED_BUFF_CANDIDATE_FILTERS
     )
+end
+
+function M.refresh_managed_learned_buff_filters()
+    if InCombatLockdown and InCombatLockdown() then return false end
+    local backend = M.get_managed_aura_backend
+        and M.get_managed_aura_backend("preset:static_long")
+    if not backend then return false end
+    apply_managed_preset_presentation(backend, backend.cfg_db or M.db)
+    return true
 end
 
 --#endregion BACKEND CREATION ==================================================

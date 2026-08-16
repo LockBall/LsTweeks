@@ -87,23 +87,25 @@ h.test("Aura Frames profiles preserve independent mode growth settings", functio
     local AF = h.addon.aura_frames
 
     local ok = AF.apply_aura_frame_profile_data({
-        growth_icon_combined = "LEFT",
-        growth_bar_combined = "UP",
-        stack_number_font_size_combined = 13,
-        stack_number_font_bold_combined = true,
-        timer_number_font_outline_combined = false,
-        stack_number_font_outline_combined = false,
-        stack_color_combined = { r = 0.2, g = 0.4, b = 0.6 },
+        growth_icon_static_long = "LEFT",
+        growth_bar_static_long = "UP",
+        stack_number_font_size_static_long = 13,
+        stack_number_font_bold_static_long = true,
+        timer_number_font_outline_static_long = false,
+        stack_number_font_outline_static_long = false,
+        stack_color_static_long = { r = 0.2, g = 0.4, b = 0.6 },
     })
 
     h.ok(ok, "Aura Frames profile data applies")
-    h.eq(AF.db.growth_icon_combined, "LEFT", "profile restores Icon Mode growth")
-    h.eq(AF.db.growth_bar_combined, "UP", "profile restores Bar Mode growth")
-    h.eq(AF.db.stack_number_font_size_combined, 13, "profile restores stack font size")
-    h.eq(AF.db.stack_number_font_bold_combined, true, "profile restores stack bold face")
-    h.eq(AF.db.timer_number_font_outline_combined, false, "profile restores timer outline")
-    h.eq(AF.db.stack_number_font_outline_combined, false, "profile restores stack outline")
-    h.eq(AF.db.stack_color_combined.g, 0.4, "profile restores stack color")
+    h.eq(AF.db.growth_icon_static_long, "LEFT", "profile restores Icon Mode growth")
+    h.eq(AF.db.growth_bar_static_long, "UP", "profile restores Bar Mode growth")
+    h.eq(AF.db.stack_number_font_size_static_long, 13, "profile restores stack font size")
+    h.eq(AF.db.stack_number_font_bold_static_long, true, "profile restores stack bold face")
+    h.eq(AF.db.timer_number_font_outline_static_long, false, "profile restores timer outline")
+    h.eq(AF.db.stack_number_font_outline_static_long, false, "profile restores stack outline")
+    h.eq(AF.db.stack_color_static_long.g, 0.4, "profile restores stack color")
+    local data = AF.export_aura_frame_profile_data()
+    h.eq(data.growth_icon_static_long, "LEFT", "profile exports the Static / Long category")
 end)
 
 h.test("Objectives profile import preserves an explicit false setting", function()

@@ -87,6 +87,7 @@ modules\aura_frames\af_frame_config.lua
 modules\aura_frames\af_defaults.lua
 modules\aura_frames\af_functions.lua
 modules\aura_frames\af_managed.lua
+modules\aura_frames\af_learned_buffs.lua
 modules\aura_frames\af_managed_presets.lua
 modules\aura_frames\af_test_aura.lua
 modules\aura_frames\af_scan.lua

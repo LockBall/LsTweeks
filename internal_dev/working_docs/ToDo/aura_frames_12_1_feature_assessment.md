@@ -81,22 +81,23 @@ redesign.
 ## Status summary
 - [x] **AF12-05 — Debuff frame:** managed transport and baseline presentation verified in game; shared presentation gaps remain owned by AF12-07 through AF12-15.
 - [x] **AF12-02 — Short frame threshold semantics:** Short Buffs now uses native total-duration filtering with a default 300-second maximum and no Long-to-Short transfer.
+- [x] **AF12-03/04 — Static / Long managed separation:** readable OOC helpful-Aura observations feed a persistent native spell-ID inclusion group without combat Aura inspection.
 - [x] **AF12-10 — Layout and positioning:** fixed safety limit, growth, wrapping, spacing, positioning, and resize behavior are implemented for the managed presets.
 - [x] **AF12-12 — Aura tooltips:** managed frames use Blizzard-owned native tooltips in and out of combat and install no addon Aura hover scripts.
 - [x] **AF12-16 — Profiles, shared colors, move mode, and settings:** implemented and regression-covered for the current managed presets; settings belonging to unfinished capabilities remain tracked by their owning items.
 - [x] **AF12-19 — Other modules:** the full automated regression suite passes and extended in-game use has produced no remaining cross-module 12.1 regression.
 - **Partial:** AF12-01, AF12-07, AF12-08, AF12-14, and AF12-18.
-- **Open/design decision:** AF12-03, AF12-04, AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
+- **Open/design decision:** AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
 
 
 ## Numbered feature assessment
 
 ### AF12-01 — Preset live Aura frames
 
-**Features:** Static, Short Buffs, Long, Combined Buffs, Timed Buffs, and Debuffs.
+**Features:** Static, Short Buffs, Long, Static / Long Buffs, Timed Buffs, and Debuffs.
 
-**Assessment:** Partially migrated. Short Buffs, Combined Buffs, Timed Buffs,
-and Debuffs use managed AuraContainers. Static and Long retain their existing
+**Assessment:** Partially migrated. Short Buffs, Static / Long Buffs, Timed
+Buffs, and Debuffs use managed AuraContainers. Static and Long retain their existing
 implementations for later separation work, but remain incompatible legacy paths
 and must not yet be used for combat validation.
 
@@ -105,9 +106,9 @@ and must not yet be used for combat validation.
 IDs for sorting. These operations are no longer safe while Auras are secret.
 The four captured errors are direct manifestations of this incompatibility.
 
-**Direction:** Validate each managed preset in combat without restoring addon
-AuraData inspection. The remaining Static/Long split is addressed separately
-below.
+**Direction:** Validate each managed preset in combat. Static / Long learning
+must remain OOC-only; combat display stays entirely within Blizzard's managed
+container.
 
 ### AF12-02 — Short frame threshold semantics
 
@@ -128,29 +129,28 @@ development recovery path.
 
 ### AF12-03 — Long frame filtering
 
-**Assessment:** No documented managed `minDuration` filter exists. A clean
-“duration greater than the Short threshold” group therefore cannot currently be
-created without inspecting protected Aura data.
+**Assessment:** Implemented through learned native inclusion because no
+documented managed `minDuration` filter exists.
 
-Using an unrestricted timed group alongside a `maxDuration` Short group may
-duplicate Short Auras, depending on group assignment behavior, and must not be
-assumed safe without a focused in-game probe.
+While out of combat, `af_learned_buffs.lua` records the latest readable total
+duration for each active helpful spell. Durations above `short_threshold` feed
+the Static / Long Buffs native `includeSpellIDs` map; later readable Short
+observations reclassify the spell. Unknown spells remain hidden until learned.
 
-**Direction:** Preserve Long as its own feature. Use the separate Combined Buffs
-frame, with its own saved settings and unrestricted managed `HELPFUL` filter,
-as the safe baseline while investigating separation. Do not emulate Long with
-addon-side Aura inspection.
+**Direction:** Keep learning, clearing, and filter refresh blocked in combat.
+Do not inspect Aura data to maintain the list during combat.
 
 ### AF12-04 — Static-only buffs
 
-**Assessment:** No documented “permanent Auras only” candidate filter exists.
+**Assessment:** Implemented in the consolidated learned Static / Long frame; no
+documented “permanent Auras only” candidate filter exists.
 
-A nonzero `maxDuration` excludes permanent Auras, but there is no documented
-inverse that selects only permanent Auras. The old Static classification relies
-on expiration data that addons can no longer examine safely.
+A readable OOC duration of zero adds the spell to the same persistent native
+inclusion set as Long buffs. The old Static frame remains a legacy path; the
+managed consolidated frame is the combat-safe option.
 
-**Direction:** Redesign or consolidate Static. Do not attempt to infer
-permanence from secret timing values.
+**Direction:** Continue rejecting secret or malformed observations and leave
+unknown spells absent until a readable OOC scan learns them.
 
 ### AF12-05 — Debuff frame
 
@@ -490,9 +490,8 @@ unrelated modules without new evidence.
 
 ## Recommended review order
 
-1. Validate Short Buffs and Timed Buffs beside the Combined Buffs and Debuffs
-   managed baseline while resolving the Static/Long product model in AF12-03
-   and AF12-04.
+1. Validate Short Buffs, Static / Long Buffs learning and persistence, Timed
+   Buffs, and Debuffs in and out of combat.
 2. Finish managed presentation gaps in AF12-07 through AF12-11: cooldown swipe,
    live color/background refresh parity, native timer formatting, and sorting.
 3. Add managed-safe synthetic previews under AF12-15, then decide native buff

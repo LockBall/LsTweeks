@@ -1110,6 +1110,12 @@ function M.build_preset_frame_panel(p, data)
             end
             if cat == "short" then
                 local short_threshold_range = get_setting_range("short_threshold")
+                local function update_short_threshold()
+                    update()
+                    if M.refresh_managed_learned_buff_filters then
+                        M.refresh_managed_learned_buff_filters()
+                    end
+                end
                 local threshold = addon.CreateSliderWithBox(
                     addon_name .. "ShortMaxDuration",
                     ctx.parent,
@@ -1120,7 +1126,7 @@ function M.build_preset_frame_panel(p, data)
                     M.db,
                     "short_threshold",
                     M.defaults,
-                    update,
+                    update_short_threshold,
                     {
                         immediate_callback = true,
                         tooltip = "Shows helpful auras whose total duration is at most this many seconds. Buffs are ordered by the next expiration.",
@@ -1128,6 +1134,23 @@ function M.build_preset_frame_panel(p, data)
                 )
                 ctx.grid:place_at(threshold, 6, 1)
                 M.controls.short_threshold_slider = threshold
+            end
+            if cat == "static_long" then
+                local clear_learned = CreateFrame("Button", nil, ctx.parent, "UIPanelButtonTemplate")
+                clear_learned:SetSize(130, 24)
+                clear_learned:SetText("Clear Learned Buffs")
+                clear_learned:SetScript("OnClick", function()
+                    if M.clear_learned_helpful_durations then
+                        M.clear_learned_helpful_durations()
+                    end
+                end)
+                addon.AttachTooltip(
+                    clear_learned,
+                    "Clear Learned Buffs",
+                    "Clears saved OOC duration observations. Active helpful Auras are learned again after the next readable Aura update."
+                )
+                ctx.grid:place_at(clear_learned, 6, 1)
+                M.controls.clear_learned_buffs = clear_learned
             end
             create_hide_blizz_cdm_control()
         end

@@ -1041,8 +1041,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
     elseif category == "short" and M.create_managed_short_buff_backend then
         managed_backend = M.create_managed_short_buff_backend(frame, cfg_db)
-    elseif category == "combined" and M.create_managed_combined_buff_backend then
-        managed_backend = M.create_managed_combined_buff_backend(frame, cfg_db)
+    elseif category == "static_long" and M.create_managed_learned_buff_backend then
+        managed_backend = M.create_managed_learned_buff_backend(frame, cfg_db)
     elseif category == "timed" and M.create_managed_timed_buff_backend then
         managed_backend = M.create_managed_timed_buff_backend(frame, cfg_db)
     end
@@ -1244,11 +1244,15 @@ end
 
 local function start_aura_frame_runtime_services()
     M._module_runtime_enabled = true
+    if M.start_learned_buff_listener then
+        M.start_learned_buff_listener()
+    end
     if M.set_managed_aura_runtime_enabled then
         M.set_managed_aura_runtime_enabled(true)
     end
-    -- Managed frames own no PLAYER_ENTERING_WORLD handler, so startup must
-    -- explicitly apply their saved shell state after enabling the engine.
+    -- Managed presentation owns no PLAYER_ENTERING_WORLD handler, so startup
+    -- explicitly applies saved shell state after enabling the engine. The
+    -- separate learned-buff listener only refreshes its native inclusion map.
     if M.refresh_managed_preset_frames then
         M.refresh_managed_preset_frames()
     end
@@ -1279,6 +1283,9 @@ end
 
 local function stop_aura_frame_runtime_services()
     M._module_runtime_enabled = false
+    if M.stop_learned_buff_listener then
+        M.stop_learned_buff_listener()
+    end
     if M.set_managed_aura_runtime_enabled then
         M.set_managed_aura_runtime_enabled(false)
     end
@@ -1512,6 +1519,12 @@ function M.on_reset_complete()
     -- Reset conductor: recover runtime state, reconcile frame ownership, then
     -- refresh visible frames and settings controls from the replaced DB.
     apply_reset_runtime_state()
+    if M.note_learned_buff_cache_replaced then
+        M.note_learned_buff_cache_replaced()
+    end
+    if M.queue_learned_buff_scan then
+        M.queue_learned_buff_scan()
+    end
     remove_orphan_custom_frames_after_reset()
     refresh_aura_frames_after_reset()
     refresh_aura_frame_settings_after_reset()

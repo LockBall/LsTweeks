@@ -41,27 +41,27 @@ The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Co
 - `Static`: permanent player buffs.
 - `Short Buffs`: helpful player auras whose total duration is at or below its configured maximum; the default is five minutes, and the next expiration is shown first.
 - `Long`: timed player buffs above the short-buff threshold.
-- `Combined Buffs`: all helpful player auras through WoW's managed Aura display.
+- `Static / Long Buffs`: helpful player auras last observed outside combat with no duration or a total duration above the Short Buffs maximum. Learned spell IDs persist across reloads and can be cleared from this frame's settings.
 - `Timed Buffs`: helpful player auras with an expiration time through WoW's managed Aura display.
 - `Debuffs`: harmful player auras through WoW's managed Aura display.
 
-After WoW 12.1, **Short Buffs**, **Combined Buffs**, **Timed Buffs**, and **Debuffs** are the current combat-safe live Aura paths. Short Buffs and Timed Buffs delegate duration filtering to WoW and never read Aura duration or expiration values in addon code. Short Buffs no longer receives Long buffs when their remaining time crosses its maximum because WoW filters by total duration. Static and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those two frames for combat Aura display yet.
+After WoW 12.1, **Short Buffs**, **Static / Long Buffs**, **Timed Buffs**, and **Debuffs** are the current combat-safe live Aura paths. Short Buffs and Timed Buffs delegate duration filtering to WoW. Static / Long Buffs learns readable helpful-Aura durations only outside combat, then gives WoW the learned spell-ID inclusion set; unknown buffs remain hidden until observed outside combat. Short Buffs no longer receives Long buffs when their remaining time crosses its maximum because classification uses total duration. Static and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those two frames for combat Aura display yet.
 
 Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the owning frame implementation selects and arranges the displayed auras; there is no adjustable pool-size setting.
 
-When Frame BG is enabled for managed Short Buffs, Combined Buffs, Timed Buffs, or Debuffs, an empty frame retains one configured-width row so its future placement remains visible; the background expands as native Aura rows appear.
+When Frame BG is enabled for managed Short Buffs, Static / Long Buffs, Timed Buffs, or Debuffs, an empty frame retains one configured-width row so its future placement remains visible; the background expands as native Aura rows appear.
 
 Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
 
 #### Test Aura Preview
-Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Combined Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
+Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
 
 
 #### Tooltips
-Managed Short Buffs, Combined Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
+Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration; the Static / Long Buffs mover tooltip reports the learned inclusion count and current Short maximum. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
-Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Short Buffs, Combined Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
+Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Short Buffs, Static / Long Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
 
 
 #### WoW Cooldown Manager Frames
