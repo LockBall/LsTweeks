@@ -50,62 +50,6 @@ function M.on_shared_color_changed()
     end
 end
 
-function M.resolve_background_color(category, target_type, local_color)
-    local resolved = local_color
-    local shared_color = target_type == "bar"
-        and M.db and M.db.shared_bar_background_color
-        or M.db and M.db.shared_frame_background_color
-    if M.db
-        and M.db.shared_background_color_enabled == true
-        and M.get_background_color_sync_enabled(category, target_type)
-        and shared_color
-    then
-        resolved = shared_color
-    end
-
-    local color_sync = addon.all_the_colors
-    local consumer_group = M.get_color_consumer_group(category)
-    if target_type == "bar" and color_sync and color_sync.resolve_module_color then
-        return color_sync.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", resolved, consumer_group)
-    end
-    if color_sync and color_sync.resolve_color then
-        return color_sync.resolve_color(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, target_type),
-            resolved
-        )
-    end
-    return resolved
-end
-
-function M.resolve_background_visibility(category, target_type, local_enabled)
-    local resolved = local_enabled == true
-    if target_type == "frame"
-        and M.db
-        and M.db.shared_background_color_enabled == true
-        and M.get_background_color_sync_enabled(category, target_type)
-    then
-        resolved = true
-    end
-
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_visibility then
-        return color_sync.resolve_visibility(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, target_type),
-            resolved
-        )
-    end
-    return resolved
-end
-
-function M.resolve_frame_background(cfg_db, category)
-    local enabled = M.get_setting(cfg_db, category, "bg", false) == true
-    local color = M.get_setting(cfg_db, category, "bg_color", { r = 0, g = 0, b = 0, a = 0.5 })
-    return M.resolve_background_visibility(category, "frame", enabled),
-        M.resolve_background_color(category, "frame", color)
-end
-
 function M.resolve_bar_color(category, local_color)
     local resolved = local_color
     if M.db
@@ -439,30 +383,6 @@ local function set_height_for_growth_if_changed(frame, height, growth)
     M.set_height_for_growth(frame, height, growth)
 end
 
-local function set_backdrop_state_if_changed(frame, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
-    if frame._lstweeks_bg_r == bg_r
-        and frame._lstweeks_bg_g == bg_g
-        and frame._lstweeks_bg_b == bg_b
-        and frame._lstweeks_bg_a == bg_a
-        and frame._lstweeks_br_r == br_r
-        and frame._lstweeks_br_g == br_g
-        and frame._lstweeks_br_b == br_b
-        and frame._lstweeks_br_a == br_a then
-        return
-    end
-
-    frame._lstweeks_bg_r = bg_r
-    frame._lstweeks_bg_g = bg_g
-    frame._lstweeks_bg_b = bg_b
-    frame._lstweeks_bg_a = bg_a
-    frame._lstweeks_br_r = br_r
-    frame._lstweeks_br_g = br_g
-    frame._lstweeks_br_b = br_b
-    frame._lstweeks_br_a = br_a
-    frame:SetBackdropColor(bg_r, bg_g, bg_b, bg_a)
-    frame:SetBackdropBorderColor(br_r, br_g, br_b, br_a)
-end
-
 --#endregion RUNTIME CONFIGURATION AND FRAME STATE =============================
 --#region AURA UPDATE (MAIN PER-FRAME REFRESH) =================================
 -- Works for both preset category frames and custom filtered frames.
@@ -493,8 +413,13 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         if self._managed_cdm_backend and M.set_managed_aura_backend_enabled then
             M.set_managed_aura_backend_enabled(self._managed_cdm_backend, false)
         end
-        if M.update_combat_background then
-            M.update_combat_background(self, 0, false, nil, InCombatLockdown and InCombatLockdown(), false)
+        if M.apply_addon_frame_background then
+            M.apply_addon_frame_background(self, {
+                display_count = 0,
+                enabled = false,
+                in_combat = InCombatLockdown and InCombatLockdown(),
+                is_moving = false,
+            })
         end
         cancel_frame_ooc_fade(self)
         set_alpha_if_changed(self, 1)
@@ -579,8 +504,12 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         self, render_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
 
+    local managed_cdm_aura_mode = false
     if self._managed_cdm_backend and M.refresh_managed_cdm_backend then
         M.refresh_managed_cdm_backend(self, bar_mode)
+        if M.set_managed_cdm_move_outline_shown then
+            managed_cdm_aura_mode = M.set_managed_cdm_move_outline_shown(self, is_moving)
+        end
     end
 
     if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
@@ -597,33 +526,14 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         set_height_for_growth_if_changed(self, new_height, growth)
     end
 
-    local is_bg_enabled = runtime_config.frame_bg_enabled
-    local combat_background_active = M.update_combat_background
-        and M.update_combat_background(self, display_count, is_bg_enabled, bgC, in_combat, is_moving)
-    local bg_r, bg_g, bg_b, bg_a
-    local br_r, br_g, br_b, br_a
-    if is_moving then
-        if is_bg_enabled and bgC then
-            bg_r, bg_g, bg_b, bg_a = bgC.r, bgC.g, bgC.b, bgC.a or 1
-            br_r, br_g, br_b, br_a = 1, 1, 1, 1
-        else
-            bg_r, bg_g, bg_b, bg_a = 0, 0, 0, 0.8
-            br_r, br_g, br_b, br_a = 1, 1, 1, 1
-        end
-    else
-        if is_bg_enabled and bgC then
-            bg_r, bg_g, bg_b, bg_a = bgC.r, bgC.g, bgC.b, bgC.a or 1
-            br_r, br_g, br_b, br_a = 0, 0, 0, 0
-        else
-            bg_r, bg_g, bg_b, bg_a = 0, 0, 0, 0
-            br_r, br_g, br_b, br_a = 0, 0, 0, 0
-        end
-    end
-    if combat_background_active then
-        bg_a = 0
-        br_a = 0
-    end
-    set_backdrop_state_if_changed(self, bg_r, bg_g, bg_b, bg_a, br_r, br_g, br_b, br_a)
+    M.apply_addon_frame_background(self, {
+        display_count = display_count,
+        enabled = runtime_config.frame_bg_enabled,
+        color = bgC,
+        in_combat = in_combat,
+        is_moving = is_moving,
+        suppressed = managed_cdm_aura_mode,
+    })
 end
 
 --#endregion AURA UPDATE (MAIN PER-FRAME REFRESH) ==============================

@@ -23,10 +23,6 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     h.eq(buffs_backend.frame_background.texture:IsShown(), false,
         "disabling Static / Long Frame BG hides the managed background")
-    local static_long_bar_buttons = buffs_backend.container.__groups["buffs:bar"].buttons
-    h.eq(buffs_backend.frame_background_rows[static_long_bar_buttons[2]].background.texture:IsShown(), false,
-        "disabling Static / Long Frame BG hides native row extensions")
-
     local color_sync = h.addon.all_the_colors
     M.db.shared_background_color_enabled = true
     M.db.sync_bar_bg_static_long = true

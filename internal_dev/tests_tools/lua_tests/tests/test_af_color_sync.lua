@@ -102,7 +102,10 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
 
     local timer_font = M.controls.timer_number_font_dropdown_static_long
     local timer_bold = M.controls.timer_number_font_bold_static_long
-    h.ok(timer_bold.checkbox:IsEnabled(), "Source Code Pro enables its available Bold option")
+    h.eq(timer_font:GetValue(), M.DEFAULT_AURA_FONT_KEY,
+        "Aura timer fonts default to Game Default")
+    h.ok(not timer_bold.checkbox:IsEnabled(),
+        "Game Default initially disables its unavailable Bold option")
     timer_font.button:Click()
     h.ok(click_open_dropdown_option("Game Default"), "Game Default timer font option is selectable")
     h.eq(timer_font.button:GetFontString():GetFontObject(), GameFontNormalSmall,

@@ -66,11 +66,9 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
         h.is_nil(aura_button.__cancel_aura_buttons,
             "managed Debuff AuraButton does not enable native cancellation")
     end
-    local debuff_bar_buttons = backend.container.__groups["debuffs:bar"].buttons
-    h.eq(backend.frame_background_rows[debuff_bar_buttons[1]].background.texture:IsShown(), false,
-        "fixed empty row replaces the first native row background without overlap")
-    h.ok(backend.frame_background_rows[debuff_bar_buttons[2]].background.texture:IsShown(),
-        "later native rows extend the frame background")
+    local _, background_anchor = backend.frame_background.texture:GetPoint(1)
+    h.eq(background_anchor, backend.frame_background_anchor,
+        "Bar Mode background follows its stable full-width anchor")
 
     h.ok(frame:IsShown(), "runtime startup shows the enabled managed Debuff shell")
     h.eq(frame.move_handle:IsShown(), false, "move controls follow saved off state")

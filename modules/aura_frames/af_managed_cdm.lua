@@ -112,12 +112,15 @@ local function create_record_mode(backend, record, mode)
     local bar_mode = mode == "bar"
     local category = backend.category
     local candidate_filters = { includeSpellIDs = record.spell_ids }
-    local initializer = M.create_managed_presentation_initializer(
+    local initialize_group_presentation = M.create_managed_presentation_initializer(
         backend.cfg_db,
         category,
         bar_mode,
         backend
     )
+    local initializer = function(aura_button)
+        initialize_group_presentation(aura_button, record.order)
+    end
     local group_key = make_key(category, "group", mode, record.cooldown_id)
     local group, group_error = M.add_managed_aura_group(
         backend,
@@ -266,6 +269,26 @@ local function apply_backend_style(backend)
             M.set_managed_presentation_bar_color(duration_bar, bar_color)
         end
     end)
+    local aura_mode = cfg_db["cooldown_mode_" .. category] ~= true
+    if aura_mode and M.apply_managed_presentation_chrome then
+        M.apply_managed_presentation_chrome(
+            backend,
+            cfg_db,
+            cfg_db["bar_mode_" .. category] == true
+        )
+    elseif backend.frame_background then
+        M.hide_managed_frame_background(backend)
+    end
+end
+
+function M.set_managed_cdm_move_outline_shown(frame, shown)
+    local backend = frame and frame._managed_cdm_backend
+    if not backend then return false end
+    local aura_mode = backend.cfg_db["cooldown_mode_" .. backend.category] ~= true
+    for _, edge in pairs(backend.move_outline or {}) do
+        edge:SetShown(aura_mode and shown == true)
+    end
+    return aura_mode
 end
 
 local function anchor_slot_buttons(frame, backend)
@@ -344,10 +367,11 @@ function M.create_managed_cdm_backend(frame, cfg_db, category)
     if not backend then return nil, backend_error end
     backend.category = category
     backend.cfg_db = cfg_db
-    backend.skip_frame_background_rows = true
     backend.cdm_records = {}
     backend.bar_regions = {}
-    backend.frame_background_rows = {}
+    M.initialize_managed_frame_background(backend, frame)
+    backend.move_outline = M.create_managed_container_move_outline
+        and M.create_managed_container_move_outline(backend.container)
     frame._managed_cdm_backend = backend
 
     local source_records = get_ordered_cooldown_records(category)

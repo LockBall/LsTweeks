@@ -1,6 +1,7 @@
 -- Managed preset Aura capabilities (Short, learned Static / Long, Timed Buffs, and Debuffs).
--- Owns native icon/bar presentation, frame backgrounds, and move outlines for
+-- Owns native icon/bar presentation and move outlines for
 -- HELPFUL Buffs and HARMFUL Debuffs without reintroducing Aura data reads.
+-- af_background.lua owns background policy and managed geometry.
 
 local addon_name, addon = ...
 
@@ -18,7 +19,6 @@ local BAR_TIMER_WIDTH = 36
 local MOVE_OUTLINE_OVERLAP = 1
 local MOVE_HANDLE_EDGE_THICKNESS = 3
 local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
-local NO_BACKGROUND_INSETS = { left = 0, right = 0, top = 0, bottom = 0 }
 local managed_duration_fonts = {}
 local managed_stack_fonts = {}
 local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
@@ -139,17 +139,6 @@ local function set_managed_bar_width(aura_button, width)
     aura_button:SetWidth(width)
 end
 
-local function register_frame_background_row(backend, aura_button, mode, index)
-    if backend.skip_frame_background_rows then return end
-    local background = addon.CreateBackgroundRegion(aura_button)
-    backend.frame_background_rows[aura_button] = {
-        aura_button = aura_button,
-        background = background,
-        mode = mode,
-        index = index,
-    }
-end
-
 local function initialize_preset_icon(
     aura_button,
     cfg_db,
@@ -157,12 +146,10 @@ local function initialize_preset_icon(
     duration_font,
     stack_font,
     backend,
-    index
+    _index
 )
     local duration_overlay = backend.icon_duration_overlay == true
     aura_button:SetSize(ICON_SIZE, duration_overlay and ICON_SIZE or ICON_CELL_HEIGHT)
-    register_frame_background_row(backend, aura_button, "icon", index)
-
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(ICON_SIZE, ICON_SIZE)
     icon:SetPoint("TOP", aura_button, "TOP")
@@ -212,8 +199,7 @@ local function initialize_preset_bar(
         - (BAR_FRAME_INSET * 2)
     aura_button:SetSize(row_width, BAR_ROW_HEIGHT)
     aura_button._lstweeks_width = row_width
-    register_frame_background_row(backend, aura_button, "bar", index)
-
+    M.register_managed_frame_background_row(backend, aura_button, "bar", index)
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(BAR_ROW_HEIGHT, BAR_ROW_HEIGHT)
     icon:SetPoint("LEFT", aura_button, "LEFT")
@@ -385,114 +371,9 @@ local function create_container_move_outline(container)
     return outline
 end
 
+M.create_managed_container_move_outline = create_container_move_outline
+
 --#endregion MANAGED MOVE OUTLINE CREATION =====================================
-
-
---#region MANAGED FRAME BACKGROUNDS ============================================
-
-local function configure_managed_frame_background(
-    backend,
-    bar_mode,
-    width,
-    spacing,
-    show_timer_text,
-    growth_layout
-)
-    local mode = bar_mode and "bar" or "icon"
-    local cell_height = show_timer_text and ICON_CELL_HEIGHT or ICON_SIZE
-    local signature = table.concat({
-        mode,
-        width,
-        spacing,
-        cell_height,
-        growth_layout.value,
-    }, ":")
-    if backend.frame_background_signature == signature then return end
-    backend.frame_background_signature = signature
-
-    local minimum_height = bar_mode and (BAR_ROW_HEIGHT + (BAR_FRAME_INSET * 2)) or cell_height
-    local anchor = backend.frame_background_anchor
-    anchor:ClearAllPoints()
-    anchor:SetPoint(growth_layout.anchor, backend.owner, growth_layout.anchor)
-    anchor:SetSize(width, minimum_height)
-
-    local icons_per_row = growth_layout.vertical and 1
-        or math.max(1, math.floor((width + spacing) / (ICON_SIZE + spacing)))
-    local grows_up = growth_layout.vertical_direction == "UP"
-    local grows_left = growth_layout.horizontal == "LEFT"
-    for _, record in pairs(backend.frame_background_rows) do
-        local texture = record.background.texture
-        record.extends_background = false
-        texture:ClearAllPoints()
-        if record.mode == mode then
-            if bar_mode and record.index > 1 then
-                record.extends_background = true
-                texture:SetSize(width, BAR_ROW_HEIGHT + spacing)
-                if grows_up then
-                    texture:SetPoint(
-                        "BOTTOMLEFT",
-                        record.aura_button,
-                        "BOTTOMLEFT",
-                        -BAR_FRAME_INSET,
-                        BAR_FRAME_INSET - spacing
-                    )
-                else
-                    texture:SetPoint(
-                        "TOPLEFT",
-                        record.aura_button,
-                        "TOPLEFT",
-                        -BAR_FRAME_INSET,
-                        spacing - BAR_FRAME_INSET
-                    )
-                end
-            elseif not bar_mode
-                and record.index > icons_per_row
-                and ((record.index - 1) % icons_per_row) == 0
-            then
-                record.extends_background = true
-                texture:SetSize(width, cell_height + spacing)
-                local point
-                if grows_up then
-                    point = grows_left and "BOTTOMRIGHT" or "BOTTOMLEFT"
-                    texture:SetPoint(point, record.aura_button, point, 0, -spacing)
-                else
-                    point = grows_left and "TOPRIGHT" or "TOPLEFT"
-                    texture:SetPoint(point, record.aura_button, point, 0, spacing)
-                end
-            end
-        end
-    end
-end
-
-local function apply_managed_frame_background(
-    backend,
-    cfg_db,
-    bar_mode,
-    width,
-    spacing,
-    show_timer_text,
-    growth_layout
-)
-    local background = backend and backend.frame_background
-    if not (background and M.resolve_frame_background) then return end
-
-    configure_managed_frame_background(
-        backend,
-        bar_mode,
-        width,
-        spacing,
-        show_timer_text,
-        growth_layout
-    )
-    local enabled, color = M.resolve_frame_background(cfg_db, backend.category)
-    background:Apply(enabled, color, NO_BACKGROUND_INSETS)
-    for _, record in pairs(backend.frame_background_rows) do
-        record.background:SetColor(color)
-        record.background:SetShown(enabled and record.extends_background)
-    end
-end
-
---#endregion MANAGED FRAME BACKGROUNDS =========================================
 
 
 --#region MANAGED MOVE OUTLINE =================================================
@@ -556,17 +437,42 @@ local function position_container_move_outline(backend, width, bar_mode, growth_
     end
 end
 
-function M.update_managed_move_outline_width(frame, width)
-    local backend = frame and frame._managed_aura_backend
-    if not (backend and backend.move_outline_growth_layout) then return false end
-    if InCombatLockdown and InCombatLockdown() then return false end
-    position_container_move_outline(
+local function apply_managed_presentation_chrome(backend, cfg_db, bar_mode, width_override)
+    if not (backend and cfg_db) then return false end
+    local category = backend.category
+    local width = math.max(
+        M.MIN_FRAME_WIDTH,
+        width_override or get_preset_setting(cfg_db, category, "width", M.DEFAULT_FRAME_WIDTH)
+    )
+    local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
+    local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
+    local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
+    position_container_move_outline(backend, width, bar_mode, growth_layout)
+    M.apply_managed_frame_background(
         backend,
-        math.max(M.MIN_FRAME_WIDTH, width or frame:GetWidth()),
-        backend.move_outline_bar_mode,
-        backend.move_outline_growth_layout
+        cfg_db,
+        bar_mode,
+        width,
+        spacing,
+        show_timer_text,
+        growth_layout
     )
     return true
+end
+
+M.apply_managed_presentation_chrome = apply_managed_presentation_chrome
+
+function M.update_managed_move_outline_width(frame, width)
+    local backend = frame and (frame._managed_aura_backend or frame._managed_cdm_backend)
+    if not backend then return false end
+    if InCombatLockdown and InCombatLockdown() then return false end
+    local bar_mode = backend.cfg_db["bar_mode_" .. backend.category] == true
+    return apply_managed_presentation_chrome(
+        backend,
+        backend.cfg_db,
+        bar_mode,
+        math.max(M.MIN_FRAME_WIDTH, width or frame:GetWidth())
+    )
 end
 
 --#endregion MANAGED MOVE OUTLINE ==============================================
@@ -653,16 +559,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     local max_frame_count = M.AURA_FRAME_LIMIT
     local spacing = get_preset_setting(cfg_db, category, "spacing", 1)
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
-    position_container_move_outline(backend, width, bar_mode, growth_layout)
-    apply_managed_frame_background(
-        backend,
-        cfg_db,
-        bar_mode,
-        width,
-        spacing,
-        show_timer_text,
-        growth_layout
-    )
+    apply_managed_presentation_chrome(backend, cfg_db, bar_mode, width)
     local signature = table.concat({ mode, max_frame_count, spacing, growth_layout.value, width,
         tostring(show_timer_text) }, ":")
     if backend.presentation_signature == signature then return end
@@ -724,11 +621,7 @@ local function create_managed_preset_backend(
     end
     backend.stack_font = stack_font
     backend.bar_regions = {}
-    backend.frame_background_rows = {}
-    backend.frame_background_anchor = CreateFrame("Frame", nil, frame)
-    backend.frame_background = addon.CreateBackgroundRegion(frame, {
-        anchor_to = backend.frame_background_anchor,
-    })
+    M.initialize_managed_frame_background(backend, frame)
     backend.move_outline = create_container_move_outline(backend.container)
     backend.presentation_group_keys = {
         bar = group_key .. ":bar",

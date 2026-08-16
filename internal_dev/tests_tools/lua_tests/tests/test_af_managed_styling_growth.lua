@@ -33,6 +33,7 @@ h.test("managed Static / Long Buff styling and growth remain independently confi
         "disabling managed timer text hides the shared duration font")
 
     M.db.timer_static_long = true
+    M.db.timer_number_font_static_long = h.addon.DEFAULT_FONT_KEY
     M.db.timer_number_font_size_static_long = 14
     M.db.timer_number_font_bold_static_long = true
     M.db.timer_color_static_long = { r = 0.2, g = 0.3, b = 0.4 }
@@ -49,6 +50,7 @@ h.test("managed Static / Long Buff styling and growth remain independently confi
     h.eq(color_call[3], 0.4, "managed timer font applies the saved blue component")
     h.eq(color_call[4], 1, "enabling managed timer text restores its opacity")
 
+    M.db.stack_number_font_static_long = h.addon.DEFAULT_FONT_KEY
     M.db.stack_number_font_size_static_long = 13.5
     M.db.stack_number_font_bold_static_long = true
     M.db.stack_color_static_long = { r = 0.7, g = 0.6, b = 0.5 }
@@ -124,8 +126,8 @@ h.test("managed Static / Long Buff styling and growth remain independently confi
         "bg_static_long", "scale_static_long", "spacing_static_long", "HELPFUL")
     h.eq(buffs_backend.container.__flow_anchor, "TOPRIGHT",
         "Icon Mode restores its remembered LEFT growth")
-    h.eq(buffs_backend.frame_background_anchor.__width, M.MIN_FRAME_WIDTH,
-        "empty Icon Mode background uses the effective configured frame width")
+    h.eq(buffs_backend.frame_background_anchor.__width, M.MANAGED_PRESENTATION_METRICS.icon_size,
+        "empty Icon Mode background uses one icon-cell width")
     h.eq(buffs_backend.frame_background_anchor.__height, 46,
         "empty Icon Mode background uses one icon-and-timer row")
     M.db.bar_mode_static_long = true

@@ -8,7 +8,6 @@ local addon_name, addon = ...
 
 local floor          = math.floor
 local math_max       = math.max
-local math_min       = math.min
 local math_ceil      = math.ceil
 local InCombatLockdown = InCombatLockdown
 
@@ -146,85 +145,6 @@ function M.set_height_for_growth(self, new_height, growth)
 end
 
 --#endregion FRAME HEIGHT RESIZE (PRESERVES ANCHOR POINT) ======================
-
---#region COMBAT BACKGROUND VARIANTS ==========================================
-
--- The frame shell intentionally keeps its geometry frozen in combat. These
--- pre-sized textures instead switch visibility to match the current aura count.
-function M.setup_combat_background_variants(self)
-    if not self or InCombatLockdown() then return end
-
-    local layout = self._layout_cache
-    local max_count = self.icons and #self.icons or 0
-    if not layout then return end
-
-    local variants = self._combat_background_variants or {}
-    self._combat_background_variants = variants
-    self._combat_background_variant_count = max_count
-
-    local growth_layout = layout.growth_layout or addon.GetGrowthDirection(layout.growth)
-    local anchor = growth_layout.anchor
-    for count = 0, max_count do
-        local variant = variants[count + 1]
-        if not variant then
-            variant = self:CreateTexture(nil, "BACKGROUND", nil, 1)
-            variants[count + 1] = variant
-        end
-        variant:ClearAllPoints()
-        variant:SetPoint(anchor, self, anchor, 0, 0)
-        variant:SetSize(
-            layout.frame_width,
-            M.get_aura_frame_height(layout, count, layout.bar_mode, layout.spacing, layout.layout_show_timer_text)
-        )
-        variant:Hide()
-    end
-
-    for index = max_count + 2, #variants do
-        variants[index]:Hide()
-    end
-    self._combat_background_index = nil
-end
-
-function M.update_combat_background(self, display_count, enabled, color, in_combat, is_moving)
-    if not self then return false end
-    local variants = self._combat_background_variants
-
-    if not in_combat and variants and color then
-        local r, g, b, a = color.r, color.g, color.b, color.a or 1
-        if self._combat_background_r ~= r
-            or self._combat_background_g ~= g
-            or self._combat_background_b ~= b
-            or self._combat_background_a ~= a then
-            self._combat_background_r = r
-            self._combat_background_g = g
-            self._combat_background_b = b
-            self._combat_background_a = a
-            for index = 1, (self._combat_background_variant_count or 0) + 1 do
-                variants[index]:SetColorTexture(r, g, b, a)
-            end
-        end
-    end
-
-    local wanted_index
-    if in_combat and enabled and color and not is_moving and variants then
-        local max_count = self._combat_background_variant_count or 0
-        wanted_index = math_min(max_count, math_max(0, tonumber(display_count) or 0)) + 1
-    end
-
-    local current_index = self._combat_background_index
-    if current_index == wanted_index then return wanted_index ~= nil end
-    if current_index and variants and variants[current_index] then
-        variants[current_index]:Hide()
-    end
-    self._combat_background_index = wanted_index
-    if wanted_index and variants[wanted_index] then
-        variants[wanted_index]:Show()
-        return true
-    end
-    return false
-end
-
---#endregion COMBAT BACKGROUND VARIANTS =======================================
 
 --#region LAYOUT ENGINE ========================================================
 

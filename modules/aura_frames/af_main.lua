@@ -93,7 +93,7 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
         cfg_db,
         category,
         setting_prefix .. "_number_font",
-        addon.DEFAULT_FONT_KEY
+        M.DEFAULT_AURA_FONT_KEY
     )
     local size = setting_prefix == "stack"
         and M.get_stack_number_font_size(category, cfg_db)
@@ -699,8 +699,14 @@ local function position_aura_frame_move_handle(frame)
         managed_mover_edge = "TOP"
     end
 
-    if frame._managed_aura_backend then
+    local cdm_backend = frame._managed_cdm_backend
+    local cdm_aura_mode = cdm_backend
+        and cdm_backend.cfg_db["cooldown_mode_" .. cdm_backend.category] ~= true
+    if frame._managed_aura_backend or cdm_aura_mode then
         handle:SetBackdropBorderColor(0, 0, 0, 0)
+    else
+        local color = M.MOVE_BORDER_COLOR
+        handle:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
     end
     if uses_safe_mover_edge then
         local mover_side = managed_mover_edge == "BOTTOM" and 2 or 1

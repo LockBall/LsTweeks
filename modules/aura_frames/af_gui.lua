@@ -238,7 +238,7 @@ function M.sync_general_controls_from_db()
     for _, cat in ipairs(M.TIMER_CATEGORIES) do
         local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
         if font_dropdown and font_dropdown.SetValue then
-            font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or addon.DEFAULT_FONT_KEY)
+            font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or M.DEFAULT_AURA_FONT_KEY)
         end
 
         local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
@@ -255,7 +255,7 @@ function M.sync_general_controls_from_db()
     for _, cat in ipairs(M.CATEGORIES) do
         local stack_font_dropdown = M.controls["stack_number_font_dropdown_" .. cat]
         if stack_font_dropdown and stack_font_dropdown.SetValue then
-            stack_font_dropdown:SetValue(M.db["stack_number_font_" .. cat] or addon.DEFAULT_FONT_KEY)
+            stack_font_dropdown:SetValue(M.db["stack_number_font_" .. cat] or M.DEFAULT_AURA_FONT_KEY)
         end
 
         local stack_font_size_slider = M.controls["stack_number_font_size_slider_" .. cat]
