@@ -82,6 +82,87 @@ h.test("managed backend lifecycle preserves feature and runtime gates", function
     h.eq(M.get_managed_aura_backend("test_debuff"), nil, "released backend leaves registry")
 end)
 
+h.test("managed Aura slots initialize one stable native indicator", function()
+    local M = h.addon.aura_frames
+    local owner = CreateFrame("Frame", nil, UIParent)
+    local backend = M.create_managed_aura_backend(owner, "test_slot", "player")
+    local initialized
+    local slot, err = M.add_managed_aura_slot(backend, "spell:1001", "HELPFUL", {
+        candidateFilters = { includeSpellIDs = { [1001] = true } },
+        initializeFrame = function(aura_button)
+            initialized = aura_button
+        end,
+    })
+
+    h.is_nil(err, "managed slot created without an error")
+    h.ok(slot and slot.aura_button, "managed slot returns its stable AuraButton")
+    h.eq(slot.aura_button, initialized, "slot initialization receives the returned AuraButton")
+    h.eq(backend.aura_buttons[initialized], "spell:1001", "slot button joins accessibility tracking")
+    h.eq(backend.container.__slots["spell:1001"].filter_string, "HELPFUL",
+        "managed slot preserves its native Aura filter")
+end)
+
+h.test("CDM managed backend uses groups for Aura mode and slots for cooldown overlays", function()
+    local M = h.addon.aura_frames
+    Enum.CooldownViewerCategory = {
+        Essential = 0,
+        Utility = 1,
+        TrackedBuff = 2,
+        TrackedBar = 3,
+    }
+    C_CooldownViewer = {
+        GetCooldownViewerCategorySet = function(category)
+            h.eq(category, 0, "Essential frame requests the matching public CDM category")
+            return { 71 }
+        end,
+        GetCooldownViewerCooldownInfo = function(cooldown_id)
+            h.eq(cooldown_id, 71, "CDM backend resolves static info for its cooldown ID")
+            return { spellID = 7001, linkedSpellIDs = { 7002 } }
+        end,
+    }
+    local owner = CreateFrame("Frame", nil, UIParent)
+    owner.category = "essential"
+    owner.icons = {}
+    local cfg_db = {
+        cooldown_mode_essential = true,
+        bar_mode_essential = false,
+        timer_essential = true,
+        width_essential = 140,
+        spacing_essential = 2,
+        growth_icon_essential = "RIGHT",
+        growth_bar_essential = "DOWN",
+        color_essential = { r = 1, g = 1, b = 1, a = 1 },
+        bar_bg_color_essential = { r = 0, g = 0, b = 0, a = 1 },
+        bar_text_color_essential = { r = 1, g = 1, b = 1, a = 1 },
+    }
+
+    local backend, err = M.create_managed_cdm_backend(owner, cfg_db, "essential")
+    h.is_nil(err, "CDM managed backend created without an error")
+    h.ok(backend and backend.cdm_records[71], "CDM backend owns one record per cooldown ID")
+    local record = backend.cdm_records[71]
+    h.eq(record.spell_ids[7001], true, "CDM Aura filter includes the base spell")
+    h.eq(record.spell_ids[7002], true, "CDM Aura filter includes linked Aura spells")
+    h.eq(backend.container.__groups[record.modes.icon.group_key].active_max_frame_count, 0,
+        "cooldown mode disables compact Aura groups")
+    h.eq(backend.container.__slots[record.modes.icon.slot_key].options.candidateFilters.includeSpellIDs[7001], true,
+        "cooldown mode enables the selected native Aura slot overlay")
+    h.eq(record.modes.icon.slot_button.__height, 32,
+        "cooldown icon slot keeps native duration text inside the fixed icon cell")
+    h.eq(backend.container.__groups[record.modes.icon.group_key].layout.elementWidth, 32,
+        "CDM icon groups expose their width so separate tracked groups share a horizontal line")
+    h.eq(next(backend.container.__slots[record.modes.bar.slot_key].options.candidateFilters.includeSpellIDs), nil,
+        "cooldown mode disables the inactive presentation slot")
+
+    cfg_db.cooldown_mode_essential = false
+    M.refresh_managed_cdm_backend(owner, false)
+    h.eq(backend.container.__groups[record.modes.icon.group_key].active_max_frame_count, 1,
+        "Aura mode enables the compact native group")
+    h.eq(next(backend.container.__slots[record.modes.icon.slot_key].options.candidateFilters.includeSpellIDs), nil,
+        "Aura mode disables fixed cooldown overlay slots")
+    M.release_managed_aura_backend(backend)
+    C_CooldownViewer = nil
+end)
+
 h.test("managed accessibility helper skips constrained AuraButtons", function()
     local M = h.addon.aura_frames
     local owner = base_create_frame("Frame", nil, UIParent)

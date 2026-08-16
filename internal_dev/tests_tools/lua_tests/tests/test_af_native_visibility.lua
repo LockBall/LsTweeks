@@ -1,4 +1,4 @@
--- Aura Frames native visibility tests: reversible Aura-frame parent suppression and CDM settings.
+-- Aura Frames native visibility tests: reversible Aura-frame parent suppression and CDM alpha hiding.
 -- Runs under desktop Lua 5.1 against the wow_stub environment.
 ---@diagnostic disable: undefined-global
 
@@ -108,42 +108,29 @@ h.test("General-tab Blizzard visibility changes apply after combat", function()
     M.restore_blizz_aura_frame_settings()
 end)
 
-h.test("CDM visibility restores the prior Blizzard setting on module disable", function()
+h.test("public CDM transport does not drive Blizzard Edit Mode visibility", function()
     install_live_cooldown_viewer_enums()
     local viewer = create_viewer("EssentialCooldownViewer", Enum.CooldownViewerVisibleSetting.Hidden)
+    M.db = { hide_blizz_cdm_essential = false }
 
-    M.ensure_blizz_cdm_viewer_always_visible("essential")
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Always, "module forces Always while active")
-
-    M.restore_blizz_cdm_viewer_settings()
-
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "module disable restores prior visibility")
-    h.eq(viewer.__setting, Enum.EditModeCooldownViewerSetting.VisibleSetting, "restore uses Edit Mode setting")
+    M.update_blizz_cdm_visibility("essential")
+    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden,
+        "addon leaves Blizzard visibility unchanged")
+    h.is_nil(viewer.__setting, "addon never invokes the Edit Mode setting method")
 end)
 
-h.test("CDM visibility restoration waits for combat to end", function()
-    install_live_cooldown_viewer_enums()
-    local viewer = create_viewer("UtilityCooldownViewer", Enum.CooldownViewerVisibleSetting.Hidden)
+h.test("CDM alpha hide is independent and restores without viewer scripts", function()
+    local viewer = create_viewer("UtilityCooldownViewer", 2)
+    M.db = { hide_blizz_cdm_utility = true }
 
-    M.ensure_blizz_cdm_viewer_always_visible("utility")
-    h.stub.in_combat = true
+    M.update_blizz_cdm_visibility("utility")
+    h.eq(viewer:GetAlpha(), 0, "hide preference suppresses the native viewer visually")
+    h.eq(viewer:IsMouseEnabled(), false, "hidden native viewer does not intercept the mouse")
+    h.eq(#(viewer:GetCalls("HookScript") or {}), 0, "addon installs no viewer script hooks")
+
     M.restore_blizz_cdm_viewer_settings()
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Always, "combat keeps required setting until regen")
-
-    h.stub.in_combat = false
-    h.fire_event("PLAYER_REGEN_ENABLED")
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "regen restores prior visibility")
-end)
-
-h.test("CDM visibility restoration respects an external setting change", function()
-    install_live_cooldown_viewer_enums()
-    local viewer = create_viewer("BuffIconCooldownViewer", Enum.CooldownViewerVisibleSetting.InCombat)
-
-    M.ensure_blizz_cdm_viewer_always_visible("tracked_buffs")
-    viewer.visibleSetting = Enum.CooldownViewerVisibleSetting.Hidden
-    M.restore_blizz_cdm_viewer_settings()
-
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "module does not overwrite later external setting")
+    h.eq(viewer:GetAlpha(), 1, "module disable restores native viewer alpha")
+    h.eq(viewer:IsMouseEnabled(), true, "module disable restores native viewer mouse state")
 end)
 
 h.run("af_native_visibility")

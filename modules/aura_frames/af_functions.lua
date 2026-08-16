@@ -512,22 +512,11 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     activity.is_custom = is_custom
     activity.is_cdm = is_cdm
     activity.needs_custom_scan = enabled and is_custom
-    activity.needs_cdm_viewer = enabled and is_cdm
-    activity.needs_cdm_scan = enabled and is_cdm
+    local needs_cdm_cooldown_layer = enabled and is_cdm
+        and read_frame_bool(cfg_db, "cooldown_mode_" .. category)
+    activity.needs_cdm_scan = needs_cdm_cooldown_layer
 
     return activity
-end
-
-function M.cdm_category_needs_viewer(category)
-    if not (category and M.WOW_COOLDOWN_CATEGORIES[category]) then
-        return false
-    end
-    local keys = M.get_preset_keys(category)
-    local frame = M.frames and M.frames[keys.show_key]
-    if not frame then
-        return M.db and M.db[keys.show_key] == true
-    end
-    return M.get_frame_activity_state(frame, keys.show_key, keys.move_key).needs_cdm_viewer == true
 end
 
 function M.invalidate_aura_scan_caches()

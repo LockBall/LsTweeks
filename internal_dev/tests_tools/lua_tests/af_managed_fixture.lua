@@ -27,6 +27,7 @@ CreateFrame = function(kind, name, parent, template)
     if kind ~= "AuraContainer" then return frame end
 
     frame.__groups = {}
+    frame.__slots = {}
     frame.__group_calls = {}
 
     function frame:SetUnit(unit)
@@ -100,6 +101,41 @@ CreateFrame = function(kind, name, parent, template)
         end
     end
 
+    function frame:AddAuraSlot(key, filter_string, options)
+        local aura_button = base_create_frame("AuraButton", nil, self, "CustomAuraButtonTemplate")
+        function aura_button:SetHideTooltipInCombat(enabled)
+            self.__hide_tooltip_in_combat = enabled == true
+        end
+        function aura_button:SetCancelAuraButtons(buttons)
+            self.__cancel_aura_buttons = buttons
+        end
+        function aura_button:SetSpellName(region)
+            self.__spell_name_region = region
+        end
+        function aura_button:SetDurationText(region, binding_options)
+            self.__duration_text_region = region
+            self.__duration_text_options = binding_options
+        end
+        function aura_button:SetApplicationCount(region, binding_options)
+            self.__application_count_region = region
+            self.__application_count_options = binding_options
+        end
+        function aura_button:SetDurationBar(region, binding_options)
+            self.__duration_bar_region = region
+            self.__duration_bar_options = binding_options
+        end
+        local slot = {
+            key = key,
+            filter_string = filter_string,
+            options = options,
+            button = aura_button,
+        }
+        self.__slots[key] = slot
+        options.initializeFrame(aura_button)
+        aura_button.__access_constrained = true
+        return aura_button
+    end
+
     function frame:SetAuraGroupLayout(key, layout)
         self.__groups[key].layout = layout
     end
@@ -120,6 +156,11 @@ CreateFrame = function(kind, name, parent, template)
 
     function frame:SetAuraGroupSortMethod(key, method, direction)
         self.__group_calls[#self.__group_calls + 1] = { "sort", key, method, direction }
+    end
+
+
+    function frame:SetAuraSlotCandidateFilters(key, value)
+        self.__slots[key].options.candidateFilters = value
     end
 
     created_containers[#created_containers + 1] = frame

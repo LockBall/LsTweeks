@@ -56,21 +56,23 @@ Use **Test Aura** to preview a custom or Cooldown Manager-backed frame. Its adja
 
 
 #### Tooltips
-Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration; the Static / Long Buffs mover tooltip reports the learned inclusion count and current Short maximum. Custom and Cooldown Manager-backed frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
+Managed Short Buffs, Static / Long Buffs, Timed Buffs, Debuffs, and active Cooldown Manager Auras use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration; the Static / Long Buffs mover tooltip reports the learned inclusion count and current Short maximum. Custom frames and addon-rendered CDM cooldown entries use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
 Right-click a supported cancelable player buff to remove it. Static / Long Buffs uses Blizzard's native AuraButton cancellation and inherits Blizzard's restrictions; custom frames use the addon-owned out-of-combat cancellation path. Short Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries are not cancelable through LsTweeks.
 
 
 #### WoW Cooldown Manager Frames
-Cooldown Manager-backed frames read live Blizzard Cooldown Manager viewer state:
+Cooldown Manager-backed frames combine Blizzard managed Auras with live Cooldown Manager cooldown state:
 
 - `Essential`
 - `Utility`
 - `Tracked Buffs`
 - `Tracked Bars`
 
-WoW Cooldown Manager must stay enabled for these frames to populate. When an LsTweeks CDM-backed frame is enabled, the matching WoW Edit Mode Cooldown Manager frame is kept set to **Always Visible** so it continues producing live viewer state. If **Hide WoW ...** is checked, LsTweeks hides the Blizzard viewer with alpha and mouse settings, not `Hide()`, because hidden viewers stop providing useful child state. Use **Sync to CDM** after manually reordering icons inside the same CDM group if the addon frame has not refreshed yet.
+Active Auras are displayed through WoW 12.1 managed Aura groups and slots, so LsTweeks does not read their protected Aura data. Aura mode uses compact native groups in Cooldown Manager order. Cooldown mode keeps an addon-rendered cooldown cell underneath each stable native Aura slot; when an active Aura ends, Blizzard hides the slot and reveals the continuing cooldown.
+
+Cooldown mode reads ordered spell identity through WoW's public `C_CooldownViewer` APIs and cooldown/charge timing through `C_Spell` duration objects; it does not inspect or hook Blizzard Cooldown Viewer frames. The matching **Hide WoW ...** option is therefore independent of cooldown transport and only suppresses the native viewer visually. Use **Sync to CDM** after manually reordering icons inside the same CDM group if the addon frame has not refreshed yet.
 
 
 #### Custom Filtered Frames

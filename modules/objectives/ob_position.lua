@@ -24,6 +24,7 @@ local objective_position_state = "unavailable"
 local objective_position_base
 local objective_position_applied = false
 local objective_drag_state = setmetatable({}, { __mode = "k" })
+local objective_drag_driver
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -216,6 +217,36 @@ local function get_cursor_position()
     return (x or 0) / scale, (y or 0) / scale
 end
 
+local function stop_objective_drag_driver()
+    if objective_drag_driver then objective_drag_driver:Hide() end
+end
+
+local function start_objective_drag_driver()
+    if not objective_drag_driver then
+        objective_drag_driver = CreateFrame("Frame")
+        objective_drag_driver:SetScript("OnUpdate", function()
+            local tracker = get_objective_tracker()
+            local state = tracker and objective_drag_state[tracker]
+            if not state or not state.dragging then
+                stop_objective_drag_driver()
+                return
+            end
+            if InCombatLockdown() then
+                objective_drag_state[tracker] = nil
+                stop_objective_drag_driver()
+                return
+            end
+
+            local current_x, current_y = get_cursor_position()
+            save_objective_offset("x", state.start_offset_x + current_x - state.start_cursor_x)
+            save_objective_offset("y", state.start_offset_y + current_y - state.start_cursor_y)
+            apply_objective_position()
+        end)
+        objective_drag_driver:Hide()
+    end
+    objective_drag_driver:Show()
+end
+
 local function sync_objective_move_header_highlight()
     local tracker = get_objective_tracker()
     if not tracker then return end
@@ -267,26 +298,14 @@ local function ensure_objective_move_hooks(tracker)
             start_offset_x = get_objective_offset("x"),
             start_offset_y = get_objective_offset("y"),
         }
-    end)
-
-    tracker:HookScript("OnUpdate", function(self)
-        local state = objective_drag_state[self]
-        if not state or not state.dragging then return end
-        if InCombatLockdown() then
-            objective_drag_state[self] = nil
-            return
-        end
-
-        local current_x, current_y = get_cursor_position()
-        save_objective_offset("x", state.start_offset_x + current_x - state.start_cursor_x)
-        save_objective_offset("y", state.start_offset_y + current_y - state.start_cursor_y)
-        apply_objective_position()
+        start_objective_drag_driver()
     end)
 
     tracker:HookScript("OnDragStop", function(self)
         local state = objective_drag_state[self]
         if not state or not state.dragging then return end
         objective_drag_state[self] = nil
+        stop_objective_drag_driver()
         save_objective_position_from_tracker()
     end)
 
@@ -312,6 +331,7 @@ local function apply_objective_move_mode()
         end
     else
         objective_drag_state[tracker] = nil
+        stop_objective_drag_driver()
         if objective_move_hooks_installed and tracker.EnableMouse and objective_move_original_mouse_enabled ~= nil then
             tracker:EnableMouse(objective_move_original_mouse_enabled == true)
         end
@@ -332,6 +352,7 @@ local function restore_objective_move_mode()
     if not tracker then return end
 
     objective_drag_state[tracker] = nil
+    stop_objective_drag_driver()
     if tracker.EnableMouse and objective_move_original_mouse_enabled ~= nil then
         tracker:EnableMouse(objective_move_original_mouse_enabled == true)
     end

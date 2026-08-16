@@ -88,6 +88,9 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
 
     local bar_mode = M.controls.bar_mode_static_long
     local growth = M.controls.growth_dropdown_static_long
+    local _, growth_anchor = growth:GetPoint(1)
+    h.eq(growth_anchor, M.controls.tooltip_static_long,
+        "Growth Direction is grouped in the first control column")
     h.eq(growth:GetValue(), "LEFT", "Static / Long Buffs opens with its saved Icon Mode growth")
     bar_mode.checkbox:SetChecked(true)
     bar_mode.checkbox:Click()

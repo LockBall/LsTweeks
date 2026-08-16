@@ -26,13 +26,9 @@ local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 local WOW_COOLDOWN_REFRESH_PROFILES = {
     immediate = {
         delays = { UPDATE_INTERVALS.next_frame },
-        prepare_viewers = false,
-        clear_child_cache = true,
     },
     hook = {
         delays = { UPDATE_INTERVALS.next_frame },
-        prepare_viewers = false,
-        clear_child_cache = false,
         defer_zero = true,
     },
     combat_entry = {
@@ -41,8 +37,6 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
             UPDATE_INTERVALS.fifth_sec,
             UPDATE_INTERVALS.six_tenths_sec,
         },
-        prepare_viewers = false,
-        clear_child_cache = false,
         mark_scan_dirty = true,
     },
     startup = {
@@ -53,8 +47,6 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
             UPDATE_INTERVALS.two_point_five_sec,
             UPDATE_INTERVALS.five_sec,
         },
-        prepare_viewers = true,
-        clear_child_cache = true,
     },
     settings = {
         delays = {
@@ -63,8 +55,6 @@ local WOW_COOLDOWN_REFRESH_PROFILES = {
             UPDATE_INTERVALS.six_tenths_sec,
             UPDATE_INTERVALS.one_point_two_sec,
         },
-        prepare_viewers = true,
-        clear_child_cache = true,
     },
 }
 
@@ -181,24 +171,12 @@ local function run_wow_cooldown_refresh(refresh_config, category_filter)
         M.update_all_blizz_cdm_visibility()
     end
 
-    local should_prepare_viewers = refresh_config.prepare_viewers and M.prepare_blizz_cdm_viewer
-    local should_clear_child_cache = refresh_config.clear_child_cache and M.clear_cooldown_viewer_child_cache
-
     for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
         if not category_filter or category == category_filter then
-            local needs_viewer = M.cdm_category_needs_viewer(category)
-            if should_prepare_viewers and needs_viewer then
-                M.prepare_blizz_cdm_viewer(category)
-            end
-
-            if should_clear_child_cache and needs_viewer then
-                M.clear_cooldown_viewer_child_cache(category)
-            end
-
             local show_key = M.get_preset_keys(category).show_key
             local frame = M.frames[show_key]
             local p = frame and frame.update_params
-            if p and (needs_viewer or frame:IsShown()) then
+            if p and frame:IsShown() then
                 M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
             end
         end
@@ -209,8 +187,6 @@ local function schedule_wow_cooldown_refresh(delay, refresh_config, category_fil
     delay = delay or 0
     M._cdm_refresh_pending = M._cdm_refresh_pending or {}
     local key = tostring(delay)
-        .. "|" .. tostring(refresh_config.prepare_viewers == true)
-        .. "|" .. tostring(refresh_config.clear_child_cache == true)
         .. "|" .. tostring(refresh_config.defer_zero == true)
         .. "|" .. tostring(refresh_config.mark_scan_dirty == true)
         .. "|" .. tostring(category_filter or "")
@@ -717,22 +693,30 @@ local function position_aura_frame_move_handle(frame)
     local handle = frame and frame.move_handle
     if not handle then return end
 
+    local managed_mover_edge = frame._managed_mover_edge
+    local uses_safe_mover_edge = frame._managed_aura_backend or frame._managed_cdm_backend
+    if frame._managed_cdm_backend and not managed_mover_edge then
+        managed_mover_edge = "TOP"
+    end
+
     if frame._managed_aura_backend then
         handle:SetBackdropBorderColor(0, 0, 0, 0)
-        local mover_side = frame._managed_mover_edge == "BOTTOM" and 2 or 1
+    end
+    if uses_safe_mover_edge then
+        local mover_side = managed_mover_edge == "BOTTOM" and 2 or 1
         for index, edge in ipairs(handle.hit_areas or {}) do
             edge:SetShown(index == mover_side)
         end
         local mover_edge = handle.hit_areas and handle.hit_areas[mover_side]
         if mover_edge then
             mover_edge:ClearAllPoints()
-            mover_edge:SetPoint(frame._managed_mover_edge .. "LEFT", handle,
-                frame._managed_mover_edge .. "LEFT", 0,
-                frame._managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
+            mover_edge:SetPoint(managed_mover_edge .. "LEFT", handle,
+                managed_mover_edge .. "LEFT", 0,
+                managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
                     or MANAGED_MOVE_HIT_OUTSET)
-            mover_edge:SetPoint(frame._managed_mover_edge .. "RIGHT", handle,
-                frame._managed_mover_edge .. "RIGHT", -RESIZE_HANDLE_SIZE,
-                frame._managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
+            mover_edge:SetPoint(managed_mover_edge .. "RIGHT", handle,
+                managed_mover_edge .. "RIGHT", -RESIZE_HANDLE_SIZE,
+                managed_mover_edge == "BOTTOM" and -MANAGED_MOVE_HIT_OUTSET
                     or MANAGED_MOVE_HIT_OUTSET)
             mover_edge:SetHeight(MANAGED_MOVE_HIT_WIDTH)
         end
@@ -886,6 +870,9 @@ local function register_aura_frame_events(frame, category)
     if M.WOW_COOLDOWN_CATEGORIES[category] then
         frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
         frame:RegisterEvent("SPELL_UPDATE_CHARGES")
+        frame:RegisterEvent("COOLDOWN_VIEWER_DATA_LOADED")
+        frame:RegisterEvent("COOLDOWN_VIEWER_TABLE_HOTFIXED")
+        frame:RegisterEvent("COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED")
     end
 end
 
@@ -897,6 +884,9 @@ local function is_aura_frame_event_relevant(event, unit)
         or event == "PLAYER_SPECIALIZATION_CHANGED"
         or event == "SPELL_UPDATE_COOLDOWN"
         or event == "SPELL_UPDATE_CHARGES"
+        or event == "COOLDOWN_VIEWER_DATA_LOADED"
+        or event == "COOLDOWN_VIEWER_TABLE_HOTFIXED"
+        or event == "COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED"
 end
 
 local function queue_deferred_aura_scan(frame, params)
@@ -1011,6 +1001,9 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     if not managed_backend then
         -- Pre-create addon-owned icons/bars so combat updates never create frames.
         create_aura_icon_pool(frame, cfg_db, category)
+        if M.WOW_COOLDOWN_CATEGORIES[category] and M.create_managed_cdm_backend then
+            M.create_managed_cdm_backend(frame, cfg_db, category)
+        end
     end
 
     -- Map-based aura cache: auraInstanceID → entry table. Persists across events.

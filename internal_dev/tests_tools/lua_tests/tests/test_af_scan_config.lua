@@ -236,16 +236,15 @@ h.test("custom secret-timing helpful Aura classifies from DoesAuraHaveExpiration
     h.stub.auras.player = nil
 end)
 
-h.test("CDM Aura entries build directly from viewer children", function()
+h.test("CDM Aura mode delegates active Aura transport to managed groups", function()
     local M = load_aura_frames()
     M.db = { cooldown_mode_essential = false }
-    h.stub.auras.player = {
-        buffs = {
-            { auraInstanceID = 901, spellId = 9001, name = "Viewer Aura", icon = 9,
-                duration = 30, expirationTime = GetTime() + 30 },
-        },
-        debuffs = {},
-    }
+    local aura_reads = 0
+    local previous_get_by_instance = C_UnitAuras.GetAuraDataByAuraInstanceID
+    rawset(C_UnitAuras, "GetAuraDataByAuraInstanceID", function()
+        aura_reads = aura_reads + 1
+        error("CDM must not inspect active AuraData")
+    end)
     local child = { GetAuraSpellInstanceID = function() return 901 end }
     local viewer = { GetChildren = function() return child end }
     M.get_cdm_viewer_frame = function() return viewer end
@@ -253,9 +252,80 @@ h.test("CDM Aura entries build directly from viewer children", function()
 
     M.add_cooldown_viewer_category_entries(target_map, "essential")
 
-    h.eq(target_map[901].name, "Viewer Aura", "viewer child resolves its active Aura without a preset scan")
-    h.eq(target_map[901].category, "essential", "directly built entry retains its CDM category")
-    h.stub.auras.player = nil
+    h.eq(aura_reads, 0, "CDM Aura mode performs no addon-owned AuraData read")
+    h.eq(next(target_map), nil, "managed groups own the complete active Aura display")
+    rawset(C_UnitAuras, "GetAuraDataByAuraInstanceID", previous_get_by_instance)
+end)
+
+h.test("CDM cooldown rendering does not request unit Aura instance ordering", function()
+    local M = load_aura_frames()
+    local previous_get_ids = C_UnitAuras.GetUnitAuraInstanceIDs
+    rawset(C_UnitAuras, "GetUnitAuraInstanceIDs", function()
+        error("CDM must not request unit Aura instance ordering")
+    end)
+    local frame = {
+        category = "essential",
+        icons = {},
+    }
+
+    local ok, err = pcall(M.render_aura_map, frame, {
+        [11001] = { spell_id = 11001, cdm_order = 1 },
+    }, false, nil, nil, M.AURA_FRAME_LIMIT, "HELPFUL", "default", false, nil)
+
+    rawset(C_UnitAuras, "GetUnitAuraInstanceIDs", previous_get_ids)
+    h.ok(ok, tostring(err))
+end)
+
+h.test("CDM cooldown scans use public APIs without touching Blizzard viewer frames", function()
+    local M = load_aura_frames()
+    local previous_cdm_api = C_CooldownViewer
+    local previous_cooldown_duration = C_Spell.GetSpellCooldownDuration
+    local previous_charge_duration = C_Spell.GetSpellChargeDuration
+    local cooldown_duration = { kind = "cooldown" }
+    local charge_duration = { kind = "charge" }
+    C_CooldownViewer = {
+        GetCooldownViewerCategorySet = function()
+            return { 81, 82 }
+        end,
+        GetCooldownViewerCooldownInfo = function(cooldown_id)
+            if cooldown_id == 82 then
+                return { cooldownID = cooldown_id, spellID = 8201, linkedSpellIDs = {}, charges = true }
+            end
+            return {
+                cooldownID = cooldown_id,
+                spellID = 8101,
+                overrideSpellID = 8102,
+                linkedSpellIDs = { 8103 },
+                charges = false,
+            }
+        end,
+    }
+    rawset(C_Spell, "GetSpellCooldownDuration", function(spell_id, ignore_gcd)
+        h.eq(spell_id, 8102, "cooldown duration uses the active override spell")
+        h.eq(ignore_gcd, true, "cooldown duration excludes the global cooldown")
+        return cooldown_duration
+    end)
+    rawset(C_Spell, "GetSpellChargeDuration", function(spell_id)
+        h.eq(spell_id, 8201, "charge cooldown uses the public charge-duration API")
+        return charge_duration
+    end)
+    M.db = { cooldown_mode_essential = true }
+    M.get_cdm_viewer_frame = function()
+        error("public CDM scan must not access Blizzard viewer frames")
+    end
+    local target_map = {}
+
+    local ok, err = pcall(M.add_cooldown_viewer_category_entries, target_map, "essential")
+
+    C_CooldownViewer = previous_cdm_api
+    rawset(C_Spell, "GetSpellCooldownDuration", previous_cooldown_duration)
+    rawset(C_Spell, "GetSpellChargeDuration", previous_charge_duration)
+    h.ok(ok, tostring(err))
+    h.eq(target_map.cd_81.spell_id, 8102, "public cooldown metadata builds the render entry")
+    h.eq(target_map.cd_81.duration_object, cooldown_duration, "public duration object reaches the renderer")
+    h.eq(target_map.cd_81.cdm_order, 1, "category-set order is preserved")
+    h.eq(target_map.cd_82.duration_object, charge_duration, "charge duration object reaches the renderer")
+    h.eq(target_map.cd_82.cdm_order, 2, "charge cooldown preserves category-set order")
 end)
 
 h.test("addon-owned Aura cancellation remains custom-frame only", function()

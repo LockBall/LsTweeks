@@ -419,32 +419,35 @@ remains authoritative.
 
 **Features:** Essential, Utility, Tracked Buffs, and Tracked Bars.
 
-**Assessment:** Not implicated directly by the four captured Lua errors, but
-high-risk and not yet proven 12.1-safe.
+**Assessment:** Reworked in code; live combat acceptance remains open.
 
-These frames do not use the ordinary preset Aura scanner as their primary
-source. They mirror Blizzard Cooldown Manager viewer children and hook their
-state. Some child state, Aura-backed duration information, or frame access may
-now become secret or forbidden during combat and encounters.
+Active Aura transport now uses Blizzard's new managed AuraGroup/AuraSlot APIs.
+Aura mode creates compact per-cooldown groups; cooldown mode overlays stable
+per-cooldown slots over the surviving addon cooldown layer. The managed filters
+come from CDM base/override/linked spell metadata and never read child Aura IDs
+or `AuraData`.
 
-Cooldown-only entries are not equivalent to active Auras, so a managed
-AuraContainer is not automatically a complete replacement for this backend.
+Cooldown-only entries now use `C_CooldownViewer.GetCooldownViewerCategorySet()`
+and `GetCooldownViewerCooldownInfo()` for ordered identity, plus
+`C_Spell.GetSpellCooldownDuration()` / `GetSpellChargeDuration()` for duration
+objects. Neither mode reads, hooks, prepares, or forces visibility on Blizzard
+Cooldown Viewer item frames.
 
-**Direction:** Audit and test this path separately in combat. Verify Essential,
-Utility, Tracked Buffs, and Tracked Bars in both active-Aura and cooldown phases,
-including reload during an encounter. Decide from evidence whether to retain the
-viewer bridge or migrate only its Aura-backed portions.
+**Direction:** Run the focused CDM regression matrix for Essential, Utility,
+Tracked Buffs, and Tracked Bars in Aura and cooldown modes, including reload
+during an encounter. Confirm native tooltips, CDM order, active-to-cooldown slot
+handoff, bar/icon presentation, and no blocked actions or Lua errors.
 
 ### AF12-18 — Hiding Blizzard Aura and Cooldown Manager frames
 
 **Assessment:** BuffFrame and DebuffFrame now have a reversible, test-covered
-hidden-parent path. Cooldown Manager suppression remains a separate concern.
+hidden-parent path. Cooldown Manager suppression is presentation-only.
 
 **Status:** Partial. The General-tab Blizzard Buff/Debuff toggles now work in
 game, and automated coverage verifies deferred changes plus module-disable
 restoration. The 2026-08-15 in-game matrix passed checkbox changes, reload,
 combat deferral, module-disable restoration, and hidden-hitbox checks. Cooldown
-Manager suppression remains part of the AF12-17 audit.
+Manager suppression no longer participates in CDM data transport.
 
 BuffFrame and DebuffFrame inherit Blizzard's Aura Frame Edit Mode behavior, but
 `UpdateSystemSettingValue` silently does nothing before the system has
@@ -454,10 +457,9 @@ frames under one hidden addon-owned parent and restores their captured original
 parents after combat. Blizzard shown state, events, scripts, and Aura processing
 remain untouched, while rendering and descendant hitboxes are both suppressed.
 
-**Direction:** BuffFrame/DebuffFrame suppression is complete. Continue avoiding
-`Hide()` for Cooldown Manager viewers where doing so stops the viewer from
-producing state needed by LsTweeks; remaining suppression work belongs to
-AF12-17.
+**Direction:** BuffFrame/DebuffFrame suppression is complete. Cooldown Manager
+hide settings may change alpha and mouse state only; do not hook viewer scripts,
+drive Edit Mode visibility, or call viewer update methods.
 
 ### AF12-19 — Other LsTweeks modules
 

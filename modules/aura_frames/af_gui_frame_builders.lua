@@ -861,16 +861,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 6, 0)
         M.controls[control_key("test_aura") .. "_pause"] = pause_test_aura_button
         refresh_pause_test_aura_button()
-        grid:stack_below(test_aura_container, enable_container)
     end
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
-    grid:stack_below(tooltip_container, test_aura_container or enable_container)
+    grid:stack_below(tooltip_container, enable_container)
 
     local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2)
     local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared BG Colors."
     add_label_tooltip(frame_bg_container, frame_bg_label, frame_bg_tooltip)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)
     grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
+    if test_aura_container then
+        grid:stack_below(test_aura_container, frame_bg_color_picker, { y = -4 })
+    end
 
     local scale_range = get_setting_range("scale")
     local scale_slider = create_frame_slider(
@@ -902,17 +904,22 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     )
     grid:place_at(spacing_slider, 1, 4)
 
+    local growth_anchor = tooltip_container
     if opts.build_source_controls then
-        opts.build_source_controls({
+        local source_controls = opts.build_source_controls({
             parent = parent,
             grid = grid,
             update = update,
             bound_raw_cb = bound_raw_cb,
             frame_config = frame_config,
             position_controls = position_controls,
+            enable_container = enable_container,
             enable_checkbox = enable_cb,
             tooltip_container = tooltip_container,
         })
+        if source_controls and source_controls.growth_anchor then
+            growth_anchor = source_controls.growth_anchor
+        end
     end
 
     local function on_fade_ooc_changed(is_checked)
@@ -1000,7 +1007,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end)
     M.controls["growth_dropdown_" .. frame_config.id] = growth_dropdown
     refresh_growth_control()
-    grid:stack_below(growth_dropdown, timer_swipe_container or bar_mode_container, { y = -25 })
+    grid:stack_below(growth_dropdown, growth_anchor, { y = -25 })
 
     local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
     grid:place_at(bar_color_picker, 3, 2, "picker")
@@ -1080,11 +1087,22 @@ function M.build_preset_frame_panel(p, data)
                     M.update_blizz_cdm_visibility(cat)
                     update()
                 end)
-                ctx.grid:stack_below(hide_blizz_cdm_container, ctx.tooltip_container)
+                ctx.grid:stack_below(hide_blizz_cdm_container, ctx.enable_container)
+                return hide_blizz_cdm_container
             end
 
+            local cooldown_mode_container
             if cat == "essential" or cat == "utility" then
-                ctx.bound_raw_cb("Cooldown Mode", "cooldown_mode_" .. cat, 6, 1, update)
+                cooldown_mode_container = ctx.bound_raw_cb(
+                    "Cooldown Mode",
+                    "cooldown_mode_" .. cat,
+                    6,
+                    1,
+                    update
+                )
+                ctx.grid:stack_below(ctx.tooltip_container, cooldown_mode_container)
+            elseif hide_blizz_cdm_label then
+                ctx.grid:place_at(ctx.tooltip_container, 6, 1)
             end
             if cat == "short" then
                 local short_threshold_range = get_setting_range("short_threshold")
@@ -1130,7 +1148,7 @@ function M.build_preset_frame_panel(p, data)
                 ctx.grid:place_at(clear_learned, 6, 1)
                 M.controls.clear_learned_buffs = clear_learned
             end
-            create_hide_blizz_cdm_control()
+            return { growth_anchor = create_hide_blizz_cdm_control() }
         end
     })
 end

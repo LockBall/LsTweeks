@@ -41,7 +41,7 @@ end
 
 --#endregion AVAILABILITY ======================================================
 
---#region BACKEND AND GROUP CREATION ==========================================
+--#region BACKEND, GROUP, AND SLOT CREATION ===================================
 
 local function apply_backend_visibility(backend)
     local shown = backend.feature_enabled and M._managed_aura_runtime_enabled
@@ -83,6 +83,7 @@ function M.create_managed_aura_backend(owner, key, unit, enabled)
         container = container,
         feature_enabled = enabled ~= false,
         groups = {},
+        slots = {},
         aura_buttons = setmetatable({}, { __mode = "k" }),
     }
     M._managed_aura_backends[key] = backend
@@ -135,7 +136,52 @@ function M.add_managed_aura_group(backend, key, filter_string, options, layout)
     return group
 end
 
---#endregion BACKEND AND GROUP CREATION =======================================
+function M.add_managed_aura_slot(backend, key, filter_string, options)
+    if not (backend and backend.container) then
+        return nil, "managed Aura slot requires a backend"
+    end
+    if type(backend.container.AddAuraSlot) ~= "function" then
+        return nil, "managed Aura slot API is unavailable"
+    end
+    if type(key) ~= "string" or key == "" then
+        return nil, "managed Aura slot requires a non-empty key"
+    end
+    if backend.slots[key] then
+        return nil, "managed Aura slot key is already registered: " .. key
+    end
+    if type(filter_string) ~= "string" or filter_string == "" then
+        return nil, "managed Aura slot requires a filter string"
+    end
+    if type(options) ~= "table" then
+        return nil, "managed Aura slot requires an options table"
+    end
+    if options.initializeFrame ~= nil and type(options.initializeFrame) ~= "function" then
+        return nil, "managed Aura slot options.initializeFrame must be a function"
+    end
+
+    local initialize_frame = options.initializeFrame
+    local managed_options = {}
+    for option_key, value in pairs(options) do
+        managed_options[option_key] = value
+    end
+
+    local slot = { key = key }
+    backend.slots[key] = slot
+    managed_options.initializeFrame = function(aura_button)
+        backend.aura_buttons[aura_button] = key
+        slot.aura_button = aura_button
+        if initialize_frame then
+            -- This is the only unconditional write window before Blizzard
+            -- applies the AuraButton access constraints.
+            initialize_frame(aura_button)
+        end
+    end
+
+    slot.aura_button = backend.container:AddAuraSlot(key, filter_string, managed_options)
+    return slot
+end
+
+--#endregion BACKEND, GROUP, AND SLOT CREATION ================================
 
 --#region ACCESSIBILITY ========================================================
 
@@ -176,6 +222,10 @@ function M.get_managed_aura_status_fields()
         for _ in pairs(backend.groups) do
             group_count = group_count + 1
         end
+        local slot_count = 0
+        for _ in pairs(backend.slots) do
+            slot_count = slot_count + 1
+        end
         local container_shown = backend.container:IsShown() == true
         local container_enabled = "unknown"
         if type(backend.container.IsEnabled) == "function" then
@@ -190,6 +240,7 @@ function M.get_managed_aura_status_fields()
             .. ":enabled=" .. container_enabled
             .. ":shown=" .. tostring(container_shown)
             .. ":groups=" .. tostring(group_count)
+            .. ":slots=" .. tostring(slot_count)
             .. ":buttons=" .. tostring(total_count)
             .. ":accessible=" .. tostring(accessible_count)
     end

@@ -23,6 +23,13 @@ local managed_duration_fonts = {}
 local managed_stack_fonts = {}
 local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
 
+M.MANAGED_PRESENTATION_METRICS = M.MANAGED_PRESENTATION_METRICS or {
+    icon_size = ICON_SIZE,
+    icon_cell_height = ICON_CELL_HEIGHT,
+    bar_row_height = BAR_ROW_HEIGHT,
+    bar_frame_inset = BAR_FRAME_INSET,
+}
+
 --#region MANAGED CONTAINER LAYOUT ============================================
 
 local function get_short_max_duration(cfg_db)
@@ -77,9 +84,12 @@ local function configure_preset_layout(container, frame, cfg_db, category, max_f
         elementSpacing = spacing,
         lineSpacing = spacing,
         layoutIndex = 1,
+        elementWidth = bar_mode and (width - (BAR_FRAME_INSET * 2)) or ICON_SIZE,
         elementHeight = (not bar_mode) and icon_cell_height or nil,
     }
 end
+
+M.configure_managed_presentation_layout = configure_preset_layout
 
 --#endregion MANAGED CONTAINER LAYOUT =========================================
 
@@ -130,6 +140,7 @@ local function set_managed_bar_width(aura_button, width)
 end
 
 local function register_frame_background_row(backend, aura_button, mode, index)
+    if backend.skip_frame_background_rows then return end
     local background = addon.CreateBackgroundRegion(aura_button)
     backend.frame_background_rows[aura_button] = {
         aura_button = aura_button,
@@ -148,7 +159,8 @@ local function initialize_preset_icon(
     backend,
     index
 )
-    aura_button:SetSize(ICON_SIZE, ICON_CELL_HEIGHT)
+    local duration_overlay = backend.icon_duration_overlay == true
+    aura_button:SetSize(ICON_SIZE, duration_overlay and ICON_SIZE or ICON_CELL_HEIGHT)
     register_frame_background_row(backend, aura_button, "icon", index)
 
     local icon = aura_button:CreateTexture(nil, "ARTWORK")
@@ -157,9 +169,13 @@ local function initialize_preset_icon(
     aura_button:SetIcon(icon)
 
     local duration_text = aura_button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    duration_text:SetPoint("TOP", icon, "BOTTOM", 0, -ICON_TIMER_GAP)
-    duration_text:SetWidth(ICON_SIZE)
-    duration_text:SetHeight(ICON_TIMER_HEIGHT)
+    if duration_overlay then
+        duration_text:SetAllPoints(icon)
+    else
+        duration_text:SetPoint("TOP", icon, "BOTTOM", 0, -ICON_TIMER_GAP)
+        duration_text:SetWidth(ICON_SIZE)
+        duration_text:SetHeight(ICON_TIMER_HEIGHT)
+    end
     duration_text:SetJustifyH("CENTER")
     apply_duration_font(duration_text, duration_font, category)
 
@@ -304,6 +320,37 @@ local function create_preset_initializer(
         )
     end
 end
+
+function M.create_managed_presentation_initializer(cfg_db, category, bar_mode, backend)
+    if not (cfg_db and category and backend) then return nil end
+    local duration_font = managed_duration_fonts[category]
+    if not duration_font and CreateFont then
+        duration_font = CreateFont(addon_name .. "ManagedAuraDurationFont" .. category)
+        managed_duration_fonts[category] = duration_font
+    end
+    local stack_font = managed_stack_fonts[category]
+    if not stack_font and CreateFont then
+        stack_font = CreateFont(addon_name .. "ManagedAuraStackFont" .. category)
+        managed_stack_fonts[category] = stack_font
+    end
+    backend.duration_font = backend.duration_font or duration_font
+    backend.stack_font = backend.stack_font or stack_font
+    backend.bar_regions = backend.bar_regions or {}
+    backend.frame_background_rows = backend.frame_background_rows or {}
+    return create_preset_initializer(
+        cfg_db,
+        category,
+        bar_mode,
+        backend.duration_font,
+        backend.stack_font,
+        backend.bar_regions,
+        backend
+    )
+end
+
+M.get_managed_presentation_bar_color = get_preset_bar_color
+M.set_managed_presentation_bar_color = set_managed_bar_color
+M.set_managed_presentation_bar_width = set_managed_bar_width
 
 --#endregion MANAGED BUTTON INITIALIZATION =====================================
 

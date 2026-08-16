@@ -12,13 +12,15 @@ Manual in-game test for WoW Cooldown Manager backed Aura Frames.
 
 
 ## Purpose
-Verify CDM-backed frames display active aura duration first, then cooldown, and that
-Blizzard reused CDM child frames do not carry stale cached spell name/icon identity.
+Verify CDM-backed frames display Blizzard-managed active Aura duration first, then
+the public-API-backed addon cooldown layer, without touching Blizzard viewer internals.
 
 Regression fixed:
+- Active Aura transport no longer reads CDM child Aura instance IDs or protected
+  `AuraData`; native AuraGroups own Aura mode and native AuraSlots overlay cooldown mode.
 - Utility CDM frame could display cooldown immediately instead of active aura duration.
-- Root cause was stale addon-owned cached spell name/icon state for reused Blizzard
-  CooldownViewer child frames after `cooldownID` or spell ID changed.
+- Cooldown identity/order now comes from `C_CooldownViewer`; duration objects come
+  from `C_Spell`. Blizzard Cooldown Viewer children and mixins are not hooked.
 
 
 ## Setup
@@ -67,7 +69,7 @@ Test groups:
 
 Reload/wait variant:
 1. Reload UI.
-2. Wait out of combat long enough for CDM viewer state to settle.
+2. Wait out of combat long enough for CDM data-loaded refreshes to settle.
 3. Enter combat and cast Divine Protection from Utility.
 4. Confirm Utility still shows active aura duration before cooldown, matching Essential.
 
@@ -82,3 +84,5 @@ Fail:
 - Active aura duration is skipped and cooldown appears immediately.
 - Cooldown appears only after leaving combat.
 - A frame shows a stale spell name/icon after a spell is moved between CDM groups.
+- A Lua error reports that `GetUnitAuraInstanceIDs()` cannot access secret Auras while tainted by LsTweeks during a CDM refresh.
+- A Blizzard Cooldown Viewer error reports forbidden-table access in `RegisterAuraInstanceIDItemFrame()` with execution tainted by LsTweeks.

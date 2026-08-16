@@ -1,0 +1,121 @@
+# Error Inbox
+
+Paste the next unprocessed WoW Lua error export here.
+Message: ...ce/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua:1688: attempted to index a table that cannot be accessed while tainted (execution tainted by 'LsTweeks')
+Time: Sun Aug 16 14:09:48 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:1688: in function 'RegisterAuraInstanceIDItemFrame'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:255: in function 'OnAuraInstanceInfoSet'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewerItemData.lua]:356: in function 'SetAuraInstanceInfo'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewerItemData.lua]:741: in function 'RefreshAuraInstance'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:1256: in function 'RefreshData'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:189: in function 'OnUnitAuraAddedEvent'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:1836: in function 'OnUnitAura'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:1777: in function 'OnEvent'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:2168: in function 'OnEvent'
+[Interface/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua]:2245: in function <...ce/AddOns/Blizzard_CooldownViewer/CooldownViewer.lua:2244>
+
+Locals:
+self=UtilityCooldownViewer <CooldownViewer.xml:309>{
+ iconLimit=7
+ systemInfo=<table>
+ downKeys=<table>
+ visibleSetting=0
+ oldGridSettings=<table>
+ hasDoneInitialTargetUpdate=true
+ dirty=false
+ stride=7
+ childYPadding=-2
+ pandemicIconPool=<table>
+ layoutFramesGoingUp=false
+ hideWhenInactive=true
+ layoutFramesGoingRight=true
+ alwaysUpdateLayout=true
+ orientationSetting=0
+ ignoreFramePositionManager=true
+ dirtySettings=<table>
+ settingMap=<table>
+ isManagedFrame=true
+ hasActiveChanges=false
+ tooltipsShown=true
+ iconDirection=1
+ timerShown=true
+ iconScale=1.100000
+ isHorizontal=true
+ isBottomManagedFrame=true
+ itemFramePool=<table>
+ settingDisplayInfoMap=<table>
+ settingsDialogAnchor=<table>
+ snappedFrames=<table>
+ defaultHideSelection=true
+ layoutIndex=11
+ cooldownViewerCategory=1
+ itemTemplate="CooldownViewerUtilityItemTemplate"
+ systemIndex=2
+ ignoreInLayoutWhenActionBarIsOverriden=true
+ itemFramesNeedingTargetUpdateMap=<table>
+ layoutParent=BottomManagedFrameContainer <ManagedFrameSystem.xml:8>
+ iconPadding=2
+ savedSystemInfo=<table>
+ systemNameString="Utility Cooldowns"
+ auraInstanceIDToItemFramesMap=<forbidden table>
+ childXPadding=-2
+ hideWhenActionBarIsOverriden=true
+ Selection=Frame <EditModeSystemTemplates.xml:348>
+ align="center"
+ system=20
+ itemFramesNeedingOnUpdateMap=<table>
+}
+auraInstanceID=4045
+itemFrame=Frame <CooldownViewer.lua:2028>{
+ includeAsLayoutChildWhenHidden=true
+ cooldownDuration=0
+ cooldownChargesCount=2
+ auraSpellID=363608
+ wasSetFromItem=false
+ CooldownFlash=Frame <CooldownViewer.xml:134>
+ auraInstanceID=4045
+ auraDataCached=<table>
+ hideWhenInactive=true
+ isOnGCD=false
+ cooldownIsActive=false
+ needsRangeCheck=false
+ cooldownPlayFlash=false
+ cooldownDesaturated=false
+ cooldownPaused=false
+ cooldownUseAuraDisplayTime=false
+ cooldownShowSwipe=false
+ cooldownStartTime=0
+ isActive=true
+ OutOfRange=Texture <CooldownViewer.xml:111>
+ allowAvailableAlert=false
+ Cooldown=Cooldown <CooldownViewer.xml:117>
+ isOnActualCooldown=false
+ cooldownModRate=1
+ cooldownChargesShown=true
+ wasSetFromEditMode=false
+ wasSetFromCooldown=false
+ wasSetFromCharges=false
+ cachedSpellChargeInfo=<table>
+ previousCooldownChargesCount=2
+ wasSetFromAura=false
+ isActiveSpell=190784
+ viewerFrame=UtilityCooldownViewer <CooldownViewer.xml:309>
+ layoutIndex=1
+ cooldownInfo=<table>
+ alertsByEvent=<table>
+ cooldownEnabled=false
+ ChargeCount=Frame <CooldownViewer.xml:123>
+ Icon=Texture <CooldownViewer.xml:97>
+ cooldownSwipeColor=<table>
+ cooldownFont="GameFontHighlightOutline"
+ auraDataUnit="player"
+ cooldownShowDrawEdge=false
+ cooldownID=19407
+ allowOnCooldownAlert=false
+}
+(*temporary)=<forbidden table>
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempted to index a table that cannot be accessed while tainted (execution tainted by 'LsTweeks')"

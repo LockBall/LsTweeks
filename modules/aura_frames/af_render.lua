@@ -485,6 +485,7 @@ local function assign_aura_object_metadata(obj, entry, live_remaining, live_dura
     obj.aura_live_duration = (not is_spell_cooldown) and live_duration or nil
     obj.aura_scan_time  = now
     obj.aura_spell_id   = entry.spell_id
+    obj.cdm_cooldown_id = entry.cooldown_id
     obj.aura_category   = timer_category
     obj.aura_timer_behavior = timer_behavior
     obj.tooltip_enabled = tooltip_enabled
@@ -764,7 +765,12 @@ local function build_render_list(frame, aura_map, aura_filter, sort_mode)
     local list = _scratch_list
     wipe(list)
 
-    if frame.is_custom then
+    local is_cdm_frame = M.WOW_COOLDOWN_CATEGORIES[frame.category]
+    if is_cdm_frame then
+        for _, entry in pairs(aura_map) do
+            list[#list + 1] = entry
+        end
+    elseif frame.is_custom then
         add_custom_entries_to_render_list(list, aura_map)
     else
         add_preset_entries_to_render_list(frame, list, aura_map, aura_filter, sort_mode)
@@ -772,7 +778,7 @@ local function build_render_list(frame, aura_map, aura_filter, sort_mode)
 
     if frame.category == "short" then
         apply_short_frame_render_order(frame, list)
-    elseif M.WOW_COOLDOWN_CATEGORIES[frame.category] then
+    elseif is_cdm_frame then
         apply_cdm_frame_render_order(list)
     end
 

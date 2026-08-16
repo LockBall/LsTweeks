@@ -164,8 +164,11 @@ h.test("disabled border does not create an unused frame", function()
 
     Ls_Tweeks_DB.objectives.objective_tracker_move_mode = true
     M.apply_objective_move_mode()
-    h.eq(#(ObjectiveTrackerFrame:GetCalls("HookScript") or {}), 3,
-        "explicit move mode initializes its three tracker script hooks")
+    local move_hooks = ObjectiveTrackerFrame:GetCalls("HookScript") or {}
+    h.eq(#move_hooks, 2,
+        "explicit move mode installs only its bounded drag hooks")
+    h.eq(move_hooks[1][1], "OnDragStart", "move mode hooks tracker drag start")
+    h.eq(move_hooks[2][1], "OnDragStop", "move mode hooks tracker drag stop without tracker OnUpdate")
     h.eq(#(ObjectiveTrackerFrame:GetCalls("EnableMouse") or {}), 1,
         "explicit move mode enables tracker mouse input")
 

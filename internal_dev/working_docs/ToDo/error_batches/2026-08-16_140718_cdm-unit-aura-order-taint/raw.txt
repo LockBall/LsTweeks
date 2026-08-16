@@ -1,0 +1,172 @@
+Message: GetUnitAuraInstanceIDs(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
+Lua Taint: LsTweeks
+Time: Sun Aug 16 13:59:47 2026
+Count: 3
+Stack:
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:688: in function <...ce/AddOns/LsTweeks/modules/aura_frames/af_render.lua:673>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:770: in function <...ce/AddOns/LsTweeks/modules/aura_frames/af_render.lua:763>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:822: in function 'render_aura_map'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_main.lua]:579: in function 'update_auras'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:911: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:909>
+
+Locals:
+frame=Frame <af_main.lua:973>{
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ _show_timer_swipe=true
+ _lstweeks_bg_g=0.500000
+ _combat_background_b=0.500000
+ RightEdge=Texture <NineSlice.lua:52>
+ _lstweeks_br_r=1
+ _lstweeks_br_g=1
+ icons=<table>
+ _show_tooltip=true
+ _combat_background_r=0.500000
+ _show_cooldown_overlay=false
+ _lstweeks_width=200
+ TopEdge=Texture <NineSlice.lua:52>
+ _lstweeks_applied_alpha=1
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+ _lstweeks_growth_height=58
+ update_params=<table>
+ _lstweeks_applied_scale=1
+ _lstweeks_pos_y=320
+ is_custom=false
+ _lstweeks_pos_point="TOPLEFT"
+ _combat_background_a=0.500000
+ _combat_background_variant_count=40
+ _scan_pending=false
+ _combat_background_g=0.500000
+ _lstweeks_br_b=1
+ _lstweeks_br_a=1
+ _lstweeks_bg_a=0.500000
+ resizer=Button <af_main.lua:803>
+ _lstweeks_bg_b=0.500000
+ _lstweeks_bg_r=0.500000
+ _render_display_signature="essential|preset|iconimer|swipe
+ooverlayooltip|40imeleft|0|1|0.45|0.25|1|0.5|0.5|0.5|0.5|1|1|1"
+ _show_timer_text=true
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ BottomEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ _tooltip_cache_retry_count=0
+ _bar_mode_key="bar_mode_essential"
+ _bar_mode=false
+ _aura_map=<table>
+ _combat_background_variants=<table>
+ _layout_cache=<table>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ _activity_state=<table>
+ move_handle=Frame <af_main.lua:680>
+ _lstweeks_pos_x=539
+ Center=Texture <NineSlice.lua:52>
+ _lstweeks_pos_scale=1
+ _lstweeks_height=57.999969
+ _lstweeks_growth="RIGHT"
+ category="essential"
+ _display_count=0
+ _runtime_config_cache=<table>
+}
+list=<table>
+aura_map=<table>
+aura_filter="HELPFUL"
+sort_mode="timeleft"
+sort_rule=4
+sort_dir=0
+wow_filter="HELPFUL"
+cache_key="HELPFUL40"
+sorted_ids=nil
+SORT_RULE_DEFAULT=1
+SORT_DIR_NORMAL=0
+SORT_RULE_EXPIRATION=4
+SORT_RULE_NAME=6
+_sorted_aura_ids_cache=<table>
+C_UnitAuras=<table>
+_scratch_seen=<table>
+
+Message: GetUnitAuraInstanceIDs(): Auras cannot be accessed when secret while tainted by 'LsTweeks'
+Lua Taint: LsTweeks
+Time: Sun Aug 16 13:59:47 2026
+Count: 3
+Stack:
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:688: in function <...ce/AddOns/LsTweeks/modules/aura_frames/af_render.lua:673>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:770: in function <...ce/AddOns/LsTweeks/modules/aura_frames/af_render.lua:763>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_render.lua]:822: in function 'render_aura_map'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_logic_main.lua]:579: in function 'update_auras'
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:202: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:172>
+[Interface/AddOns/LsTweeks/modules/aura_frames/af_main.lua]:221: in function <...face/AddOns/LsTweeks/modules/aura_frames/af_main.lua:219>
+
+Locals:
+frame=Frame <af_main.lua:973>{
+ BottomLeftCorner=Texture <NineSlice.lua:52>
+ _show_timer_swipe=true
+ _lstweeks_bg_g=0.500000
+ _combat_background_b=0.500000
+ RightEdge=Texture <NineSlice.lua:52>
+ _lstweeks_br_r=1
+ _lstweeks_br_g=1
+ icons=<table>
+ _show_tooltip=true
+ _combat_background_r=0.500000
+ _show_cooldown_overlay=false
+ _lstweeks_width=200
+ TopEdge=Texture <NineSlice.lua:52>
+ _lstweeks_applied_alpha=1
+ BottomRightCorner=Texture <NineSlice.lua:52>
+ LeftEdge=Texture <NineSlice.lua:52>
+ _lstweeks_growth_height=58
+ update_params=<table>
+ _lstweeks_applied_scale=1
+ _lstweeks_pos_y=320
+ is_custom=false
+ _lstweeks_pos_point="TOPLEFT"
+ _combat_background_a=0.500000
+ _combat_background_variant_count=40
+ _scan_pending=true
+ _combat_background_g=0.500000
+ _lstweeks_br_b=1
+ _lstweeks_br_a=1
+ _lstweeks_bg_a=0.500000
+ resizer=Button <af_main.lua:803>
+ _lstweeks_bg_b=0.500000
+ _lstweeks_bg_r=0.500000
+ _render_display_signature="essential|preset|iconimer|swipe
+ooverlayooltip|40imeleft|0|1|0.45|0.25|1|0.5|0.5|0.5|0.5|1|1|1"
+ _show_timer_text=true
+ TopLeftCorner=Texture <NineSlice.lua:52>
+ BottomEdge=Texture <NineSlice.lua:52>
+ backdropInfo=<table>
+ _tooltip_cache_retry_count=0
+ _bar_mode_key="bar_mode_essential"
+ _bar_mode=false
+ _aura_map=<table>
+ _combat_background_variants=<table>
+ _layout_cache=<table>
+ TopRightCorner=Texture <NineSlice.lua:52>
+ _activity_state=<table>
+ move_handle=Frame <af_main.lua:680>
+ _lstweeks_pos_x=539
+ Center=Texture <NineSlice.lua:52>
+ _lstweeks_pos_scale=1
+ _lstweeks_height=57.999969
+ _lstweeks_growth="RIGHT"
+ category="essential"
+ _display_count=0
+ _runtime_config_cache=<table>
+}
+list=<table>
+aura_map=<table>
+aura_filter="HELPFUL"
+sort_mode="timeleft"
+sort_rule=4
+sort_dir=0
+wow_filter="HELPFUL"
+cache_key="HELPFUL40"
+sorted_ids=nil
+SORT_RULE_DEFAULT=1
+SORT_DIR_NORMAL=0
+SORT_RULE_EXPIRATION=4
+SORT_RULE_NAME=6
+_sorted_aura_ids_cache=<table>
+C_UnitAuras=<table>
+_scratch_seen=<table>

@@ -238,7 +238,7 @@ local function set_alpha_if_changed(frame, alpha)
     -- Blizzard managed AuraButtons do not reliably inherit visual alpha across
     -- the constrained AuraContainer boundary.  Fade the addon-owned aggregate
     -- container as well, without touching individual protected AuraButtons.
-    local backend = frame._managed_aura_backend
+    local backend = frame._managed_aura_backend or frame._managed_cdm_backend
     local container = backend and backend.container
     if container and backend._lstweeks_applied_alpha ~= alpha then
         backend._lstweeks_applied_alpha = alpha
@@ -490,6 +490,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
+        if self._managed_cdm_backend and M.set_managed_aura_backend_enabled then
+            M.set_managed_aura_backend_enabled(self._managed_cdm_backend, false)
+        end
         if M.update_combat_background then
             M.update_combat_background(self, 0, false, nil, InCombatLockdown and InCombatLockdown(), false)
         end
@@ -557,10 +560,6 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
 
     set_shown_if_changed(self, true)
 
-    if activity.needs_cdm_viewer and M.prepare_blizz_cdm_viewer then
-        M.prepare_blizz_cdm_viewer(category)
-    end
-
     if not self._aura_map then self._aura_map = {} end
     wipe(self._aura_map)
     if activity.needs_custom_scan then
@@ -579,6 +578,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local display_count = M.render_aura_map(
         self, render_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
     )
+
+    if self._managed_cdm_backend and M.refresh_managed_cdm_backend then
+        M.refresh_managed_cdm_backend(self, bar_mode)
+    end
 
     if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
 
