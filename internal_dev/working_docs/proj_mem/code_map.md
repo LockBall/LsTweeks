@@ -33,7 +33,7 @@ Reference routes not covered by the `agent_start.md` routing table; that table i
 ## Fast Commands
 These are repo-local or project-specific commands. Platform-provided agent tools are session context, not project read-in.
 
-- Session baseline (agent_start.md + compatibility sentinel + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1`
+- Session baseline (agent_start.md + compatibility/API status + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1`
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
@@ -49,6 +49,9 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Changed-file LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`; multiple changed files use one smallest-common workspace so Ketho initializes once while retaining cross-file diagnostics.
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
 - Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
+- Refresh Ketho plus the branch-matched local API/FrameXML source: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/sync_wow_api_reference.ps1 [-Channel live|ptr|beta]`; use `-StatusOnly` for an offline version/commit report and `-SkipKethoUpdate` to refresh only source.
+- WoW API reference updater regression tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/test_sync_wow_api_reference.ps1`
+- Search the refreshed source snapshot: `rg -n <API-or-symbol> internal_dev/tests_tools/.wow-api-source/<channel>/Interface`
 - Condense repeated WoW Lua errors: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path <error-export.txt> [-OutputPath <report.md>]`; add `-IncludeLocals` only for deeper follow-up.
 - Archive a processed error inbox: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/archive_lua_error_batch.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -Label <short-label> -ClearInbox`; preserves raw export and `condensed.md` under `ToDo/error_batches/` before resetting the inbox.
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
@@ -109,11 +112,13 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `internal_dev/tests_tools/lua_tests/`: headless Lua 5.1 tests against a stubbed WoW API; see `lua_tests/tests_nfo.md` for the stub, harness, and test-writing rules.
 - `api_lookup.ps1`: prints exact Ketho annotation blocks for WoW API functions.
+- `sync_wow_api_reference.ps1`: performs the managed online Ketho/source refresh, enforces TOC interface compatibility, and writes/reports an ignored version/commit receipt; branch caches live under `.wow-api-source/` and are never packaged.
+- `test_sync_wow_api_reference.ps1`: isolated local-Git regression coverage for initial/repeat refresh, alternate channels, TOC mismatch override, dirty caches, wrong remotes, and wrong branches.
 - `condense_lua_errors.ps1`: groups WoW Lua error exports by message and stack variant, surfaces taint/addon ownership signals, and omits repetitive locals by default; `test_condense_lua_errors.ps1` owns focused regression checks.
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines with named functions.
 - `doc_section.ps1`: prints one named `##` markdown section or lists `##` headings.
-- `agent_startup.ps1`: one-shot session baseline printer (agent_start.md, compatibility sentinel, worktree status, Read-In Shortcuts); read-only.
+- `agent_startup.ps1`: one-shot session baseline printer (agent_start.md, compatibility/API status, worktree status, Read-In Shortcuts); read-only.
 - `packaging/`: release package builder, policy, and verifier.
 - `lua_checks/`: LuaLS/Ketho helper and ignored generated diagnostics.
 - `internal_dev/working_docs/SoundKitConstants.lua`: large searchable sound reference; search only when sound IDs are needed.

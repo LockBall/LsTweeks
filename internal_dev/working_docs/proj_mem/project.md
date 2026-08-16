@@ -41,7 +41,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 ### Workflow
 - Source of truth: this file plus relevant memory under `proj_mem/modules/` and `proj_mem/functions/`.
 - Durable changes: update the owning project, module, or shared-function memory for architecture, defaults, APIs, or debugging lessons.
-- Session start: read `agent_start.md` first, then `### Active Compatibility Sentinel` and only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
+- Session start: read `agent_start.md` first, then `### Active Compatibility Sentinel`, offline WoW API reference status, and only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module/function memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
@@ -90,11 +90,13 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 
 ### Ketho / LuaLS
 - Use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`) for Blizzard API reviews. Enable `wowAPI.luals.frameXML` for FrameXML/CDM/widget work.
+- Refresh cadence follows `agent_start.md`: run `sync_wow_api_reference.ps1` once per session/channel before the first patch-sensitive API task, retain the reported client version/commit in session context, and reuse that snapshot unless the target changes or evidence indicates upstream moved. The script refreshes the published Ketho extension and an ignored local `wow-ui-source` checkout; if refresh cannot complete, disclose the cached version/commit instead of calling it current.
+- Ketho is the typed/signature layer only when its declared mainline matches the target patch. When it lags, use the refreshed local checkout of the online maintained Blizzard-generated docs/FrameXML mirror as the declared/runtime source reference and retain in-game evidence as the authority for taint, Secret Values, combat, and undocumented behavior.
 - Treat LuaLS diagnostics as review prompts, not automatic change requests.
 - Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `lua_checks/`.
 - Preferred shell helper: Ketho/LuaLS helper in `code_map.md`.
 - Direct annotation root: `%USERPROFILE%\.vscode\extensions\ketho.wow-api-<version>\Annotations\`.
-- For APIs, grep annotations by name and cross-check call sites before changing code.
+- For stable APIs, grep annotations by name and cross-check call sites before changing code. For patch-sensitive APIs, search the refreshed channel checkout too.
 
 
 ### Packaging / Release
@@ -109,7 +111,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Supported client line: Retail 12.0.7 and 12.1 (`Interface` 120007/120100); `LsTweeks.toc` owns the exact interface values.
 - Active API boundary: retail 12.x Secret Values affect Aura, tooltip, player-health, and Objective Tracker paths; never assume a value is readable from combat state or API provenance alone.
 - Managed Auras: WoW 12.1 migrated displays use Blizzard `AuraContainer`/`AuraButton` native bindings; detailed contracts remain in `### Key WoW APIs And Lessons`, `modules/aura_frames.md`, and `functions/tooltip.md`.
-- Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory.
+- Treat compatibility notes as current hypotheses, not authority. Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory. Use Ketho only when its declared client version matches the target patch; otherwise verify against matching Blizzard-generated docs/FrameXML and available in-game evidence.
 - Keep this startup sentinel current and compact: replace obsolete alerts instead of accumulating history or incident detail.
 
 
@@ -217,6 +219,7 @@ Violations here can create invisible or unstable controls.
 
 
 ### Key WoW APIs And Lessons
+- Scope/freshness: this is a project-specific risk and routing index, not maintained API documentation. Treat each relevant claim as a hypothesis until verified against the session's refreshed branch-matched `wow-ui-source` version/commit; runtime restrictions also require current in-game evidence. When evidence changes a claim, update its owning project/module/function memory in the same session and search repository markdown for superseded guidance.
 - Aura APIs: WoW 12.1 live Aura displays use managed `AuraContainer`/`AuraButton` objects. Indexed, slot, instance-ID, `AuraData`, and `UNIT_AURA` payload inspection can be secret and must not drive migrated capabilities. Blizzard-owned secret state must be rendered only through documented native bindings: do not infer it from widget state, compare secret widget-return values such as `AuraButton:IsShown()`, or attach script handlers to observe transitions. In particular, Blizzard passes a secret boolean into `AuraButton:SetShown()`, and existing addon `OnShow`/`OnHide` handlers make that native write illegal. `af_managed.lua` owns only the shared lifecycle/safety boundary; capability code keeps Blizzard group/layout/binding calls explicit.
 - Spell APIs: legacy globals `GetSpellInfo`, `GetSpellTexture`, and similar are removed on modern retail (11.0+); use `C_Spell.GetSpellInfo(spellId)` (returns an info table with `name`, `iconID`, etc.), `C_Spell.GetSpellTexture`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`. Never cache the legacy globals; caching captures `nil` and fails at call time.
 - Tooltip APIs: route every tooltip through `functions/tooltip.lua`; the complete renderer, secret-data, taint, and validation contract is owned in `functions/tooltip.md`. Aura Frames' cache/fallback policy remains module-owned.

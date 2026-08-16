@@ -10,7 +10,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 
 ## Session Start
-1. Baseline = this file + `project.md` `### Active Compatibility Sentinel` + `git status --short` + `code_map.md` `## Read-In Shortcuts` (all printed by `internal_dev/tests_tools/agent_startup.ps1`; run the pieces manually only if the script fails). Do not re-read baseline pieces or load the whole code map.
+1. Baseline = this file + `project.md` `### Active Compatibility Sentinel` + offline WoW API reference status + `git status --short` + `code_map.md` `## Read-In Shortcuts` (all printed by `internal_dev/tests_tools/agent_startup.ps1`; run the pieces manually only if the script fails). Do not re-read baseline pieces or load the whole code map.
 2. `ToDo/` holds review notes and findings; read it only when the user directs you there or the request routes to a specific note.
 3. Follow every route directly matched by the request. Add another route only when the request also matches it.
 
@@ -28,7 +28,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Runtime contracts, events/timers/hot paths, taint, or combat guards | `project.md` `### Runtime And Performance Rules` |
 | Defaults, DB handling, resets, or profiles | `project.md` `### Data, Resets, And Profiles` |
 | Shared GUI/layout rules, widget anchoring, or settings-grid usage | `project.md` `### GUI/Layout Rules` |
-| WoW API usage, taint, combat guard, or Lua gotcha | `project.md` `### Key WoW APIs And Lessons` |
+| WoW API usage, taint, combat guard, or Lua gotcha | `project.md` `### Ketho / LuaLS`, then `### Key WoW APIs And Lessons` |
 | Public install/use steps, embedded libraries, license, or credits | `README.md` `## Installation`, `## Use Notes`, `## Embedded Libraries`, `## License`, or `## Credits` via `doc_section.ps1` |
 | Public Aura Frames behavior, names, or terminology | `README.md` `### Aura Frames` via `doc_section.ps1` |
 | Public Player Frame behavior, names, or terminology | `README.md` `### Player Frame` via `doc_section.ps1` |
@@ -70,6 +70,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Avoid abstractions that hide WoW API, taint, combat, timing, or hot-path state.
 - Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache hot globals, batch noisy events, skip disabled frames early, and avoid frame churn.
 - Use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
+- Before the first patch-sensitive WoW API task in a session, run `sync_wow_api_reference.ps1` once for the matching channel, retain its reported client version and commit in session context, and reuse that snapshot. Rerun only when the channel/target changes, the refresh failed, or evidence indicates upstream moved; details live in `project.md` `### Ketho / LuaLS`.
 - Vendored libraries under `libs/` are third-party dependencies. Do not edit them for style or type warnings unless intentionally updating the dependency.
 - Runtime-logic bugs: reproduce as a failing headless Lua test (`internal_dev/tests_tools/lua_tests/`) before fixing when the bug is testable there (timers, events, state machines, DB handling); taint/visual/event-order bugs stay in-game-only. The fix then keeps the test as permanent regression coverage.
 - Headless validation is one-pass and impact-selected: run the smallest red-to-green suite once, then only the remaining non-test checks; use all suites only when broad or uncertain impact justifies them. Commands live in `code_map.md` `## Fast Commands`; detailed selection policy lives in `tests_nfo.md` `## Workflow Integration`.

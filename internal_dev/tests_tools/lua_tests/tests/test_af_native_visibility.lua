@@ -12,6 +12,13 @@ h.load_addon("modules/aura_frames")
 
 local M = h.addon.aura_frames
 
+local function install_live_cooldown_viewer_enums()
+    Enum = {
+        CooldownViewerVisibleSetting = { Always = 0, InCombat = 1, Hidden = 2 },
+        EditModeCooldownViewerSetting = { VisibleSetting = 6 },
+    }
+end
+
 local function create_viewer(name, visible_setting)
     local viewer = CreateFrame("Frame", name, UIParent)
     viewer.visibleSetting = visible_setting
@@ -102,27 +109,21 @@ h.test("General-tab Blizzard visibility changes apply after combat", function()
 end)
 
 h.test("CDM visibility restores the prior Blizzard setting on module disable", function()
-    Enum = {
-        CooldownViewerVisibleSetting = { Always = 2, Never = 1 },
-        EditModeCooldownViewerSetting = { VisibleSetting = 9 },
-    }
-    local viewer = create_viewer("EssentialCooldownViewer", Enum.CooldownViewerVisibleSetting.Never)
+    install_live_cooldown_viewer_enums()
+    local viewer = create_viewer("EssentialCooldownViewer", Enum.CooldownViewerVisibleSetting.Hidden)
 
     M.ensure_blizz_cdm_viewer_always_visible("essential")
     h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Always, "module forces Always while active")
 
     M.restore_blizz_cdm_viewer_settings()
 
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Never, "module disable restores prior visibility")
+    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "module disable restores prior visibility")
     h.eq(viewer.__setting, Enum.EditModeCooldownViewerSetting.VisibleSetting, "restore uses Edit Mode setting")
 end)
 
 h.test("CDM visibility restoration waits for combat to end", function()
-    Enum = {
-        CooldownViewerVisibleSetting = { Always = 2, Never = 1 },
-        EditModeCooldownViewerSetting = { VisibleSetting = 9 },
-    }
-    local viewer = create_viewer("UtilityCooldownViewer", Enum.CooldownViewerVisibleSetting.Never)
+    install_live_cooldown_viewer_enums()
+    local viewer = create_viewer("UtilityCooldownViewer", Enum.CooldownViewerVisibleSetting.Hidden)
 
     M.ensure_blizz_cdm_viewer_always_visible("utility")
     h.stub.in_combat = true
@@ -131,21 +132,18 @@ h.test("CDM visibility restoration waits for combat to end", function()
 
     h.stub.in_combat = false
     h.fire_event("PLAYER_REGEN_ENABLED")
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Never, "regen restores prior visibility")
+    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "regen restores prior visibility")
 end)
 
 h.test("CDM visibility restoration respects an external setting change", function()
-    Enum = {
-        CooldownViewerVisibleSetting = { Always = 2, Never = 1, OnlyInCombat = 3 },
-        EditModeCooldownViewerSetting = { VisibleSetting = 9 },
-    }
-    local viewer = create_viewer("BuffIconCooldownViewer", Enum.CooldownViewerVisibleSetting.OnlyInCombat)
+    install_live_cooldown_viewer_enums()
+    local viewer = create_viewer("BuffIconCooldownViewer", Enum.CooldownViewerVisibleSetting.InCombat)
 
     M.ensure_blizz_cdm_viewer_always_visible("tracked_buffs")
-    viewer.visibleSetting = Enum.CooldownViewerVisibleSetting.Never
+    viewer.visibleSetting = Enum.CooldownViewerVisibleSetting.Hidden
     M.restore_blizz_cdm_viewer_settings()
 
-    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Never, "module does not overwrite later external setting")
+    h.eq(viewer.visibleSetting, Enum.CooldownViewerVisibleSetting.Hidden, "module does not overwrite later external setting")
 end)
 
 h.run("af_native_visibility")

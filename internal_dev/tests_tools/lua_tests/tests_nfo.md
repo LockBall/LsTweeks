@@ -45,7 +45,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 ## Running
 - All suites: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`
 - One suite by substring: append the filter, e.g. `run_tests.ps1 pf_fade`.
-- Several suites in one invocation: `run_tests.ps1 -Suite af_ranges,tooltip`.
+- Several suites in one invocation: `run_tests.ps1 -Suite af_timer_preview,tooltip`.
 - Impact-selected suites for current staged, unstaged, and untracked files: `run_tests.ps1 -Changed`; add `-ListOnly` to inspect the selection without executing it.
 - `check_fast.ps1 -Changed` runs impact-selected suites by default. Use `-SkipTests` after the relevant suites already passed, or `-AllTests` only when full coverage is justified. Packaging runs all suites unless tests are explicitly skipped.
 - Requires a Lua 5.1 interpreter; the runner checks `C:\Program Files (x86)\Lua\5.1\lua.exe` first, then PATH (`lua5.1`, `lua51`, `lua`, `luajit`).
@@ -63,10 +63,17 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
 - `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
-- `tests/test_af_ranges.lua`: Aura Frames numeric setting metadata, visible-icon ticker behavior, and Aura-tooltip integration, including isolated native delegate use outside/during combat, proof that shared global `GameTooltip` is untouched, owner-transfer-safe hiding, and the plain live-timing fallback.
-- `tests/test_af_managed.lua`: WoW 12.1 managed AuraContainer foundation and managed preset capabilities — initialization-before-constraints, synchronized processing/visibility lifecycle gating, startup shell refresh without legacy Aura-update events, combat/OOC alpha transitions on both the addon shell and aggregate managed container, policy-resolved Frame BG with a configured-width empty placeholder and non-overlapping native-visibility row extensions, explicit auto-sizing icon/bar flow layout, canonical RIGHT/LEFT/DOWN/UP managed icon growth, horizontal-to-DOWN Bar Mode normalization, native icon/name/duration/stack/bar bindings and combat-capable native tooltips, accessible-button filtering and status observability, unavailable-API fallback, Debuff isolation, the independent combined `HELPFUL` Buffs route with no legacy pool or `UNIT_AURA` handler, and OOC Bar Mode switching between preinitialized groups without backend replacement.
+- `tests/test_af_timer_preview.lua`: Aura timer formatting, numeric interval metadata, long-preview playback/pause behavior, stack ticking, and Long/Short threshold transitions.
+- `tests/test_af_layout_runtime.lua`: Aura layout sizing, movement, combat backgrounds, saved-color normalization, visible-icon ticker lifecycle, and stable range writes.
+- `tests/test_af_tooltip_integration.lua`: Aura tooltip cache/prewarm behavior, safe copied rendering, restricted-combat fallbacks, native-delegate experiment isolation, and owner-safe hiding.
+- `tests/test_af_scan_config.lua`: Aura scan-cache invalidation, custom-frame cleanup, setting fallback, runtime color resolution, malformed-record handling, identity refresh, and secret-timing classification.
+- `af_managed_fixture.lua`: shared WoW 12.1 AuraContainer stub and managed-preset boot fixture; each managed presentation suite consumes it in an isolated Lua process.
+- `tests/test_af_managed.lua`: managed AuraContainer foundation — initialization-before-constraints, processing/visibility lifecycle gating, accessible-button filtering, status observability, module gating, and unavailable-API fallback.
+- `tests/test_af_managed_debuff_presentation.lua`: managed Debuff native bindings, HARMFUL groups, auto-sizing layout, background extensions, move controls, and combat/OOC aggregate fade behavior.
+- `tests/test_af_managed_combined_presentation.lua`: independent combined `HELPFUL` Buff groups, color-policy backgrounds, native icon/name/duration/stack/bar bindings, accessible OOC color updates, resize propagation, and Bar/Icon group switching.
+- `tests/test_af_managed_styling_growth.lua`: managed duration/stack typography, timer-row visibility, canonical icon growth, independent Icon/Bar growth memory, and malformed Bar-growth normalization. Changed-file selection uses the `af_managed` prefix to include all four managed suites for Aura Frames production changes.
 - `tests/test_table_utils.lua`: shared table/default utilities.
-- `tests/test_tooltip.lua`: centralized plain owned-tooltip renderer (`functions/tooltip.lua`) — rich left/right line rendering, right-only lines, width bounding and shrink-to-fit, native fonts, and quadrant anchoring. Aura-specific isolated-native delegate integration and fallback behavior stay in `test_af_ranges.lua`.
+- `tests/test_tooltip.lua`: centralized plain owned-tooltip renderer (`functions/tooltip.lua`) — rich left/right line rendering, right-only lines, width bounding and shrink-to-fit, native fonts, and quadrant anchoring. Aura-specific isolated-native delegate integration and fallback behavior stay in `test_af_tooltip_integration.lua`.
 
 
 ## The Stub: wow_stub.lua
@@ -125,7 +132,7 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 
 ## Extending The Stub
 - The smoke suite prints "globals the stub returned nil for" — that list is the live gap report. Extend only when a gap changes behavior under test; a nil global that the addon already guards against is faithful to a missing in-game API.
-- New global function or C_* namespace: add it to the matching stub region with the smallest plausible behavior, returning realistic types (check `api_lookup.ps1 <ApiName>` for real signatures before inventing return values).
+- New global function or C_* namespace: add it to the matching stub region with the smallest plausible behavior and realistic return types. Use `api_lookup.ps1 <ApiName>` for patch-matched stable signatures; for patch-sensitive APIs, first refresh the matching `wow-ui-source` channel and verify the generated declaration/runtime source before modeling it.
 - New frame method that must return a real value: add it to `frame_methods` explicitly. Unknown verb-prefixed methods already no-op safely, but their nil return breaks arithmetic/indexing on the result.
 - New Blizzard sub-frame the addon walks (`Frame.Child.GrandChild`): build it in the "common globals" region next to the existing PlayerFrame/ObjectiveTrackerFrame trees.
 - Keep fakes deterministic: no randomness, no wall-clock reads; everything derives from `stub.now` and explicit knobs.

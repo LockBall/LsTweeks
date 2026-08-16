@@ -36,6 +36,7 @@ function Get-LuaFiles {
                 $relative = Get-RelativePath $_.FullName
                 -not (
                     $relative -like "libs/*" -or
+                    $relative -like "internal_dev/tests_tools/.wow-api-source/*" -or
                     $relative -like "internal_dev/tests_tools/lua_checks/*" -or
                     $relative -eq "internal_dev/working_docs/SoundKitConstants.lua"
                 )

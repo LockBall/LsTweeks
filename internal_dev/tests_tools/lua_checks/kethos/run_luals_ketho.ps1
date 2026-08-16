@@ -21,7 +21,12 @@ if (-not $luaServer) {
 
 $kethoExtension = Get-ChildItem -Path $extensionsRoot -Directory -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -like "ketho.wow-api-*" } |
-    Sort-Object Name -Descending |
+    Sort-Object {
+        if ($_.Name -match "^ketho\.wow-api-([0-9]+(?:\.[0-9]+)+)") {
+            return [version]$Matches[1]
+        }
+        return [version]"0.0"
+    } -Descending |
     Select-Object -First 1
 
 if (-not $kethoExtension) {

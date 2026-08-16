@@ -5,7 +5,7 @@
 param(
     # Optional substring filter, e.g. ./run_tests.ps1 pf_fade
     [string]$Filter,
-    # One or more exact/substring suite names, e.g. -Suite af_ranges,tooltip
+    # One or more exact/substring suite names, e.g. -Suite af_timer_preview,tooltip
     [string[]]$Suite,
     # Select suites impacted by staged, unstaged, and untracked files.
     [switch]$Changed,
@@ -121,10 +121,21 @@ function Get-ImpactedSuiteNames {
         }
 
         switch -Regex ($path) {
+            '^internal_dev/tests_tools/lua_tests/af_managed_fixture\.lua$' { & $add 'af_managed'; continue }
             '^modules/background_color_sync/' { & $add @('bcs_sync', 'af_color_sync'); continue }
             '^modules/aura_frames/af_logic_native_visibility\.lua$' { & $add 'af_native_visibility'; continue }
-            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_ranges', 'af_color_sync'); continue }
-            '^modules/aura_frames/' { & $add @('af_ranges', 'af_color_sync'); continue }
+            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_scan_config', 'af_color_sync'); continue }
+            '^modules/aura_frames/' {
+                & $add @(
+                    'af_timer_preview',
+                    'af_layout_runtime',
+                    'af_tooltip_integration',
+                    'af_scan_config',
+                    'af_color_sync',
+                    'af_managed'
+                )
+                continue
+            }
             '^modules/audio_volumes/' { & $add 'av_situations'; continue }
             '^modules/objectives/ob_auto_collapse\.lua$' { & $add 'ob_auto_collapse'; continue }
             '^modules/objectives/ob_(background|functions|main)\.lua$' { & $add @('ob_background', 'ob_auto_collapse'); continue }
@@ -132,7 +143,7 @@ function Get-ImpactedSuiteNames {
             '^modules/objectives/' { & $add @('ob_auto_collapse', 'ob_background', 'ob_section_count'); continue }
             '^modules/player_frame/' { & $add 'pf_fade'; continue }
             '^modules/skyriding_vigor/' { & $add 'sv_state'; continue }
-            '^functions/tooltip\.lua$' { & $add @('tooltip', 'af_ranges'); continue }
+            '^functions/tooltip\.lua$' { & $add @('tooltip', 'af_tooltip_integration'); continue }
             '^functions/table_utils\.lua$' { & $add @('table_utils', 'profiles'); continue }
             '^functions/(buttons|checkbox|dropdown|slider)\.lua$' { & $add 'control_factories'; continue }
             '^functions/profiles\.lua$' { & $add 'profiles'; continue }

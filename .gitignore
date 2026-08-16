@@ -44,6 +44,10 @@ luac.out
 .luarc.json
 .luarc.jsonc
 
+# Local WoW API / FrameXML source snapshots
+internal_dev/tests_tools/.wow-api-source/
+internal_dev/tests_tools/.wow-api-test/
+
 # WoW packager artifacts
 pkgmeta.yaml
 pkgmeta.yml

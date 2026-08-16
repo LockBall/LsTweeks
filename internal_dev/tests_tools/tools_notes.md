@@ -272,7 +272,23 @@ Ketho API lookup:
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\api_lookup.ps1 C_Spell.GetSpellInfo
 ```
 
-Use this before changing WoW API call sites when the signature or return type matters. It prints exact function annotation blocks from the installed Ketho Core and FrameXML annotation folders.
+Use this for stable API signatures and return types. It prints exact function annotation blocks from the installed Ketho Core and FrameXML annotation folders; it does not prove that the installed Ketho release matches the current client patch.
+
+Patch-sensitive API reference refresh:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\sync_wow_api_reference.ps1 -Channel live
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\sync_wow_api_reference.ps1 -Channel live -StatusOnly
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\test_sync_wow_api_reference.ps1
+```
+
+Run the refresh once per session/channel before the first patch-sensitive API task, retain its reported client version/commit in session context, and reuse that snapshot for later work in the same session. Rerun only when the channel/target changes, the first refresh failed, or evidence indicates upstream moved. The command updates the published `ketho.wow-api` extension through the VS Code CLI and creates or fast-forwards an ignored shallow checkout at `internal_dev/tests_tools/.wow-api-source/<channel>/`. That checkout is a disposable synchronized cache of the online maintained mirror, not an independently maintained API source; never hand-edit it. The command reports the Ketho release and declared mainline alongside the source checkout's exact client version, commit, and commit date. A mismatch makes Ketho a typing aid only; search the matching source checkout for current generated API declarations and FrameXML implementation:
+
+```powershell
+rg -n "C_UnitAuras|AuraContainer" internal_dev\tests_tools\.wow-api-source\live\Interface
+```
+
+The updater fails rather than replacing a non-Git directory, changing branches, overwriting local cache edits, accepting an unexpected remote, resolving a non-fast-forward update, or accepting a source interface absent from `LsTweeks.toc`. `-AllowInterfaceMismatch` is only for intentional future-channel research. Each successful managed refresh writes an ignored receipt with its UTC time, source version/commit, TOC interfaces, and Ketho version; startup prints a compact offline summary. If network refresh is unavailable, use `-StatusOnly` and report the cached version/commit instead of describing it as current. Use `-SkipKethoUpdate` only when the published extension update is intentionally unnecessary or unavailable. Run the focused regression test after updater changes; it uses isolated local Git repositories and never contacts upstream.
 
 Working local config path:
 

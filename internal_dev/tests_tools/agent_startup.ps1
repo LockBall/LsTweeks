@@ -1,5 +1,6 @@
 # One-shot coding-agent session baseline: prints agent_start.md, the active
-# compatibility sentinel, worktree status, and code_map Read-In Shortcuts.
+# compatibility sentinel, offline API-reference status, worktree status, and
+# code_map Read-In Shortcuts.
 # Read-only; never writes files.
 
 $ErrorActionPreference = "Stop"
@@ -11,6 +12,9 @@ Write-Output ([System.IO.File]::ReadAllText((Join-Path $projMem "agent_start.md"
 
 Write-Output "===== project.md Active Compatibility Sentinel ====="
 & (Join-Path $PSScriptRoot "doc_section.ps1") (Join-Path $projMem "project.md") "Active Compatibility Sentinel"
+
+Write-Output "===== WoW API reference status ====="
+& (Join-Path $PSScriptRoot "sync_wow_api_reference.ps1") -Channel live -StatusOnly -CompactStatus
 
 Write-Output "===== git status --short ====="
 $status = git -C $repoRoot status --short

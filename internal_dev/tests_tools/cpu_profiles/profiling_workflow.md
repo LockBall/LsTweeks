@@ -91,5 +91,5 @@ in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`
 
 ## Validation After Profiling Changes
 - Run `fast validation`.
-- For Blizzard API or FrameXML-sensitive changes, also run the Ketho/LuaLS helper.
+- For Blizzard API or FrameXML-sensitive changes, first refresh the matching `wow-ui-source` channel, verify relevant claims against its reported version/commit, then run the Ketho/LuaLS helper with Ketho treated only as a typing aid when its declared patch lags.
 - Copy/paste commands live in `code_map.md` `## Fast Commands`.
