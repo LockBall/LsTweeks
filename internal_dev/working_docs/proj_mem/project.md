@@ -10,6 +10,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
   - [Ketho / LuaLS](#ketho--luals)
   - [Packaging / Release](#packaging--release)
 - [Project Overview](#project-overview)
+  - [Active Compatibility Sentinel](#active-compatibility-sentinel)
   - [AddOn Summary](#addon-summary)
   - [File Map](#file-map)
 - [Shared Architecture](#shared-architecture)
@@ -40,7 +41,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 ### Workflow
 - Source of truth: this file plus relevant memory under `proj_mem/modules/` and `proj_mem/functions/`.
 - Durable changes: update the owning project, module, or shared-function memory for architecture, defaults, APIs, or debugging lessons.
-- Session start: read `agent_start.md` first, then only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
+- Session start: read `agent_start.md` first, then `### Active Compatibility Sentinel` and only `code_map.md` `## Read-In Shortcuts`; `code_map.md` owns targeted routing, validation commands, and source-outline routing.
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module/function memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
@@ -104,6 +105,14 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 
 
 ## Project Overview
+### Active Compatibility Sentinel
+- Supported client line: Retail 12.0.7 and 12.1 (`Interface` 120007/120100); `LsTweeks.toc` owns the exact interface values.
+- Active API boundary: retail 12.x Secret Values affect Aura, tooltip, player-health, and Objective Tracker paths; never assume a value is readable from combat state or API provenance alone.
+- Managed Auras: WoW 12.1 migrated displays use Blizzard `AuraContainer`/`AuraButton` native bindings; detailed contracts remain in `### Key WoW APIs And Lessons`, `modules/aura_frames.md`, and `functions/tooltip.md`.
+- Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory.
+- Keep this startup sentinel current and compact: replace obsolete alerts instead of accumulating history or incident detail.
+
+
 ### AddOn Summary
 **L's Tweeks** is a modular WoW 12.0.5+ UI addon by LockBall. Keep the intentional **Tweeks** spelling.
 

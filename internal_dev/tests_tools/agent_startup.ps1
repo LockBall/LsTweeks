@@ -1,5 +1,5 @@
-# One-shot coding-agent session baseline: prints agent_start.md, worktree status,
-# and the code_map Read-In Shortcuts section in one call.
+# One-shot coding-agent session baseline: prints agent_start.md, the active
+# compatibility sentinel, worktree status, and code_map Read-In Shortcuts.
 # Read-only; never writes files.
 
 $ErrorActionPreference = "Stop"
@@ -8,6 +8,9 @@ $projMem = Join-Path $repoRoot "internal_dev\working_docs\proj_mem"
 
 Write-Output "===== agent_start.md ====="
 Write-Output ([System.IO.File]::ReadAllText((Join-Path $projMem "agent_start.md")))
+
+Write-Output "===== project.md Active Compatibility Sentinel ====="
+& (Join-Path $PSScriptRoot "doc_section.ps1") (Join-Path $projMem "project.md") "Active Compatibility Sentinel"
 
 Write-Output "===== git status --short ====="
 $status = git -C $repoRoot status --short
