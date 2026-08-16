@@ -621,22 +621,6 @@ function M.build_general_tab(p)
     enable_blizz_debuffs_container:SetPoint("CENTER", enable_panel, "CENTER", 35, -5)
     M.controls["enable_blizz_debuffs"] = enable_blizz_debuffs_container
 
-    -- Short Buff Threshold slider
-    local short_threshold_range = get_setting_range("short_threshold")
-    local threshold = addon.CreateSliderWithBox(addon_name.."Tslider", p, "Short Buff Threshold", short_threshold_range.min, short_threshold_range.max, short_threshold_range.step, M.db, "short_threshold", M.defaults, function()
-        local frames_list = M.frames_list
-        if not frames_list then return end
-        for i = 1, #frames_list do
-            local v = frames_list[i]
-            local params = v.update_params
-            if params then
-                M.update_auras(v, params.show_key, params.move_key, params.timer_key, params.bg_key,
-                    params.scale_key, params.spacing_key, params.aura_filter)
-            end
-        end
-    end)
-    threshold:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
-
     local visible_icon_tick = addon.CreateSliderWithBox(
         addon_name.."AuraVisibleIconTick",
         p,
@@ -657,7 +641,7 @@ function M.build_general_tab(p)
             tooltip = "How often visible aura timer text and bars update.\nHigher values use less CPU but update less smoothly.",
         }
     )
-    visible_icon_tick:SetPoint("TOPLEFT", threshold, "BOTTOMLEFT", 0, -18)
+    visible_icon_tick:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
     M.controls.aura_visible_icon_tick_slider = visible_icon_tick
 
     local cancel_modifier = addon.CreateDropdown(addon_name.."CancelModifier", p, "Cancel Modifier", CANCEL_MODIFIER_OPTIONS, {
@@ -1123,6 +1107,27 @@ function M.build_preset_frame_panel(p, data)
 
             if cat == "essential" or cat == "utility" then
                 ctx.bound_raw_cb("Cooldown Mode", "cooldown_mode_" .. cat, 6, 1, update)
+            end
+            if cat == "short" then
+                local short_threshold_range = get_setting_range("short_threshold")
+                local threshold = addon.CreateSliderWithBox(
+                    addon_name .. "ShortMaxDuration",
+                    ctx.parent,
+                    "Max Duration Sec",
+                    short_threshold_range.min,
+                    short_threshold_range.max,
+                    short_threshold_range.step,
+                    M.db,
+                    "short_threshold",
+                    M.defaults,
+                    update,
+                    {
+                        immediate_callback = true,
+                        tooltip = "Shows helpful auras whose total duration is at most this many seconds. Buffs are ordered by the next expiration.",
+                    }
+                )
+                ctx.grid:place_at(threshold, 6, 1)
+                M.controls.short_threshold_slider = threshold
             end
             create_hide_blizz_cdm_control()
         end

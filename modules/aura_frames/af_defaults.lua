@@ -31,7 +31,7 @@ M.FRAME_DEFS = {
     },
     {
         key = "short",
-        label = "Short",
+        label = "Short Buffs",
         timer = true,
         cdm = false,
         is_debuff = false,
@@ -306,7 +306,7 @@ M.DEFAULT_FRAME_WIDTH = 200
 M.MIN_FRAME_HEIGHT = 44
 M.AURA_FRAME_LIMIT = 40
 M.ICON_STACK_INSET = { right = 2, bottom = 2 }
-M.DEFAULT_SHORT_THRESHOLD = 60
+M.DEFAULT_SHORT_THRESHOLD = 300
 M.DEFAULT_TIMER_NUMBER_FONT_SIZE = 10
 M.DEFAULT_OOC_FADE_DELAY = 2
 M.DEFAULT_OOC_FADE_LENGTH = 3

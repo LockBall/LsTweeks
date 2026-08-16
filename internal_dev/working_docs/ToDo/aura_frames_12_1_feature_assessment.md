@@ -80,49 +80,51 @@ redesign.
 
 ## Status summary
 - [x] **AF12-05 — Debuff frame:** managed transport and baseline presentation verified in game; shared presentation gaps remain owned by AF12-07 through AF12-15.
-- [x] **AF12-10 — Layout and positioning:** fixed safety limit, growth, wrapping, spacing, positioning, and resize behavior are implemented for Combined Buffs and Debuffs.
+- [x] **AF12-02 — Short frame threshold semantics:** Short Buffs now uses native total-duration filtering with a default 300-second maximum and no Long-to-Short transfer.
+- [x] **AF12-10 — Layout and positioning:** fixed safety limit, growth, wrapping, spacing, positioning, and resize behavior are implemented for the managed presets.
 - [x] **AF12-12 — Aura tooltips:** managed frames use Blizzard-owned native tooltips in and out of combat and install no addon Aura hover scripts.
 - [x] **AF12-16 — Profiles, shared colors, move mode, and settings:** implemented and regression-covered for the current managed presets; settings belonging to unfinished capabilities remain tracked by their owning items.
 - [x] **AF12-19 — Other modules:** the full automated regression suite passes and extended in-game use has produced no remaining cross-module 12.1 regression.
 - **Partial:** AF12-01, AF12-07, AF12-08, AF12-14, and AF12-18.
-- **Open/design decision:** AF12-02, AF12-03, AF12-04, AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
+- **Open/design decision:** AF12-03, AF12-04, AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
 
 
 ## Numbered feature assessment
 
 ### AF12-01 — Preset live Aura frames
 
-**Features:** Static, Short, Long, Combined Buffs, and Debuffs.
+**Features:** Static, Short Buffs, Long, Combined Buffs, Timed Buffs, and Debuffs.
 
-**Assessment:** Partially migrated. Debuffs and the new, independent Combined
-Buffs frame now use managed AuraContainers. Static, Short, and Long retain their
-existing saved settings and implementations for later separation work, but
-remain incompatible legacy paths and must not yet be used for combat validation.
+**Assessment:** Partially migrated. Short Buffs, Combined Buffs, Timed Buffs,
+and Debuffs use managed AuraContainers. Static and Long retain their existing
+implementations for later separation work, but remain incompatible legacy paths
+and must not yet be used for combat validation.
 
 `af_scan.lua` discovers player Auras with `GetBuffDataByIndex` and
 `GetDebuffDataByIndex`. `af_render.lua` also requests and iterates Aura instance
 IDs for sorting. These operations are no longer safe while Auras are secret.
 The four captured errors are direct manifestations of this incompatibility.
 
-**Direction:** Validate the unrestricted combined `HELPFUL` Buffs frame first.
-Then separate supported categories through managed filters without restoring
-addon AuraData inspection. The exact Static/Short split remains addressed
-separately below.
+**Direction:** Validate each managed preset in combat without restoring addon
+AuraData inspection. The remaining Static/Long split is addressed separately
+below.
 
 ### AF12-02 — Short frame threshold semantics
 
-**Assessment:** The current behavior cannot be reproduced exactly with the
-documented managed filters.
+**Assessment:** Implemented with intentionally revised semantics.
 
 LsTweeks classifies an Aura as Short using its *remaining* time. A Long Aura is
 therefore transferred into the Short frame when its countdown crosses the
 configured threshold. Managed candidate filters support `maxDuration`, but that
 means the Aura's total or maximum duration, not its current remaining time.
 
-**Direction:** Redefine Short as “total duration at or below the threshold,” or
-replace the Short/Long model with a different grouping. Do not silently retain
-the setting with changed semantics; make the change explicit in UI text and
-migration notes.
+**Status:** Short Buffs uses managed `HELPFUL` groups with native
+`candidateFilters.maxDuration = short_threshold`. The default is 300 seconds,
+the setting lives in the Short Buffs panel, and its mover tooltip reports the
+configured maximum. Both Bar and Icon groups use native `ExpirationOnly` normal
+ordering so the next expiration appears first. There is deliberately no
+Long-to-Short transfer and no migration handling; module reset is the clean
+development recovery path.
 
 ### AF12-03 — Long frame filtering
 
@@ -242,7 +244,7 @@ live 12.1 API before keeping it enabled.
 **Assessment:** Preservable through native AuraButton bindings.
 
 AuraButton supports engine-driven icon textures, application counts, duration
-cooldowns, duration text, and duration/status bars. Combined Buffs and Debuffs
+cooldowns, duration text, and duration/status bars. The managed presets
 now use native icon, stack, duration text, spell-name, and duration-bar sinks.
 Icon cooldown swipe is not yet bound for these managed presets.
 
@@ -300,7 +302,7 @@ with headless formatter tests and in-game secret Aura testing.
 
 **Assessment:** Preservable through managed Aura group layout.
 
-**Status:** Complete for Combined Buffs and Debuffs. They use one fixed internal
+**Status:** Complete for the managed presets. They use one fixed internal
 safety limit rather than a user-adjustable maximum, and implement spacing,
 UP/DOWN bar growth, independent four-way icon growth, wrapping, addon-owned
 positioning, and width resizing. AuraContainer remains corner-anchored and owns
@@ -335,8 +337,8 @@ sort choice that cannot be represented by the live enum.
 **Assessment:** Native detailed tooltips are preservable and should replace the
 custom Aura tooltip stack.
 
-**Status:** Complete for managed frames. Combined Buffs and Debuffs use native
-AuraButton tooltips with mouse motion enabled in and out of combat. Their
+**Status:** Complete for managed frames. They use native AuraButton tooltips
+with mouse motion enabled in and out of combat. Their
 managed path installs no addon hover scripts and performs no Aura tooltip lookup
 or reconstruction.
 
@@ -404,17 +406,17 @@ sharing presentation configuration and formatter definitions wherever safe.
 
 **Assessment:** Preservable.
 
-**Status:** Complete for the current managed presets. Combined Buffs and Debuffs
-have independent saved settings, positions, profile fields, shared-color
+**Status:** Complete for the current managed presets. They have independent
+saved settings, positions, profile fields, shared-color
 participation, four-way icon growth, vertical bar growth, move borders, and
 resize grips. OOC changes update container layout and accessible presentation
 state without rebuilding managed groups. Fields tied to unfinished sorting,
-preview, cancellation, or legacy Static/Short/Long semantics remain owned by
+preview, cancellation, or legacy Static/Long semantics remain owned by
 those numbered feature decisions.
 
 These features manage addon-owned configuration and positioning. This project
 has one developer/user and does not carry migration code: obsolete fields can
-be removed when the Short, Static, Long, cancellation, and sorting decisions are
+be removed when the Static, Long, cancellation, and sorting decisions are
 final, while module reset remains the clean recovery path.
 
 Some live appearance changes may need to be deferred while managed buttons are
@@ -488,8 +490,9 @@ unrelated modules without new evidence.
 
 ## Recommended review order
 
-1. Keep Combined Buffs and Debuffs as the validated managed baseline while
-   resolving the Static/Short/Long product model in AF12-02 through AF12-04.
+1. Validate Short Buffs and Timed Buffs beside the Combined Buffs and Debuffs
+   managed baseline while resolving the Static/Long product model in AF12-03
+   and AF12-04.
 2. Finish managed presentation gaps in AF12-07 through AF12-11: cooldown swipe,
    live color/background refresh parity, native timer formatting, and sorting.
 3. Add managed-safe synthetic previews under AF12-15, then decide native buff

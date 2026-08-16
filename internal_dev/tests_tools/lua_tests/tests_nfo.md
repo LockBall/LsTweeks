@@ -71,6 +71,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_af_managed.lua`: managed AuraContainer foundation — initialization-before-constraints, processing/visibility lifecycle gating, accessible-button filtering, status observability, module gating, and unavailable-API fallback.
 - `tests/test_af_managed_debuff_presentation.lua`: managed Debuff native bindings, HARMFUL groups, auto-sizing layout, background extensions, move controls, and combat/OOC aggregate fade behavior.
 - `tests/test_af_managed_combined_presentation.lua`: independent combined `HELPFUL` Buff groups, color-policy backgrounds, native icon/name/duration/stack/bar bindings, accessible OOC color updates, resize propagation, and Bar/Icon group switching.
+- `tests/test_af_managed_short_presentation.lua`: Short Buff managed backend, five-minute native maximum-duration filtering, live threshold refresh, expiration-only ordering, mover tooltip, and absence of legacy icon/event ownership.
 - `tests/test_af_managed_timed_presentation.lua`: Timed Buff managed backend, native `maxDuration = math.huge` permanent-aura exclusion, and absence of legacy icon/event ownership.
 - `tests/test_af_managed_styling_growth.lua`: managed duration/stack typography, timer-row visibility, canonical icon growth, independent Icon/Bar growth memory, and malformed Bar-growth normalization. Use the `af_managed` suite prefix to include all managed suites for Aura Frames production changes.
 - `tests/test_table_utils.lua`: shared table/default utilities.

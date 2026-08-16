@@ -19,6 +19,9 @@ AnchorUtil = {
     FlowDirection = { Left = 1, Right = 2, Down = 3, Up = 4 },
 }
 
+AuraContainerSortMethod = { ExpirationOnly = 5 }
+AuraContainerSortDirection = { Normal = 0, Reverse = 1 }
+
 CreateFrame = function(kind, name, parent, template)
     local frame = base_create_frame(kind, name, parent, template)
     if kind ~= "AuraContainer" then return frame end
@@ -103,6 +106,7 @@ CreateFrame = function(kind, name, parent, template)
     end
 
     function frame:SetAuraGroupCandidateFilters(key, value)
+        self.__groups[key].options.candidateFilters = value
         self.__group_calls[#self.__group_calls + 1] = { "candidate_filters", key, value }
     end
 
@@ -124,6 +128,13 @@ local function boot_managed_presets()
     local M = h.addon.aura_frames
     h.boot({
         aura_frames = {
+            short_threshold = 300,
+            show_short = true,
+            move_short = false,
+            width_short = 145,
+            bar_mode_short = true,
+            growth_icon_short = "DOWN",
+            growth_bar_short = "DOWN",
             show_debuff = true,
             move_debuff = false,
             width_debuff = 120,

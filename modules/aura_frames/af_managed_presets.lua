@@ -1,4 +1,4 @@
--- Managed preset Aura capabilities (Combined Buffs, Timed Buffs, and Debuffs).
+-- Managed preset Aura capabilities (Short, Combined, Timed Buffs, and Debuffs).
 -- Owns native icon/bar presentation, frame backgrounds, and move outlines for
 -- HELPFUL Buffs and HARMFUL Debuffs without reintroducing Aura data reads.
 
@@ -24,6 +24,11 @@ local managed_stack_fonts = {}
 local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
 
 --#region MANAGED CONTAINER LAYOUT ============================================
+
+local function get_short_max_duration(cfg_db)
+    local duration = tonumber(cfg_db and cfg_db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
+    return math.max(0, duration)
+end
 
 local function get_preset_setting(cfg_db, category, name, fallback)
     local value = cfg_db[name .. "_" .. category]
@@ -523,6 +528,27 @@ end
 
 local function apply_managed_preset_presentation(backend, cfg_db)
     local category = backend.category
+    if category == "short" then
+        local max_duration = get_short_max_duration(cfg_db)
+        if backend.short_max_duration ~= max_duration then
+            local candidate_filters = { maxDuration = max_duration }
+            backend.container:SetAuraGroupCandidateFilters(
+                backend.presentation_group_keys.bar,
+                candidate_filters
+            )
+            backend.container:SetAuraGroupCandidateFilters(
+                backend.presentation_group_keys.icon,
+                candidate_filters
+            )
+            backend.short_max_duration = max_duration
+        end
+        if backend.owner.move_handle then
+            backend.owner.move_handle.body = string.format(
+                "Shows helpful auras with a total duration of %s seconds or less.",
+                tostring(max_duration)
+            )
+        end
+    end
     local bar_mode = get_preset_setting(cfg_db, category, "bar_mode", false) == true
     local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
     local width = math.max(
@@ -593,7 +619,9 @@ local function create_managed_preset_backend(
     category,
     group_key,
     filter_string,
-    candidate_filters
+    candidate_filters,
+    sort_method,
+    sort_direction
 )
     if not (frame and cfg_db and M.create_managed_aura_backend) then return nil end
 
@@ -629,6 +657,9 @@ local function create_managed_preset_backend(
         bar = group_key .. ":bar",
         icon = group_key .. ":icon",
     }
+    if category == "short" then
+        backend.short_max_duration = candidate_filters and candidate_filters.maxDuration
+    end
 
     local max_frame_count = M.AURA_FRAME_LIMIT
     local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
@@ -647,6 +678,8 @@ local function create_managed_preset_backend(
         {
             maxFrameCount = max_frame_count,
             candidateFilters = candidate_filters,
+            sortMethod = sort_method,
+            sortDirection = sort_direction,
             initializeFrame = create_preset_initializer(
                 cfg_db,
                 category,
@@ -674,6 +707,8 @@ local function create_managed_preset_backend(
         {
             maxFrameCount = max_frame_count,
             candidateFilters = candidate_filters,
+            sortMethod = sort_method,
+            sortDirection = sort_direction,
             initializeFrame = create_preset_initializer(
                 cfg_db,
                 category,
@@ -702,6 +737,26 @@ end
 
 function M.create_managed_combined_buff_backend(frame, cfg_db)
     return create_managed_preset_backend(frame, cfg_db, "combined", "buffs", "HELPFUL")
+end
+
+function M.create_managed_short_buff_backend(frame, cfg_db)
+    -- Load Blizzard_AuraContainer before resolving its public sort enums;
+    -- this Lua file itself can load earlier in the addon startup sequence.
+    if M.is_managed_aura_supported then
+        M.is_managed_aura_supported()
+    end
+    local sort_method = rawget(_G, "AuraContainerSortMethod")
+    local sort_direction = rawget(_G, "AuraContainerSortDirection")
+    return create_managed_preset_backend(
+        frame,
+        cfg_db,
+        "short",
+        "short_buffs",
+        "HELPFUL",
+        { maxDuration = get_short_max_duration(cfg_db) },
+        sort_method and sort_method.ExpirationOnly,
+        sort_direction and sort_direction.Normal
+    )
 end
 
 function M.create_managed_timed_buff_backend(frame, cfg_db)

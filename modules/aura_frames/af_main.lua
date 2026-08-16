@@ -724,7 +724,7 @@ local function create_aura_frame_move_handle(parent, label, scale_key)
         edge:RegisterForDrag("LeftButton")
         edge:SetScript("OnEnter", function(self)
             handle_frame_mouse_enter(parent)
-            addon.ShowOwnedTooltip(self, tb.title, nil, "ANCHOR_RIGHT")
+            addon.ShowOwnedTooltip(self, tb.title, tb.body, "ANCHOR_RIGHT")
         end)
         edge:SetScript("OnLeave", function()
             addon.HideOwnedTooltip()
@@ -1039,6 +1039,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     local managed_backend
     if category == "debuff" and M.create_managed_debuff_backend then
         managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
+    elseif category == "short" and M.create_managed_short_buff_backend then
+        managed_backend = M.create_managed_short_buff_backend(frame, cfg_db)
     elseif category == "combined" and M.create_managed_combined_buff_backend then
         managed_backend = M.create_managed_combined_buff_backend(frame, cfg_db)
     elseif category == "timed" and M.create_managed_timed_buff_backend then
