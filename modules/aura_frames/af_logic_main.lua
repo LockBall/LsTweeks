@@ -1,5 +1,5 @@
 -- Main aura update logic for Aura Frames: managed-frame routing, runtime config cache,
--- frame state helpers, OOC fade, and legacy per-frame refresh.
+-- frame state helpers, OOC fade, and addon-rendered per-frame refresh.
 -- update_auras() orchestrates scan, render, layout, sizing, and visibility for preset and custom aura frames.
 local addon_name, addon = ...
 
@@ -47,37 +47,6 @@ function M.on_shared_color_changed()
             M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
                 params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
         end
-    end
-end
-
--- A long helpful aura changes category when its remaining time reaches the
--- short threshold.  The visible-icon ticker detects that boundary; this
--- deferred refresh rebuilds the shared scan once, outside the ticker loop.
-function M.queue_threshold_reclassification()
-    if M._threshold_reclassification_pending then return end
-    M._threshold_reclassification_pending = true
-
-    local function refresh()
-        M._threshold_reclassification_pending = nil
-        if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
-        if M.mark_aura_scan_dirty then M.mark_aura_scan_dirty() else M._aura_scan_dirty = true end
-
-        local frames_list = M.frames_list
-        if not frames_list then return end
-        for i = 1, #frames_list do
-            local frame = frames_list[i]
-            local params = frame and frame.update_params
-            if params then
-                M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
-                    params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
-            end
-        end
-    end
-
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0, refresh)
-    else
-        refresh()
     end
 end
 
@@ -499,7 +468,7 @@ end
 -- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
-function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter, info)
+function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if self and self._managed_aura_backend and M.update_managed_preset_frame then
         M.update_managed_preset_frame(self, show_key, move_key)
@@ -508,7 +477,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if not self or not self.icons then return end
 
     local db       = M.db
-    local category = self.category  -- e.g. "static", "short", "custom_1"
+    local category = self.category
     local is_custom = self.is_custom
     local custom_entry = is_custom and self.custom_entry
 
@@ -592,68 +561,19 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         M.prepare_blizz_cdm_viewer(category)
     end
 
-    -- Run the unified scan once per dirty event batch, then let the other
-    -- preset frames in the same deferred batch reuse M._aura_map.
-    if activity.needs_shared_scan and M._aura_scan_dirty then
-        M.unified_scan(info, short_threshold)
-        M._aura_scan_dirty = false
-    end
-
-    local render_map
+    if not self._aura_map then self._aura_map = {} end
+    wipe(self._aura_map)
     if activity.needs_custom_scan then
-        if not self._aura_map then self._aura_map = {} end
         M.scan_custom_aura_map(self, custom_entry, self._aura_map, max_limit, short_threshold)
-        render_map = self._aura_map
-    else
-        if activity.needs_cdm_scan then
-            if not self._aura_map then self._aura_map = {} end
-            wipe(self._aura_map)
-            M.add_cooldown_viewer_category_entries(self._aura_map, category)
-            render_map = self._aura_map
-        else
-            -- Preset frame: use the scan-built bucket when available.
-            local category_bucket = M._aura_maps_by_category and M._aura_maps_by_category[category]
-            local shared_long_preview = preview_enabled and show_key == "show_long"
-                and M.is_shared_long_test_preview_active and M.is_shared_long_test_preview_active()
-            if category_bucket and (not preview_enabled or shared_long_preview) then
-                render_map = category_bucket
-            else
-                if not self._aura_map then self._aura_map = {} end
-                wipe(self._aura_map)
-                render_map = self._aura_map
-                if category_bucket then
-                    for iid, entry in pairs(category_bucket) do
-                        self._aura_map[iid] = entry
-                    end
-                else
-                    for iid, entry in pairs(M._aura_map) do
-                        if entry.category == category then
-                            self._aura_map[iid] = entry
-                        end
-                    end
-                end
-            end
-        end
+    elseif activity.needs_cdm_scan then
+        M.add_cooldown_viewer_category_entries(self._aura_map, category)
     end
+    local render_map = self._aura_map
 
     M.refresh_frame_ooc_fade(self, activity, cfg_db)
 
-    local shared_long_preview = preview_enabled and show_key == "show_long"
-        and M.is_shared_long_test_preview_active and M.is_shared_long_test_preview_active()
-    if preview_enabled and not shared_long_preview then
-        if render_map ~= self._aura_map then
-            if not self._aura_map then self._aura_map = {} end
-            wipe(self._aura_map)
-            if render_map then
-                for iid, entry in pairs(render_map) do
-                    self._aura_map[iid] = entry
-                end
-            end
-            render_map = self._aura_map
-        end
+    if preview_enabled then
         M.append_test_aura(render_map, show_key, aura_filter)
-    elseif render_map == self._aura_map then
-        self._aura_map["__test_preview__"] = nil
     end
 
     local display_count = M.render_aura_map(

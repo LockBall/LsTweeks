@@ -46,7 +46,7 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
         "Debuff flow reserves one vertical line for every allowed row")
     h.eq(backend.container.__groups["debuffs:bar"].layout.elementSpacing, 1,
         "Debuff bar group receives explicit element spacing")
-    h.eq(frame.icons, nil, "managed Debuff frame creates no legacy icon pool")
+    h.eq(frame.icons, nil, "managed Debuff frame creates no addon icon pool")
     h.ok(frame:GetScript("OnEvent"), "managed Debuff shell owns its combat-state handler")
     h.eq(frame.__events.UNIT_AURA, nil, "managed Debuff frame does not register UNIT_AURA")
     h.eq(frame.__events.PLAYER_REGEN_DISABLED, true, "managed Debuff shell watches combat entry")
@@ -54,7 +54,7 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
 
     for _, aura_button in ipairs(backend.container.__groups["debuffs:bar"].buttons) do
         h.eq(aura_button.__width, 108, "managed Debuff bar uses the saved inner frame width")
-        h.eq(aura_button.__height, 18, "managed Debuff bar uses the legacy row height")
+        h.eq(aura_button.__height, 18, "managed Debuff bar uses the established row height")
         h.eq(#(aura_button:GetCalls("SetIcon") or {}), 1, "managed Debuff AuraButton binds one native icon")
         h.ok(aura_button.__spell_name_region, "managed Debuff AuraButton binds native spell text")
         h.ok(aura_button.__duration_text_region, "managed Debuff AuraButton binds native duration text")
@@ -63,6 +63,8 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
         h.eq(aura_button.__mouse_motion_enabled, true, "managed Debuff AuraButton enables native hover")
         h.eq(aura_button.__hide_tooltip_in_combat, false,
             "managed Debuff AuraButton allows its native tooltip in combat")
+        h.is_nil(aura_button.__cancel_aura_buttons,
+            "managed Debuff AuraButton does not enable native cancellation")
     end
     local debuff_bar_buttons = backend.container.__groups["debuffs:bar"].buttons
     h.eq(backend.frame_background_rows[debuff_bar_buttons[1]].background.texture:IsShown(), false,
@@ -123,10 +125,8 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
     h.eq(backend.container:GetAlpha(), 0.35,
         "combat-exit event restores the managed Debuff container OOC alpha")
 
-    local long_frame = M.frames.show_long
-    h.eq(long_frame._managed_aura_backend, nil, "legacy Long remains separate from the Static / Long managed capability")
-    h.ok(long_frame.icons, "Long retains its existing frame implementation")
-    h.eq(long_frame.__events.UNIT_AURA, true, "Long retains its existing event route while disabled")
+    h.is_nil(M.frames.show_static, "removed Static preset has no runtime frame")
+    h.is_nil(M.frames.show_long, "removed Long preset has no runtime frame")
     M.set_managed_aura_runtime_enabled(false)
 end)
 

@@ -19,21 +19,11 @@ end
 -- older call sites stable while preventing separate category lists from drifting.
 M.FRAME_DEFS = {
     {
-        key = "static",
-        label = "Static",
-        timer = false,
-        cdm = false,
-        is_debuff = false,
-        tree_order = 1,
-        growth = { icon = "RIGHT", bar = "DOWN" },
-        test_label = "Test Static Buff",
-        test_sort_id = 1,
-    },
-    {
         key = "short",
         label = "Short Buffs",
         timer = true,
         cdm = false,
+        supports_test_aura = false,
         is_debuff = false,
         tree_order = 3,
         growth = { icon = "DOWN", bar = "DOWN" },
@@ -41,21 +31,11 @@ M.FRAME_DEFS = {
         test_sort_id = 2,
     },
     {
-        key = "long",
-        label = "Long",
-        timer = true,
-        cdm = false,
-        is_debuff = false,
-        tree_order = 4,
-        growth = { icon = "RIGHT", bar = "DOWN" },
-        test_label = "Test Long Buff",
-        test_sort_id = 3,
-    },
-    {
         key = "static_long",
         label = "Static / Long Buffs",
         timer = true,
         cdm = false,
+        supports_test_aura = false,
         is_debuff = false,
         tree_order = 4.5,
         growth = { icon = "RIGHT", bar = "DOWN" },
@@ -67,6 +47,7 @@ M.FRAME_DEFS = {
         label = "Timed Buffs",
         timer = true,
         cdm = false,
+        supports_test_aura = false,
         is_debuff = false,
         tree_order = 4.6,
         growth = { icon = "DOWN", bar = "DOWN" },
@@ -127,6 +108,7 @@ M.FRAME_DEFS = {
         frame_label = "Debuffs",
         timer = true,
         cdm = false,
+        supports_test_aura = false,
         is_debuff = true,
         tree_order = 2,
         growth = { icon = "UP", bar = "UP" },
@@ -283,6 +265,11 @@ function M.get_frame_def(category)
     return M.FRAME_DEFS_BY_KEY[category]
 end
 
+function M.frame_supports_test_aura(category)
+    local frame_def = M.FRAME_DEFS_BY_KEY[category]
+    return frame_def == nil or frame_def.supports_test_aura ~= false
+end
+
 function M.get_preset_keys(category)
     return {
         show_key = "show_" .. category,
@@ -380,7 +367,7 @@ end
 
 -- The Data: strictly default values
 M.defaults = {
-    last_frames_node = "static",
+    last_frames_node = "static_long",
     last_tab_index = 1,
 
     -- Global Toggles
@@ -389,7 +376,6 @@ M.defaults = {
     snap_to_grid   = true,
     show_grid      = true,
     show_bar_section_outlines = false,
-    cancel_modifier = "CTRL",
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
     learned_helpful_durations = {},
     aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
@@ -397,28 +383,6 @@ M.defaults = {
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_number_font_outline = true,
-
-    -- STATIC
-    show_static     = true,
-    move_static     = true,
-    timer_static    = false,
-    tooltip_static  = true,
-    bg_static       = false,
-    scale_static    = 1.0,
-    spacing_static  = 2.0,
-    width_static    = M.DEFAULT_FRAME_WIDTH,
-    bar_mode_static = false,
-    color_static    = shared_bar_color_default("buff"),
-    bar_bg_color_static = default_bg_color(),
-    fade_ooc_static = false,
-    ooc_alpha_static = addon.DEFAULT_FADE_ALPHA,
-    fade_delay_static = M.DEFAULT_OOC_FADE_DELAY,
-    fade_length_static = M.DEFAULT_OOC_FADE_LENGTH,
-    bg_color_static = default_bg_color(),
-    sort_static  = "name",
-    test_aura_static = true,
-
-    bar_text_color_static = { r = 1, g = 1, b = 1 },
 
     -- SHORT
     show_short      = true,
@@ -443,34 +407,7 @@ M.defaults = {
     timer_number_font_size_short = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_short = false,
     timer_color_short = { r = 1, g = 1, b = 1 },
-    test_aura_short = true,
     bar_text_color_short = { r = 1, g = 1, b = 1 },
-
-    -- LONG
-    show_long       = true,
-    move_long       = true,
-    timer_long      = true,
-    timer_swipe_long = true,
-    tooltip_long    = true,
-    bg_long         = false,
-    scale_long      = 1.0,
-    spacing_long    = 2.0,
-    width_long      = M.DEFAULT_FRAME_WIDTH,
-    bar_mode_long   = false,
-    color_long      = { r = 0, g = 0.5, b = 1 },
-    bar_bg_color_long = default_bg_color(),
-    fade_ooc_long = false,
-    ooc_alpha_long = addon.DEFAULT_FADE_ALPHA,
-    fade_delay_long = M.DEFAULT_OOC_FADE_DELAY,
-    fade_length_long = M.DEFAULT_OOC_FADE_LENGTH,
-    bg_color_long = default_bg_color(),
-    sort_long    = "timeleft",
-    timer_number_font_long = addon.DEFAULT_FONT_KEY,
-    timer_number_font_size_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_long = false,
-    timer_color_long = { r = 1, g = 1, b = 1 },
-    test_aura_long = true,
-    bar_text_color_long = { r = 1, g = 1, b = 1 },
 
     -- STATIC / LONG BUFFS
     show_static_long       = false,
@@ -495,7 +432,6 @@ M.defaults = {
     timer_number_font_size_static_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_static_long = false,
     timer_color_static_long = { r = 1, g = 1, b = 1 },
-    test_aura_static_long = false,
     bar_text_color_static_long = { r = 1, g = 1, b = 1 },
 
     -- TIMED BUFFS
@@ -521,7 +457,6 @@ M.defaults = {
     timer_number_font_size_timed = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_timed = false,
     timer_color_timed = { r = 1, g = 1, b = 1 },
-    test_aura_timed = false,
     bar_text_color_timed = { r = 1, g = 1, b = 1 },
 
     -- ESSENTIAL
@@ -657,7 +592,6 @@ M.defaults = {
     timer_number_font_size_debuff = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold_debuff = false,
     timer_color_debuff = { r = 1, g = 1, b = 1 },
-    test_aura_debuff = true,
     bar_text_color_debuff = { r = 1, g = 1, b = 1 },
 
     -- Custom filtered frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
@@ -666,10 +600,8 @@ M.defaults = {
     -- POSITIONS
     -- pos.x = left edge offset from screen center; pos.y = top edge offset from screen center
     positions = {
-        static = { point = "TOPLEFT", x = 485, y = 373.5 },
         debuff = { point = "TOPLEFT", x = 485, y = 246.5 },
         short  = { point = "TOPLEFT", x = 485, y = 128.5 },
-        long   = { point = "TOPLEFT", x = 485, y =  29 },
         static_long = { point = "TOPLEFT", x = 100, y = 29 },
         timed = { point = "TOPLEFT", x = 100, y = -25 },
         essential = { point = "TOPLEFT", x = -100, y = 25 },
@@ -695,9 +627,9 @@ end
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
 M.defaults.shared_bar_background_color = { r = 0.5, g = 0.5, b = 0.5, a = 0.5 }
 M.defaults.shared_buff_bar_color = {
-    r = M.defaults.color_static.r,
-    g = M.defaults.color_static.g,
-    b = M.defaults.color_static.b,
+    r = M.defaults.color_static_long.r,
+    g = M.defaults.color_static_long.g,
+    b = M.defaults.color_static_long.b,
 }
 M.defaults.shared_debuff_bar_color = {
     r = M.defaults.color_debuff.r,

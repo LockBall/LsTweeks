@@ -59,6 +59,8 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
 
     h.ok(M.controls.clear_learned_buffs,
         "Static / Long Buffs exposes the learned-duration cache control")
+    h.is_nil(M.controls.test_aura_static_long,
+        "managed Static / Long Buffs omits the unsupported Test Aura control")
 
     h.eq(addon.DEFAULT_FADE_ALPHA, 0.50,
         "one shared Fade Alpha constant owns every module default")
@@ -133,9 +135,9 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
         "participation matrix shares the color section"
     )
 
-    local background_control = M.controls["background_color_sync:bg:static"]
-    local bar_color_control = M.controls["bar_color_sync:static"]
-    local text_color_control = M.controls["text_color_sync:static"]
+    local background_control = M.controls["background_color_sync:bg:static_long"]
+    local bar_color_control = M.controls["bar_color_sync:static_long"]
+    local text_color_control = M.controls["text_color_sync:static_long"]
     h.ok(background_control, "selected Aura frame exposes one BG Colors participation control")
     h.ok(bar_color_control, "selected Aura frame exposes bar color participation")
     h.ok(text_color_control, "selected Aura frame exposes text color participation")
@@ -144,10 +146,10 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(not text_color_control.checkbox:IsEnabled(), "disabled shared color makes text participation inactive")
 
     local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
-    h.eq(M.db.sync_bar_bg_static, true, "BG Colors starts selected in Aura DB")
-    h.eq(M.db.sync_bar_color_static, true, "bar color starts selected in Aura DB")
-    h.eq(M.db.sync_text_color_static, true, "text colors start selected in Aura DB")
-    h.eq(M.defaults.shared_buff_bar_color.r, M.defaults.color_static.r,
+    h.eq(M.db.sync_bar_bg_static_long, true, "BG Colors starts selected in Aura DB")
+    h.eq(M.db.sync_bar_color_static_long, true, "bar color starts selected in Aura DB")
+    h.eq(M.db.sync_text_color_static_long, true, "text colors start selected in Aura DB")
+    h.eq(M.defaults.shared_buff_bar_color.r, M.defaults.color_static_long.r,
         "shared Buff bar uses the Buff bar default")
     h.eq(M.defaults.shared_debuff_bar_color.r, M.defaults.color_debuff.r,
         "shared Debuff bar uses the Debuff bar default")
@@ -206,9 +208,9 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     bar_color_control.checkbox:Click()
     text_color_control:SetChecked(false)
     text_color_control.checkbox:Click()
-    h.eq(M.db.sync_bar_bg_static, false, "BG Colors control updates Aura-owned participation")
-    h.eq(M.db.sync_bar_color_static, false, "bar color control updates Aura-owned participation")
-    h.eq(M.db.sync_text_color_static, false, "text color control updates Aura-owned participation")
+    h.eq(M.db.sync_bar_bg_static_long, false, "BG Colors control updates Aura-owned participation")
+    h.eq(M.db.sync_bar_color_static_long, false, "bar color control updates Aura-owned participation")
+    h.eq(M.db.sync_text_color_static_long, false, "text color control updates Aura-owned participation")
 
     consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
     color_sync.get_db().global_enabled = true
@@ -247,24 +249,24 @@ h.test("Aura Frames resolves shared color before the global override", function(
     M.db.shared_frame_background_color = { r = 0.5, g = 0.6, b = 0.7, a = 0.8 }
     M.db.shared_bar_background_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
     M.db.shared_background_color_enabled = true
-    M.db.sync_bar_bg_static = true
+    M.db.sync_bar_bg_static_long = true
     db.global_enabled = false
 
-    local resolved, source = M.resolve_background_color("static", "frame", local_color)
+    local resolved, source = M.resolve_background_color("static_long", "frame", local_color)
     h.eq(resolved, M.db.shared_frame_background_color, "selected target uses Aura-owned shared frame color")
     h.eq(source, "local", "Background Colors reports no global override")
 
-    M.db.sync_bar_bg_static = false
-    resolved = M.resolve_background_color("static", "bar", local_color)
+    M.db.sync_bar_bg_static_long = false
+    resolved = M.resolve_background_color("static_long", "bar", local_color)
     h.eq(resolved, local_color, "deselected BG Colors keeps the local bar background")
-    resolved = M.resolve_background_color("static", "frame", local_color)
+    resolved = M.resolve_background_color("static_long", "frame", local_color)
     h.eq(resolved, local_color, "deselected BG Colors keeps the local frame background")
-    M.db.sync_bar_bg_static = true
-    resolved = M.resolve_background_color("static", "bar", local_color)
+    M.db.sync_bar_bg_static_long = true
+    resolved = M.resolve_background_color("static_long", "bar", local_color)
     h.eq(resolved, M.db.shared_bar_background_color, "selected bar target uses its independent shared color")
 
     h.eq(
-        M.resolve_background_visibility("static", "frame", false),
+        M.resolve_background_visibility("static_long", "frame", false),
         true,
         "selected shared frame background becomes visible even when its local background is off"
     )
@@ -272,31 +274,31 @@ h.test("Aura Frames resolves shared color before the global override", function(
     db.global_enabled = true
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
-    resolved, source = M.resolve_background_color("static", "frame", local_color)
+    resolved, source = M.resolve_background_color("static_long", "frame", local_color)
     h.eq(resolved, db.global_color, "global color overrides selected Aura target")
     h.eq(source, "global", "global source reported")
-    resolved = M.resolve_background_color("static", "bar", local_color)
+    resolved = M.resolve_background_color("static_long", "bar", local_color)
     h.eq(resolved, db.aura_bar_bg_color, "Bar BG override stays independent from Frame BG")
 
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, false)
-    resolved = M.resolve_background_color("static", "frame", local_color)
+    resolved = M.resolve_background_color("static_long", "frame", local_color)
     h.eq(resolved, M.db.shared_frame_background_color, "unchecked module falls back to Aura shared frame color")
 end)
 
 h.test("Bar BG picker color reaches rendered Aura bars", function()
-    local frame = M.frames.show_short
+    local frame = M.frames.show_essential
     local params = frame and frame.update_params
-    h.ok(params, "Short Aura frame is available")
+    h.ok(params, "Essential Aura frame is available")
 
     color_sync.get_db().global_enabled = false
-    M.db.show_short = true
-    M.db.test_aura_short = true
-    M.db.bar_mode_short = true
+    M.db.show_essential = true
+    M.db.test_aura_essential = true
+    M.db.bar_mode_essential = true
     M.db.shared_background_color_enabled = true
-    M.db.sync_bar_bg_short = true
+    M.db.sync_bar_bg_essential = true
     M.db.shared_bar_background_color = { r = 0.17, g = 0.31, b = 0.73, a = 0.62 }
-    M.mark_aura_scan_dirty()
+    M.invalidate_aura_scan_caches()
     M.invalidate_frame_runtime_config(frame)
     M.update_auras(
         frame,
@@ -325,17 +327,17 @@ h.test("Aura Frames resolves shared Buff and Debuff bar colors before the global
     M.db.shared_buff_bar_color = { r = 0.2, g = 0.4, b = 0.6 }
     M.db.shared_debuff_bar_color = { r = 0.8, g = 0.2, b = 0.1 }
     M.db.shared_background_color_enabled = true
-    M.db.sync_bar_color_static = true
+    M.db.sync_bar_color_static_long = true
     M.db.sync_bar_color_debuff = true
     db.global_enabled = false
 
-    h.eq(M.resolve_bar_color("static", local_color), M.db.shared_buff_bar_color,
+    h.eq(M.resolve_bar_color("static_long", local_color), M.db.shared_buff_bar_color,
         "Buff category uses the shared Buff bar color")
     h.eq(M.resolve_bar_color("debuff", local_color), M.db.shared_debuff_bar_color,
         "Debuff category uses the shared Debuff bar color")
 
-    M.db.sync_bar_color_static = false
-    h.eq(M.resolve_bar_color("static", local_color), local_color,
+    M.db.sync_bar_color_static_long = false
+    h.eq(M.resolve_bar_color("static_long", local_color), local_color,
         "deselected bar color target keeps its local color")
 
     local custom = M.spawn_custom_frame()
@@ -345,14 +347,14 @@ h.test("Aura Frames resolves shared Buff and Debuff bar colors before the global
         "harmful custom frame uses the shared Debuff bar color")
     M.destroy_custom_frame(custom.id)
 
-    M.db.sync_bar_color_static = true
+    M.db.sync_bar_color_static_long = true
     db.global_enabled = true
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, false)
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs, true)
     db.aura_debuff_bar_color = { r = 0.9, g = 0.8, b = 0.7 }
-    h.eq(M.resolve_bar_color("static", local_color), M.db.shared_buff_bar_color,
+    h.eq(M.resolve_bar_color("static_long", local_color), M.db.shared_buff_bar_color,
         "disabled Buff participation keeps the Aura-owned Buff bar color")
     h.eq(M.resolve_bar_color("debuff", local_color), db.aura_debuff_bar_color,
         "global color overrides the Aura-owned Debuff bar color")
@@ -360,7 +362,7 @@ h.test("Aura Frames resolves shared Buff and Debuff bar colors before the global
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs, false)
-    h.eq(M.resolve_bar_color("static", local_color), db.aura_buff_bar_color,
+    h.eq(M.resolve_bar_color("static_long", local_color), db.aura_buff_bar_color,
         "Buff participation can be enabled independently")
     h.eq(M.resolve_bar_color("debuff", local_color), M.db.shared_debuff_bar_color,
         "disabled Debuff participation keeps the Aura-owned Debuff bar color")
@@ -402,9 +404,9 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_bar_text_color = { r = 0.1, g = 0.3, b = 0.5 }
     M.db.shared_timer_text_color = { r = 0.9, g = 0.7, b = 0.5 }
     M.db.shared_background_color_enabled = false
-    M.db.sync_bar_bg_static = true
-    M.db.sync_bar_color_static = false
-    M.db.sync_text_color_static = false
+    M.db.sync_bar_bg_static_long = true
+    M.db.sync_bar_color_static_long = false
+    M.db.sync_text_color_static_long = false
     local saved = M.export_aura_frame_profile_data()
 
     M.db.shared_frame_background_color.r = 0.9
@@ -414,9 +416,9 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_bar_text_color.r = 0.9
     M.db.shared_timer_text_color.r = 0.1
     M.db.shared_background_color_enabled = true
-    M.db.sync_bar_bg_static = false
-    M.db.sync_bar_color_static = true
-    M.db.sync_text_color_static = true
+    M.db.sync_bar_bg_static_long = false
+    M.db.sync_bar_color_static_long = true
+    M.db.sync_text_color_static_long = true
     local ok = M.apply_aura_frame_profile_data(saved)
 
     h.ok(ok, "Aura profile applies")
@@ -427,9 +429,9 @@ h.test("Aura profiles own shared color and target selections", function()
     h.eq(M.db.shared_bar_text_color.r, 0.1, "Aura profile restores shared Bar Text color")
     h.eq(M.db.shared_timer_text_color.r, 0.9, "Aura profile restores shared Timer Text color")
     h.eq(M.db.shared_background_color_enabled, false, "Aura profile restores shared enablement")
-    h.eq(M.db.sync_bar_bg_static, true, "Aura profile restores BG Colors selection")
-    h.eq(M.db.sync_bar_color_static, false, "Aura profile restores bar color selection")
-    h.eq(M.db.sync_text_color_static, false, "Aura profile restores text color selection")
+    h.eq(M.db.sync_bar_bg_static_long, true, "Aura profile restores BG Colors selection")
+    h.eq(M.db.sync_bar_color_static_long, false, "Aura profile restores bar color selection")
+    h.eq(M.db.sync_text_color_static_long, false, "Aura profile restores text color selection")
 end)
 
 h.run("af_color_sync")

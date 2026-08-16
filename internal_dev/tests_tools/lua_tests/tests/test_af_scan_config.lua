@@ -13,25 +13,6 @@ local function load_aura_frames()
     return h.addon.aura_frames
 end
 
-h.test("repeated dirty marks do not clear Aura scan caches before the pending scan", function()
-    local M = load_aura_frames()
-    local custom_cache_clears = 0
-    local sorted_cache_clears = 0
-    M._aura_scan_dirty = false
-    M.clear_custom_aura_scan_cache = function()
-        custom_cache_clears = custom_cache_clears + 1
-    end
-    M.clear_sorted_aura_ids_cache = function()
-        sorted_cache_clears = sorted_cache_clears + 1
-    end
-
-    M.mark_aura_scan_dirty()
-    M.mark_aura_scan_dirty()
-
-    h.eq(custom_cache_clears, 1, "custom Aura cache clears once per pending scan")
-    h.eq(sorted_cache_clears, 1, "sorted Aura cache clears once per pending scan")
-end)
-
 h.test("custom frame deletion clears its scan cache and controls", function()
     local M = load_aura_frames()
     local cache_clears = 0
@@ -78,7 +59,6 @@ h.test("category-specific false settings override flat Aura Frame fallbacks", fu
         bar_text_color_short = { r = 1, g = 1, b = 1 },
         bg_color_short = { r = 1, g = 0, b = 0, a = 0.5 },
     }
-    M._aura_map = {}
     local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     frame.category = "short"
     frame.icons = {}
@@ -155,7 +135,6 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
         bar_text_color_short = { r = 1, g = 1, b = 1 },
         bg_color_short = { r = 1, g = 0, b = 0, a = 0.5 },
     }
-    M._aura_map = {}
     local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     frame.category = "short"
     frame.icons = {}
@@ -229,51 +208,9 @@ h.test("custom helpful frames retain per-entry static short and long timer class
     h.stub.auras.player = nil
 end)
 
-h.test("unified scan continues after malformed helpful and debuff records", function()
+h.test("custom secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", function()
     local M = load_aura_frames()
-    M.db = {}
-    h.stub.auras.player = {
-        buffs = {
-            { spellId = 1001, name = "Malformed Buff", icon = 1, duration = 10, expirationTime = 10 },
-            { auraInstanceID = 101, spellId = 1002, name = "Valid Buff", icon = 2, duration = 10, expirationTime = 10 },
-        },
-        debuffs = {
-            { spellId = 2001, name = "Malformed Debuff", icon = 3, duration = 10, expirationTime = 10 },
-            { auraInstanceID = 202, spellId = 2002, name = "Valid Debuff", icon = 4, duration = 10, expirationTime = 10 },
-        },
-    }
-    M._aura_map = {}
-
-    M.unified_scan(nil, 5)
-
-    h.ok(M._aura_map[101], "valid helpful record survives an earlier malformed record")
-    h.ok(M._aura_map[202], "valid debuff record survives an earlier malformed record")
-    h.stub.auras.player = nil
-end)
-
-h.test("unified scan refreshes an Aura order key when identity changes", function()
-    local M = load_aura_frames()
-    M.db = {}
-    h.stub.auras.player = {
-        buffs = {
-            { auraInstanceID = 303, spellId = 3003, name = "Original", icon = 3, duration = 10, expirationTime = 10 },
-        },
-        debuffs = {},
-    }
-    M._aura_map = {}
-
-    M.unified_scan(nil, 5)
-    local original_key = M._aura_map[303].order_key
-    h.stub.auras.player.buffs[1].name = "Updated"
-    M.unified_scan(nil, 5)
-
-    h.ok(M._aura_map[303].order_key ~= original_key, "identity change refreshes ordering")
-    h.stub.auras.player = nil
-end)
-
-h.test("secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", function()
-    local M = load_aura_frames()
-    M.db = {}
+    M.db = { short_threshold = 300 }
     local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
     h.stub.auras.player = {
         buffs = {
@@ -281,46 +218,67 @@ h.test("secret-timing helpful Aura classifies from DoesAuraHaveExpirationTime", 
         },
         debuffs = {},
     }
-    M._aura_map = {}
+    local target_map = {}
+    local custom_entry = { aura_base_filter = "HELPFUL", aura_modifier = "" }
 
     rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return false end)
-    M.unified_scan(nil, 5)
-    h.eq(M._aura_map[601].category, "static", "known non-expiring secret Aura classifies as static")
+    M.clear_custom_aura_scan_cache()
+    M.scan_custom_aura_map(CreateFrame("Frame"), custom_entry, target_map, M.AURA_FRAME_LIMIT, 300)
+    h.eq(target_map[601].category, "static", "known non-expiring secret Aura classifies as static")
 
     h.stub.auras.player.buffs[1] = { auraInstanceID = 602, spellId = 6002, name = "Secret Timed", icon = 1 }
     rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return true end)
-    M.unified_scan(nil, 5)
-    h.eq(M._aura_map[602].category, "short", "known expiring secret Aura with no history classifies as short")
-
-    h.stub.auras.player.buffs[1] = { auraInstanceID = 603, spellId = 6003, name = "Unavailable Result", icon = 1 }
-    rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return nil end)
-    M.unified_scan(nil, 5)
-    h.eq(M._aura_map[603].category, "short", "unreadable expiration result with no history falls back to short")
+    M.clear_custom_aura_scan_cache()
+    M.scan_custom_aura_map(CreateFrame("Frame"), custom_entry, target_map, M.AURA_FRAME_LIMIT, 300)
+    h.eq(target_map[602].category, "short", "known expiring secret Aura with no history falls back safely")
 
     C_UnitAuras.DoesAuraHaveExpirationTime = previous_expiration_check
     h.stub.auras.player = nil
 end)
 
-h.test("secret-timing debuff always joins the debuff bucket regardless of expiration readability", function()
+h.test("CDM Aura entries build directly from viewer children", function()
     local M = load_aura_frames()
-    M.db = {}
-    local previous_expiration_check = C_UnitAuras.DoesAuraHaveExpirationTime
-    M._aura_map = {}
+    M.db = { cooldown_mode_essential = false }
+    h.stub.auras.player = {
+        buffs = {
+            { auraInstanceID = 901, spellId = 9001, name = "Viewer Aura", icon = 9,
+                duration = 30, expirationTime = GetTime() + 30 },
+        },
+        debuffs = {},
+    }
+    local child = { GetAuraSpellInstanceID = function() return 901 end }
+    local viewer = { GetChildren = function() return child end }
+    M.get_cdm_viewer_frame = function() return viewer end
+    local target_map = {}
 
-    for _, result in ipairs({ false, true, nil }) do
-        h.stub.auras.player = {
-            buffs = {},
-            debuffs = {
-                { auraInstanceID = 701, spellId = 7001, name = "Secret Debuff", icon = 1 },
-            },
-        }
-        rawset(C_UnitAuras, "DoesAuraHaveExpirationTime", function() return result end)
-        M.unified_scan(nil, 5)
-        h.eq(M._aura_map[701].category, "debuff",
-            "debuff belongs to the debuff frame when expiration readability is " .. tostring(result))
+    M.add_cooldown_viewer_category_entries(target_map, "essential")
+
+    h.eq(target_map[901].name, "Viewer Aura", "viewer child resolves its active Aura without a preset scan")
+    h.eq(target_map[901].category, "essential", "directly built entry retains its CDM category")
+    h.stub.auras.player = nil
+end)
+
+h.test("addon-owned Aura cancellation remains custom-frame only", function()
+    local M = load_aura_frames()
+    local previous_cancel = CancelUnitBuff
+    local cancellations = 0
+    CancelUnitBuff = function() cancellations = cancellations + 1 end
+    M.frames_list = {}
+    h.stub.auras.player = {
+        buffs = { { auraInstanceID = 1001, spellId = 10001, name = "Cancelable" } },
+        debuffs = {},
+    }
+    local function make_icon(parent)
+        return { aura_index = 1001, GetParent = function() return parent end }
     end
 
-    C_UnitAuras.DoesAuraHaveExpirationTime = previous_expiration_check
+    h.eq(M.try_cancel_aura_icon(make_icon({ category = "long" }), "RightButton"), false,
+        "removed preset category cannot cancel Auras")
+    h.eq(M.try_cancel_aura_icon(make_icon({ is_custom = true }), "RightButton"), true,
+        "custom frame retains out-of-combat cancellation")
+    h.eq(cancellations, 1, "only the custom frame reaches CancelUnitBuff")
+
+    CancelUnitBuff = previous_cancel
     h.stub.auras.player = nil
 end)
 

@@ -15,7 +15,7 @@ h.test("managed Short Buffs use native maximum duration and expiration ordering"
     local short_backend = short_frame and short_frame._managed_aura_backend
 
     h.ok(short_backend, "Short Buffs frame owns a managed backend")
-    h.eq(short_frame.icons, nil, "Short Buffs create no legacy icon pool")
+    h.eq(short_frame.icons, nil, "Short Buffs create no addon icon pool")
     h.eq(short_frame.__events.UNIT_AURA, nil, "Short Buffs do not register UNIT_AURA")
 
     for _, group_key in ipairs({ "short_buffs:bar", "short_buffs:icon" }) do

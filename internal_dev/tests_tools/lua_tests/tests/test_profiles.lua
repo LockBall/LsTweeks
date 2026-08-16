@@ -54,10 +54,10 @@ h.test("Aura Frames profiles retain their module-specific refresh contract", fun
     local AF = h.addon.aura_frames
     AF.db.profiles = {}
     AF.db.short_threshold = 7
-    local ok = AF.save_aura_frame_profile("Aura Regression", false)
+    local ok = AF.profile_manager:save("Aura Regression", false)
     h.ok(ok, "Aura Frames profile saves through shared manager")
     AF.db.short_threshold = 19
-    ok = AF.load_aura_frame_profile("Aura Regression")
+    ok = AF.profile_manager:load("Aura Regression")
     h.ok(ok, "Aura Frames profile loads through shared manager")
     h.eq(AF.db.short_threshold, 7, "Aura Frames schema restores its own setting")
 end)

@@ -612,7 +612,7 @@ function M.build_frames_tab(p, frames_data)
     -- ----------------------------------------------------------------
     -- Restore last selected node
     -- ----------------------------------------------------------------
-    local last    = (M.db and M.db.last_frames_node) or "static"
+    local last    = (M.db and M.db.last_frames_node) or "static_long"
     local restored = false
 
     -- Check preset nodes
@@ -675,7 +675,7 @@ function M.build_frames_tab(p, frames_data)
             end
         end
         rebuild_tree()
-        local last_key = (M.db and M.db.last_frames_node) or "static"
+        local last_key = (M.db and M.db.last_frames_node) or "static_long"
         for _, data in ipairs(frames_data) do
             local cat = data.show_key:sub(6)
             if last_key == cat then

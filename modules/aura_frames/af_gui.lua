@@ -150,6 +150,7 @@ end
 
 local function sync_test_aura_category(category)
     local value_table, test_key, show_storage_key, show_key = M.get_test_aura_binding(category)
+    if not value_table then return end
     local enabled = value_table and value_table[test_key] == true
     local frame_test_key, frame_pause_key, frame_show_key = get_frame_test_control_keys(category)
     local frame_test_control = M.controls[frame_test_key]
@@ -176,7 +177,9 @@ function M.sync_test_aura_controls(category)
         return
     end
     for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
-        sync_test_aura_category(frame_def.key)
+        if frame_def.supports_test_aura ~= false then
+            sync_test_aura_category(frame_def.key)
+        end
     end
     for _, entry in ipairs(M.db.custom_frames or {}) do
         if entry.id then sync_test_aura_category(entry.id) end
@@ -199,15 +202,6 @@ function M.sync_general_controls_from_db()
     set_checked("snap_to_grid_checkbox", M.db.snap_to_grid)
     set_checked("show_grid_checkbox", M.db.show_grid)
 
-    local cancel_modifier = M.controls.cancel_modifier_dropdown
-    if cancel_modifier and cancel_modifier.SetValue then
-        local value = M.db.cancel_modifier
-        if value ~= "OFF" and value ~= "CTRL" and value ~= "ALT" and value ~= "SHIFT" then
-            value = M.defaults.cancel_modifier or "CTRL"
-        end
-        cancel_modifier:SetValue(value)
-    end
-
     local visible_icon_tick = M.controls.aura_visible_icon_tick_slider
     if visible_icon_tick and visible_icon_tick.SetValueSilently then
         visible_icon_tick:SetValueSilently(M.get_visible_icon_tick_interval and M.get_visible_icon_tick_interval()
@@ -224,10 +218,12 @@ function M.sync_general_controls_from_db()
             "tooltip_" .. cat,
             "bg_" .. cat,
             "bar_mode_" .. cat,
-            "test_aura_" .. cat,
             "cooldown_mode_" .. cat,
             "hide_blizz_cdm_" .. cat,
         }
+        if M.frame_supports_test_aura(cat) then
+            keys[#keys + 1] = "test_aura_" .. cat
+        end
         for _, key in ipairs(keys) do
             if M.db[key] ~= nil then
                 set_checked(key, M.db[key])

@@ -44,7 +44,7 @@ The local/global policy conflict is fixed in code: checking a frame-specific **F
 This is an implementation group rather than one pass/fail test.
 
 ### Migration And Presentation
-- Static and Long remain legacy Aura-scanning frames and should not be combat-validated as managed frames yet.
+- The obsolete Static and Long presets and their shared scanner have been removed; validate the surviving managed Static / Long Buffs frame only.
 - Managed icon cooldown swipe is not implemented; add and bind it natively before testing it.
 - Validate Short Buffs beside Timed Buffs with its default 300-second maximum: a helpful Aura with a total duration at or below five minutes must appear in both, a longer timed Aura only in Timed Buffs, and permanent Auras in neither. Confirm Short remains ordered by next expiration and that changing Max Duration Sec updates both Bar and Icon modes without reload, Lua errors, secret-value errors, or blocked actions across combat.
 - Validate Static / Long Buffs learning in Bar and Icon modes: acquire readable permanent, longer-than-five-minute, and Short buffs outside combat; only the first two should appear. Reload and confirm the learned inclusion persists. Enter combat, add/remove known buffs, and confirm native display updates without addon Aura reads or blocked actions. Return OOC with a changed readable duration and confirm reclassification. Clear Learned Buffs OOC and confirm the frame empties, then relearns active helpful Auras; confirm the button cannot mutate the cache in combat.

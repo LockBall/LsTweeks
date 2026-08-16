@@ -75,6 +75,9 @@ CreateFrame = function(kind, name, parent, template)
             function aura_button:SetHideTooltipInCombat(enabled)
                 self.__hide_tooltip_in_combat = enabled == true
             end
+            function aura_button:SetCancelAuraButtons(buttons)
+                self.__cancel_aura_buttons = buttons
+            end
             function aura_button:SetSpellName(region)
                 self.__spell_name_region = region
             end
@@ -152,7 +155,6 @@ local function boot_managed_presets()
             fade_length_debuff = 0,
             bg_debuff = true,
             bg_color_debuff = { r = 0.1, g = 0.2, b = 0.3, a = 0.4 },
-            show_long = false,
             show_static_long = true,
             move_static_long = false,
             width_static_long = 140,

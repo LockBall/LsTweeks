@@ -1,6 +1,6 @@
 -- Bootstrap and frame construction for the aura frames module
 -- loads last so all other af_* files have already populated M.
--- Creates preset and custom aura frames with legacy icon pools or managed backends,
+-- Creates preset and custom aura frames with addon-owned icon pools or managed backends,
 -- buckets UNIT_AURA events, starts the timer ticker, and registers the settings tab.
 
 local addon_name, addon = ...
@@ -173,8 +173,8 @@ local function run_wow_cooldown_refresh(refresh_config, category_filter)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if not M.frames then return end
 
-    if refresh_config.mark_scan_dirty and M.mark_aura_scan_dirty then
-        M.mark_aura_scan_dirty()
+    if refresh_config.mark_scan_dirty and M.invalidate_aura_scan_caches then
+        M.invalidate_aura_scan_caches()
     end
 
     if M.update_all_blizz_cdm_visibility then
@@ -274,13 +274,6 @@ local function has_cacheable_tooltip_identity(obj)
     return is_usable_tooltip_number(obj.aura_index) or is_usable_tooltip_number(obj.aura_spell_id)
 end
 
-local tooltip_scan_cache_attempts = {}
-
-local function clear_tooltip_scan_attempts(aura_key, spell_key)
-    if aura_key then tooltip_scan_cache_attempts[aura_key] = nil end
-    if spell_key then tooltip_scan_cache_attempts[spell_key] = nil end
-end
-
 local function get_safe_basic_aura_name(obj)
     if is_usable_tooltip_text(obj.aura_name) then
         return obj.aura_name
@@ -343,7 +336,6 @@ local function cache_tooltip_data_lines_for_identity(aura_instance_id, spell_id)
     if cached then
         if aura_key then M._tooltip_data_lines_cache[aura_key] = cached end
         if spell_key then M._tooltip_data_lines_cache[spell_key] = cached end
-        clear_tooltip_scan_attempts(aura_key, spell_key)
         return cached
     end
 
@@ -357,7 +349,6 @@ local function cache_tooltip_data_lines_for_identity(aura_instance_id, spell_id)
     if lines then
         if aura_key then M._tooltip_data_lines_cache[aura_key] = lines end
         if spell_key then M._tooltip_data_lines_cache[spell_key] = lines end
-        clear_tooltip_scan_attempts(aura_key, spell_key)
     end
     return lines
 end
@@ -373,11 +364,6 @@ function M.clear_aura_tooltip_instance_cache()
             if type(key) == "string" and key:sub(1, 5) == "aura:" then
                 cache[key] = nil
             end
-        end
-    end
-    for key in pairs(tooltip_scan_cache_attempts) do
-        if type(key) == "string" and key:sub(1, 5) == "aura:" then
-            tooltip_scan_cache_attempts[key] = nil
         end
     end
 end
@@ -423,25 +409,6 @@ function M.prewarm_aura_tooltip_cache(frame)
             M.prewarm_aura_tooltip_cache(retry_frame)
         end
     end)
-end
-
-function M.prewarm_scanned_aura_tooltip_cache(aura_map)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
-    if InCombatLockdown and InCombatLockdown() then return end
-    if type(aura_map) ~= "table" then return end
-
-    for _, entry in pairs(aura_map) do
-        if type(entry) == "table" and not entry.is_test_preview then
-            local aura_key, spell_key = get_aura_tooltip_cache_keys_for_identity(entry.instance_id, entry.spell_id)
-            local attempt_key = aura_key or spell_key
-            if attempt_key and (tooltip_scan_cache_attempts[attempt_key] or 0) < 2 then
-                local lines = cache_tooltip_data_lines_for_identity(entry.instance_id, entry.spell_id)
-                if not lines then
-                    tooltip_scan_cache_attempts[attempt_key] = (tooltip_scan_cache_attempts[attempt_key] or 0) + 1
-                end
-            end
-        end
-    end
 end
 
 local function build_basic_aura_tooltip_lines(obj)
@@ -941,14 +908,12 @@ local function queue_deferred_aura_scan(frame, params)
     -- noisy event bursts while ensuring scans run outside event-dispatch taint.
     C_Timer.After(UPDATE_INTERVALS.aura_event_bucket, function()
         f._scan_pending = false
-        local event_info = f._pending_aura_info
-        f._pending_aura_info = nil
         M.update_auras(f, params.show_key, params.move_key, params.timer_key,
-            params.bg_key, params.scale_key, params.spacing_key, params.aura_filter, event_info)
+            params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
     end)
 end
 
-local function handle_aura_frame_event(frame, event, unit, info)
+local function handle_aura_frame_event(frame, event, unit)
     local params = frame.update_params
     if not params then return end
     if not is_aura_frame_event_relevant(event, unit) then return end
@@ -959,7 +924,6 @@ local function handle_aura_frame_event(frame, event, unit, info)
 
     local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
     if not activity.enabled then
-        frame._pending_aura_info = nil
         return
     end
 
@@ -970,11 +934,8 @@ local function handle_aura_frame_event(frame, event, unit, info)
     -- Do not scan inside the event handler. C_UnitAuras calls made directly
     -- during event dispatch can return secret values in combat, so every frame
     -- update is deferred through the short aura bucket below.
-    if event == "UNIT_AURA" then
-        frame._pending_aura_info = M.merge_aura_info(frame._pending_aura_info, info)
-    end
     if event ~= "SPELL_UPDATE_COOLDOWN" and event ~= "SPELL_UPDATE_CHARGES" then
-        M.mark_aura_scan_dirty()
+        M.invalidate_aura_scan_caches()
     end
     if event == "PLAYER_REGEN_DISABLED"
         and M.WOW_COOLDOWN_CATEGORIES[params.category] then
@@ -1048,7 +1009,7 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     end
 
     if not managed_backend then
-        -- Pre-create legacy icons/bars so combat updates never create frames.
+        -- Pre-create addon-owned icons/bars so combat updates never create frames.
         create_aura_icon_pool(frame, cfg_db, category)
     end
 
@@ -1106,7 +1067,7 @@ function M.create_custom_frame(entry)
     local aura_filter = M.get_custom_aura_filter(entry)
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,
-    -- not the prefixed pattern used by preset frames ("timer_static", etc.).
+    -- not the prefixed pattern used by preset frames.
     local frame = M.create_aura_frame(
         show_key,
         "move",
@@ -1196,8 +1157,6 @@ local function prepare_aura_frame_db()
     local saved_db = Ls_Tweeks_DB
     if not saved_db.aura_frames then saved_db.aura_frames = {} end
     M.db = saved_db.aura_frames
-    M._aura_scan_dirty = true
-
     if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
     if M.normalize_saved_colors then M.normalize_saved_colors(M.db) end
@@ -1332,11 +1291,7 @@ end
 
 function M.set_module_enabled(enabled)
     if enabled then
-        if M.mark_aura_scan_dirty then
-            M.mark_aura_scan_dirty()
-        else
-            M._aura_scan_dirty = true
-        end
+        M.invalidate_aura_scan_caches()
 
         ensure_module_started()
         start_aura_frame_runtime_services()

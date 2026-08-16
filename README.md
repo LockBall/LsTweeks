@@ -34,18 +34,16 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, and **Text Colors**, with one participation checkbox per color group for every built-in and custom frame. These colors are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared colors are disabled; individual Test Aura controls remain on the Frames tabs.
+The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, and **Text Colors**, with one participation checkbox per color group for every built-in and custom frame. These colors are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared colors are disabled; individual Test Aura controls remain on custom and Cooldown Manager-backed frame tabs.
 
 
 #### Preset Frames
-- `Static`: permanent player buffs.
 - `Short Buffs`: helpful player auras whose total duration is at or below its configured maximum; the default is five minutes, and the next expiration is shown first.
-- `Long`: timed player buffs above the short-buff threshold.
 - `Static / Long Buffs`: helpful player auras last observed outside combat with no duration or a total duration above the Short Buffs maximum. Learned spell IDs persist across reloads and can be cleared from this frame's settings.
 - `Timed Buffs`: helpful player auras with an expiration time through WoW's managed Aura display.
 - `Debuffs`: harmful player auras through WoW's managed Aura display.
 
-After WoW 12.1, **Short Buffs**, **Static / Long Buffs**, **Timed Buffs**, and **Debuffs** are the current combat-safe live Aura paths. Short Buffs and Timed Buffs delegate duration filtering to WoW. Static / Long Buffs learns readable helpful-Aura durations only outside combat, then gives WoW the learned spell-ID inclusion set; unknown buffs remain hidden until observed outside combat. Short Buffs no longer receives Long buffs when their remaining time crosses its maximum because classification uses total duration. Static and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those two frames for combat Aura display yet.
+After WoW 12.1, all four preset frames use combat-safe managed Aura paths. Short Buffs and Timed Buffs delegate duration filtering to WoW. Static / Long Buffs learns readable helpful-Aura durations only outside combat, then gives WoW the learned spell-ID inclusion set; unknown buffs remain hidden until observed outside combat. Short Buffs does not receive longer buffs when their remaining time crosses its maximum because classification uses total duration.
 
 Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the owning frame implementation selects and arranges the displayed auras; there is no adjustable pool-size setting.
 
@@ -54,14 +52,14 @@ When Frame BG is enabled for managed Short Buffs, Static / Long Buffs, Timed Buf
 Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
 
 #### Test Aura Preview
-Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
+Use **Test Aura** to preview a custom or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
 
 
 #### Tooltips
-Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration; the Static / Long Buffs mover tooltip reports the learned inclusion count and current Short maximum. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
+Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. The Short Buffs mover tooltip reports its configured maximum duration; the Static / Long Buffs mover tooltip reports the learned inclusion count and current Short maximum. Custom and Cooldown Manager-backed frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
-Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Short Buffs, Static / Long Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
+Right-click a supported cancelable player buff to remove it. Static / Long Buffs uses Blizzard's native AuraButton cancellation and inherits Blizzard's restrictions; custom frames use the addon-owned out-of-combat cancellation path. Short Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries are not cancelable through LsTweeks.
 
 
 #### WoW Cooldown Manager Frames
@@ -114,7 +112,7 @@ All the Colors applies reversible runtime color overrides without replacing the 
 - **Global Color**: one RGBA color across checked modules; visibility-capable backgrounds in those modules are shown while the override is active.
 - **Show Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings. Enabling **Fade OOC** on an individual Aura Frame clears this global override and synchronizes its linked controls.
-- **Enable Test Auras**: temporarily previews test auras on every enabled Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
+- **Enable Test Auras**: temporarily previews test auras on every enabled custom or Cooldown Manager-backed Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
 - **Global Participation**: Objectives, Buffs, and Debuffs have independent checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
 - **Aura Colors**: the Global page groups the independent Frame BG and Bar BG overrides under **BG Colors**, Buff Bar and Debuff Bar fills under **Bar Colors**, and Bar Text and Timer Text under **Text Colors**.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.

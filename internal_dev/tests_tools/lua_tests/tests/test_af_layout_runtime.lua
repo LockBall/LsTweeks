@@ -16,7 +16,7 @@ end
 h.test("icon timer slots reserve width for long duration labels", function()
     local M = load_aura_frames()
     M.db = {}
-    local frame = M.create_aura_frame("show_long", "move_long", "timer_long", "bg_long", "scale_long", "spacing_long", "Long", false)
+    local frame = M.create_aura_frame("show_short", "move_short", "timer_short", "bg_short", "scale_short", "spacing_short", "Short", false)
     frame._runtime_config_cache = {
         frame_width = 120,
         spacing = 2,
@@ -26,7 +26,7 @@ h.test("icon timer slots reserve width for long duration labels", function()
         cooldown_icon_overlay = false,
     }
 
-    M.setup_layout(frame, "show_long", "spacing_long", false)
+    M.setup_layout(frame, "show_short", "spacing_short", false)
 
     h.eq(frame.icons[1].timer_slot:GetWidth(), 36, "timer slot fits compact duration text")
     h.eq(frame.icons[1].time_text:GetWidth(), 36, "timer text uses the compact reserved slot")
@@ -53,14 +53,14 @@ end)
 
 h.test("move mode uses an inward border mover without changing aura layout", function()
     local M = load_aura_frames()
-    M.db = { width_long = 120 }
+    M.db = { width_short = 120 }
     local frame = M.create_aura_frame(
-        "show_long", "move_long", "timer_long", "bg_long",
-        "scale_long", "spacing_long", "Long", false
+        "show_short", "move_short", "timer_short", "bg_short",
+        "scale_short", "spacing_short", "Short", false
     )
 
     M.update_aura_frame_move_controls(frame, true)
-    M.setup_layout(frame, "show_long", "spacing_long", false)
+    M.setup_layout(frame, "show_short", "spacing_short", false)
     h.eq(#frame.move_handle.hit_areas, 4, "border mover exposes four inward edge hit areas")
     for _, edge in ipairs(frame.move_handle.hit_areas) do
         h.ok(edge:GetScript("OnEnter"), "each border edge owns the title tooltip entry path")
@@ -119,9 +119,9 @@ end)
 h.test("saved preset and custom colors normalize to readable RGBA", function()
     local M = load_aura_frames()
     M.db = {
-        color_static = { r = -1, g = 2, b = "0.5", a = 9 },
-        stack_color_static = { r = 2, g = -1, b = "0.25" },
-        bar_bg_color_static = "invalid",
+        color_static_long = { r = -1, g = 2, b = "0.5", a = 9 },
+        stack_color_static_long = { r = 2, g = -1, b = "0.25" },
+        bar_bg_color_static_long = "invalid",
         custom_frames = {
             {
                 id = "custom_color_test",
@@ -133,13 +133,13 @@ h.test("saved preset and custom colors normalize to readable RGBA", function()
     }
 
     M.normalize_saved_colors(M.db)
-    h.eq(M.db.color_static.r, 0, "preset red clamps to zero")
-    h.eq(M.db.color_static.g, 1, "preset green clamps to one")
-    h.eq(M.db.color_static.b, 0.5, "preset blue coerces to a number")
-    h.eq(M.db.color_static.a, 1, "preset alpha clamps to one")
-    h.eq(M.db.stack_color_static.r, 1, "preset stack red clamps to one")
-    h.eq(M.db.stack_color_static.g, 0, "preset stack green clamps to zero")
-    h.eq(M.db.stack_color_static.b, 0.25, "preset stack blue coerces to a number")
+    h.eq(M.db.color_static_long.r, 0, "preset red clamps to zero")
+    h.eq(M.db.color_static_long.g, 1, "preset green clamps to one")
+    h.eq(M.db.color_static_long.b, 0.5, "preset blue coerces to a number")
+    h.eq(M.db.color_static_long.a, 1, "preset alpha clamps to one")
+    h.eq(M.db.stack_color_static_long.r, 1, "preset stack red clamps to one")
+    h.eq(M.db.stack_color_static_long.g, 0, "preset stack green clamps to zero")
+    h.eq(M.db.stack_color_static_long.b, 0.25, "preset stack blue coerces to a number")
     h.eq(M.db.custom_frames[1].color.r, 1, "custom red clamps to one")
     h.eq(M.db.custom_frames[1].color.g, 0, "custom green clamps to zero")
     h.eq(M.db.custom_frames[1].bg_color.a, 0, "custom alpha clamps to zero")
@@ -164,7 +164,7 @@ h.test("visible icon ticker refresh stops idle ticker immediately", function()
     h.eq(h.stub.ActiveTimerCount(), 0, "queued ticker cancelled")
 end)
 
-h.test("visible icon ticker skips managed frames without legacy icon pools", function()
+h.test("visible icon ticker skips managed frames without addon icon pools", function()
     local M = load_aura_frames()
     M.db = { short_threshold = M.DEFAULT_SHORT_THRESHOLD }
     local managed_frame = CreateFrame("Frame", nil, UIParent)
@@ -173,7 +173,7 @@ h.test("visible icon ticker skips managed frames without legacy icon pools", fun
     M.frames_list = { managed_frame }
 
     h.eq(M.tick_visible_icons(GetTime()), false,
-        "managed frame transition leaves no legacy icon work to tick")
+        "managed frame transition leaves no addon icon work to tick")
 end)
 
 h.test("shared Aura bar range helper skips unchanged writes", function()
@@ -202,7 +202,7 @@ h.test("layout-owned Aura height calculation covers bars and icon growth", funct
     layout.growth = "RIGHT"
     h.eq(M.get_aura_frame_height(layout, 3, false, 2, true), 104, "horizontal icons use wrapped rows")
     h.eq(M.get_aura_frame_height(layout, 0, false, 2, false), 44, "empty icon frame keeps its base footprint")
-    h.eq(M.get_aura_frame_height(nil, 3, false, 2, true), 132, "missing layout retains the stable legacy icon fallback")
+    h.eq(M.get_aura_frame_height(nil, 3, false, 2, true), 132, "missing layout retains the stable compatibility fallback")
 end)
 
 

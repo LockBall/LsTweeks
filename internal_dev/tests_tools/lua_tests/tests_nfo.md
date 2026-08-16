@@ -63,10 +63,10 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.
 - `tests/test_sv_state.lua`: Skyriding Vigor charge detection (power normalization, display mod, spell-charge fallback) and frame fade primitives plus the full-charge fade policy.
-- `tests/test_af_timer_preview.lua`: Aura timer formatting, numeric interval metadata, long-preview playback/pause behavior, stack ticking, and Long/Short threshold transitions.
+- `tests/test_af_timer_preview.lua`: Aura timer formatting, numeric interval metadata, generic preview playback/pause behavior, and stack ticking.
 - `tests/test_af_layout_runtime.lua`: Aura layout sizing, movement, combat backgrounds, saved-color normalization, visible-icon ticker lifecycle, and stable range writes.
 - `tests/test_af_tooltip_integration.lua`: Aura tooltip cache/prewarm behavior, safe copied rendering, restricted-combat fallbacks, native-delegate experiment isolation, and owner-safe hiding.
-- `tests/test_af_scan_config.lua`: Aura scan-cache invalidation, custom-frame cleanup, setting fallback, runtime color resolution, malformed-record handling, identity refresh, and secret-timing classification.
+- `tests/test_af_scan_config.lua`: custom-frame cleanup, setting fallback, runtime color resolution, custom secret-timing classification, and direct CDM Aura entry construction.
 - `af_managed_fixture.lua`: shared WoW 12.1 AuraContainer stub and managed-preset boot fixture; each managed presentation suite consumes it in an isolated Lua process.
 - `tests/test_af_managed.lua`: managed AuraContainer foundation — initialization-before-constraints, processing/visibility lifecycle gating, accessible-button filtering, status observability, module gating, and unavailable-API fallback.
 - `tests/test_af_managed_debuff_presentation.lua`: managed Debuff native bindings, HARMFUL groups, auto-sizing layout, background extensions, move controls, and combat/OOC aggregate fade behavior.

@@ -1,8 +1,4 @@
--- Unified aura scanning and classification for all aura frame categories.
--- M.unified_scan() runs one pass over all player buffs and debuffs, classifying each into M._aura_map
--- with an entry.category ("static"/"short"/"long"/"debuff") and entry.is_helpful flag.
--- It also rebuilds per-category bucket maps so preset frames do not each filter the full master map.
--- Custom frames scan with a selected AuraFilters string.
+-- Aura scanning for custom frames and Blizzard Cooldown Manager-backed frames.
 
 local addon_name, addon = ...
 
@@ -18,40 +14,11 @@ local GCD_HOOK_THRESHOLD = 1.5
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
--- Scratch tables reused every unified_scan call to avoid per-scan allocation.
-local _scratch_old_map      = {}
-local _scratch_old_cat      = {}
-local _scratch_seen_iids    = {}
-local _scratch_added_by_key = {}
-local _scratch_added_lookup = {}
 local _scratch_viewer_children = {}
 local _scratch_custom_old_map = {}
 local _custom_aura_scan_cache = {}
-local AURA_SCAN_BUCKET_CATEGORIES = { "static", "short", "long", "debuff" }
 
 --#region SHARED HELPERS =======================================================
-
-local function reset_aura_category_buckets()
-    M._aura_maps_by_category = M._aura_maps_by_category or {}
-    for _, category in ipairs(AURA_SCAN_BUCKET_CATEGORIES) do
-        local bucket = M._aura_maps_by_category[category]
-        if bucket then
-            wipe(bucket)
-        else
-            M._aura_maps_by_category[category] = {}
-        end
-    end
-    return M._aura_maps_by_category
-end
-
-local function add_to_category_bucket(buckets, entry)
-    local category = entry and entry.category
-    local bucket = category and buckets[category]
-    local iid = entry and entry.instance_id
-    if bucket and iid ~= nil then
-        bucket[iid] = entry
-    end
-end
 
 local function make_order_key(spell_id, name, icon, is_helpful)
     local f = is_helpful and "H" or "D"
@@ -135,33 +102,6 @@ local function make_entry(iid, name, icon, duration, expiration, spell_id, dispe
         added_at     = added_at or GetTime(),
         order_key    = make_order_key(spell_id, name, icon, is_helpful),
     }
-end
-
--- Update an existing entry in place (avoids allocation on unchanged auras).
-local function update_entry(entry, name, icon, duration, expiration, spell_id, dispel_name, rem, count, scan_rem, live_cnt, category)
-    local refresh_order_key = issecretvalue(spell_id)
-        or issecretvalue(name)
-        or issecretvalue(icon)
-        or issecretvalue(entry.spell_id)
-        or issecretvalue(entry.name)
-        or issecretvalue(entry.icon)
-        or spell_id ~= entry.spell_id
-        or name ~= entry.name
-        or icon ~= entry.icon
-    entry.name          = name
-    entry.icon          = icon
-    entry.duration      = duration
-    entry.expiration    = expiration
-    entry.spell_id      = spell_id
-    entry.dispel_name   = dispel_name
-    entry.remaining     = rem
-    entry.count         = count
-    entry.scan_remaining = scan_rem
-    entry.live_count    = live_cnt
-    if refresh_order_key then
-        entry.order_key = make_order_key(spell_id, name, icon, entry.is_helpful)
-    end
-    if category then entry.category = category end
 end
 
 local function get_safe_spell_id(raw_spell_id, old_entry)
@@ -634,8 +574,7 @@ local function install_cooldown_viewer_item_hooks()
 end
 
 -- Populates target_map by walking the Blizzard CooldownViewer frame for this category.
--- Aura mode:
---   Reads the child mixin's aura instance ID and maps directly to M._aura_map entries.
+-- Aura mode reads each child mixin's Aura instance ID and builds the entry directly.
 -- Cooldown mode:
 --   1. Active phase: prefer the child mixin's live aura instance ID from the Blizzard CDM viewer.
 --   2. Cooldown phase: use the hooked DurationObject/cache, with spell cooldown
@@ -666,13 +605,7 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             local iid = get_child_aura_instance_id(child)
             local has_active_aura_entry = false
             if iid then
-                local aura_entry = M._aura_map[iid]
-                if not aura_entry then
-                    aura_entry = build_cdm_active_aura_entry(iid, category, cdm_order)
-                    if aura_entry then
-                        M._aura_map[iid] = aura_entry
-                    end
-                end
+                local aura_entry = build_cdm_active_aura_entry(iid, category, cdm_order)
                 if aura_entry then
                     aura_entry.cdm_order = cdm_order
                     target_map[iid] = aura_entry
@@ -772,296 +705,11 @@ function M.add_cooldown_viewer_category_entries(target_map, category)
             state.category = category
             local iid = get_child_aura_instance_id(child)
             if iid then
-                local entry = M._aura_map[iid]
-                if not entry then
-                    entry = build_cdm_active_aura_entry(iid, category)
-                    if entry then
-                        M._aura_map[iid] = entry
-                    end
-                end
+                local entry = build_cdm_active_aura_entry(iid, category)
                 if entry then target_map[iid] = entry end
             end
         end
     end
 end
 
-local function build_added_by_key(map)
-    local by_key = _scratch_added_by_key
-    wipe(by_key)
-    for _, entry in pairs(map) do
-        local key = entry.order_key
-        if key and entry.added_at and (not by_key[key] or entry.added_at < by_key[key]) then
-            by_key[key] = entry.added_at
-        end
-    end
-    return by_key
-end
-
-local function build_added_lookup(info)
-    local lookup = _scratch_added_lookup
-    wipe(lookup)
-    local count  = 0
-    if not info then return lookup, count end
-    if info.addedAuras then
-        for _, a in ipairs(info.addedAuras) do
-            local iid = a and a.auraInstanceID
-            if iid then lookup[iid] = a; count = count + 1 end
-        end
-    elseif info.addedAuraInstanceIDs then
-        for _, iid in ipairs(info.addedAuraInstanceIDs) do
-            if iid then lookup[iid] = true; count = count + 1 end
-        end
-    end
-    return lookup, count
-end
-
 --#endregion SHARED HELPERS ====================================================
-
---#region HELPFUL AURA CLASSIFICATION ==========================================
--- Returns "static" | "short" | "long" for a helpful aura given its remaining time.
--- Returns nil when classification is deferred to caller (secret fields).
-local function classify_helpful(classify_rem, short_threshold)
-    if classify_rem == nil then return nil end
-    if classify_rem == 0 then return "static" end
-    if classify_rem <= short_threshold then return "short" end
-    return "long"
-end
-
---#endregion HELPFUL AURA CLASSIFICATION =======================================
-
---#region UNIFIED SCAN =========================================================
--- Scans all player buffs and debuffs in one pass.
--- Populates M._aura_map: iid -> entry with is_helpful and category fields.
--- Preset frames filter by entry.category; custom frames use C_UnitAuras.GetAuraDataByIndex directly.
-function M.unified_scan(info, short_threshold)
-    M._aura_map = M._aura_map or {}
-    local cur_map = M._aura_map
-    local category_buckets = reset_aura_category_buckets()
-    if M.clear_sorted_aura_ids_cache then
-        M.clear_sorted_aura_ids_cache()
-    end
-
-    -- Snapshot old map for stable added_at and secret-field fallback.
-    -- We build a shallow copy of keys only (old entries are referenced, not cloned).
-    local old_map = _scratch_old_map
-    wipe(old_map)
-    for iid, entry in pairs(cur_map) do old_map[iid] = entry end
-
-    local old_added_by_key = build_added_by_key(old_map)
-    local added_lookup, added_count = build_added_lookup(info)
-
-    local removed_count = 0
-    local replacement_pref_cat = nil  -- category hint from a 1-for-1 swap
-    if info and info.removedAuraInstanceIDs then
-        removed_count = #info.removedAuraInstanceIDs
-        if removed_count == 1 and added_count == 1 then
-            local rid = info.removedAuraInstanceIDs[1]
-            local old = old_map[rid]
-            if old then replacement_pref_cat = old.category end
-        end
-    end
-
-    local seen_iids = _scratch_seen_iids
-    wipe(seen_iids)
-
-    -- -------------------------------------------------------------------------
-    -- PASS 1: HELPFUL (buffs)
-    -- -------------------------------------------------------------------------
-    local max_helpful = M.AURA_FRAME_LIMIT
-
-    local old_cat_by_spell = nil
-    local function get_old_category_by_spell(spell_id)
-        if not spell_id then return nil end
-        if not old_cat_by_spell then
-            old_cat_by_spell = _scratch_old_cat
-            wipe(old_cat_by_spell)
-            for _, entry in pairs(old_map) do
-                if entry.is_helpful and entry.spell_id and entry.category then
-                    old_cat_by_spell[entry.spell_id] = entry.category
-                end
-            end
-        end
-        return old_cat_by_spell[spell_id]
-    end
-
-    local i, count = 1, 0
-    while count < max_helpful do
-        local aura = C_UnitAuras.GetBuffDataByIndex("player", i)
-        if not aura then break end
-        i = i + 1
-
-        local iid = aura.auraInstanceID
-        if iid then
-            local old_entry     = old_map[iid]
-            local safe_spell_id = get_aura_spell_id(aura, old_entry)
-            local duration      = aura.duration
-            local expiration    = aura.expirationTime
-            local rem           = compute_remaining(duration, expiration)
-
-        -- GetAuraDuration is readable even when scan fields are secret (combat).
-        local need_live = (rem == nil) or issecretvalue(rem) or issecretvalue(expiration)
-        local live_remaining, live_expiration = read_live_aura_timing(iid, need_live)
-
-        local classify_rem = live_remaining or rem
-
-        local category = nil
-
-        if classify_rem ~= nil then
-            category = classify_helpful(classify_rem, short_threshold)
-        else
-            -- Secret fields: use DoesAuraHaveExpirationTime as final boolean.
-            local expires = C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
-            local expires_known
-            if type(expires) ~= "boolean" or issecretvalue(expires) then
-                expires_known = nil
-            else
-                expires_known = expires
-            end
-
-            if expires_known == false then
-                category = "static"
-            elseif expires_known == true then
-                local old_cat = (old_entry and old_entry.category)
-                    or get_old_category_by_spell(safe_spell_id)
-                category = old_cat or "short"
-            else
-                local old_cat = (old_entry and old_entry.category)
-                    or get_old_category_by_spell(safe_spell_id)
-                if old_cat then
-                    category = old_cat
-                elseif added_lookup[iid] and replacement_pref_cat then
-                    category = replacement_pref_cat
-                else
-                    category = "short"
-                end
-            end
-        end
-
-        if category then
-            local name  = aura.name
-            local icon  = aura.icon
-            local dispel = aura.dispelName
-            if issecretvalue(dispel) then dispel = nil end
-
-            local stacks, live_count = get_aura_stack_counts(aura, iid)
-            local safe_duration, safe_expiration, safe_remaining =
-                resolve_safe_timing(duration, expiration, rem, live_remaining, live_expiration, old_entry)
-
-            local entry = cur_map[iid]
-            if entry then
-                update_entry(entry, name, icon, safe_duration, safe_expiration,
-                    safe_spell_id, dispel, safe_remaining or 0, stacks, live_remaining, live_count, category)
-            else
-                local key = make_order_key(aura.spellId, name, icon, true)
-                local recovered_at = (old_entry and old_entry.added_at)
-                    or (key and old_added_by_key[key]) or nil
-                entry = make_entry(iid, name, icon, safe_duration, safe_expiration,
-                    safe_spell_id, dispel, safe_remaining or 0, stacks,
-                    true, category, recovered_at or GetTime())
-                entry.scan_remaining = live_remaining
-                entry.live_count     = live_count
-                cur_map[iid] = entry
-            end
-            seen_iids[iid] = true
-            add_to_category_bucket(category_buckets, entry)
-
-            count = count + 1
-        end
-        end
-    end
-
-    -- -------------------------------------------------------------------------
-    -- PASS 2: HARMFUL (debuffs)
-    -- -------------------------------------------------------------------------
-    local max_debuff = M.AURA_FRAME_LIMIT
-
-    i, count = 1, 0
-    while count < max_debuff do
-        local aura = C_UnitAuras.GetDebuffDataByIndex("player", i)
-        if not aura then break end
-        i = i + 1
-
-        local iid = aura.auraInstanceID
-        if iid then
-            local old_entry     = old_map[iid]
-            local duration      = aura.duration
-            local expiration    = aura.expirationTime
-            local name          = aura.name
-            local icon          = aura.icon
-            local dispel        = aura.dispelName
-            if issecretvalue(dispel) then dispel = nil end
-
-        local rem = compute_remaining(duration, expiration)
-        local belongs = false
-
-        if rem == nil then
-            -- Secret fields: use DoesAuraHaveExpirationTime.
-            local expires = C_UnitAuras.DoesAuraHaveExpirationTime("player", iid)
-            local expires_known
-            if type(expires) ~= "boolean" or issecretvalue(expires) then
-                expires_known = nil
-            else
-                expires_known = expires
-            end
-
-            local added_data = added_lookup and added_lookup[iid]
-            local is_new = (old_map[iid] == nil) and (added_data ~= nil)
-
-            if is_new then
-                -- Debuffs always belong to the debuff frame regardless of timing.
-                belongs = true
-            elseif expires_known == nil then
-                belongs = (old_map[iid] ~= nil)
-            else
-                belongs = true
-            end
-        else
-            -- Readable debuffs always belong to the debuff frame.
-            belongs = true
-        end
-
-        if belongs then
-            local safe_spell_id = get_safe_spell_id(aura.spellId, old_entry)
-            local stacks, live_count = get_aura_stack_counts(aura, iid)
-            local safe_duration, safe_expiration, safe_remaining =
-                resolve_safe_timing(duration, expiration, rem, nil, nil, old_entry)
-
-            local entry = cur_map[iid]
-            if entry then
-                update_entry(entry, name, icon, safe_duration, safe_expiration,
-                    safe_spell_id, dispel, safe_remaining or 0, stacks, nil, live_count, "debuff")
-                entry.is_helpful = false
-            else
-                local key = make_order_key(aura.spellId, name, icon, false)
-                local recovered_at = (old_entry and old_entry.added_at)
-                    or (key and old_added_by_key[key]) or nil
-                entry = make_entry(iid, name, icon, safe_duration, safe_expiration,
-                    safe_spell_id, dispel, safe_remaining or 0, stacks,
-                    false, "debuff", recovered_at or GetTime())
-                entry.live_count = live_count
-                cur_map[iid] = entry
-            end
-            seen_iids[iid] = true
-            add_to_category_bucket(category_buckets, entry)
-            count = count + 1
-        end
-        end
-    end
-
-    if M.add_shared_long_test_aura then
-        M.add_shared_long_test_aura(category_buckets, short_threshold)
-    end
-
-    -- -------------------------------------------------------------------------
-    -- CLEANUP: remove stale IIDs not seen this scan pass.
-    -- -------------------------------------------------------------------------
-    for iid in pairs(cur_map) do
-        if not seen_iids[iid] then cur_map[iid] = nil end
-    end
-
-    if M.prewarm_scanned_aura_tooltip_cache then
-        M.prewarm_scanned_aura_tooltip_cache(cur_map)
-    end
-end
-
---#endregion UNIFIED SCAN ======================================================

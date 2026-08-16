@@ -85,12 +85,13 @@ end
 
 --#region MANAGED BUTTON INITIALIZATION ========================================
 
-local function bind_native_tooltip(aura_button)
+local function bind_native_interaction(aura_button, category)
     -- AuraButton owns this tooltip path and can identify its secret Aura
     -- without addon AuraData reads or addon-owned hover scripts, including
     -- while Aura access is restricted in combat.
     aura_button:SetMouseMotionEnabled(true)
     aura_button:SetHideTooltipInCombat(false)
+    aura_button:SetCancelAuraButtons(category == "static_long" and "RightButtonUp" or nil)
 end
 
 local function apply_duration_font(duration_text, duration_font, category)
@@ -178,7 +179,7 @@ local function initialize_preset_icon(
 
     aura_button:SetDurationText(duration_text, {})
     aura_button:SetApplicationCount(stack_text, {})
-    bind_native_tooltip(aura_button)
+    bind_native_interaction(aura_button, category)
 end
 
 local function initialize_preset_bar(
@@ -265,7 +266,7 @@ local function initialize_preset_bar(
     })
     bar_regions[aura_button] = duration_bar
 
-    bind_native_tooltip(aura_button)
+    bind_native_interaction(aura_button, category)
 end
 
 local function create_preset_initializer(

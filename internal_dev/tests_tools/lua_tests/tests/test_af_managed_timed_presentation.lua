@@ -15,7 +15,7 @@ h.test("managed Timed Buffs use Blizzard native permanent-aura exclusion", funct
     local timed_backend = timed_frame and timed_frame._managed_aura_backend
 
     h.ok(timed_backend, "Timed Buffs frame owns a managed backend")
-    h.eq(timed_frame.icons, nil, "Timed Buffs create no legacy icon pool")
+    h.eq(timed_frame.icons, nil, "Timed Buffs create no addon icon pool")
     h.eq(timed_frame.__events.UNIT_AURA, nil, "Timed Buffs do not register UNIT_AURA")
 
     for _, group_key in ipairs({ "timed_buffs:bar", "timed_buffs:icon" }) do

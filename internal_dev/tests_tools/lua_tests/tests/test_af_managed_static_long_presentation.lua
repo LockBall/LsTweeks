@@ -54,10 +54,13 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     h.eq(buffs_backend.container.__groups["buffs:bar"].filter_string, "HELPFUL",
         "Static / Long Buff groups request helpful Auras")
     for _, group_key in ipairs({ "buffs:bar", "buffs:icon" }) do
-        local included = buffs_backend.container.__groups[group_key].options.candidateFilters.includeSpellIDs
+        local group = buffs_backend.container.__groups[group_key]
+        local included = group.options.candidateFilters.includeSpellIDs
         h.eq(included[9001], true, "learned permanent Aura is included natively")
         h.eq(included[9002], true, "learned Long Aura is included natively")
         h.eq(included[9003], nil, "learned Short Aura is absent from native inclusion")
+        h.eq(group.buttons[1].__cancel_aura_buttons, "RightButtonUp",
+            "Static / Long AuraButtons use native right-click cancellation")
     end
     h.ok(buffs_frame.move_handle.body:find("2 learned", 1, true),
         "mover tooltip reports the learned inclusion count")
@@ -74,7 +77,7 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
         "Static / Long Buff icon pool uses the fixed Aura limit")
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
         "bar-mode Static / Long Buffs use vertical flow")
-    h.eq(buffs_frame.icons, nil, "Static / Long Buffs frame creates no legacy icon pool")
+    h.eq(buffs_frame.icons, nil, "Static / Long Buffs frame creates no addon icon pool")
     h.eq(buffs_frame.__events.UNIT_AURA, nil, "Static / Long Buffs frame does not register UNIT_AURA")
     h.ok(buffs_frame:IsShown(), "runtime startup shows enabled Static / Long Buffs")
     h.eq(buffs_frame:GetAlpha(), 0.25,

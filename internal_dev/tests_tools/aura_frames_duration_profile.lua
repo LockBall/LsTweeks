@@ -30,7 +30,6 @@ end
 local tracked = {
     "tick_visible_icons",
     "render_aura_map",
-    "unified_scan",
     "scan_custom_aura_map",
     "add_cooldown_viewer_category_entries",
 }
@@ -123,7 +122,6 @@ local function print_report()
         "C_UnitAuras.GetUnitAuraInstanceIDs",
         "tick_visible_icons",
         "render_aura_map",
-        "unified_scan",
         "scan_custom_aura_map",
         "add_cooldown_viewer_category_entries",
     }) do

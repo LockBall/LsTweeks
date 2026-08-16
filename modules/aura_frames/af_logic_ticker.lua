@@ -22,7 +22,7 @@ local function aura_icon_needs_tick(obj, frame, now)
     if obj.is_test_preview then return true end
     if obj.is_spell_cooldown then return true end
 
-    local is_static_entry = (frame and frame.category == "static") or obj.aura_is_static == true
+    local is_static_entry = obj.aura_is_static == true
     if is_static_entry then return false end
 
     local show_timer_text = frame and frame._show_timer_text
@@ -134,9 +134,6 @@ function M.tick_visible_icons(now)
     end
 
     now = now or GetTime()
-    local db = M.db
-    local short_threshold = (db and db.short_threshold) or M.DEFAULT_SHORT_THRESHOLD
-
     local frames_list = M.frames_list
     if not frames_list then return false end
     local needs_tick = false
@@ -144,7 +141,6 @@ function M.tick_visible_icons(now)
         local frame = frames_list[frame_index]
         local icons = frame and frame.icons
         if icons and frame:IsVisible() then
-            local is_static_frame = (frame.category == "static")
             local show_timer_text = frame._show_timer_text
             local bar_mode = frame._bar_mode
             local show_cooldown_overlay = frame._show_cooldown_overlay == true
@@ -159,7 +155,7 @@ function M.tick_visible_icons(now)
                     if obj.is_test_preview and M.update_test_preview_state then
                         M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), now)
                     end
-                    local is_static_entry = is_static_frame or obj.aura_is_static == true
+                    local is_static_entry = obj.aura_is_static == true
                     if is_static_entry then
                         clear_timer_text(obj.time_text)
                         if obj.bar and obj.bar:IsShown() then
@@ -208,11 +204,6 @@ function M.tick_visible_icons(now)
                             end
                         end
                         if remaining and remaining > 0 then
-                            if M.should_reclassify_aura_category
-                                and M.should_reclassify_aura_category(frame.category, remaining, short_threshold, obj.is_test_preview)
-                                and M.queue_threshold_reclassification then
-                                M.queue_threshold_reclassification()
-                            end
                             if show_timer_text and not show_cooldown_overlay then
                                 M.set_timer_text(obj.time_text, obj.aura_category or frame.category, remaining, obj.aura_timer_behavior)
                             end

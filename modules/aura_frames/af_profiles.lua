@@ -9,7 +9,7 @@ addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local PROFILE_GLOBAL_KEYS = {
-    "enable_blizz_buffs", "enable_blizz_debuffs", "cancel_modifier", "short_threshold", "aura_visible_icon_tick",
+    "enable_blizz_buffs", "enable_blizz_debuffs", "short_threshold", "aura_visible_icon_tick",
     "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline",
     "shared_background_color_enabled",
 }
@@ -41,14 +41,20 @@ local function apply_keys(source, dest, keys)
     for _, key in ipairs(keys) do dest[key] = source[key] ~= nil and copy(source[key]) or nil end
 end
 
+local function should_profile_category_prefix(category, prefix)
+    return prefix ~= "test_aura" or M.frame_supports_test_aura(category)
+end
+
 function M.export_aura_frame_profile_data()
     if not M.db then return nil end
     local data = {}
     copy_keys(M.db, data, PROFILE_GLOBAL_KEYS)
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
-            local key = prefix .. "_" .. category
-            if M.db[key] ~= nil then data[key] = copy(M.db[key]) end
+            if should_profile_category_prefix(category, prefix) then
+                local key = prefix .. "_" .. category
+                if M.db[key] ~= nil then data[key] = copy(M.db[key]) end
+            end
         end
     end
     data.positions = copy(M.db.positions or {})
@@ -66,13 +72,15 @@ function M.apply_aura_frame_profile_data(data)
     apply_keys(data, M.db, PROFILE_GLOBAL_KEYS)
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
-            local key = prefix .. "_" .. category
-            if data[key] ~= nil then
-                M.db[key] = copy(data[key])
-            elseif M.defaults[key] ~= nil then
-                M.db[key] = copy(M.defaults[key])
-            else
-                M.db[key] = nil
+            if should_profile_category_prefix(category, prefix) then
+                local key = prefix .. "_" .. category
+                if data[key] ~= nil then
+                    M.db[key] = copy(data[key])
+                elseif M.defaults[key] ~= nil then
+                    M.db[key] = copy(M.defaults[key])
+                else
+                    M.db[key] = nil
+                end
             end
         end
     end
@@ -96,12 +104,5 @@ M.profile_manager = addon.CreateProfileManager({
     export_data = M.export_aura_frame_profile_data,
     apply_data = M.apply_aura_frame_profile_data,
 })
-
-function M.get_aura_frame_profiles() return M.profile_manager:get_profiles() end
-function M.find_aura_frame_profile(name) return M.profile_manager:find(name) end
-function M.save_aura_frame_profile(name, overwrite) return M.profile_manager:save(name, overwrite) end
-function M.delete_aura_frame_profile(name) return M.profile_manager:delete(name) end
-function M.rename_aura_frame_profile(old_name, new_name) return M.profile_manager:rename(old_name, new_name) end
-function M.load_aura_frame_profile(name) return M.profile_manager:load(name) end
 
 --#endregion PROFILE SCHEMA ====================================================

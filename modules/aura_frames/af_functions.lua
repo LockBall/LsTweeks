@@ -45,19 +45,6 @@ function M.normalize_aura_timer_remaining(seconds, allow_zero, compensate_bounda
     return seconds
 end
 
-function M.is_aura_timer_phase_active(elapsed, duration)
-    if type(elapsed) ~= "number" or type(duration) ~= "number" then return false end
-    return elapsed < duration and (duration - elapsed) > M.AURA_TIMER_EPSILON
-end
-
--- Real auras only count down, so they can move Long -> Short.  The cycling
--- test preview also restarts above the threshold and must return Short -> Long.
-function M.should_reclassify_aura_category(category, remaining, short_threshold, is_test_preview)
-    if type(remaining) ~= "number" or type(short_threshold) ~= "number" then return false end
-    if category == "long" then return remaining <= short_threshold end
-    return is_test_preview and category == "short" and remaining > short_threshold
-end
-
 function M.set_shown_if_changed(frame, shown)
     if not frame then return end
     if shown then
@@ -75,29 +62,13 @@ function M.clear_timer_text(font_string)
     end
 end
 
-local function normalize_cancel_modifier(modifier)
-    if modifier == "OFF" or modifier == "CTRL" or modifier == "ALT" or modifier == "SHIFT" then
-        return modifier
-    end
-    return "CTRL"
-end
-
-local function is_cancel_modifier_down(modifier)
-    if modifier == "CTRL" then return IsControlKeyDown and IsControlKeyDown() end
-    if modifier == "ALT" then return IsAltKeyDown and IsAltKeyDown() end
-    if modifier == "SHIFT" then return IsShiftKeyDown and IsShiftKeyDown() end
-    return false
-end
-
 local function is_frame_category_cancelable(frame)
-    if not frame then return false end
-    if frame.is_custom then return true end
-    return frame.category == "static" or frame.category == "long"
+    return frame and frame.is_custom == true
 end
 
 local function refresh_aura_frames_after_cancel()
-    if M.mark_aura_scan_dirty then
-        M.mark_aura_scan_dirty()
+    if M.invalidate_aura_scan_caches then
+        M.invalidate_aura_scan_caches()
     end
 
     local function refresh()
@@ -138,11 +109,7 @@ end
 function M.try_cancel_aura_icon(obj, button)
     if button ~= "RightButton" then return false end
     if InCombatLockdown and InCombatLockdown() then return false end
-    if not (M.db and obj) then return false end
-
-    local modifier = normalize_cancel_modifier(M.db.cancel_modifier)
-    if modifier == "OFF" then return false end
-    if not is_cancel_modifier_down(modifier) then return false end
+    if not obj then return false end
 
     if obj.is_test_preview or obj.is_spell_cooldown then return false end
     if type(obj.aura_index) ~= "number" then return false end
@@ -527,7 +494,9 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     local is_cdm = category and M.WOW_COOLDOWN_CATEGORIES[category] == true
     local enabled_key = is_custom and "show" or show_key
     local moving_key = is_custom and "move" or move_key
-    local test_key = is_custom and "test_aura" or (category and ("test_aura_" .. category))
+    local supports_test_aura = is_custom or (category and M.frame_supports_test_aura(category))
+    local test_key = is_custom and "test_aura"
+        or (supports_test_aura and category and ("test_aura_" .. category))
     local enabled = read_frame_bool(cfg_db, enabled_key)
 
     local activity = frame and frame._activity_state
@@ -538,10 +507,10 @@ function M.get_frame_activity_state(frame, show_key, move_key)
 
     activity.enabled = enabled
     activity.moving = enabled and read_frame_bool(cfg_db, moving_key)
-    activity.test_aura = enabled and (read_frame_bool(cfg_db, test_key) or M.is_global_test_aura_enabled())
+    activity.test_aura = enabled and supports_test_aura
+        and (read_frame_bool(cfg_db, test_key) or M.is_global_test_aura_enabled())
     activity.is_custom = is_custom
     activity.is_cdm = is_cdm
-    activity.needs_shared_scan = enabled and not is_custom
     activity.needs_custom_scan = enabled and is_custom
     activity.needs_cdm_viewer = enabled and is_cdm
     activity.needs_cdm_scan = enabled and is_cdm
@@ -561,10 +530,7 @@ function M.cdm_category_needs_viewer(category)
     return M.get_frame_activity_state(frame, keys.show_key, keys.move_key).needs_cdm_viewer == true
 end
 
-function M.mark_aura_scan_dirty()
-    if M._aura_scan_dirty then return end
-
-    M._aura_scan_dirty = true
+function M.invalidate_aura_scan_caches()
     M.clear_custom_aura_scan_cache()
     if M.clear_sorted_aura_ids_cache then
         M.clear_sorted_aura_ids_cache()

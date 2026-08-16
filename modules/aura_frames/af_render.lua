@@ -1,8 +1,7 @@
 -- Renders aura maps into pooled icon/bar frames.
 -- render_aura_map() orchestrates list ordering, metadata assignment, visual setup,
 -- timer/bar updates, and unused-icon cleanup through focused helpers.
--- set_timer_text() formats countdown strings; merge_aura_info() combines pending
--- UNIT_AURA payloads before the deferred scan.
+-- set_timer_text() formats countdown strings for addon-rendered entries.
 
 local addon_name, addon = ...
 
@@ -451,7 +450,6 @@ local function build_display_signature(
 
         local is_spell_cooldown = entry.is_spell_cooldown == true
         local has_stable_timing = is_spell_cooldown
-            or frame.category == "static"
             or (entry.expiration ~= nil and not issecretvalue(entry.expiration))
         if not has_stable_timing then return nil end
 
@@ -572,14 +570,14 @@ local function update_aura_timer_and_bar(
     bar_mode,
     show_render_timer_text,
     show_timer_swipe,
-    is_static_frame,
+    is_static_entry,
     live_remaining,
     live_duration,
     cooldown_duration,
     now
 )
-    -- Static frame buffs are effectively permanent; never display a timer string.
-    if is_static_frame then
+    -- Custom entries classified as static are effectively permanent.
+    if is_static_entry then
         clear_timer_and_fill_bar(obj, bar_mode)
         return
     end
@@ -636,10 +634,10 @@ local function update_aura_timer_and_bar(
     end
 end
 
-local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_frame, is_spell_cooldown)
+local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_entry, is_spell_cooldown)
     local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
         and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
-    local need_live_duration = (not is_static_frame)
+    local need_live_duration = (not is_static_entry)
         and (not is_spell_cooldown)
         and (show_timer_text or bar_mode)
         and type(entry.instance_id) == "number"
@@ -813,55 +811,6 @@ end
 
 --#endregion TIMER TEXT ========================================================
 
---#region AURA INFO MERGING ====================================================
-
--- Merge UNIT_AURA payloads while a deferred scan is pending.
--- Blizzard can fire multiple UNIT_AURA events inside the shared aura bucket window;
--- we need to union their added/updated/removed IDs so no aura changes are lost.
-function M.merge_aura_info(dst, src)
-    if not src then return dst end
-    dst = dst or {}
-
-    local function merge_id_list(key, list)
-        if not list then return end
-        dst[key] = dst[key] or {}
-        dst[key.."_set"] = dst[key.."_set"] or {}
-        for _, iid in ipairs(list) do
-            if iid and not dst[key.."_set"][iid] then
-                dst[key.."_set"][iid] = true
-                dst[key][#dst[key] + 1] = iid
-            end
-        end
-    end
-
-    merge_id_list("removedAuraInstanceIDs", src.removedAuraInstanceIDs)
-    merge_id_list("updatedAuraInstanceIDs", src.updatedAuraInstanceIDs)
-
-    -- Modern payload: addedAuras = array of aura tables with auraInstanceID.
-    if src.addedAuras then
-        dst.addedAuras = dst.addedAuras or {}
-        dst.addedAuras_set = dst.addedAuras_set or {}
-        for _, aura in ipairs(src.addedAuras) do
-            local iid = aura and aura.auraInstanceID
-            if iid and not dst.addedAuras_set[iid] then
-                dst.addedAuras_set[iid] = true
-                dst.addedAuras[#dst.addedAuras + 1] = aura
-            end
-        end
-    end
-
-    -- Backward/alternate payload support.
-    merge_id_list("addedAuraInstanceIDs", src.addedAuraInstanceIDs)
-
-    if src.isFullUpdate then
-        dst.isFullUpdate = true
-    end
-
-    return dst
-end
-
---#endregion AURA INFO MERGING =================================================
-
 --#region AURA MAP RENDERER ====================================================
 
 -- Main render orchestrator for one aura frame.
@@ -873,7 +822,6 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     local list = build_render_list(self, aura_map, aura_filter, sort_mode)
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
     local now = GetTime()
-    local is_static_frame = (self.category == "static")
     local show_cooldown_overlay = self._show_cooldown_overlay == true
     local show_render_timer_text = show_timer_text and not show_cooldown_overlay
     local show_timer_swipe = self._show_timer_swipe ~= false
@@ -926,7 +874,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         end
         local live_count = entry.live_count
         local is_spell_cooldown = entry.is_spell_cooldown == true
-        local is_static_entry = is_static_frame or (self.is_custom and entry.category == "static")
+        local is_static_entry = self.is_custom and entry.category == "static"
         local live_duration, live_remaining, cooldown_duration =
             resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_entry, is_spell_cooldown)
 

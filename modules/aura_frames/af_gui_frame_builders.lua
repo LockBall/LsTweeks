@@ -8,20 +8,6 @@ local M = addon.aura_frames
 
 --#region SHARED FRAME PANEL HELPERS ===========================================
 
-local CANCEL_MODIFIER_OPTIONS = {
-    { value = "OFF", text = "OFF" },
-    { value = "CTRL", text = "CTRL" },
-    { value = "ALT", text = "ALT" },
-    { value = "SHIFT", text = "SHIFT" },
-}
-
-local function normalize_cancel_modifier(value)
-    if value == "OFF" or value == "CTRL" or value == "ALT" or value == "SHIFT" then
-        return value
-    end
-    return "CTRL"
-end
-
 local function get_setting_range(key)
     return M.SETTING_RANGES[key]
 end
@@ -86,6 +72,7 @@ local function make_preset_frame_settings_config(data)
     return {
         id = cat,
         is_custom = false,
+        supports_test_aura = M.frame_supports_test_aura(cat),
         value_table = M.db,
         defaults_table = M.defaults,
         frame_show_key = data.show_key,
@@ -113,7 +100,7 @@ local function make_preset_frame_settings_config(data)
             bar_mode = "bar_mode_" .. cat,
             growth_icon = "growth_icon_" .. cat,
             growth_bar = "growth_bar_" .. cat,
-            test_aura = "test_aura_" .. cat,
+            test_aura = M.frame_supports_test_aura(cat) and ("test_aura_" .. cat) or nil,
             timer_number_font = "timer_number_font_" .. cat,
             timer_number_font_size = "timer_number_font_size_" .. cat,
             timer_number_font_bold = "timer_number_font_bold_" .. cat,
@@ -624,7 +611,7 @@ function M.build_general_tab(p)
     local visible_icon_tick = addon.CreateSliderWithBox(
         addon_name.."AuraVisibleIconTick",
         p,
-        "Timer Tick Sec",
+        "Addon Timer Tick Sec",
         get_setting_range("aura_visible_icon_tick").min,
         get_setting_range("aura_visible_icon_tick").max,
         get_setting_range("aura_visible_icon_tick").step,
@@ -638,23 +625,11 @@ function M.build_general_tab(p)
         end,
         {
             display_decimals = 2,
-            tooltip = "How often visible aura timer text and bars update.\nHigher values use less CPU but update less smoothly.",
+            tooltip = "How often addon-rendered custom and Cooldown Manager timer text and bars update. Managed Short, Static / Long, Timed, and Debuff animation is controlled by WoW.\nHigher values use less CPU but update less smoothly.",
         }
     )
     visible_icon_tick:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
     M.controls.aura_visible_icon_tick_slider = visible_icon_tick
-
-    local cancel_modifier = addon.CreateDropdown(addon_name.."CancelModifier", p, "Cancel Modifier", CANCEL_MODIFIER_OPTIONS, {
-        width = 120,
-        get_value = function()
-            return normalize_cancel_modifier(M.db.cancel_modifier or M.defaults.cancel_modifier)
-        end,
-        on_select = function(value)
-            M.db.cancel_modifier = normalize_cancel_modifier(value)
-        end,
-    })
-    cancel_modifier:SetPoint("LEFT", enable_panel, "RIGHT", 165, 0)
-    M.controls.cancel_modifier_dropdown = cancel_modifier
 
     -- Show Bar Section Outlines Checkbox
     local outlines_container = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,
@@ -846,47 +821,50 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         update()
     end)
 
-    local test_aura_key = frame_setting_key(frame_config, "test_aura")
-    local preview_show_key = opts.frame_show_key or frame_config.frame_show_key
-    local pause_test_aura_button
-    local function refresh_pause_test_aura_button()
-        if not pause_test_aura_button then return end
-        local is_enabled = value_table[test_aura_key] == true
-        local is_paused = M.is_test_preview_paused(preview_show_key)
-        pause_test_aura_button:SetEnabled(is_enabled)
-        pause_test_aura_button:SetPaused(is_paused)
-    end
+    local test_aura_container
+    if frame_config.supports_test_aura ~= false then
+        local test_aura_key = frame_setting_key(frame_config, "test_aura")
+        local preview_show_key = opts.frame_show_key or frame_config.frame_show_key
+        local pause_test_aura_button
+        local function refresh_pause_test_aura_button()
+            if not pause_test_aura_button then return end
+            local is_enabled = value_table[test_aura_key] == true
+            local is_paused = M.is_test_preview_paused(preview_show_key)
+            pause_test_aura_button:SetEnabled(is_enabled)
+            pause_test_aura_button:SetPaused(is_paused)
+        end
 
-    local test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
-        if M.set_test_aura_enabled then
-            M.set_test_aura_enabled(frame_config.id, is_checked)
-        else
-            if is_checked then
-                value_table[frame_setting_key(frame_config, "show")] = true
-                if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
-            elseif M.stop_test_preview_clock then
-                M.stop_test_preview_clock(preview_show_key)
+        test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
+            if M.set_test_aura_enabled then
+                M.set_test_aura_enabled(frame_config.id, is_checked)
+            else
+                if is_checked then
+                    value_table[frame_setting_key(frame_config, "show")] = true
+                    if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
+                elseif M.stop_test_preview_clock then
+                    M.stop_test_preview_clock(preview_show_key)
+                end
+                update()
             end
-            update()
-        end
-        if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
+            if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
+            refresh_pause_test_aura_button()
+        end)
+        pause_test_aura_button = addon.CreatePlayPauseButton(parent, function()
+            if M.toggle_test_aura_preview then
+                M.toggle_test_aura_preview(frame_config.id)
+            else
+                M.toggle_test_preview_pause(preview_show_key)
+                update()
+            end
+            refresh_pause_test_aura_button()
+        end, { width = 32, height = 32 })
+        pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 6, 0)
+        M.controls[control_key("test_aura") .. "_pause"] = pause_test_aura_button
         refresh_pause_test_aura_button()
-    end)
-    pause_test_aura_button = addon.CreatePlayPauseButton(parent, function()
-        if M.toggle_test_aura_preview then
-            M.toggle_test_aura_preview(frame_config.id)
-        else
-            M.toggle_test_preview_pause(preview_show_key)
-            update()
-        end
-        refresh_pause_test_aura_button()
-    end, { width = 32, height = 32 })
-    pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 6, 0)
-    M.controls[control_key("test_aura") .. "_pause"] = pause_test_aura_button
-    refresh_pause_test_aura_button()
-    grid:stack_below(test_aura_container, enable_container)
+        grid:stack_below(test_aura_container, enable_container)
+    end
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
-    grid:stack_below(tooltip_container, test_aura_container)
+    grid:stack_below(tooltip_container, test_aura_container or enable_container)
 
     local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2)
     local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared BG Colors."
@@ -1046,7 +1024,7 @@ function M.build_preset_frame_panel(p, data)
     local aura_filter = data.is_debuff and "HARMFUL" or "HELPFUL"
 
     local function update() -- refreshes current category frame preview
-        M.mark_aura_scan_dirty()
+        M.invalidate_aura_scan_caches()
         if M.invalidate_frame_runtime_config then
             M.invalidate_frame_runtime_config(M.frames[data.show_key])
         end
@@ -1071,7 +1049,7 @@ function M.build_preset_frame_panel(p, data)
         y_name_suffix = "YPosSlider",
         width_name_suffix = "WidthSlider",
         bar_color_control_key = "bar_color_picker_" .. cat,
-        show_timer_controls = cat ~= "static",
+        show_timer_controls = true,
         timer_labels = {
             row = 5,
             control_prefix = cat,
@@ -1167,7 +1145,7 @@ function M.build_custom_settings_panel(p, entry)
     local id = frame_config.id
 
     local function update()
-        M.mark_aura_scan_dirty()
+        M.invalidate_aura_scan_caches()
         update_custom_frame(entry)
     end
 
