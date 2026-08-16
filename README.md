@@ -42,25 +42,26 @@ The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Co
 - `Short`: timed player buffs at or below the short-buff threshold.
 - `Long`: timed player buffs above the short-buff threshold.
 - `Combined Buffs`: all helpful player auras through WoW's managed Aura display.
+- `Timed Buffs`: helpful player auras with an expiration time through WoW's managed Aura display.
 - `Debuffs`: harmful player auras through WoW's managed Aura display.
 
-After WoW 12.1, **Combined Buffs** and **Debuffs** are the current combat-safe live Aura paths. Static, Short, and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those three frames for combat Aura display yet.
+After WoW 12.1, **Combined Buffs**, **Timed Buffs**, and **Debuffs** are the current combat-safe live Aura paths. Timed Buffs delegates permanent-aura exclusion to WoW's native duration filter and never reads Aura duration or expiration values in addon code. Static, Short, and Long retain their settings while their legacy Aura scanning is migrated; do not rely on those three frames for combat Aura display yet.
 
 Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the owning frame implementation selects and arranges the displayed auras; there is no adjustable pool-size setting.
 
-When Frame BG is enabled for managed Combined Buffs or Debuffs, an empty frame retains one configured-width row so its future placement remains visible; the background expands as native Aura rows appear.
+When Frame BG is enabled for managed Combined Buffs, Timed Buffs, or Debuffs, an empty frame retains one configured-width row so its future placement remains visible; the background expands as native Aura rows appear.
 
 Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
 
 #### Test Aura Preview
-Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Combined Buffs and Debuffs do not yet have synthetic previews.
+Use **Test Aura** to preview a legacy or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Combined Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
 
 
 #### Tooltips
-Managed Combined Buffs and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
+Managed Combined Buffs, Timed Buffs, and Debuffs use Blizzard's native detailed Aura tooltips both in and out of combat. Legacy Aura frames use LsTweeks' guarded tooltip cache: information seen before combat is remembered until logout or reload, while restricted effects first encountered in combat may show only readable fallback details.
 
 #### Aura Cancellation
-Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Combined Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
+Outside combat, hold the selected modifier (Ctrl by default) and right-click a supported cancelable player buff in a Static, Long, or custom frame. Managed Combined Buffs, Timed Buffs, Debuffs, and Cooldown Manager entries cannot currently be cancelled through LsTweeks.
 
 
 #### WoW Cooldown Manager Frames

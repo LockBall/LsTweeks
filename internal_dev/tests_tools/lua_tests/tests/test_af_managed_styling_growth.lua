@@ -13,6 +13,10 @@ h.test("managed Combined Buff styling and growth remain independently configurab
     local M = fixture.boot_managed_presets()
     local buffs_frame = M.frames.show_combined
     local buffs_backend = buffs_frame._managed_aura_backend
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        h.eq(aura_button.__duration_text_region:GetCalls("SetTextColor"), nil,
+            "combined Buff bar duration text inherits the managed timer font color")
+    end
     M.db.bar_mode_combined = false
     M.db.width_combined = 180
     M.db.spacing_combined = 2

@@ -46,7 +46,8 @@ This is an implementation group rather than one pass/fail test.
 ### Migration And Presentation
 - Static, Short, and Long remain legacy Aura-scanning frames and should not be combat-validated as managed frames yet.
 - Managed icon cooldown swipe is not implemented; add and bind it natively before testing it.
-- Validate Frame BG on both Combined Buffs and Debuffs in Bar and Icon modes: local Frame BG should toggle immediately, Aura Shared BG Colors participation should force it visible and apply the shared Frame BG color, and the matching Buff or Debuff All the Colors override should replace the final RGBA independently. With no matching Auras, the background must remain one configured-width row; as Auras populate, native-visibility extension rows must grow without gaps, overlapping alpha, stale rows, Lua errors, or blocked actions. Repeat OOC, in combat, and after returning OOC.
+- Validate Timed Buffs in Bar and Icon modes beside Combined Buffs: timed Auras must appear in both frames, permanent Auras only in Combined, with no secret-value or blocked-action errors before, during, or after combat.
+- Validate Frame BG on Combined Buffs, Timed Buffs, and Debuffs in Bar and Icon modes: local Frame BG should toggle immediately, Aura Shared BG Colors participation should force it visible and apply the shared Frame BG color, and the matching Buff or Debuff All the Colors override should replace the final RGBA independently. With no matching Auras, the background must remain one configured-width row; as Auras populate, native-visibility extension rows must grow without gaps, overlapping alpha, stale rows, Lua errors, or blocked actions. Repeat OOC, in combat, and after returning OOC.
 - Change Bar BG and non-duration bar-text settings while managed Auras are visible and out of combat. Record which changes apply immediately and which require reload or group rebuild.
 
 ### CDM Regression

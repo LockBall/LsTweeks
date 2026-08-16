@@ -149,6 +149,12 @@ local function boot_managed_presets()
             fade_length_combined = 0,
             bg_combined = true,
             bg_color_combined = { r = 0.4, g = 0.3, b = 0.2, a = 0.1 },
+            show_timed = true,
+            move_timed = false,
+            width_timed = 150,
+            bar_mode_timed = true,
+            growth_icon_timed = "DOWN",
+            growth_bar_timed = "DOWN",
         },
     })
     return M

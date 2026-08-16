@@ -1,4 +1,4 @@
--- Managed preset Aura capabilities (combined Buffs and Debuffs).
+-- Managed preset Aura capabilities (Combined Buffs, Timed Buffs, and Debuffs).
 -- Owns native icon/bar presentation, frame backgrounds, and move outlines for
 -- HELPFUL Buffs and HARMFUL Debuffs without reintroducing Aura data reads.
 
@@ -21,6 +21,7 @@ local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
 local NO_BACKGROUND_INSETS = { left = 0, right = 0, top = 0, bottom = 0 }
 local managed_duration_fonts = {}
 local managed_stack_fonts = {}
+local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
 
 --#region MANAGED CONTAINER LAYOUT ============================================
 
@@ -242,13 +243,14 @@ local function initialize_preset_bar(
     spell_name:SetWordWrap(false)
     if spell_name.SetMaxLines then spell_name:SetMaxLines(1) end
 
-    local text_color = M.resolve_text_color(
+    local bar_text_color = M.resolve_text_color(
         category,
         "bar",
         get_preset_setting(cfg_db, category, "bar_text_color")
     )
-    duration_text:SetTextColor(text_color.r, text_color.g, text_color.b, 1)
-    spell_name:SetTextColor(text_color.r, text_color.g, text_color.b, 1)
+    -- Duration text inherits the category-owned FontObject so Timer Text color
+    -- changes continue to propagate after the immutable native binding.
+    spell_name:SetTextColor(bar_text_color.r, bar_text_color.g, bar_text_color.b, 1)
 
     aura_button:SetSpellName(spell_name)
     aura_button:SetDurationText(duration_text, {})
@@ -585,7 +587,14 @@ end
 
 --#region BACKEND CREATION =====================================================
 
-local function create_managed_preset_backend(frame, cfg_db, category, group_key, filter_string)
+local function create_managed_preset_backend(
+    frame,
+    cfg_db,
+    category,
+    group_key,
+    filter_string,
+    candidate_filters
+)
     if not (frame and cfg_db and M.create_managed_aura_backend) then return nil end
 
     local backend, backend_error = M.create_managed_aura_backend(
@@ -637,6 +646,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         filter_string,
         {
             maxFrameCount = max_frame_count,
+            candidateFilters = candidate_filters,
             initializeFrame = create_preset_initializer(
                 cfg_db,
                 category,
@@ -663,6 +673,7 @@ local function create_managed_preset_backend(frame, cfg_db, category, group_key,
         filter_string,
         {
             maxFrameCount = max_frame_count,
+            candidateFilters = candidate_filters,
             initializeFrame = create_preset_initializer(
                 cfg_db,
                 category,
@@ -691,6 +702,20 @@ end
 
 function M.create_managed_combined_buff_backend(frame, cfg_db)
     return create_managed_preset_backend(frame, cfg_db, "combined", "buffs", "HELPFUL")
+end
+
+function M.create_managed_timed_buff_backend(frame, cfg_db)
+    -- Blizzard evaluates maxDuration inside AuraContainer. Any non-nil
+    -- maximum also excludes permanent (duration-zero) auras without exposing
+    -- duration or expiration values to addon code.
+    return create_managed_preset_backend(
+        frame,
+        cfg_db,
+        "timed",
+        "timed_buffs",
+        "HELPFUL",
+        TIMED_BUFF_CANDIDATE_FILTERS
+    )
 end
 
 --#endregion BACKEND CREATION ==================================================

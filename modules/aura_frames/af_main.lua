@@ -1041,6 +1041,8 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
     elseif category == "combined" and M.create_managed_combined_buff_backend then
         managed_backend = M.create_managed_combined_buff_backend(frame, cfg_db)
+    elseif category == "timed" and M.create_managed_timed_buff_backend then
+        managed_backend = M.create_managed_timed_buff_backend(frame, cfg_db)
     end
 
     if not managed_backend then
