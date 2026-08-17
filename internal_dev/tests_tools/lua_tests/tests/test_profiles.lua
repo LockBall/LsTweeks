@@ -111,16 +111,16 @@ end)
 h.test("Objectives profile import preserves an explicit false setting", function()
     local OB = h.addon.objectives
     local db = OB.get_db()
-    local original_default = OB.defaults.objectives.collapse_all
-    OB.defaults.objectives.collapse_all = true
-    db.collapse_all = true
+    local original_default = OB.defaults.objectives.collapse_campaign
+    OB.defaults.objectives.collapse_campaign = true
+    db.collapse_campaign = true
 
-    local ok = OB.apply_objectives_profile_data({ collapse_all = false })
+    local ok = OB.apply_objectives_profile_data({ collapse_campaign = false })
 
-    OB.defaults.objectives.collapse_all = original_default
+    OB.defaults.objectives.collapse_campaign = original_default
 
     h.ok(ok, "Objectives profile data applies")
-    h.eq(db.collapse_all, false, "explicit false survives profile fallback")
+    h.eq(db.collapse_campaign, false, "explicit false survives profile fallback")
 end)
 
 h.run("profiles")

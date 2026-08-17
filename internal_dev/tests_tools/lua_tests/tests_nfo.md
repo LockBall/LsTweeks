@@ -58,7 +58,7 @@ Out-of-game tests that run addon Lua under desktop Lua 5.1 against a stubbed WoW
 - `run_tests.ps1`: process-per-suite runner with single/multiple-suite filtering and changed-file impact selection. The selector maps module/shared files to owning suites, maps changed test files directly, and narrows `wow_stub.lua` method changes to suites that reference those methods; unrecognized shared-stub changes fall back to all suites.
 - `tests/test_smoke_load_all.lua`: loads every TOC file, boots, exercises module toggles, `/lst status`, and 30s of simulated time.
 - `tests/test_pf_fade.lua`: Player Frame fade state machine scenarios (delay/fade/faded, combat interrupts, delayed-combat helper isolation, health gate, slider retargeting, timer-leak check).
-- `tests/test_ob_auto_collapse.lua`: Objectives Auto-Collapse combat deferral, including direct in-combat apply and queued timer recheck before tracker mutation.
+- `tests/test_ob_auto_collapse.lua`: Objectives section Auto-Collapse combat deferral, queued timer rechecks, and the prohibition on mutating secret-sensitive parent-container collapse state.
 - `tests/test_ob_background.lua`: Objectives background behavior, including addon-owned overlay state, explicit border ownership, automatic-position cleanup, and disable/toggle boundaries that avoid direct Blizzard tracker updates.
 - `tests/test_ob_section_count.lua`: Objectives Section Count helper contract coverage, including disabled count settings returning four explicit false values.
 - `tests/test_av_situations.lua`: Audio Volumes combat volumes and fishing focus — CVar profile cache/apply/restore, event routing, situation precedence, disable-mid-combat restore.

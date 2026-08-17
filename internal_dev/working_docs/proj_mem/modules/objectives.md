@@ -11,7 +11,6 @@
 
 ## Settings And Defaults
 Important `objectives` keys:
-- `collapse_all`: when true, starts Blizzard's All Objectives tracker collapsed.
 - `collapse_campaign`: when true, starts Blizzard's Campaign module in the All Objectives tracker collapsed.
 - `collapse_quests`: when true, starts Blizzard's Quests module in the All Objectives tracker collapsed.
 - `collapse_achievements`: when true, starts Blizzard's Achievements module in the All Objectives tracker collapsed.
@@ -38,8 +37,8 @@ Important `objectives` keys:
 
 
 ### Auto-Collapse
-- Auto-Collapse tracker metadata lives in `TRACKER_DEFS` in `modules/objectives/ob_auto_collapse.lua`; it owns DB keys, labels, status keys, global frame names, and top-to-bottom UI order. Current order: All Objectives, Campaign, Quests, Achievements. The settings UI shows these inside an outlined `Auto-Collapse` group, with Campaign, Quests, and Achievements at one shared child indent under All Objectives.
-- Blizzard's `ObjectiveTrackerFrame`, `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker` all expose `SetCollapsed`/`IsCollapsed`. Auto-Collapse calls `SetCollapsed(true)` when LsTweeks applies settings, then leaves Blizzard's own manual expand/collapse behavior alone.
+- Auto-Collapse tracker metadata lives in `TRACKER_DEFS` in `modules/objectives/ob_auto_collapse.lua`; it owns DB keys, labels, status keys, global frame names, and top-to-bottom UI order. Current order: Campaign, Quests, Achievements.
+- Auto-Collapse calls `SetCollapsed(true)` only on `CampaignQuestObjectiveTracker`, `QuestObjectiveTracker`, and `AchievementObjectiveTracker`, then leaves Blizzard's own manual expand/collapse behavior alone. Never programmatically collapse `ObjectiveTrackerFrame`: its `SetCollapsed()` writes parent `isCollapsed` from addon context, and `ObjectiveTrackerModuleMixin:Update()` later branches on that tainted field before Scenario `LayoutContents()` calls secret-sensitive `ShouldShowMawBuffs()`. This produces the Maw Buffs secret-Aura error on later objective changes even when the captured stack contains no LsTweeks frame. Retail 12.1 exposes no safe public setter for this parent state, so All Objectives collapse remains manual/Blizzard-owned and legacy `collapse_all` data is ignored.
 - Unchecking an Auto-Collapse option calls that tracker frame's `SetCollapsed(false)` once so the section reopens immediately. Disabling the Objectives module does not force-expand sections; later tracker state is left to Blizzard/user actions.
 
 

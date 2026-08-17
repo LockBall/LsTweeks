@@ -32,7 +32,6 @@ end
 
 M.defaults = {
     objectives = {
-        collapse_all = false,
         collapse_campaign = false,
         collapse_quests = false,
         collapse_achievements = false,
@@ -81,7 +80,6 @@ M.SETTINGS_LAYOUT = {
             grid_col_width = 220,
             grid_col_gap = 220,
             child_gap_y = -8,
-            child_indent_x = 18,
         },
         section_count = {
             offset_y = -514,

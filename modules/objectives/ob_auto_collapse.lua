@@ -13,14 +13,6 @@ local UI_GROUP = UI_LAYOUT.groups.auto_collapse
 
 local TRACKER_DEFS = {
     {
-        key = "all",
-        db_key = "collapse_all",
-        control_key = "collapse_all_checkbox",
-        label = "All Objectives",
-        frame_name = "ObjectiveTrackerFrame",
-        help = "Collapses the All Objectives tracker when LsTweeks applies settings. You can still open and close it manually afterward.",
-    },
-    {
         key = "campaign",
         db_key = "collapse_campaign",
         control_key = "collapse_campaign_checkbox",
@@ -223,7 +215,6 @@ function M.BuildAutoCollapseSettings(parent)
 
     local widest_content = 0
     local previous_container
-    local previous_indent_x = 0
     for index, def in ipairs(TRACKER_DEFS) do
         local row_def = def
         local collapse_container, collapse_cb, collapse_label = addon.CreateCheckbox(
@@ -235,16 +226,14 @@ function M.BuildAutoCollapseSettings(parent)
             end
         )
         M.controls[row_def.control_key] = collapse_container
-        local indent_x = row_def.key == "all" and 0 or UI_GROUP.child_indent_x
         if index == 1 then
             grid:place_at(collapse_container, 1, 1)
         else
-            grid:stack_below(collapse_container, previous_container, { x = indent_x - previous_indent_x, y = UI_GROUP.child_gap_y })
+            grid:stack_below(collapse_container, previous_container, { y = UI_GROUP.child_gap_y })
         end
         addon.AttachTooltip(collapse_label, nil, row_def.help)
-        widest_content = math.max(widest_content, indent_x + (collapse_container:GetWidth() or 0))
+        widest_content = math.max(widest_content, collapse_container:GetWidth() or 0)
         previous_container = collapse_container
-        previous_indent_x = indent_x
     end
 
     group:SetWidth(math.ceil(widest_content + cfg.group_padding_x * 2))
