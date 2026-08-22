@@ -51,6 +51,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 
 ## Collaboration Rules
+- Interpret questions using “can,” “could,” or “is it possible” literally as capability questions: answer yes or no with a brief explanation, then wait for a separate instruction before taking the discussed action.
 - Treat user statements as hypotheses until code, docs, runtime behavior, or API annotations confirm them. Correct wrong assumptions directly.
 - Prefer concrete evidence over memory or inference, especially for WoW APIs, taint/combat behavior, packaging contents, and generated diagnostics.
 - Proactively volunteer concise, evidence-grounded improvements noticed during work—even when not explicitly requested—when they would materially improve correctness, observability, maintainability, performance, or user experience. State the benefit, tradeoff, and required authority; suggest rather than expand implementation scope without authorization. For uncertain runtime causes, include the smallest safe diagnostic and avoid collecting secret, user, or unnecessary data.
@@ -68,6 +69,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Prefer one deterministic runtime path. Centralize unavoidable branching and route callers through it.
 - Match existing file ownership and visible GUI unless the request explicitly changes behavior.
 - Avoid abstractions that hide WoW API, taint, combat, timing, or hot-path state.
+- Failed-path investigations: reject only the exact API/caller/timing/target/argument combination supported by evidence, then apply `project.md` `### Key WoW APIs And Lessons` `Failure scope` before building a non-native workaround.
 - Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache hot globals, batch noisy events, skip disabled frames early, and avoid frame churn.
 - Use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
 - Before the first patch-sensitive WoW API task in a session, run `sync_wow_api_reference.ps1` once for the matching channel, retain its reported client version and commit in session context, and reuse that snapshot. Rerun only when the channel/target changes, the refresh failed, or evidence indicates upstream moved; details live in `project.md` `### Ketho / LuaLS`.
@@ -81,7 +83,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 Before saying work is complete, resolve these questions internally; ask the user only when required evidence cannot be obtained safely.
 - Scope: does the final diff implement only the requested behavior, preserve unrelated/user-owned changes, and cover every consumer of changed shared state?
 - Evidence timing: did relevant validation run after the last behavior-changing edit, without counting stale or duplicate runs?
-- Assumptions: could a bad reload, stale client state, delayed callback, cached data, combat state, or incomplete stub make the apparent result misleading?
+- Assumptions: could a bad reload, stale client state, delayed callback, cached data, combat state, or incomplete stub make the apparent result misleading; did any failure reject more than the exact path tested?
 - Regression value: did the test fail before the fix and enforce the actual safety boundary, not merely the visible happy path?
 - Environment gap: what cannot headless tests or static analysis prove, and was the smallest necessary in-game check completed and recorded?
 - Documentation: after behavior or architecture changes, did a repository-wide markdown search find and correct superseded rules in project/module memory, `code_map.md`, test docs, applicable public docs, and temporary ToDos?

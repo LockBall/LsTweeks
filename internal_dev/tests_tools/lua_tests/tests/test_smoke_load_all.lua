@@ -33,6 +33,24 @@ h.test("/lst status runs for every module without error", function()
     SlashCmdList["LSTWEEKS"]("status")
 end)
 
+h.test("/lst filtered status emits readable multiline fields", function()
+    local messages = {}
+    local original_print = print
+    print = function(message)
+        messages[#messages + 1] = tostring(message)
+    end
+    SlashCmdList["LSTWEEKS"]("status objectives")
+    print = original_print
+
+    local output = table.concat(messages, "\n")
+    h.ok(output:find("Objectives: enabled=true\n  campaign_available=", 1, true),
+        "filtered Objectives fields use newline separators")
+    h.ok(output:find("campaign_available=true\n  campaign_auto_collapse=false", 1, true),
+        "every filtered Objectives field uses a newline separator")
+    h.eq(output:find("Objectives: enabled=true, campaign_available=", 1, true), nil,
+        "filtered Objectives output is not one comma-separated line")
+end)
+
 h.test("/lst tooltipdebug retains trace markers", function()
     local before_marker_count = #h.addon.GetTooltipDebugTrace()
     SlashCmdList["LSTWEEKS"]("tooltipdebug mark")

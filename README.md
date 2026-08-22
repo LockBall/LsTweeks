@@ -103,7 +103,7 @@ Objectives extends and restyles the Blizzard Objective Tracker (All Objectives, 
 
 - **Position**: separate controls for moving the All Objectives tracker, including snap-to-grid offsets.
 - **Background**: separate controls for Blizzard's Objective Tracker background and LsTweeks' custom color background, sized to the visible tracker sections when Objectives module behavior is active.
-- **Auto-Collapse**: optional group to start Campaign, Quests, and Achievements collapsed while preserving normal manual expand/collapse behavior. The parent All Objectives tracker remains Blizzard-owned because addon-written parent collapse state taints secret-sensitive Scenario updates in Retail 12.1.
+- **Auto-Collapse**: optionally collapses Campaign, Quests, and Achievements through Blizzard's native section state. Calls are deferred, combat-safe, and isolated through `securecall`; a manual expansion stays open until that section is manually collapsed again. The parent All Objectives tracker remains Blizzard-owned.
 - **Section Count**: optional checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - **Profiles**: saving and loading complete Objective Tracker setups, plus a module reset that can preserve saved profiles.
 

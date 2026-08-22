@@ -58,6 +58,9 @@ function M.set_module_enabled(enabled)
     if enabled then
         M.apply_objectives()
     else
+        if M.restore_auto_collapse then
+            M.restore_auto_collapse("module disabled")
+        end
         if M.set_section_count_module_enabled then
             M.set_section_count_module_enabled(false)
         end
@@ -121,8 +124,13 @@ loader:SetScript("OnEvent", function(self, event, name)
         objectives_combat_update_pending = false
         if M.is_runtime_enabled() then
             M.apply_objectives()
-        elseif M.restore_background then
-            M.restore_background()
+        else
+            if M.restore_auto_collapse then
+                M.restore_auto_collapse("module disabled after combat")
+            end
+            if M.restore_background then
+                M.restore_background()
+            end
         end
     end
 end)

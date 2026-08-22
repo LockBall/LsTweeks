@@ -18,7 +18,7 @@ local TRACKER_DEFS = {
         control_key = "collapse_campaign_checkbox",
         label = "Campaign",
         frame_name = "CampaignQuestObjectiveTracker",
-        help = "Starts the Campaign section collapsed. A manual expansion stays open until you collapse the section again.",
+        help = "Starts the Campaign section hidden. A manual expansion stays open until you collapse the section again.",
     },
     {
         key = "quests",
@@ -26,7 +26,7 @@ local TRACKER_DEFS = {
         control_key = "collapse_quests_checkbox",
         label = "Quests",
         frame_name = "QuestObjectiveTracker",
-        help = "Starts the Quests section collapsed. A manual expansion stays open until you collapse the section again.",
+        help = "Starts the Quests section hidden. A manual expansion stays open until you collapse the section again.",
     },
     {
         key = "achievements",
@@ -34,7 +34,7 @@ local TRACKER_DEFS = {
         control_key = "collapse_achievements_checkbox",
         label = "Achievements",
         frame_name = "AchievementObjectiveTracker",
-        help = "Starts the Achievements section collapsed. A manual expansion stays open until you collapse the section again.",
+        help = "Starts the Achievements section hidden. A manual expansion stays open until you collapse the section again.",
     },
 }
 
@@ -47,9 +47,9 @@ local collapse_queued = {}
 local collapse_attempts = {}
 local deferred_tracker_updates = {}
 local last_apply_reason = {}
+local manual_expand_buttons = setmetatable({}, { __mode = "k" })
 local hooked_minimize_buttons = setmetatable({}, { __mode = "k" })
 local manual_open_overrides = {}
-local last_native_result = {}
 local native_experiment = {
     pending = false,
     requests = 0,
@@ -78,7 +78,7 @@ end
 
 local function get_tracker(def)
     local frame = def and _G[def.frame_name]
-    if frame and type(frame.SetCollapsed) == "function" and type(frame.IsCollapsed) == "function" then
+    if frame and frame.ContentsFrame then
         return frame
     end
     return nil
@@ -107,16 +107,45 @@ local function ensure_manual_toggle_hook(tracker, def)
     end)
 end
 
-local function set_native_collapsed(tracker, def, collapsed)
-    if type(securecall) ~= "function" then
-        last_native_result[def.key] = "securecall_unavailable"
-        return false
+local function set_manual_expand_button_shown(tracker, def, shown)
+    local button = tracker and manual_expand_buttons[tracker]
+    if not shown then
+        if button then
+            button:Hide()
+        end
+        return
     end
 
-    securecall(tracker.SetCollapsed, tracker, collapsed)
-    local applied = tracker:IsCollapsed() == collapsed
-    last_native_result[def.key] = applied and "applied" or "state_mismatch"
-    return applied
+    local minimize_button = tracker.Header and tracker.Header.MinimizeButton
+    if not minimize_button then return end
+    ensure_manual_toggle_hook(tracker, def)
+
+    if not button then
+        button = CreateFrame("Button", nil, minimize_button, "ObjectiveTrackerModuleMinimizeButtonTemplate")
+        button:SetAllPoints(minimize_button)
+        button:SetFrameLevel(minimize_button:GetFrameLevel() + 1)
+        button:GetNormalTexture():SetAtlas("ui-questtrackerbutton-secondary-expand", true)
+        button:GetPushedTexture():SetAtlas("ui-questtrackerbutton-secondary-expand-pressed", true)
+        button:SetScript("OnClick", function()
+            local current_tracker = get_tracker(def)
+            if current_tracker ~= tracker then
+                button:Hide()
+                return
+            end
+
+            collapse_queued[def.key] = false
+            deferred_tracker_updates[def.key] = nil
+            manual_open_overrides[def.key] = true
+            last_apply_reason[def.key] = "manual expand"
+            if not tracker.ContentsFrame:IsShown() then
+                tracker.ContentsFrame:Show()
+            end
+            button:Hide()
+        end)
+        manual_expand_buttons[tracker] = button
+    end
+
+    button:Show()
 end
 
 local function collapse_tracker(def, reason)
@@ -133,14 +162,13 @@ local function collapse_tracker(def, reason)
     if not tracker then return end
 
     last_apply_reason[def.key] = reason or "unknown"
-    ensure_manual_toggle_hook(tracker, def)
+    set_manual_expand_button_shown(tracker, def, true)
 
-    if tracker:IsCollapsed() then
-        last_native_result[def.key] = "already_collapsed"
+    if not tracker.ContentsFrame:IsShown() then
         return
     end
 
-    set_native_collapsed(tracker, def, true)
+    tracker.ContentsFrame:Hide()
     collapse_attempts[def.key] = (collapse_attempts[def.key] or 0) + 1
 end
 
@@ -157,14 +185,13 @@ local function expand_tracker(def, reason)
     if not tracker then return end
 
     last_apply_reason[def.key] = reason or "unknown"
-    ensure_manual_toggle_hook(tracker, def)
+    set_manual_expand_button_shown(tracker, def, false)
 
-    if not tracker:IsCollapsed() then
-        last_native_result[def.key] = "already_expanded"
+    if tracker.ContentsFrame:IsShown() then
         return
     end
 
-    set_native_collapsed(tracker, def, false)
+    tracker.ContentsFrame:Show()
 end
 
 local function queue_collapse(def, reason)
@@ -203,13 +230,12 @@ function M.get_auto_collapse_status()
         fields[#fields + 1] = prefix .. "available=" .. tostring(tracker ~= nil)
         fields[#fields + 1] = prefix .. "auto_collapse=" .. tostring(is_auto_collapse_enabled(def) == true)
         fields[#fields + 1] = prefix .. "manual_open=" .. tostring(manual_open_overrides[def.key] == true)
-        local is_collapsed = tracker ~= nil and tracker:IsCollapsed() == true
+        local is_collapsed = tracker ~= nil and not tracker.ContentsFrame:IsShown()
         fields[#fields + 1] = prefix .. "collapsed=" .. tostring(is_collapsed)
         fields[#fields + 1] = prefix .. "queued=" .. tostring(collapse_queued[def.key] == true)
         fields[#fields + 1] = prefix .. "deferred=" .. tostring(deferred_tracker_updates[def.key] and deferred_tracker_updates[def.key].action or "none")
         fields[#fields + 1] = prefix .. "attempts=" .. tostring(collapse_attempts[def.key] or 0)
         fields[#fields + 1] = prefix .. "last_reason=" .. tostring(last_apply_reason[def.key] or "none")
-        fields[#fields + 1] = prefix .. "native_result=" .. tostring(last_native_result[def.key] or "none")
     end
     local quest_tracker = get_tracker(TRACKER_DEFS[2])
     fields[#fields + 1] = "native_experiment_pending=" .. tostring(native_experiment.pending == true)
@@ -278,15 +304,6 @@ function M.run_native_collapse_experiment(action)
     end)
 
     return true, "queued native " .. action .. " for Quests on the next frame"
-end
-
-function M.restore_auto_collapse(reason)
-    for _, def in ipairs(TRACKER_DEFS) do
-        collapse_queued[def.key] = false
-        deferred_tracker_updates[def.key] = nil
-        manual_open_overrides[def.key] = false
-        expand_tracker(def, reason or "module disabled")
-    end
 end
 
 --#endregion PUBLIC API =========================================================

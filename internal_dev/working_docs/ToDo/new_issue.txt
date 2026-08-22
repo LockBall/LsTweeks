@@ -1,3 +1,2 @@
 # Error Inbox
-
 Paste the next unprocessed WoW Lua error export here.

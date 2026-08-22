@@ -113,14 +113,16 @@ function addon.register_module_status(module_key, builder)
     addon.module_status_builders[module_key] = builder
 end
 
-local function join_status_fields(fields)
+local function append_status_fields(target, fields)
     if type(fields) == "table" then
-        return table.concat(fields, ", ")
+        for _, field in ipairs(fields) do
+            target[#target + 1] = tostring(field)
+        end
+    elseif fields ~= nil then
+        target[#target + 1] = tostring(fields)
+    else
+        target[#target + 1] = "no runtime status registered"
     end
-    if fields ~= nil then
-        return tostring(fields)
-    end
-    return "no runtime status registered"
 end
 
 local function status_module_matches(module_def, filter)
@@ -134,7 +136,8 @@ end
 function addon.print_module_status(filter)
     ensure_module_flags()
     filter = (filter or ""):match("^%s*(.-)%s*$")
-    print("|cff33ff99LsTweeks module status|r" .. (filter ~= "" and (" (" .. filter .. ")") or ""))
+    local heading_suffix = filter ~= "" and (" (" .. filter .. ")") or ""
+    print("|cff33ff99LsTweeks module status|r" .. heading_suffix)
     local printed = 0
     for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
         if status_module_matches(module_def, filter) then
@@ -144,17 +147,16 @@ function addon.print_module_status(filter)
             if builder then
                 local ok, result = pcall(builder)
                 if ok then
-                    local detail = join_status_fields(result)
-                    if detail and detail ~= "" then
-                        fields[#fields + 1] = detail
-                    end
+                    append_status_fields(fields, result)
                 else
                     fields[#fields + 1] = "status_error=" .. tostring(result)
                 end
             else
                 fields[#fields + 1] = "no runtime status registered"
             end
-            print((module_def.label or key) .. ": " .. table.concat(fields, ", "))
+            local separator = filter ~= "" and "\n  " or ", "
+            local module_status = (module_def.label or key) .. ": " .. table.concat(fields, separator)
+            print(module_status)
             printed = printed + 1
         end
     end
@@ -239,6 +241,17 @@ SlashCmdList["LSTWEEKS"] = function(msg)
     local status_filter = msg:match("^[Ss][Tt][Aa][Tt][Uu][Ss]%s+(.+)$")
     if msg:lower() == "status" or status_filter then
         addon.print_module_status(status_filter)
+        return
+    end
+    local objective_native_action = msg:match("^[Oo][Bb][Nn][Aa][Tt][Ii][Vv][Ee]%s+(%S+)$")
+    if msg:lower() == "obnative" or objective_native_action then
+        if addon.objectives and addon.objectives.run_native_collapse_experiment then
+            local ok, result = addon.objectives.run_native_collapse_experiment(objective_native_action)
+            local color = ok and "|cff33ff99" or "|cffff6633"
+            print(color .. "LsTweeks Objectives experiment|r: " .. tostring(result))
+        else
+            print("|cffff6633LsTweeks Objectives experiment|r: Objectives helpers are unavailable")
+        end
         return
     end
     local tooltip_debug_action = msg:match("^[Tt][Oo][Oo][Ll][Tt][Ii][Pp][Dd][Ee][Bb][Uu][Gg]%s+(.+)$")

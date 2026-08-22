@@ -36,7 +36,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Session baseline (agent_start.md + compatibility/API status + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1`
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
-- In-game status: `/lst status` for all modules; `/lst status <module key or label>` for one module, such as `/lst status objectives`.
+- In-game status: `/lst status` for a compact all-module summary; `/lst status <module key or label>` for readable multiline fields from one module, such as `/lst status objectives`. Do not call restricted `CopyToClipboard` from the addon slash handler; Retail blocks it as a Blizzard-UI-only action even when the user entered the command.
 - Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
 - Fast validation with impact-selected headless tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
 - Fast non-test validation after targeted suites already passed: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed -SkipTests`
