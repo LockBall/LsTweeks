@@ -490,12 +490,12 @@ function frame_methods:SetHorizontalScroll() end
 -- Cooldown widgets
 function frame_methods:SetCooldown() end
 function frame_methods:Clear() end
-function frame_methods:SetReverse() end
-function frame_methods:SetHideCountdownNumbers() end
+function frame_methods:SetReverse(value) record(self, "SetReverse", value) end
+function frame_methods:SetHideCountdownNumbers(value) record(self, "SetHideCountdownNumbers", value) end
 function frame_methods:SetSwipeColor() end
-function frame_methods:SetDrawEdge() end
-function frame_methods:SetDrawBling() end
-function frame_methods:SetDrawSwipe() end
+function frame_methods:SetDrawEdge(value) record(self, "SetDrawEdge", value) end
+function frame_methods:SetDrawBling(value) record(self, "SetDrawBling", value) end
+function frame_methods:SetDrawSwipe(value) record(self, "SetDrawSwipe", value) end
 
 -- GameTooltip methods
 function frame_methods:SetOwner(owner, anchor)

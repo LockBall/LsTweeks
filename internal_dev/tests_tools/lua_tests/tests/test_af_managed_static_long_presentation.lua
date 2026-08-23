@@ -158,6 +158,21 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:icon"].buttons) do
         h.eq(aura_button.__height, 46,
             "Static / Long Buff icon cells reserve a row below the icon for duration text")
+        local duration_cooldown = aura_button.__duration_cooldown_region
+        h.ok(duration_cooldown,
+            "Static / Long Buff icons bind a native Aura duration cooldown")
+        h.eq(duration_cooldown:GetParent(), aura_button,
+            "native Aura duration cooldown remains owned by its AuraButton")
+        h.eq(duration_cooldown:GetObjectType(), "Cooldown",
+            "native Aura duration binding receives a Cooldown region")
+        h.ok(duration_cooldown:GetFrameLevel() > aura_button:GetFrameLevel(),
+            "native Aura duration swipe renders above the icon owner")
+        h.eq(duration_cooldown:GetLastCall("SetDrawSwipe")[1], true,
+            "saved Timer Swipe enables the native Aura duration swipe")
+        h.eq(duration_cooldown:GetLastCall("SetReverse")[1], true,
+            "native Aura duration swipe uses Blizzard aura-style reverse progression")
+        h.eq(duration_cooldown:GetLastCall("SetHideCountdownNumbers")[1], true,
+            "native Aura duration swipe does not duplicate the separate duration text")
         h.ok(aura_button.__duration_text_region,
             "Static / Long Buff icons bind native duration text")
         h.eq(aura_button.__duration_text_region.__points[1][1], "TOP",
@@ -166,6 +181,8 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
             "Static / Long Buff icon duration text uses the managed duration font")
         h.ok(aura_button.__application_count_region,
             "Static / Long Buff icons bind native stack text")
+        h.ok(aura_button.__application_count_region:GetParent():GetFrameLevel() > duration_cooldown:GetFrameLevel(),
+            "managed icon text renders above the native Aura duration swipe")
         h.eq(aura_button.__application_count_region:GetFontObject(), buffs_backend.stack_font,
             "Static / Long Buff icon stack text uses the managed stack font")
         h.eq(aura_button.__application_count_region.__points[1][1], "BOTTOMRIGHT",
@@ -175,6 +192,15 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
         h.eq(aura_button.__application_count_region.__points[1][5], M.ICON_STACK_INSET.bottom,
             "Static / Long Buff icon stack text uses the shared bottom inset")
     end
+    local first_icon_cooldown = buffs_backend.container.__groups["buffs:icon"].buttons[1]
+        .__duration_cooldown_region
+    buffs_backend.container.__groups["buffs:icon"].buttons[1].CanBeAccessedInContext = function()
+        return true
+    end
+    M.db.timer_swipe_static_long = false
+    M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
+    h.eq(first_icon_cooldown:GetLastCall("SetDrawSwipe")[1], false,
+        "managed Timer Swipe changes update the native duration swipe OOC")
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Horizontal,
         "wrapped Static / Long Buff icons retain horizontal growth")
     h.eq(M.get_managed_aura_backend("preset:static_long"), buffs_backend,

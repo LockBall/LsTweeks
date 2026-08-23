@@ -139,6 +139,24 @@ local function set_managed_bar_width(aura_button, width)
     aura_button:SetWidth(width)
 end
 
+local function set_managed_duration_swipe_enabled(cooldown, enabled)
+    if not cooldown then return end
+    enabled = enabled == true
+    if cooldown._lstweeks_draw_swipe == enabled then return end
+    cooldown._lstweeks_draw_swipe = enabled
+    cooldown:SetDrawSwipe(enabled)
+end
+
+local function apply_managed_icon_swipe_style(backend, cfg_db)
+    if not (backend and cfg_db and backend.icon_cooldowns) then return end
+    local enabled = get_preset_setting(cfg_db, backend.category, "timer_swipe", true) ~= false
+    M.for_each_accessible_managed_aura_button(backend, function(aura_button)
+        set_managed_duration_swipe_enabled(backend.icon_cooldowns[aura_button], enabled)
+    end)
+end
+
+M.apply_managed_icon_swipe_style = apply_managed_icon_swipe_style
+
 local function initialize_preset_icon(
     aura_button,
     cfg_db,
@@ -155,7 +173,26 @@ local function initialize_preset_icon(
     icon:SetPoint("TOP", aura_button, "TOP")
     aura_button:SetIcon(icon)
 
-    local duration_text = aura_button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local duration_cooldown = CreateFrame("Cooldown", nil, aura_button, "CooldownFrameTemplate")
+    duration_cooldown:SetAllPoints(icon)
+    duration_cooldown:SetFrameLevel(aura_button:GetFrameLevel() + 1)
+    duration_cooldown:SetDrawEdge(false)
+    duration_cooldown:SetDrawBling(false)
+    duration_cooldown:SetHideCountdownNumbers(true)
+    duration_cooldown:SetReverse(true)
+    set_managed_duration_swipe_enabled(
+        duration_cooldown,
+        get_preset_setting(cfg_db, category, "timer_swipe", true) ~= false
+    )
+    backend.icon_cooldowns[aura_button] = duration_cooldown
+    aura_button:SetDurationCooldown(duration_cooldown)
+
+    local text_overlay = CreateFrame("Frame", nil, aura_button)
+    text_overlay:SetAllPoints(icon)
+    text_overlay:SetFrameLevel(duration_cooldown:GetFrameLevel() + 1)
+
+    local duration_text_parent = duration_overlay and text_overlay or aura_button
+    local duration_text = duration_text_parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     if duration_overlay then
         duration_text:SetAllPoints(icon)
     else
@@ -166,7 +203,7 @@ local function initialize_preset_icon(
     duration_text:SetJustifyH("CENTER")
     apply_duration_font(duration_text, duration_font, category)
 
-    local stack_text = aura_button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    local stack_text = text_overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     stack_text:SetPoint(
         "BOTTOMRIGHT",
         icon,
@@ -322,6 +359,7 @@ function M.create_managed_presentation_initializer(cfg_db, category, bar_mode, b
     backend.duration_font = backend.duration_font or duration_font
     backend.stack_font = backend.stack_font or stack_font
     backend.bar_regions = backend.bar_regions or {}
+    backend.icon_cooldowns = backend.icon_cooldowns or {}
     backend.frame_background_rows = backend.frame_background_rows or {}
     return create_preset_initializer(
         cfg_db,
@@ -549,6 +587,7 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     end
     local bar_color = get_preset_bar_color(cfg_db, category)
     local bar_width = width - (BAR_FRAME_INSET * 2)
+    apply_managed_icon_swipe_style(backend, cfg_db)
     M.for_each_accessible_managed_aura_button(backend, function(aura_button, group_key)
         if group_key == backend.presentation_group_keys.bar then
             set_managed_bar_width(aura_button, bar_width)
@@ -621,6 +660,7 @@ local function create_managed_preset_backend(
     end
     backend.stack_font = stack_font
     backend.bar_regions = {}
+    backend.icon_cooldowns = {}
     M.initialize_managed_frame_background(backend, frame)
     backend.move_outline = create_container_move_outline(backend.container)
     backend.presentation_group_keys = {

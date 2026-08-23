@@ -86,6 +86,9 @@ CreateFrame = function(kind, name, parent, template)
                 self.__duration_text_region = region
                 self.__duration_text_options = binding_options
             end
+            function aura_button:SetDurationCooldown(region)
+                self.__duration_cooldown_region = region
+            end
             function aura_button:SetApplicationCount(region, binding_options)
                 self.__application_count_region = region
                 self.__application_count_options = binding_options
@@ -115,6 +118,9 @@ CreateFrame = function(kind, name, parent, template)
         function aura_button:SetDurationText(region, binding_options)
             self.__duration_text_region = region
             self.__duration_text_options = binding_options
+        end
+        function aura_button:SetDurationCooldown(region)
+            self.__duration_cooldown_region = region
         end
         function aura_button:SetApplicationCount(region, binding_options)
             self.__application_count_region = region

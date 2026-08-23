@@ -1011,7 +1011,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         update()
     end)
     if has_timer_controls then
-        timer_swipe_container = bound_cb("Timer Swipe", "timer_swipe", 3, 1)
+        timer_swipe_container = bound_cb("Duration Swipe", "timer_swipe", 3, 1)
         grid:stack_below(timer_swipe_container, bar_mode_container)
         M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
         refresh_timer_swipe_control()

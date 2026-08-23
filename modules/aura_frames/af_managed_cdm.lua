@@ -143,6 +143,7 @@ local function create_record_mode(backend, record, mode)
         duration_font = backend.duration_font,
         stack_font = backend.stack_font,
         bar_regions = backend.bar_regions,
+        icon_cooldowns = backend.icon_cooldowns,
         frame_background_rows = backend.frame_background_rows,
     }, { __index = backend })
     local initialize_slot_presentation = M.create_managed_presentation_initializer(
@@ -262,6 +263,9 @@ local function apply_backend_style(backend)
     local width = math.max(M.MIN_FRAME_WIDTH, cfg_db["width_" .. category] or M.DEFAULT_FRAME_WIDTH)
         - ((metrics and metrics.bar_frame_inset or 6) * 2)
     local bar_color = M.get_managed_presentation_bar_color(cfg_db, category)
+    if M.apply_managed_icon_swipe_style then
+        M.apply_managed_icon_swipe_style(backend, cfg_db)
+    end
     M.for_each_accessible_managed_aura_button(backend, function(aura_button)
         local duration_bar = backend.bar_regions[aura_button]
         if duration_bar then
@@ -369,6 +373,7 @@ function M.create_managed_cdm_backend(frame, cfg_db, category)
     backend.cfg_db = cfg_db
     backend.cdm_records = {}
     backend.bar_regions = {}
+    backend.icon_cooldowns = {}
     M.initialize_managed_frame_background(backend, frame)
     backend.move_outline = M.create_managed_container_move_outline
         and M.create_managed_container_move_outline(backend.container)

@@ -51,6 +51,8 @@ When Frame BG is enabled for managed Short Buffs, Static / Long Buffs, Timed Buf
 
 Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
 
+In Icon mode, **Duration Swipe** adds Blizzard's native Aura-duration sweep alongside the optional timer text. Permanent Auras have no timed sweep. Bar Mode communicates remaining duration through its status bar instead.
+
 #### Test Aura Preview
 Use **Test Aura** to preview a custom or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
 

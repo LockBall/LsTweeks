@@ -24,8 +24,8 @@ The shell and aggregate managed AuraContainer now receive the same OOC alpha wit
 
 
 ## 2 Managed Presentation And Migration
-- [ ] **a** Validate the surviving managed Static / Long Buffs frame after removal of the obsolete Static and Long presets
-- [ ] **b** (Agent) Add managed icon cooldown swipe during AuraButton initialization and bind it natively without live-Aura reads
+- [x] **a** Validate the surviving managed Static / Long Buffs frame after removal of the obsolete Static and Long presets
+- [x] **b** (Agent) Add managed icon cooldown swipe during AuraButton initialization and bind it natively without live-Aura reads
 - [ ] **c** Validate Short Buffs beside Timed Buffs at the 300-second boundary in Bar and Icon modes across combat
 - [ ] **d** Validate Static / Long Buff learning, persistence, combat updates, duration reclassification, and OOC cache clearing in Bar and Icon modes
 - [ ] **e** Validate Frame BG on Short, Static / Long, Timed, and Debuff frames across Bar/Icon modes, shared colors, All the Colors overrides, combat, and empty geometry
