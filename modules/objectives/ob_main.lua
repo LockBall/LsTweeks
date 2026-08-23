@@ -30,7 +30,9 @@ function M.defer_objectives_combat_update()
 end
 
 function M.apply_objectives()
-    if not M.is_runtime_enabled() then return end
+    if not M.is_runtime_enabled() then
+        return
+    end
 
     if M.apply_background then
         M.apply_background()
@@ -100,15 +102,15 @@ end
 loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
-loader:SetScript("OnEvent", function(self, event, name)
+loader:SetScript("OnEvent", function(self, event, arg1, arg2)
     if event == "ADDON_LOADED" then
-        if name == addon_name then
+        if arg1 == addon_name then
             Ls_Tweeks_DB = Ls_Tweeks_DB or {}
             addon.apply_defaults(DEFAULTS, Ls_Tweeks_DB)
             if addon.register_category then
                 addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 600, module_key = MODULE_KEY })
             end
-        elseif name == "Blizzard_ObjectiveTracker" then
+        elseif arg1 == "Blizzard_ObjectiveTracker" then
             M.apply_objectives()
         end
     elseif event == "PLAYER_ENTERING_WORLD" then

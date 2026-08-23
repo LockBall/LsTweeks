@@ -23,6 +23,7 @@ return {
         ignoreDir = {
             ".vscode",
             "libs",
+            "internal_dev/working_docs/ToDo/backups",
             "internal_dev/tests_tools/lua_checks/.lua-language-server",
             "internal_dev/tests_tools/lua_checks/.luals-check",
             "internal_dev/tests_tools/lua_checks/.luacheck-logs",

@@ -1,0 +1,150 @@
+-- Behavioral tests for the reload-surviving Objectives diagnostic trace.
+-- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
+---@diagnostic disable: undefined-global
+
+
+--#region FILE CONTENTS ======================================================
+
+package.path = arg[0]:gsub("[\\/][^\\/]+$", "") .. "/../?.lua;" .. package.path
+local h = require("harness")
+
+h.load_addon("modules/objectives")
+
+local M = h.addon.objectives
+
+local function fresh_trace_db()
+    Ls_Tweeks_DB = { objectives = {}, modules = { objectives = true } }
+end
+
+h.test("trace survives session changes in SavedVariables", function()
+    fresh_trace_db()
+
+    M.start_objectives_trace_session("first load")
+    M.record_objectives_trace("auto", "collapse", "section=quests")
+    M.start_objectives_trace_session("reload")
+    M.record_objectives_trace("event", "SCENARIO_CRITERIA_UPDATE")
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(#entries, 4, "two session markers and two records retained")
+    h.eq(entries[1].session, 1, "first marker uses first session")
+    h.eq(entries[2].session, 1, "first action remains in first session")
+    h.eq(entries[3].session, 2, "reload marker uses second session")
+    h.eq(entries[4].action, "SCENARIO_CRITERIA_UPDATE", "post-reload action retained")
+end)
+
+h.test("trace ring remains bounded and ordered", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("bounded")
+
+    for index = 1, M.OBJECTIVES_TRACE_LIMIT + 25 do
+        M.record_objectives_trace("test", "entry", "index=" .. tostring(index))
+    end
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(#entries, M.OBJECTIVES_TRACE_LIMIT, "ring entry count")
+    h.eq(entries[#entries].detail, "index=" .. tostring(M.OBJECTIVES_TRACE_LIMIT + 25), "newest entry retained")
+    h.ok(entries[1].sequence < entries[#entries].sequence, "retained entries remain chronological")
+end)
+
+h.test("consecutive duplicate records coalesce with first and last timing", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("coalesce")
+
+    M.record_objectives_trace("main", "event", "name=SCENARIO_CRITERIA_UPDATE")
+    h.advance(1)
+    M.record_objectives_trace("main", "event", "name=SCENARIO_CRITERIA_UPDATE")
+    M.record_objectives_trace("main", "event", "name=SCENARIO_CRITERIA_UPDATE")
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(#entries, 2, "session marker plus one coalesced event")
+    h.eq(entries[2].repeat_count, 3, "repeat count")
+    h.eq(entries[2].uptime, 0, "first occurrence uptime retained")
+    h.eq(entries[2].last_uptime, 1, "last occurrence uptime retained")
+end)
+
+h.test("critical boundary records survive timeline trimming", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("critical")
+    M.record_objectives_trace_critical("auto", "securecall", "section=quests")
+
+    for index = 1, M.OBJECTIVES_TRACE_LIMIT + 25 do
+        M.record_objectives_trace("noise", "entry", "index=" .. tostring(index))
+    end
+
+    local critical = M.get_objectives_trace_critical_entries()
+    h.eq(#critical, 2, "session start and securecall remain pinned")
+    h.eq(critical[1].source, "session", "session marker pinned")
+    h.eq(critical[2].action, "securecall", "securecall pinned")
+
+    local output = M.get_objectives_trace_output_lines()
+    h.ok(#output <= M.OBJECTIVES_TRACE_PRINT_LIMIT + M.OBJECTIVES_TRACE_CRITICAL_LIMIT + 3,
+        "printed output remains below the bounded timeline plus critical summary")
+    h.ok(output[#output]:find("auto/securecall", 1, true), "critical securecall prints at the end")
+end)
+
+h.test("clear removes old evidence and leaves a marker", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("clear test")
+    M.record_objectives_trace("test", "old evidence")
+
+    M.clear_objectives_trace()
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(#entries, 1, "only clear marker remains")
+    h.eq(entries[1].source, "trace", "clear marker source")
+    h.eq(entries[1].action, "cleared", "clear marker action")
+end)
+
+h.test("trace omits an accidentally supplied secret value", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("secret guard")
+
+    M.record_objectives_trace("test", "secret", { __lstweeks_test_secret_value = true })
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(entries[#entries].detail, "<secret omitted>", "secret detail is not retained")
+end)
+
+h.test("security labels expose attribution without reading field values", function()
+    local original = issecurevariable
+    issecurevariable = function(owner, key)
+        h.eq(owner, QuestObjectiveTracker, "security owner")
+        h.eq(key, "isCollapsed", "security key")
+        return false, "TestTaintSource"
+    end
+
+    local label = M.get_objectives_variable_security(QuestObjectiveTracker, "isCollapsed")
+    issecurevariable = original
+
+    h.eq(label, "tainted:TestTaintSource", "taint attribution label")
+end)
+
+h.test("Scenario events capture a security snapshot", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("scenario test")
+
+    h.fire_event("SCENARIO_CRITERIA_UPDATE")
+
+    local entries = M.get_objectives_trace_entries()
+    local entry = entries[#entries]
+    h.eq(entry.source, "main", "Scenario trace source")
+    h.eq(entry.action, "event", "Scenario trace action")
+    h.ok(entry.detail:find("name=SCENARIO_CRITERIA_UPDATE", 1, true), "Scenario event name captured")
+    h.ok(entry.detail:find("quests.collapsed=", 1, true), "tracker security captured")
+end)
+
+h.test("slash command can mark and print the persistent trace", function()
+    fresh_trace_db()
+    M.start_objectives_trace_session("slash test")
+
+    SlashCmdList["LSTWEEKS"]("obtrace mark")
+    SlashCmdList["LSTWEEKS"]("obtrace")
+
+    local entries = M.get_objectives_trace_entries()
+    h.eq(entries[#entries].source, "trace", "slash marker source")
+    h.eq(entries[#entries].action, "manual_marker", "slash marker action")
+end)
+
+h.run("ob_trace")
+
+--#endregion FILE CONTENTS ===================================================

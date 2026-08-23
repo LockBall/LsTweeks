@@ -1,0 +1,27 @@
+LsTweeks Objectives trace: stored=21 timeline_printed=21 critical=3 current_session=9
+Recent timeline:
+[6929] time=12:04:06 uptime=316855.937 session=8 trace/cleared
+[6930] time=12:04:14 uptime=316863.383 session=9 session/started ADDON_LOADED
+[6931] time=12:04:16 uptime=316863.383 session=9 main/event name=PLAYER_ENTERING_WORLD,initial=false,reload=true
+[6932] time=12:04:16 uptime=316863.383 session=9 main/apply_started combat=false
+[6933] time=12:04:16 uptime=316863.383 session=9 background/hooks_installed
+[6934] time=12:04:16 uptime=316863.383 session=9 background/sync_queued reason=hooks installed
+[6935] time=12:04:16 uptime=316863.383 session=9 auto/apply combat=false
+[6936] time=12:04:16 uptime=316863.383 session=9 auto/collapse_queued section=quests,reason=apply
+[6937] time=12:04:16 uptime=316863.383 session=9 main/apply_finished
+[6938] time=12:04:27 uptime=316875.843 session=9 background/hook method=NineSlice.SetPoint
+[6939] time=12:04:27 uptime=316875.843 session=9 background/sync_started reason=hooks installed
+[6940] time=12:04:27 uptime=316875.843 session=9 background/sync_finished state=blizzard_owned_expanded
+[6941] time=12:04:27 uptime=316875.843 session=9 auto/securecall section=quests,desired=true,result=applied,before{method=secure,collapsed=secure,dirty=secure,height=secure},after{method=secure,collapsed=tainted:LsTweeks,dirty=secure,height=secure}
+[6942] time=12:04:27 uptime=316875.843 session=9 main/delayed_apply reason=PLAYER_ENTERING_WORLD
+[6943] time=12:04:27 uptime=316875.843 session=9 main/apply_started combat=false
+[6944] time=12:04:27 uptime=316875.843 session=9 auto/apply combat=false
+[6945] time=12:04:27 uptime=316875.843 session=9 auto/collapse_queued section=quests,reason=apply
+[6946] time=12:04:27 uptime=316875.843 session=9 main/apply_finished
+[6947] time=12:04:28 uptime=316877.522 session=9 background/hook method=NineSlice.SetPoint
+[6948] time=12:04:28 uptime=316877.522 session=9 auto/collapse_skipped section=quests,reason=already_collapsed
+[6949] time=12:04:28 uptime=316877.922 session=9 background/hook method=NineSlice.SetPoint repeats=7 last_time=12:04:33 last_uptime=316882.685
+Critical boundary records repeated for copy safety:
+critical [6929] time=12:04:06 uptime=316855.937 session=8 trace/cleared
+critical [6930] time=12:04:14 uptime=316863.383 session=9 session/started ADDON_LOADED
+critical [6941] time=12:04:27 uptime=316875.843 session=9 auto/securecall section=quests,desired=true,result=applied,before{method=secure,collapsed=secure,dirty=secure,height=secure},after{method=secure,collapsed=tainted:LsTweeks,dirty=secure,height=secure}

@@ -26,18 +26,7 @@ The local/global policy conflict is fixed in code: checking a frame-specific **F
 
 
 ## 4. Objective Tracker Secret-Aura Taint Isolation
-### Test
-1. Reload with the current Objective Tracker corrections enabled.
-2. Reproduce the prior scenario: a Void Incursion boss death, combat exit, or another event that refreshes Scenario Objective Tracker/Maw Buffs.
-3. Watch for `GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by LsTweeks`.
-4. If it does not recur, repeat through several combat and tracker transitions before considering it resolved.
-5. If it recurs, disable only the Objectives module, reload, and repeat the same scenario.
-6. Preserve any new error export in `new_issue.txt`.
-
-### Interpretation
-- Error stops with Objectives disabled: continue isolating Objective Tracker writes.
-- Error persists with Objectives disabled: move the audit boundary outside that module.
-- No recurrence across repeated tests: record the clean run while retaining caution because the original taint was event-specific.
+Completed. The Auto-Collapse-on trace tainted section collapse and height fields, the matching Auto-Collapse-off control kept them secure, and the Quests-only boundary showed `isCollapsed=tainted:LsTweeks` immediately after direct-function `securecall`. The evidence and procedure are preserved in `internal_dev/working_docs/reference/objectives_auto_collapse_taint_2026-08/`; remaining Aura Frames checks do not need to repeat this Objectives isolation.
 
 
 ## 5. Remaining Aura Migration, Presentation, And Performance

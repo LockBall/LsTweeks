@@ -243,17 +243,6 @@ SlashCmdList["LSTWEEKS"] = function(msg)
         addon.print_module_status(status_filter)
         return
     end
-    local objective_native_action = msg:match("^[Oo][Bb][Nn][Aa][Tt][Ii][Vv][Ee]%s+(%S+)$")
-    if msg:lower() == "obnative" or objective_native_action then
-        if addon.objectives and addon.objectives.run_native_collapse_experiment then
-            local ok, result = addon.objectives.run_native_collapse_experiment(objective_native_action)
-            local color = ok and "|cff33ff99" or "|cffff6633"
-            print(color .. "LsTweeks Objectives experiment|r: " .. tostring(result))
-        else
-            print("|cffff6633LsTweeks Objectives experiment|r: Objectives helpers are unavailable")
-        end
-        return
-    end
     local tooltip_debug_action = msg:match("^[Tt][Oo][Oo][Ll][Tt][Ii][Pp][Dd][Ee][Bb][Uu][Gg]%s+(.+)$")
     if msg:lower() == "tooltipdebug" then
         if addon.PrintTooltipRendererHistory then

@@ -1,0 +1,253 @@
+-- Objectives diagnostics: bounded reload-surviving trace with safe metadata only.
+local addon_name, addon = ...
+
+addon.objectives = addon.objectives or {}
+local M = addon.objectives
+
+
+--#region TRACE STORAGE ========================================================
+
+local TRACE_VERSION = 1
+local TRACE_LIMIT = 200
+local TRACE_CRITICAL_LIMIT = 20
+local TRACE_PRINT_LIMIT = 90
+local current_session
+
+M.OBJECTIVES_TRACE_LIMIT = TRACE_LIMIT
+M.OBJECTIVES_TRACE_CRITICAL_LIMIT = TRACE_CRITICAL_LIMIT
+M.OBJECTIVES_TRACE_PRINT_LIMIT = TRACE_PRINT_LIMIT
+
+local function get_trace_store(create)
+    if not Ls_Tweeks_DB then return nil end
+
+    local store = Ls_Tweeks_DB.objectives_trace
+    if type(store) ~= "table" or store.version ~= TRACE_VERSION then
+        if not create then return nil end
+        store = {
+            version = TRACE_VERSION,
+            next_sequence = 1,
+            next_session = 1,
+            entries = {},
+            critical_entries = {},
+        }
+        Ls_Tweeks_DB.objectives_trace = store
+    end
+
+    if type(store.entries) ~= "table" then store.entries = {} end
+    if type(store.critical_entries) ~= "table" then store.critical_entries = {} end
+    if type(store.next_sequence) ~= "number" then store.next_sequence = 1 end
+    if type(store.next_session) ~= "number" then store.next_session = 1 end
+    return store
+end
+
+local function safe_trace_text(value)
+    if type(issecretvalue) == "function" and issecretvalue(value) then
+        return "<secret omitted>"
+    end
+    local value_type = type(value)
+    if value == nil then return nil end
+    if value_type == "string" then return value end
+    if value_type == "number" or value_type == "boolean" then return tostring(value) end
+    return "<unsupported>"
+end
+
+local function trim_trace(store)
+    while #store.entries > TRACE_LIMIT do
+        table.remove(store.entries, 1)
+    end
+end
+
+local function copy_entry(entry)
+    local copied = {}
+    for key, value in pairs(entry) do
+        copied[key] = value
+    end
+    return copied
+end
+
+local function append_critical_entry(store, entry)
+    store.critical_entries[#store.critical_entries + 1] = copy_entry(entry)
+    while #store.critical_entries > TRACE_CRITICAL_LIMIT do
+        table.remove(store.critical_entries, 1)
+    end
+end
+
+local function create_trace_entry(store, source, action, detail)
+    local entry = {
+        sequence = store.next_sequence,
+        session = current_session or 0,
+        wall_time = date and date("%H:%M:%S") or "--:--:--",
+        uptime = GetTime and GetTime() or 0,
+        source = safe_trace_text(source) or "unknown",
+        action = safe_trace_text(action) or "unknown",
+        detail = safe_trace_text(detail),
+    }
+    store.next_sequence = store.next_sequence + 1
+    return entry
+end
+
+local function records_match(left, right)
+    return left and right
+        and left.session == right.session
+        and left.source == right.source
+        and left.action == right.action
+        and left.detail == right.detail
+end
+
+local function record_trace(source, action, detail, critical)
+    local store = get_trace_store(true)
+    if not store then return false end
+
+    local entry = create_trace_entry(store, source, action, detail)
+    local previous = store.entries[#store.entries]
+    if not critical and records_match(previous, entry) then
+        previous.repeat_count = (previous.repeat_count or 1) + 1
+        previous.last_wall_time = entry.wall_time
+        previous.last_uptime = entry.uptime
+        return true
+    end
+
+    store.entries[#store.entries + 1] = entry
+    trim_trace(store)
+    if critical then
+        append_critical_entry(store, entry)
+    end
+    return true
+end
+
+--#endregion TRACE STORAGE =====================================================
+
+
+--#region PUBLIC TRACE API =====================================================
+
+function M.record_objectives_trace(source, action, detail)
+    return record_trace(source, action, detail, false)
+end
+
+function M.record_objectives_trace_critical(source, action, detail)
+    return record_trace(source, action, detail, true)
+end
+
+function M.start_objectives_trace_session(reason)
+    local store = get_trace_store(true)
+    if not store then return nil end
+
+    current_session = store.next_session
+    store.next_session = store.next_session + 1
+    M.record_objectives_trace_critical("session", "started", reason)
+    return current_session
+end
+
+function M.clear_objectives_trace()
+    local store = get_trace_store(true)
+    if not store then return false end
+
+    store.entries = {}
+    store.critical_entries = {}
+    M.record_objectives_trace_critical("trace", "cleared")
+    return true
+end
+
+function M.get_objectives_trace_critical_entries()
+    local store = get_trace_store(false)
+    local entries = {}
+    for index, entry in ipairs(store and store.critical_entries or {}) do
+        entries[index] = entry
+    end
+    return entries
+end
+
+function M.get_objectives_trace_entries()
+    local store = get_trace_store(false)
+    local entries = {}
+    for index, entry in ipairs(store and store.entries or {}) do
+        entries[index] = entry
+    end
+    return entries
+end
+
+function M.get_objectives_variable_security(owner, key)
+    if not owner or type(key) ~= "string" or type(issecurevariable) ~= "function" then
+        return "unavailable"
+    end
+
+    local ok, secure, taint_source = pcall(issecurevariable, owner, key)
+    if not ok then return "check_error" end
+    if secure then return "secure" end
+    if type(taint_source) == "string" and taint_source ~= "" then
+        return "tainted:" .. taint_source
+    end
+    return "insecure"
+end
+
+function M.get_objectives_security_snapshot()
+    local parts = {}
+    local frames = {
+        { "parent", _G.ObjectiveTrackerFrame },
+        { "campaign", _G.CampaignQuestObjectiveTracker },
+        { "quests", _G.QuestObjectiveTracker },
+        { "achievements", _G.AchievementObjectiveTracker },
+        { "scenario", _G.ScenarioObjectiveTracker },
+    }
+    for _, frame_def in ipairs(frames) do
+        local label, frame = frame_def[1], frame_def[2]
+        if frame then
+            parts[#parts + 1] = label .. ".collapsed=" .. M.get_objectives_variable_security(frame, "isCollapsed")
+            parts[#parts + 1] = label .. ".dirty=" .. M.get_objectives_variable_security(frame, "dirty")
+            parts[#parts + 1] = label .. ".height=" .. M.get_objectives_variable_security(frame, "contentsHeight")
+        end
+    end
+    return table.concat(parts, ",")
+end
+
+local function format_trace_entry(entry, prefix)
+    local line = (prefix or "") .. "[" .. tostring(entry.sequence or "?") .. "]"
+        .. " time=" .. tostring(entry.wall_time or "--:--:--")
+        .. " uptime=" .. tostring(entry.uptime or 0)
+        .. " session=" .. tostring(entry.session or 0)
+        .. " " .. tostring(entry.source or "unknown")
+        .. "/" .. tostring(entry.action or "unknown")
+    if entry.detail then
+        line = line .. " " .. tostring(entry.detail)
+    end
+    if (entry.repeat_count or 1) > 1 then
+        line = line .. " repeats=" .. tostring(entry.repeat_count)
+            .. " last_time=" .. tostring(entry.last_wall_time or entry.wall_time or "--:--:--")
+            .. " last_uptime=" .. tostring(entry.last_uptime or entry.uptime or 0)
+    end
+    return line
+end
+
+function M.get_objectives_trace_output_lines()
+    local entries = M.get_objectives_trace_entries()
+    local critical_entries = M.get_objectives_trace_critical_entries()
+    local lines = {
+        "LsTweeks Objectives trace: stored=" .. tostring(#entries)
+            .. " timeline_printed=" .. tostring(math.min(#entries, TRACE_PRINT_LIMIT))
+            .. " critical=" .. tostring(#critical_entries)
+            .. " current_session=" .. tostring(current_session or 0),
+        "Recent timeline:",
+    }
+    local first_index = math.max(1, #entries - TRACE_PRINT_LIMIT + 1)
+    for index = first_index, #entries do
+        lines[#lines + 1] = format_trace_entry(entries[index])
+    end
+    lines[#lines + 1] = "Critical boundary records repeated for copy safety:"
+    for _, entry in ipairs(critical_entries) do
+        lines[#lines + 1] = format_trace_entry(entry, "critical ")
+    end
+    return lines
+end
+
+
+function M.print_objectives_trace()
+    for index, line in ipairs(M.get_objectives_trace_output_lines()) do
+        if index == 1 then
+            print("|cff33ff99" .. line .. "|r")
+        else
+            print(line)
+        end
+    end
+end
+
+--#endregion PUBLIC TRACE API ==================================================

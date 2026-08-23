@@ -1,4 +1,5 @@
 # Objectives Height Compaction Experiment
+Archive marker: `[~]` means the step was superseded when the native `securecall` candidate was rejected
 
 ## Goal
 Determine whether Auto-Collapse can safely reclaim the vertical space reserved by a hidden Objective Tracker section without calling Blizzard collapse methods, entering the shared container update graph, or tainting later secret-sensitive layout work.
@@ -64,28 +65,9 @@ Evaluate these only if the height-modifier experiment is rejected:
 ## Phase 2: Reload-Scoped Prototype
 - [x] **a** (Agent) Trace how Blizzard calculates each section's layout height and identify a safe way for an auto-hidden section to contribute only its header height; no safe mechanism was found
 - [x] **b** (Agent) Reject the mechanism if it requires overriding `GetContentsHeight`, writing `contentsHeight`, or calling the shared container update; all identified candidates require one of these paths
-- [ ] **c** (Agent) Add a temporary `/lst` experiment toggle
-- [ ] **d** (Agent) Default the experiment toggle off
-- [ ] **e** (Agent) Reset the experiment toggle on reload
-- [ ] **f** (Agent) Implement one centralized compaction apply path
-- [ ] **g** (Agent) Implement one centralized compaction clear path
-- [ ] **h** (Agent) Define one file-local modifier key
-- [ ] **i** (Agent) Keep all experiment tracker state file-local
-- [ ] **j** (Agent) Require numeric `contentsHeight`, `headerHeight`, and `bottomSpacing` before compaction
-- [ ] **k** (Agent) Compute the compact target when Auto-Collapse hides a section
-- [ ] **l** (Agent) Apply the computed modifier when Auto-Collapse hides a section
-- [ ] **m** (Agent) Clear the modifier when the addon-owned expand button opens a section
-- [ ] **n** (Agent) Clear the modifier when the section's Auto-Collapse setting is disabled
-- [ ] **o** (Agent) Clear every applied modifier when Objectives is disabled
-- [ ] **p** (Agent) Skip geometry mutation during combat
-- [ ] **q** (Agent) Queue one existing Objectives combat replay for skipped geometry mutation
-- [ ] **r** (Agent) Confirm the prototype does not hook container `Update` or tracker `OnUpdate`
-- [ ] **s** (Agent) Add a status field for experiment enabled state
-- [ ] **t** (Agent) Add a status field for modifier applied state
-- [ ] **u** (Agent) Add status fields for source height and compact target height
-- [ ] **v** (Agent) Add a status field for the last compaction reason
+- [x] **c** (Agent) Cancel the height-modifier prototype before implementation because it cannot change Blizzard's authoritative container budget within the safety boundary
 
-Stop gate: steps c through v remain paused because a and b found no candidate that can change Blizzard's container budget within the experiment's safety boundary
+The canceled implementation checklist was condensed rather than left as false pending work; no modifier code, toggle, geometry hook, or modifier status state was created
 
 
 ## Phase 3: Native securecall Comparison
@@ -125,43 +107,53 @@ Phases 1 through 3 preserve the investigation history. Their height-modifier and
 
 
 ## Phase 5: Production Candidate
-- [x] **a** (Agent) Back up the visibility-only implementation as `backups/ob_auto_collapse_visibility_2026-08-22.lua`
+- [x] **a** (Agent) Back up the visibility-only implementation as `ob_auto_collapse_visibility_2026-08-22.lua.txt`
 - [x] **b** (Agent) Route normal Campaign, Quests, and Achievements Auto-Collapse through deferred native `securecall`
 - [x] **c** (Agent) Remove the overlay-button workaround from the active implementation
 - [x] **d** (Agent) Preserve manual-open overrides and manual-collapse rearming
 - [x] **e** (Agent) Preserve combat deferral
-- [x] **f** (Agent) Expand native sections when their setting or the Objectives module is disabled
+- [x] **f** (Agent) Expand a section when its setting is disabled and expand only addon-owned collapses when Objectives is disabled
 - [x] **g** (Agent) Add per-section native result status
 - [x] **h** (Agent) Pass focused Auto-Collapse and smoke tests
-- [ ] **i** Run `/reload`
-- [ ] **j** Enable Campaign, Quests, and Achievements Auto-Collapse
-- [ ] **k** Confirm all available sections use Blizzard's native collapsed state and no layout gap remains
-- [ ] **l** Confirm a manually expanded section stays open through an Objectives refresh
-- [ ] **m** Confirm manually collapsing the section rearms Auto-Collapse
-- [ ] **n** Complete another Void Incursion boss or Scenario update with Auto-Collapse active
-- [ ] **o** (Agent) Inspect `taint.log` and decide whether to retain or restore the candidate
+- [x] **i** Run `/reload`
+- [x] **j** Enable Campaign, Quests, and Achievements Auto-Collapse
+- [x] **k** Confirm all available sections use Blizzard's native collapsed state and no layout gap remains
+- [x] **l** Confirm a manually expanded section stays open through an Objectives refresh
+- [x] **m** Confirm manually collapsing the section rearms Auto-Collapse
+- [x] **n** Complete another Void Incursion boss or Scenario update with Auto-Collapse active
+- [x] **o** (Agent) Inspect `taint.log` and retain the candidate; no relevant taint or visible error appeared
 
 
 ## Phase 6: Update Resilience
 Blizzard can rebuild tracker contents after quest, campaign, achievement, or scenario updates. Confirm its native collapsed state remains authoritative without addon-owned geometry.
 
-- [ ] **a** Trigger a tracker update while all configured sections are collapsed
-- [ ] **b** Confirm collapsed sections retain header-only layout height
-- [ ] **c** Confirm later sections remain visible without gaps, clipping, or overlap
-- [ ] **d** Manually expand one section
-- [ ] **e** Trigger another tracker update
-- [ ] **f** Confirm the manually expanded section stays open
-- [ ] **g** Manually collapse that section
-- [ ] **h** Trigger another tracker update
-- [ ] **i** Confirm native collapsed layout remains stable
-- [ ] **j** (Agent) Inspect status and taint evidence after the sequence
+- [x] **a** Trigger a tracker update while all configured sections are collapsed
+- [x] **b** Confirm collapsed sections retain header-only layout height
+- [x] **c** Confirm later sections remain visible without gaps, clipping, or overlap
+- [x] **d** Manually expand one section
+- [x] **e** Trigger another tracker update
+- [x] **f** Confirm the manually expanded section stays open
+- [x] **g** Manually collapse that section
+- [x] **h** Trigger another tracker update
+- [x] **i** Confirm native collapsed layout remains stable
+- [x] **j** (Agent) Inspect status and taint evidence after the sequence; all configured sections were natively collapsed at 25px with no queued/deferred collapse work, later sections remained displayable, ownership matched manual interaction, and the only taint entry was normal slash registration
+
+
+## Phase 7: Reload-Surviving Failure Trace
+- [x] **a** (Agent) Record the 2026-08-23 recurrence and objective-progress stall as a failed acceptance gate
+- [x] **b** (Agent) Add a bounded 200-entry trace outside profile data so evidence survives `/reload`
+- [x] **c** (Agent) Record Auto-Collapse queue, combat deferral, manual interaction, and pre/post-`securecall` field security
+- [x] **d** (Agent) Record existing background callback activity and Scenario event security snapshots without adding Blizzard-frame hooks
+- [x] **e** (Agent) Add `/lst obtrace`, `/lst obtrace clear`, and `/lst obtrace mark`
+- [x] **f** (Agent) Pass the focused trace, Auto-Collapse, background, and smoke tests
+- [x] **g** Follow the targeted procedure in `objectives_void_incursion_trace_test.md`
 
 
 ## Diagnostics
 Capture before and after each candidate mutation:
 - Tracker name and current collapsed/visible state.
 - `contentsHeight`, `headerHeight`, `bottomSpacing`, and `GetHeight()`.
-- Applied modifier and computed compact target.
+- Native result and addon-owned collapse state.
 - Combat state and apply reason.
 - Security state for relevant Blizzard-owned fields where `issecurevariable` can inspect them safely.
 - `/lst status objectives`.
@@ -170,45 +162,68 @@ Capture before and after each candidate mutation:
 Do not store full logs in durable module memory. Archive raw evidence under the existing error-batch workflow and summarize only confirmed conclusions here and in `proj_mem/modules/objectives.md`.
 
 
-## In-Game Test Matrix
-Run each case first with compaction off, then with it on.
+## In-Game Acceptance
 
-### Basic Layout
-- [ ] Reload with Campaign, Quests, and Achievements enabled for Auto-Collapse.
-- [ ] Confirm hidden headers stack without blank vertical gaps.
-- [ ] Expand each section individually and confirm exact height restoration.
-- [ ] Collapse each expanded section and confirm compaction is rearmed.
-- [ ] Repeat expansion/collapse in different section orders.
-- [ ] Disable and re-enable each setting.
-- [ ] Disable and re-enable the Objectives module.
+### Confirmed Evidence
+- [x] Reload with Campaign, Quests, and Achievements enabled for Auto-Collapse
+- [x] Confirm native collapsed headers stack without blank vertical gaps
+- [x] Expand Campaign, Quests, and Achievements individually and confirm exact height restoration
+- [x] Collapse Campaign, Quests, and Achievements individually and confirm Auto-Collapse is rearmed
+- [x] Enter combat while sections are auto-collapsed
+- [x] Run Scenario content that updates criteria repeatedly
+- [x] Run two Void Incursions through boss death and the subsequent `SCENARIO_CRITERIA_UPDATE` path
+- [x] Allow several tracker updates after the last addon interaction to catch delayed dirty passes
+- [x] Test with the user's normal addon set except the two intentionally disabled competing tracker addons
 
-### Tracker Updates
-- [ ] Track and untrack ordinary quests.
-- [ ] Advance quest objectives and complete/turn in a quest.
-- [ ] Track and untrack achievements.
-- [ ] Trigger Campaign objective changes.
-- [ ] Test empty sections and sections that acquire their first entry after login.
-- [ ] Test sections whose content height grows and shrinks while manually open.
+### Reduced Remaining Matrix
+These cases exercise distinct remaining risks; reordered clicks and further variations of already-proven native behavior were pruned
 
-### Combat And Protected-State Boundaries
-- [ ] Enter combat while sections are auto-hidden.
-- [ ] Try Blizzard's native section button during combat.
-- [ ] Change settings during combat and verify deferred application after regeneration.
-- [ ] Enter and leave combat with a manual-open override active.
-- [ ] Confirm no `ADDON_ACTION_BLOCKED` or protected-frame mutation errors.
+Paused after the 2026-08-23 taint recurrence until Phase 7 identifies the responsible Objectives path
 
-### Known High-Risk Surfaces
-- [ ] Open the world map and hover quest or world-quest rewards with embedded tooltip content.
-- [ ] Run Scenario content that updates criteria repeatedly.
-- [ ] Run a Void Incursion through boss death and the subsequent `SCENARIO_CRITERIA_UPDATE` path.
-- [ ] Exercise Maw Buffs or another secret-sensitive Scenario display when available.
-- [ ] Allow several tracker updates after the last addon interaction to catch delayed dirty passes.
+#### 1 Module Ownership Lifecycle
+- [~] **a** Superseded — Manually collapse Quests while Campaign and Achievements remain addon-owned
+- [~] **b** Superseded — Disable the Objectives module
+- [~] **c** Superseded — Confirm Campaign and Achievements expand while Quests stays collapsed
+- [~] **d** Superseded — Re-enable the Objectives module
+- [~] **e** Superseded — Confirm the configured sections collapse again
 
-### Compatibility
-- [ ] Test with no other tracker addon enabled.
-- [ ] Test with the user's normal addon set.
-- [ ] Verify Edit Mode and Objective Tracker background behavior.
-- [ ] Verify section-count title updates and hover behavior.
+#### 2 Achievement Update While Manually Open
+- [~] **a** Superseded — Manually expand Achievements
+- [~] **b** Superseded — Track or untrack an achievement
+- [~] **c** Superseded — Confirm Achievements remains open and the layout stays correct
+
+#### 3 Native Section Control During Combat
+- [~] **a** Superseded — Enter combat
+- [~] **b** Superseded — Use a native section button
+- [~] **c** Superseded — Leave combat
+- [~] **d** Superseded — Trigger a tracker refresh
+- [~] **e** Superseded — Confirm the manual choice persists with no blocked-action error
+
+#### 4 Auto-Collapse Setting Change During Combat
+- [~] **a** Superseded — Enter combat
+- [~] **b** Superseded — Change one Auto-Collapse setting
+- [~] **c** Superseded — Leave combat
+- [~] **d** Superseded — Confirm the setting applies with no protected-action error
+
+#### 5 World-Map Embedded Tooltip
+- [~] **a** Superseded — Open the world map
+- [~] **b** Superseded — Hover a quest or world-quest reward with embedded tooltip content
+- [~] **c** Superseded — Confirm no tooltip geometry or secret-value error
+
+#### 6 Edit Mode Compatibility
+- [x] **a** Open and close Edit Mode
+- [x] **b** Confirm the Objective Tracker background and native collapsed sections remain stable
+
+#### 7 Final Evidence Inspection
+- [x] **a** (Agent) Inspect final status and taint evidence; reject native collapse from the completed boundary and control evidence
+
+### Pruned As Redundant
+- Different expansion and collapse orders use the same per-section native path already proven individually
+- Repeating every setting toggle out of combat duplicates the shared data-driven path and headless coverage
+- Ordinary quest changes, quest completion, Scenario criteria changes, delayed tracker updates, and section growth all exercised Blizzard-driven refreshes
+- Empty-section and Campaign-only variations no longer target an independent addon layout mechanism because Blizzard owns the collapsed geometry
+- The two Void Incursion boss cycles exercised the exact secret-sensitive Scenario and Maw Buffs failure path that motivated this work
+- Section-count title hover does not exercise the collapse boundary
 
 
 ## Headless Regression Coverage
@@ -218,24 +233,26 @@ Run each case first with compaction off, then with it on.
 - [x] Manual collapse rearms Auto-Collapse.
 - [x] Disabling a setting expands its section with combat deferral.
 - [x] Disabling the Objectives module expands sections owned by Auto-Collapse.
+- [x] Disabling the Objectives module preserves sections already collapsed by Blizzard or the user.
 - [x] Repeated apply operations skip redundant native state writes.
 
 
 ## Acceptance Gates
-All gates must pass before compaction can become default behavior:
-- [ ] Hidden sections reclaim vertical space without clipping, overlap, or anchor drift.
-- [ ] Manual expansion restores the exact Blizzard layout and remains open.
-- [ ] Manual collapse rearms Auto-Collapse without an immediate reopen or rehide race.
-- [ ] Blizzard content updates do not invalidate the compact height.
-- [ ] No addon-driven collapse, dirty mark, or container update enters the call graph.
-- [ ] No new taint attribution, secret-value error, protected-action failure, or tooltip geometry error appears across the full matrix.
-- [ ] Disable and reload paths restore Blizzard-owned geometry cleanly.
-- [ ] Headless suites, changed-file LuaLS/Ketho, and routine fast checks pass.
+All gates must pass before native Auto-Collapse is considered fully accepted:
+- [x] Natively collapsed sections reclaim vertical space without clipping, overlap, or anchor drift.
+- [x] Manual expansion restores the exact Blizzard layout and remains open.
+- [x] Manual collapse rearms Auto-Collapse without an immediate reopen or rehide race.
+- [x] Blizzard content updates preserve native collapsed layout.
+- [x] No direct addon-context collapse, dirty mark, or container update enters the call graph; section collapse uses only the centralized direct-function `securecall` boundary.
+- [~] Superseded — No new taint attribution, secret-value error, protected-action failure, or tooltip geometry error appears across the reduced matrix
+- [x] Reload restores the production implementation and Blizzard-owned geometry cleanly
+- [~] Superseded — Module disable preserves user-owned state while restoring addon-owned geometry cleanly
+- [x] Headless suites, changed-file LuaLS/Ketho, and routine fast checks pass.
 
 
 ## Immediate Rejection Conditions
-Reject the candidate and return to visibility-only behavior if any occurs:
-- `heightModifiers`, related frame geometry, or downstream execution becomes addon-tainted.
+Reject the candidate and restore the backed-up visibility implementation if any occurs:
+- Native collapse state, related frame state, or downstream execution becomes addon-tainted by LsTweeks.
 - Scenario/Maw Buffs secret-value errors return.
 - World-map or embedded-item tooltip geometry errors appear.
 - Blizzard updates repeatedly overwrite or accumulate the modifier.
@@ -293,20 +310,56 @@ Add dated entries while testing; keep each entry concise and link archived raw e
 - This directly passes the previously failing delayed event once; repetition and broader tracker-update testing are still required before promoting the technique
 - The final native expand also reported `result=applied` and restored the normal Quests layout
 
+### 2026-08-22 — Production candidate repetition and cleanup
+- Normal Campaign, Quests, and Achievements Auto-Collapse was active for another Void Incursion boss and Scenario update
+- No visible Lua, secret-value, or blocked-action error appeared
+- The fresh `taint.log` contained no Objective Tracker, Scenario tracker, `ShouldShowMawBuffs`, `GetAuraDataByIndex`, secret-value, or blocked-action entry
+- The only LsTweeks entry was Blizzard reading `SLASH_LSTWEEKS1`, alongside the same normal slash-registration noise from other addons
+- At this point the production candidate was retained while the remaining manual-interaction and update-resilience checklist items were completed
+- The duplicate reload-scoped `/lst obnative` command, experiment runtime state, status fields, and headless tests were removed after promotion
+- Auto-Collapse now tracks successful addon-issued collapses so module disable does not expand a section that was already collapsed by Blizzard or the user
+
+### 2026-08-23 — Production candidate recurrence
+- A later Void Incursion reproduced `GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsTweeks'` in Blizzard Maw Buffs through Scenario Objective Tracker layout
+- Objective progress stopped updating for the remainder of the event state and resumed immediately after `/reload`, confirming a reload-scoped functional failure rather than harmless log noise
+- The captured Blizzard stack identifies the eventual consumer but contains no LsTweeks caller frame, so it does not distinguish section `securecall`, manual-button activity, background hooks, or another earlier Objectives mutation
+- The prior two clean cycles remain valid observations but no longer support accepting the candidate as safe
+- User approved continued `securecall` testing with a bounded persistent trace instead of an immediate rollback
+
+### 2026-08-23 — First persistent trace result
+- An Auto-Collapse-on Void Incursion completed without a visible error
+- All 54 captured Scenario snapshots attributed Campaign, Quests, and Achievements `isCollapsed` and `contentsHeight` to LsTweeks while parent, Scenario, and section `dirty` fields remained secure
+- The state is unsafe even though this event did not reach the secret-aura error
+- Repeated Scenario events displaced the startup boundary records from copied chat history, so the collector now coalesces duplicates and repeats a bounded critical record set at the end
+- The next test keeps Objectives enabled but disables all three Auto-Collapse settings before a clean reload to isolate other Objectives paths
+
+### 2026-08-23 — Auto-Collapse-off control
+- Objectives and its existing background hooks remained enabled while Campaign, Quests, and Achievements Auto-Collapse were disabled
+- No post-reload `auto/securecall` occurred and the Incursion completed without a visible error
+- All 75 represented Scenario events kept every inspected section, parent, and Scenario field secure
+- Compared with the Auto-Collapse-on run, this isolates the section-field taint to Auto-Collapse rather than general Objectives background activity
+- The next planned check was an immediate Quests-only pre/post-`securecall` capture
+
+### 2026-08-23 — Immediate Quests boundary result
+- Before `securecall`, Quests `SetCollapsed`, `isCollapsed`, `dirty`, and `contentsHeight` all reported secure
+- Immediately after `securecall`, `isCollapsed` reported `tainted:LsTweeks`; method, dirty, and height remained secure at that instant
+- The earlier Scenario trace showed `contentsHeight` becoming tainted during downstream layout
+- Together with the clean no-`securecall` control, this conclusively rejects deferred direct-function `securecall` for native Auto-Collapse
+
 ### Pending
 - Baseline client: Retail 12.1.0.69404, Interface 120100, synced FrameXML commit `81d15e42f16f3473131880500e7a8c8eb88fa5e6`.
 - Reproduced limitation: Achievements header can remain truncated until a real Blizzard collapse of Quests releases the container's budgeted height.
 - Rejected as a standalone candidate: `SetHeightModifier`; it changes physical frame height but not the `GetContentsHeight()` value used for container budgeting.
-- Current decision: do not implement height compaction until a taint-safe container-budget mechanism is identified. Visibility-only Auto-Collapse is safe from the known dirty-graph taint but is not functionally equivalent to collapse.
+- Current decision: reject deferred direct-function native `securecall`; the active replacement is visibility-only Auto-Collapse with accepted spacing limitations
 
 
 ## Closeout
 If accepted:
-- Remove the reload-scoped experiment toggle and diagnostic-only code.
-- Keep the smallest useful status fields.
-- Promote the confirmed contract and taint evidence to `proj_mem/modules/objectives.md`.
-- Update README wording if the visible layout changes.
-- Archive or remove this ToDo after durable documentation is complete.
+- [x] **a** (Agent) Remove the reload-scoped experiment command and diagnostic-only code
+- [x] **b** (Agent) Keep only production per-section status fields
+- [x] **c** (Agent) Promote the confirmed contract, secure-boundary lesson, and taint evidence to durable project and Objectives memory
+- [x] **d** (Agent) Update README wording for native collapsed layout
+- [x] **e** (Agent) Condense the investigation into a reusable case study and archive the raw working evidence
 
 If rejected:
 - Remove all experimental geometry code and hooks.

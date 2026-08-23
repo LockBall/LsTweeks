@@ -1,0 +1,12 @@
+Objectives visibility-only no-reload security snapshot
+Date: 2026-08-23
+
+C true true
+Q true true
+A true true
+P true true
+S true true
+
+Legend: C=Campaign, Q=Quests, A=Achievements, P=parent Objective Tracker, S=Scenario
+Fields: isCollapsed, contentsHeight
+Interpretation: every inspected field remained secure after normal gameplay with the visibility-only fallback active

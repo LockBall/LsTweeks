@@ -255,7 +255,7 @@ Preferred helper script:
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1
 ```
 
-The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`.
+The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`. Whole-workspace checks exclude `working_docs/ToDo/backups/` because exact historical Lua fallbacks are evidence, not active code, and must not pollute current diagnostics.
 
 Targeted helper modes:
 

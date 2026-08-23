@@ -103,7 +103,7 @@ Objectives extends and restyles the Blizzard Objective Tracker (All Objectives, 
 
 - **Position**: separate controls for moving the All Objectives tracker, including snap-to-grid offsets.
 - **Background**: separate controls for Blizzard's Objective Tracker background and LsTweeks' custom color background, sized to the visible tracker sections when Objectives module behavior is active.
-- **Auto-Collapse**: optionally collapses Campaign, Quests, and Achievements through Blizzard's native section state. Calls are deferred, combat-safe, and isolated through `securecall`; a manual expansion stays open until that section is manually collapsed again. The parent All Objectives tracker remains Blizzard-owned.
+- **Auto-Collapse**: optionally hides Campaign, Quests, and Achievements contents without changing Blizzard's native collapsed state. A manual expansion stays open until that section is manually collapsed again. This taint-safe fallback can retain empty layout space because Blizzard still budgets the expanded section height; the parent All Objectives tracker remains Blizzard-owned.
 - **Section Count**: optional checkboxes for quest log and tracked achievement counters, with per-counter **On Hover** display options.
 - **Profiles**: saving and loading complete Objective Tracker setups, plus a module reset that can preserve saved profiles.
 
@@ -200,15 +200,26 @@ Embedded libraries are stored in `libs/` and credited in `sources.md`. They are 
 
 
 ## Credits
-- LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge.
-- Inspired by the WoW addon community, including Elkano's BuffBars, BetterCooldownManager, TellMeWhen, ArcUI, EllesmereUI, BasicBuffHide, and Angleur.
-- TellMeWhen, ArcUI, and EllesmereUI helped confirm the community-tested WoW 12.1 managed AuraContainer/AuraButton direction; LsTweeks uses its own implementation based on Blizzard's public API contract.
-- BasicBuffHide helped confirm hidden-parent suppression for Blizzard's 12.1 BuffFrame; LsTweeks uses an independent implementation and contains no copied BasicBuffHide code.
-- Fishing Focus was informed by Angleur's Ultra Focus audio-profile approach.
-- Skyriding Vigor was informed by DragonRider's restored vigor-display concept; this addon uses its own implementation and Blizzard UI assets.
-- Addon design and implementation by **LockBall**.
-- Special thanks to **DiscoMouse**.
-- Portions of this addon were developed with assistance from agentic tools.
+#### Libraries
+- LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0 by their respective authors on WowAce / CurseForge
+
+#### Inspiration
+For non-lib inspirational sources, this addon uses its own implementation, Blizzard UI assets and public API
+The WoW addon community:
+- Elkano's BuffBars
+- BetterCooldownManager
+- TellMeWhen, ArcUI, EllesmereUI: confirm community-tested WoW 12.1 managed AuraContainer/AuraButton direction
+- BasicBuffHide: hidden-parent suppression for Blizzard's 12.1 BuffFrame (no longer used)
+- Angleur: fishing audio profiles
+- Quest Log Collapse: research lead for the rejected securecall Objective Tracker experiment
+- DragonRider: restored vigor-display
+
+#### Hoomans
+- Design and implementation by **LockBall**
+- Special thanks to **DiscoMouse**
+
+#### Non-Hoomans
+- Portions of this addon were developed with agentic tools assistance
 
 
 ## Sources

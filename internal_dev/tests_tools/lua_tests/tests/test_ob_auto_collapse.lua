@@ -1,4 +1,4 @@
--- Behavioral tests for Objectives Auto-Collapse combat deferral.
+-- Behavioral tests for Objectives visibility-only Auto-Collapse.
 -- Runs under desktop Lua 5.1 against the wow_stub environment, outside the WoW LuaLS profile.
 ---@diagnostic disable: undefined-global
 
@@ -13,15 +13,6 @@ h.load_addon("modules/objectives")
 
 local M = h.addon.objectives
 
----@class TestObjectiveTrackerHeader : Frame
----@field MinimizeButton Button
-
----@class TestObjectiveTracker : ObjectiveTrackerFrame
----@field __collapsed boolean
----@field __calls table<string, table[]>
----@field Header TestObjectiveTrackerHeader
----@field GetCalls fun(self: TestObjectiveTracker, method: string): table[]?
----@field GetLastCall fun(self: TestObjectiveTracker, method: string): table?
 local TRACKERS = {
     ObjectiveTrackerFrame,
     CampaignQuestObjectiveTracker,
@@ -35,7 +26,7 @@ local function fresh_db(overrides)
         collapse_quests = false,
         collapse_achievements = false,
     }
-    for k, v in pairs(overrides or {}) do db[k] = v end
+    for key, value in pairs(overrides or {}) do db[key] = value end
     Ls_Tweeks_DB = { objectives = db, modules = { objectives = true } }
     return db
 end
@@ -43,12 +34,15 @@ end
 local function reset_runtime()
     stub.in_combat = false
     stub.timers = {}
+    M.restore_auto_collapse("test reset")
+    stub.timers = {}
     for _, tracker in ipairs(TRACKERS) do
-        ---@cast tracker TestObjectiveTracker
         tracker.__collapsed = false
         tracker.__calls = {}
     end
-    ObjectiveTrackerManager.__calls = {}
+    CampaignQuestObjectiveTracker.ContentsFrame:Show()
+    QuestObjectiveTracker.ContentsFrame:Show()
+    AchievementObjectiveTracker.ContentsFrame:Show()
 end
 
 local function call_count(frame, method)
@@ -56,25 +50,12 @@ local function call_count(frame, method)
     return calls and #calls or 0
 end
 
-h.test("auto-collapse apply defers tracker mutation while in combat", function()
-    reset_runtime()
-    fresh_db({ collapse_campaign = true })
+local function get_expand_button(tracker)
+    local children = { tracker.Header.MinimizeButton:GetChildren() }
+    return children[#children]
+end
 
-    stub.in_combat = true
-    M.apply_auto_collapse()
-    h.advance(1)
-
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "native collapse is deferred in combat")
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), false, "tracker unchanged in combat")
-
-    h.leave_combat()
-    h.advance(1)
-
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true, "tracker collapsed after regen")
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 1, "one deferred native collapse call")
-end)
-
-h.test("auto-collapse uses native securecall only on configured section trackers", function()
+h.test("auto-collapse hides only configured section contents", function()
     reset_runtime()
     fresh_db({ collapse_campaign = true, collapse_quests = true, collapse_achievements = true })
 
@@ -84,151 +65,125 @@ h.test("auto-collapse uses native securecall only on configured section trackers
     h.eq(call_count(ObjectiveTrackerFrame, "SetCollapsed"), 0, "parent tracker is never collapsed")
     for index = 2, #TRACKERS do
         local tracker = TRACKERS[index]
-        h.eq(call_count(tracker, "SetCollapsed"), 1,
-            "one native collapse on " .. (tracker.GetName and tracker:GetName() or "?"))
-        h.eq(tracker:IsCollapsed(), true, "configured section reaches native collapsed state")
+        h.eq(call_count(tracker, "SetCollapsed"), 0, "section native collapse is never called")
+        h.eq(tracker:IsCollapsed(), false, "Blizzard collapsed state remains untouched")
+        h.eq(tracker.ContentsFrame:IsShown(), false, "configured section contents are hidden")
     end
 end)
 
-h.test("manual native expansion stays open until manual collapse rearms auto-collapse", function()
+h.test("auto-collapse defers visibility mutation while in combat", function()
+    reset_runtime()
+    fresh_db({ collapse_campaign = true })
+
+    stub.in_combat = true
+    M.apply_auto_collapse()
+    h.advance(1)
+
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "contents remain shown in combat")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "no native collapse in combat")
+
+    h.leave_combat()
+    h.advance(1)
+
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), false, "contents hide after regen")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "no native collapse after regen")
+end)
+
+h.test("manual overlay expansion stays open across later apply passes", function()
     reset_runtime()
     fresh_db({ collapse_campaign = true })
 
     M.apply_auto_collapse()
     h.advance(1)
+    local expand_button = get_expand_button(CampaignQuestObjectiveTracker)
+    h.ok(expand_button and expand_button:IsShown(), "addon expand overlay is available")
 
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true, "section starts natively collapsed")
-    CampaignQuestObjectiveTracker.__collapsed = false
-    CampaignQuestObjectiveTracker.Header.MinimizeButton:Click()
-
-    M.apply_auto_collapse()
-    h.advance(1)
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), false,
-        "later apply passes preserve a manual expansion")
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 1,
-        "manual-open override prevents another native collapse")
-
-    CampaignQuestObjectiveTracker.__collapsed = true
-    CampaignQuestObjectiveTracker.Header.MinimizeButton:Click()
-    CampaignQuestObjectiveTracker.__collapsed = false
-    M.apply_auto_collapse()
-    h.advance(1)
-
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true,
-        "a manual Blizzard collapse rearms auto-collapse")
-end)
-
-h.test("queued auto-collapse rechecks combat before timer fires", function()
-    reset_runtime()
-    fresh_db({ collapse_quests = true })
+    expand_button:Click()
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "manual overlay click shows contents")
 
     M.apply_auto_collapse()
-    stub.in_combat = true
     h.advance(1)
-
-    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 0, "timer did not collapse in combat")
-    h.eq(QuestObjectiveTracker:IsCollapsed(), false, "quest tracker unchanged in combat")
-
-    h.leave_combat()
-    h.advance(1)
-
-    h.eq(QuestObjectiveTracker:IsCollapsed(), true, "quest tracker collapsed after regen")
-    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 1, "one deferred quest collapse call")
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "later apply preserves manual expansion")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "manual path never calls native collapse")
 end)
 
-h.test("disabling auto-collapse in combat defers tracker expansion", function()
-    reset_runtime()
-    local db = fresh_db({ collapse_campaign = true })
-    CampaignQuestObjectiveTracker.__collapsed = true
-
-    local parent = CreateFrame("Frame", nil, UIParent)
-    M.BuildAutoCollapseSettings(parent)
-
-    stub.in_combat = true
-    local control = M.controls.collapse_campaign_checkbox
-    control:SetChecked(false)
-    control.checkbox:Click()
-
-    h.eq(db.collapse_campaign, false, "setting saved immediately")
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "no in-combat expand call")
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true, "tracker still collapsed in combat")
-
-    h.leave_combat()
-    h.advance(1)
-
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), false, "tracker expanded after regen")
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 1, "one deferred native expand call")
-end)
-
-h.test("already-satisfied auto-collapse state skips redundant native collapse", function()
+h.test("manual Blizzard collapse rearms visibility Auto-Collapse", function()
     reset_runtime()
     fresh_db({ collapse_campaign = true })
-    CampaignQuestObjectiveTracker.__collapsed = true
 
     M.apply_auto_collapse()
     h.advance(1)
+    get_expand_button(CampaignQuestObjectiveTracker):Click()
 
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "no redundant native collapse call")
+    CampaignQuestObjectiveTracker.__collapsed = true
+    CampaignQuestObjectiveTracker.ContentsFrame:Hide()
+    CampaignQuestObjectiveTracker.Header.MinimizeButton:Click()
+
+    CampaignQuestObjectiveTracker.__collapsed = false
+    CampaignQuestObjectiveTracker.ContentsFrame:Show()
+    M.apply_auto_collapse()
+    h.advance(1)
+
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), false, "manual collapse rearms next visibility apply")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "rearmed path remains visibility-only")
 end)
 
-h.test("already-expanded disabled setting skips redundant show", function()
+h.test("disabling a setting restores only addon-hidden contents", function()
     reset_runtime()
     local db = fresh_db({ collapse_campaign = true })
+    M.apply_auto_collapse()
+    h.advance(1)
 
     local parent = CreateFrame("Frame", nil, UIParent)
     M.BuildAutoCollapseSettings(parent)
-
-    db.collapse_campaign = true
     local control = M.controls.collapse_campaign_checkbox
     control:SetChecked(false)
     control.checkbox:Click()
 
-    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "no redundant native expand call")
+    h.eq(db.collapse_campaign, false, "setting is disabled")
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "owned visibility is restored")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "setting change avoids native collapse")
 end)
 
-h.test("module-disable restore expands sections owned by Auto-Collapse", function()
+h.test("module disable restores visibility owned by Auto-Collapse", function()
     reset_runtime()
     fresh_db({ collapse_campaign = true, collapse_quests = true })
-
     M.apply_auto_collapse()
     h.advance(1)
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true, "campaign starts collapsed")
-    h.eq(QuestObjectiveTracker:IsCollapsed(), true, "quests start collapsed")
 
     M.restore_auto_collapse("module disabled")
 
-    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), false, "campaign expands on module disable")
-    h.eq(QuestObjectiveTracker:IsCollapsed(), false, "quests expand on module disable")
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "campaign contents are restored")
+    h.eq(QuestObjectiveTracker.ContentsFrame:IsShown(), true, "quest contents are restored")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "restore avoids native collapse")
+    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 0, "restore avoids native collapse")
 end)
 
-h.test("native collapse experiment is manual, deferred, and isolated from Auto-Collapse", function()
+h.test("module disable preserves preexisting hidden contents", function()
     reset_runtime()
-    fresh_db()
+    fresh_db({ collapse_campaign = true })
+    CampaignQuestObjectiveTracker.__collapsed = true
+    CampaignQuestObjectiveTracker.ContentsFrame:Hide()
 
-    local queued, message = M.run_native_collapse_experiment("collapse")
-    h.eq(queued, true, message)
-    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 0, "native experiment waits until the next frame")
-
+    M.apply_auto_collapse()
     h.advance(1)
+    M.restore_auto_collapse("module disabled")
 
-    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 1, "native experiment makes one explicit collapse call")
-    h.eq(QuestObjectiveTracker:IsCollapsed(), true, "native experiment reaches Blizzard collapsed state")
+    h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), false, "unowned hidden state is preserved")
+    h.eq(CampaignQuestObjectiveTracker:IsCollapsed(), true, "preexisting native state is preserved")
+    h.eq(call_count(CampaignQuestObjectiveTracker, "SetCollapsed"), 0, "unowned state is never written")
+end)
+
+h.test("status distinguishes visibility hiding from native collapse", function()
+    reset_runtime()
+    fresh_db({ collapse_quests = true })
+    M.apply_auto_collapse()
+    h.advance(1)
 
     local status = table.concat(M.get_auto_collapse_status(), ",")
-    h.ok(status:find("native_experiment_result=applied", 1, true), "native result is visible in status")
-    h.ok(status:find("native_experiment_requests=1", 1, true), "native request count is visible in status")
-end)
-
-h.test("native collapse experiment refuses combat", function()
-    reset_runtime()
-    fresh_db()
-    stub.in_combat = true
-
-    local queued = M.run_native_collapse_experiment("expand")
-
-    h.eq(queued, false, "native experiment is not queued in combat")
-    h.advance(1)
-    h.eq(call_count(QuestObjectiveTracker, "SetCollapsed"), 0, "native experiment never calls collapse in combat")
+    h.ok(status:find("quests_addon_hidden=true", 1, true), "status reports owned hiding")
+    h.ok(status:find("quests_contents_shown=false", 1, true), "status reports hidden contents")
+    h.ok(not status:find("native_result", 1, true), "rejected native status is absent")
 end)
 
 h.run("ob_auto_collapse")
