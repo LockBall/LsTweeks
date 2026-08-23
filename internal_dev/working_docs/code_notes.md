@@ -1,7 +1,8 @@
 <!-- User-owned personal scratch notes. Agents must not modify, reorganize, or delete this file unless the user explicitly requests it. -->
 
 **Agent Read-In**
-Run pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\agent_startup.ps1 and follow its output
+Run pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/agent-start.ps1 and follow its output
+
 ---
 
 **improve efficiency and speed of the lua analyzer**
@@ -52,4 +53,3 @@ use your agent to build tools
 https://www.reddit.com/r/ClaudeAI/comments/1u3euwc/after_10_years_as_an_engineer_the_thing_id_teach/
 
 Karpathy's CLAUDE.md
-

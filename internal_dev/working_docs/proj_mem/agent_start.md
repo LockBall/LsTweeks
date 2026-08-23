@@ -10,7 +10,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 
 ## Session Start
-1. Baseline = this file + `project.md` `### Active Compatibility Sentinel` + offline WoW API reference status + `git status --short` + `code_map.md` `## Read-In Shortcuts` (all printed by `internal_dev/tests_tools/agent_startup.ps1`; run the pieces manually only if the script fails). Do not re-read baseline pieces or load the whole code map.
+1. Baseline = this file + `project.md` `### Active Compatibility Sentinel` + offline WoW API reference status + `git status --short` + `code_map.md` `## Read-In Shortcuts` (all printed by `internal_dev/agent-start.ps1`; run the pieces manually only if the script fails). Do not re-read baseline pieces or load the whole code map.
 2. `ToDo/` holds review notes and findings; read it only when the user directs you there or the request routes to a specific note.
 3. Follow every route directly matched by the request. Add another route only when the request also matches it.
 

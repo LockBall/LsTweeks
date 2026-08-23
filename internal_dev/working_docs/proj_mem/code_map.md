@@ -33,7 +33,7 @@ Reference routes not covered by the `agent_start.md` routing table; that table i
 ## Fast Commands
 These are repo-local or project-specific commands. Platform-provided agent tools are session context, not project read-in.
 
-- Session baseline (agent_start.md + compatibility/API status + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/agent_startup.ps1`
+- Session baseline (agent_start.md + compatibility/API status + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/agent-start.ps1`
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
 - In-game status: `/lst status` for a compact all-module summary; `/lst status <module key or label>` for readable multiline fields from one module, such as `/lst status objectives`. Do not call restricted `CopyToClipboard` from the addon slash handler; Retail blocks it as a Blizzard-UI-only action even when the user entered the command.
@@ -118,7 +118,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `check_fast.ps1`: quick local verification wrapper.
 - `check_regions.ps1`: validates Lua region markers and prints live source outlines with named functions.
 - `doc_section.ps1`: prints one named `##` markdown section or lists `##` headings.
-- `agent_startup.ps1`: one-shot session baseline printer (agent_start.md, compatibility/API status, worktree status, Read-In Shortcuts); read-only.
+- `internal_dev/agent-start.ps1`: one-shot session baseline printer (agent_start.md, compatibility/API status, worktree status, Read-In Shortcuts); read-only.
 - `packaging/`: release package builder, policy, and verifier.
 - `lua_checks/`: LuaLS/Ketho helper and ignored generated diagnostics.
 - `internal_dev/working_docs/SoundKitConstants.lua`: large searchable sound reference; search only when sound IDs are needed.
