@@ -26,9 +26,15 @@ The shell and aggregate managed AuraContainer now receive the same OOC alpha wit
 ## 2 Managed Presentation And Migration
 - [x] **a** Validate the surviving managed Static / Long Buffs frame after removal of the obsolete Static and Long presets
 - [x] **b** (Agent) Add managed icon cooldown swipe during AuraButton initialization and bind it natively without live-Aura reads
-- [ ] **c** Validate Short Buffs beside Timed Buffs at the 300-second boundary in Bar and Icon modes across combat
-- [ ] **d** Validate Static / Long Buff learning, persistence, combat updates, duration reclassification, and OOC cache clearing in Bar and Icon modes
-- [ ] **e** Validate Frame BG on Short, Static / Long, Timed, and Debuff frames across Bar/Icon modes, shared colors, All the Colors overrides, combat, and empty geometry
+- [x] **c** Validate Short Buffs beside Timed Buffs at the 300-second boundary in Bar and Icon modes across combat
+- [x] **d** Validate Static / Long Buff learning, persistence, combat updates, duration reclassification, and OOC cache clearing in Bar and Icon modes
+- [ ] **e1** Validate the local Frame BG toggle on Short Buffs in Bar and Icon modes with active and empty contents
+- [ ] **e2** Validate the local Frame BG toggle on Static / Long Buffs in Bar and Icon modes with active and empty contents
+- [ ] **e3** Validate the local Frame BG toggle on Timed Buffs in Bar and Icon modes with active and empty contents
+- [ ] **e4** Validate the local Frame BG toggle on Debuffs in Bar and Icon modes with active and empty contents
+- [ ] **e5** Validate shared Frame BG colors on one managed Buff frame and the Debuff frame
+- [ ] **e6** Validate All the Colors Frame BG overrides on one managed Buff frame and the Debuff frame
+- [ ] **e7** Confirm managed Frame BG visibility, color, and empty geometry remain stable through combat transitions
 - [ ] **f** Change Bar BG and non-duration bar-text settings while managed Auras are visible OOC and record which changes apply immediately versus requiring a safe rebuild
 - [ ] **g** (Agent) Diagnose the managed-frame Scale regression; `update_managed_preset_frame` currently returns before the generic `SetScale` path in `update_auras`
 

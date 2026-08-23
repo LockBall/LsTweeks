@@ -475,6 +475,16 @@ h.test("Aura profiles own shared color and target selections", function()
     h.eq(M.db.move_bg_opt_out_static_long, true, "Aura profile restores the Move Mode Frame BG opt-out")
 end)
 
+h.test("Icon Mode growth falls back Right when no prior icon direction is saved", function()
+    local saved_growth = M.db.growth_icon_short
+    M.db.growth_icon_short = nil
+
+    h.eq(M.get_mode_growth(M.db, "short", false), "RIGHT",
+        "deselecting Bar Mode without a saved Icon Mode direction falls back Right")
+
+    M.db.growth_icon_short = saved_growth
+end)
+
 h.run("af_color_sync")
 
 --#endregion FILE CONTENTS ===================================================

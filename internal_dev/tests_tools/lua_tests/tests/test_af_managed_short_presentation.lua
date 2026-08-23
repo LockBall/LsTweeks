@@ -42,6 +42,14 @@ h.test("managed Short Buffs use native maximum duration and expiration ordering"
     h.ok(short_frame.move_handle.body:find("120 seconds", 1, true),
         "Short Buff mover tooltip follows duration changes")
 
+    M.db.bg_short = true
+    M.db.bar_mode_short = false
+    M.update_auras(short_frame, "show_short", "move_short", "timer_short",
+        "bg_short", "scale_short", "spacing_short", "HELPFUL")
+    short_backend.container:SetSize(1, 1)
+    h.ok(short_backend.frame_background.texture:IsShown(),
+        "empty Short Buff Icon Mode keeps its shell-owned minimum Frame BG visible after native layout")
+
     M.db.scale_short = 1.4
     M.update_auras(short_frame, "show_short", "move_short", "timer_short",
         "bg_short", "scale_short", "spacing_short", "HELPFUL")

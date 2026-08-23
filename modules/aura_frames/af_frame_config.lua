@@ -56,10 +56,15 @@ end
 
 function M.get_mode_growth(cfg_db, category, bar_mode)
     local mode_key = M.get_growth_logical_key(bar_mode)
-    local fallback = cfg_db and cfg_db ~= M.db
-        and M.CUSTOM_FRAME_TEMPLATE and M.CUSTOM_FRAME_TEMPLATE[mode_key]
-        or M.defaults and M.defaults[mode_key .. "_" .. category]
-        or "DOWN"
+    local fallback
+    if bar_mode then
+        fallback = cfg_db and cfg_db ~= M.db
+            and M.CUSTOM_FRAME_TEMPLATE and M.CUSTOM_FRAME_TEMPLATE[mode_key]
+            or M.defaults and M.defaults[mode_key .. "_" .. category]
+            or "DOWN"
+    else
+        fallback = "RIGHT"
+    end
     local growth = M.get_setting(cfg_db, category, mode_key, fallback)
     if bar_mode then return normalize_bar_growth(growth) end
     return addon.GetGrowthDirection(growth).value

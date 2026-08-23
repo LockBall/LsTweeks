@@ -225,12 +225,21 @@ function M.initialize_managed_frame_background(backend, owner)
     backend.frame_background = backend.frame_background or addon.CreateBackgroundRegion(owner, {
         anchor_to = backend.frame_background_anchor,
     })
-    -- Icon Mode needs AuraContainer's aggregate rectangle. Bar Mode instead
-    -- uses full-width button rows because its native container bounds do not
-    -- include the shell's stable width/inset contract.
+    -- Blizzard resets an empty AuraContainer to 1x1 after every native layout.
+    -- Keep one shell-owned base cell, then clip two container-following textures
+    -- to the native aggregate rectangle so active icons extend it without
+    -- overlapping and darkening the base cell.
+    backend.icon_frame_background_clip = backend.icon_frame_background_clip
+        or CreateFrame("Frame", nil, backend.container, "DisableUntrustedLayoutScriptsTemplate")
+    backend.icon_frame_background_clip:SetAllPoints(backend.container)
+    backend.icon_frame_background_clip:SetClipsChildren(true)
     backend.icon_frame_background = backend.icon_frame_background
-        or addon.CreateBackgroundRegion(backend.container)
-    return backend.frame_background ~= nil and backend.icon_frame_background ~= nil
+        or addon.CreateBackgroundRegion(backend.icon_frame_background_clip)
+    backend.icon_frame_background_cross = backend.icon_frame_background_cross
+        or addon.CreateBackgroundRegion(backend.icon_frame_background_clip)
+    return backend.frame_background ~= nil
+        and backend.icon_frame_background ~= nil
+        and backend.icon_frame_background_cross ~= nil
 end
 
 function M.register_managed_frame_background_row(backend, aura_button, mode, index)
@@ -267,6 +276,30 @@ local function configure_managed_frame_background(
     anchor:ClearAllPoints()
     anchor:SetPoint(growth_layout.anchor, backend.owner, growth_layout.anchor)
     anchor:SetSize(background_width, minimum_height)
+
+    local container = backend.container
+    local primary = backend.icon_frame_background.texture
+    local cross = backend.icon_frame_background_cross.texture
+    primary:ClearAllPoints()
+    cross:ClearAllPoints()
+    backend.icon_frame_background_uses_cross = not growth_layout.vertical
+    if growth_layout.value == "LEFT" then
+        primary:SetPoint("TOPRIGHT", anchor, "TOPLEFT")
+        primary:SetPoint("BOTTOMLEFT", container, "BOTTOMLEFT")
+        cross:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT")
+        cross:SetPoint("BOTTOMLEFT", container, "BOTTOMRIGHT", -icon_size, 0)
+    elseif growth_layout.value == "UP" then
+        primary:SetPoint("BOTTOMLEFT", anchor, "TOPLEFT")
+        primary:SetPoint("TOPRIGHT", container, "TOPRIGHT")
+    elseif growth_layout.vertical then
+        primary:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT")
+        primary:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT")
+    else
+        primary:SetPoint("TOPLEFT", anchor, "TOPRIGHT")
+        primary:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT")
+        cross:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT")
+        cross:SetPoint("BOTTOMRIGHT", container, "BOTTOMLEFT", icon_size, 0)
+    end
 
     local grows_up = growth_layout.vertical_direction == "UP"
     for _, record in pairs(backend.frame_background_rows) do
@@ -307,7 +340,8 @@ function M.apply_managed_frame_background(
 )
     local background = backend and backend.frame_background
     local icon_background = backend and backend.icon_frame_background
-    if not (background and icon_background) then return false end
+    local icon_background_cross = backend and backend.icon_frame_background_cross
+    if not (background and icon_background and icon_background_cross) then return false end
     configure_managed_frame_background(
         backend,
         bar_mode,
@@ -317,8 +351,13 @@ function M.apply_managed_frame_background(
         growth_layout
     )
     local enabled, color = M.resolve_frame_background(cfg_db, backend.category)
-    background:Apply(enabled and bar_mode, color, NO_INSETS)
-    icon_background:Apply(enabled and not bar_mode, color, NO_INSETS)
+    background:Apply(enabled, color, NO_INSETS)
+    icon_background:SetColor(color)
+    icon_background:SetShown(enabled and not bar_mode)
+    icon_background_cross:SetColor(color)
+    icon_background_cross:SetShown(
+        enabled and not bar_mode and backend.icon_frame_background_uses_cross
+    )
     for _, record in pairs(backend.frame_background_rows) do
         record.background:SetColor(color)
         record.background:SetShown(enabled and bar_mode and record.extends_background)
@@ -330,6 +369,7 @@ function M.hide_managed_frame_background(backend)
     if not backend then return end
     if backend.frame_background then backend.frame_background:SetShown(false) end
     if backend.icon_frame_background then backend.icon_frame_background:SetShown(false) end
+    if backend.icon_frame_background_cross then backend.icon_frame_background_cross:SetShown(false) end
     for _, record in pairs(backend.frame_background_rows or {}) do
         record.background:SetShown(false)
     end
