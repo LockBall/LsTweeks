@@ -42,6 +42,29 @@ h.test("managed Short Buffs use native maximum duration and expiration ordering"
     h.ok(short_frame.move_handle.body:find("120 seconds", 1, true),
         "Short Buff mover tooltip follows duration changes")
 
+    M.db.scale_short = 1.4
+    M.update_auras(short_frame, "show_short", "move_short", "timer_short",
+        "bg_short", "scale_short", "spacing_short", "HELPFUL")
+    h.eq(short_frame:GetScale(), 1.4,
+        "managed Short Buff shell applies saved scale changes")
+    local _, _, _, scaled_x, scaled_y = short_frame:GetPoint(1)
+    h.eq(scaled_x, M.db.positions.short.x / 1.4,
+        "managed scale keeps the saved horizontal screen position")
+    h.eq(scaled_y, M.db.positions.short.y / 1.4,
+        "managed scale keeps the saved vertical screen position")
+
+    short_frame._is_user_positioning = true
+    M.db.scale_short = 1.6
+    M.update_auras(short_frame, "show_short", "move_short", "timer_short",
+        "bg_short", "scale_short", "spacing_short", "HELPFUL")
+    h.eq(short_frame:GetScale(), 1.4,
+        "managed runtime refresh does not rescale during user positioning")
+    short_frame._is_user_positioning = nil
+    M.update_auras(short_frame, "show_short", "move_short", "timer_short",
+        "bg_short", "scale_short", "spacing_short", "HELPFUL")
+    h.eq(short_frame:GetScale(), 1.6,
+        "managed shell applies the pending scale after user positioning")
+
     h.eq(M.get_managed_aura_backend("preset:short"), short_backend,
         "Short Buffs register one stable managed backend")
     M.set_managed_aura_runtime_enabled(false)

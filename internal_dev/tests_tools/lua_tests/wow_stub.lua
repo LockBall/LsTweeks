@@ -421,9 +421,9 @@ function frame_methods:GetCheckedTexture() return new_region("Texture", nil, sel
 function frame_methods:SetDisabledCheckedTexture() end
 
 -- misc frame behavior
-function frame_methods:SetScale() end
-function frame_methods:GetScale() return 1 end
-function frame_methods:GetEffectiveScale() return 1 end
+function frame_methods:SetScale(scale) record(self, "SetScale", scale); self.__scale = scale end
+function frame_methods:GetScale() return self.__scale or 1 end
+function frame_methods:GetEffectiveScale() return self.__scale or 1 end
 function frame_methods:SetFrameStrata(s) self.__strata = s end
 function frame_methods:GetFrameStrata() return self.__strata or "MEDIUM" end
 function frame_methods:SetFrameLevel(l) self.__level = l end

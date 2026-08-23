@@ -780,6 +780,15 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
     if not backend then return false end
 
     local activity = M.get_frame_activity_state(frame, show_key, move_key)
+    local params = frame.update_params
+    if activity.enabled and M.apply_aura_frame_shell_transform then
+        M.apply_aura_frame_shell_transform(
+            frame,
+            backend.cfg_db or M.db,
+            params and params.scale_key,
+            frame.category == "debuff" and -25 or 75
+        )
+    end
     if not InCombatLockdown or not InCombatLockdown() then
         apply_managed_preset_presentation(backend, backend.cfg_db)
     end

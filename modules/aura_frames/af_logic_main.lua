@@ -368,6 +368,15 @@ local function apply_position_if_changed(frame, scale_key, fallback_y, scale)
     M.apply_saved_frame_position(frame, scale_key, fallback_y, scale)
 end
 
+function M.apply_aura_frame_shell_transform(frame, cfg_db, scale_key, fallback_y)
+    if not (frame and cfg_db) then return end
+    if (InCombatLockdown and InCombatLockdown()) or frame._is_user_positioning == true then return end
+
+    local scale = cfg_db[scale_key] or cfg_db.scale or 1.0
+    set_scale_if_changed(frame, scale)
+    apply_position_if_changed(frame, scale_key, fallback_y, scale)
+end
+
 local function set_size_if_changed(frame, width, height)
     if not frame then return end
     if frame._lstweeks_width == width and frame._lstweeks_height == height then return end
@@ -453,17 +462,14 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local in_combat = InCombatLockdown and InCombatLockdown()
     local is_user_positioning = self._is_user_positioning == true
 
-    local scale = cfg_db[scale_key] or cfg_db["scale"] or 1.0
-    if not in_combat and not is_user_positioning then
-        set_scale_if_changed(self, scale)
-    end
+    M.apply_aura_frame_shell_transform(
+        self, cfg_db, scale_key, (aura_filter == "HARMFUL") and -25 or 75)
 
     local _width  = frame_width
     local _height = self:GetHeight() or 50
     if _width  < 1 then _width  = M.DEFAULT_FRAME_WIDTH end
     if _height < 1 then _height = 50  end
     if not in_combat and not is_user_positioning then
-        apply_position_if_changed(self, scale_key, (aura_filter == "HARMFUL") and -25 or 75, scale)
         set_size_if_changed(self, _width, _height)
     end
 
