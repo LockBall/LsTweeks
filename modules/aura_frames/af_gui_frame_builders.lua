@@ -82,6 +82,7 @@ local function make_preset_frame_settings_config(data)
         keys = {
             show = data.show_key,
             move = data.move_key,
+            move_bg_opt_out = "move_bg_opt_out_" .. cat,
             timer = data.timer_key,
             timer_swipe = "timer_swipe_" .. cat,
             tooltip = "tooltip_" .. cat,
@@ -142,6 +143,7 @@ local function make_custom_frame_settings_config(entry)
         keys = {
             show = "show",
             move = "move",
+            move_bg_opt_out = "move_bg_opt_out",
             timer = "timer",
             timer_swipe = "timer_swipe",
             tooltip = "tooltip",
@@ -423,6 +425,8 @@ local function create_frame_position_controls(parent, frame_config, grid, update
     local frame_show_key = options.frame_show_key or frame_config.frame_show_key
     local show_key = frame_setting_key(frame_config, "show")
     local move_key = frame_setting_key(frame_config, "move")
+    local move_bg_opt_out_key = frame_setting_key(frame_config, "move_bg_opt_out")
+    local bg_key = frame_setting_key(frame_config, "bg")
     local width_key = frame_setting_key(frame_config, "width")
     local scale_key = options.scale_key or frame_config.scale_key
     local value_table = frame_config.value_table
@@ -454,6 +458,13 @@ local function create_frame_position_controls(parent, frame_config, grid, update
                 if enable_cb and enable_cb.SetCheckedSilently and enable_cb.GetChecked and not enable_cb:GetChecked() then
                     enable_cb:SetCheckedSilently(true)
                     value_table[show_key] = true
+                end
+                if value_table[move_bg_opt_out_key] ~= true and value_table[bg_key] ~= true then
+                    value_table[bg_key] = true
+                    local bg_cb = M.controls and M.controls[options.bg_control_key]
+                    if bg_cb and bg_cb.SetCheckedSilently then
+                        bg_cb:SetCheckedSilently(true)
+                    end
                 end
             end
             update()
@@ -799,6 +810,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         scale_key = opts.scale_key or frame_config.scale_key,
         show_control_key = control_key("show"),
         move_control_key = control_key("move"),
+        bg_control_key = control_key("bg"),
         x_control_key = opts.x_control_key,
         y_control_key = opts.y_control_key,
         width_control_key = opts.width_control_key,
@@ -865,7 +877,10 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
     grid:stack_below(tooltip_container, enable_container)
 
-    local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2)
+    local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2, function(is_checked)
+        value_table[frame_setting_key(frame_config, "move_bg_opt_out")] = not is_checked
+        update()
+    end)
     local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared BG Colors."
     add_label_tooltip(frame_bg_container, frame_bg_label, frame_bg_tooltip)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)

@@ -10,7 +10,7 @@ local M = addon.aura_frames
 --#region PROFILE SCHEMA ======================================================
 
 M.PRESENTATION_PROFILE_CATEGORY_PREFIXES = {
-    "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
+    "show", "move", "move_bg_opt_out", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
     "growth_icon", "growth_bar", "sort", "test_aura", "bar_text_color", "timer_number_font",
     "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline", "timer_color", "cooldown_mode", "hide_blizz_cdm",
@@ -19,7 +19,7 @@ M.PRESENTATION_PROFILE_CATEGORY_PREFIXES = {
 }
 
 M.CUSTOM_PRESENTATION_PROFILE_KEYS = {
-    "show", "move", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
+    "show", "move", "move_bg_opt_out", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
     "growth_icon", "growth_bar", "test_aura", "bar_text_color", "timer_number_font", "timer_number_font_size",
     "timer_number_font_bold", "timer_number_font_outline", "timer_color", "sync_bar_bg", "sync_bar_color", "sync_text_color",

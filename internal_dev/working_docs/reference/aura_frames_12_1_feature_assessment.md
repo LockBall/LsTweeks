@@ -1,4 +1,5 @@
-# Aura Frames 12.1 Feature Assessment
+# Aura Frames 12.1 Feature Assessment Reference
+The active unfinished items from this assessment are consolidated in `internal_dev/working_docs/ToDo/aura_frames_remaining_work.md`
 
 ## Table of Contents
 - [Purpose](#purpose)
@@ -87,7 +88,7 @@ redesign.
 - [x] **AF12-16 — Profiles, shared colors, move mode, and settings:** implemented and regression-covered for the current managed presets; settings belonging to unfinished capabilities remain tracked by their owning items.
 - [x] **AF12-19 — Other modules:** the full automated regression suite passes and extended in-game use has produced no remaining cross-module 12.1 regression.
 - **Partial:** AF12-07, AF12-08, AF12-14, and AF12-18.
-- **Open/design decision:** AF12-06, AF12-09, AF12-11, AF12-13, AF12-15, and AF12-17.
+- **Open/design decision at archival:** AF12-06, AF12-09, AF12-11, and AF12-15. AF12-17 requires live acceptance; AF12-13 is complete.
 
 
 ## Numbered feature assessment

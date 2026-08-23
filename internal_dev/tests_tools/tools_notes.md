@@ -217,13 +217,13 @@ Package verification passed.
 
 
 ## Lua Error Condenser
-Condense a WoW Lua error text export into an agent-readable Markdown report:
+Archive a WoW Lua error inbox with its agent-readable condensed report, then clear the inbox only after both files exist:
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -OutputPath internal_dev/working_docs/ToDo/new_issue_condensed.md
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/archive_lua_error_batch.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -Label <short-label> -ClearInbox
 ```
 
-The report groups normalized messages, sums reported counts, extracts common stack prefixes, retains distinct caller tails, and surfaces message origin, explicit taint attribution, and addons present in captured stacks. Locals are omitted by default; add `-IncludeLocals` for capped representative excerpts or `-Format Json` for structured output.
+The archived report groups normalized messages, sums reported counts, extracts common stack prefixes, retains distinct caller tails, and surfaces message origin, explicit taint attribution, and addons present in captured stacks. Use `condense_lua_errors.ps1` directly only for a temporary alternate output or structured JSON; do not leave a generated `new_issue_condensed.md` beside the inbox.
 
 Focused tool regression:
 
@@ -255,7 +255,7 @@ Preferred helper script:
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1
 ```
 
-The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`. Whole-workspace checks exclude `working_docs/ToDo/backups/` because exact historical Lua fallbacks are evidence, not active code, and must not pollute current diagnostics.
+The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`.
 
 Targeted helper modes:
 

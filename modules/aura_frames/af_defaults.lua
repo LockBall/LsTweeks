@@ -701,6 +701,7 @@ M.SHARED_COLOR_COLUMNS = {
 }
 M.defaults.shared_background_color_enabled = false
 for _, category in ipairs(M.CATEGORIES) do
+    M.defaults["move_bg_opt_out_" .. category] = false
     M.defaults["sync_bar_bg_" .. category] = true
     M.defaults["sync_bar_color_" .. category] = true
     M.defaults["sync_text_color_" .. category] = true
@@ -721,6 +722,7 @@ M.CUSTOM_FRAME_TEMPLATE = {
     -- Display
     show     = true,
     move     = true,
+    move_bg_opt_out = false,
     timer    = true,
     timer_swipe = true,
     tooltip  = true,

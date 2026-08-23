@@ -86,6 +86,38 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
         "Move Mode tooltip explains that it disables OOC Fade")
     move_control.checkbox:GetScript("OnLeave")(move_control.checkbox)
 
+    local frame_bg_control = M.controls.bg_static_long
+    M.db.move_static_long = false
+    M.db.bg_static_long = false
+    M.db.move_bg_opt_out_static_long = false
+    move_control:SetCheckedSilently(false)
+    frame_bg_control:SetCheckedSilently(false)
+
+    move_control.checkbox:SetChecked(true)
+    move_control.checkbox:Click()
+    h.eq(M.db.bg_static_long, true, "entering Move Mode enables Frame BG")
+    h.eq(frame_bg_control:GetChecked(), true, "Move Mode syncs the Frame BG checkbox")
+
+    frame_bg_control.checkbox:SetChecked(false)
+    frame_bg_control.checkbox:Click()
+    h.eq(M.db.move_bg_opt_out_static_long, true, "manually disabling Frame BG records the opt-out")
+
+    move_control.checkbox:SetChecked(false)
+    move_control.checkbox:Click()
+    move_control.checkbox:SetChecked(true)
+    move_control.checkbox:Click()
+    h.eq(M.db.bg_static_long, false, "Move Mode respects the saved Frame BG opt-out")
+
+    frame_bg_control.checkbox:SetChecked(true)
+    frame_bg_control.checkbox:Click()
+    h.eq(M.db.move_bg_opt_out_static_long, false, "manually enabling Frame BG clears the opt-out")
+
+    M.db.move_static_long = false
+    M.db.bg_static_long = false
+    M.db.move_bg_opt_out_static_long = false
+    move_control:SetCheckedSilently(false)
+    frame_bg_control:SetCheckedSilently(false)
+
     local bar_mode = M.controls.bar_mode_static_long
     local growth = M.controls.growth_dropdown_static_long
     local _, growth_anchor = growth:GetPoint(1)
@@ -413,6 +445,7 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.sync_bar_bg_static_long = true
     M.db.sync_bar_color_static_long = false
     M.db.sync_text_color_static_long = false
+    M.db.move_bg_opt_out_static_long = true
     local saved = M.export_aura_frame_profile_data()
 
     M.db.shared_frame_background_color.r = 0.9
@@ -425,6 +458,7 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.sync_bar_bg_static_long = false
     M.db.sync_bar_color_static_long = true
     M.db.sync_text_color_static_long = true
+    M.db.move_bg_opt_out_static_long = false
     local ok = M.apply_aura_frame_profile_data(saved)
 
     h.ok(ok, "Aura profile applies")
@@ -438,6 +472,7 @@ h.test("Aura profiles own shared color and target selections", function()
     h.eq(M.db.sync_bar_bg_static_long, true, "Aura profile restores BG Colors selection")
     h.eq(M.db.sync_bar_color_static_long, false, "Aura profile restores bar color selection")
     h.eq(M.db.sync_text_color_static_long, false, "Aura profile restores text color selection")
+    h.eq(M.db.move_bg_opt_out_static_long, true, "Aura profile restores the Move Mode Frame BG opt-out")
 end)
 
 h.run("af_color_sync")
