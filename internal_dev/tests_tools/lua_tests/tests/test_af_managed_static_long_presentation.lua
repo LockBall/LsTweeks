@@ -47,6 +47,28 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     M.db.shared_background_color_enabled = false
     M.db.bg_static_long = true
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
+    M.db.bar_mode_static_long = false
+    M.db.growth_icon_static_long = "DOWN"
+    M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
+    h.ok(buffs_backend.frame_background_layer,
+        "managed backgrounds own one protected-hierarchy rendering layer")
+    h.eq(buffs_backend.frame_background_layer:GetParent(), buffs_backend.container,
+        "managed background layer inherits the AuraContainer restrictions")
+    h.eq(buffs_backend.frame_background.texture:GetParent(), buffs_backend.frame_background_layer,
+        "managed first-cell BG belongs to the shared rendering layer")
+    h.eq(buffs_backend.icon_frame_background.texture:GetParent(), buffs_backend.frame_background_layer,
+        "managed Icon Mode extension BG is a peer of the first-cell BG")
+    h.eq(buffs_backend.icon_frame_background_cross.texture:GetParent(), buffs_backend.frame_background_layer,
+        "managed Icon Mode cross BG is a peer of the first-cell BG")
+    local extension_point, extension_relative_to, extension_relative_point =
+        buffs_backend.icon_frame_background.texture:GetPoint(1)
+    h.eq(extension_point, "TOPLEFT", "Down-growing extension starts at its top-left")
+    h.eq(extension_relative_to, buffs_backend.frame_background_anchor,
+        "Down-growing extension partitions from the first-cell BG anchor")
+    h.eq(extension_relative_point, "BOTTOMLEFT",
+        "Down-growing extension begins below, rather than over, the first cell")
+    M.db.bar_mode_static_long = true
+    M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     h.eq(buffs_backend.container.__groups["buffs:bar"].filter_string, "HELPFUL",
         "Static / Long Buff groups request helpful Auras")
     for _, group_key in ipairs({ "buffs:bar", "buffs:icon" }) do
@@ -73,7 +95,8 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
         "Static / Long Buff icon pool uses the fixed Aura limit")
     h.eq(buffs_backend.container.__flow_axis, AnchorUtil.FlowLayoutAxis.Vertical,
         "bar-mode Static / Long Buffs use vertical flow")
-    h.eq(buffs_frame.icons, nil, "Static / Long Buffs frame creates no addon icon pool")
+    h.eq(#buffs_frame.icons, 1, "Static / Long Buffs precreate one addon-owned preview visual")
+    h.ok(not buffs_frame.icons[1]:IsShown(), "Static / Long preview visual starts hidden")
     h.eq(buffs_frame.__events.UNIT_AURA, nil, "Static / Long Buffs frame does not register UNIT_AURA")
     h.ok(buffs_frame:IsShown(), "runtime startup shows enabled Static / Long Buffs")
     h.eq(buffs_frame:GetAlpha(), 0.25,

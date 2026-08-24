@@ -21,6 +21,7 @@ local MOVE_HANDLE_EDGE_THICKNESS = 3
 local MOVE_OUTLINE_PASSIVE_ALPHA = 0.45
 local managed_duration_fonts = {}
 local managed_stack_fonts = {}
+local managed_bar_fonts = {}
 local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
 
 M.MANAGED_PRESENTATION_METRICS = M.MANAGED_PRESENTATION_METRICS or {
@@ -282,6 +283,11 @@ local function initialize_preset_bar(
     apply_duration_font(duration_text, duration_font, category)
 
     local spell_name = text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    if backend.bar_font then
+        spell_name:SetFontObject(backend.bar_font)
+    elseif M.apply_bar_text_font_style then
+        M.apply_bar_text_font_style(spell_name, category, cfg_db)
+    end
     spell_name:SetPoint("LEFT", stack_text, "RIGHT", 2, 0)
     spell_name:SetPoint("RIGHT", duration_text, "LEFT", -2, 0)
     spell_name:SetJustifyH("LEFT")
@@ -358,6 +364,12 @@ function M.create_managed_presentation_initializer(cfg_db, category, bar_mode, b
     end
     backend.duration_font = backend.duration_font or duration_font
     backend.stack_font = backend.stack_font or stack_font
+    local bar_font = managed_bar_fonts[category]
+    if not bar_font and CreateFont then
+        bar_font = CreateFont(addon_name .. "ManagedAuraBarFont" .. category)
+        managed_bar_fonts[category] = bar_font
+    end
+    backend.bar_font = backend.bar_font or bar_font
     backend.bar_regions = backend.bar_regions or {}
     backend.icon_cooldowns = backend.icon_cooldowns or {}
     backend.frame_background_rows = backend.frame_background_rows or {}
@@ -585,6 +597,9 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     if backend.stack_font and M.apply_stack_font_style then
         M.apply_stack_font_style(backend.stack_font, category, cfg_db)
     end
+    if backend.bar_font and M.apply_bar_text_font_style then
+        M.apply_bar_text_font_style(backend.bar_font, category, cfg_db)
+    end
     local bar_color = get_preset_bar_color(cfg_db, category)
     local bar_width = width - (BAR_FRAME_INSET * 2)
     apply_managed_icon_swipe_style(backend, cfg_db)
@@ -659,6 +674,12 @@ local function create_managed_preset_backend(
         managed_stack_fonts[category] = stack_font
     end
     backend.stack_font = stack_font
+    local bar_font = managed_bar_fonts[category]
+    if not bar_font and CreateFont then
+        bar_font = CreateFont(addon_name .. "ManagedAuraBarFont" .. category)
+        managed_bar_fonts[category] = bar_font
+    end
+    backend.bar_font = bar_font
     backend.bar_regions = {}
     backend.icon_cooldowns = {}
     M.initialize_managed_frame_background(backend, frame)
@@ -678,6 +699,9 @@ local function create_managed_preset_backend(
     end
     if stack_font and M.apply_stack_font_style then
         M.apply_stack_font_style(stack_font, category, cfg_db)
+    end
+    if bar_font and M.apply_bar_text_font_style then
+        M.apply_bar_text_font_style(bar_font, category, cfg_db)
     end
     local bar_layout = configure_preset_layout(
         backend.container, frame, cfg_db, category, max_frame_count, true, show_timer_text)
@@ -815,6 +839,24 @@ local function set_shell_controls_shown(frame, shown)
     end
 end
 
+local function hide_managed_mock_preview(frame)
+    for _, icon in ipairs(frame and frame.icons or {}) do
+        icon:Hide()
+    end
+    if frame then
+        frame._display_count = 0
+        frame._render_display_signature = nil
+        frame._layout_cache = nil
+    end
+    if M.apply_addon_frame_background then
+        M.apply_addon_frame_background(frame, { enabled = false, suppressed = true })
+    end
+    if M.hide_managed_test_preview_background then
+        M.hide_managed_test_preview_background(frame)
+    end
+    if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
+end
+
 function M.update_managed_preset_frame(frame, show_key, move_key)
     local backend = frame and frame._managed_aura_backend
     if not backend then return false end
@@ -831,6 +873,9 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
     end
     if not InCombatLockdown or not InCombatLockdown() then
         apply_managed_preset_presentation(backend, backend.cfg_db)
+    end
+    if activity.test_aura ~= true then
+        hide_managed_mock_preview(frame)
     end
     set_shell_controls_shown(frame, activity.enabled and activity.moving == true)
     M.set_managed_aura_backend_enabled(backend, activity.enabled)

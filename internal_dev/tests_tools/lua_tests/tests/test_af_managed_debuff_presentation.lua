@@ -46,7 +46,8 @@ h.test("managed Debuff presentation uses native HARMFUL groups and safe shell be
         "Debuff flow reserves one vertical line for every allowed row")
     h.eq(backend.container.__groups["debuffs:bar"].layout.elementSpacing, 1,
         "Debuff bar group receives explicit element spacing")
-    h.eq(frame.icons, nil, "managed Debuff frame creates no addon icon pool")
+    h.eq(#frame.icons, 1, "managed Debuff frame precreates one addon-owned preview visual")
+    h.ok(not frame.icons[1]:IsShown(), "managed Debuff preview visual starts hidden")
     h.ok(frame:GetScript("OnEvent"), "managed Debuff shell owns its combat-state handler")
     h.eq(frame.__events.UNIT_AURA, nil, "managed Debuff frame does not register UNIT_AURA")
     h.eq(frame.__events.PLAYER_REGEN_DISABLED, true, "managed Debuff shell watches combat entry")

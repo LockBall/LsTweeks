@@ -338,4 +338,42 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     M.setup_combat_background_variants(self)
 end
 
+function M.position_managed_test_preview(frame, native_growth)
+    local obj = frame and frame.icons and frame.icons[1]
+    local layout = frame and frame._layout_cache
+    local anchor = frame and frame._managed_test_preview_background_anchor
+    if not (obj and layout and anchor) then return false end
+
+    local gap = math_max(2, (layout.spacing or 0) + 2)
+    local bar_layout = M.get_bar_layout_params()
+    if layout.bar_mode then
+        anchor:SetSize(layout.frame_width, bar_layout.row_height + (bar_layout.frame_inset * 2))
+    else
+        local cell_height = layout.icon_size
+        if layout.layout_show_timer_text then
+            cell_height = cell_height + TIMER_SLOT_HEIGHT + TIMER_BOTTOM_PADDING
+        end
+        anchor:SetSize(layout.icon_size, cell_height)
+    end
+
+    anchor:ClearAllPoints()
+    obj:ClearAllPoints()
+    if native_growth == "RIGHT" then
+        anchor:SetPoint("TOPRIGHT", frame, "TOPLEFT", -gap, 0)
+    elseif native_growth == "LEFT" then
+        anchor:SetPoint("TOPLEFT", frame, "TOPRIGHT", gap, 0)
+    elseif native_growth == "UP" then
+        anchor:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, -gap)
+    else
+        anchor:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, gap)
+    end
+
+    if layout.bar_mode then
+        obj:SetPoint("LEFT", anchor, "LEFT", bar_layout.frame_inset, 0)
+    else
+        obj:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
+    end
+    return true
+end
+
 --#endregion LAYOUT ENGINE =====================================================

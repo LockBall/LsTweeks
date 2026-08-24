@@ -90,7 +90,7 @@ h.test("global test Aura playback keeps enabled preview clocks synchronized", fu
     h.ok(M.is_test_preview_paused("show_essential"), "enabled preview-capable preset starts paused")
     h.ok(M.is_test_preview_paused("show_tracked_buffs"), "second preview-capable preset starts paused")
     h.ok(M.is_test_preview_paused("show_custom_1"), "enabled custom frame starts paused")
-    h.ok(not M._test_preview_started.show_short, "managed preset has no preview clock")
+    h.ok(M.is_test_preview_paused("show_short"), "managed preset receives an addon-owned preview clock")
     h.ok(not M._test_preview_started.show_custom_2, "disabled custom frame has no preview clock")
     h.eq(M.toggle_global_test_aura_previews(), false, "Play starts every enabled preview")
     h.ok(not M.is_test_preview_paused("show_essential"), "preset preview is playing")

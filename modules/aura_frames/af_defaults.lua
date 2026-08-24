@@ -24,7 +24,7 @@ M.FRAME_DEFS = {
         label = "Short Buffs",
         timer = true,
         cdm = false,
-        supports_test_aura = false,
+        supports_test_aura = true,
         is_debuff = false,
         tree_order = 3,
         growth = { icon = "DOWN", bar = "DOWN" },
@@ -36,7 +36,7 @@ M.FRAME_DEFS = {
         label = "Static / Long Buffs",
         timer = true,
         cdm = false,
-        supports_test_aura = false,
+        supports_test_aura = true,
         is_debuff = false,
         tree_order = 4.5,
         growth = { icon = "RIGHT", bar = "DOWN" },
@@ -48,7 +48,7 @@ M.FRAME_DEFS = {
         label = "Timed Buffs",
         timer = true,
         cdm = false,
-        supports_test_aura = false,
+        supports_test_aura = true,
         is_debuff = false,
         tree_order = 4.6,
         growth = { icon = "DOWN", bar = "DOWN" },
@@ -113,7 +113,7 @@ M.FRAME_DEFS = {
         frame_label = "Debuffs",
         timer = true,
         cdm = false,
-        supports_test_aura = false,
+        supports_test_aura = true,
         is_debuff = true,
         tree_order = 2,
         growth = { icon = "UP", bar = "UP" },
@@ -199,6 +199,14 @@ end
 
 function M.set_text_color_sync_enabled(category, enabled)
     return set_participation_setting(category, "sync_text_color", enabled)
+end
+
+function M.get_text_font_sync_enabled(category)
+    return get_participation_setting(category, "sync_text_font") == true
+end
+
+function M.set_text_font_sync_enabled(category, enabled)
+    return set_participation_setting(category, "sync_text_font", enabled)
 end
 
 function M.is_debuff_frame_category(category)
@@ -619,6 +627,10 @@ M.defaults = {
 M.apply_presentation_growth_defaults(M.defaults, M.FRAME_DEFS)
 
 for _, category in ipairs(M.CATEGORIES) do
+    if M.frame_supports_test_aura(category) then
+        M.defaults["test_aura_" .. category] = false
+    end
+    M.defaults["bar_text_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
     M.defaults["stack_number_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
     M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
     M.defaults["stack_number_font_bold_" .. category] = false
@@ -643,6 +655,8 @@ M.defaults.shared_debuff_bar_color = {
 }
 M.defaults.shared_bar_text_color = { r = 1, g = 1, b = 1 }
 M.defaults.shared_timer_text_color = { r = 1, g = 1, b = 1 }
+M.defaults.shared_bar_text_font = M.DEFAULT_AURA_FONT_KEY
+M.defaults.shared_timer_text_font = M.DEFAULT_AURA_FONT_KEY
 M.SHARED_COLOR_COLUMNS = {
     {
         title = "BG Colors",
@@ -699,12 +713,37 @@ M.SHARED_COLOR_COLUMNS = {
         },
     },
 }
+M.SHARED_FONT_COLUMNS = {
+    {
+        title = "Text Font",
+        column = 5,
+        pickers = {
+            {
+                label = "Bar Font",
+                db_key = "shared_bar_text_font",
+                control_key = "background_color_sync_bar_font_picker",
+                apply_all_control_key = "background_color_sync_bar_font_apply_all",
+                local_key = "bar_text_font",
+                role = "body",
+            },
+            {
+                label = "Timer Font",
+                db_key = "shared_timer_text_font",
+                control_key = "background_color_sync_timer_font_picker",
+                apply_all_control_key = "background_color_sync_timer_font_apply_all",
+                local_key = "timer_number_font",
+                role = "timer",
+            },
+        },
+    },
+}
 M.defaults.shared_background_color_enabled = false
 for _, category in ipairs(M.CATEGORIES) do
     M.defaults["move_bg_opt_out_" .. category] = false
     M.defaults["sync_bar_bg_" .. category] = true
     M.defaults["sync_bar_color_" .. category] = true
     M.defaults["sync_text_color_" .. category] = true
+    M.defaults["sync_text_font_" .. category] = true
 end
 
 --#endregion FRAME DEFINITIONS AND DEFAULTS ===================================
@@ -741,10 +780,12 @@ M.CUSTOM_FRAME_TEMPLATE = {
     sync_bar_bg = true,
     sync_bar_color = true,
     sync_text_color = true,
+    sync_text_font = true,
     test_aura    = true,
 
     -- Timer font (matches TIMER_CATEGORIES convention)
     timer_number_font      = M.DEFAULT_AURA_FONT_KEY,
+    bar_text_font          = M.DEFAULT_AURA_FONT_KEY,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_number_font_outline = true,

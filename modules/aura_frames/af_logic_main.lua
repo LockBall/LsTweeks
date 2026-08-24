@@ -96,6 +96,34 @@ function M.resolve_text_color(category, text_type, local_color)
     return resolved
 end
 
+function M.resolve_text_font(category, text_type, local_font)
+    if M.db
+        and M.db.shared_background_color_enabled == true
+        and M.get_text_font_sync_enabled(category)
+    then
+        return (text_type == "timer" and M.db.shared_timer_text_font or M.db.shared_bar_text_font)
+            or local_font
+    end
+    return local_font
+end
+
+function M.apply_shared_font_to_all(local_key, shared_key)
+    if not (M.db and local_key and shared_key) then return false end
+    local selected_font = M.db[shared_key]
+    if not selected_font then return false end
+
+    for _, category in ipairs(M.CATEGORIES or {}) do
+        M.db[local_key .. "_" .. category] = selected_font
+    end
+    for _, entry in ipairs(M.db.custom_frames or {}) do
+        entry[local_key] = selected_font
+    end
+
+    if M.on_shared_color_changed then M.on_shared_color_changed() end
+    if M.sync_general_controls_from_db then M.sync_general_controls_from_db() end
+    return true
+end
+
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
     local cache = frame._runtime_config_cache
     if cache then return cache end
@@ -401,7 +429,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if self and self._managed_aura_backend and M.update_managed_preset_frame then
         M.update_managed_preset_frame(self, show_key, move_key)
-        return
+        local managed_activity = M.get_frame_activity_state(self, show_key, move_key)
+        if managed_activity.test_aura ~= true then return end
     end
     if not self or not self.icons then return end
 
@@ -457,6 +486,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD
     local growth        = runtime_config.growth
+    local managed_preview = self._managed_aura_backend ~= nil and preview_enabled
     local max_limit     = runtime_config.max_limit
     local sort_mode     = runtime_config.sort_mode
     local in_combat = InCombatLockdown and InCombatLockdown()
@@ -487,6 +517,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     M.update_aura_frame_move_controls(self, is_moving)
     if needs_layout and not in_combat and not is_user_positioning then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
+        if managed_preview and M.position_managed_test_preview then
+            M.position_managed_test_preview(self, growth)
+        end
     end
 
     set_shown_if_changed(self, true)
@@ -528,7 +561,7 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         layout_show_timer_text
     )
 
-    if not in_combat and not is_user_positioning then
+    if not managed_preview and not in_combat and not is_user_positioning then
         set_height_for_growth_if_changed(self, new_height, growth)
     end
 
@@ -538,8 +571,11 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
         color = bgC,
         in_combat = in_combat,
         is_moving = is_moving,
-        suppressed = managed_cdm_aura_mode,
+        suppressed = managed_cdm_aura_mode or managed_preview,
     })
+    if managed_preview and M.apply_managed_test_preview_background then
+        M.apply_managed_test_preview_background(self, cfg_db, category)
+    end
 end
 
 --#endregion AURA UPDATE (MAIN PER-FRAME REFRESH) ==============================

@@ -28,10 +28,10 @@ The shell and aggregate managed AuraContainer now receive the same OOC alpha wit
 - [x] **b** (Agent) Add managed icon cooldown swipe during AuraButton initialization and bind it natively without live-Aura reads
 - [x] **c** Validate Short Buffs beside Timed Buffs at the 300-second boundary in Bar and Icon modes across combat
 - [x] **d** Validate Static / Long Buff learning, persistence, combat updates, duration reclassification, and OOC cache clearing in Bar and Icon modes
-- [ ] **e1** Validate the local Frame BG toggle on Short Buffs in Bar and Icon modes with active and empty contents
-- [ ] **e2** Validate the local Frame BG toggle on Static / Long Buffs in Bar and Icon modes with active and empty contents
-- [ ] **e3** Validate the local Frame BG toggle on Timed Buffs in Bar and Icon modes with active and empty contents
-- [ ] **e4** Validate the local Frame BG toggle on Debuffs in Bar and Icon modes with active and empty contents
+- [x] **e1** Validate the local Frame BG toggle on Short Buffs in Bar and Icon modes with active and empty contents
+- [x] **e2** Validate the local Frame BG toggle on Static / Long Buffs in Bar and Icon modes with active and empty contents
+- [x] **e3** Validate the local Frame BG toggle on Timed Buffs in Bar and Icon modes with active and empty contents
+- [x] **e4** Validate the local Frame BG toggle on Debuffs in Bar and Icon modes with active and empty contents
 - [ ] **e5** Validate shared Frame BG colors on one managed Buff frame and the Debuff frame
 - [ ] **e6** Validate All the Colors Frame BG overrides on one managed Buff frame and the Debuff frame
 - [ ] **e7** Confirm managed Frame BG visibility, color, and empty geometry remain stable through combat transitions
@@ -63,4 +63,4 @@ The temporary Aura Frames profiler probe is already configured. Follow `internal
 - [ ] **a** (Agent) Map Custom Filtered Frames only to live-supported standard Aura filters and managed candidate filters; reject arbitrary predicates requiring protected Aura data
 - [ ] **b** (Agent) Implement native numeric rule formatters for compact and decimal timer modes with boundary tests and secret-Aura live validation
 - [ ] **c** (Agent) Map sorting only to live-supported AuraContainer methods and remove choices that require addon comparators or unavailable enum members
-- [ ] **d** (Agent) Restore Test Aura previews as addon-owned mock visuals separate from managed live AuraButtons while sharing safe presentation settings
+- [ ] **d** Live-validate restored Test Aura previews on Short, Static / Long, Timed, and Debuff frames in Bar and Icon modes; implementation uses one addon-owned mock with its own Frame BG cell on the side opposite native growth and never injects synthetic data into managed AuraButtons

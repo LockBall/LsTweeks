@@ -1,4 +1,4 @@
--- Aura Frames shared background/bar colors and per-frame participation matrix.
+-- Aura Frames shared colors/fonts and per-frame participation matrix.
 
 
 local addon_name, addon = ...
@@ -10,9 +10,9 @@ local GROUP_WIDTH = 700
 local GROUP_OFFSET_X = 20
 local CONTROL_ROW_HEIGHT = 50
 local MATRIX_OFFSET_Y = CONTROL_ROW_HEIGHT + 10
-local COLUMN_COUNT = 4
+local COLUMN_COUNT = 5
 local COLUMN_WIDTH = 120
-local COLUMN_GAP = 165
+local COLUMN_GAP = 140
 local HEADER_BAR_WIDTH = ((COLUMN_COUNT - 1) * COLUMN_GAP) + COLUMN_WIDTH
 local HEADER_BAR_HEIGHT = 24
 local HEADER_BAR_Y_OFFSET = 15
@@ -65,6 +65,7 @@ local function clear_participation_control_keys()
                 key:match("^background_color_sync:[^:]+:")
                 or key:match("^bar_color_sync:")
                 or key:match("^text_color_sync:")
+                or key:match("^text_font_sync:")
             )
         then
             M.controls[key] = nil
@@ -88,9 +89,11 @@ local function refresh_participation_rows()
             slot.background_control:SetCheckedSilently(M.get_background_color_sync_enabled(row.category))
             slot.bar_color_control:SetCheckedSilently(M.get_bar_color_sync_enabled(row.category))
             slot.text_color_control:SetCheckedSilently(M.get_text_color_sync_enabled(row.category))
+            slot.text_font_control:SetCheckedSilently(M.get_text_font_sync_enabled(row.category))
             M.controls["background_color_sync:bg:" .. row.category] = slot.background_control
             M.controls["bar_color_sync:" .. row.category] = slot.bar_color_control
             M.controls["text_color_sync:" .. row.category] = slot.text_color_control
+            M.controls["text_font_sync:" .. row.category] = slot.text_font_control
             slot.frame:Show()
         else
             slot.frame:Hide()
@@ -116,6 +119,15 @@ function M.sync_background_color_controls()
             local picker = M.controls[picker_def.control_key]
             if picker and picker.SetValue then picker:SetValue(M.db[picker_def.db_key]) end
             if picker then picker:SetEnabled(shared_controls_enabled) end
+        end
+    end
+    for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
+        for _, picker_def in ipairs(column.pickers) do
+            local picker = M.controls[picker_def.control_key]
+            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.db_key]) end
+            if picker then picker:SetEnabled(true) end
+            local apply_all = M.controls[picker_def.apply_all_control_key]
+            if apply_all then apply_all:SetEnabled(true) end
         end
     end
     local enabled_control = M.controls.background_color_sync_enabled
@@ -147,6 +159,8 @@ function M.sync_background_color_controls()
             slot.bar_color_control:SetEnabled(shared_controls_enabled)
             slot.text_color_control:SetCheckedSilently(M.get_text_color_sync_enabled(slot.category))
             slot.text_color_control:SetEnabled(shared_controls_enabled)
+            slot.text_font_control:SetCheckedSilently(M.get_text_font_sync_enabled(slot.category))
+            slot.text_font_control:SetEnabled(shared_controls_enabled)
         end
     end
 end
@@ -179,7 +193,7 @@ local function build_color_controls(parent, color_sync)
         col_width = COLUMN_WIDTH,
         col_gap = COLUMN_GAP,
         col_offset = 0,
-        col_align = { "left", "left", "left", "left" },
+        col_align = { "left", "left", "left", "left", "left" },
         row_start = 0,
         row_heights = { CONTROL_ROW_HEIGHT },
         content_rows = 1,
@@ -243,8 +257,9 @@ local function attach_slot_tooltip(slot, control, target_type)
             background = "frame and bar background",
             bar_color = "bar color",
             text_color = "bar and timer text colors",
+            text_font = "bar and timer text fonts",
         })[target_type]
-        addon.ShowOwnedTooltip(self, "Apply the shared " .. target_label .. " color to "
+        addon.ShowOwnedTooltip(self, "Apply the shared " .. target_label .. " to "
             .. slot.display_label .. ".", nil)
     end)
     control.checkbox:SetScript("OnLeave", function()
@@ -263,7 +278,7 @@ local function create_participation_slot(parent, grid, index)
         col_width = COLUMN_WIDTH,
         col_gap = COLUMN_GAP,
         col_offset = 5,
-        col_align = { "left", "center", "center", "center" },
+        col_align = { "left", "center", "center", "center", "center" },
         row_start = 0,
         row_heights = { 30 },
         content_rows = 1,
@@ -314,10 +329,64 @@ local function create_participation_slot(parent, grid, index)
     slot_grid:place_at(text_color_control, 1, 4)
     slot.text_color_control = text_color_control
 
+    local text_font_control = addon.CreateCheckbox(frame, "", false, function(is_checked)
+        if slot.category and M.set_text_font_sync_enabled(slot.category, is_checked) then
+            refresh_shared_colors()
+        end
+    end)
+    slot_grid:place_at(text_font_control, 1, 5)
+    slot.text_font_control = text_font_control
+
     attach_slot_tooltip(slot, background_control, "background")
     attach_slot_tooltip(slot, bar_color_control, "bar_color")
     attach_slot_tooltip(slot, text_color_control, "text_color")
+    attach_slot_tooltip(slot, text_font_control, "text_font")
     return slot
+end
+
+local function build_shared_font_column(panel, header_grid, title_text, column, picker_defs)
+    create_header_title(panel, header_grid, title_text, column)
+    for index, picker_def in ipairs(picker_defs) do
+        local picker_control = addon.CreateFontDropdown(
+            addon_name .. "SharedAura" .. picker_def.db_key,
+            panel,
+            {
+                label = picker_def.label,
+                role = picker_def.role,
+                width = COLUMN_WIDTH,
+                get_value = function() return M.db[picker_def.db_key] end,
+                on_select = function(value)
+                    M.db[picker_def.db_key] = value
+                    refresh_shared_colors()
+                end,
+            }
+        )
+        header_grid:place_at(picker_control, 1, column, nil, {
+            width = COLUMN_WIDTH,
+            align = "center",
+            y_offset = COLOR_PICKER_ROW_Y[index],
+        })
+        M.controls[picker_def.control_key] = picker_control
+
+        local apply_all = addon.CreateTextButton(panel, "Apply All", function()
+            M.apply_shared_font_to_all(picker_def.local_key, picker_def.db_key)
+        end, {
+            height = 16,
+            min_width = 58,
+        })
+        apply_all:SetPoint("TOP", picker_control, "BOTTOM", 0, 0)
+        apply_all:SetScript("OnEnter", function(self)
+            addon.ShowOwnedTooltip(
+                self,
+                "Copy the selected " .. picker_def.label .. " to every Aura frame once.",
+                "This does not enable shared settings."
+            )
+        end)
+        apply_all:SetScript("OnLeave", function()
+            addon.HideOwnedTooltip()
+        end)
+        M.controls[picker_def.apply_all_control_key] = apply_all
+    end
 end
 
 local function build_shared_color_column(panel, header_grid, title_text, column, picker_defs)
@@ -352,7 +421,7 @@ local function build_participation_matrix(content, content_height)
         col_width = COLUMN_WIDTH,
         col_gap = COLUMN_GAP,
         col_offset = 0,
-        col_align = { "left", "center", "center", "center" },
+        col_align = { "left", "center", "center", "center", "center" },
         row_start = 0,
         row_heights = { 125 },
         row_gap = 0,
@@ -370,6 +439,9 @@ local function build_participation_matrix(content, content_height)
     create_header_title(panel, header_grid, "Frame Name", 1)
     for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
         build_shared_color_column(panel, header_grid, column.title, column.column, column.pickers)
+    end
+    for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
+        build_shared_font_column(panel, header_grid, column.title, column.column, column.pickers)
     end
     local rows_parent = CreateFrame("Frame", nil, panel)
     rows_parent:SetSize(GROUP_WIDTH - 50, 1)

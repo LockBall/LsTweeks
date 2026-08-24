@@ -18,6 +18,11 @@ for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
         PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
     end
 end
+for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
+    for _, picker in ipairs(column.pickers) do
+        PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
+    end
+end
 local PROFILE_CATEGORY_PREFIXES = M.PRESENTATION_PROFILE_CATEGORY_PREFIXES
 local CUSTOM_PROFILE_KEYS = {
     "id", "name", "aura_base_filter", "aura_modifier", "position",

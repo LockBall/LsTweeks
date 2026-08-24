@@ -218,25 +218,50 @@ end
 
 --#region MANAGED BACKGROUNDS =================================================
 
+function M.initialize_managed_test_preview_background(frame)
+    if not frame then return false end
+    frame._managed_test_preview_background_anchor = frame._managed_test_preview_background_anchor
+        or CreateFrame("Frame", nil, frame)
+    frame._managed_test_preview_background = frame._managed_test_preview_background
+        or addon.CreateBackgroundRegion(frame, {
+            anchor_to = frame._managed_test_preview_background_anchor,
+        })
+    return frame._managed_test_preview_background ~= nil
+end
+
+function M.apply_managed_test_preview_background(frame, cfg_db, category)
+    local background = frame and frame._managed_test_preview_background
+    if not background then return false end
+    local enabled, color = M.resolve_frame_background(cfg_db, category)
+    background:Apply(enabled, color, NO_INSETS)
+    return true
+end
+
+function M.hide_managed_test_preview_background(frame)
+    local background = frame and frame._managed_test_preview_background
+    if background then background:SetShown(false) end
+end
+
 function M.initialize_managed_frame_background(backend, owner)
     if not (backend and owner and backend.container) then return false end
     backend.frame_background_rows = backend.frame_background_rows or {}
     backend.frame_background_anchor = backend.frame_background_anchor or CreateFrame("Frame", nil, owner)
-    backend.frame_background = backend.frame_background or addon.CreateBackgroundRegion(owner, {
-        anchor_to = backend.frame_background_anchor,
-    })
-    -- Blizzard resets an empty AuraContainer to 1x1 after every native layout.
-    -- Keep one shell-owned base cell, then clip two container-following textures
-    -- to the native aggregate rectangle so active icons extend it without
-    -- overlapping and darkening the base cell.
-    backend.icon_frame_background_clip = backend.icon_frame_background_clip
+    backend.frame_background_layer = backend.frame_background_layer
         or CreateFrame("Frame", nil, backend.container, "DisableUntrustedLayoutScriptsTemplate")
-    backend.icon_frame_background_clip:SetAllPoints(backend.container)
-    backend.icon_frame_background_clip:SetClipsChildren(true)
+    backend.frame_background_layer:SetAllPoints(backend.container)
+    backend.frame_background = backend.frame_background
+        or addon.CreateBackgroundRegion(backend.frame_background_layer, {
+            anchor_to = backend.frame_background_anchor,
+        })
+    -- Blizzard resets an empty AuraContainer to 1x1 after every native layout.
+    -- Keep one shell-anchored base cell, then partition two extensions around
+    -- it. All three textures live in one container-owned layer: that avoids
+    -- mixed-hierarchy alpha on the first cell without making a safe owner-level
+    -- region depend on forbidden AuraContainer layout.
     backend.icon_frame_background = backend.icon_frame_background
-        or addon.CreateBackgroundRegion(backend.icon_frame_background_clip)
+        or addon.CreateBackgroundRegion(backend.frame_background_layer)
     backend.icon_frame_background_cross = backend.icon_frame_background_cross
-        or addon.CreateBackgroundRegion(backend.icon_frame_background_clip)
+        or addon.CreateBackgroundRegion(backend.frame_background_layer)
     return backend.frame_background ~= nil
         and backend.icon_frame_background ~= nil
         and backend.icon_frame_background_cross ~= nil

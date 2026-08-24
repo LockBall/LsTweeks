@@ -34,7 +34,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, and **Text Colors**, with one participation checkbox per color group for every built-in and custom frame. These colors are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared colors are disabled; individual Test Aura controls remain on custom and Cooldown Manager-backed frame tabs.
+The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, **Text Colors**, and **Text Font** settings, with one participation checkbox per group for every built-in and custom frame. **Apply All** beneath Bar Font and Timer Font performs a one-shot copy to every frame without enabling live sharing. The shared settings are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared settings are disabled; individual Test Aura controls remain on custom and Cooldown Manager-backed frame tabs.
 
 
 #### Preset Frames
@@ -54,7 +54,7 @@ Each Aura frame can configure stack-count color, font, bold face, outline, and f
 In Icon mode, **Duration Swipe** adds Blizzard's native Aura-duration sweep alongside the optional timer text. Permanent Auras have no timed sweep. Bar Mode communicates remaining duration through its status bar instead.
 
 #### Test Aura Preview
-Use **Test Aura** to preview a custom or Cooldown Manager-backed frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Managed Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs do not yet have synthetic previews.
+Use **Test Aura** to preview any Aura frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs keep their native managed content visible while displaying one addon-owned mock on the side opposite their growth direction.
 
 
 #### Tooltips

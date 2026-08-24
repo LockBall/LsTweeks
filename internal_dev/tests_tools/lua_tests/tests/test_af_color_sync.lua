@@ -59,8 +59,8 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
 
     h.ok(M.controls.clear_learned_buffs,
         "Static / Long Buffs exposes the learned-duration cache control")
-    h.is_nil(M.controls.test_aura_static_long,
-        "managed Static / Long Buffs omits the unsupported Test Aura control")
+    h.ok(M.controls.test_aura_static_long,
+        "managed Static / Long Buffs exposes its addon-owned Test Aura control")
 
     h.eq(addon.DEFAULT_FADE_ALPHA, 0.50,
         "one shared Fade Alpha constant owns every module default")
@@ -159,6 +159,10 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(M.controls.background_color_sync_debuff_bar_picker, "Debuff bar picker is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_bar_text_picker, "Bar Text picker is on Shared BG Colors")
     h.ok(M.controls.background_color_sync_timer_text_picker, "Timer Text picker is on Shared BG Colors")
+    h.ok(M.controls.background_color_sync_bar_font_picker, "Bar Font picker is on Shared BG Colors")
+    h.ok(M.controls.background_color_sync_timer_font_picker, "Timer Font picker is on Shared BG Colors")
+    h.ok(M.controls.background_color_sync_bar_font_apply_all, "Bar Font exposes a one-shot Apply All action")
+    h.ok(M.controls.background_color_sync_timer_font_apply_all, "Timer Font exposes a one-shot Apply All action")
     h.ok(M.controls.background_color_sync_enabled, "shared color section exposes its enable checkbox")
     h.ok(M.controls.background_color_sync_disable_ooc_fade, "shared tab exposes the linked global fade policy")
     h.ok(M.controls.background_color_sync_test_auras, "shared tab exposes global test Auras")
@@ -166,7 +170,7 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.eq(M.db.shared_background_color_enabled, false, "shared color defaults disabled")
     h.ok(M.shared_background_color_group, "tab exposes shared color controls")
     h.ok(M.background_color_matrix_group, "tab exposes the participation matrix")
-    h.eq(M.shared_background_color_group:GetWidth(), 700, "shared color section fits all four columns")
+    h.eq(M.shared_background_color_group:GetWidth(), 700, "shared section fits all five columns")
     h.eq(
         M.background_color_matrix_group:GetParent(),
         M.shared_background_color_group,
@@ -176,17 +180,26 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     local background_control = M.controls["background_color_sync:bg:static_long"]
     local bar_color_control = M.controls["bar_color_sync:static_long"]
     local text_color_control = M.controls["text_color_sync:static_long"]
+    local text_font_control = M.controls["text_font_sync:static_long"]
     h.ok(background_control, "selected Aura frame exposes one BG Colors participation control")
     h.ok(bar_color_control, "selected Aura frame exposes bar color participation")
     h.ok(text_color_control, "selected Aura frame exposes text color participation")
+    h.ok(text_font_control, "selected Aura frame exposes text font participation")
     h.ok(not background_control.checkbox:IsEnabled(), "disabled shared color makes participation inactive")
     h.ok(not bar_color_control.checkbox:IsEnabled(), "disabled shared color makes bar color participation inactive")
     h.ok(not text_color_control.checkbox:IsEnabled(), "disabled shared color makes text participation inactive")
+    h.ok(not text_font_control.checkbox:IsEnabled(), "disabled shared settings make font participation inactive")
 
     local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
     h.eq(M.db.sync_bar_bg_static_long, true, "BG Colors starts selected in Aura DB")
     h.eq(M.db.sync_bar_color_static_long, true, "bar color starts selected in Aura DB")
     h.eq(M.db.sync_text_color_static_long, true, "text colors start selected in Aura DB")
+    h.eq(M.db.sync_text_font_static_long, true, "text fonts start selected in Aura DB")
+    h.eq(M.db.shared_bar_text_font, M.DEFAULT_AURA_FONT_KEY, "shared Bar Font uses the Aura font default")
+    h.eq(M.db.shared_timer_text_font, M.DEFAULT_AURA_FONT_KEY, "shared Timer Font uses the Aura font default")
+    M.controls.background_color_sync_bar_font_picker.button:Click()
+    h.ok(click_open_dropdown_option("Source Code Pro"), "shared Bar Font option is selectable")
+    h.eq(M.db.shared_bar_text_font, "source_code_pro", "shared Bar Font picker writes Aura-owned state")
     h.eq(M.defaults.shared_buff_bar_color.r, M.defaults.color_static_long.r,
         "shared Buff bar uses the Buff bar default")
     h.eq(M.defaults.shared_debuff_bar_color.r, M.defaults.color_debuff.r,
@@ -239,6 +252,7 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     h.ok(background_control.checkbox:IsEnabled(), "enabling shared color activates participation")
     h.ok(bar_color_control.checkbox:IsEnabled(), "enabling shared color activates bar color participation")
     h.ok(text_color_control.checkbox:IsEnabled(), "enabling shared color activates text participation")
+    h.ok(text_font_control.checkbox:IsEnabled(), "enabling shared settings activates font participation")
 
     background_control:SetChecked(false)
     background_control.checkbox:Click()
@@ -246,9 +260,12 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     bar_color_control.checkbox:Click()
     text_color_control:SetChecked(false)
     text_color_control.checkbox:Click()
+    text_font_control:SetChecked(false)
+    text_font_control.checkbox:Click()
     h.eq(M.db.sync_bar_bg_static_long, false, "BG Colors control updates Aura-owned participation")
     h.eq(M.db.sync_bar_color_static_long, false, "bar color control updates Aura-owned participation")
     h.eq(M.db.sync_text_color_static_long, false, "text color control updates Aura-owned participation")
+    h.eq(M.db.sync_text_font_static_long, false, "text font control updates Aura-owned participation")
 
     consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
     color_sync.get_db().global_enabled = true
@@ -267,17 +284,51 @@ h.test("Shared BG Colors tab owns the Aura frame participation matrix", function
     M.sync_background_color_controls()
 end)
 
+h.test("shared font actions copy one selected font to every frame without enabling sharing", function()
+    local entry = M.spawn_custom_frame()
+    M.db.shared_background_color_enabled = false
+    M.db.shared_bar_text_font = "game_default"
+    M.db.shared_timer_text_font = "source_code_pro"
+    for _, category in ipairs(M.CATEGORIES) do
+        M.db["bar_text_font_" .. category] = "source_code_pro"
+        M.db["timer_number_font_" .. category] = "game_default"
+    end
+    entry.bar_text_font = "source_code_pro"
+    entry.timer_number_font = "game_default"
+
+    M.controls.background_color_sync_bar_font_apply_all:Click()
+    for _, category in ipairs(M.CATEGORIES) do
+        h.eq(M.db["bar_text_font_" .. category], "game_default",
+            "Apply All copies Bar Font to " .. category)
+        h.eq(M.db["timer_number_font_" .. category], "game_default",
+            "Bar Font Apply All leaves Timer Font unchanged for " .. category)
+    end
+    h.eq(entry.bar_text_font, "game_default", "Apply All copies Bar Font to custom frames")
+    h.eq(entry.timer_number_font, "game_default", "Bar Font Apply All leaves custom Timer Font unchanged")
+    h.eq(M.db.shared_background_color_enabled, false, "Apply All does not enable live sharing")
+
+    M.controls.background_color_sync_timer_font_apply_all:Click()
+    for _, category in ipairs(M.CATEGORIES) do
+        h.eq(M.db["timer_number_font_" .. category], "source_code_pro",
+            "Apply All copies Timer Font to " .. category)
+    end
+    h.eq(entry.timer_number_font, "source_code_pro", "Apply All copies Timer Font to custom frames")
+    M.destroy_custom_frame(entry.id)
+end)
+
 h.test("shared color matrix tracks custom frame lifecycle", function()
     local entry = M.spawn_custom_frame()
     h.ok(entry and entry.id, "custom frame created")
     h.ok(M.controls["background_color_sync:bg:" .. entry.id], "custom backgrounds join the matrix")
     h.ok(M.controls["bar_color_sync:" .. entry.id], "custom bar color joins the matrix")
     h.ok(M.controls["text_color_sync:" .. entry.id], "custom text colors join the matrix")
+    h.ok(M.controls["text_font_sync:" .. entry.id], "custom text fonts join the matrix")
 
     M.destroy_custom_frame(entry.id)
     h.is_nil(M.controls["background_color_sync:bg:" .. entry.id], "deleted custom backgrounds leave the matrix")
     h.is_nil(M.controls["bar_color_sync:" .. entry.id], "deleted custom bar color leaves the matrix")
     h.is_nil(M.controls["text_color_sync:" .. entry.id], "deleted custom text colors leave the matrix")
+    h.is_nil(M.controls["text_font_sync:" .. entry.id], "deleted custom text fonts leave the matrix")
 end)
 
 h.test("Aura Frames resolves shared color before the global override", function()
@@ -434,6 +485,22 @@ h.test("Aura Frames resolves shared Bar and Timer text colors before the global 
     db.global_enabled = false
 end)
 
+h.test("Aura Frames resolves shared Bar and Timer fonts per participating frame", function()
+    M.db.shared_bar_text_font = "game_default"
+    M.db.shared_timer_text_font = "source_code_pro"
+    M.db.shared_background_color_enabled = true
+    M.db.sync_text_font_short = true
+
+    h.eq(M.resolve_text_font("short", "bar", "source_code_pro"), "game_default",
+        "Bar text uses the shared Bar Font")
+    h.eq(M.resolve_text_font("short", "timer", "game_default"), "source_code_pro",
+        "timer text uses the shared Timer Font")
+
+    M.db.sync_text_font_short = false
+    h.eq(M.resolve_text_font("short", "bar", "source_code_pro"), "source_code_pro",
+        "deselected font target keeps its local Bar font")
+end)
+
 h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_frame_background_color = { r = 0.2, g = 0.3, b = 0.4, a = 0.5 }
     M.db.shared_bar_background_color = { r = 0.6, g = 0.7, b = 0.8, a = 0.9 }
@@ -441,10 +508,14 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_debuff_bar_color = { r = 0.7, g = 0.2, b = 0.1 }
     M.db.shared_bar_text_color = { r = 0.1, g = 0.3, b = 0.5 }
     M.db.shared_timer_text_color = { r = 0.9, g = 0.7, b = 0.5 }
+    M.db.shared_bar_text_font = "game_default"
+    M.db.shared_timer_text_font = "source_code_pro"
     M.db.shared_background_color_enabled = false
     M.db.sync_bar_bg_static_long = true
     M.db.sync_bar_color_static_long = false
     M.db.sync_text_color_static_long = false
+    M.db.sync_text_font_static_long = false
+    M.db.bar_text_font_static_long = "source_code_pro"
     M.db.move_bg_opt_out_static_long = true
     local saved = M.export_aura_frame_profile_data()
 
@@ -454,10 +525,14 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_debuff_bar_color.r = 0.9
     M.db.shared_bar_text_color.r = 0.9
     M.db.shared_timer_text_color.r = 0.1
+    M.db.shared_bar_text_font = "source_code_pro"
+    M.db.shared_timer_text_font = "game_default"
     M.db.shared_background_color_enabled = true
     M.db.sync_bar_bg_static_long = false
     M.db.sync_bar_color_static_long = true
     M.db.sync_text_color_static_long = true
+    M.db.sync_text_font_static_long = true
+    M.db.bar_text_font_static_long = "game_default"
     M.db.move_bg_opt_out_static_long = false
     local ok = M.apply_aura_frame_profile_data(saved)
 
@@ -468,10 +543,14 @@ h.test("Aura profiles own shared color and target selections", function()
     h.eq(M.db.shared_debuff_bar_color.r, 0.7, "Aura profile restores shared Debuff bar color")
     h.eq(M.db.shared_bar_text_color.r, 0.1, "Aura profile restores shared Bar Text color")
     h.eq(M.db.shared_timer_text_color.r, 0.9, "Aura profile restores shared Timer Text color")
+    h.eq(M.db.shared_bar_text_font, "game_default", "Aura profile restores shared Bar Font")
+    h.eq(M.db.shared_timer_text_font, "source_code_pro", "Aura profile restores shared Timer Font")
     h.eq(M.db.shared_background_color_enabled, false, "Aura profile restores shared enablement")
     h.eq(M.db.sync_bar_bg_static_long, true, "Aura profile restores BG Colors selection")
     h.eq(M.db.sync_bar_color_static_long, false, "Aura profile restores bar color selection")
     h.eq(M.db.sync_text_color_static_long, false, "Aura profile restores text color selection")
+    h.eq(M.db.sync_text_font_static_long, false, "Aura profile restores text font selection")
+    h.eq(M.db.bar_text_font_static_long, "source_code_pro", "Aura profile restores the local Bar Font")
     h.eq(M.db.move_bg_opt_out_static_long, true, "Aura profile restores the Move Mode Frame BG opt-out")
 end)
 

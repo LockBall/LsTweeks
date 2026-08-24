@@ -2,7 +2,7 @@
 -- BuildSettings() creates three tabs:
 -- 1) General (global toggles and runtime controls)
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
--- 3) Shared BG Colors (shared Aura color and per-frame participation).
+-- 3) Shared BG Colors (shared Aura colors/fonts and per-frame participation).
 -- 4) Profiles (save/load complete Aura Frames setups across characters).
 
 

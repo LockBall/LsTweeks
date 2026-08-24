@@ -95,6 +95,9 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
         setting_prefix .. "_number_font",
         M.DEFAULT_AURA_FONT_KEY
     )
+    if setting_prefix == "timer" and M.resolve_text_font then
+        selected_key = M.resolve_text_font(category, "timer", selected_key)
+    end
     local size = setting_prefix == "stack"
         and M.get_stack_number_font_size(category, cfg_db)
         or M.get_timer_number_font_size(category, cfg_db)
@@ -135,6 +138,24 @@ function M.apply_stack_font_style(font_target, category, cfg_db, alpha)
     apply_number_text_style(font_target, category, cfg_db, "stack", alpha)
 end
 
+function M.apply_bar_text_font_style(font_target, category, cfg_db)
+    if not font_target or not font_target.SetFont then return end
+    local selected_key = M.get_setting(
+        cfg_db,
+        category,
+        "bar_text_font",
+        M.DEFAULT_AURA_FONT_KEY
+    )
+    if M.resolve_text_font then
+        selected_key = M.resolve_text_font(category, "bar", selected_key)
+    end
+    addon.ApplySelectedFont(font_target, {
+        key = selected_key,
+        role = "body",
+        size = 10,
+    })
+end
+
 function M.apply_number_font_to_text(font_string, category, cfg_db)
     M.apply_number_font_style(font_string, category, cfg_db)
 end
@@ -153,6 +174,9 @@ function M.apply_number_font_to_all()
                 end
                 if obj and obj.count_text then
                     M.apply_stack_font_style(obj.count_text, category, cfg_db)
+                end
+                if obj and obj.name_text then
+                    M.apply_bar_text_font_style(obj.name_text, category, cfg_db)
                 end
             end
         end
@@ -557,6 +581,7 @@ local function create_icon_text_regions(obj, category, cfg_db)
     M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
 
     obj.name_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    M.apply_bar_text_font_style(obj.name_text, category, cfg_db)
     obj.name_text:SetJustifyH("LEFT")
     obj.name_text:SetWordWrap(false)
     if obj.name_text.SetMaxLines then
@@ -608,9 +633,9 @@ local function create_aura_icon(parent, category, cfg_db, bar_bg_default)
     return obj
 end
 
-local function create_aura_icon_pool(frame, cfg_db, category)
+local function create_aura_icon_pool(frame, cfg_db, category, pool_size)
     frame.icons = {}
-    local pool_size = M.AURA_FRAME_LIMIT
+    pool_size = pool_size or M.AURA_FRAME_LIMIT
     local bar_bg_default = M.get_bar_bg_color(cfg_db, category)
 
     for i = 1, pool_size do
@@ -1004,9 +1029,13 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         managed_backend = M.create_managed_timed_buff_backend(frame, cfg_db)
     end
 
+    -- Managed presets need one addon-owned mock visual for Test Aura. Other
+    -- frames retain their full precreated pool so combat updates create nothing.
+    create_aura_icon_pool(frame, cfg_db, category, managed_backend and 1 or nil)
+    if managed_backend and M.initialize_managed_test_preview_background then
+        M.initialize_managed_test_preview_background(frame)
+    end
     if not managed_backend then
-        -- Pre-create addon-owned icons/bars so combat updates never create frames.
-        create_aura_icon_pool(frame, cfg_db, category)
         if M.WOW_COOLDOWN_CATEGORIES[category] and M.create_managed_cdm_backend then
             M.create_managed_cdm_backend(frame, cfg_db, category)
         end
