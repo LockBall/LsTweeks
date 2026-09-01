@@ -53,6 +53,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - WoW API reference updater regression tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/test_sync_wow_api_reference.ps1`
 - Search the refreshed source snapshot: `rg -n <API-or-symbol> internal_dev/tests_tools/.wow-api-source/<channel>/Interface`
 - Condense repeated WoW Lua errors: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path <error-export.txt> [-OutputPath <report.md>]`; add `-IncludeLocals` only for deeper follow-up.
+- Process the Aura Frames CPU profile inbox: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/cpu_profiles/process_af_cpu_profile_inbox.ps1 [-OutputPath <run-section.md>]`; validates the automatic context and emits a Markdown run section without modifying history.
 - Archive a processed error inbox: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/archive_lua_error_batch.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -Label <short-label> -ClearInbox`; preserves raw export and `condensed.md` under `ToDo/error_batches/` before resetting the inbox.
 - Release package only: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1`
 - Headless Lua tests (all suites): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_tests/run_tests.ps1`

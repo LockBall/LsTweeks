@@ -102,6 +102,122 @@ h.test("managed Aura slots initialize one stable native indicator", function()
         "managed slot preserves its native Aura filter")
 end)
 
+h.test("CDM record discovery follows saved category overrides", function()
+    local M = h.addon.aura_frames
+    local previous_api = C_CooldownViewer
+    local previous_settings = CooldownViewerSettings
+    local previous_settings_mixin = CooldownViewerSettingsMixin
+    local previous_provider_mixin = CooldownViewerSettingsDataProviderMixin
+    Enum.CooldownViewerCategory = {
+        Essential = 0,
+        Utility = 1,
+        TrackedBuff = 2,
+        TrackedBar = 3,
+    }
+    C_CooldownViewer = {
+        GetCooldownViewerCategorySet = function(category)
+            if category == Enum.CooldownViewerCategory.Utility then return { 71, 72 } end
+            return {}
+        end,
+        GetCooldownViewerCooldownInfo = function(cooldown_id)
+            return { cooldownID = cooldown_id, spellID = 7000 + cooldown_id }
+        end,
+    }
+    local provider = {}
+    CooldownViewerSettings = { data_provider = provider }
+    CooldownViewerSettingsMixin = {
+        GetDataProvider = function(settings)
+            return settings.data_provider
+        end,
+    }
+    CooldownViewerSettingsDataProviderMixin = {
+        GetOrderedCooldownIDsForCategory = function(_provider, category, allow_unknown)
+            h.eq(allow_unknown, false, "addon requests only learned effective-layout entries")
+            if category == Enum.CooldownViewerCategory.Essential then return { 71 } end
+            if category == Enum.CooldownViewerCategory.Utility then return { 72 } end
+            return {}
+        end,
+    }
+
+    local essential_records = M.get_ordered_cdm_records("essential")
+    local utility_records = M.get_ordered_cdm_records("utility")
+
+    C_CooldownViewer = previous_api
+    CooldownViewerSettings = previous_settings
+    CooldownViewerSettingsMixin = previous_settings_mixin
+    CooldownViewerSettingsDataProviderMixin = previous_provider_mixin
+    h.eq(#essential_records, 1, "saved category override moves the cooldown into Essential")
+    h.eq(essential_records[1].cooldown_id, 71, "effective layout preserves the moved cooldown ID")
+    h.eq(#utility_records, 1, "saved category override removes the moved cooldown from Utility")
+    h.eq(utility_records[1].cooldown_id, 72, "unmoved Utility cooldown remains present")
+end)
+
+h.test("empty CDM provider state falls back to learned public records", function()
+    local M = h.addon.aura_frames
+    C_CooldownViewer = {
+        GetCooldownViewerCategorySet = function(category)
+            if category == Enum.CooldownViewerCategory.Essential then return { 81 } end
+            return {}
+        end,
+        GetCooldownViewerCooldownInfo = function(cooldown_id)
+            return { cooldownID = cooldown_id, spellID = 8001 }
+        end,
+    }
+    CooldownViewerSettings = { data_provider = {} }
+    CooldownViewerSettingsMixin = {
+        GetDataProvider = function(settings)
+            return settings.data_provider
+        end,
+    }
+    CooldownViewerSettingsDataProviderMixin = {
+        GetOrderedCooldownIDsForCategory = function()
+            return {}
+        end,
+    }
+
+    local records = M.get_ordered_cdm_records("essential")
+
+    C_CooldownViewer = nil
+    CooldownViewerSettings = nil
+    CooldownViewerSettingsMixin = nil
+    CooldownViewerSettingsDataProviderMixin = nil
+    h.eq(#records, 1, "transient empty provider does not erase the Essential frame")
+    h.eq(records[1].cooldown_id, 81, "fallback preserves the learned public cooldown")
+end)
+
+h.test("populated CDM provider preserves an intentionally empty category", function()
+    local M = h.addon.aura_frames
+    C_CooldownViewer = {
+        GetCooldownViewerCategorySet = function(category)
+            if category == Enum.CooldownViewerCategory.Essential then return { 81 } end
+            return {}
+        end,
+        GetCooldownViewerCooldownInfo = function(cooldown_id)
+            return { cooldownID = cooldown_id, spellID = 8001 }
+        end,
+    }
+    CooldownViewerSettings = { data_provider = {} }
+    CooldownViewerSettingsMixin = {
+        GetDataProvider = function(settings)
+            return settings.data_provider
+        end,
+    }
+    CooldownViewerSettingsDataProviderMixin = {
+        GetOrderedCooldownIDsForCategory = function(_provider, category)
+            if category == Enum.CooldownViewerCategory.Utility then return { 91 } end
+            return {}
+        end,
+    }
+
+    local records = M.get_ordered_cdm_records("essential")
+
+    C_CooldownViewer = nil
+    CooldownViewerSettings = nil
+    CooldownViewerSettingsMixin = nil
+    CooldownViewerSettingsDataProviderMixin = nil
+    h.eq(#records, 0, "moving the last Essential cooldown out leaves Essential empty")
+end)
+
 h.test("CDM managed backend uses groups for Aura mode and slots for cooldown overlays", function()
     local M = h.addon.aura_frames
     Enum.CooldownViewerCategory = {

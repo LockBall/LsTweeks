@@ -242,6 +242,21 @@ function M.queue_wow_cooldown_refresh(profile, category_filter)
     end
 end
 
+function M.install_cdm_layout_refresh_hook()
+    if M._cdm_layout_refresh_hooked then return true end
+    local cdm_api = C_CooldownViewer
+    if not (cdm_api and type(cdm_api.SetLayoutData) == "function" and hooksecurefunc) then
+        return false
+    end
+
+    hooksecurefunc(cdm_api, "SetLayoutData", function()
+        if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+        M.queue_wow_cooldown_refresh("settings")
+    end)
+    M._cdm_layout_refresh_hooked = true
+    return true
+end
+
 --#endregion MODULE STATE AND COOLDOWN REFRESH =================================
 --#region AURA ICON TOOLTIPS ===================================================
 
@@ -544,6 +559,7 @@ local function create_icon_cooldown(obj)
     cooldown:SetDrawEdge(false)
     cooldown:SetDrawSwipe(true)
     cooldown:SetDrawBling(false)
+    cooldown:SetSwipeColor(0, 0, 0, 0.7)
     cooldown:SetHideCountdownNumbers(false)
     cooldown:Hide()
     return cooldown
@@ -1231,6 +1247,7 @@ end
 
 local function start_aura_frame_runtime_services()
     M._module_runtime_enabled = true
+    M.install_cdm_layout_refresh_hook()
     if M.start_learned_buff_listener then
         M.start_learned_buff_listener()
     end

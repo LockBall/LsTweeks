@@ -7,7 +7,7 @@ time-normalized and ticker-normalized comparisons from the saved data.
 
 
 ## Table of Contents
-- [Improvement Summary](#improvement-summary)
+- [Historical June Improvement Summary](#historical-june-improvement-summary)
 - [Whole-Addon Profiler Runs](#whole-addon-profiler-runs)
 - [Aura Frames Duration Probe](#aura-frames-duration-probe)
 - [Current Decision](#current-decision)
@@ -15,11 +15,13 @@ time-normalized and ticker-normalized comparisons from the saved data.
 - [Runs](#runs)
 
 
-## Improvement Summary
-Generated with `analyze_af_cpu_profiles.ps1`. Baseline is
+## Historical June Improvement Summary
+Historical table generated with `analyze_af_cpu_profiles.ps1`. Baseline is
 `2026-06-22, Aura Frames Only`. Raw elapsed `ms/sec` is the measured CPU rate
 for each run; ticker-normalized values estimate what `af.tick_visible_icons`
-would cost at the reference `0.10s` ticker cadence.
+would cost at the reference `0.10s` ticker cadence. This table documents the
+June optimization sequence; current decisions use the 2026-08-31 post-migration
+baseline archived below.
 
 | Run | Elapsed | Combat | Tick | `af.update_auras` ms/sec | Change | `af.render_aura_map` ms/sec | Change | `af.tick_visible_icons` ms/sec | Change | Tick norm ms/sec | Change | `af.get_setting` ms/sec | Change |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -49,6 +51,74 @@ cadence rather than lower per-tick cost.
 
 ## Whole-Addon Profiler Runs
 Use `../addon_cpu_profile.lua` with only `PROFILE_TARGETS.aura_frames = true` for these runs.
+
+
+### 2026-08-31, Aura Frames Only, Post-Migration Baseline
+<!-- cpu-profile-run: elapsed=100.2 combat=98.5 timer_tick=0.15 -->
+
+Context: 100.2s run with only `PROFILE_TARGETS.aura_frames = true`. Combat was
+active for 98.5s, 98.3% of elapsed time, one segment, and the report was captured
+while combat remained active. Timer Tick was `0.15s`; Retribution specialization
+(`70`) was active; Essential and Utility cooldown modes were enabled; no Test
+Auras or Custom Filtered frames were enabled. Seven of eight Aura Frames were
+shown. Managed AuraButtons reported `accessible=0` because status was captured
+in combat.
+
+| Metric | Calls | Total ms | Avg ms | Max ms | Combat ms/sec | Combat calls/sec |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `af.update_auras` | 1040 | 910.462 | 0.8754 | 5.538 | 9.245 | 10.56 |
+| `af.add_cooldown_viewer_category_entries` | 520 | 476.573 | 0.9165 | 4.611 | 4.839 | 5.28 |
+| `af.render_aura_map` | 1040 | 268.383 | 0.2581 | 0.775 | 2.725 | 10.56 |
+| `af.get_ordered_cdm_records` | 520 | 139.906 | 0.2691 | 3.341 | 1.421 | 5.28 |
+| `af.get_frame_activity_state` | 6124 | 115.833 | 0.0189 | 0.244 | 1.176 | 62.18 |
+| `af.tick_visible_icons` | 601 | 60.451 | 0.1006 | 1.035 | 0.614 | 6.10 |
+| `af.is_global_test_aura_enabled` | 6123 | 34.602 | 0.0057 | 0.224 | 0.351 | 62.17 |
+| `af.refresh_frame_ooc_fade` | 1040 | 28.387 | 0.0273 | 0.401 | 0.288 | 10.56 |
+| `af.refresh_visible_icon_ticker` | 1040 | 26.071 | 0.0251 | 0.070 | 0.265 | 10.56 |
+| `af.any_frame_needs_visible_icon_tick` | 1040 | 20.184 | 0.0194 | 0.064 | 0.205 | 10.56 |
+| `af.is_runtime_enabled` | 2688 | 19.296 | 0.0072 | 0.551 | 0.196 | 27.29 |
+| `af.refresh_managed_cdm_backend` | 1040 | 14.430 | 0.0139 | 0.609 | 0.147 | 10.56 |
+| `af.frame_needs_visible_icon_tick` | 4160 | 12.757 | 0.0031 | 0.039 | 0.130 | 42.24 |
+| `af.get_frame_config_db` | 6128 | 11.767 | 0.0019 | 0.111 | 0.119 | 62.22 |
+| `af.frame_supports_test_aura` | 6124 | 11.100 | 0.0018 | 0.028 | 0.113 | 62.18 |
+| `af.prewarm_aura_tooltip_cache` | 1044 | 10.973 | 0.0105 | 0.044 | 0.111 | 10.60 |
+| `af.set_managed_aura_backend_enabled` | 1040 | 9.798 | 0.0094 | 0.599 | 0.099 | 10.56 |
+| `af.update_aura_frame_move_controls` | 1040 | 9.580 | 0.0092 | 0.046 | 0.097 | 10.56 |
+| `af.apply_addon_frame_background` | 1040 | 8.496 | 0.0082 | 0.196 | 0.086 | 10.56 |
+| `af.get_timer_behavior` | 1040 | 8.068 | 0.0078 | 0.035 | 0.082 | 10.56 |
+| `af.set_managed_cdm_move_outline_shown` | 1040 | 7.683 | 0.0074 | 0.038 | 0.078 | 10.56 |
+| `af.invalidate_aura_scan_caches` | 1107 | 7.602 | 0.0069 | 0.043 | 0.077 | 11.24 |
+| `af.get_setting` | 3396 | 7.459 | 0.0022 | 0.021 | 0.076 | 34.48 |
+| `af.set_shown_if_changed` | 2080 | 5.140 | 0.0025 | 0.038 | 0.052 | 21.12 |
+| `af.normalize_timer_category` | 1040 | 4.419 | 0.0042 | 0.030 | 0.045 | 10.56 |
+| `af.get_aura_frame_height` | 1040 | 3.673 | 0.0035 | 0.028 | 0.037 | 10.56 |
+| `af.update_combat_background` | 1040 | 3.115 | 0.0030 | 0.185 | 0.032 | 10.56 |
+| `af.apply_aura_frame_shell_transform` | 1040 | 2.132 | 0.0020 | 0.026 | 0.022 | 10.56 |
+| `af.clear_custom_aura_scan_cache` | 1107 | 1.622 | 0.0015 | 0.016 | 0.016 | 11.24 |
+| `af.clear_sorted_aura_ids_cache` | 1107 | 1.589 | 0.0014 | 0.016 | 0.016 | 11.24 |
+| `af.ensure_visible_icon_ticker` | 1040 | 1.485 | 0.0014 | 0.022 | 0.015 | 10.56 |
+| `af.queue_learned_buff_scan` | 238 | 1.481 | 0.0062 | 0.043 | 0.015 | 2.42 |
+| `af.ensure_blizz_cdm_loaded` | 520 | 0.877 | 0.0017 | 0.022 | 0.009 | 5.28 |
+| `af.get_frame_def` | 520 | 0.790 | 0.0015 | 0.005 | 0.008 | 5.28 |
+| `af.learn_helpful_aura_durations_ooc` | 173 | 0.774 | 0.0045 | 0.009 | 0.008 | 1.76 |
+| `af.register_managed_frame_background_row` | 10 | 0.363 | 0.0363 | 0.055 | 0.004 | 0.10 |
+| `af.resolve_bar_color` | 10 | 0.260 | 0.0260 | 0.044 | 0.003 | 0.10 |
+| `af.resolve_text_color` | 10 | 0.190 | 0.0190 | 0.023 | 0.002 | 0.10 |
+| `af.refresh_frame_fade_for_combat_state` | 4 | 0.173 | 0.0431 | 0.100 | 0.002 | 0.04 |
+| `af.get_color_consumer_group` | 20 | 0.171 | 0.0085 | 0.013 | 0.002 | 0.20 |
+
+Assessment: `af.update_auras` was the dominant inclusive path at `9.245ms/sec`
+combat-normalized. CDM map construction was the clearest attributed cost:
+`af.add_cooldown_viewer_category_entries` used `4.839ms/sec`, with ordered CDM
+record discovery at `1.421ms/sec`. Rendering was secondary at `2.725ms/sec`.
+The visible-icon ticker was only `0.614ms/sec`, so cadence comparison is not
+warranted from this baseline. Activity-state lookup reached `62.18 calls/sec`
+and `1.176ms/sec`; individual managed-backend enable/refresh paths stayed below
+`0.15ms/sec`. `scan_custom_aura_map` was inactive because no Custom Filtered
+frame existed, while OOC accessible-button setup could not be measured by this
+in-combat run. The next matched control should disable Essential and Utility
+cooldown modes to isolate the material CDM scan/map contribution before code
+changes or event-attribution probes.
 
 
 ### 2026-06-27, Aura Frames Only, Current Combat Check

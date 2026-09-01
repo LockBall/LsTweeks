@@ -1,7 +1,7 @@
 param(
     [string]$InputPath = "internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md",
     [string]$OutputPath = "",
-    [string]$BaselineTitle = "2026-06-22, Aura Frames Only",
+    [string]$BaselineTitle = "2026-08-31, Aura Frames Only, Post-Migration Baseline",
     [double]$TickerReferenceSec = 0.10,
     [string[]]$Metrics = @(
         "af.update_auras",

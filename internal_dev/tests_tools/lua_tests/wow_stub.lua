@@ -492,7 +492,7 @@ function frame_methods:SetCooldown() end
 function frame_methods:Clear() end
 function frame_methods:SetReverse(value) record(self, "SetReverse", value) end
 function frame_methods:SetHideCountdownNumbers(value) record(self, "SetHideCountdownNumbers", value) end
-function frame_methods:SetSwipeColor() end
+function frame_methods:SetSwipeColor(r, g, b, a) record(self, "SetSwipeColor", r, g, b, a) end
 function frame_methods:SetDrawEdge(value) record(self, "SetDrawEdge", value) end
 function frame_methods:SetDrawBling(value) record(self, "SetDrawBling", value) end
 function frame_methods:SetDrawSwipe(value) record(self, "SetDrawSwipe", value) end

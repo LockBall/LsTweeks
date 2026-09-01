@@ -35,6 +35,14 @@ in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`
   recorded, and emit a paste-ready `<!-- cpu-profile-run: ... -->` metadata line
   for the run-history files; no manual normalization or metadata transcription
   is needed.
+- Aura Frames-targeted reports also print the module status, Timer Tick,
+  specialization, Essential/Utility cooldown modes, Test Aura state, and Custom
+  Filtered frame details. Do not collect that context separately before a run.
+- Paste a new Aura Frames report into
+  `internal_dev/working_docs/ToDo/aura_frames_profile_results.txt`. Validate and
+  convert it to a run-history section with
+  `process_af_cpu_profile_inbox.ps1`; the processor does not alter
+  `af_cpu_profiles.md`, so review the generated section before archiving it.
 - Rows for helpers captured as load-time locals in hot-path files undercount
   (their cost folds into parent rows); see the caveat comment beside the Aura
   Frames section in `addon_cpu_profile.lua`.

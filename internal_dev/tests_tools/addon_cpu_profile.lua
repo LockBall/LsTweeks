@@ -295,6 +295,96 @@ local function get_aura_timer_tick()
         or (addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.aura_visible_icon_tick)
 end
 
+local function get_aura_setting(M, key)
+    local value = M and M.db and M.db[key]
+    if value == nil then
+        value = M and M.defaults and M.defaults[key]
+    end
+    return value
+end
+
+local function bool_text(value)
+    return value == true and "true" or "false"
+end
+
+local function clean_context_text(value)
+    return tostring(value or "unknown"):gsub("[%c|]", " ")
+end
+
+local function print_aura_profile_context()
+    if not is_target_enabled("aura_frames") then return end
+
+    local M = addon.aura_frames
+    if not M then
+        print("aura_context unavailable")
+        return
+    end
+
+    if addon.print_module_status then
+        addon.print_module_status("aura_frames")
+    end
+
+    local specialization_index = GetSpecialization and GetSpecialization()
+    local specialization_id, specialization_name
+    if specialization_index and GetSpecializationInfo then
+        specialization_id, specialization_name = GetSpecializationInfo(specialization_index)
+    end
+    print(format(
+        "aura_specialization index=%s id=%s name=%s",
+        tostring(specialization_index or "none"),
+        tostring(specialization_id or "none"),
+        clean_context_text(specialization_name or "none")
+    ))
+    print(format(
+        "aura_cooldown_modes essential=%s utility=%s",
+        bool_text(get_aura_setting(M, "cooldown_mode_essential")),
+        bool_text(get_aura_setting(M, "cooldown_mode_utility"))
+    ))
+
+    local test_auras = {}
+    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+        if frame_def.supports_test_aura ~= false
+            and get_aura_setting(M, "test_aura_" .. frame_def.key) == true
+        then
+            test_auras[#test_auras + 1] = frame_def.key
+        end
+    end
+
+    local custom_frames = {}
+    for _, entry in ipairs(M.db and M.db.custom_frames or {}) do
+        local id = clean_context_text(entry.id or "unknown")
+        local name = clean_context_text(entry.name or "unnamed")
+        custom_frames[#custom_frames + 1] = format(
+            "%s:%s(show=%s,test=%s)",
+            id,
+            name,
+            bool_text(entry.show),
+            bool_text(entry.test_aura)
+        )
+        if entry.test_aura == true then
+            test_auras[#test_auras + 1] = id
+        end
+    end
+
+    local global_test_auras = M.is_global_test_aura_enabled
+        and M.is_global_test_aura_enabled()
+        or false
+    local global_test_auras_paused = M.are_global_test_aura_previews_paused
+        and M.are_global_test_aura_previews_paused()
+        or false
+    print(format(
+        "aura_test_auras global=%s paused=%s frames=%s",
+        bool_text(global_test_auras),
+        bool_text(global_test_auras_paused),
+        #test_auras > 0 and table.concat(test_auras, ",") or "none"
+    ))
+    print(format(
+        "aura_custom_frames count=%d entries=%s",
+        #custom_frames,
+        #custom_frames > 0 and table.concat(custom_frames, "|") or "none"
+    ))
+end
+
 local function print_target_settings()
     local timer_tick = get_aura_timer_tick()
     if timer_tick then
@@ -395,6 +485,7 @@ local function report_profile(limit)
         P.skyriding_segments or 0,
         P.skyriding_started_at and "yes" or "no"
     ))
+    print_aura_profile_context()
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
         local normalized = ""

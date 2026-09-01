@@ -19,8 +19,12 @@ Regression fixed:
 - Active Aura transport no longer reads CDM child Aura instance IDs or protected
   `AuraData`; native AuraGroups own Aura mode and native AuraSlots overlay cooldown mode.
 - Utility CDM frame could display cooldown immediately instead of active aura duration.
-- Cooldown identity/order now comes from `C_CooldownViewer`; duration objects come
-  from `C_Spell`. Blizzard Cooldown Viewer children and mixins are not hooked.
+- Effective saved category/order comes from Blizzard's read-only Cooldown Manager
+  data provider, spell metadata comes from `C_CooldownViewer`, and duration objects
+  come from `C_Spell`. Blizzard Cooldown Viewer frames and item widgets are not
+  inspected or hooked.
+- Saving category or order edits through WoW's Cooldown Manager now refreshes every
+  addon CDM frame through the public layout-data save boundary.
 
 
 ## Setup
@@ -34,11 +38,14 @@ Regression fixed:
 For each spell and CDM group:
 
 1. Put the spell in the CDM group.
-2. Enter combat.
-3. Cast the spell.
-4. Confirm the addon frame shows active aura duration first.
-5. Let the active aura expire.
-6. Confirm the addon frame then shows the cooldown without waiting for combat exit.
+2. Save or close WoW's Cooldown Manager and confirm it leaves the old addon frame.
+3. Confirm it appears in the destination addon frame when that frame's configured
+   Aura/cooldown mode makes the spell visible.
+4. Enter combat.
+5. Cast the spell.
+6. Confirm the addon frame shows active aura duration first.
+7. Let the active aura expire.
+8. Confirm the addon frame then shows the cooldown without waiting for combat exit.
 
 Test spells:
 - Blessing of Freedom

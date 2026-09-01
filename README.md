@@ -74,7 +74,7 @@ Cooldown Manager-backed frames combine Blizzard managed Auras with live Cooldown
 
 Active Auras are displayed through WoW 12.1 managed Aura groups and slots, so LsTweeks does not read their protected Aura data. Aura mode uses compact native groups in Cooldown Manager order. Cooldown mode keeps an addon-rendered cooldown cell underneath each stable native Aura slot; when an active Aura ends, Blizzard hides the slot and reveals the continuing cooldown.
 
-Cooldown mode reads ordered spell identity through WoW's public `C_CooldownViewer` APIs and cooldown/charge timing through `C_Spell` duration objects; it does not inspect or hook Blizzard Cooldown Viewer frames. The matching **Hide WoW ...** option is therefore independent of cooldown transport and only suppresses the native viewer visually. Use **Sync to CDM** after manually reordering icons inside the same CDM group if the addon frame has not refreshed yet.
+Cooldown mode reads effective saved category/order from Blizzard's Cooldown Manager data provider, spell metadata through the public `C_CooldownViewer` API, and cooldown/charge timing through `C_Spell` duration objects; it does not inspect or hook Blizzard Cooldown Viewer frames. The matching **Hide WoW ...** option is therefore independent of cooldown transport and only suppresses the native viewer visually. Saving category or order edits in WoW's Cooldown Manager refreshes the addon frames automatically; **Sync to CDM** remains available as a manual fallback.
 
 
 #### Custom Filtered Frames

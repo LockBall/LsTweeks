@@ -481,6 +481,7 @@ function M.build_frames_tab(p, frames_data)
     if addon.ApplyStandardButtonStyle then
         addon.ApplyStandardButtonStyle(cooldown_group_title_btn)
     end
+    addon.AttachTooltip(cooldown_group_title_btn, nil, "Use this to set auras in frames.")
     cooldown_group_title_btn:SetScript("OnClick", function()
         local function hook_cdm_settings_panel(panel)
             if not panel or panel._lstweeks_refresh_hooked then return end
@@ -530,7 +531,7 @@ function M.build_frames_tab(p, frames_data)
                 wrap_text = true,
             },
             {
-                left_text = "Use after reordering icons inside a CDM group; group changes usually update automatically.",
+                left_text = "Manual fallback if a saved WoW Cooldown Manager category or order change has not refreshed yet.",
                 wrap_text = true,
             },
         })

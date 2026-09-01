@@ -8,6 +8,7 @@ local M = addon.aura_frames
 
 local EMPTY_SPELL_IDS = {}
 local CDM_FILTER = "HELPFUL"
+local securecallfunction = securecallfunction
 
 --#region COOLDOWN MANAGER DATA ===============================================
 
@@ -17,17 +18,71 @@ local function get_cdm_category(category)
     return frame_def and enum and enum[frame_def.cdm_category_enum]
 end
 
-local function get_ordered_cooldown_records(category)
-    local category_enum = get_cdm_category(category)
-    local cdm_api = C_CooldownViewer
-    if category_enum == nil or not (cdm_api
-        and cdm_api.GetCooldownViewerCategorySet
-        and cdm_api.GetCooldownViewerCooldownInfo) then
+local function read_effective_category_ids(get_ordered_ids, provider, category_enum)
+    local ids_ok, cooldown_ids = pcall(
+        securecallfunction,
+        get_ordered_ids,
+        provider,
+        category_enum,
+        false
+    )
+    if not (ids_ok and type(cooldown_ids) == "table")
+        or (issecrettable and issecrettable(cooldown_ids))
+    then
         return nil
     end
 
-    local ok, cooldown_ids = pcall(cdm_api.GetCooldownViewerCategorySet, category_enum, false)
-    if not (ok and cooldown_ids) then return nil end
+    local copied_ids = {}
+    for _, cooldown_id in ipairs(cooldown_ids) do
+        if cooldown_id ~= nil and not issecretvalue(cooldown_id) then
+            copied_ids[#copied_ids + 1] = cooldown_id
+        end
+    end
+    return copied_ids
+end
+
+local function get_effective_cooldown_ids(category_enum)
+    if M.ensure_blizz_cdm_loaded then M.ensure_blizz_cdm_loaded() end
+    local settings = CooldownViewerSettings
+    local settings_mixin = CooldownViewerSettingsMixin
+    local provider_mixin = CooldownViewerSettingsDataProviderMixin
+    local get_provider = settings_mixin and settings_mixin.GetDataProvider
+    local get_ordered_ids = provider_mixin and provider_mixin.GetOrderedCooldownIDsForCategory
+    if not (settings and get_provider and get_ordered_ids and securecallfunction) then return nil end
+
+    local provider_ok, provider = pcall(securecallfunction, get_provider, settings)
+    if not (provider_ok and provider) then return nil end
+    local requested_ids = read_effective_category_ids(get_ordered_ids, provider, category_enum)
+    if not requested_ids or #requested_ids > 0 then return requested_ids end
+
+    -- An empty category is authoritative once any sibling CDM category is
+    -- populated. Only a provider that is empty across every addon CDM frame is
+    -- treated as transiently uninitialized.
+    for _, category in ipairs(M.CDM_CATEGORIES or EMPTY_SPELL_IDS) do
+        local sibling_enum = get_cdm_category(category)
+        if sibling_enum ~= nil and sibling_enum ~= category_enum then
+            local sibling_ids = read_effective_category_ids(get_ordered_ids, provider, sibling_enum)
+            if not sibling_ids then return nil end
+            if #sibling_ids > 0 then return requested_ids end
+        end
+    end
+    return nil
+end
+
+local function get_ordered_cooldown_records(category)
+    local category_enum = get_cdm_category(category)
+    local cdm_api = C_CooldownViewer
+    if category_enum == nil or not (cdm_api and cdm_api.GetCooldownViewerCooldownInfo) then
+        return nil
+    end
+
+    local cooldown_ids = get_effective_cooldown_ids(category_enum)
+    if not cooldown_ids then
+        if not cdm_api.GetCooldownViewerCategorySet then return nil end
+        local ok
+        ok, cooldown_ids = pcall(cdm_api.GetCooldownViewerCategorySet, category_enum, false)
+        if not (ok and cooldown_ids) then return nil end
+    end
 
     local records = {}
     for order, cooldown_id in ipairs(cooldown_ids) do

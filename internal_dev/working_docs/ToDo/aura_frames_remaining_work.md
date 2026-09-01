@@ -6,7 +6,7 @@ Temporary owner for unfinished Aura Frames implementation, live acceptance, and 
 - [1 Managed Aura Fade Live Check](#1-managed-aura-fade-live-check)
 - [2 Managed Presentation And Migration](#2-managed-presentation-and-migration)
 - [3 Cooldown Manager Live Regression](#3-cooldown-manager-live-regression)
-- [4 Performance Run And Conditional Optimization](#4-performance-run-and-conditional-optimization)
+- [4 Current Architecture Performance Reassessment](#4-current-architecture-performance-reassessment)
 - [5 Deferred Feature Design](#5-deferred-feature-design)
 
 
@@ -34,29 +34,62 @@ The shell and aggregate managed AuraContainer now receive the same OOC alpha wit
 - [x] **e4** Validate the local Frame BG toggle on Debuffs in Bar and Icon modes with active and empty contents
 - [ ] **e5** Validate shared Frame BG colors on one managed Buff frame and the Debuff frame
 - [ ] **e6** Validate All the Colors Frame BG overrides on one managed Buff frame and the Debuff frame
-- [ ] **e7** Confirm managed Frame BG visibility, color, and empty geometry remain stable through combat transitions
-- [ ] **f** Change Bar BG and non-duration bar-text settings while managed Auras are visible OOC and record which changes apply immediately versus requiring a safe rebuild
-- [ ] **g** (Agent) Diagnose the managed-frame Scale regression; `update_managed_preset_frame` currently returns before the generic `SetScale` path in `update_auras`
+- [x] **e7** Confirm managed Frame BG visibility, color, and empty geometry remain stable through combat transitions
+- [x] **f** Validate Bar BG and non-duration bar-text settings update managed Auras immediately while visible OOC
+- [x] **g** Validate managed-frame Scale changes apply immediately while preserving the saved screen position
 
 
 ## 3 Cooldown Manager Live Regression
 Use `internal_dev/tests_tools/aura_frames_cdm_regression.md` as the complete matrix
-- [ ] **a** Test Essential, Utility, Tracked Buffs, and Tracked Bars in Aura and cooldown modes
-- [ ] **b** Test Divine Protection and Blessing of Freedom across Essential and Utility
-- [ ] **c** Confirm active Aura duration precedes cooldown and hands off cleanly when the Aura expires during combat
-- [ ] **d** Move a spell between CDM groups and confirm no stale spell name or icon remains
-- [ ] **e** Reload during an encounter and confirm order, tooltips, presentation, and slot handoff recover without blocked actions or Lua errors
+- [x] **a** Test Essential, Utility, Tracked Buffs, and Tracked Bars in Aura and cooldown modes
+- [x] **b** Test Divine Protection and Blessing of Freedom across Essential and Utility
+- [x] **c** Confirm active Aura duration precedes cooldown and hands off cleanly when the Aura expires during combat
+- [x] **d** Move a spell between CDM groups through WoW settings and confirm the source frame clears and the destination frame refreshes after saving
+- [x] **e** Reload during an encounter and confirm order, tooltips, presentation, and slot handoff recover without blocked actions or Lua errors
 
 
-## 4 Performance Run And Conditional Optimization
-The temporary Aura Frames profiler probe is already configured. Follow `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`
-- [ ] **a** Collect roughly 60–100 seconds of sustained combat with `/lstprofile`
-- [ ] **b** Record the Timer Tick setting and preserve the paste-ready `cpu-profile-run` metadata
-- [ ] **c** Save the report in `af_cpu_profiles.md`
-- [ ] **d** (Agent) Compare the report through `analyze_af_cpu_profiles.ps1` against the 2026-06-27 `update_auras` baseline of 6.50 ms/sec combat-normalized
-- [ ] **e** (Agent) Reopen a central `UNIT_AURA` dispatcher only if profiling attributes material cost to per-frame payload merging or timers
-- [ ] **f** (Agent) If reopened, require explicit disabled-frame, custom-frame, combat, stale-payload, lifecycle, event-order, and taint ownership tests
-- [ ] **g** (Agent) Remove the temporary probe line from `LsTweeks.toc` when performance work closes
+## 4 Current Architecture Performance Reassessment
+The June profiles predate the managed/native migration and remain historical evidence only. Establish a new baseline from the real current configuration before choosing any optimization. Do not create a Custom Filtered frame solely for the baseline. The temporary Aura Frames profiler is loaded last from `LsTweeks.toc`, targets Aura Frames only, and must be removed when this work closes. Follow `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`.
+
+Pre-check findings, in priority order:
+1. `aura_icon_needs_tick()` currently treats every visible spell-cooldown cell as active ticker work before checking whether addon-updated timer text or bar progress exists. Inactive cooldown cells and icon-mode cooldowns with a native WoW swipe may therefore keep the ticker alive unnecessarily.
+2. Every addon-owned CDM shell registers `UNIT_AURA`, spell cooldown, and charge events. The handler checks whether the frame is enabled but does not reject events that its current Aura/cooldown mode does not consume, so native Aura-mode and Tracked frames may queue redundant `update_auras()` work.
+3. An out-of-combat cooldown-mode update can discover ordered CDM records once for the addon cooldown map and again for managed-backend reconciliation, then reanchor slots and reapply style across all accessible managed AuraButtons. A shared record snapshot plus data, anchor, and style invalidation signatures may remove repeated setup work.
+4. Lower-priority candidates are unchanged managed-backend visibility writes, full-frame scans in `refresh_visible_icon_ticker()`, inactive cooldown processing while another frame owns the ticker, and OOC learned-buff scans under heavy Aura churn.
+
+Do not implement these candidates before the unchanged baseline. The first run determines which current path is material and gives every accepted change a before/after comparison.
+
+Baseline collection procedure:
+1. Set Aura Frames **Timer Tick** to `0.15`, close addon settings, and leave Move Mode off.
+2. Run `/lstprofile reset`, followed by `/lstprofile start`.
+3. Enter representative combat for roughly 60–100 seconds. Keep combat active for at least 90% of the measured time and exercise the Aura Frames normally; do not open settings or Move Mode during the run.
+4. While still in combat, run `/lstprofile report 40` and paste the complete report into `internal_dev/working_docs/ToDo/aura_frames_profile_results.txt`, replacing its placeholder text. The report automatically includes Aura Frames module status, Timer Tick, character specialization, Essential/Utility cooldown modes, enabled Test Auras, Custom Filtered frame details, and the generated `<!-- cpu-profile-run: ... -->` line. No separate `/lst status aura_frames` command, manual context notes, calculation, or metadata editing is required.
+5. Run `/lstprofile stop` after the report has been captured.
+6. Tell the agent the inbox is ready. The agent runs `process_af_cpu_profile_inbox.ps1`, preserves the validated run and metadata in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`, and performs the analysis in 4d.
+
+- [x] **a** Confirm `/lstprofile report 40` automatically prints Aura Frames module status, Timer Tick, character specialization, Essential/Utility cooldown-mode state, enabled Test Auras, and Custom Filtered frame details
+  - Confirmed with the context-only preflight saved on 2026-08-31: Timer Tick `0.15`, Retribution (`70`), Essential and Utility cooldown modes enabled, no enabled per-frame/global Test Auras, no Custom Filtered frames, and complete Aura Frames module status. The `elapsed=0.0` capture intentionally has no performance metrics and is not the 4b/4c baseline.
+- [x] **b** With Timer Tick at `0.15`, settings and Move Mode closed, collect roughly 60–100 seconds through `/lstprofile`; keep combat near or above 90% of elapsed time and capture the report while combat is still active
+  - Accepted baseline: `100.2s` elapsed, `98.5s` combat (`98.3%`), one segment, captured while combat remained active.
+- [x] **c** Paste the complete `/lstprofile report 40` output into `aura_frames_profile_results.txt`; (Agent) process it with `process_af_cpu_profile_inbox.ps1` and preserve the validated run in `af_cpu_profiles.md` as the new post-migration baseline
+  - Processor validation passed; the complete 40-row report and automatic context are preserved under `2026-08-31, Aura Frames Only, Post-Migration Baseline`.
+- [x] **d** (Agent) Assess current combat-normalized cost and call rate for `af.update_auras`, `af.render_aura_map`, `af.tick_visible_icons`, `af.frame_needs_visible_icon_tick`, `af.any_frame_needs_visible_icon_tick`, `af.add_cooldown_viewer_category_entries`, `af.refresh_managed_cdm_backend`, `af.set_managed_aura_backend_enabled`, `af.for_each_accessible_managed_aura_button`, `af.scan_custom_aura_map`, and `af.get_frame_activity_state`; do not use the June `6.50 ms/sec` result as a pass/fail threshold
+  - Dominant inclusive path: `af.update_auras` `9.245ms/sec` at `10.56 calls/sec`.
+  - Clearest attributed cost: `af.add_cooldown_viewer_category_entries` `4.839ms/sec` at `5.28 calls/sec`, including `af.get_ordered_cdm_records` `1.421ms/sec`; `af.render_aura_map` was `2.725ms/sec`.
+  - `af.get_frame_activity_state` reached `1.176ms/sec` at `62.18 calls/sec`. Individual managed-backend refresh/enable paths were below `0.15ms/sec`; accessible-button setup was not measurable during combat, and `af.scan_custom_aura_map` was inactive because no Custom Filtered frame existed.
+- [x] **e** If `af.tick_visible_icons` remains material, confirm whether native-swipe icon mode or inactive cooldown cells keep it alive, repeat matched `0.10` and `0.20` runs only if cadence still affects necessary addon-owned text/bar work, and decide whether to narrow ticker eligibility, retain the slider, or use one fixed cadence
+  - Not material in the new baseline: `0.614ms/sec` at `6.10 calls/sec`. Do not spend additional live runs or change ticker cadence/eligibility on this evidence.
+- [ ] **f** If `af.update_auras` call rate is amplified, attribute calls by event and mode before changing ownership; test event-specific rejection of `UNIT_AURA` for native CDM Aura transport and cooldown/charge events for frames without an addon cooldown layer, preserving first-cast and Aura-to-cooldown handoff behavior
+- [ ] **g** If CDM scan/render or managed-backend work is material, repeat a matched control with Essential and Utility cooldown modes disabled, then assess sharing one ordered-record snapshot and gating record reconciliation, slot anchoring, style application, and unchanged backend visibility writes
+  - CDM scan/map work is material, so collect this control next:
+    1. Out of combat, turn off **Cooldown Mode** for both Essential and Utility. Leave both frames enabled and keep Timer Tick at `0.15`.
+    2. Close addon settings, leave Move Mode off, then run `/lstprofile reset` and `/lstprofile start`.
+    3. Repeat representative combat for roughly 60–100 seconds with combat at or above 90% of elapsed time.
+    4. While still in combat, run `/lstprofile report 40` and replace the contents of `aura_frames_profile_results.txt` with the complete report.
+    5. Run `/lstprofile stop`, restore the two Cooldown Mode settings after the capture if desired, and tell the agent the control inbox is ready.
+- [ ] **h** (Agent) Add a narrower probe or optimize only when the new baseline or control runs attribute material cost or clear call amplification to a current path; do not presume that a central `UNIT_AURA` dispatcher is the solution
+- [ ] **i** (Agent) If code changes result, run focused ticker/event/CDM regression coverage, full fast validation, and the smallest relevant live recheck before accepting the result
+- [ ] **j** (Agent) Remove the temporary profiler line from `LsTweeks.toc` when performance work closes
 
 
 ## 5 Deferred Feature Design

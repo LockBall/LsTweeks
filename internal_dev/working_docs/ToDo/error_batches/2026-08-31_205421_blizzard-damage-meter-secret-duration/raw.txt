@@ -1,0 +1,49 @@
+# Error Inbox
+
+Paste the next unprocessed WoW Lua error export here.
+
+Message: ...ns/Blizzard_DamageMeter/DamageMeterSessionWindow.lua:930: attempt to compare local 'durationSeconds' (a secret number value, while execution tainted by 'LsTweeks')
+Time: Mon Aug 31 20:52:35 2026
+Count: 1
+Stack:
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeterSessionWindow.lua]:930: in function 'SetSessionDuration'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeterSessionWindow.lua]:940: in function 'ShowSessionTimerFromCombatSession'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeterSessionWindow.lua]:945: in function 'ShowSessionTimer'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeterSessionWindow.lua]:961: in function 'UpdateSessionTimerState'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeter.lua]:204: in function 'func'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeter.lua]:219: in function 'ForEachSessionWindow'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeter.lua]:204: in function 'UpdateSessionTimerState'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeter.lua]:200: in function 'UpdateShownState'
+[Interface/AddOns/Blizzard_DamageMeter/DamageMeter.lua]:90: in function <...nterface/AddOns/Blizzard_DamageMeter/DamageMeter.lua:88>
+
+Locals:
+self=DamageMeterSessionWindow1 <DamageMeter.lua:285>{
+ MinimizeButton=Button <DamageMeterSessionWindow.xml:32>
+ SessionDropdown=Button <DamageMeterSessionWindow.xml:46>
+ showBarIcons=true
+ sessionWindowIndex=1
+ SettingsDropdown=Button <DamageMeterSessionWindow.xml:41>
+ DamageMeterTypeDropdown=Button <DamageMeterSessionWindow.xml:66>
+ needsSourceWindowRefresh=false
+ barHeight=16
+ onUpdateReasons=<table>
+ barSpacing=4
+ damageMeterType=1
+ backgroundAlpha=0.500000
+ isEditing=false
+ numberDisplayType=1
+ localPlayerIndex=1
+ Header=Texture <DamageMeterSessionWindow.xml:15>
+ SessionTimer=FontString <DamageMeterSessionWindow.xml:24>
+ useClassColor=true
+ sessionType=0
+ style=0
+ damageMeterOwner=DamageMeter <DamageMeter.xml:11>
+ MinimizeContainer=Frame <DamageMeterSessionWindow.xml:84>
+}
+durationSeconds=<secret number>
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)=nil
+(*temporary)="attempt to compare local 'durationSeconds' (a secret number value, while execution tainted by 'LsTweeks')"
