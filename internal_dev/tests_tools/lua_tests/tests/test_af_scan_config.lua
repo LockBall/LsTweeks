@@ -352,6 +352,40 @@ h.test("addon-owned Aura cancellation remains custom-frame only", function()
     h.stub.auras.player = nil
 end)
 
+h.test("CDM event routing follows native Aura and addon cooldown ownership", function()
+    local M = load_aura_frames()
+    local aura_mode = {
+        enabled = true,
+        is_cdm = true,
+        needs_cdm_scan = false,
+    }
+    h.eq(M.should_process_aura_frame_event(aura_mode, "UNIT_AURA"), false,
+        "native CDM Aura transport rejects UNIT_AURA addon scans")
+    h.eq(M.should_process_aura_frame_event(aura_mode, "SPELL_UPDATE_COOLDOWN"), false,
+        "Aura-mode CDM frame rejects spell cooldown addon scans")
+    h.eq(M.should_process_aura_frame_event(aura_mode, "SPELL_UPDATE_CHARGES"), false,
+        "Aura-mode CDM frame rejects charge addon scans")
+    h.eq(M.should_process_aura_frame_event(aura_mode, "COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED"), true,
+        "Aura-mode CDM frame retains viewer override reconciliation")
+
+    local cooldown_mode = {
+        enabled = true,
+        is_cdm = true,
+        needs_cdm_scan = true,
+    }
+    h.eq(M.should_process_aura_frame_event(cooldown_mode, "UNIT_AURA"), false,
+        "cooldown-mode CDM frame leaves active Aura handoff to managed slots")
+    h.eq(M.should_process_aura_frame_event(cooldown_mode, "SPELL_UPDATE_COOLDOWN"), true,
+        "cooldown-mode CDM frame retains spell cooldown refresh")
+    h.eq(M.should_process_aura_frame_event(cooldown_mode, "SPELL_UPDATE_CHARGES"), true,
+        "cooldown-mode CDM frame retains charge refresh")
+
+    h.eq(M.should_process_aura_frame_event({ enabled = true, is_cdm = false }, "UNIT_AURA"), true,
+        "custom addon Aura scans retain UNIT_AURA")
+    h.eq(M.should_process_aura_frame_event({ enabled = false, is_cdm = true }, "SPELL_UPDATE_COOLDOWN"), false,
+        "disabled CDM frames reject runtime events")
+end)
+
 
 h.run("af_scan_config")
 

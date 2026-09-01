@@ -635,6 +635,20 @@ local function update_aura_timer_and_bar(
     end
 end
 
+local function sync_test_preview_cooldown_pause(obj, entry)
+    local cooldown = obj and obj.cooldown
+    if not (cooldown and cooldown.SetPaused) then return end
+
+    local paused = entry.is_test_preview == true
+        and M.is_test_preview_paused
+        and M.is_test_preview_paused(entry.test_preview_show_key)
+        or false
+    -- Cooldown widgets animate independently from the addon ticker.  Apply the
+    -- preview clock state after SetCooldown, and clear it when a pooled icon is
+    -- reused for a live Aura.
+    cooldown:SetPaused(paused)
+end
+
 local function resolve_entry_live_timing(entry, show_timer_text, bar_mode, is_static_entry, is_spell_cooldown)
     local has_cached_timing = entry.duration and not issecretvalue(entry.duration) and entry.duration > 0
         and entry.expiration and not issecretvalue(entry.expiration) and entry.expiration > 0
@@ -766,7 +780,11 @@ local function build_render_list(frame, aura_map, aura_filter, sort_mode)
     wipe(list)
 
     local is_cdm_frame = M.WOW_COOLDOWN_CATEGORIES[frame.category]
-    if is_cdm_frame then
+    local is_managed_preset = frame._managed_aura_backend ~= nil
+    if is_cdm_frame or is_managed_preset then
+        -- Managed preset maps contain only addon-owned Test Aura entries; live
+        -- Auras remain inside Blizzard's AuraContainer.  Render the mock through
+        -- the common addon path without querying secret unit-Aura ordering.
         for _, entry in pairs(aura_map) do
             list[#list + 1] = entry
         end
@@ -917,6 +935,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
             cooldown_duration,
             now
         )
+        sync_test_preview_cooldown_pause(obj, entry)
 
         set_shown_if_changed(obj, true)
     end

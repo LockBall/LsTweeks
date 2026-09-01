@@ -490,6 +490,11 @@ function frame_methods:SetHorizontalScroll() end
 -- Cooldown widgets
 function frame_methods:SetCooldown() end
 function frame_methods:Clear() end
+function frame_methods:SetPaused(paused)
+    self.__cooldown_paused = paused == true
+    record(self, "SetPaused", paused)
+end
+function frame_methods:IsPaused() return self.__cooldown_paused == true end
 function frame_methods:SetReverse(value) record(self, "SetReverse", value) end
 function frame_methods:SetHideCountdownNumbers(value) record(self, "SetHideCountdownNumbers", value) end
 function frame_methods:SetSwipeColor(r, g, b, a) record(self, "SetSwipeColor", r, g, b, a) end

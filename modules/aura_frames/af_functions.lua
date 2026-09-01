@@ -519,6 +519,23 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     return activity
 end
 
+function M.should_process_aura_frame_event(activity, event)
+    if not (activity and activity.enabled) then return false end
+    if activity.is_cdm ~= true then return true end
+
+    -- Blizzard's managed groups/slots own active Aura transport for every CDM
+    -- frame. UNIT_AURA therefore never needs to rebuild the addon cooldown map.
+    if event == "UNIT_AURA" then return false end
+
+    -- Spell cooldown and charge events drive only the optional addon cooldown
+    -- layer. Aura-mode CDM frames are updated natively by their managed groups.
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+        return activity.needs_cdm_scan == true
+    end
+
+    return true
+end
+
 function M.invalidate_aura_scan_caches()
     M.clear_custom_aura_scan_cache()
     if M.clear_sorted_aura_ids_cache then

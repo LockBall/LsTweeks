@@ -1,13 +1,14 @@
 # Aura Frames Remaining Work
 Temporary owner for unfinished Aura Frames implementation, live acceptance, and performance decisions after the Retail 12.1 migration
 
+Deferred feature design is tracked separately in `aura_frames_deferred_features.md`.
+
 
 ## Table of Contents
 - [1 Managed Aura Fade Live Check](#1-managed-aura-fade-live-check)
 - [2 Managed Presentation And Migration](#2-managed-presentation-and-migration)
 - [3 Cooldown Manager Live Regression](#3-cooldown-manager-live-regression)
 - [4 Current Architecture Performance Reassessment](#4-current-architecture-performance-reassessment)
-- [5 Deferred Feature Design](#5-deferred-feature-design)
 
 
 ## 1 Managed Aura Fade Live Check
@@ -79,21 +80,23 @@ Baseline collection procedure:
   - `af.get_frame_activity_state` reached `1.176ms/sec` at `62.18 calls/sec`. Individual managed-backend refresh/enable paths were below `0.15ms/sec`; accessible-button setup was not measurable during combat, and `af.scan_custom_aura_map` was inactive because no Custom Filtered frame existed.
 - [x] **e** If `af.tick_visible_icons` remains material, confirm whether native-swipe icon mode or inactive cooldown cells keep it alive, repeat matched `0.10` and `0.20` runs only if cadence still affects necessary addon-owned text/bar work, and decide whether to narrow ticker eligibility, retain the slider, or use one fixed cadence
   - Not material in the new baseline: `0.614ms/sec` at `6.10 calls/sec`. Do not spend additional live runs or change ticker cadence/eligibility on this evidence.
-- [ ] **f** If `af.update_auras` call rate is amplified, attribute calls by event and mode before changing ownership; test event-specific rejection of `UNIT_AURA` for native CDM Aura transport and cooldown/charge events for frames without an addon cooldown layer, preserving first-cast and Aura-to-cooldown handoff behavior
-- [ ] **g** If CDM scan/render or managed-backend work is material, repeat a matched control with Essential and Utility cooldown modes disabled, then assess sharing one ordered-record snapshot and gating record reconciliation, slot anchoring, style application, and unchanged backend visibility writes
-  - CDM scan/map work is material, so collect this control next:
-    1. Out of combat, turn off **Cooldown Mode** for both Essential and Utility. Leave both frames enabled and keep Timer Tick at `0.15`.
-    2. Close addon settings, leave Move Mode off, then run `/lstprofile reset` and `/lstprofile start`.
-    3. Repeat representative combat for roughly 60–100 seconds with combat at or above 90% of elapsed time.
-    4. While still in combat, run `/lstprofile report 40` and replace the contents of `aura_frames_profile_results.txt` with the complete report.
-    5. Run `/lstprofile stop`, restore the two Cooldown Mode settings after the capture if desired, and tell the agent the control inbox is ready.
-- [ ] **h** (Agent) Add a narrower probe or optimize only when the new baseline or control runs attribute material cost or clear call amplification to a current path; do not presume that a central `UNIT_AURA` dispatcher is the solution
-- [ ] **i** (Agent) If code changes result, run focused ticker/event/CDM regression coverage, full fast validation, and the smallest relevant live recheck before accepting the result
-- [ ] **j** (Agent) Remove the temporary profiler line from `LsTweeks.toc` when performance work closes
-
-
-## 5 Deferred Feature Design
-- [ ] **a** (Agent) Map Custom Filtered Frames only to live-supported standard Aura filters and managed candidate filters; reject arbitrary predicates requiring protected Aura data
-- [ ] **b** (Agent) Implement native numeric rule formatters for compact and decimal timer modes with boundary tests and secret-Aura live validation
-- [ ] **c** (Agent) Map sorting only to live-supported AuraContainer methods and remove choices that require addon comparators or unavailable enum members
-- [ ] **d** Live-validate restored Test Aura previews on Short, Static / Long, Timed, and Debuff frames in Bar and Icon modes; implementation uses one addon-owned mock with its own Frame BG cell on the side opposite native growth and never injects synthetic data into managed AuraButtons
+- [x] **f** If `af.update_auras` call rate is amplified, attribute calls by event and mode before changing ownership; test event-specific rejection of `UNIT_AURA` for native CDM Aura transport and cooldown/charge events for frames without an addon cooldown layer, preserving first-cast and Aura-to-cooldown handoff behavior
+  - Attribution captured with both cooldown modes restored. Combat coverage was only 76.4%, so its CPU rates are not a matched comparison, but the event ownership evidence is valid: Aura-mode Tracked Buffs/Bars each scheduled 200 scans from `UNIT_AURA`, cooldown, and charge events; cooldown-mode Essential/Utility each scheduled 89 scans from `UNIT_AURA`. Together these were 578 of 876 measured updates (66.0%).
+  - Implemented a mode-aware predicate: reject `UNIT_AURA` for every CDM shell; reject spell cooldown/charge events for CDM Aura mode; retain those spell events for cooldown mode and retain viewer-data/override, world-entry, specialization, and combat events for both modes. Focused headless coverage passes.
+  - Post-change live validation:
+    1. Keep Essential and Utility in **Cooldown Mode**, keep Timer Tick at `0.15`, and `/reload`.
+    2. Confirm Tracked Buffs and Tracked Bars still add, update, and remove active Auras normally.
+    3. Use an Essential or Utility ability and confirm its cooldown appears immediately; for an ability that grants an active Aura, confirm the native Aura overlay appears and the underlying cooldown remains correct when the Aura expires or is removed. Exercise a charged ability if available.
+    4. With settings and Move Mode closed, run `/lstprofile reset` and `/lstprofile start`, then collect 60–100 seconds with combat at or above 90% of elapsed time.
+    5. While still in combat, run `/lstprofile report 40`, replace `aura_frames_profile_results.txt` with the complete report, then run `/lstprofile stop` and tell the agent the validation inbox is ready.
+    6. (Agent) Confirm `aura_event` rows show CDM `UNIT_AURA` ignored, spell cooldown/charge events ignored for Tracked Aura mode but scheduled for Essential/Utility cooldown mode, and compare post-change CPU/call rates with the 2026-08-31 baseline before completing 4f.
+  - Accepted post-change validation: `92.2s` elapsed, `90.8s` combat (`98.5%`). Event rows match the intended routing exactly. Against baseline, `af.update_auras` fell from `10.56` to `6.30 calls/sec` (40.3%) and from `9.245` to `6.723ms/sec` (27.3%); the predicate itself cost `0.057ms/sec`.
+- [x] **g** If CDM scan/render or managed-backend work is material, repeat a matched control with Essential and Utility cooldown modes disabled, then assess sharing one ordered-record snapshot and gating record reconciliation, slot anchoring, style application, and unchanged backend visibility writes
+  - Accepted control: `81.7s` elapsed, `79.5s` combat (`97.3%`), with Essential and Utility enabled but both Cooldown Mode settings disabled.
+  - `af.update_auras` call rate was effectively unchanged (`10.47` versus `10.56 calls/sec`), while cost fell from `9.245` to `1.558ms/sec` (83.1%). `af.render_aura_map` fell from `2.725` to `0.366ms/sec` (86.6%); CDM category-entry and ordered-record rows disappeared from the top 40.
+  - This isolates the major cost to repeated addon cooldown-map rebuilding, not to cooldown mode increasing event frequency. Managed-backend refresh/enable paths remained immaterial, so do not prioritize record sharing, slot/style invalidation, or unchanged visibility writes. Complete 4f event/mode attribution next to identify which updates unnecessarily rebuild cooldown maps.
+- [x] **h** (Agent) Add a narrower probe or optimize only when the new baseline or control runs attribute material cost or clear call amplification to a current path; do not presume that a central `UNIT_AURA` dispatcher is the solution
+  - Event/category/mode attribution justified the narrow mode-aware predicate. Remaining record discovery was `1.124ms/sec`; broader record caching was rejected because its invalidation complexity is not warranted by this result.
+- [x] **i** (Agent) If code changes result, run focused ticker/event/CDM regression coverage, full fast validation, and the smallest relevant live recheck before accepting the result
+  - Focused event/CDM coverage, all 15 Aura Frames suites, the accepted live validation, and full fast validation pass. Full validation completed all 27 headless suites plus Lua syntax, region, memory-section, whitespace, and line-ending checks.
+- [x] **j** (Agent) Remove the temporary profiler line from `LsTweeks.toc` when performance work closes

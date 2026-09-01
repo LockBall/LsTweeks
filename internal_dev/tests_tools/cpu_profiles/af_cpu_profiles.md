@@ -53,6 +53,246 @@ cadence rather than lower per-tick cost.
 Use `../addon_cpu_profile.lua` with only `PROFILE_TARGETS.aura_frames = true` for these runs.
 
 
+### 2026-09-01, Aura Frames Only, Post Event-Routing Optimization
+<!-- cpu-profile-run: elapsed=92.2 combat=90.8 timer_tick=0.15 -->
+
+Context: 92.2s accepted post-change run with 90.8s combat (98.5%), one segment,
+and the report captured while combat remained active. Timer Tick was `0.15s`,
+both Essential and Utility used Cooldown Mode, and no Test Auras or Custom
+Filtered frames were enabled. The user completed the documented Tracked Aura,
+first-cast, managed Aura-overlay, expiration/handoff, and charged-ability live
+checks before saving the validation inbox; no behavior issue was reported.
+
+| Event | Category | Mode | Received | Scheduled | Coalesced | Ignored |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Essential | Cooldown | 32 | 15 | 17 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Tracked Bars | Aura | 32 | 29 | 3 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Tracked Buffs | Aura | 32 | 29 | 3 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Utility | Cooldown | 32 | 15 | 17 | 0 |
+| `PLAYER_REGEN_DISABLED` | Essential | Cooldown | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Tracked Bars | Aura | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Tracked Buffs | Aura | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Utility | Cooldown | 1 | 1 | 0 | 0 |
+| `SPELL_UPDATE_CHARGES` | Essential | Cooldown | 69 | 26 | 43 | 0 |
+| `SPELL_UPDATE_CHARGES` | Tracked Bars | Aura | 69 | 0 | 0 | 69 |
+| `SPELL_UPDATE_CHARGES` | Tracked Buffs | Aura | 69 | 0 | 0 | 69 |
+| `SPELL_UPDATE_CHARGES` | Utility | Cooldown | 69 | 26 | 43 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Essential | Cooldown | 928 | 208 | 720 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Tracked Bars | Aura | 928 | 0 | 0 | 928 |
+| `SPELL_UPDATE_COOLDOWN` | Tracked Buffs | Aura | 928 | 0 | 0 | 928 |
+| `SPELL_UPDATE_COOLDOWN` | Utility | Cooldown | 928 | 208 | 720 | 0 |
+| `UNIT_AURA` | Essential | Cooldown | 228 | 0 | 0 | 228 |
+| `UNIT_AURA` | Tracked Bars | Aura | 228 | 0 | 0 | 228 |
+| `UNIT_AURA` | Tracked Buffs | Aura | 228 | 0 | 0 | 228 |
+| `UNIT_AURA` | Utility | Cooldown | 228 | 0 | 0 | 228 |
+
+| Metric | Calls | Total ms | Avg ms | Max ms | Combat ms/sec | Combat calls/sec |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `af.update_auras` | 572 | 610.277 | 1.0669 | 3.717 | 6.723 | 6.30 |
+| `af.add_cooldown_viewer_category_entries` | 506 | 345.405 | 0.6826 | 3.180 | 3.805 | 5.57 |
+| `af.render_aura_map` | 572 | 187.626 | 0.3280 | 1.479 | 2.067 | 6.30 |
+| `af.get_ordered_cdm_records` | 506 | 102.004 | 0.2016 | 2.707 | 1.124 | 5.57 |
+| `af.get_frame_activity_state` | 5608 | 76.677 | 0.0137 | 0.115 | 0.845 | 61.78 |
+| `af.tick_visible_icons` | 577 | 47.191 | 0.0818 | 0.243 | 0.520 | 6.36 |
+| `af.is_global_test_aura_enabled` | 5607 | 23.458 | 0.0042 | 0.087 | 0.258 | 61.77 |
+| `af.refresh_frame_ooc_fade` | 572 | 13.949 | 0.0244 | 0.216 | 0.154 | 6.30 |
+| `af.is_runtime_enabled` | 1728 | 11.710 | 0.0068 | 0.061 | 0.129 | 19.04 |
+| `af.refresh_visible_icon_ticker` | 572 | 11.607 | 0.0203 | 0.131 | 0.128 | 6.30 |
+| `af.any_frame_needs_visible_icon_tick` | 572 | 9.023 | 0.0158 | 0.126 | 0.099 | 6.30 |
+| `af.get_frame_config_db` | 5612 | 7.739 | 0.0014 | 0.065 | 0.085 | 61.83 |
+| `af.frame_supports_test_aura` | 5608 | 7.407 | 0.0013 | 0.047 | 0.082 | 61.78 |
+| `af.refresh_managed_cdm_backend` | 572 | 5.913 | 0.0103 | 0.034 | 0.065 | 6.30 |
+| `af.frame_needs_visible_icon_tick` | 2288 | 5.699 | 0.0025 | 0.111 | 0.063 | 25.21 |
+| `af.prewarm_aura_tooltip_cache` | 576 | 5.192 | 0.0090 | 0.066 | 0.057 | 6.35 |
+| `af.should_process_aura_frame_event` | 5032 | 5.167 | 0.0010 | 0.048 | 0.057 | 55.44 |
+| `af.update_aura_frame_move_controls` | 572 | 4.860 | 0.0085 | 0.232 | 0.054 | 6.30 |
+| `af.get_setting` | 2205 | 4.017 | 0.0018 | 0.058 | 0.044 | 24.29 |
+| `af.set_managed_aura_backend_enabled` | 572 | 4.013 | 0.0070 | 0.025 | 0.044 | 6.30 |
+| `af.apply_addon_frame_background` | 572 | 3.732 | 0.0065 | 0.087 | 0.041 | 6.30 |
+| `af.get_timer_behavior` | 572 | 3.653 | 0.0064 | 0.035 | 0.040 | 6.30 |
+| `af.set_managed_cdm_move_outline_shown` | 572 | 3.335 | 0.0058 | 0.023 | 0.037 | 6.30 |
+| `af.set_shown_if_changed` | 1144 | 2.938 | 0.0026 | 0.219 | 0.032 | 12.60 |
+| `af.normalize_timer_category` | 572 | 2.148 | 0.0038 | 0.033 | 0.024 | 6.30 |
+| `af.get_aura_frame_height` | 572 | 1.720 | 0.0030 | 0.040 | 0.019 | 6.30 |
+| `af.update_combat_background` | 572 | 1.403 | 0.0025 | 0.056 | 0.015 | 6.30 |
+| `af.queue_learned_buff_scan` | 228 | 1.377 | 0.0060 | 0.027 | 0.015 | 2.51 |
+| `af.apply_aura_frame_shell_transform` | 572 | 0.871 | 0.0015 | 0.015 | 0.010 | 6.30 |
+| `af.invalidate_aura_scan_caches` | 135 | 0.863 | 0.0064 | 0.061 | 0.010 | 1.49 |
+| `af.ensure_blizz_cdm_loaded` | 506 | 0.663 | 0.0013 | 0.015 | 0.007 | 5.57 |
+| `af.ensure_visible_icon_ticker` | 572 | 0.587 | 0.0010 | 0.011 | 0.006 | 6.30 |
+| `af.get_frame_def` | 506 | 0.572 | 0.0011 | 0.013 | 0.006 | 5.57 |
+| `af.learn_helpful_aura_durations_ooc` | 169 | 0.554 | 0.0033 | 0.029 | 0.006 | 1.86 |
+| `af.clear_custom_aura_scan_cache` | 135 | 0.269 | 0.0020 | 0.055 | 0.003 | 1.49 |
+| `af.clear_sorted_aura_ids_cache` | 135 | 0.177 | 0.0013 | 0.016 | 0.002 | 1.49 |
+| `af.register_managed_frame_background_row` | 10 | 0.170 | 0.0170 | 0.026 | 0.002 | 0.11 |
+| `af.refresh_frame_fade_for_combat_state` | 4 | 0.148 | 0.0369 | 0.073 | 0.002 | 0.04 |
+| `af.resolve_text_color` | 10 | 0.135 | 0.0135 | 0.057 | 0.001 | 0.11 |
+| `af.resolve_bar_color` | 10 | 0.133 | 0.0133 | 0.022 | 0.001 | 0.11 |
+
+Assessment: the accepted event predicate produced the exact intended routing.
+All CDM `UNIT_AURA` events were ignored; Tracked Aura-mode cooldown/charge
+events were ignored; Essential/Utility cooldown-mode cooldown/charge events
+remained scheduled or coalesced. Against the 2026-08-31 baseline,
+`af.update_auras` call rate fell from `10.56` to `6.30 calls/sec` (40.3%) and
+combat-normalized cost fell from `9.245` to `6.723ms/sec` (27.3%). CDM map,
+render, ticker, and activity-state costs also fell. The event predicate itself
+cost only `0.057ms/sec`. Remaining CDM work is tied to relevant cooldown events;
+further caching would add a broader invalidation contract for only
+`1.124ms/sec` of measured record discovery, so no additional optimization is
+accepted in this pass.
+
+
+### 2026-09-01, Aura Frames Only, Event and Mode Attribution
+<!-- cpu-profile-run: elapsed=95.9 combat=73.2 timer_tick=0.15 -->
+
+Context: 95.9s diagnostic run with both Essential and Utility Cooldown Mode
+settings restored. Combat was active for 73.2s (76.4%), so this run is not a
+matched CPU comparison. Its event/category/mode counters remain valid for event
+ownership: the temporary probe counted each delivered event after the existing
+handler and distinguished scheduled, coalesced, and ignored scans.
+
+| Event | Category | Mode | Received | Scheduled | Coalesced | Ignored |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Essential | Cooldown | 33 | 15 | 18 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Tracked Bars | Aura | 33 | 15 | 18 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Tracked Buffs | Aura | 33 | 15 | 18 | 0 |
+| `COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED` | Utility | Cooldown | 33 | 15 | 18 | 0 |
+| `PLAYER_REGEN_DISABLED` | Essential | Cooldown | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Tracked Bars | Aura | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Tracked Buffs | Aura | 1 | 1 | 0 | 0 |
+| `PLAYER_REGEN_DISABLED` | Utility | Cooldown | 1 | 1 | 0 | 0 |
+| `SPELL_UPDATE_CHARGES` | Essential | Cooldown | 64 | 11 | 53 | 0 |
+| `SPELL_UPDATE_CHARGES` | Tracked Bars | Aura | 64 | 11 | 53 | 0 |
+| `SPELL_UPDATE_CHARGES` | Tracked Buffs | Aura | 64 | 11 | 53 | 0 |
+| `SPELL_UPDATE_CHARGES` | Utility | Cooldown | 64 | 11 | 53 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Essential | Cooldown | 809 | 100 | 709 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Tracked Bars | Aura | 809 | 100 | 709 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Tracked Buffs | Aura | 809 | 100 | 709 | 0 |
+| `SPELL_UPDATE_COOLDOWN` | Utility | Cooldown | 809 | 100 | 709 | 0 |
+| `UNIT_AURA` | Essential | Cooldown | 197 | 89 | 108 | 0 |
+| `UNIT_AURA` | Tracked Bars | Aura | 197 | 89 | 108 | 0 |
+| `UNIT_AURA` | Tracked Buffs | Aura | 197 | 89 | 108 | 0 |
+| `UNIT_AURA` | Utility | Cooldown | 197 | 89 | 108 | 0 |
+
+| Metric | Calls | Total ms | Avg ms | Max ms | Combat ms/sec | Combat calls/sec |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `af.update_auras` | 876 | 593.561 | 0.6776 | 3.670 | 8.106 | 11.96 |
+| `af.add_cooldown_viewer_category_entries` | 438 | 293.997 | 0.6712 | 3.033 | 4.015 | 5.98 |
+| `af.render_aura_map` | 876 | 170.509 | 0.1946 | 0.612 | 2.328 | 11.96 |
+| `af.get_ordered_cdm_records` | 438 | 89.848 | 0.2051 | 2.254 | 1.227 | 5.98 |
+| `af.get_frame_activity_state` | 5296 | 73.087 | 0.0138 | 0.232 | 0.998 | 72.32 |
+| `af.tick_visible_icons` | 597 | 48.186 | 0.0807 | 0.182 | 0.658 | 8.15 |
+| `af.refresh_managed_cdm_backend` | 876 | 38.104 | 0.0435 | 2.080 | 0.520 | 11.96 |
+| `af.is_global_test_aura_enabled` | 5295 | 21.676 | 0.0041 | 0.212 | 0.296 | 72.31 |
+| `af.for_each_accessible_managed_aura_button` | 40 | 21.284 | 0.5321 | 0.912 | 0.291 | 0.55 |
+| `af.refresh_frame_ooc_fade` | 876 | 16.543 | 0.0189 | 0.193 | 0.226 | 11.96 |
+| `af.refresh_visible_icon_ticker` | 876 | 15.889 | 0.0181 | 0.071 | 0.217 | 11.96 |
+| `af.is_runtime_enabled` | 2356 | 12.554 | 0.0053 | 0.069 | 0.171 | 32.17 |
+| `af.any_frame_needs_visible_icon_tick` | 876 | 12.290 | 0.0140 | 0.066 | 0.168 | 11.96 |
+| `af.is_managed_aura_button_accessible` | 5660 | 9.614 | 0.0017 | 0.052 | 0.131 | 77.29 |
+| `af.apply_managed_icon_swipe_style` | 20 | 8.622 | 0.4311 | 0.621 | 0.118 | 0.27 |
+| `af.frame_needs_visible_icon_tick` | 3504 | 7.402 | 0.0021 | 0.049 | 0.101 | 47.85 |
+| `af.get_frame_config_db` | 5300 | 7.366 | 0.0014 | 0.050 | 0.101 | 72.38 |
+| `af.frame_supports_test_aura` | 5296 | 7.288 | 0.0014 | 0.115 | 0.100 | 72.32 |
+| `af.prewarm_aura_tooltip_cache` | 880 | 6.499 | 0.0074 | 0.125 | 0.089 | 12.02 |
+| `af.update_aura_frame_move_controls` | 876 | 5.982 | 0.0068 | 0.064 | 0.082 | 11.96 |
+| `af.set_managed_aura_backend_enabled` | 876 | 5.403 | 0.0062 | 0.024 | 0.074 | 11.96 |
+| `af.get_setting` | 3103 | 5.368 | 0.0017 | 0.057 | 0.073 | 42.38 |
+| `af.invalidate_aura_scan_caches` | 927 | 5.343 | 0.0058 | 0.108 | 0.073 | 12.66 |
+| `af.apply_addon_frame_background` | 876 | 4.819 | 0.0055 | 0.043 | 0.066 | 11.96 |
+| `af.get_timer_behavior` | 876 | 4.761 | 0.0054 | 0.070 | 0.065 | 11.96 |
+| `af.set_managed_cdm_move_outline_shown` | 876 | 4.696 | 0.0054 | 0.024 | 0.064 | 11.96 |
+| `af.set_shown_if_changed` | 1752 | 3.347 | 0.0019 | 0.057 | 0.046 | 23.93 |
+| `af.normalize_timer_category` | 876 | 2.550 | 0.0029 | 0.059 | 0.035 | 11.96 |
+| `af.get_aura_frame_height` | 876 | 2.098 | 0.0024 | 0.023 | 0.029 | 11.96 |
+| `af.update_combat_background` | 876 | 1.741 | 0.0020 | 0.020 | 0.024 | 11.96 |
+| `af.set_managed_presentation_bar_color` | 1375 | 1.714 | 0.0012 | 0.006 | 0.023 | 18.78 |
+| `af.apply_aura_frame_shell_transform` | 876 | 1.605 | 0.0018 | 0.061 | 0.022 | 11.96 |
+| `af.apply_managed_presentation_chrome` | 10 | 1.429 | 0.1429 | 0.170 | 0.020 | 0.14 |
+| `af.apply_number_font_style` | 20 | 1.255 | 0.0628 | 0.190 | 0.017 | 0.27 |
+| `af.set_managed_presentation_bar_width` | 1375 | 1.241 | 0.0009 | 0.016 | 0.017 | 18.78 |
+| `af.clear_custom_aura_scan_cache` | 927 | 1.166 | 0.0013 | 0.086 | 0.016 | 12.66 |
+| `af.clear_sorted_aura_ids_cache` | 927 | 1.118 | 0.0012 | 0.103 | 0.015 | 12.66 |
+| `af.apply_managed_frame_background` | 10 | 1.077 | 0.1077 | 0.130 | 0.015 | 0.14 |
+| `af.queue_learned_buff_scan` | 197 | 0.956 | 0.0049 | 0.022 | 0.013 | 2.69 |
+| `af.ensure_visible_icon_ticker` | 876 | 0.893 | 0.0010 | 0.017 | 0.012 | 11.96 |
+
+Assessment: Aura-mode Tracked Buffs/Bars each scheduled 200 scans from
+`UNIT_AURA`, spell-cooldown, and charge events; cooldown-mode Essential/Utility
+each scheduled 89 scans from `UNIT_AURA`. These 578 scans were 66.0% of the 876
+measured `update_auras` calls. They are owned by managed Aura transport or do not
+drive the active addon layer. The accepted change rejects `UNIT_AURA` for every
+CDM shell and rejects spell-cooldown/charge events when the shell is in Aura
+mode, while retaining viewer-data/override, specialization, world-entry, combat,
+and cooldown-mode spell events.
+
+
+### 2026-09-01, Aura Frames Only, Essential and Utility Cooldown Modes Disabled
+<!-- cpu-profile-run: elapsed=81.7 combat=79.5 timer_tick=0.15 -->
+
+Context: 81.7s matched control with only `PROFILE_TARGETS.aura_frames = true`.
+Combat was active for 79.5s, 97.3% of elapsed time, one segment, and the report
+was captured while combat remained active. Timer Tick was `0.15s`; Retribution
+specialization (`70`) was active; Essential and Utility remained enabled but
+both Cooldown Mode settings were disabled. Tracked Buffs, Tracked Bars, and
+Debuffs were unchanged. No Test Auras or Custom Filtered frames were enabled.
+
+| Metric | Calls | Total ms | Avg ms | Max ms | Combat ms/sec | Combat calls/sec |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `af.update_auras` | 832 | 123.879 | 0.1489 | 0.475 | 1.558 | 10.47 |
+| `af.get_frame_activity_state` | 4873 | 68.572 | 0.0141 | 0.285 | 0.863 | 61.30 |
+| `af.render_aura_map` | 832 | 29.119 | 0.0350 | 0.132 | 0.366 | 10.47 |
+| `af.refresh_visible_icon_ticker` | 832 | 21.449 | 0.0258 | 0.108 | 0.270 | 10.47 |
+| `af.is_global_test_aura_enabled` | 4872 | 19.610 | 0.0040 | 0.068 | 0.247 | 61.29 |
+| `af.any_frame_needs_visible_icon_tick` | 832 | 18.264 | 0.0220 | 0.101 | 0.230 | 10.47 |
+| `af.refresh_frame_ooc_fade` | 832 | 14.124 | 0.0170 | 0.214 | 0.178 | 10.47 |
+| `af.frame_needs_visible_icon_tick` | 6656 | 10.661 | 0.0016 | 0.050 | 0.134 | 83.73 |
+| `af.refresh_managed_cdm_backend` | 832 | 7.521 | 0.0090 | 0.152 | 0.095 | 10.47 |
+| `af.get_frame_config_db` | 4878 | 7.241 | 0.0015 | 0.265 | 0.091 | 61.37 |
+| `af.frame_supports_test_aura` | 4873 | 7.033 | 0.0014 | 0.062 | 0.088 | 61.30 |
+| `af.update_aura_frame_move_controls` | 832 | 5.847 | 0.0070 | 0.092 | 0.074 | 10.47 |
+| `af.is_runtime_enabled` | 1671 | 5.761 | 0.0034 | 0.030 | 0.072 | 21.02 |
+| `af.invalidate_aura_scan_caches` | 947 | 5.103 | 0.0054 | 0.026 | 0.064 | 11.91 |
+| `af.set_managed_aura_backend_enabled` | 832 | 4.803 | 0.0058 | 0.148 | 0.060 | 10.47 |
+| `af.get_setting` | 2721 | 4.537 | 0.0017 | 0.018 | 0.057 | 34.23 |
+| `af.apply_addon_frame_background` | 832 | 4.373 | 0.0053 | 0.031 | 0.055 | 10.47 |
+| `af.set_managed_cdm_move_outline_shown` | 832 | 4.290 | 0.0052 | 0.027 | 0.054 | 10.47 |
+| `af.prewarm_aura_tooltip_cache` | 836 | 4.265 | 0.0051 | 0.033 | 0.054 | 10.52 |
+| `af.get_timer_behavior` | 832 | 3.859 | 0.0046 | 0.028 | 0.049 | 10.47 |
+| `af.set_shown_if_changed` | 1664 | 3.354 | 0.0020 | 0.085 | 0.042 | 20.93 |
+| `af.normalize_timer_category` | 832 | 1.968 | 0.0024 | 0.017 | 0.025 | 10.47 |
+| `af.update_combat_background` | 832 | 1.689 | 0.0020 | 0.026 | 0.021 | 10.47 |
+| `af.get_aura_frame_height` | 832 | 1.550 | 0.0019 | 0.124 | 0.019 | 10.47 |
+| `af.apply_aura_frame_shell_transform` | 832 | 1.406 | 0.0017 | 0.013 | 0.018 | 10.47 |
+| `af.clear_custom_aura_scan_cache` | 947 | 1.075 | 0.0011 | 0.017 | 0.014 | 11.91 |
+| `af.clear_sorted_aura_ids_cache` | 947 | 1.037 | 0.0011 | 0.014 | 0.013 | 11.91 |
+| `af.queue_learned_buff_scan` | 207 | 0.843 | 0.0041 | 0.018 | 0.011 | 2.60 |
+| `af.stop_visible_icon_ticker` | 832 | 0.704 | 0.0008 | 0.010 | 0.009 | 10.47 |
+| `af.learn_helpful_aura_durations_ooc` | 144 | 0.444 | 0.0031 | 0.006 | 0.006 | 1.81 |
+| `af.register_managed_frame_background_row` | 10 | 0.168 | 0.0168 | 0.023 | 0.002 | 0.13 |
+| `af.refresh_frame_fade_for_combat_state` | 4 | 0.151 | 0.0379 | 0.063 | 0.002 | 0.05 |
+| `af.resolve_bar_color` | 10 | 0.135 | 0.0135 | 0.018 | 0.002 | 0.13 |
+| `af.update_all_blizz_cdm_visibility` | 3 | 0.132 | 0.0440 | 0.062 | 0.002 | 0.04 |
+| `af.update_blizz_cdm_visibility` | 12 | 0.100 | 0.0084 | 0.023 | 0.001 | 0.15 |
+| `af.resolve_text_color` | 10 | 0.090 | 0.0090 | 0.012 | 0.001 | 0.13 |
+| `af.get_preset_keys` | 12 | 0.085 | 0.0071 | 0.026 | 0.001 | 0.15 |
+| `af.get_color_consumer_group` | 20 | 0.080 | 0.0040 | 0.008 | 0.001 | 0.25 |
+| `af.get_bar_bg_color` | 10 | 0.057 | 0.0057 | 0.010 | 0.001 | 0.13 |
+| `af.queue_wow_cooldown_refresh` | 4 | 0.056 | 0.0141 | 0.029 | 0.001 | 0.05 |
+
+Assessment: disabling only the two cooldown modes left `af.update_auras` call
+rate effectively unchanged (`10.47` versus `10.56 calls/sec`) but reduced its
+combat-normalized cost from `9.245` to `1.558ms/sec` (83.1%).
+`af.render_aura_map` fell from `2.725` to `0.366ms/sec` (86.6%), and
+`af.add_cooldown_viewer_category_entries` plus `af.get_ordered_cdm_records`
+disappeared from the top 40 entirely. Individual managed-backend refresh and
+enable paths remained immaterial. This isolates the major cost to rebuilding
+the addon cooldown maps, not to cooldown mode increasing event frequency. It
+does not support record-sharing or broad backend invalidation work as the first
+change; event/mode attribution should determine which updates unnecessarily
+rebuild those maps before changing scan ownership.
+
+
 ### 2026-08-31, Aura Frames Only, Post-Migration Baseline
 <!-- cpu-profile-run: elapsed=100.2 combat=98.5 timer_tick=0.15 -->
 

@@ -23,6 +23,7 @@ aura_specialization index=3 id=70 name=Retribution
 aura_cooldown_modes essential=true utility=false
 aura_test_auras global=false paused=false frames=none
 aura_custom_frames count=0 entries=none
+aura_event event=UNIT_AURA category=essential mode=cooldown received=20 scheduled=10 coalesced=10 ignored=0
 af.update_auras calls=100 total=25.000ms avg=0.2500ms max=1.000ms cb_msps=0.266 cb_callsps=1.06
 af.tick_visible_icons calls=600 total=60.000ms avg=0.1000ms max=0.500ms cb_msps=0.638 cb_callsps=6.38
 |cff33ff99== LsTweeks CPU Profile stopped ==|r
@@ -41,6 +42,9 @@ try {
     }
     if ($output -notmatch "\| ``af\.update_auras`` \| 100 \| 25\.000 \| 0\.2500 \| 1\.000 \| 0\.266 \| 1\.06 \|") {
         throw "Processed output contains an incorrect metric row."
+    }
+    if ($output -notmatch "aura_event event=UNIT_AURA category=essential mode=cooldown received=20 scheduled=10 coalesced=10 ignored=0") {
+        throw "Processed output is missing Aura event attribution."
     }
     if ($output -match "CPU Profile stopped") {
         throw "Processed output should exclude the stop marker."

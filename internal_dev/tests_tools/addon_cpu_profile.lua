@@ -392,6 +392,130 @@ local function print_target_settings()
     end
 end
 
+local function restore_aura_event_attribution()
+    for _, entry in ipairs(P.aura_event_script_wrappers or {}) do
+        if entry.frame and entry.frame.GetScript and entry.frame.SetScript
+            and entry.frame:GetScript("OnEvent") == entry.proxy
+        then
+            entry.frame:SetScript("OnEvent", entry.original)
+        end
+    end
+    P.aura_event_script_wrappers = {}
+end
+
+local function get_aura_event_mode(M, frame)
+    if frame.is_custom then return "custom" end
+    local category = frame.category
+    if M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category] then
+        return get_aura_setting(M, "cooldown_mode_" .. category) == true
+            and "cooldown"
+            or "aura"
+    end
+    return "preset"
+end
+
+local function is_aura_event_rejected_by_mode(M, frame, event)
+    local category = frame.category
+    if not (M.WOW_COOLDOWN_CATEGORIES and M.WOW_COOLDOWN_CATEGORIES[category]) then
+        return false
+    end
+    if event == "UNIT_AURA" then return true end
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then
+        return get_aura_event_mode(M, frame) ~= "cooldown"
+    end
+    return false
+end
+
+local function note_aura_event(frame, event, pending_before, pending_after, rejected_by_mode)
+    if not P.enabled then return end
+    local M = addon.aura_frames
+    if not M then return end
+
+    local category = clean_context_text(frame.category or "unknown")
+    local mode = get_aura_event_mode(M, frame)
+    local key = table.concat({ clean_context_text(event), category, mode }, "|")
+    local counter = P.aura_event_counts[key]
+    if not counter then
+        counter = {
+            event = clean_context_text(event),
+            category = category,
+            mode = mode,
+            received = 0,
+            scheduled = 0,
+            coalesced = 0,
+            ignored = 0,
+        }
+        P.aura_event_counts[key] = counter
+    end
+
+    counter.received = counter.received + 1
+    if rejected_by_mode then
+        counter.ignored = counter.ignored + 1
+    elseif not pending_before and pending_after then
+        counter.scheduled = counter.scheduled + 1
+    elseif pending_before and pending_after then
+        counter.coalesced = counter.coalesced + 1
+    else
+        counter.ignored = counter.ignored + 1
+    end
+end
+
+local function install_aura_event_attribution()
+    restore_aura_event_attribution()
+    if not is_target_enabled("aura_frames") then return end
+
+    local M = addon.aura_frames
+    for _, frame in ipairs(M and M.frames_list or {}) do
+        if frame and not frame._managed_aura_backend and frame.GetScript and frame.SetScript then
+            local original = frame:GetScript("OnEvent")
+            if original then
+                local proxy = function(event_frame, event, ...)
+                    local pending_before = event_frame._scan_pending == true
+                    local rejected_by_mode = is_aura_event_rejected_by_mode(M, event_frame, event)
+                    original(event_frame, event, ...)
+                    note_aura_event(
+                        event_frame,
+                        event,
+                        pending_before,
+                        event_frame._scan_pending == true,
+                        rejected_by_mode
+                    )
+                end
+                P.aura_event_script_wrappers[#P.aura_event_script_wrappers + 1] = {
+                    frame = frame,
+                    original = original,
+                    proxy = proxy,
+                }
+                frame:SetScript("OnEvent", proxy)
+            end
+        end
+    end
+end
+
+local function print_aura_event_attribution()
+    local counters = {}
+    for _, counter in pairs(P.aura_event_counts or {}) do
+        counters[#counters + 1] = counter
+    end
+    sort(counters, function(a, b)
+        if a.event ~= b.event then return a.event < b.event end
+        if a.category ~= b.category then return a.category < b.category end
+        return a.mode < b.mode
+    end)
+    for _, counter in ipairs(counters) do
+        print(format(
+            "aura_event event=%s category=%s mode=%s received=%d scheduled=%d coalesced=%d ignored=%d",
+            counter.event,
+            counter.category,
+            counter.mode,
+            counter.received,
+            counter.scheduled,
+            counter.coalesced,
+            counter.ignored
+        ))
+    end
+end
+
 --#endregion MODULE WRAPPER SECTIONS ===========================================
 
 
@@ -409,6 +533,8 @@ end
 
 local function reset_profile()
     P.metrics = {}
+    P.aura_event_counts = {}
+    P.aura_event_script_wrappers = P.aura_event_script_wrappers or {}
     P.started_at = now()
     reset_combat_timer(P.started_at)
     reset_skyriding_timer(P.started_at)
@@ -418,6 +544,7 @@ local function start_profile()
     install_wrappers()
     reset_profile()
     P.enabled = true
+    install_aura_event_attribution()
     print("|cff33ff99== LsTweeks CPU Profile started ==|r")
     print("targets: " .. get_enabled_target_names())
     print_target_settings()
@@ -427,6 +554,7 @@ local function stop_profile()
     finish_active_combat()
     finish_active_skyriding()
     P.enabled = false
+    restore_aura_event_attribution()
     restore_wrappers()
     print("|cff33ff99== LsTweeks CPU Profile stopped ==|r")
 end
@@ -486,6 +614,7 @@ local function report_profile(limit)
         P.skyriding_started_at and "yes" or "no"
     ))
     print_aura_profile_context()
+    print_aura_event_attribution()
     for i = 1, math.min(limit, #rows) do
         local row = rows[i]
         local normalized = ""

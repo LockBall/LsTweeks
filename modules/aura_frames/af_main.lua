@@ -960,7 +960,7 @@ local function handle_aura_frame_event(frame, event, unit)
     end
 
     local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
-    if not activity.enabled then
+    if not M.should_process_aura_frame_event(activity, event) then
         return
     end
 

@@ -37,7 +37,9 @@ in that module's memory file under `internal_dev/working_docs/proj_mem/modules/`
   is needed.
 - Aura Frames-targeted reports also print the module status, Timer Tick,
   specialization, Essential/Utility cooldown modes, Test Aura state, and Custom
-  Filtered frame details. Do not collect that context separately before a run.
+  Filtered frame details. During the section 4 event-attribution review they
+  also print per-event/category/mode received, scheduled, coalesced, and ignored
+  counts. Do not collect that context separately before a run.
 - Paste a new Aura Frames report into
   `internal_dev/working_docs/ToDo/aura_frames_profile_results.txt`. Validate and
   convert it to a run-history section with

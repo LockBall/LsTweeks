@@ -148,6 +148,31 @@ h.test("managed Short Buffs use native maximum duration and expiration ordering"
     M.set_managed_aura_runtime_enabled(false)
 end)
 
+h.test("managed Test Aura rendering does not request unit Aura instance ordering", function()
+    local M = fixture.boot_managed_presets()
+    M.db.bar_mode_short = false
+    M.db.show_timer_swipe_short = true
+    M.invalidate_frame_runtime_config(M.frames.show_short)
+    local previous_get_ids = C_UnitAuras.GetUnitAuraInstanceIDs
+    rawset(C_UnitAuras, "GetUnitAuraInstanceIDs", function()
+        error("managed Test Auras must not request secret unit Aura ordering")
+    end)
+
+    local ok, err = pcall(M.set_test_aura_enabled, "short", true)
+    local preview = M.frames.show_short.icons[1]
+    local preview_shown = preview:IsShown()
+
+    rawset(C_UnitAuras, "GetUnitAuraInstanceIDs", previous_get_ids)
+    h.ok(preview.cooldown:IsPaused(), "enabled Test Aura starts with its duration swipe paused")
+    h.ok(M.toggle_test_aura_preview("short"), "Play resumes the Test Aura")
+    h.ok(not preview.cooldown:IsPaused(), "Play resumes the duration swipe")
+    h.ok(M.toggle_test_aura_preview("short"), "Pause stops the Test Aura")
+    h.ok(preview.cooldown:IsPaused(), "Pause stops the duration swipe")
+    M.set_test_aura_enabled("short", false)
+    h.ok(ok, tostring(err))
+    h.ok(preview_shown, "managed Test Aura still uses the addon renderer")
+end)
+
 h.run("af_managed_short_presentation")
 
 --#endregion FILE CONTENTS ===================================================
