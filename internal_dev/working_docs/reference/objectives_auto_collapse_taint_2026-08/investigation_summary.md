@@ -21,7 +21,7 @@ This folder preserves the August 2026 investigation into compact per-section Aut
 - `test_ob_trace_diagnostic.lua.txt`: archived collector coverage
 - `test_ob_auto_collapse_securecall_rejected.lua.txt`: archived rejected-path coverage
 - `objectives_visibility_oneshot_security.txt`: destination for the post-rollback no-reload field-security snapshot
-- `../../../ToDo/error_batches/2026-08-17_185132_void-incursion-maw-buffs-secret-aura-taint/`: preserved recurrence error export
+- `../error_batches/resolved/2026-08-17_185132_void-incursion-maw-buffs-secret-aura-taint/`: preserved recurrence error export
 - `../../../ToDo/new_issue.txt`: most recent user-saved issue buffer at closeout; this shared buffer may later be reused and is not canonical evidence
 - The live collector, slash command, Scenario-only event subscriptions, and collector-only headless suite were removed after archival
 

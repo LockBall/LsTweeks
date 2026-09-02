@@ -3,9 +3,12 @@
 Archives one raw WoW Lua error inbox and writes its condensed report.
 
 .DESCRIPTION
-Copies the current inbox into a timestamped batch directory under `error_batches/`,
-creates `condensed.md` with `condense_lua_errors.ps1`, and optionally resets the
-inbox only after both archive files exist.
+Copies the current inbox into a timestamped batch directory under
+`working_docs/reference/error_batches/unreviewed/`, creates `condensed.md` with
+`condense_lua_errors.ps1`, and optionally resets the inbox only after both
+archive files exist. After assessment, move the batch to the `resolved` or
+`monitoring` directory and update the archive index. Use `-ArchiveRoot` to
+override the archive root.
 
 .EXAMPLE
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/archive_lua_error_batch.ps1 -Path internal_dev/working_docs/ToDo/new_issue.txt -Label tooltip-taint -ClearInbox
@@ -17,6 +20,8 @@ param(
     [string] $Path,
 
     [string] $Label = "batch",
+
+    [string] $ArchiveRoot,
 
     [switch] $ClearInbox
 )
@@ -32,8 +37,14 @@ if ([string]::IsNullOrWhiteSpace($inboxText)) {
 
 $safeLabel = ($Label -replace '[^A-Za-z0-9_-]+', '-').Trim('-')
 if (-not $safeLabel) { $safeLabel = "batch" }
-$batchRoot = Join-Path (Split-Path -Parent $resolvedPath) "error_batches"
-$existingRaw = Get-ChildItem -LiteralPath $batchRoot -Filter "raw.txt" -Recurse -ErrorAction SilentlyContinue |
+if ($ArchiveRoot) {
+    $archiveRoot = [System.IO.Path]::GetFullPath($ArchiveRoot)
+} else {
+    $archiveRoot = Join-Path (Split-Path -Parent $PSScriptRoot) "working_docs/reference/error_batches"
+}
+$batchRoot = Join-Path $archiveRoot "unreviewed"
+New-Item -ItemType Directory -Path $batchRoot -Force -ErrorAction Stop | Out-Null
+$existingRaw = Get-ChildItem -LiteralPath $archiveRoot -Filter "raw.txt" -Recurse -ErrorAction SilentlyContinue |
     Where-Object { [System.IO.File]::ReadAllText($_.FullName) -ceq $inboxText } |
     Select-Object -First 1
 if ($existingRaw) {
@@ -57,7 +68,7 @@ $rawPath = Join-Path $batchPath "raw.txt"
 $reportPath = Join-Path $batchPath "condensed.md"
 [System.IO.File]::WriteAllText($rawPath, $inboxText, [System.Text.UTF8Encoding]::new($false))
 
-& (Join-Path $PSScriptRoot "condense_lua_errors.ps1") -Path $rawPath -OutputPath $reportPath
+& (Join-Path $PSScriptRoot "condense_lua_errors.ps1") -Path $rawPath -OutputPath $reportPath -SourceLabel "raw.txt"
 if (-not (Test-Path -LiteralPath $reportPath)) {
     throw "Condensed report was not created; inbox was left unchanged."
 }

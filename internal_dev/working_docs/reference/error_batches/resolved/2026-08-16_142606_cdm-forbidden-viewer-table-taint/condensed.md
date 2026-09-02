@@ -1,6 +1,6 @@
 # Condensed Lua Errors
 
-- Source: `G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\internal_dev\working_docs\ToDo\error_batches\2026-08-16_142606_cdm-forbidden-viewer-table-taint\raw.txt`
+- Source: `raw.txt`
 - Parsed records: 1
 - Reported occurrences: 1
 - Unique messages: 1

@@ -23,6 +23,8 @@ param(
 
     [string] $OutputPath,
 
+    [string] $SourceLabel,
+
     [ValidateSet("Markdown", "Json")]
     [string] $Format = "Markdown",
 
@@ -362,9 +364,10 @@ if ($records.Count -eq 0) {
 }
 
 $families = @(Build-Families -Records $records -ProjectAddonName $AddonName)
+$reportSource = if ($SourceLabel) { $SourceLabel } else { $Path }
 if ($Format -eq 'Json') {
     $reportObject = [pscustomobject]@{
-        source = $Path
+        source = $reportSource
         parsed_records = $records.Count
         reported_occurrences = ($records | Measure-Object -Property Count -Sum).Sum
         unique_messages = $families.Count
@@ -391,7 +394,7 @@ if ($Format -eq 'Json') {
     $report = $reportObject | ConvertTo-Json -Depth 8
     $report += "`n"
 } else {
-    $report = ConvertTo-MarkdownReport -Records $records -Families $families -SourcePath $Path -StackLimit $MaxStackFrames -ShowLocals $IncludeLocals.IsPresent -LocalLimit $MaxLocalLines -ProjectAddonName $AddonName
+    $report = ConvertTo-MarkdownReport -Records $records -Families $families -SourcePath $reportSource -StackLimit $MaxStackFrames -ShowLocals $IncludeLocals.IsPresent -LocalLimit $MaxLocalLines -ProjectAddonName $AddonName
 }
 
 if ($OutputPath) {

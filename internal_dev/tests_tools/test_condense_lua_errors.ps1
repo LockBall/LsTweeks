@@ -62,6 +62,10 @@ try {
     Assert-Contains $markdown "Variant 1: 3x; First"
     if ($markdown.Contains("large=<table>")) { throw "Locals must be omitted by default." }
 
+    $labeled = (& $tool -Path $fixturePath -SourceLabel "raw.txt") | Out-String
+    Assert-Contains $labeled '- Source: `raw.txt`'
+    if ($labeled.Contains($fixturePath)) { throw "SourceLabel must replace the machine-local input path in Markdown output." }
+
     $withLocals = (& $tool -Path $fixturePath -IncludeLocals -MaxLocalLines 2) | Out-String
     Assert-Contains $withLocals "Representative locals:"
     Assert-Contains $withLocals "large=<table>{"
@@ -80,6 +84,8 @@ try {
     if ($json.parsed_records -ne 3 -or $json.reported_occurrences -ne 6 -or $json.unique_messages -ne 2) {
         throw "JSON summary counts are incorrect."
     }
+    $labeledJson = (& $tool -Path $fixturePath -Format Json -SourceLabel "raw.txt") | Out-String | ConvertFrom-Json
+    if ($labeledJson.source -ne "raw.txt") { throw "SourceLabel must replace the machine-local input path in JSON output." }
 
     Write-Output "condense_lua_errors tests passed."
 } finally {

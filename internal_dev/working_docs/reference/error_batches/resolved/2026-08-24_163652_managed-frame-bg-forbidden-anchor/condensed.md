@@ -1,6 +1,6 @@
 # Condensed Lua Errors
 
-- Source: `G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\internal_dev\working_docs\ToDo\error_batches\2026-08-24_163652_managed-frame-bg-forbidden-anchor\raw.txt`
+- Source: `raw.txt`
 - Parsed records: 2
 - Reported occurrences: 2
 - Unique messages: 1

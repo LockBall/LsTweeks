@@ -1,6 +1,6 @@
 # Condensed Lua Errors
 
-- Source: `G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks\internal_dev\working_docs\ToDo\error_batches\2026-08-17_185132_void-incursion-maw-buffs-secret-aura-taint\raw.txt`
+- Source: `raw.txt`
 - Parsed records: 1
 - Reported occurrences: 1
 - Unique messages: 1
@@ -17,7 +17,7 @@ GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsT
 - Reported occurrences: 1 across 1 record(s)
 - Stack variants: 1
 - Message origin: unknown
-- Captured: Mon Aug 17 18:49:58 2026
+- Captured: Sun Aug 23 10:07:20 2026
 - Project frames in captured stacks: none
 - Addons appearing in stacks: Blizzard_MawBuffs, Blizzard_ObjectiveTracker, Blizzard_SharedXML
 
@@ -35,7 +35,7 @@ GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'LsT
 
 ### Stack variants
 
-#### Variant 1: 1x; Mon Aug 17 18:49:58 2026
+#### Variant 1: 1x; Sun Aug 23 10:07:20 2026
 ```text
 (no caller tail; stack matches the common prefix)
 ```
