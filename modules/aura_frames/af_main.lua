@@ -1045,16 +1045,18 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
         managed_backend = M.create_managed_timed_buff_backend(frame, cfg_db)
     end
 
-    -- Managed presets need one addon-owned mock visual for Test Aura. Other
-    -- frames retain their full precreated pool so combat updates create nothing.
+    -- Managed presets need one addon-owned mock visual for Test Aura. CDM frames
+    -- retain their full pool for Cooldown Mode but share the managed preview cell.
     create_aura_icon_pool(frame, cfg_db, category, managed_backend and 1 or nil)
-    if managed_backend and M.initialize_managed_test_preview_background then
-        M.initialize_managed_test_preview_background(frame)
-    end
     if not managed_backend then
         if M.WOW_COOLDOWN_CATEGORIES[category] and M.create_managed_cdm_backend then
             M.create_managed_cdm_backend(frame, cfg_db, category)
         end
+    end
+    if (managed_backend or frame._managed_cdm_backend)
+        and M.initialize_managed_test_preview_background
+    then
+        M.initialize_managed_test_preview_background(frame)
     end
 
     -- Map-based aura cache: auraInstanceID → entry table. Persists across events.

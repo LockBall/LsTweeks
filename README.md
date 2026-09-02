@@ -34,7 +34,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, **Text Colors**, and **Text Font** settings, with one participation checkbox per group for every built-in and custom frame. **Apply All** beneath Bar Font and Timer Font performs a one-shot copy to every frame without enabling live sharing. The shared settings are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared settings are disabled; individual Test Aura controls remain on custom and Cooldown Manager-backed frame tabs.
+The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, **Text Colors**, and **Text Font** settings, with one participation checkbox per group for every built-in and custom frame. **Apply All** beneath Bar Font and Timer Font performs a one-shot copy to every frame without enabling live sharing. The shared settings are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared settings are disabled; individual Test Aura controls remain available on every Aura frame tab.
 
 
 #### Preset Frames
@@ -54,7 +54,7 @@ Each Aura frame can configure stack-count color, font, bold face, outline, and f
 In Icon mode, **Duration Swipe** adds Blizzard's native Aura-duration sweep alongside the optional timer text. Permanent Auras have no timed sweep. Bar Mode communicates remaining duration through its status bar instead.
 
 #### Test Aura Preview
-Use **Test Aura** to preview any Aura frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs keep their native managed content visible while displaying one addon-owned mock on the side opposite their growth direction.
+Use **Test Aura** to preview any Aura frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs keep their native managed content visible while displaying one addon-owned mock on the side opposite their growth direction. Cooldown Manager Aura-mode frames use the same separate preview placement; Essential and Utility Cooldown Mode place the mock in their normal addon-rendered sequence. Tracked Buffs and Tracked Bars intentionally remain Aura-mode-only.
 
 
 #### Tooltips
@@ -116,7 +116,7 @@ All the Colors applies reversible runtime color overrides without replacing the 
 - **Global Color**: one RGBA color across checked modules; visibility-capable backgrounds in those modules are shown while the override is active.
 - **Show Backgrounds**: temporarily shows every registered visibility-capable background independently of color participation and the global color override, without changing saved module settings.
 - **Disable OOC Fade**: temporarily prevents registered fade-capable backgrounds from fading out of combat without changing their saved module settings. Enabling **Fade OOC** on an individual Aura Frame clears this global override and synchronizes its linked controls.
-- **Enable Test Auras**: temporarily previews test auras on every enabled custom or Cooldown Manager-backed Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
+- **Enable Test Auras**: temporarily previews one test aura on every enabled Aura Frame without changing its individual Test Aura setting; the adjacent Play/Pause button controls all preview clocks together.
 - **Global Participation**: Objectives, Buffs, and Debuffs have independent checkboxes beneath **Enable Global Color**. Module-specific shared colors and granular target selections stay on their owning settings pages.
 - **Aura Colors**: the Global page groups the independent Frame BG and Bar BG overrides under **BG Colors**, Buff Bar and Debuff Bar fills under **Bar Colors**, and Bar Text and Timer Text under **Text Colors**.
 - **Presets**: a native-style previous/dropdown/next selector cycles through red, orange, yellow, green, blue, indigo, violet, black, white, and grey. Presets preserve the selected alpha; manual picker colors display as **Custom**.

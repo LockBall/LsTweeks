@@ -31,21 +31,23 @@ Regression fixed:
 1. Reload UI after code changes.
 2. Enable the addon CDM frame being tested.
 3. Use WoW's Cooldown Manager UI to move the same tracked spell between CDM groups.
-4. Keep the addon CDM frame in cooldown mode.
+4. For Essential or Utility handoff testing, enable **Cooldown Mode**. Tracked
+   Buffs and Tracked Bars intentionally expose Aura mode only.
 
 
 ## Core Matrix
-For each spell and CDM group:
+For each spell and applicable CDM group:
 
 1. Put the spell in the CDM group.
 2. Save or close WoW's Cooldown Manager and confirm it leaves the old addon frame.
-3. Confirm it appears in the destination addon frame when that frame's configured
-   Aura/cooldown mode makes the spell visible.
+3. Confirm it appears in the destination addon frame when that frame's supported
+   mode makes the spell visible.
 4. Enter combat.
 5. Cast the spell.
-6. Confirm the addon frame shows active aura duration first.
-7. Let the active aura expire.
-8. Confirm the addon frame then shows the cooldown without waiting for combat exit.
+6. Confirm the addon frame shows the active Aura duration.
+7. For Essential and Utility in Cooldown Mode, let the active Aura expire and
+   confirm the frame reveals the continuing cooldown without waiting for combat
+   exit. For Tracked Buffs/Bars, confirm the Aura disappears normally.
 
 Test spells:
 - Blessing of Freedom
@@ -83,7 +85,9 @@ Reload/wait variant:
 
 ## Pass Criteria
 Pass:
-- Active aura duration appears before cooldown for each spell/group pairing.
+- Active Aura duration appears correctly for every applicable spell/group pairing.
+- Essential and Utility Cooldown Mode reveal the continuing cooldown after the
+  active Aura ends; Tracked Buffs/Bars remove the ended Aura normally.
 - The same spell behaves consistently when moved between Essential and Utility.
 - No frame shows a stale spell name/icon after moving spells between CDM groups.
 

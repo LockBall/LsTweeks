@@ -448,6 +448,9 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
+        if M.hide_managed_test_preview_background then
+            M.hide_managed_test_preview_background(self)
+        end
         if self._managed_cdm_backend and M.set_managed_aura_backend_enabled then
             M.set_managed_aura_backend_enabled(self._managed_cdm_backend, false)
         end
@@ -486,7 +489,10 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     self._bar_mode        = bar_mode
     local short_threshold = db.short_threshold or M.DEFAULT_SHORT_THRESHOLD
     local growth        = runtime_config.growth
-    local managed_preview = self._managed_aura_backend ~= nil and preview_enabled
+    local managed_preview = preview_enabled and (
+        self._managed_aura_backend ~= nil
+        or (self._managed_cdm_backend ~= nil and not activity.needs_cdm_scan)
+    )
     local max_limit     = runtime_config.max_limit
     local sort_mode     = runtime_config.sort_mode
     local in_combat = InCombatLockdown and InCombatLockdown()
@@ -517,9 +523,11 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     M.update_aura_frame_move_controls(self, is_moving)
     if needs_layout and not in_combat and not is_user_positioning then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
-        if managed_preview and M.position_managed_test_preview then
-            M.position_managed_test_preview(self, growth)
-        end
+    end
+    if managed_preview and not in_combat and not is_user_positioning
+        and M.position_managed_test_preview
+    then
+        M.position_managed_test_preview(self, growth)
     end
 
     set_shown_if_changed(self, true)
@@ -575,6 +583,8 @@ function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, 
     })
     if managed_preview and M.apply_managed_test_preview_background then
         M.apply_managed_test_preview_background(self, cfg_db, category)
+    elseif M.hide_managed_test_preview_background then
+        M.hide_managed_test_preview_background(self)
     end
 end
 
