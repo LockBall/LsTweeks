@@ -73,7 +73,7 @@ end
 
 h.test("registered global, target, and local precedence is non-destructive", function()
     local db = M.get_db()
-    local consumer_db = M.ensure_consumer_db("aura_frames")
+    M.ensure_consumer_db("aura_frames")
     db.global_enabled = false
     target_state["frame:static"] = true
     target_state["bar:static"] = false

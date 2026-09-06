@@ -77,7 +77,7 @@ h.test("truthy fade setting registers fade events", function()
 end)
 
 h.test("enabling fade during combat adopts current combat state", function()
-    local db = fresh_db({ fade_out_of_combat = true })
+    fresh_db({ fade_out_of_combat = true })
     reset_runtime()
     stub.in_combat = true
 

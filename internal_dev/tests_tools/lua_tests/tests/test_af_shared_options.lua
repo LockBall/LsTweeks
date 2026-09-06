@@ -196,7 +196,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
     h.ok(not bar_color_control.checkbox:IsEnabled(), "disabled shared color makes bar color participation inactive")
     h.ok(not text_color_control.checkbox:IsEnabled(), "disabled shared color makes text participation inactive")
 
-    local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.ensure_consumer_db(M.MODULE_KEY)
     h.eq(M.db.sync_bar_bg_static_long, true, "BG Colors starts selected in Aura DB")
     h.eq(M.db.sync_bar_color_static_long, true, "bar color starts selected in Aura DB")
     h.eq(M.db.sync_text_color_static_long, true, "text colors start selected in Aura DB")
@@ -279,7 +279,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
     h.eq(local_bar_font:GetLastCall("SetFont")[1], addon.GetFontDefinition("skurri").path,
         "disabling shared Text Options immediately restores the local Bar font")
 
-    consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.ensure_consumer_db(M.MODULE_KEY)
     color_sync.get_db().global_enabled = true
     color_sync.set_global_participation_enabled(
         M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
@@ -353,7 +353,7 @@ end)
 
 h.test("Aura Frames resolves shared color before the global override", function()
     local db = color_sync.get_db()
-    local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.ensure_consumer_db(M.MODULE_KEY)
     local local_color = { r = 0.1, g = 0.2, b = 0.3, a = 0.4 }
     M.db.shared_frame_background_color = { r = 0.5, g = 0.6, b = 0.7, a = 0.8 }
     M.db.shared_bar_background_color = { r = 0.8, g = 0.7, b = 0.6, a = 0.5 }
@@ -431,7 +431,7 @@ end)
 
 h.test("Aura Frames resolves shared Buff and Debuff bar colors before the global override", function()
     local db = color_sync.get_db()
-    local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.ensure_consumer_db(M.MODULE_KEY)
     local local_color = { r = 0.1, g = 0.2, b = 0.3 }
     M.db.shared_buff_bar_color = { r = 0.2, g = 0.4, b = 0.6 }
     M.db.shared_debuff_bar_color = { r = 0.8, g = 0.2, b = 0.1 }
@@ -480,7 +480,7 @@ end)
 
 h.test("Aura Frames resolves shared Bar and Timer text colors before the global override", function()
     local db = color_sync.get_db()
-    local consumer_db = color_sync.ensure_consumer_db(M.MODULE_KEY)
+    color_sync.ensure_consumer_db(M.MODULE_KEY)
     local local_color = { r = 0.1, g = 0.2, b = 0.3 }
     M.db.shared_bar_text_color = { r = 0.2, g = 0.4, b = 0.6 }
     M.db.shared_timer_text_color = { r = 0.8, g = 0.7, b = 0.3 }

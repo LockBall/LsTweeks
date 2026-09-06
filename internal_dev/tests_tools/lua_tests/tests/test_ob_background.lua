@@ -13,13 +13,13 @@ h.load_addon("modules/objectives")
 local M = h.addon.objectives
 local edit_mode_test_calls = {}
 
----@class TestObjectiveTrackerFrame : ObjectiveTrackerFrame
+---@class TestObjectiveTrackerFrame : Frame
 ---@field __collapsed boolean
 ---@field __calls table<string, table[]>
 ---@field GetCalls fun(self: TestObjectiveTrackerFrame, method: string): table[]?
 ---@field ForceExpand fun(self: TestObjectiveTrackerFrame)
 
----@class TestObjectiveTrackerNineSlice : ObjectiveTrackerContainerTemplate_NineSlice
+---@class TestObjectiveTrackerNineSlice : Frame
 ---@field __calls table<string, table[]>
 ---@field Center Texture?
 
