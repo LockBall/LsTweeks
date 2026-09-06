@@ -122,16 +122,16 @@ function Get-ImpactedSuiteNames {
 
         switch -Regex ($path) {
             '^internal_dev/tests_tools/lua_tests/af_managed_fixture\.lua$' { & $add 'af_managed'; continue }
-            '^modules/background_color_sync/' { & $add @('bcs_sync', 'af_color_sync'); continue }
+            '^modules/background_color_sync/' { & $add @('bcs_sync', 'af_shared_options'); continue }
             '^modules/aura_frames/af_logic_native_visibility\.lua$' { & $add 'af_native_visibility'; continue }
-            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_scan_config', 'af_color_sync'); continue }
+            '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_scan_config', 'af_shared_options'); continue }
             '^modules/aura_frames/' {
                 & $add @(
                     'af_timer_preview',
                     'af_layout_runtime',
                     'af_tooltip_integration',
                     'af_scan_config',
-                    'af_color_sync',
+                    'af_shared_options',
                     'af_managed'
                 )
                 continue

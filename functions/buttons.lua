@@ -313,7 +313,13 @@ function addon.CreateMoveResetButton(parent, anchor_to, opts)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetSize(opts.width or 110, opts.height or DEFAULT_BUTTON_HEIGHT)
     if anchor_to then
-        button:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", opts.x or 0, opts.y or -6)
+        button:SetPoint(
+            "TOPLEFT",
+            anchor_to,
+            "BOTTOMLEFT",
+            opts.x or 0,
+            opts.y or -(addon.CONTROL_STACK_SPACING and addon.CONTROL_STACK_SPACING.button or 6)
+        )
     end
     button:SetText("Move Reset")
     addon.ApplyStandardButtonStyle(button)

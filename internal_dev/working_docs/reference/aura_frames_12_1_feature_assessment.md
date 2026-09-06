@@ -256,7 +256,7 @@ protected-duration reads.
 **Status:** Complete. Managed bar/icon switching, timer and Stack font/size/bold/color,
 black outlines, fractional font sizes, bar foreground color, and resizing are
 implemented. Frame BG now uses a shared texture-backed controller on the
-addon-owned frame shell and consumes the same local, Shared BG Colors, and All
+addon-owned frame shell and consumes the same local, Shared Options, and All
 the Colors policy pipeline as addon-rendered frames. It keeps one configured-width row
 visible when empty and extends through non-overlapping regions whose visibility
 is inherited from native AuraButtons. The complete Bar/Icon, empty/populated,

@@ -17,8 +17,8 @@ function M.resolve_background_color(category, target_type, local_color)
         and M.db and M.db.shared_bar_background_color
         or M.db and M.db.shared_frame_background_color
     if M.db
-        and M.db.shared_background_color_enabled == true
-        and M.get_background_color_sync_enabled(category, target_type)
+        and M.db.shared_options_enabled == true
+        and M.get_shared_background_enabled(category, target_type)
         and shared_color
     then
         resolved = shared_color
@@ -43,8 +43,8 @@ function M.resolve_background_visibility(category, target_type, local_enabled)
     local resolved = local_enabled == true
     if target_type == "frame"
         and M.db
-        and M.db.shared_background_color_enabled == true
-        and M.get_background_color_sync_enabled(category, target_type)
+        and M.db.shared_options_enabled == true
+        and M.get_shared_background_enabled(category, target_type)
     then
         resolved = true
     end

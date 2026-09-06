@@ -44,12 +44,12 @@ local POPUP_ALPHA_Y = 110
 local POPUP_HEX_X = 245
 local POPUP_HEX_Y = 48
 
--- Okay / Cancel
+-- Save / Cancel / Reset
 local POPUP_BUTTON_W = 64
-local POPUP_OKAY_X = 114.5
-local POPUP_OKAY_Y = 20
-local POPUP_CANCEL_X = 186.5
-local POPUP_CANCEL_Y = 20
+local POPUP_SAVE_X = 76
+local POPUP_CANCEL_X = 148
+local POPUP_RESET_X = 220
+local POPUP_BUTTON_Y = 20
 
 -- Preset row
 local POPUP_PRESET_SWATCH_SIZE = 16
@@ -108,6 +108,18 @@ local function get_popup_action_buttons()
     return okay, cancel
 end
 
+local function ensure_popup_reset_button()
+    if ColorPickerFrame._lstweeks_reset_button then
+        return ColorPickerFrame._lstweeks_reset_button
+    end
+    local reset = CreateFrame("Button", nil, ColorPickerFrame, "UIPanelButtonTemplate")
+    reset:SetSize(POPUP_BUTTON_W, 22)
+    reset:SetText("Reset")
+    if addon.ApplyStandardButtonStyle then addon.ApplyStandardButtonStyle(reset) end
+    ColorPickerFrame._lstweeks_reset_button = reset
+    return reset
+end
+
 local function capture_frame_layout(frame)
     if not (frame and frame.GetNumPoints and frame.GetPoint) then return nil end
 
@@ -134,7 +146,8 @@ end
 
 local function place_popup_action_buttons()
     local okay, cancel = get_popup_action_buttons()
-    local candidates = { okay, cancel }
+    local reset = ensure_popup_reset_button()
+    local candidates = { okay, cancel, reset }
 
     for _, button in ipairs(candidates) do
         if button and button.SetWidth then
@@ -145,8 +158,12 @@ local function place_popup_action_buttons()
     if okay and cancel and okay.ClearAllPoints and cancel.ClearAllPoints then
         okay:ClearAllPoints()
         cancel:ClearAllPoints()
-        okay:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_OKAY_X, POPUP_OKAY_Y)
-        cancel:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_CANCEL_X, POPUP_CANCEL_Y)
+        reset:ClearAllPoints()
+        okay:SetText("Save")
+        okay:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_SAVE_X, POPUP_BUTTON_Y)
+        cancel:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_CANCEL_X, POPUP_BUTTON_Y)
+        reset:SetPoint("BOTTOMLEFT", ColorPickerFrame, "BOTTOMLEFT", POPUP_RESET_X, POPUP_BUTTON_Y)
+        reset:Show()
     end
 end
 
@@ -182,6 +199,7 @@ local function capture_native_popup_layout()
         popup_height = ColorPickerFrame:GetHeight(),
         content = { frame = content, layout = capture_frame_layout(content) },
         okay = { frame = okay, layout = capture_frame_layout(okay) },
+        okay_text = okay and okay.GetText and okay:GetText(),
         cancel = { frame = cancel, layout = capture_frame_layout(cancel) },
         hex = { frame = hex_box, layout = capture_frame_layout(hex_box) },
     }
@@ -196,6 +214,14 @@ local function restore_native_popup_layout()
     restore_frame_layout(native_layout.okay.frame, native_layout.okay.layout)
     restore_frame_layout(native_layout.cancel.frame, native_layout.cancel.layout)
     restore_frame_layout(native_layout.hex.frame, native_layout.hex.layout)
+    if native_layout.okay.frame and native_layout.okay.frame.SetText then
+        native_layout.okay.frame:SetText(native_layout.okay_text or OKAY or "Okay")
+    end
+    local reset = ColorPickerFrame._lstweeks_reset_button
+    if reset then
+        reset:SetScript("OnClick", nil)
+        reset:Hide()
+    end
     ColorPickerFrame._lstweeks_native_layout = nil
 end
 
@@ -664,6 +690,19 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
         capture_native_popup_layout()
         apply_custom_popup_size()
         place_popup_action_buttons()
+        local popup_reset = ensure_popup_reset_button()
+        popup_reset:SetScript("OnClick", function()
+            local default = type(defaults_table) == "table" and defaults_table[db_key]
+            if not default then return end
+            local alpha = has_alpha and color_alpha_or_default(default.a, 1) or 1
+            db_table[db_key] = has_alpha
+                and { r = default.r, g = default.g, b = default.b, a = alpha }
+                or { r = default.r, g = default.g, b = default.b }
+            set_color_picker_rgb(default.r, default.g, default.b)
+            if has_alpha then set_color_picker_alpha(alpha) end
+            set_popup_alpha_percent_text(alpha)
+            apply_and_refresh(default.r, default.g, default.b, alpha, "reset", true)
+        end)
         place_color_picker_hex_box()
         if has_alpha then
             show_popup_alpha_percent(function()
@@ -693,6 +732,8 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     container.GetValue = function()
         return db_table[db_key]
     end
+
+    container.reset_button = reset
 
     container.SetEnabled = function(_, enabled)
         button:SetEnabled(enabled)

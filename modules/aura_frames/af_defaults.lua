@@ -11,6 +11,11 @@ local M = addon.aura_frames
 M.MODULE_KEY = "aura_frames"
 M.COLOR_CONSUMER_GROUPS = { buffs = "buffs", debuffs = "debuffs" }
 M.DEFAULT_AURA_FONT_KEY = "game_default"
+M.TEXT_OPTIONS_OVERRIDE_NOTICES = {
+    color_and_font = "Shared color & font are overriding.",
+    color = "Shared Text Color is enabled for this frame.",
+    font = "Shared Text Font is enabled for this frame.",
+}
 
 function M.is_runtime_enabled()
     return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
@@ -177,11 +182,11 @@ local function set_participation_setting(category, key, enabled)
     return true
 end
 
-function M.get_background_color_sync_enabled(category)
+function M.get_shared_background_enabled(category)
     return get_participation_setting(category, "sync_bar_bg") == true
 end
 
-function M.set_background_color_sync_enabled(category, enabled)
+function M.set_shared_background_enabled(category, enabled)
     return set_participation_setting(category, "sync_bar_bg", enabled)
 end
 
@@ -260,8 +265,8 @@ if color_sync and color_sync.register_consumer then
         },
         supports_ooc_fade = true,
         refresh = function()
-            if M.on_shared_color_changed then
-                M.on_shared_color_changed()
+            if M.on_shared_options_changed then
+                M.on_shared_options_changed()
             end
         end,
     })
@@ -631,6 +636,9 @@ for _, category in ipairs(M.CATEGORIES) do
         M.defaults["test_aura_" .. category] = false
     end
     M.defaults["bar_text_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
+    M.defaults["bar_text_font_size_" .. category] = 10
+    M.defaults["bar_text_font_bold_" .. category] = false
+    M.defaults["bar_text_font_outline_" .. category] = false
     M.defaults["stack_number_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
     M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
     M.defaults["stack_number_font_bold_" .. category] = false
@@ -657,6 +665,12 @@ M.defaults.shared_bar_text_color = { r = 1, g = 1, b = 1 }
 M.defaults.shared_timer_text_color = { r = 1, g = 1, b = 1 }
 M.defaults.shared_bar_text_font = M.DEFAULT_AURA_FONT_KEY
 M.defaults.shared_timer_text_font = M.DEFAULT_AURA_FONT_KEY
+M.defaults.shared_bar_text_font_size = 10
+M.defaults.shared_bar_text_font_bold = false
+M.defaults.shared_bar_text_font_outline = false
+M.defaults.shared_timer_text_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
+M.defaults.shared_timer_text_font_bold = false
+M.defaults.shared_timer_text_font_outline = true
 M.SHARED_COLOR_COLUMNS = {
     {
         title = "BG Colors",
@@ -665,13 +679,13 @@ M.SHARED_COLOR_COLUMNS = {
             {
                 label = "Frame BG",
                 db_key = "shared_frame_background_color",
-                control_key = "background_color_sync_frame_picker",
+                control_key = "shared_options_frame_picker",
                 has_alpha = true,
             },
             {
                 label = "Bar BG",
                 db_key = "shared_bar_background_color",
-                control_key = "background_color_sync_bar_picker",
+                control_key = "shared_options_bar_picker",
                 has_alpha = true,
             },
         },
@@ -683,13 +697,13 @@ M.SHARED_COLOR_COLUMNS = {
             {
                 label = "Buff Bar",
                 db_key = "shared_buff_bar_color",
-                control_key = "background_color_sync_buff_bar_picker",
+                control_key = "shared_options_buff_bar_picker",
                 has_alpha = true,
             },
             {
                 label = "Debuff Bar",
                 db_key = "shared_debuff_bar_color",
-                control_key = "background_color_sync_debuff_bar_picker",
+                control_key = "shared_options_debuff_bar_picker",
                 has_alpha = true,
             },
         },
@@ -701,13 +715,13 @@ M.SHARED_COLOR_COLUMNS = {
             {
                 label = "Bar Text",
                 db_key = "shared_bar_text_color",
-                control_key = "background_color_sync_bar_text_picker",
+                control_key = "shared_options_bar_text_picker",
                 has_alpha = false,
             },
             {
                 label = "Timer Text",
                 db_key = "shared_timer_text_color",
-                control_key = "background_color_sync_timer_text_picker",
+                control_key = "shared_options_timer_text_picker",
                 has_alpha = false,
             },
         },
@@ -715,29 +729,25 @@ M.SHARED_COLOR_COLUMNS = {
 }
 M.SHARED_FONT_COLUMNS = {
     {
-        title = "Text Font",
-        column = 5,
+        title = "Text Options",
+        column = 4,
         pickers = {
             {
-                label = "Bar Font",
+                label = "Bar Text",
                 db_key = "shared_bar_text_font",
-                control_key = "background_color_sync_bar_font_picker",
-                apply_all_control_key = "background_color_sync_bar_font_apply_all",
-                local_key = "bar_text_font",
+                control_key = "shared_options_bar_font_picker",
                 role = "body",
             },
             {
-                label = "Timer Font",
+                label = "Timer Text",
                 db_key = "shared_timer_text_font",
-                control_key = "background_color_sync_timer_font_picker",
-                apply_all_control_key = "background_color_sync_timer_font_apply_all",
-                local_key = "timer_number_font",
+                control_key = "shared_options_timer_font_picker",
                 role = "timer",
             },
         },
     },
 }
-M.defaults.shared_background_color_enabled = false
+M.defaults.shared_options_enabled = false
 for _, category in ipairs(M.CATEGORIES) do
     M.defaults["move_bg_opt_out_" .. category] = false
     M.defaults["sync_bar_bg_" .. category] = true
@@ -786,6 +796,9 @@ M.CUSTOM_FRAME_TEMPLATE = {
     -- Timer font (matches TIMER_CATEGORIES convention)
     timer_number_font      = M.DEFAULT_AURA_FONT_KEY,
     bar_text_font          = M.DEFAULT_AURA_FONT_KEY,
+    bar_text_font_size     = 10,
+    bar_text_font_bold     = false,
+    bar_text_font_outline  = false,
     timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
     timer_number_font_bold = false,
     timer_number_font_outline = true,

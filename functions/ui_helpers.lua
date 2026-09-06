@@ -4,6 +4,8 @@
 
 local addon_name, addon = ...
 
+local DEFAULT_POPUP_BACKGROUND_TEXTURE = "Interface\\FrameGeneral\\UI-Background-Marble"
+
 
 --#region CONTROL PANELS =======================================================
 
@@ -30,6 +32,36 @@ function addon.CreateControlPanel(parent, width, height, opts)
     panel:SetSize(width or 1, height or 1)
     addon.ApplyControlPanelBackdrop(panel, opts)
     return panel
+end
+
+function addon.CreatePopupFrame(name, parent, opts)
+    opts = opts or {}
+    local popup = CreateFrame("Frame", name, parent or UIParent, "BackdropTemplate")
+    if opts.width and opts.height then popup:SetSize(opts.width, opts.height) end
+    if opts.strata then popup:SetFrameStrata(opts.strata) end
+    if opts.level then popup:SetFrameLevel(opts.level) end
+    if opts.clamped ~= nil then popup:SetClampedToScreen(opts.clamped == true) end
+
+    addon.ApplyControlPanelBackdrop(popup, {
+        bg = { 0, 0, 0, 0 },
+        border = opts.border,
+        edgeFile = opts.edge_file,
+        edgeSize = opts.edge_size,
+        insets = opts.insets,
+    })
+    popup.background = popup:CreateTexture(nil, "BACKGROUND", nil, -7)
+    popup.background:SetAllPoints()
+    if opts.background_atlas then
+        popup.background:SetAtlas(opts.background_atlas)
+    else
+        popup.background:SetTexture(opts.background_texture or DEFAULT_POPUP_BACKGROUND_TEXTURE)
+    end
+    popup.background:SetHorizTile(opts.horizontal_tile ~= false)
+    popup.background:SetVertTile(opts.vertical_tile ~= false)
+    if opts.background_color then
+        popup.background:SetVertexColor(unpack(opts.background_color))
+    end
+    return popup
 end
 
 --#endregion CONTROL PANELS ====================================================

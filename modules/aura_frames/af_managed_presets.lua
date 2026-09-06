@@ -285,8 +285,8 @@ local function initialize_preset_bar(
     local spell_name = text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     if backend.bar_font then
         spell_name:SetFontObject(backend.bar_font)
-    elseif M.apply_bar_text_font_style then
-        M.apply_bar_text_font_style(spell_name, category, cfg_db)
+    elseif M.apply_bar_text_style then
+        M.apply_bar_text_style(spell_name, category, cfg_db)
     end
     spell_name:SetPoint("LEFT", stack_text, "RIGHT", 2, 0)
     spell_name:SetPoint("RIGHT", duration_text, "LEFT", -2, 0)
@@ -310,6 +310,7 @@ local function initialize_preset_bar(
         direction = Enum.StatusBarTimerDirection.RemainingTime,
     })
     bar_regions[aura_button] = duration_bar
+    backend.bar_text_regions[aura_button] = spell_name
 
     bind_native_interaction(aura_button, category)
 end
@@ -371,6 +372,7 @@ function M.create_managed_presentation_initializer(cfg_db, category, bar_mode, b
     end
     backend.bar_font = backend.bar_font or bar_font
     backend.bar_regions = backend.bar_regions or {}
+    backend.bar_text_regions = backend.bar_text_regions or {}
     backend.icon_cooldowns = backend.icon_cooldowns or {}
     backend.frame_background_rows = backend.frame_background_rows or {}
     return create_preset_initializer(
@@ -597,8 +599,8 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     if backend.stack_font and M.apply_stack_font_style then
         M.apply_stack_font_style(backend.stack_font, category, cfg_db)
     end
-    if backend.bar_font and M.apply_bar_text_font_style then
-        M.apply_bar_text_font_style(backend.bar_font, category, cfg_db)
+    if backend.bar_font and M.apply_bar_text_style then
+        M.apply_bar_text_style(backend.bar_font, category, cfg_db)
     end
     local bar_color = get_preset_bar_color(cfg_db, category)
     local bar_width = width - (BAR_FRAME_INSET * 2)
@@ -681,6 +683,7 @@ local function create_managed_preset_backend(
     end
     backend.bar_font = bar_font
     backend.bar_regions = {}
+    backend.bar_text_regions = {}
     backend.icon_cooldowns = {}
     M.initialize_managed_frame_background(backend, frame)
     backend.move_outline = create_container_move_outline(backend.container)
@@ -700,8 +703,8 @@ local function create_managed_preset_backend(
     if stack_font and M.apply_stack_font_style then
         M.apply_stack_font_style(stack_font, category, cfg_db)
     end
-    if bar_font and M.apply_bar_text_font_style then
-        M.apply_bar_text_font_style(bar_font, category, cfg_db)
+    if bar_font and M.apply_bar_text_style then
+        M.apply_bar_text_style(bar_font, category, cfg_db)
     end
     local bar_layout = configure_preset_layout(
         backend.container, frame, cfg_db, category, max_frame_count, true, show_timer_text)

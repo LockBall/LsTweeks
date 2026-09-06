@@ -141,23 +141,20 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     local btn_text = btn:GetFontString()
     local dropdown_icon = create_dropdown_icon(container, cfg)
 
-    local popup = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
-    popup:SetSize(width, #options * row_h + 4)
-    popup:SetFrameStrata("FULLSCREEN_DIALOG")
-    popup:SetFrameLevel(100)
-    popup:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 10,
+    local popup = addon.CreatePopupFrame(nil, UIParent, {
+        width = width,
+        height = #options * row_h + 4,
+        strata = "FULLSCREEN_DIALOG",
+        level = 100,
+        edge_size = 10,
         insets = { left = 2, right = 2, top = 2, bottom = 2 },
+        border = { 0.4, 0.4, 0.4, 1 },
     })
-    popup:SetBackdropColor(0.08, 0.08, 0.08, 0.96)
-    popup:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
     popup:Hide()
 
     local function apply_button_style(option)
         if cfg.apply_button_style then
-            cfg.apply_button_style(btn_text, option)
+            cfg.apply_button_style(btn_text, option, btn)
             return
         end
         if btn_text then

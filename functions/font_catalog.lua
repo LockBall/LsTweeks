@@ -21,6 +21,34 @@ local FONT_DEFINITIONS = {
         key = "game_default",
         label = "Game Default",
     },
+    {
+        key = "friz_quadrata",
+        label = "Friz Quadrata",
+        path = "Fonts\\FRIZQT__.TTF",
+        preview_size = 10,
+        flags = "",
+    },
+    {
+        key = "arial_narrow",
+        label = "Arial Narrow",
+        path = "Fonts\\ARIALN.TTF",
+        preview_size = 10,
+        flags = "",
+    },
+    {
+        key = "morpheus",
+        label = "Morpheus",
+        path = "Fonts\\MORPHEUS.TTF",
+        preview_size = 10,
+        flags = "",
+    },
+    {
+        key = "skurri",
+        label = "Skurri",
+        path = "Fonts\\SKURRI.TTF",
+        preview_size = 10,
+        flags = "",
+    },
 }
 
 local FONT_DEFINITIONS_BY_KEY = {}
@@ -34,6 +62,8 @@ local GAME_DEFAULT_FONT_OBJECTS = {
     timer = "GameFontNormalSmall",
     stack = "NumberFontNormal",
 }
+
+local font_dropdown_serial = 0
 
 function addon.GetFontDefinition(key)
     return FONT_DEFINITIONS_BY_KEY[key] or FONT_DEFINITIONS_BY_KEY[addon.DEFAULT_FONT_KEY]
@@ -118,12 +148,46 @@ end
 
 function addon.CreateFontDropdown(name, parent, config)
     config = config or {}
+    font_dropdown_serial = font_dropdown_serial + 1
+    local selected_preview_font = CreateFont
+        and CreateFont(addon_name .. "FontDropdownPreview" .. font_dropdown_serial)
+        or nil
+    local function apply_button_color(button)
+        if not (button and config.get_text_color) then return end
+        local color = config.get_text_color()
+        local font_string = button:GetFontString()
+        if color and selected_preview_font and selected_preview_font.SetTextColor then
+            selected_preview_font:SetTextColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+        end
+        if color and font_string and font_string.SetTextColor then
+            font_string:SetTextColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+        end
+    end
+    local function apply_role_option_style(font_string, option, button)
+        local role = config.get_role and config.get_role() or config.role
+        if button and selected_preview_font and option then
+            addon.ApplySelectedFont(selected_preview_font, {
+                key = option.value,
+                role = role,
+                size = option.font_size or 9,
+            })
+            button:SetNormalFontObject(selected_preview_font)
+            button:SetHighlightFontObject(selected_preview_font)
+            apply_button_color(button)
+            return
+        end
+        if option and not option.font_path then
+            font_string:SetFontObject(addon.GetGameDefaultFontObject(role) or GameFontNormalSmall)
+            return
+        end
+        apply_option_style(font_string, option)
+    end
     return addon.CreateDropdown(name, parent, config.label or "Font", addon.GetFontDropdownOptions(config.role), {
         width = config.width or 180,
         get_value = config.get_value,
         on_select = config.on_select,
-        apply_button_style = apply_option_style,
-        apply_row_style = apply_option_style,
+        apply_button_style = apply_role_option_style,
+        apply_row_style = apply_role_option_style,
     })
 end
 

@@ -35,6 +35,7 @@ functions\color_picker.lua
 functions\panel_riveted.lua
 functions\dropdown.lua
 functions\font_catalog.lua
+functions\font_picker.lua
 functions\growth_direction.lua
 functions\group_column.lua
 functions\profiles.lua
@@ -101,7 +102,7 @@ modules\aura_frames\af_logic_main.lua
 modules\aura_frames\af_profiles.lua
 modules\aura_frames\af_gui.lua
 modules\aura_frames\af_gui_frame_builders.lua
-modules\aura_frames\af_gui_shared_bg_colors.lua
+modules\aura_frames\af_gui_shared_options.lua
 modules\aura_frames\af_gui_tree.lua
 modules\aura_frames\af_debug_outlines.lua
 modules\aura_frames\af_screen_grid.lua

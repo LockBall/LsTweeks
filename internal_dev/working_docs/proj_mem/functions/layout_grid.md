@@ -24,6 +24,7 @@ Durable contracts for shared settings-grid placement in `functions/layout_grid.l
 
 ## Composition Rules
 - `grid:stack_below()` owns secondary controls within one cell. Place the first control normally, then stack related controls below it instead of repeating local vertical-offset arithmetic.
+- `addon.CONTROL_STACK_SPACING` is the shared source for routine vertical gaps: `checkbox`, `nested`, `picker`, `button`, and `section`. Pass a control-stack token as `opts.spacing` to `grid:stack_below()`; use `section` when deriving grid row heights for distinct blocks. The helper converts positive stack spacing to the required negative anchor offset. Do not re-measure or repeat raw offsets for these standard gaps.
 - Declare row heights large enough for the full cell stack. Module-specific taller rows remain in module layout configuration.
 - Row separators are explicit. Supply only occupied divider rows so sparse grids do not render separators through empty content; choose fixed or stretch behavior through grid options rather than local lines.
 - One placement owner sets external anchors. Avoid duplicate anchors in the same direction and do not mix grid placement with later manual offsets unless the module documents the deliberate override.

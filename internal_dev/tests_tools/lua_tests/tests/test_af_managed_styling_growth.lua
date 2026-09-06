@@ -50,6 +50,18 @@ h.test("managed Static / Long Buff styling and growth remain independently confi
     h.eq(color_call[3], 0.4, "managed timer font applies the saved blue component")
     h.eq(color_call[4], 1, "enabling managed timer text restores its opacity")
 
+    M.db.bar_text_font_static_long = h.addon.DEFAULT_FONT_KEY
+    M.db.bar_text_font_size_static_long = 12.5
+    M.db.bar_text_font_bold_static_long = true
+    M.db.bar_text_font_outline_static_long = true
+    M.update_auras(buffs_frame, "show_static_long", "move_static_long", "timer_static_long",
+        "bg_static_long", "scale_static_long", "spacing_static_long", "HELPFUL")
+    local bar_font_call = buffs_backend.bar_font:GetLastCall("SetFont")
+    h.eq(bar_font_call[1], h.addon.GetFontDefinition(h.addon.DEFAULT_FONT_KEY).bold_path,
+        "managed bar text applies the saved bold face")
+    h.eq(bar_font_call[2], 12.5, "managed bar text applies the saved size")
+    h.eq(bar_font_call[3], "OUTLINE", "managed bar text applies the saved outline")
+
     M.db.stack_number_font_static_long = h.addon.DEFAULT_FONT_KEY
     M.db.stack_number_font_size_static_long = 13.5
     M.db.stack_number_font_bold_static_long = true
@@ -102,6 +114,22 @@ h.test("managed Static / Long Buff styling and growth remain independently confi
         "managed Game Default timer text preserves the configured size")
     h.eq(font_call[3], "OUTLINE",
         "managed Game Default timer text preserves the configured outline")
+
+    M.db.timer_number_font_static_long = "morpheus"
+    M.db.stack_number_font_static_long = "skurri"
+    M.db.bar_text_font_static_long = "arial_narrow"
+    M.apply_number_font_to_all()
+    h.eq(buffs_backend.duration_font:GetLastCall("SetFont")[1], h.addon.GetFontDefinition("morpheus").path,
+        "font picker refresh updates the managed Timer font immediately")
+    h.eq(buffs_backend.stack_font:GetLastCall("SetFont")[1], h.addon.GetFontDefinition("skurri").path,
+        "font picker refresh updates the managed Stack font immediately")
+    h.eq(buffs_backend.bar_font:GetLastCall("SetFont")[1], h.addon.GetFontDefinition("arial_narrow").path,
+        "font picker refresh updates the managed Bar font immediately")
+    for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
+        h.eq(aura_button.__spell_name_region:GetLastCall("SetFont")[1],
+            h.addon.GetFontDefinition("arial_narrow").path,
+            "font picker refresh updates each existing managed Bar label immediately")
+    end
 
     local growth_cases = {
         RIGHT = { AnchorUtil.FlowLayoutAxis.Horizontal, "TOPLEFT", AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Down },

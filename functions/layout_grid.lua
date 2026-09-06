@@ -3,6 +3,14 @@
 
 local addon_name, addon = ...
 
+addon.CONTROL_STACK_SPACING = addon.CONTROL_STACK_SPACING or {
+    checkbox = 0,
+    nested = 4,
+    picker = 4,
+    button = 6,
+    section = 16,
+}
+
 --#region GRID ANCHOR HELPERS =================================================
 
 function addon.GetGridOffset(placement, cfg)
@@ -139,6 +147,13 @@ local function stack_settings_grid_control_below(grid, control, anchor, opts)
     local width = opts.width or (control.GetWidth and control:GetWidth() or 0)
     local align = opts.align or (opts.center and "center") or "left"
     local x = opts.x_offset or opts.x or 0
+    local y = opts.y_offset or opts.y
+    if y == nil and opts.spacing then
+        local spacing = type(opts.spacing) == "number"
+            and opts.spacing
+            or addon.CONTROL_STACK_SPACING[opts.spacing]
+        y = -(spacing or 0)
+    end
     if align == "center" then
         x = x + ((opts.column_width or grid.col_width or 0) - width) / 2
     elseif align == "right" then
@@ -146,7 +161,7 @@ local function stack_settings_grid_control_below(grid, control, anchor, opts)
     end
 
     control:ClearAllPoints()
-    control:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, opts.y_offset or opts.y or 0)
+    control:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, y or 0)
 end
 
 --#endregion GRID PLACEMENT HELPERS ===========================================

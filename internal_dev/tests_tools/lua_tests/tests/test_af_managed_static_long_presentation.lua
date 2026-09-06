@@ -24,13 +24,13 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     h.eq(buffs_backend.frame_background.texture:IsShown(), false,
         "disabling Static / Long Frame BG hides the managed background")
     local color_sync = h.addon.all_the_colors
-    M.db.shared_background_color_enabled = true
+    M.db.shared_options_enabled = true
     M.db.sync_bar_bg_static_long = true
     M.db.shared_frame_background_color = { r = 0.6, g = 0.5, b = 0.4, a = 0.3 }
     color_sync.get_db().global_enabled = false
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     h.ok(buffs_backend.frame_background.texture:IsShown(),
-        "Shared BG Colors can show a managed background when local Frame BG is off")
+        "Shared Options can show a managed background when local Frame BG is off")
     static_long_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
     h.eq(static_long_bg_color[1], 0.6, "managed Frame BG receives the Aura shared color")
 
@@ -44,7 +44,7 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     h.eq(static_long_bg_color[4], 0.6, "managed Frame BG receives global override alpha")
 
     color_sync.get_db().global_enabled = false
-    M.db.shared_background_color_enabled = false
+    M.db.shared_options_enabled = false
     M.db.bg_static_long = true
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     M.db.bar_mode_static_long = false

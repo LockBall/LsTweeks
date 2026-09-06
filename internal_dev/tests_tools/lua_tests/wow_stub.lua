@@ -394,9 +394,16 @@ function frame_methods:SetDisabledTexture() end
 function frame_methods:GetNormalTexture() return new_region("Texture", nil, self) end
 function frame_methods:GetPushedTexture() return new_region("Texture", nil, self) end
 function frame_methods:GetHighlightTexture() return new_region("Texture", nil, self) end
-function frame_methods:SetNormalFontObject() end
-function frame_methods:SetHighlightFontObject() end
-function frame_methods:SetDisabledFontObject() end
+function frame_methods:SetNormalFontObject(font_object)
+    record(self, "SetNormalFontObject", font_object)
+    self:GetFontString():SetFontObject(font_object)
+end
+function frame_methods:SetHighlightFontObject(font_object)
+    record(self, "SetHighlightFontObject", font_object)
+end
+function frame_methods:SetDisabledFontObject(font_object)
+    record(self, "SetDisabledFontObject", font_object)
+end
 function frame_methods:GetFontString()
     if not self.__fontstring then
         self.__fontstring = new_region("FontString", nil, self)

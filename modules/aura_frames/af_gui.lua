@@ -2,7 +2,7 @@
 -- BuildSettings() creates three tabs:
 -- 1) General (global toggles and runtime controls)
 -- 2) Frames (a tree sidebar listing preset, CDM-backed, and custom frames with settings grids).
--- 3) Shared BG Colors (shared Aura colors/fonts and per-frame participation).
+-- 3) Shared Options (shared Aura colors/fonts and per-frame participation).
 -- 4) Profiles (save/load complete Aura Frames setups across characters).
 
 
@@ -89,8 +89,8 @@ local function build_tab_panel(parent, context, data, index)
         M.build_general_tab(p)
     elseif data.is_frames then
         M.build_frames_tab(p, context.frames_data)
-    elseif data.is_shared_bg_colors then
-        M.build_shared_bg_colors_tab(p)
+    elseif data.is_shared_options then
+        M.build_shared_options_tab(p)
     elseif data.is_profiles then
         build_profiles_tab(p)
     end
@@ -117,7 +117,7 @@ function M.BuildSettings(parent)
     local tab_data = {
         { name = "General", is_general  = true },
         { name = "Frames",  is_frames   = true },
-        { name = "Shared BG Colors", is_shared_bg_colors = true },
+        { name = "Shared Options", is_shared_options = true },
         { name = "Profiles", is_profiles = true },
     }
 
@@ -189,6 +189,7 @@ end
 -- Sync GUI control states from DB (used after reset flows).
 function M.sync_general_controls_from_db()
     if not M.controls or not M.db then return end
+    if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
 
     local function set_checked(control_key, value)
         local control = M.controls[control_key]
@@ -235,48 +236,18 @@ function M.sync_general_controls_from_db()
         end
     end
 
-    for _, cat in ipairs(M.TIMER_CATEGORIES) do
-        local font_dropdown = M.controls["timer_number_font_dropdown_"..cat]
-        if font_dropdown and font_dropdown.SetValue then
-            font_dropdown:SetValue(M.db["timer_number_font_"..cat] or M.db.timer_number_font or M.DEFAULT_AURA_FONT_KEY)
-        end
-
-        local font_size_slider = M.controls["timer_number_font_size_slider_"..cat]
-        if font_size_slider and font_size_slider.SetValueSilently then
-            font_size_slider:SetValueSilently(M.db["timer_number_font_size_"..cat] or M.defaults["timer_number_font_size_"..cat] or M.DEFAULT_TIMER_NUMBER_FONT_SIZE)
-        end
-    end
-
-    for _, cat in ipairs(M.TIMER_CATEGORIES) do
-        set_checked("timer_number_font_bold_"..cat, M.db["timer_number_font_bold_"..cat])
-        set_checked("timer_number_font_outline_" .. cat, M.db["timer_number_font_outline_" .. cat])
-    end
-
     for _, cat in ipairs(M.CATEGORIES) do
-        local stack_font_dropdown = M.controls["stack_number_font_dropdown_" .. cat]
-        if stack_font_dropdown and stack_font_dropdown.SetValue then
-            stack_font_dropdown:SetValue(M.db["stack_number_font_" .. cat] or M.DEFAULT_AURA_FONT_KEY)
+        for _, prefix in ipairs({ "bar_text_options_", "timer_text_options_", "stack_text_options_" }) do
+            local picker = M.controls[prefix .. cat]
+            if picker and picker.Refresh then picker:Refresh() end
         end
-
-        local stack_font_size_slider = M.controls["stack_number_font_size_slider_" .. cat]
-        if stack_font_size_slider and stack_font_size_slider.SetValueSilently then
-            stack_font_size_slider:SetValueSilently(
-                M.db["stack_number_font_size_" .. cat]
-                    or M.defaults["stack_number_font_size_" .. cat]
-                    or M.DEFAULT_TIMER_NUMBER_FONT_SIZE
-            )
-        end
-        set_checked("stack_number_font_bold_" .. cat, M.db["stack_number_font_bold_" .. cat])
-        set_checked("stack_number_font_outline_" .. cat, M.db["stack_number_font_outline_" .. cat])
-        local refresh_stack_bold = M.controls["stack_number_font_bold_refresh_" .. cat]
-        if refresh_stack_bold then refresh_stack_bold() end
     end
 
     set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
-    if M.rebuild_shared_background_color_group then
-        M.rebuild_shared_background_color_group()
-    elseif M.sync_background_color_controls then
-        M.sync_background_color_controls()
+    if M.rebuild_shared_options_group then
+        M.rebuild_shared_options_group()
+    elseif M.sync_shared_options_controls then
+        M.sync_shared_options_controls()
     end
 
 end

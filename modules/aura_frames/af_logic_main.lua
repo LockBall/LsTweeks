@@ -30,10 +30,10 @@ function M.invalidate_all_frame_runtime_config()
     end
 end
 
-function M.on_shared_color_changed()
+function M.on_shared_options_changed()
     M.invalidate_all_frame_runtime_config()
-    if M.sync_background_color_controls then
-        M.sync_background_color_controls()
+    if M.sync_shared_options_controls then
+        M.sync_shared_options_controls()
     end
     if M.apply_number_font_to_all then M.apply_number_font_to_all() end
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
@@ -53,7 +53,7 @@ end
 function M.resolve_bar_color(category, local_color)
     local resolved = local_color
     if M.db
-        and M.db.shared_background_color_enabled == true
+        and M.db.shared_options_enabled == true
         and M.get_bar_color_sync_enabled(category)
     then
         resolved = M.is_debuff_frame_category(category)
@@ -76,7 +76,7 @@ end
 function M.resolve_text_color(category, text_type, local_color)
     local resolved = local_color
     if M.db
-        and M.db.shared_background_color_enabled == true
+        and M.db.shared_options_enabled == true
         and M.get_text_color_sync_enabled(category)
     then
         resolved = text_type == "timer"
@@ -98,7 +98,7 @@ end
 
 function M.resolve_text_font(category, text_type, local_font)
     if M.db
-        and M.db.shared_background_color_enabled == true
+        and M.db.shared_options_enabled == true
         and M.get_text_font_sync_enabled(category)
     then
         return (text_type == "timer" and M.db.shared_timer_text_font or M.db.shared_bar_text_font)
@@ -107,21 +107,16 @@ function M.resolve_text_font(category, text_type, local_font)
     return local_font
 end
 
-function M.apply_shared_font_to_all(local_key, shared_key)
-    if not (M.db and local_key and shared_key) then return false end
-    local selected_font = M.db[shared_key]
-    if not selected_font then return false end
-
-    for _, category in ipairs(M.CATEGORIES or {}) do
-        M.db[local_key .. "_" .. category] = selected_font
+function M.resolve_text_style_value(category, text_type, suffix, local_value)
+    if M.db
+        and M.db.shared_options_enabled == true
+        and M.get_text_font_sync_enabled(category)
+    then
+        local prefix = text_type == "timer" and "shared_timer_text_font_" or "shared_bar_text_font_"
+        local shared_value = M.db[prefix .. suffix]
+        if shared_value ~= nil then return shared_value end
     end
-    for _, entry in ipairs(M.db.custom_frames or {}) do
-        entry[local_key] = selected_font
-    end
-
-    if M.on_shared_color_changed then M.on_shared_color_changed() end
-    if M.sync_general_controls_from_db then M.sync_general_controls_from_db() end
-    return true
+    return local_value
 end
 
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)

@@ -20,8 +20,10 @@ h.load_file("functions/ui_helpers.lua")
 h.load_file("functions/checkbox.lua")
 h.load_file("functions/buttons.lua")
 h.load_file("functions/slider_with_box.lua")
+h.load_file("functions/color_picker.lua")
 h.load_file("functions/dropdown.lua")
 h.load_file("functions/font_catalog.lua")
+h.load_file("functions/font_picker.lua")
 h.load_file("functions/growth_direction.lua")
 
 h.test("background region controller follows its parent without geometry reads", function()
@@ -62,6 +64,8 @@ h.test("font catalog shares role-aware selection across modules", function()
         "bundled default exposes its registered bold face")
     h.ok(not addon.IsFontBoldAvailable("game_default"),
         "semantic Game Default does not claim an unavailable bold face")
+    h.ok(not addon.IsFontBoldAvailable("morpheus"),
+        "Blizzard catalog faces do not claim unregistered bold variants")
 
     local selected = "game_default"
     local control = addon.CreateFontDropdown("FontFactoryTest", UIParent, {
@@ -69,8 +73,17 @@ h.test("font catalog shares role-aware selection across modules", function()
         get_value = function() return selected end,
         on_select = function(value) selected = value end,
     })
-    h.eq(control.button:GetFontString():GetFontObject(), NumberFontNormal,
-        "shared font dropdown previews the requested semantic role")
+    local dropdown_preview = control.button:GetLastCall("SetNormalFontObject")[1]
+    h.ok(dropdown_preview ~= NumberFontNormal,
+        "font dropdown isolates its selected preview from Blizzard's native FontObject color")
+    h.eq(dropdown_preview:GetLastCall("SetFont")[1],
+        NumberFontNormal:GetFont(),
+        "semantic Game Default copies the requested role face into the dropdown preview")
+    control:SetValue("morpheus")
+    control:SetValue("game_default")
+    h.eq(control.button:GetLastCall("SetNormalFontObject")[1]:GetLastCall("SetFont")[1],
+        NumberFontNormal:GetFont(),
+        "returning from a file-backed face restores the Game Default button font")
 
     local target = UIParent:CreateFontString(nil, "OVERLAY")
     addon.ApplySelectedFont(target, {
@@ -245,6 +258,61 @@ h.test("slider bindings without callbacks do not queue empty timers", function()
 
     container.slider.__scripts.OnValueChanged(container.slider, 1)
     h.eq(h.stub.ActiveTimerCount(), 0, "callback-free slider writes without an empty debounce timer")
+end)
+
+h.test("font picker reuses one transactional popup and rolls back Cancel", function()
+    local values = {
+        color = { r = 0.25, g = 0.5, b = 0.75 },
+        font = "source_code_pro",
+        size = 10,
+        bold = false,
+        outline = false,
+    }
+    local defaults = { color = values.color, font = "game_default", size = 12, bold = false, outline = true }
+    local function binding(key)
+        return {
+            get = function() return values[key] end,
+            set = function(value) values[key] = value end,
+            get_default = function() return defaults[key] end,
+        }
+    end
+    local config = { label = "Text Options", role = "body", on_preview = function() end }
+    for _, key in ipairs({ "color", "font", "size", "bold", "outline" }) do
+        config[key] = binding(key)
+    end
+    local first = addon.CreateFontPicker(UIParent, config)
+    local second = addon.CreateFontPicker(UIParent, config)
+    h.eq(first.preview_font:GetLastCall("SetFont")[1], addon.GetFontDefinition("source_code_pro").path,
+        "font launcher previews its selected family")
+    h.eq(first.preview_font:GetLastCall("SetTextColor")[1], 0.25,
+        "font launcher previews its selected text color")
+    h.eq(first:GetFontString():GetLastCall("SetTextColor")[1], 0.25,
+        "font launcher applies its selected color after installing the preview font object")
+    first:Click()
+    local popup = addon.GetFontOptionsPopup()
+    h.ok(popup and popup.active == first, "font launcher opens the shared popup")
+    h.eq(popup.font.button:GetFontString():GetLastCall("SetTextColor")[1], 0.25,
+        "popup font dropdown previews the selected text color")
+    h.eq(popup.font.button:GetLastCall("SetNormalFontObject")[1]:GetLastCall("SetTextColor")[1], 0.25,
+        "popup font dropdown preview object retains the selected color across button states")
+    h.eq(first:GetLastCall("SetButtonState")[1], "PUSHED", "open launcher stays visually pushed")
+    first:Click()
+    h.eq(popup.active, nil, "clicking the active launcher closes its popup")
+    h.eq(first:GetLastCall("SetButtonState")[1], "NORMAL", "closed launcher returns to normal")
+    first:Click()
+    popup.bold.checkbox:SetChecked(true)
+    popup.bold.checkbox:Click()
+    h.eq(values.bold, true, "popup edits preview through the active binding")
+    popup.cancel:Click()
+    h.eq(values.bold, false, "Cancel restores the opening snapshot")
+    first:Click()
+    second:Click()
+    h.eq(addon.GetFontOptionsPopup(), popup, "launchers reuse one popup instance")
+    h.eq(popup.active, second, "opening another launcher rebinds the singleton")
+    popup.bold.checkbox:SetChecked(true)
+    popup.bold.checkbox:Click()
+    popup.save:Click()
+    h.eq(values.bold, true, "Save retains edited values")
 end)
 
 h.run("control_factories")

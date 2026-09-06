@@ -101,17 +101,25 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
     local size = setting_prefix == "stack"
         and M.get_stack_number_font_size(category, cfg_db)
         or M.get_timer_number_font_size(category, cfg_db)
+    if setting_prefix == "timer" and M.resolve_text_style_value then
+        size = M.resolve_text_style_value(category, "timer", "size", size)
+    end
     local use_outline = M.get_setting(
         cfg_db,
         category,
         setting_prefix .. "_number_font_outline",
         true
     ) ~= false
+    local bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true
+    if setting_prefix == "timer" and M.resolve_text_style_value then
+        bold = M.resolve_text_style_value(category, "timer", "bold", bold) == true
+        use_outline = M.resolve_text_style_value(category, "timer", "outline", use_outline) ~= false
+    end
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
         role = setting_prefix,
         size = size,
-        bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true,
+        bold = bold,
         outline = use_outline,
         min_size = 6,
         max_size = 18,
@@ -138,7 +146,7 @@ function M.apply_stack_font_style(font_target, category, cfg_db, alpha)
     apply_number_text_style(font_target, category, cfg_db, "stack", alpha)
 end
 
-function M.apply_bar_text_font_style(font_target, category, cfg_db)
+function M.apply_bar_text_style(font_target, category, cfg_db)
     if not font_target or not font_target.SetFont then return end
     local selected_key = M.get_setting(
         cfg_db,
@@ -149,11 +157,30 @@ function M.apply_bar_text_font_style(font_target, category, cfg_db)
     if M.resolve_text_font then
         selected_key = M.resolve_text_font(category, "bar", selected_key)
     end
+    local size = M.get_setting(cfg_db, category, "bar_text_font_size", 10)
+    local bold = M.get_setting(cfg_db, category, "bar_text_font_bold", false) == true
+    local outline = M.get_setting(cfg_db, category, "bar_text_font_outline", false) == true
+    if M.resolve_text_style_value then
+        size = M.resolve_text_style_value(category, "bar", "size", size)
+        bold = M.resolve_text_style_value(category, "bar", "bold", bold) == true
+        outline = M.resolve_text_style_value(category, "bar", "outline", outline) == true
+    end
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
         role = "body",
-        size = 10,
+        size = size,
+        bold = bold,
+        outline = outline,
+        min_size = 6,
+        max_size = 24,
     })
+    local color = M.get_setting(cfg_db, category, "bar_text_color")
+    if color and M.resolve_text_color then
+        color = M.resolve_text_color(category, "bar", color)
+    end
+    if color and font_target.SetTextColor then
+        font_target:SetTextColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
+    end
 end
 
 function M.apply_number_font_to_text(font_string, category, cfg_db)
@@ -176,8 +203,25 @@ function M.apply_number_font_to_all()
                     M.apply_stack_font_style(obj.count_text, category, cfg_db)
                 end
                 if obj and obj.name_text then
-                    M.apply_bar_text_font_style(obj.name_text, category, cfg_db)
+                    M.apply_bar_text_style(obj.name_text, category, cfg_db)
                 end
+            end
+        end
+        local backend = frame and frame._managed_aura_backend
+        if backend then
+            local category = frame.category
+            local cfg_db = frame._cfg_db
+            if backend.duration_font then
+                M.apply_number_font_style(backend.duration_font, category, cfg_db)
+            end
+            if backend.stack_font then
+                M.apply_stack_font_style(backend.stack_font, category, cfg_db)
+            end
+            if backend.bar_font then
+                M.apply_bar_text_style(backend.bar_font, category, cfg_db)
+            end
+            for _, font_string in pairs(backend.bar_text_regions or {}) do
+                M.apply_bar_text_style(font_string, category, cfg_db)
             end
         end
     end
@@ -597,7 +641,7 @@ local function create_icon_text_regions(obj, category, cfg_db)
     M.add_debug_outline(obj.name_slot, 0, 0.6, 1, 0.9)
 
     obj.name_text = obj.text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    M.apply_bar_text_font_style(obj.name_text, category, cfg_db)
+    M.apply_bar_text_style(obj.name_text, category, cfg_db)
     obj.name_text:SetJustifyH("LEFT")
     obj.name_text:SetWordWrap(false)
     if obj.name_text.SetMaxLines then
@@ -1101,8 +1145,8 @@ function M.create_custom_frame(entry)
     if M.register_background_color_targets then
         M.register_background_color_targets(id, entry.name or id, custom_order)
     end
-    if M.rebuild_shared_background_color_group then
-        M.rebuild_shared_background_color_group()
+    if M.rebuild_shared_options_group then
+        M.rebuild_shared_options_group()
     end
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
     entry.aura_modifier = entry.aura_modifier or "NONE"
@@ -1179,7 +1223,7 @@ function M.destroy_custom_frame(id)
                 M.controls[key] = nil
             end
         end
-        M.controls["background_color_sync:bg:" .. id] = nil
+        M.controls["shared_options:bg:" .. id] = nil
         M.controls["bar_color_sync:" .. id] = nil
         M.controls["text_color_sync:" .. id] = nil
     end
@@ -1189,8 +1233,8 @@ function M.destroy_custom_frame(id)
     if M.unregister_background_color_targets then
         M.unregister_background_color_targets(id)
     end
-    if M.rebuild_shared_background_color_group then
-        M.rebuild_shared_background_color_group()
+    if M.rebuild_shared_options_group then
+        M.rebuild_shared_options_group()
     end
 end
 

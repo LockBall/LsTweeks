@@ -79,13 +79,14 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/color_picker.lua`: shared color-picker/session factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/dropdown.lua`: shared dropdown and native-style cycling-dropdown factories. Memory: `proj_mem/functions/controls.md`.
 - `functions/font_catalog.lua`: addon-wide selectable-font catalog, semantic Blizzard defaults, font application, and font-dropdown factory. Memory: `proj_mem/functions/controls.md`.
+- `functions/font_picker.lua`: shared Text Options launcher and singleton transactional font popup. Memory: `proj_mem/functions/controls.md`.
 - `functions/group_column.lua`: shared Aura-style grouped selector column factory with section outlines, selected-group border highlighting, optional row delete buttons, and optional group actions.
 - `functions/module_reset.lua`: ARM-code module reset panel.
 - `functions/panel_riveted.lua`: shared riveted panel visuals.
 - `functions/profiles.lua`: shared profile manager and Profiles-tab UI. Memory: `proj_mem/functions/profiles.md`.
 - `functions/layout_grid.lua`: shared settings-grid geometry and composition. Memory: `proj_mem/functions/layout_grid.md`.
 - `functions/slider_with_box.lua`: shared slider/edit-box/reset factory. Memory: `proj_mem/functions/controls.md`.
-- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops and gold outlined settings groups.
+- `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, Marble-backed popup frames, and gold outlined settings groups.
 - `functions/tooltip.lua`: centralized tooltip factory and secret-data boundary. Memory: `proj_mem/functions/tooltip.md`.
 - `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 

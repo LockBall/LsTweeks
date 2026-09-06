@@ -34,7 +34,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared BG Colors** tab provides shared **BG Colors**, **Bar Colors**, **Text Colors**, and **Text Font** settings, with one participation checkbox per group for every built-in and custom frame. **Apply All** beneath Bar Font and Timer Font performs a one-shot copy to every frame without enabling live sharing. The shared settings are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared settings are disabled; individual Test Aura controls remain available on every Aura frame tab.
+The Aura Frames **Shared Options** tab provides shared **BG Colors**, **Bar Colors**, and compact **Text Options** launchers, with one participation checkbox per group for every built-in and custom frame. Shared Bar and Timer Text Options contain Color, Font, Font Size, Bold, and Outline; edits preview immediately on participating frames, Save retains them, Cancel restores the opening values, and Reset previews the defaults. The shared settings are disabled by default and included in Aura Frames profiles and resets. The global **Enable Test Auras**/Play/Pause and linked **Disable OOC Fade** controls remain available when shared settings are disabled; individual Test Aura controls remain available on every Aura frame tab.
 
 
 #### Preset Frames
@@ -49,7 +49,7 @@ Aura Frames use a fixed internal safety limit of 40 entries. Blizzard or the own
 
 When Frame BG is enabled for managed Short Buffs, Static / Long Buffs, Timed Buffs, or Debuffs, an empty frame retains one configured-width row so its future placement remains visible; the background expands as native Aura rows appear.
 
-Each Aura frame can configure stack-count color, font, bold face, outline, and font size independently from its timer and bar text. Timer text has its own matching black-outline toggle.
+Each Aura frame has compact Bar, Timer, and Stack Text Options launchers. Their shared popup provides Color, Font, Font Size, Bold, Outline, Save, Cancel, and Reset while keeping the main frame panel uncluttered.
 
 In Icon mode, **Duration Swipe** adds Blizzard's native Aura-duration sweep alongside the optional timer text. Permanent Auras have no timed sweep. Bar Mode communicates remaining duration through its status bar instead.
 

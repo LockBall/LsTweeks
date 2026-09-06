@@ -11,7 +11,9 @@ local M = addon.aura_frames
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "short_threshold", "aura_visible_icon_tick",
     "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline",
-    "shared_background_color_enabled",
+    "shared_options_enabled",
+    "shared_bar_text_font_size", "shared_bar_text_font_bold", "shared_bar_text_font_outline",
+    "shared_timer_text_font_size", "shared_timer_text_font_bold", "shared_timer_text_font_outline",
 }
 for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
     for _, picker in ipairs(column.pickers) do
@@ -43,7 +45,13 @@ local function copy_keys(source, dest, keys)
     end
 end
 local function apply_keys(source, dest, keys)
-    for _, key in ipairs(keys) do dest[key] = source[key] ~= nil and copy(source[key]) or nil end
+    for _, key in ipairs(keys) do
+        if source[key] ~= nil then
+            dest[key] = copy(source[key])
+        else
+            dest[key] = nil
+        end
+    end
 end
 
 local function should_profile_category_prefix(category, prefix)
@@ -74,6 +82,7 @@ end
 
 function M.apply_aura_frame_profile_data(data)
     if not (M.db and data) then return false, "Profile data is missing." end
+    if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
     apply_keys(data, M.db, PROFILE_GLOBAL_KEYS)
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do

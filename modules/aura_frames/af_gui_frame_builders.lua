@@ -50,13 +50,13 @@ local function create_bound_checkbox_control(parent, label, value_table, value_k
     return container, checkbox, label_text
 end
 
-local function create_snap_to_grid_checkbox(parent, anchor_to)
+local function create_snap_to_grid_checkbox(parent, anchor_to, grid)
     local container, checkbox, _ = addon.CreateCheckbox(parent, "Snap to Grid", M.db.snap_to_grid == true,
         function(is_checked)
             M.db.snap_to_grid = is_checked
         end
     )
-    container:SetPoint("TOPLEFT", anchor_to, "BOTTOMLEFT", 0, -4)
+    grid:stack_below(container, anchor_to, { spacing = "nested" })
     M.controls.snap_to_grid_checkbox = container
     return container, checkbox
 end
@@ -93,6 +93,10 @@ local function make_preset_frame_settings_config(data)
             bg_color = "bg_color_" .. cat,
             color = "color_" .. cat,
             bar_text_color = "bar_text_color_" .. cat,
+            bar_text_font = "bar_text_font_" .. cat,
+            bar_text_font_size = "bar_text_font_size_" .. cat,
+            bar_text_font_bold = "bar_text_font_bold_" .. cat,
+            bar_text_font_outline = "bar_text_font_outline_" .. cat,
             bar_bg_color = "bar_bg_color_" .. cat,
             fade_ooc = "fade_ooc_" .. cat,
             ooc_alpha = "ooc_alpha_" .. cat,
@@ -154,6 +158,10 @@ local function make_custom_frame_settings_config(entry)
             bg_color = "bg_color",
             color = "color",
             bar_text_color = "bar_text_color",
+            bar_text_font = "bar_text_font",
+            bar_text_font_size = "bar_text_font_size",
+            bar_text_font_bold = "bar_text_font_bold",
+            bar_text_font_outline = "bar_text_font_outline",
             bar_bg_color = "bar_bg_color",
             fade_ooc = "fade_ooc",
             ooc_alpha = "ooc_alpha",
@@ -181,10 +189,65 @@ local function frame_setting_key(frame_config, logical_key)
     return frame_config.keys[logical_key]
 end
 
+local function make_frame_font_binding(frame_config, logical_key, fallback)
+    local key = frame_setting_key(frame_config, logical_key)
+    return {
+        get = function()
+            local value = frame_config.value_table[key]
+            return value ~= nil and value or fallback
+        end,
+        set = function(value) frame_config.value_table[key] = value end,
+        get_default = function()
+            local value = frame_config.defaults_table[key]
+            return value ~= nil and value or fallback
+        end,
+    }
+end
+
+local function create_frame_font_picker(parent, frame_config, grid, update, config)
+    local text_color_sync_key = "sync_text_color_" .. frame_config.id
+    local text_font_sync_key = "sync_text_font_" .. frame_config.id
+    local function get_shared_notice()
+        if M.db.shared_options_enabled ~= true then return nil end
+        local color_shared = M.db[text_color_sync_key] == true
+        local font_shared = M.db[text_font_sync_key] == true
+        if color_shared and font_shared then
+            return M.TEXT_OPTIONS_OVERRIDE_NOTICES.color_and_font
+        elseif color_shared then
+            return M.TEXT_OPTIONS_OVERRIDE_NOTICES.color
+        elseif font_shared then
+            return M.TEXT_OPTIONS_OVERRIDE_NOTICES.font
+        end
+    end
+    local function refresh()
+        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        update()
+    end
+    local picker = addon.CreateFontPicker(parent, {
+        label = config.label,
+        popup_label = config.popup_label or config.label,
+        width = config.width or grid.reset_btn_width,
+        role = config.role,
+        color = make_frame_font_binding(frame_config, config.color_key, config.color_default),
+        font = make_frame_font_binding(frame_config, config.font_key, M.DEFAULT_AURA_FONT_KEY),
+        size = make_frame_font_binding(frame_config, config.size_key, config.size_default),
+        bold = make_frame_font_binding(frame_config, config.bold_key, false),
+        outline = make_frame_font_binding(frame_config, config.outline_key, config.outline_default),
+        get_notice = get_shared_notice,
+        on_preview = refresh,
+    })
+    grid:place_at(picker, config.row, config.column, nil, {
+        width = config.width or grid.reset_btn_width,
+        y_offset = config.y_offset,
+    })
+    M.controls[config.control_key] = picker
+    return picker
+end
+
 local function create_frame_color_picker(parent, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
     local key = frame_setting_key(frame_config, logical_key)
     local picker = addon.CreateColorPicker(parent, frame_config.value_table, key, has_alpha, label, frame_config.defaults_table, update)
-    grid:place_at(picker, row, column, "picker")
+    grid:place_at(picker, row, column)
     if control_key then M.controls[control_key] = picker end
     return picker
 end
@@ -206,218 +269,48 @@ local function create_frame_slider(parent, frame_config, name_suffix, label, min
     )
 end
 
-local function create_frame_timer_controls(parent, frame_config, grid, update, labels)
-    local id = frame_config.id
-    local control_prefix = labels.control_prefix or id
-    local row = labels.row or 4
-    local dropdown_name = labels.dropdown_name or (addon_name .. id .. "TimerFont")
-    local font_size_name = labels.font_size_name or (addon_name .. id .. "TimerFontSize")
-    local timer_text_key = frame_setting_key(frame_config, "timer")
-    local timer_font_key = frame_setting_key(frame_config, "timer_number_font")
-    local timer_font_size_key = frame_setting_key(frame_config, "timer_number_font_size")
-    local timer_bold_key = frame_setting_key(frame_config, "timer_number_font_bold")
-    local timer_outline_key = frame_setting_key(frame_config, "timer_number_font_outline")
-    local timer_color_key = frame_setting_key(frame_config, "timer_color")
-
-    local function get_selected_timer_font()
-        return frame_config.value_table[timer_font_key]
-            or M.db.timer_number_font
-            or M.DEFAULT_AURA_FONT_KEY
-    end
-
-    local function refresh_fonts()
-        M.apply_number_font_to_all()
-        update()
-    end
-
-    local timer_text_container = create_bound_checkbox_control(
-        parent,
-        labels.timer_text_label or "Timer Text",
-        frame_config.value_table,
-        timer_text_key,
-        grid,
-        row,
-        1,
-        labels.timer_text_control_key or timer_text_key,
-        nil,
-        update
-    )
-
-    local timer_bold_container = create_bound_checkbox_control(
-        parent,
-        labels.bold_label or "Bold",
-        frame_config.value_table,
-        timer_bold_key,
-        grid,
-        row,
-        1,
-        labels.bold_control_key or timer_bold_key,
-        refresh_fonts,
-        update
-    )
-    grid:stack_below(timer_bold_container, timer_text_container, { y = -4 })
-
-    local timer_outline_container = create_bound_checkbox_control(
-        parent,
-        labels.outline_label or "Outline",
-        frame_config.value_table,
-        timer_outline_key,
-        grid,
-        row,
-        1,
-        labels.outline_control_key or ("timer_number_font_outline_" .. control_prefix),
-        refresh_fonts,
-        update
-    )
-    grid:stack_below(timer_outline_container, timer_bold_container, { y = -4 })
-
-    local function refresh_bold_availability()
-        timer_bold_container:SetEnabled(addon.IsFontBoldAvailable(get_selected_timer_font()))
-    end
-
-    local timer_font = addon.CreateFontDropdown(dropdown_name, parent, {
-        label = labels.font_label or "Font",
+local function create_frame_timer_options(parent, frame_config, grid, update, labels)
+    local row = labels.row or 3
+    local timer_key = frame_setting_key(frame_config, "timer")
+    local timer_text_checkbox = create_bound_checkbox_control(
+        parent, labels.timer_text_label or "Timer Text", frame_config.value_table, timer_key,
+        grid, row, 1, labels.timer_text_control_key or timer_key, nil, update)
+    local timer_text_button = create_frame_font_picker(parent, frame_config, grid, update, {
+        label = "Timer Text",
+        popup_label = "Timer Text Options",
         role = "timer",
-        width = labels.font_dropdown_width or 120,
-        get_value = get_selected_timer_font,
-        on_select = function(value)
-            frame_config.value_table[timer_font_key] = value
-            refresh_bold_availability()
-            refresh_fonts()
-        end,
+        row = row,
+        column = 3,
+        control_key = labels.font_control_key or ("timer_text_options_" .. frame_config.id),
+        color_key = "timer_color",
+        color_default = { r = 1, g = 1, b = 1 },
+        font_key = "timer_number_font",
+        size_key = "timer_number_font_size",
+        size_default = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
+        bold_key = "timer_number_font_bold",
+        outline_key = "timer_number_font_outline",
+        outline_default = true,
     })
-    grid:place_at(timer_font, row, 3, nil, { width = labels.font_dropdown_width or 120, y_offset = labels.font_y_offset or -15 })
-    M.controls[labels.font_control_key or ("timer_number_font_dropdown_" .. control_prefix)] = timer_font
-    refresh_bold_availability()
-
-    local font_size_slider = addon.CreateSliderWithBox(
-        font_size_name,
-        parent,
-        labels.font_size_label or "Font Size",
-        get_setting_range("timer_number_font_size").min,
-        get_setting_range("timer_number_font_size").max,
-        get_setting_range("timer_number_font_size").step,
-        frame_config.value_table,
-        timer_font_size_key,
-        frame_config.defaults_table,
-        refresh_fonts,
-        { immediate_callback = true }
-    )
-    grid:place_at(font_size_slider, row, 4)
-    M.controls[labels.font_size_control_key or ("timer_number_font_size_slider_" .. control_prefix)] = font_size_slider
-
-    local timer_color_picker = addon.CreateColorPicker(
-        parent,
-        frame_config.value_table,
-        timer_color_key,
-        false,
-        labels.color_label or "Color",
-        frame_config.defaults_table,
-        refresh_fonts
-    )
-    grid:place_at(timer_color_picker, row, 2, "picker")
-    M.controls[labels.color_control_key or ("timer_color_picker_" .. control_prefix)] = timer_color_picker
-
-    return {
-        timer_text_container = timer_text_container,
-        timer_font = timer_font,
-        font_size_slider = font_size_slider,
-    }
+    return timer_text_checkbox, timer_text_button
 end
 
-local function create_frame_stack_text_controls(parent, frame_config, grid, update)
-    local id = frame_config.id
-    local stack_font_key = frame_setting_key(frame_config, "stack_number_font")
-    local stack_font_size_key = frame_setting_key(frame_config, "stack_number_font_size")
-    local stack_bold_key = frame_setting_key(frame_config, "stack_number_font_bold")
-    local stack_outline_key = frame_setting_key(frame_config, "stack_number_font_outline")
-    local stack_color_key = frame_setting_key(frame_config, "stack_color")
-
-    local function get_selected_stack_font()
-        return frame_config.value_table[stack_font_key] or M.DEFAULT_AURA_FONT_KEY
-    end
-
-    local function refresh_stack_fonts()
-        M.apply_number_font_to_all()
-        update()
-    end
-
-    local refresh_bold_availability
-    local stack_font = addon.CreateFontDropdown(addon_name .. id .. "StackFont", parent, {
-        label = "Stack Font",
+local function create_frame_stack_options(parent, frame_config, grid, update)
+    return create_frame_font_picker(parent, frame_config, grid, update, {
+        label = "Stack Text",
+        popup_label = "Stack Text Options",
         role = "stack",
-        width = 120,
-        get_value = get_selected_stack_font,
-        on_select = function(value)
-            frame_config.value_table[stack_font_key] = value
-            if refresh_bold_availability then refresh_bold_availability() end
-            refresh_stack_fonts()
-        end,
+        row = 3,
+        column = 3,
+        control_key = "stack_text_options_" .. frame_config.id,
+        color_key = "stack_color",
+        color_default = { r = 1, g = 1, b = 1 },
+        font_key = "stack_number_font",
+        size_key = "stack_number_font_size",
+        size_default = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
+        bold_key = "stack_number_font_bold",
+        outline_key = "stack_number_font_outline",
+        outline_default = true,
     })
-    grid:place_at(stack_font, 6, 3, nil, { width = 120, y_offset = -15 })
-    M.controls["stack_number_font_dropdown_" .. id] = stack_font
-
-    local stack_bold_container = create_bound_checkbox_control(
-        parent,
-        "Bold",
-        frame_config.value_table,
-        stack_bold_key,
-        grid,
-        6,
-        3,
-        "stack_number_font_bold_" .. id,
-        refresh_stack_fonts,
-        update
-    )
-    grid:stack_below(stack_bold_container, stack_font, { y = -4 })
-
-    local stack_outline_container = create_bound_checkbox_control(
-        parent,
-        "Outline",
-        frame_config.value_table,
-        stack_outline_key,
-        grid,
-        6,
-        3,
-        "stack_number_font_outline_" .. id,
-        refresh_stack_fonts,
-        update
-    )
-    grid:stack_below(stack_outline_container, stack_bold_container, { y = -4 })
-
-    refresh_bold_availability = function()
-        stack_bold_container:SetEnabled(addon.IsFontBoldAvailable(get_selected_stack_font()))
-    end
-    M.controls["stack_number_font_bold_refresh_" .. id] = refresh_bold_availability
-    refresh_bold_availability()
-
-    local stack_color_picker = addon.CreateColorPicker(
-        parent,
-        frame_config.value_table,
-        stack_color_key,
-        false,
-        "Stack Color",
-        frame_config.defaults_table,
-        refresh_stack_fonts
-    )
-    grid:place_at(stack_color_picker, 6, 2, "picker")
-    M.controls["stack_color_picker_" .. id] = stack_color_picker
-
-    local stack_font_size_slider = addon.CreateSliderWithBox(
-        addon_name .. id .. "StackFontSize",
-        parent,
-        "Stack Font Size",
-        get_setting_range("timer_number_font_size").min,
-        get_setting_range("timer_number_font_size").max,
-        get_setting_range("timer_number_font_size").step,
-        frame_config.value_table,
-        stack_font_size_key,
-        frame_config.defaults_table,
-        refresh_stack_fonts,
-        { immediate_callback = true }
-    )
-    grid:place_at(stack_font_size_slider, 6, 4)
-    M.controls["stack_number_font_size_slider_" .. id] = stack_font_size_slider
 end
 
 local function create_frame_position_controls(parent, frame_config, grid, update, options)
@@ -528,7 +421,7 @@ local function create_frame_position_controls(parent, frame_config, grid, update
     grid:place_at(y_slider, row, 3)
     grid:place_at(width_slider, row, 4)
 
-    local snap_container = create_snap_to_grid_checkbox(parent, move_container)
+    local snap_container = create_snap_to_grid_checkbox(parent, move_container, grid)
 
     M.create_move_reset_button(parent, snap_container, {
         width = grid.reset_btn_width,
@@ -584,12 +477,11 @@ local function create_frame_position_controls(parent, frame_config, grid, update
 end
 
 function M.build_general_tab(p)
-    -- Manual layout for General tab
+    local section_spacing = addon.CONTROL_STACK_SPACING.section
 
     -- Blizzard Buff & Debuff Enable Frames Section
     local enable_panel = CreateFrame("Frame", nil, p, "BackdropTemplate")
     enable_panel:SetSize(150, 45)
-    enable_panel:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -16)
     M.apply_tooltip_panel_backdrop(enable_panel, 0.08, 0.08, 0.08, 0.85, 0.3, 0.3, 0.3, 1)
 
     local panel_title = enable_panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -639,7 +531,6 @@ function M.build_general_tab(p)
             tooltip = "How often addon-rendered custom and Cooldown Manager timer text and bars update. Managed Short, Static / Long, Timed, and Debuff animation is controlled by WoW.\nHigher values use less CPU but update less smoothly.",
         }
     )
-    visible_icon_tick:SetPoint("TOPLEFT", enable_panel, "BOTTOMLEFT", 0, -24)
     M.controls.aura_visible_icon_tick_slider = visible_icon_tick
 
     -- Show Bar Section Outlines Checkbox
@@ -651,7 +542,6 @@ function M.build_general_tab(p)
             end
         end
     )
-    outlines_container:SetPoint("TOPLEFT", visible_icon_tick, "BOTTOMLEFT", 0, -18)
     M.controls.show_bar_section_outlines_checkbox = outlines_container
 
     -- reset panel
@@ -660,13 +550,32 @@ function M.build_general_tab(p)
         preserve_default = true,
         preserve_keys = { "profiles", "last_profile_name" },
         before_reset = function()
+            if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
             if M.refresh_cdm_default_positions then
                 M.refresh_cdm_default_positions()
             end
         end,
         after_reset = M.on_reset_complete,
     })
-    resetPanel:SetPoint("TOPLEFT", outlines_container, "BOTTOMLEFT", 0, -16)
+    local grid = addon.CreateSettingsGrid(p, {
+        column_count = 1,
+        col_width = 190,
+        col_gap = 190,
+        col_offset = 16,
+        col_align = { "left" },
+        row_start = -16,
+        row_heights = {
+            45 + section_spacing,
+            addon.SLIDER_WITH_BOX_SIZE.height + section_spacing,
+            24 + section_spacing,
+            115,
+        },
+        content_rows = 4,
+    })
+    grid:place_at(enable_panel, 1, 1)
+    grid:place_at(visible_icon_tick, 2, 1)
+    grid:place_at(outlines_container, 3, 1)
+    grid:place_at(resetPanel, 4, 1)
 end
 
 -- Custom filtered frame panel builders.
@@ -692,8 +601,8 @@ function M.update_custom_frame_title(entry)
     if frame.move_handle then
         frame.move_handle.title = entry.name or entry.id
     end
-    if M.rebuild_shared_background_color_group then
-        M.rebuild_shared_background_color_group()
+    if M.rebuild_shared_options_group then
+        M.rebuild_shared_options_group()
     end
 end
 
@@ -875,18 +784,18 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         refresh_pause_test_aura_button()
     end
     local tooltip_container = bound_cb("Tooltip", "tooltip", 2, 1)
-    grid:stack_below(tooltip_container, enable_container)
+    grid:stack_below(tooltip_container, enable_container, { spacing = "checkbox" })
 
     local frame_bg_container, _, frame_bg_label = bound_cb("Frame BG", "bg", 1, 2, function(is_checked)
         value_table[frame_setting_key(frame_config, "move_bg_opt_out")] = not is_checked
         update()
     end)
-    local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared BG Colors."
+    local frame_bg_tooltip = "Shows the background behind this Aura frame. Frame BG Color is used unless this frame participates in Shared Options."
     add_label_tooltip(frame_bg_container, frame_bg_label, frame_bg_tooltip)
     local frame_bg_color_picker = bound_picker("bg_color", true, "Frame BG Color", 1, 2)
-    grid:stack_below(frame_bg_color_picker, frame_bg_container, { y = -4 })
+    grid:stack_below(frame_bg_color_picker, frame_bg_container, { spacing = "picker" })
     if test_aura_container then
-        grid:stack_below(test_aura_container, frame_bg_color_picker, { y = -4 })
+        grid:stack_below(test_aura_container, frame_bg_color_picker, { spacing = "nested" })
     end
 
     local scale_range = get_setting_range("scale")
@@ -942,7 +851,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         if is_checked and color_sync and color_sync.set_disable_ooc_fade then
             color_sync.set_disable_ooc_fade(false)
             if color_sync.sync_controls then color_sync.sync_controls() end
-            if M.sync_background_color_controls then M.sync_background_color_controls() end
+            if M.sync_shared_options_controls then M.sync_shared_options_controls() end
             if color_sync.refresh_consumers then
                 color_sync.refresh_consumers()
                 return
@@ -1012,7 +921,6 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end)
     if has_timer_controls then
         timer_swipe_container = bound_cb("Duration Swipe", "timer_swipe", 3, 1)
-        grid:stack_below(timer_swipe_container, bar_mode_container)
         M.controls["timer_swipe_refresh_" .. control_key("timer_swipe")] = refresh_timer_swipe_control
         refresh_timer_swipe_control()
     end
@@ -1025,17 +933,40 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     grid:stack_below(growth_dropdown, growth_anchor, { y = -25 })
 
     local bar_color_picker = addon.CreateColorPicker(parent, value_table, frame_setting_key(frame_config, "color"), true, "Bar Color", frame_config.defaults_table, update)
-    grid:place_at(bar_color_picker, 3, 2, "picker")
+    grid:place_at(bar_color_picker, 3, 2)
     if opts.bar_color_control_key then
         M.controls[opts.bar_color_control_key] = bar_color_picker
     end
-    local bar_text_color_picker = bound_picker("bar_text_color", false, "Bar Text Color", 3, 3)
-    local bar_bg_color_picker = bound_picker("bar_bg_color", true, "Bar BG Color", 3, 4)
+    local bar_text_button = create_frame_font_picker(parent, frame_config, grid, update, {
+        label = "Bar Text",
+        popup_label = "Bar Text Options",
+        role = "body",
+        row = 3,
+        column = 3,
+        control_key = "bar_text_options_" .. frame_config.id,
+        color_key = "bar_text_color",
+        color_default = { r = 1, g = 1, b = 1 },
+        font_key = "bar_text_font",
+        size_key = "bar_text_font_size",
+        size_default = 10,
+        bold_key = "bar_text_font_bold",
+        outline_key = "bar_text_font_outline",
+        outline_default = false,
+    })
+    local bar_bg_color_picker = bound_picker("bar_bg_color", true, "Bar BG Color", 3, 2)
+    grid:stack_below(bar_bg_color_picker, bar_color_picker, { spacing = "picker" })
 
+    local timer_text_button
     if has_timer_controls then
-        create_frame_timer_controls(parent, frame_config, grid, update, opts.timer_labels or {})
+        local timer_text_checkbox
+        timer_text_checkbox, timer_text_button = create_frame_timer_options(
+            parent, frame_config, grid, update, opts.timer_labels or {})
+        grid:stack_below(timer_text_checkbox, bar_mode_container, { spacing = "checkbox" })
+        grid:stack_below(timer_swipe_container, timer_text_checkbox, { spacing = "checkbox" })
+        grid:stack_below(timer_text_button, bar_text_button, { spacing = "button" })
     end
-    create_frame_stack_text_controls(parent, frame_config, grid, update)
+    local stack_text_button = create_frame_stack_options(parent, frame_config, grid, update)
+    grid:stack_below(stack_text_button, timer_text_button or bar_text_button, { spacing = "button" })
 end
 
 --#endregion SHARED FRAME PANEL HELPERS ========================================
@@ -1073,7 +1004,7 @@ function M.build_preset_frame_panel(p, data)
         bar_color_control_key = "bar_color_picker_" .. cat,
         show_timer_controls = true,
         timer_labels = {
-            row = 5,
+            row = 3,
             control_prefix = cat,
             dropdown_name = addon_name .. cat .. "TimerFont",
             font_size_name = addon_name .. cat .. "TimerFontSizeSlider",
@@ -1083,7 +1014,6 @@ function M.build_preset_frame_panel(p, data)
             font_size_label = "Font Size",
             color_label = "Text Color",
             font_dropdown_width = 120,
-            font_y_offset = -15,
         },
         on_enable_changed = function(is_checked)
             if is_checked or not hide_blizz_cdm_label then return end
@@ -1102,7 +1032,11 @@ function M.build_preset_frame_panel(p, data)
                     M.update_blizz_cdm_visibility(cat)
                     update()
                 end)
-                ctx.grid:stack_below(hide_blizz_cdm_container, ctx.enable_container)
+                ctx.grid:stack_below(
+                    hide_blizz_cdm_container,
+                    ctx.enable_container,
+                    { spacing = "checkbox" }
+                )
                 return hide_blizz_cdm_container
             end
 
@@ -1115,7 +1049,11 @@ function M.build_preset_frame_panel(p, data)
                     1,
                     update
                 )
-                ctx.grid:stack_below(ctx.tooltip_container, cooldown_mode_container)
+                ctx.grid:stack_below(
+                    ctx.tooltip_container,
+                    cooldown_mode_container,
+                    { spacing = "checkbox" }
+                )
             elseif hide_blizz_cdm_label then
                 ctx.grid:place_at(ctx.tooltip_container, 6, 1)
             end
@@ -1191,7 +1129,7 @@ function M.build_custom_settings_panel(p, entry)
         bar_color_control_key = "custom_" .. id .. "_bar_color",
         growth_y_offset = -33,
         timer_labels = {
-            row = 5,
+            row = 3,
             control_prefix = "custom_" .. id,
             dropdown_name = addon_name .. id .. "TimerFont",
             font_size_name = addon_name .. id .. "TimerFontSize",
@@ -1201,7 +1139,6 @@ function M.build_custom_settings_panel(p, entry)
             font_size_label = "Timer Font Size",
             color_label = "Timer Color",
             font_dropdown_width = 120,
-            font_y_offset = -15,
         },
         build_source_controls = function(ctx)
             ctx.grid:place_at(create_frame_name_control(ctx.parent, entry), 6, 1, nil, { width = 130, y_offset = -30 })

@@ -94,6 +94,9 @@ h.test("Aura Frames profiles preserve independent mode growth settings", functio
         timer_number_font_outline_static_long = false,
         stack_number_font_outline_static_long = false,
         stack_color_static_long = { r = 0.2, g = 0.4, b = 0.6 },
+        bar_text_font_size_static_long = 12.5,
+        bar_text_font_bold_static_long = true,
+        bar_text_font_outline_static_long = true,
     })
 
     h.ok(ok, "Aura Frames profile data applies")
@@ -104,6 +107,9 @@ h.test("Aura Frames profiles preserve independent mode growth settings", functio
     h.eq(AF.db.timer_number_font_outline_static_long, false, "profile restores timer outline")
     h.eq(AF.db.stack_number_font_outline_static_long, false, "profile restores stack outline")
     h.eq(AF.db.stack_color_static_long.g, 0.4, "profile restores stack color")
+    h.eq(AF.db.bar_text_font_size_static_long, 12.5, "profile restores Bar text font size")
+    h.eq(AF.db.bar_text_font_bold_static_long, true, "profile restores Bar text bold face")
+    h.eq(AF.db.bar_text_font_outline_static_long, true, "profile restores Bar text outline")
     local data = AF.export_aura_frame_profile_data()
     h.eq(data.growth_icon_static_long, "LEFT", "profile exports the Static / Long category")
 end)
