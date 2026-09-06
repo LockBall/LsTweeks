@@ -2,7 +2,7 @@
 -- Defines category lists, CDM frame mappings, and per-category defaults.
 -- Runtime files should read these values instead of repeating category names
 -- or default settings.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames

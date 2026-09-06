@@ -1139,7 +1139,7 @@ function M.BuildBackgroundSettings(parent)
         offsets = { default = 0 },
     })
 
-    local customize_container, customize_cb, customize_label = addon.CreateCheckbox(
+    local customize_container, _, customize_label = addon.CreateCheckbox(
         background_group,
         "WoW BG",
         db.customize_background == true,
@@ -1149,7 +1149,7 @@ function M.BuildBackgroundSettings(parent)
     background_grid:place_at(customize_container, 1, 1)
     addon.AttachTooltip(customize_label, nil, "Sets Blizzard's Objective Tracker Edit Mode opacity to the saved WoW BG Alpha value, or 0 when unchecked.")
 
-    local color_enabled_container, color_enabled_cb, color_enabled_label = addon.CreateCheckbox(
+    local color_enabled_container, _, color_enabled_label = addon.CreateCheckbox(
         background_group,
         "Custom BG",
         is_background_color_enabled(db),
@@ -1194,7 +1194,7 @@ function M.BuildBackgroundSettings(parent)
     background_grid:stack_below(picker, color_enabled_container, { y = -2 })
     addon.AttachTooltip(picker, nil, "Tints the center color block. The picker alpha controls only that color block.")
 
-    local border_container, border_cb, border_label = addon.CreateCheckbox(
+    local border_container, _, border_label = addon.CreateCheckbox(
         background_group,
         "Border",
         is_background_border_enabled(),

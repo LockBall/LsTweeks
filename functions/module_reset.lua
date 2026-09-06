@@ -6,7 +6,7 @@
 -- opts.after_reset lets a module resync only its own runtime/controls.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region MODULE RESET FACTORY ================================================
 

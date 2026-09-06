@@ -33,12 +33,7 @@ for _, key in ipairs(M.CUSTOM_PRESENTATION_PROFILE_KEYS) do
     CUSTOM_PROFILE_KEYS[#CUSTOM_PROFILE_KEYS + 1] = key
 end
 
-local function copy(value)
-    if type(value) ~= "table" then return value end
-    local result = {}
-    for key, child in pairs(value) do result[key] = copy(child) end
-    return result
-end
+local copy = addon.deep_copy
 local function copy_keys(source, dest, keys)
     for _, key in ipairs(keys) do
         if source[key] ~= nil then dest[key] = copy(source[key]) end

@@ -4,14 +4,7 @@ local M = addon.skyriding_vigor
 
 --#region PROFILES =============================================================
 
-local function copy(value)
-    if type(value) ~= "table" then return value end
-    local out = {}
-    for key, child in pairs(value) do
-        out[key] = copy(child)
-    end
-    return out
-end
+local copy = addon.deep_copy
 
 function M.export_skyriding_vigor_profile_data()
     local db = M.get_root_db()

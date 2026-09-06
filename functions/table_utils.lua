@@ -1,9 +1,18 @@
 -- Shared table/default-copy utilities used across all modules.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region TABLE COPYING ======================================================
+
+function addon.deep_copy(value)
+    if type(value) ~= "table" then return value end
+    local result = {}
+    for key, child in pairs(value) do
+        result[key] = addon.deep_copy(child)
+    end
+    return result
+end
 
 -- Use after table.wipe(dest) to restore a DB table from defaults.
 function addon.deep_copy_into(src, dest)

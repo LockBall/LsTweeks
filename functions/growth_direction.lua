@@ -2,7 +2,7 @@
 -- Consumers translate the canonical axis/anchor/direction values into their
 -- own layout APIs instead of maintaining module-local direction tables.
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region DIRECTION DEFINITIONS ===============================================
 

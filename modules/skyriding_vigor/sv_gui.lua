@@ -187,11 +187,6 @@ local function place_grid_control(frame, placement, place_opts)
     end
 end
 
-local function get_separator_y(row, cfg)
-    return cfg.title_offset_y - ((row - 1) * (cfg.slider_row_height + cfg.slider_row_gap_y))
-        + math.floor(cfg.grid_row_gap / 2)
-end
-
 local function open_skyriding_talents()
     if InCombatLockdown and InCombatLockdown() then
         print("|cFFFFFF00LsTweaks: Cannot open Skyriding Talents while in combat. Try again out of combat.|r")
@@ -939,7 +934,7 @@ local function build_race_profile_panel(parent, context)
     local race_profile_panel = create_control_panel(parent)
     M.controls.race_profile_panel = race_profile_panel
 
-    local race_profile_container, race_profile_cb = addon.CreateCheckbox(
+    local race_profile_container = addon.CreateCheckbox(
         race_profile_panel,
         STRINGS.race_profile_enabled,
         root_db and root_db.race_profile_enabled,

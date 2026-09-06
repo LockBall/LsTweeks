@@ -12,12 +12,7 @@ local PROFILE_KEYS = {
     "targets", "fishing_focus", "combat_volumes", "quiet_custom", "custom_situations", "next_custom_situation_id",
 }
 
-local function copy(value)
-    if type(value) ~= "table" then return value end
-    local result = {}
-    for key, child in pairs(value) do result[key] = copy(child) end
-    return result
-end
+local copy = addon.deep_copy
 
 function M.export_audio_volumes_profile_data()
     local db = M.get_db()

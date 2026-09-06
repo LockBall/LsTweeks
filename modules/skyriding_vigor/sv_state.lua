@@ -94,11 +94,11 @@ function M.get_charge_info()
             -- Action spell charges can report maxCharges = 1; keep the six-node bar shape in fallback mode.
             local max_slots = M.MAX_SLOTS
             if not is_secret(spell_current) then
-                local start_time = info.cooldownStartTime
-                local duration = info.cooldownDuration
-                if is_secret(start_time) then start_time = 0 end
-                if is_secret(duration) then duration = 0 end
-                return min(spell_current, max_slots), max_slots, start_time or 0, duration or 0
+                local cooldown_start = info.cooldownStartTime
+                local cooldown_duration = info.cooldownDuration
+                if is_secret(cooldown_start) then cooldown_start = 0 end
+                if is_secret(cooldown_duration) then cooldown_duration = 0 end
+                return min(spell_current, max_slots), max_slots, cooldown_start or 0, cooldown_duration or 0
             end
         end
     end

@@ -13,8 +13,6 @@ addon.about = addon.about or {
     frames = {}
 }
 
-local M = addon.about
-
 -- UI Configuration Constants (module-specific)
 -- Shared values (padding, panel sizes, etc.) come from addon.UI_THEME
 local UI_CONFIG = {

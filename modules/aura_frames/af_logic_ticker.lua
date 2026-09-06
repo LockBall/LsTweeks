@@ -1,6 +1,6 @@
 -- Visible icon ticker logic for Aura Frames.
 -- Keeps timer text, cooldown state, and bar values fresh between aura scans.
-local addon_name, addon = ...
+local _, addon = ...
 
 local math_max      = math.max
 local math_min      = math.min
@@ -142,7 +142,6 @@ function M.tick_visible_icons(now)
         local icons = frame and frame.icons
         if icons and frame:IsVisible() then
             local show_timer_text = frame._show_timer_text
-            local bar_mode = frame._bar_mode
             local show_cooldown_overlay = frame._show_cooldown_overlay == true
             local display_count = frame._display_count or 0
             local icon_count = #icons

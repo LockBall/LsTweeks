@@ -1,6 +1,6 @@
 -- Audio Volumes situations: Fishing Focus, Combat Volumes, Quick Picks,
 -- temporary channel CVars, situation previews, and situation event routing.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes

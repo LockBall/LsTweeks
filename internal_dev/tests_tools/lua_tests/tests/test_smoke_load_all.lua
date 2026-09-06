@@ -43,8 +43,8 @@ h.test("/lst filtered status emits readable multiline fields", function()
     print = original_print
 
     local output = table.concat(messages, "\n")
-    h.ok(output:find("Objectives: enabled=true\n  campaign_available=", 1, true),
-        "filtered Objectives fields use newline separators")
+    h.ok(output:find("Objectives: enabled=true\n  activation_reminder_enabled=true", 1, true),
+        "the first filtered Objectives field uses a newline separator")
     h.ok(output:find("campaign_available=true\n  campaign_auto_collapse=false", 1, true),
         "every filtered Objectives field uses a newline separator")
     h.eq(output:find("Objectives: enabled=true, campaign_available=", 1, true), nil,

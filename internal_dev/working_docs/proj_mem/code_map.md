@@ -88,7 +88,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `functions/slider_with_box.lua`: shared slider/edit-box/reset factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/ui_helpers.lua`: shared settings UI helpers for common control-panel backdrops, Marble-backed popup frames, and gold outlined settings groups.
 - `functions/tooltip.lua`: centralized tooltip factory and secret-data boundary. Memory: `proj_mem/functions/tooltip.md`.
-- `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
+- `functions/table_utils.lua`: shared table/default-copy and value helpers: `addon.deep_copy()`, `addon.deep_copy_into()`, `addon.apply_defaults()`, and `addon.clamp_number()`.
 
 
 ## Feature Modules

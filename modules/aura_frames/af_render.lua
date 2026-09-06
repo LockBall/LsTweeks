@@ -3,7 +3,7 @@
 -- timer/bar updates, and unused-icon cleanup through focused helpers.
 -- set_timer_text() formats countdown strings for addon-rendered entries.
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local floor      = math.floor
 local math_max   = math.max
@@ -685,7 +685,7 @@ local function add_custom_entries_to_render_list(list, aura_map)
     end)
 end
 
-local function add_preset_entries_to_render_list(frame, list, aura_map, aura_filter, sort_mode)
+local function add_preset_entries_to_render_list(_frame, list, aura_map, aura_filter, sort_mode)
     -- Resolve sort parameters for GetUnitAuraInstanceIDs.
     local sort_rule = SORT_RULE_DEFAULT
     local sort_dir  = SORT_DIR_NORMAL

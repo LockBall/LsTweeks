@@ -1,5 +1,5 @@
 -- Objectives Section Count: optional low-cost counters in Blizzard tracker titles.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.objectives = addon.objectives or {}
 local M = addon.objectives
@@ -401,7 +401,7 @@ function M.BuildSectionCountSettings(parent)
 
     local show_quest_log, show_tracked_achievements, quest_log_on_hover, tracked_achievements_on_hover = get_count_settings()
     local function create_count_checkbox(label, checked, db_key, control_key, tooltip)
-        local container, checkbox, checkbox_label = addon.CreateCheckbox(
+        local container, _, checkbox_label = addon.CreateCheckbox(
             count_group,
             label,
             checked,

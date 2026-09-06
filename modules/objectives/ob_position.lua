@@ -443,7 +443,7 @@ function M.BuildPositionSettings(parent)
         offsets = { default = 0 },
     })
 
-    local move_mode_container, move_mode_cb, move_mode_label = addon.CreateCheckbox(
+    local move_mode_container, _, move_mode_label = addon.CreateCheckbox(
         position_group,
         "Move Mode",
         db.objective_tracker_move_mode == true,
@@ -453,7 +453,7 @@ function M.BuildPositionSettings(parent)
     position_grid:place_at(move_mode_container, 1, 1)
     addon.AttachTooltip(move_mode_label, nil, "Allows dragging the All Objectives tracker and saves the result to the X/Y offset sliders.")
 
-    local snap_container, snap_cb, snap_label = addon.CreateCheckbox(
+    local snap_container, _, snap_label = addon.CreateCheckbox(
         position_group,
         "Snap to Grid",
         db.objective_tracker_snap_to_grid == true,

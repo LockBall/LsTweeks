@@ -2,7 +2,7 @@
 -- chrome: control panel backdrops and gold-outlined settings groups.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local DEFAULT_POPUP_BACKGROUND_TEXTURE = "Interface\\FrameGeneral\\UI-Background-Marble"
 

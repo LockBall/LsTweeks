@@ -1,7 +1,7 @@
 -- Aura Frames shared colors/fonts and per-frame participation matrix.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames

@@ -5,7 +5,7 @@
 --#region FILE CONTENTS ======================================================
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 -- ============================================================================
 -- CATEGORY REGISTRATION (modules use this)
@@ -265,7 +265,6 @@ function addon.init_main_frame()
 
         -- Build Category Buttons from registered modules (includes About module)
         for _, cat in ipairs(addon.categories) do
-            local category_locked = is_category_locked(cat)
             local btn = CreateFrame("Button", nil, frame.sidebar, "UIPanelButtonTemplate")
             btn:SetSize(120, 22)
             btn:SetPoint("TOPLEFT", frame.sidebar, "TOPLEFT", 10, y)

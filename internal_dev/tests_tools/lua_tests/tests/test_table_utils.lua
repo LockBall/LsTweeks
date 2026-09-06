@@ -12,6 +12,15 @@ local h = require("harness")
 h.load_file("functions/table_utils.lua")
 local addon = h.addon
 
+h.test("deep_copy returns an independent recursive value", function()
+    local src = { a = 1, nested = { b = 2 } }
+    local result = addon.deep_copy(src)
+
+    h.ok(result ~= src, "top-level table is copied")
+    h.ok(result.nested ~= src.nested, "nested table is copied")
+    h.eq(result.nested.b, 2, "nested value is preserved")
+end)
+
 h.test("deep_copy_into copies nested tables by value", function()
     local src = { a = 1, nested = { b = 2, deeper = { c = 3 } } }
     local dest = {}

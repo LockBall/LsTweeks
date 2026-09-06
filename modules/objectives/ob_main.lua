@@ -102,7 +102,7 @@ end
 loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
-loader:SetScript("OnEvent", function(self, event, arg1, arg2)
+loader:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == addon_name then
             Ls_Tweeks_DB = Ls_Tweeks_DB or {}

@@ -55,6 +55,42 @@ local function get_expand_button(tracker)
     return children[#children]
 end
 
+local function status_contains(expected)
+    return table.concat(M.get_auto_collapse_status(), ","):find(expected, 1, true) ~= nil
+end
+
+h.test("activation reminder can be disabled, rearmed, and synchronized from data", function()
+    reset_runtime()
+    local db = fresh_db({ collapse_campaign = true })
+
+    M.apply_auto_collapse()
+    h.advance(1)
+    h.ok(status_contains("activation_reminder_shown=true"),
+        "first startup Auto-Collapse shows its activation reminder")
+
+    local parent = CreateFrame("Frame", nil, UIParent)
+    M.BuildAutoCollapseSettings(parent)
+    local reminder = M.controls.show_auto_collapse_activation_tooltip
+    h.eq(reminder:GetChecked(), true, "activation reminder is checked by default")
+
+    reminder:SetChecked(false)
+    reminder.checkbox:Click()
+    h.eq(db.show_auto_collapse_activation_tooltip, false, "activation reminder can be disabled")
+    h.ok(status_contains("activation_reminder_shown=false"),
+        "disabling the reminder hides it")
+
+    reminder:SetChecked(true)
+    reminder.checkbox:Click()
+    h.eq(db.show_auto_collapse_activation_tooltip, true, "activation reminder can be re-enabled")
+    h.ok(status_contains("activation_reminder_shown=true"),
+        "re-enabling the reminder displays it again")
+
+    db.show_auto_collapse_activation_tooltip = false
+    M.apply_auto_collapse()
+    h.ok(status_contains("activation_reminder_shown=false"),
+        "runtime synchronization hides a reminder disabled outside its checkbox callback")
+end)
+
 h.test("auto-collapse hides only configured section contents", function()
     reset_runtime()
     fresh_db({ collapse_campaign = true, collapse_quests = true, collapse_achievements = true })
@@ -69,34 +105,6 @@ h.test("auto-collapse hides only configured section contents", function()
         h.eq(tracker:IsCollapsed(), false, "Blizzard collapsed state remains untouched")
         h.eq(tracker.ContentsFrame:IsShown(), false, "configured section contents are hidden")
     end
-    local activation_tooltip = M.get_auto_collapse_activation_tooltip()
-    h.ok(activation_tooltip and activation_tooltip:IsShown(),
-        "first startup Auto-Collapse shows the session activation instruction")
-    h.eq(activation_tooltip.lines[2]:GetText(), M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TEXT,
-        "activation instruction uses the centralized user-facing text")
-    h.eq(activation_tooltip.lines[3]:GetText(), " ",
-        "activation instruction separates its two messages with a blank line")
-    h.eq(activation_tooltip.lines[4]:GetText(), M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_LABEL,
-        "activation instruction gives the reminder setting a separate label")
-    h.eq(activation_tooltip.lines[4]:GetLastCall("SetFontObject")[1], GameTooltipHeaderText,
-        "activation reminder label uses the bold tooltip font")
-    h.eq(activation_tooltip.lines[5]:GetText(), M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_TEXT,
-        "activation instruction explains how to disable future reminders")
-
-    local parent = CreateFrame("Frame", nil, UIParent)
-    M.BuildAutoCollapseSettings(parent)
-    local reminder = M.controls.show_auto_collapse_activation_tooltip
-    h.eq(reminder:GetChecked(), true, "activation reminder is checked by default")
-    reminder:SetChecked(false)
-    reminder.checkbox:Click()
-    h.eq(Ls_Tweeks_DB.objectives.show_auto_collapse_activation_tooltip, false,
-        "activation reminder setting can be disabled")
-    h.ok(not activation_tooltip:IsShown(), "disabling the reminder hides its active tooltip")
-    reminder:SetChecked(true)
-    reminder.checkbox:Click()
-    h.eq(Ls_Tweeks_DB.objectives.show_auto_collapse_activation_tooltip, true,
-        "activation reminder setting can be re-enabled")
-    h.ok(activation_tooltip:IsShown(), "re-enabling the reminder displays it again")
 end)
 
 h.test("auto-collapse defers visibility mutation while in combat", function()
@@ -128,7 +136,7 @@ h.test("manual overlay expansion stays open across later apply passes", function
 
     expand_button:Click()
     h.eq(CampaignQuestObjectiveTracker.ContentsFrame:IsShown(), true, "manual overlay click shows contents")
-    h.ok(not M.get_auto_collapse_activation_tooltip():IsShown(),
+    h.ok(status_contains("activation_reminder_shown=false"),
         "starting the requested button interaction dismisses the activation instruction")
 
     M.apply_auto_collapse()

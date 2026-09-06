@@ -5,7 +5,7 @@
 --#region FILE CONTENTS ======================================================
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local GetTime = GetTime
 

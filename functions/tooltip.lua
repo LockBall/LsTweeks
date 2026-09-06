@@ -205,7 +205,8 @@ function addon.CreateOwnedTooltip(name, parent)
 
     -- The wrap argument is accepted for caller compatibility but sizing is
     -- measurement-driven: lines whose natural width fits the cap size to it,
-    -- and only cap-exceeding lines take the full width and wrap.
+    -- and only cap-exceeding lines take the full width and wrap. An optional
+    -- FontObject is applied before measurement for additional title rows.
     function tooltip:AddLine(text, r, g, b, _wrap, font_object)
         local index = (self.line_count or 0) + 1
         local line = self.lines[index]

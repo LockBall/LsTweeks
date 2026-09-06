@@ -1,6 +1,6 @@
 -- Aura scanning for custom frames and Blizzard Cooldown Manager-backed frames.
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local math_max   = math.max
 local GetTime    = GetTime
@@ -17,15 +17,6 @@ local _scratch_custom_old_map = {}
 local _custom_aura_scan_cache = {}
 
 --#region SHARED HELPERS =======================================================
-
-local function make_order_key(spell_id, name, icon, is_helpful)
-    local f = is_helpful and "H" or "D"
-    local sid = (spell_id ~= nil and not issecretvalue(spell_id)) and tostring(spell_id) or nil
-    local n   = (name    ~= nil and not issecretvalue(name))     and tostring(name)     or nil
-    local ic  = (icon    ~= nil and not issecretvalue(icon))     and tostring(icon)     or nil
-    if not sid and not n and not ic then return nil end
-    return f .. "|" .. (sid or "") .. "|" .. (n or "") .. "|" .. (ic or "")
-end
 
 -- Returns remaining seconds, or nil if duration is nil/secret.
 local function compute_remaining(duration, expiration)

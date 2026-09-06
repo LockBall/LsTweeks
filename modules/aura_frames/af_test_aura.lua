@@ -1,6 +1,6 @@
 -- Fake aura preview data for layout and UI testing outside of combat.
 -- Preview entries are rendered by the normal aura-frame renderer/ticker path.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames

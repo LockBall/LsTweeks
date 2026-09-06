@@ -38,7 +38,7 @@ function M.BuildSpecificsTab(parent)
 
     local slider_x = UI.pad_x + UI.fishing_slider_width + UI.fishing_slider_gap
     local specifics_detail_width = (UI.fishing_slider_width * 4) + (UI.fishing_slider_gap * 3)
-    local help_panel = create_specifics_help_panel(
+    create_specifics_help_panel(
         parent,
         parent,
         "TOPLEFT",

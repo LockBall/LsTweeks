@@ -354,7 +354,7 @@ function M.resolve_color(module_key, target_key, local_color)
         return local_color, "local"
     end
 
-    local db, consumer, target, consumer_db = get_target_state(module_key, target_key)
+    local db, _, target, consumer_db = get_target_state(module_key, target_key)
     if not db or not consumer_db then
         return local_color, "local"
     end

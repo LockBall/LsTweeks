@@ -1,6 +1,6 @@
 -- Runtime behavior for Audio Volumes: applies file mutes, plays previews and
 -- replacements, and wires WoW events to selected replacement sounds.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes

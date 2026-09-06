@@ -2,7 +2,7 @@
 -- ApplyRivetedPanelStyle() and AddRivetCorners() dress an existing frame; CreateRivetedPanel() builds a fully styled panel from scratch.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region RIVETED PANEL STYLE =================================================
 

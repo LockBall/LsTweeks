@@ -9,7 +9,7 @@
 -- apply-RGB-preserve-alpha behavior when a preset swatch is clicked; it must write db_table[db_key] itself.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region COLOR PICKER CONSTANTS =============================================
 
@@ -215,7 +215,7 @@ local function restore_native_popup_layout()
     restore_frame_layout(native_layout.cancel.frame, native_layout.cancel.layout)
     restore_frame_layout(native_layout.hex.frame, native_layout.hex.layout)
     if native_layout.okay.frame and native_layout.okay.frame.SetText then
-        native_layout.okay.frame:SetText(native_layout.okay_text or OKAY or "Okay")
+        native_layout.okay.frame:SetText(native_layout.okay_text or "Okay")
     end
     local reset = ColorPickerFrame._lstweeks_reset_button
     if reset then

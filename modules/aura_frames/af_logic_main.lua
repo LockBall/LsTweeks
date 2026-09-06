@@ -1,7 +1,7 @@
 -- Main aura update logic for Aura Frames: managed-frame routing, runtime config cache,
 -- frame state helpers, OOC fade, and addon-rendered per-frame refresh.
 -- update_auras() orchestrates scan, render, layout, sizing, and visibility for preset and custom aura frames.
-local addon_name, addon = ...
+local _, addon = ...
 
 local GetTime        = GetTime
 local C_Timer        = C_Timer
@@ -184,8 +184,6 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
 end
 
 local set_shown_if_changed = M.set_shown_if_changed
-local clear_timer_text = M.clear_timer_text
-
 local function set_scale_if_changed(frame, scale)
     if not frame then return end
     scale = scale or 1
@@ -420,7 +418,7 @@ end
 -- Works for both preset category frames and custom filtered frames.
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
-function M.update_auras(self, show_key, move_key, timer_key, bg_key, scale_key, spacing_key, aura_filter)
+function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key, spacing_key, aura_filter)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
     if self and self._managed_aura_backend and M.update_managed_preset_frame then
         M.update_managed_preset_frame(self, show_key, move_key)

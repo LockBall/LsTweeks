@@ -73,5 +73,5 @@ Important `objectives` keys:
 
 
 ### Lifecycle And Combat Deferral
-- Protected Objective Tracker mutations are combat-deferred through `M.defer_objectives_combat_update()` in `ob_main.lua`. Position apply/restore, move-mode tracker changes, native Auto-Collapse changes, background color/opacity writes, background anchor correction, border sync, and tracker `Update()` replay after `PLAYER_REGEN_ENABLED`; settings values still save immediately during combat.
+- Protected Objective Tracker mutations are combat-deferred through `M.defer_objectives_combat_update()` in `ob_main.lua`. Position apply/restore, move-mode tracker changes, visibility Auto-Collapse changes, background color/opacity writes, background anchor correction, border sync, and tracker `Update()` replay after `PLAYER_REGEN_ENABLED`; settings values still save immediately during combat.
 - Initialization can race `ObjectiveTrackerManager:Init()`, which runs after both `PLAYER_ENTERING_WORLD` and `VARIABLES_LOADED`. Remove the `ADDON_LOADED` or delayed `PLAYER_ENTERING_WORLD` apply paths only after in-game testing proves they are redundant.

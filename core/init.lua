@@ -192,7 +192,7 @@ local function init_db()
 end
 
 -- MAIN INITIALIZATION SEQUENCE
-local function on_event(self, event, name)
+local function on_event(self, _, name)
     if name ~= addon_name then return end
 
     -- Store version from TOC
@@ -224,7 +224,7 @@ f:SetScript("OnEvent", on_event)
 -- AUTO-OPEN on reload/login if the setting is enabled
 local f2 = CreateFrame("Frame")
 f2:RegisterEvent("PLAYER_ENTERING_WORLD")
-f2:SetScript("OnEvent", function(self, event, isInitialLogin, isReloadingUi)
+f2:SetScript("OnEvent", function(self, _, isInitialLogin, isReloadingUi)
     if (isInitialLogin or isReloadingUi) and Ls_Tweeks_DB and Ls_Tweeks_DB.open_on_reload then
         if addon.main_frame then
             addon.main_frame:Show()

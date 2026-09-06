@@ -1,5 +1,5 @@
 -- Shared settings UI support for the Audio Volumes module.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
@@ -133,7 +133,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     local play_button = create_play_button(slider_panel, target_key)
     play_button:SetPoint("RIGHT", slider_widget, "LEFT", 0, 0)
 
-    local original_container, original_checkbox, original_label
+    local original_container, original_label
     local suppress_original_clear = false
 
     local function set_slider_inactive(inactive)
@@ -221,7 +221,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     slider_options_row:SetSize(UI.slider_width, 24)
     slider_options_row:SetPoint("TOP", slider_widget, "BOTTOM", 0, -6)
 
-    original_container, original_checkbox, original_label = addon.CreateCheckbox(
+    original_container, _, original_label = addon.CreateCheckbox(
         slider_panel,
         STRINGS.use_original_label,
         initial_target_db.use_original == true,
@@ -252,7 +252,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     original_container:SetPoint("RIGHT", slider_options_row, "RIGHT", 0, 0)
     M.controls[target_key .. "_use_original"] = original_container
 
-    local play_on_adjust_frame, play_on_adjust_checkbox = addon.CreateCheckbox(
+    local play_on_adjust_frame = addon.CreateCheckbox(
         slider_panel,
         STRINGS.play_on_adjust_label,
         initial_target_db.play_on_adjust == true,

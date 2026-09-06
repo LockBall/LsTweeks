@@ -4,7 +4,7 @@
 
 --#region FILE CONTENTS ======================================================
 
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.skyriding_vigor = addon.skyriding_vigor or {
     controls = {},

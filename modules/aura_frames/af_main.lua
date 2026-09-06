@@ -18,8 +18,6 @@ local floor = math.floor
 local math_max = math.max
 local GetTime = GetTime
 local issecretvalue = issecretvalue
-local issecrettable = issecrettable
-local securecallfunction = securecallfunction
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
 local UPDATE_INTERVALS = M.UPDATE_INTERVALS
 
@@ -1462,7 +1460,7 @@ end
 -- owns one broad responsibility.
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
-loader:SetScript("OnEvent", function(self, event, name)
+loader:SetScript("OnEvent", function(self, _, name)
     if name == addon_name then
         -- Settings remain available while the module is disabled, so attach and
         -- normalize their saved data independently from frame/runtime startup.

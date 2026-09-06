@@ -4,13 +4,11 @@
 -- SetCheckedSilently(), SetEnabled(), Enable(), Disable(), and HookCheckedChanged().
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region CHECKBOX FACTORY ====================================================
 
 function addon.CreateCheckbox(parent, label_text, is_checked, on_click_callback)
-    local theme = addon.UI_THEME
-
     -- Container frame (will be sized dynamically)
     local container = CreateFrame("Frame", nil, parent)
     container:SetHeight(24)

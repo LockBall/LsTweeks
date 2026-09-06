@@ -118,8 +118,7 @@ end
 
 local function get_node_size(style)
     if not style then
-        local unused_style_key
-        unused_style_key, style = M.get_bar_style(get_db())
+        style = select(2, M.get_bar_style(get_db()))
     end
     local atlas = style.frame
     if M._node_size_atlas ~= atlas or not M._node_width or not M._node_height then
@@ -147,8 +146,7 @@ end
 local function get_background_size(style)
     local width, height = get_node_size(style)
     if not style then
-        local unused_style_key
-        unused_style_key, style = M.get_bar_style(get_db())
+        style = select(2, M.get_bar_style(get_db()))
     end
     return max(1, width * (style.background_scale_x or BACKGROUND_LAYOUT.scale_x)),
         max(1, height * (style.background_scale_y or BACKGROUND_LAYOUT.scale_y))
@@ -165,8 +163,7 @@ end
 
 local function get_frame_edge_inset_x(frame_width, style)
     if not style then
-        local unused_style_key
-        unused_style_key, style = M.get_bar_style(get_db())
+        style = select(2, M.get_bar_style(get_db()))
     end
     local inset = style.visible_edge_inset_x
     if inset == nil then
@@ -188,8 +185,7 @@ local function get_spacing_pixels(db, style)
         spacing_setting = default_spacing
     end
     if not style then
-        local unused_style_key
-        unused_style_key, style = M.get_bar_style(db)
+        style = select(2, M.get_bar_style(db))
     end
     return spacing_setting + (style.spacing_offset or 0)
 end
@@ -358,8 +354,7 @@ local function set_slot_spark_clip_bounds(slot, style)
     if slot._spark_clip_bounds_set then return end
 
     if not style then
-        local unused_style_key
-        unused_style_key, style = M.get_bar_style(get_db())
+        style = select(2, M.get_bar_style(get_db()))
     end
     local fill_width, fill_height = get_fill_size(style)
     local frame_width = get_frame_size(style)

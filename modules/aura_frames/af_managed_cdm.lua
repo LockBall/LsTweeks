@@ -371,7 +371,7 @@ local function anchor_slot_buttons(frame, backend)
     end
 end
 
-function M.refresh_managed_cdm_backend(frame, bar_mode)
+function M.refresh_managed_cdm_backend(frame, _bar_mode)
     local backend = frame and frame._managed_cdm_backend
     if not backend then return false end
     M.set_managed_aura_backend_enabled(backend, frame:IsShown())

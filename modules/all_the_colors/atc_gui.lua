@@ -1,7 +1,7 @@
 -- Registry-driven General and Profiles settings for Shared Colors.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.all_the_colors = addon.all_the_colors or {}
 local M = addon.all_the_colors

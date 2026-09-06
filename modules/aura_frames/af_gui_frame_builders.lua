@@ -326,7 +326,6 @@ local function create_frame_position_controls(parent, frame_config, grid, update
     local defaults_table = frame_config.defaults_table
     local position_table = frame_config.position_table
     local default_position = frame_config.default_position
-    local control_prefix = options.control_prefix or id
     local row = options.row or 1
 
     local function update_frame_position(axis, value)

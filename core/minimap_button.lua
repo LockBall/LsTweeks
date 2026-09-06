@@ -5,7 +5,7 @@
 --#region FILE CONTENTS ======================================================
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local LDB = LibStub("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0")

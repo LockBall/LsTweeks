@@ -20,14 +20,7 @@ for _, color_def in ipairs(M.AURA_COLOR_DEFS) do
     PROFILE_KEYS[#PROFILE_KEYS + 1] = color_def.key
 end
 
-local function copy(value)
-    if type(value) ~= "table" then return value end
-    local out = {}
-    for key, child in pairs(value) do
-        out[key] = copy(child)
-    end
-    return out
-end
+local copy = addon.deep_copy
 
 function M.export_profile_data()
     local data = {}

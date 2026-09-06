@@ -1,6 +1,6 @@
 -- Shared helpers for the Audio Volumes module: DB access, preset lookup,
 -- target ordering, and target activity predicates.
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes

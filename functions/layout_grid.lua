@@ -1,7 +1,7 @@
 -- Shared row/column layout helpers for settings panels.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.CONTROL_STACK_SPACING = addon.CONTROL_STACK_SPACING or {
     checkbox = 0,

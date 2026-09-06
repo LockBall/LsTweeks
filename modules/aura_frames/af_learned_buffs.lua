@@ -2,7 +2,7 @@
 -- Readable observations become a native spell-ID inclusion filter; combat and
 -- secret Aura state are never inspected or used for addon-side display.
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local M = addon.aura_frames
 

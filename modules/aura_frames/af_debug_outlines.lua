@@ -4,7 +4,7 @@
 
 --#region FILE CONTENTS ======================================================
 
-local addon_name, addon = ...
+local _, addon = ...
 local M = addon.aura_frames
 
 local function is_outline_enabled()

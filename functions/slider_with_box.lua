@@ -5,7 +5,7 @@
 -- instead of reaching into container.slider for routine value handling.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region SLIDER CONSTANTS ====================================================
 
@@ -181,7 +181,7 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
         cancel_live_callback()
     end)
 
-    slider:SetScript("OnValueChanged", function(self, value)
+    slider:SetScript("OnValueChanged", function(_, value)
         if db_table then
             db_table[db_key] = value
         end

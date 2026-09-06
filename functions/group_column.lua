@@ -2,7 +2,7 @@
 -- Provides thin bordered group boxes, centered group titles, selected-group borders, selectable rows, delete rows, and group actions.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 --#region GROUP COLUMN CONSTANTS =============================================
 

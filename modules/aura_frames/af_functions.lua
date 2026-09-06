@@ -5,7 +5,7 @@
 
 --#region FILE CONTENTS ======================================================
 
-local addon_name, addon = ...
+local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
@@ -138,8 +138,7 @@ local function read_main_frame_reference()
         local right = main_frame.GetRight and main_frame:GetRight()
         local center_y
         if main_frame.GetCenter then
-            local center_x
-            center_x, center_y = main_frame:GetCenter()
+            _, center_y = main_frame:GetCenter()
         end
         if right and center_y then
             return right - ui_center_x, center_y - ui_center_y

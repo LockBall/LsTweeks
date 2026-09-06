@@ -1,6 +1,6 @@
 -- Aura Frames ownership tests for shared background color controls.
 -- Runs under desktop Lua 5.1 against the wow_stub environment.
----@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-global, duplicate-set-field, undefined-field
 
 
 --#region FILE CONTENTS ======================================================
@@ -134,7 +134,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
     local preview_font = UIParent:CreateFontString(nil, "OVERLAY")
     M.frames.show_static_long.icons = { { time_text = preview_font } }
     local update_auras = M.update_auras
-    M.update_auras = function() end
+    M.update_auras = function(...) end
     M.controls.timer_text_options_static_long:Click()
     local text_popup = addon.GetFontOptionsPopup()
     text_popup.font.button:Click()
@@ -148,7 +148,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
 
     local bar_preview_font = UIParent:CreateFontString(nil, "OVERLAY")
     M.frames.show_static_long.icons = { { name_text = bar_preview_font } }
-    M.update_auras = function() end
+    M.update_auras = function(...) end
     M.db.shared_options_enabled = true
     M.db.sync_text_color_static_long = true
     M.db.sync_text_font_static_long = true
@@ -267,7 +267,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
     local local_bar_font = UIParent:CreateFontString(nil, "OVERLAY")
     M.frames.show_static_long.icons = { { name_text = local_bar_font } }
     local shared_update_auras = M.update_auras
-    M.update_auras = function() end
+    M.update_auras = function(...) end
     text_color_control:SetChecked(false)
     text_color_control.checkbox:Click()
     M.update_auras = shared_update_auras

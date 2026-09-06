@@ -5,22 +5,26 @@ local M = addon.objectives
 
 --#region PROFILE SCHEMA =======================================================
 
-local KEYS = { "collapse_campaign", "collapse_quests", "collapse_achievements", "show_auto_collapse_activation_tooltip", "show_quest_log_count", "show_quest_log_count_on_hover", "show_tracked_achievement_count", "show_tracked_achievement_count_on_hover", "customize_background", "background_color_enabled", "objective_tracker_border", "background_color", "background_alpha", "objective_tracker_move_mode", "objective_tracker_snap_to_grid", "objective_tracker_offset_x", "objective_tracker_offset_y" }
-local function copy(value)
-    if type(value) ~= "table" then return value end
-    local out = {}
-    for key, child in pairs(value) do out[key] = copy(child) end
-    return out
-end
+local PROFILE_KEYS = {
+    "collapse_campaign", "collapse_quests", "collapse_achievements",
+    "show_auto_collapse_activation_tooltip",
+    "show_quest_log_count", "show_quest_log_count_on_hover",
+    "show_tracked_achievement_count", "show_tracked_achievement_count_on_hover",
+    "customize_background", "background_color_enabled", "objective_tracker_border",
+    "background_color", "background_alpha",
+    "objective_tracker_move_mode", "objective_tracker_snap_to_grid",
+    "objective_tracker_offset_x", "objective_tracker_offset_y",
+}
+local copy = addon.deep_copy
 function M.export_objectives_profile_data()
     local data, db = {}, M.get_db()
-    for _, key in ipairs(KEYS) do data[key] = copy(db[key]) end
+    for _, key in ipairs(PROFILE_KEYS) do data[key] = copy(db[key]) end
     return data
 end
 function M.apply_objectives_profile_data(data)
     if not data then return false, "Profile data is missing." end
     local db, defaults = M.get_db(), M.defaults.objectives
-    for _, key in ipairs(KEYS) do
+    for _, key in ipairs(PROFILE_KEYS) do
         if data[key] ~= nil then
             db[key] = copy(data[key])
         else

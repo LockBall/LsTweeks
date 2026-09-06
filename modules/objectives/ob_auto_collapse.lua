@@ -11,12 +11,15 @@ M.controls = M.controls or {}
 local UI_LAYOUT = M.SETTINGS_LAYOUT
 local UI_GROUP = UI_LAYOUT.groups.auto_collapse
 
-M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TITLE = "Activate Auto-Hide"
-M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TEXT =
+local ACTIVATION_REMINDER_DB_KEY = "show_auto_collapse_activation_tooltip"
+local ACTIVATION_REMINDER_LABEL = "Activation Reminder"
+local ACTIVATION_TOOLTIP_TITLE = "Activate Auto-Hide"
+local ACTIVATION_TOOLTIP_TEXT =
     "After each login or reload, click every enabled section button twice to activate Auto-Hide."
-M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_LABEL = "Activation Reminder"
-M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_TEXT =
+local ACTIVATION_TOOLTIP_DISABLE_TEXT =
     "Uncheck this option in Objectives settings to hide this message in the future."
+local ACTIVATION_REMINDER_HELP =
+    "Shows the login/reload reminder to click every enabled section button twice to activate Auto-Hide."
 
 local TRACKER_DEFS = {
     {
@@ -75,6 +78,11 @@ local function should_auto_collapse(def)
     return is_auto_collapse_enabled(def) and manual_open_overrides[def.key] ~= true
 end
 
+local function is_activation_reminder_enabled()
+    local db = M.get_db()
+    return not db or db[ACTIVATION_REMINDER_DB_KEY] ~= false
+end
+
 --#endregion DATABASE HELPERS ==================================================
 
 
@@ -87,23 +95,21 @@ local function hide_activation_tooltip()
 end
 
 local function show_activation_tooltip(button)
-    if activation_tooltip_shown or not button then return end
-    local db = M.get_db()
-    if db and db.show_auto_collapse_activation_tooltip == false then return end
+    if activation_tooltip_shown or not button or not is_activation_reminder_enabled() then return end
     activation_tooltip_shown = true
     activation_tooltip = activation_tooltip or addon.CreateOwnedTooltip(
         addon_name .. "ObjectivesAutoCollapseActivationTooltip"
     )
     addon.ResetOwnedTooltip(activation_tooltip)
     activation_tooltip:SetOwner(button, "ANCHOR_LEFT")
-    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TITLE, 1, 0.82, 0)
-    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_TITLE, 1, 0.82, 0)
+    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_TEXT, 0.95, 0.95, 0.95, true)
     activation_tooltip:AddLine(" ", 0.95, 0.95, 0.95)
     activation_tooltip:AddLine(
-        M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_LABEL,
+        ACTIVATION_REMINDER_LABEL,
         1, 0.82, 0, false, GameTooltipHeaderText
     )
-    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_DISABLE_TEXT, 0.95, 0.95, 0.95, true)
     activation_tooltip:ApplyContentWidth()
     activation_tooltip:Show()
 end
@@ -116,7 +122,7 @@ local function get_tracker(def)
     return nil
 end
 
-local function show_available_activation_tooltip()
+local function rearm_activation_tooltip()
     activation_tooltip_shown = false
     for _, def in ipairs(TRACKER_DEFS) do
         local tracker = get_tracker(def)
@@ -262,6 +268,7 @@ end
 --#region PUBLIC API ============================================================
 
 function M.apply_auto_collapse()
+    if not is_activation_reminder_enabled() then hide_activation_tooltip() end
     for _, def in ipairs(TRACKER_DEFS) do
         local deferred = deferred_tracker_updates[def.key]
         deferred_tracker_updates[def.key] = nil
@@ -276,6 +283,10 @@ end
 
 function M.get_auto_collapse_status()
     local fields = {}
+    fields[#fields + 1] = "activation_reminder_enabled=" .. tostring(is_activation_reminder_enabled())
+    fields[#fields + 1] = "activation_reminder_shown=" .. tostring(
+        activation_tooltip ~= nil and activation_tooltip:IsShown() == true
+    )
     for _, def in ipairs(TRACKER_DEFS) do
         local tracker = get_tracker(def)
         local prefix = def.key .. "_"
@@ -290,10 +301,6 @@ function M.get_auto_collapse_status()
         fields[#fields + 1] = prefix .. "last_reason=" .. tostring(last_apply_reason[def.key] or "none")
     end
     return fields
-end
-
-function M.get_auto_collapse_activation_tooltip()
-    return activation_tooltip
 end
 
 function M.restore_auto_collapse(reason)
@@ -356,7 +363,7 @@ function M.BuildAutoCollapseSettings(parent)
     local previous_container
     for index, def in ipairs(TRACKER_DEFS) do
         local row_def = def
-        local collapse_container, collapse_cb, collapse_label = addon.CreateCheckbox(
+        local collapse_container, _, collapse_label = addon.CreateCheckbox(
             group,
             row_def.label,
             db and db[row_def.db_key] == true,
@@ -377,14 +384,14 @@ function M.BuildAutoCollapseSettings(parent)
 
     local reminder_container, _, reminder_label = addon.CreateCheckbox(
         group,
-        "Activation Reminder",
-        not db or db.show_auto_collapse_activation_tooltip ~= false,
+        ACTIVATION_REMINDER_LABEL,
+        is_activation_reminder_enabled(),
         function(is_checked)
             local current_db = M.get_db()
             if not current_db then return end
-            current_db.show_auto_collapse_activation_tooltip = is_checked == true
+            current_db[ACTIVATION_REMINDER_DB_KEY] = is_checked == true
             if is_checked then
-                show_available_activation_tooltip()
+                rearm_activation_tooltip()
             else
                 hide_activation_tooltip()
             end
@@ -394,9 +401,9 @@ function M.BuildAutoCollapseSettings(parent)
     addon.AttachTooltip(
         reminder_label,
         nil,
-        "Shows the login/reload reminder to click every enabled section button twice to activate Auto-Hide."
+        ACTIVATION_REMINDER_HELP
     )
-    M.controls.show_auto_collapse_activation_tooltip = reminder_container
+    M.controls[ACTIVATION_REMINDER_DB_KEY] = reminder_container
     widest_content = math.max(widest_content, reminder_container:GetWidth() or 0)
 
     group:SetWidth(math.ceil(widest_content + cfg.group_padding_x * 2))

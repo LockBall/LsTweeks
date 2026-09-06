@@ -4,7 +4,7 @@
 -- get_bar_layout_params() returns pixel measurements for bar-mode rows (icon, stack count, timer, name slots).
 -- set_height_for_growth() resizes a frame while keeping the correct edge anchored so icons grow in the right direction.
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local floor          = math.floor
 local math_max       = math.max

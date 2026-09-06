@@ -3,7 +3,7 @@
 -- A shared click-blocker closes the active popup when the user clicks outside it.
 
 
-local addon_name, addon = ...
+local _, addon = ...
 
 local OUTLINED_CONTROL_GAP = 5
 local OUTLINED_SIDE_PADDING = 10
@@ -97,7 +97,7 @@ end
 --#region DROPDOWN FACTORY ====================================================
 
 -- Shared dropdown constructor used by module UIs.
-function addon.CreateDropdown(name, parent, label_text, options, cfg)
+function addon.CreateDropdown(_name, parent, label_text, options, cfg)
     cfg = cfg or {}
     options = options or {}
 
@@ -114,7 +114,7 @@ function addon.CreateDropdown(name, parent, label_text, options, cfg)
     local width = cfg.width or 180
     if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
         local text_values = cfg.fit_to_options and {} or { label_text }
-        for i, option in ipairs(options) do
+        for _, option in ipairs(options) do
             text_values[#text_values + 1] = get_option_text(option)
         end
         width = addon.GetTextFitWidth(
@@ -305,7 +305,7 @@ function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
     local dropdown_width = cfg.width or 180
     if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
         local text_values = cfg.fit_to_options and {} or { label_text }
-        for i, option in ipairs(options) do
+        for _, option in ipairs(options) do
             local option_text = cfg.get_option_text and cfg.get_option_text(option)
                 or option.text
                 or tostring(option.value or "")
