@@ -338,6 +338,37 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     M.setup_combat_background_variants(self)
 end
 
+local function shift_managed_preview_frame_onscreen(frame, native_growth, preview_width, preview_height, gap)
+    local screen_left, screen_right = UIParent:GetLeft(), UIParent:GetRight()
+    local screen_top, screen_bottom = UIParent:GetTop(), UIParent:GetBottom()
+    local frame_left, frame_right = frame:GetLeft(), frame:GetRight()
+    local frame_top, frame_bottom = frame:GetTop(), frame:GetBottom()
+    local shift_x, shift_y = 0, 0
+
+    if native_growth == "RIGHT" and screen_left and frame_left then
+        shift_x = math_max(0, screen_left - (frame_left - gap - preview_width))
+    elseif native_growth == "LEFT" and screen_right and frame_right then
+        shift_x = -math_max(0, frame_right + gap + preview_width - screen_right)
+    elseif native_growth == "UP" and screen_bottom and frame_bottom then
+        shift_y = math_max(0, screen_bottom - (frame_bottom - gap - preview_height))
+    elseif screen_top and frame_top then
+        shift_y = -math_max(0, frame_top + gap + preview_height - screen_top)
+    end
+    if shift_x == 0 and shift_y == 0 then return false end
+
+    local point, relative_to, relative_point, x, y = frame:GetPoint(1)
+    if not point then return false end
+    local scale = frame:GetScale()
+    if not scale or scale <= 0 then scale = 1 end
+    frame:ClearAllPoints()
+    frame:SetPoint(point, relative_to, relative_point, (x or 0) + (shift_x / scale), (y or 0) + (shift_y / scale))
+    -- The shell transform cache describes the saved position, not this
+    -- preview-only offset. Invalidate it so disabling the preview restores the
+    -- saved anchor on the next normal refresh.
+    frame._lstweeks_pos_point = nil
+    return true
+end
+
 function M.position_managed_test_preview(frame, native_growth)
     local obj = frame and frame.icons and frame.icons[1]
     local layout = frame and frame._layout_cache
@@ -373,6 +404,8 @@ function M.position_managed_test_preview(frame, native_growth)
     else
         obj:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
     end
+    shift_managed_preview_frame_onscreen(
+        frame, native_growth, anchor:GetWidth(), anchor:GetHeight(), gap)
     return true
 end
 

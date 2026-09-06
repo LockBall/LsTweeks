@@ -121,6 +121,27 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 0,
         "Static / Long Buff icon group is parked")
 
+    color_sync.set_test_auras_enabled(true)
+    color_sync.refresh_consumers()
+    h.ok(buffs_frame.icons[1]:IsShown(),
+        "global Test Auras shows the Static / Long mock in Bar Mode")
+    h.eq(buffs_frame.icons[1].aura_name, "Test Static / Long Buff",
+        "global Bar Mode preview uses the Static / Long label")
+    local preview_point, preview_relative_to = buffs_frame.icons[1]:GetPoint(1)
+    h.eq(preview_point, "LEFT", "Static / Long Bar Mode preview uses its bar anchor")
+    h.eq(preview_relative_to, buffs_frame._managed_test_preview_background_anchor,
+        "Static / Long Bar Mode preview uses the separate managed preview cell")
+    local preview_anchor_point, _, preview_anchor_relative_point =
+        buffs_frame._managed_test_preview_background_anchor:GetPoint(1)
+    h.eq(preview_anchor_point, "BOTTOMLEFT",
+        "Static / Long Bar Mode preview remains opposite Down growth")
+    h.eq(preview_anchor_relative_point, "TOPLEFT",
+        "Static / Long Bar Mode preview stays outside the live bar path")
+    color_sync.set_test_auras_enabled(false)
+    color_sync.refresh_consumers()
+    h.ok(not buffs_frame.icons[1]:IsShown(),
+        "disabling global Test Auras hides the Static / Long Bar Mode mock")
+
     for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
         aura_button.CanBeAccessedInContext = function() return true end
     end

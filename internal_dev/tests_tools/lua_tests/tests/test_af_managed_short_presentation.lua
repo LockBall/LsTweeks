@@ -77,6 +77,21 @@ h.test("managed Short Buffs use native maximum duration and expiration ordering"
         h.eq(relative_to, short_frame, growth .. " preview stays on the addon shell")
         h.eq(relative_point, expected[2], growth .. " preview sits opposite native growth")
     end
+    M.db.growth_icon_short = "DOWN"
+    M.invalidate_frame_runtime_config(short_frame)
+    M.update_auras(short_frame, "show_short", "move_short", "timer_short",
+        "bg_short", "scale_short", "spacing_short", "HELPFUL")
+    local _, _, _, saved_x, saved_y = short_frame:GetPoint(1)
+    short_frame.GetTop = function() return UIParent:GetTop() end
+    short_frame.GetBottom = function() return UIParent:GetTop() - short_frame:GetHeight() end
+    M.position_managed_test_preview(short_frame, "DOWN")
+    local _, _, _, shifted_x, shifted_y = short_frame:GetPoint(1)
+    h.eq(shifted_x, saved_x, "top-edge preview does not shift the frame horizontally")
+    h.ok(shifted_y < saved_y, "top-edge preview temporarily shifts the frame inward")
+    M.apply_aura_frame_shell_transform(short_frame, M.db, "scale_short", 75)
+    local _, _, _, restored_x, restored_y = short_frame:GetPoint(1)
+    h.eq(restored_x, saved_x, "normal shell transform restores the saved horizontal position")
+    h.eq(restored_y, saved_y, "normal shell transform restores the saved vertical position")
     M.db.bar_mode_short = true
     M.db.growth_bar_short = "DOWN"
     M.invalidate_frame_runtime_config(short_frame)

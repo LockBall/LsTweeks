@@ -54,7 +54,7 @@ Each Aura frame can configure stack-count color, font, bold face, outline, and f
 In Icon mode, **Duration Swipe** adds Blizzard's native Aura-duration sweep alongside the optional timer text. Permanent Auras have no timed sweep. Bar Mode communicates remaining duration through its status bar instead.
 
 #### Test Aura Preview
-Use **Test Aura** to preview any Aura frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs keep their native managed content visible while displaying one addon-owned mock on the side opposite their growth direction. Cooldown Manager Aura-mode frames use the same separate preview placement; Essential and Utility Cooldown Mode place the mock in their normal addon-rendered sequence. Tracked Buffs and Tracked Bars intentionally remain Aura-mode-only.
+Use **Test Aura** to preview any Aura frame. Its adjacent Play/Pause button controls the preview countdown; a saved active preview loads paused after reload until you select Play. Short Buffs, Static / Long Buffs, Timed Buffs, and Debuffs keep their native managed content visible while displaying one addon-owned mock on the side opposite their growth direction. If that preview would cross a screen edge, the frame shifts inward temporarily without changing its saved position. Cooldown Manager Aura-mode frames use the same separate preview placement; Essential and Utility Cooldown Mode place the mock in their normal addon-rendered sequence. Tracked Buffs and Tracked Bars intentionally remain Aura-mode-only.
 
 
 #### Tooltips
