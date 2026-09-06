@@ -35,6 +35,7 @@ M.defaults = {
         collapse_campaign = false,
         collapse_quests = false,
         collapse_achievements = false,
+        show_auto_collapse_activation_tooltip = true,
         show_quest_log_count = false,
         show_quest_log_count_on_hover = false,
         show_tracked_achievement_count = false,

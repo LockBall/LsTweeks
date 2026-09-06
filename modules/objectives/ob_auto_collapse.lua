@@ -11,6 +11,13 @@ M.controls = M.controls or {}
 local UI_LAYOUT = M.SETTINGS_LAYOUT
 local UI_GROUP = UI_LAYOUT.groups.auto_collapse
 
+M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TITLE = "Activate Auto-Hide"
+M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TEXT =
+    "After each login or reload, click every enabled section button twice to activate Auto-Hide."
+M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_LABEL = "Activation Reminder"
+M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_TEXT =
+    "Uncheck this option in Objectives settings to hide this message in the future."
+
 local TRACKER_DEFS = {
     {
         key = "campaign",
@@ -51,6 +58,8 @@ local manual_expand_buttons = setmetatable({}, { __mode = "k" })
 local hooked_minimize_buttons = setmetatable({}, { __mode = "k" })
 local manual_open_overrides = {}
 local addon_hidden_contents = setmetatable({}, { __mode = "k" })
+local activation_tooltip
+local activation_tooltip_shown = false
 
 --#endregion RUNTIME STATE =====================================================
 
@@ -71,12 +80,52 @@ end
 
 --#region TRACKER RUNTIME ======================================================
 
+local function hide_activation_tooltip()
+    if not activation_tooltip then return end
+    activation_tooltip:Hide()
+    addon.ResetOwnedTooltip(activation_tooltip)
+end
+
+local function show_activation_tooltip(button)
+    if activation_tooltip_shown or not button then return end
+    local db = M.get_db()
+    if db and db.show_auto_collapse_activation_tooltip == false then return end
+    activation_tooltip_shown = true
+    activation_tooltip = activation_tooltip or addon.CreateOwnedTooltip(
+        addon_name .. "ObjectivesAutoCollapseActivationTooltip"
+    )
+    addon.ResetOwnedTooltip(activation_tooltip)
+    activation_tooltip:SetOwner(button, "ANCHOR_LEFT")
+    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TITLE, 1, 0.82, 0)
+    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:AddLine(" ", 0.95, 0.95, 0.95)
+    activation_tooltip:AddLine(
+        M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_LABEL,
+        1, 0.82, 0, false, GameTooltipHeaderText
+    )
+    activation_tooltip:AddLine(M.AUTO_COLLAPSE_ACTIVATION_TOOLTIP_DISABLE_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:ApplyContentWidth()
+    activation_tooltip:Show()
+end
+
 local function get_tracker(def)
     local frame = def and _G[def.frame_name]
     if frame and frame.ContentsFrame then
         return frame
     end
     return nil
+end
+
+local function show_available_activation_tooltip()
+    activation_tooltip_shown = false
+    for _, def in ipairs(TRACKER_DEFS) do
+        local tracker = get_tracker(def)
+        local button = tracker and manual_expand_buttons[tracker]
+        if button and button:IsShown() and is_auto_collapse_enabled(def) then
+            show_activation_tooltip(button)
+            return
+        end
+    end
 end
 
 local function defer_tracker_update(def, action, reason)
@@ -95,6 +144,7 @@ local function ensure_manual_toggle_hook(tracker, def)
     hooked_minimize_buttons[minimize_button] = true
     minimize_button:HookScript("OnClick", function()
         if get_tracker(def) ~= tracker then return end
+        hide_activation_tooltip()
 
         local is_collapsed = tracker.IsCollapsed and tracker:IsCollapsed() == true
         manual_open_overrides[def.key] = not is_collapsed
@@ -122,6 +172,7 @@ local function set_manual_expand_button_shown(tracker, def, shown)
         button:GetNormalTexture():SetAtlas("ui-questtrackerbutton-secondary-expand", true)
         button:GetPushedTexture():SetAtlas("ui-questtrackerbutton-secondary-expand-pressed", true)
         button:SetScript("OnClick", function()
+            hide_activation_tooltip()
             local current_tracker = get_tracker(def)
             if current_tracker ~= tracker then
                 button:Hide()
@@ -142,6 +193,7 @@ local function set_manual_expand_button_shown(tracker, def, shown)
     end
 
     button:Show()
+    show_activation_tooltip(button)
 end
 
 local function collapse_tracker(def, reason)
@@ -240,7 +292,12 @@ function M.get_auto_collapse_status()
     return fields
 end
 
+function M.get_auto_collapse_activation_tooltip()
+    return activation_tooltip
+end
+
 function M.restore_auto_collapse(reason)
+    hide_activation_tooltip()
     for _, def in ipairs(TRACKER_DEFS) do
         collapse_queued[def.key] = false
         deferred_tracker_updates[def.key] = nil
@@ -317,6 +374,30 @@ function M.BuildAutoCollapseSettings(parent)
         widest_content = math.max(widest_content, collapse_container:GetWidth() or 0)
         previous_container = collapse_container
     end
+
+    local reminder_container, _, reminder_label = addon.CreateCheckbox(
+        group,
+        "Activation Reminder",
+        not db or db.show_auto_collapse_activation_tooltip ~= false,
+        function(is_checked)
+            local current_db = M.get_db()
+            if not current_db then return end
+            current_db.show_auto_collapse_activation_tooltip = is_checked == true
+            if is_checked then
+                show_available_activation_tooltip()
+            else
+                hide_activation_tooltip()
+            end
+        end
+    )
+    grid:stack_below(reminder_container, previous_container, { y = UI_GROUP.child_gap_y })
+    addon.AttachTooltip(
+        reminder_label,
+        nil,
+        "Shows the login/reload reminder to click every enabled section button twice to activate Auto-Hide."
+    )
+    M.controls.show_auto_collapse_activation_tooltip = reminder_container
+    widest_content = math.max(widest_content, reminder_container:GetWidth() or 0)
 
     group:SetWidth(math.ceil(widest_content + cfg.group_padding_x * 2))
 end

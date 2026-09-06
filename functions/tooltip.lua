@@ -206,7 +206,7 @@ function addon.CreateOwnedTooltip(name, parent)
     -- The wrap argument is accepted for caller compatibility but sizing is
     -- measurement-driven: lines whose natural width fits the cap size to it,
     -- and only cap-exceeding lines take the full width and wrap.
-    function tooltip:AddLine(text, r, g, b, _wrap)
+    function tooltip:AddLine(text, r, g, b, _wrap, font_object)
         local index = (self.line_count or 0) + 1
         local line = self.lines[index]
         if not line then
@@ -214,6 +214,7 @@ function addon.CreateOwnedTooltip(name, parent)
             line:SetJustifyH("LEFT")
             self.lines[index] = line
         end
+        line:SetFontObject(font_object or (index == 1 and GameTooltipHeaderText or GameTooltipText))
         local right_line = self.right_lines[index]
         if right_line then
             right_line:Hide()

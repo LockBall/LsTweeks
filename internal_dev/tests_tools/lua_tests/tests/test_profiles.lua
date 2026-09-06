@@ -121,12 +121,17 @@ h.test("Objectives profile import preserves an explicit false setting", function
     OB.defaults.objectives.collapse_campaign = true
     db.collapse_campaign = true
 
-    local ok = OB.apply_objectives_profile_data({ collapse_campaign = false })
+    local ok = OB.apply_objectives_profile_data({
+        collapse_campaign = false,
+        show_auto_collapse_activation_tooltip = false,
+    })
 
     OB.defaults.objectives.collapse_campaign = original_default
 
     h.ok(ok, "Objectives profile data applies")
     h.eq(db.collapse_campaign, false, "explicit false survives profile fallback")
+    h.eq(db.show_auto_collapse_activation_tooltip, false,
+        "Objectives profiles preserve the disabled activation reminder")
 end)
 
 h.run("profiles")
