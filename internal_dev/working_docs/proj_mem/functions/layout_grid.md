@@ -10,7 +10,7 @@ Durable contracts for shared settings-grid placement in `functions/layout_grid.l
 
 
 ## Ownership And API
-- Low-level helpers: `addon.GetGridOffset()`, `addon.SetGridPoint()`, and `addon.CenterGridControl()`.
+- Low-level helpers: `addon.GetGridOffset()` and `addon.SetGridPoint()`.
 - `addon.CreateSettingsGrid(parent, opts)` owns shared row/column geometry and returns `grid:place_at()`, `grid:place()`, `grid:center()`, `grid:stack_below()`, `grid:add_row_separator()`, and `grid:add_row_separators()`.
 - Control factories own only their internal geometry; the grid/caller owns external placement.
 

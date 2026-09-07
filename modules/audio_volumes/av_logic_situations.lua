@@ -412,14 +412,6 @@ function M.set_quick_pick_from_menu(situation_key, enabled)
     return true
 end
 
-function M.copy_current_sound_channels_to_fishing_focus()
-    local focus_db = M.get_fishing_focus_db()
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-        focus_db[channel.key] = read_channel_percent(channel)
-    end
-    return focus_db
-end
-
 function M.copy_current_sound_channels_to_situation(situation_key)
     local profile_db = M.get_situation_profile_db(situation_key)
     if not profile_db then return nil end
@@ -427,14 +419,6 @@ function M.copy_current_sound_channels_to_situation(situation_key)
         profile_db[channel.key] = read_channel_percent(channel)
     end
     return profile_db
-end
-
-function M.copy_current_sound_channels_to_combat_volumes()
-    local combat_db = M.get_combat_volumes_db()
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
-        combat_db[channel.key] = read_channel_percent(channel)
-    end
-    return combat_db
 end
 
 function M.get_current_sound_channel_percent(channel)

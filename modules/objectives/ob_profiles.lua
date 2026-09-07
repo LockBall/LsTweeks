@@ -35,8 +35,4 @@ function M.apply_objectives_profile_data(data)
     return true, "Loaded profile."
 end
 M.profile_manager = addon.CreateProfileManager({ label = "Objectives", get_db = M.get_db, export_data = M.export_objectives_profile_data, apply_data = M.apply_objectives_profile_data })
-function M.get_objectives_profiles() return M.profile_manager:get_profiles() end
-function M.save_objectives_profile(name, overwrite) return M.profile_manager:save(name, overwrite) end
-function M.load_objectives_profile(name) return M.profile_manager:load(name) end
-
 --#endregion PROFILE SCHEMA ====================================================

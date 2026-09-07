@@ -46,8 +46,4 @@ M.profile_manager = addon.CreateProfileManager({
     apply_data = M.apply_audio_volumes_profile_data,
 })
 
-function M.get_audio_volumes_profiles() return M.profile_manager:get_profiles() end
-function M.save_audio_volumes_profile(name, overwrite) return M.profile_manager:save(name, overwrite) end
-function M.load_audio_volumes_profile(name) return M.profile_manager:load(name) end
-
 --#endregion PROFILE SCHEMA ====================================================

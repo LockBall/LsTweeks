@@ -9,6 +9,14 @@ local h = require("harness")
 h.load_addon()
 h.boot({})
 
+local function assert_profile_covers_defaults(label, defaults, exported, excluded)
+    for key in pairs(defaults) do
+        if not excluded[key] then
+            h.ok(exported[key] ~= nil, label .. " profile schema covers default " .. key)
+        end
+    end
+end
+
 h.test("shared profile manager isolates saved data and tracks selection", function()
     local db = {}
     local live = { nested = { value = 10 } }
@@ -132,6 +140,42 @@ h.test("Objectives profile import preserves an explicit false setting", function
     h.eq(db.collapse_campaign, false, "explicit false survives profile fallback")
     h.eq(db.show_auto_collapse_activation_tooltip, false,
         "Objectives profiles preserve the disabled activation reminder")
+end)
+
+h.test("module profile schemas cover every non-session default", function()
+    local AF = h.addon.aura_frames
+    assert_profile_covers_defaults("Aura Frames", AF.defaults, AF.export_aura_frame_profile_data(), {
+        last_frames_node = true,
+        last_tab_index = true,
+        profiles = true,
+        snap_to_grid = true,
+        show_grid = true,
+        show_bar_section_outlines = true,
+        learned_helpful_durations = true,
+    })
+
+    local OB = h.addon.objectives
+    assert_profile_covers_defaults("Objectives", OB.defaults.objectives, OB.export_objectives_profile_data(), {
+        last_tab_index = true,
+        profiles = true,
+    })
+
+    local AV = h.addon.audio_volumes
+    assert_profile_covers_defaults("Audio Volumes", AV.defaults.audio_volumes, AV.export_audio_volumes_profile_data(), {
+        last_tab_index = true,
+        last_sound_key = true,
+        last_situation_key = true,
+        last_quick_pick_key = true,
+        profiles = true,
+    })
+
+    local SV = h.addon.skyriding_vigor
+    assert_profile_covers_defaults("Skyriding Vigor", h.addon.module_defaults.sv.skyriding_vigor,
+        SV.export_skyriding_vigor_profile_data(), {
+            last_tab_index = true,
+            last_profile_name = true,
+            profiles = true,
+        })
 end)
 
 h.run("profiles")

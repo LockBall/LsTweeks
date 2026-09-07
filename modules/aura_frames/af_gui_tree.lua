@@ -524,11 +524,9 @@ function M.build_frames_tab(p, frames_data)
             },
             {
                 left_text = "Rebuilds addon cooldown frames from the live WoW Cooldown Manager viewers.",
-                wrap_text = true,
             },
             {
                 left_text = "Manual fallback if a saved WoW Cooldown Manager category or order change has not refreshed yet.",
-                wrap_text = true,
             },
         })
     end)

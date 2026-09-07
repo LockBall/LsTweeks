@@ -93,37 +93,6 @@ h.test("disabling the native Aura experiment clears stale owner tracking", funct
         "a superseded Aura owner cannot hide a later tooltip after toggle-off")
 end)
 
-h.test("Aura spell data never enters the native spell processor", function()
-    local addon = load_tooltip()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    local shown = addon.ShowNativeSpellTooltip(owner, 909, "ANCHOR_RIGHT")
-
-    h.eq(shown, false, "native Aura spell rendering is disabled")
-    h.is_nil(rawget(_G, "LsTweeksNativeTooltip"), "Aura spell data creates no native GameTooltip")
-    h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled native%-spell"), "trace records the disabled native spell route")
-end)
-
-h.test("opaque Aura entry point never queries or renders live data", function()
-    local addon = load_tooltip()
-    local owner = CreateFrame("Frame", nil, UIParent)
-    local getter_calls = 0
-    local previous_tooltip_info = C_TooltipInfo
-    C_TooltipInfo = {
-        GetUnitAuraByAuraInstanceID = function()
-            getter_calls = getter_calls + 1
-            return { lines = { { leftText = "Live Aura description" } } }
-        end,
-    }
-
-    local shown = addon.ShowOpaqueAuraTooltip(owner, "player", 909, "ANCHOR_RIGHT")
-    C_TooltipInfo = previous_tooltip_info
-
-    h.eq(shown, false, "opaque live rendering is permanently disabled")
-    h.eq(getter_calls, 0, "disabled renderer never queries live Aura data")
-    h.is_nil(rawget(_G, "LsTweeksOpaqueAuraTooltip"), "disabled renderer creates no GameTooltip")
-    h.ok(addon.GetTooltipDebugTrace()[1]:find("skip%-disabled opaque%-aura"), "trace records the disabled route")
-end)
-
 h.test("centralized tooltip data copier rejects secret containers", function()
     local addon = load_tooltip()
     local secret_data = setmetatable({
@@ -179,14 +148,14 @@ h.test("centralized tooltip renderer bounds long single and double lines", funct
     h.ok(left_width + 10 + right_width <= 224, "double-line columns remain inside the content width")
 end)
 
-h.test("centralized tooltip renderer shrinks short wrap-flagged lines to fit", function()
+h.test("centralized tooltip renderer shrinks short lines to fit", function()
     local addon = load_tooltip()
     local tooltip = addon.CreateOwnedTooltip("LsTweeksWrapShrinkTestTooltip", UIParent)
 
     tooltip:ClearLines()
-    tooltip:AddLine("A short wrapped body", nil, nil, nil, true)
+    tooltip:AddLine("A short wrapped body")
     tooltip:ApplyContentWidth()
-    h.ok(tooltip:GetWidth() < 240, "short wrap-flagged line does not force the maximum tooltip width")
+    h.ok(tooltip:GetWidth() < 240, "short line does not force the maximum tooltip width")
     h.eq(tooltip:GetWidth(), tooltip.lines[1]:GetWidth() + 16, "tooltip width tracks the measured line width plus insets")
 end)
 

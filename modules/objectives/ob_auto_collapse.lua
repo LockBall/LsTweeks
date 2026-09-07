@@ -103,13 +103,13 @@ local function show_activation_tooltip(button)
     addon.ResetOwnedTooltip(activation_tooltip)
     activation_tooltip:SetOwner(button, "ANCHOR_LEFT")
     activation_tooltip:AddLine(ACTIVATION_TOOLTIP_TITLE, 1, 0.82, 0)
-    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_TEXT, 0.95, 0.95, 0.95)
     activation_tooltip:AddLine(" ", 0.95, 0.95, 0.95)
     activation_tooltip:AddLine(
         ACTIVATION_REMINDER_LABEL,
-        1, 0.82, 0, false, GameTooltipHeaderText
+        1, 0.82, 0, GameTooltipHeaderText
     )
-    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_DISABLE_TEXT, 0.95, 0.95, 0.95, true)
+    activation_tooltip:AddLine(ACTIVATION_TOOLTIP_DISABLE_TEXT, 0.95, 0.95, 0.95)
     activation_tooltip:ApplyContentWidth()
     activation_tooltip:Show()
 end

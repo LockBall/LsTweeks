@@ -203,11 +203,9 @@ function addon.CreateOwnedTooltip(name, parent)
         self:SetPoint(point, relative_to, relative_point, x, 0)
     end
 
-    -- The wrap argument is accepted for caller compatibility but sizing is
-    -- measurement-driven: lines whose natural width fits the cap size to it,
-    -- and only cap-exceeding lines take the full width and wrap. An optional
-    -- FontObject is applied before measurement for additional title rows.
-    function tooltip:AddLine(text, r, g, b, _wrap, font_object)
+    -- Sizing is measurement-driven: lines whose natural width fits the cap size
+    -- to it, and only cap-exceeding lines take the full width and wrap.
+    function tooltip:AddLine(text, r, g, b, font_object)
         local index = (self.line_count or 0) + 1
         local line = self.lines[index]
         if not line then
@@ -315,7 +313,7 @@ function addon.CreateOwnedTooltip(name, parent)
 
     function tooltip:SetText(text, r, g, b)
         self:ClearLines()
-        self:AddLine(text, r, g, b, true)
+        self:AddLine(text, r, g, b)
         self:ApplyContentWidth()
     end
 
@@ -362,19 +360,6 @@ function addon.ShowNativeAuraTooltip(owner, unit, aura_instance_id, anchor)
     native_aura_tooltip_owner = owner
     record_tooltip_trace("complete", "native-aura")
     return true
-end
-
-function addon.ShowNativeSpellTooltip()
-    record_tooltip_trace("skip-disabled", "native-spell")
-    return false
-end
-
-function addon.ShowOpaqueAuraTooltip()
-    -- Even direct pass-through of live Aura text into an isolated GameTooltip
-    -- can taint later Blizzard widget layout. Keep this legacy entry point inert
-    -- so stale callers cannot reopen that data path.
-    record_tooltip_trace("skip-disabled", "opaque-aura")
-    return false
 end
 
 function addon.HideNativeTooltip(owner)
@@ -445,13 +430,11 @@ function addon.CopySafeTooltipDataLines(data)
             local left_text = get_safe_tooltip_text(line.leftText)
             local right_text = get_safe_tooltip_text(line.rightText)
             if left_text or right_text then
-                local wrap_text = line.wrapText
                 copied[#copied + 1] = {
                     left_text = left_text,
                     right_text = right_text,
                     left_color = copy_safe_tooltip_color(line.leftColor),
                     right_color = copy_safe_tooltip_color(line.rightColor),
-                    wrap_text = not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true,
                 }
             end
         end
@@ -495,13 +478,11 @@ function addon.AddOwnedTooltipLines(tooltip, lines)
                         right_b
                     )
                 else
-                    local wrap_text = line.wrap_text
                     tooltip:AddLine(
                         left_text,
                         left_r,
                         left_g,
-                        left_b,
-                        not (issecretvalue and issecretvalue(wrap_text)) and wrap_text == true
+                        left_b
                     )
                 end
                 added = true
@@ -551,7 +532,6 @@ function addon.ShowOwnedTooltip(owner, title, body, anchor)
         lines[#lines + 1] = {
             left_text = body,
             left_color = { r = 0.95, g = 0.95, b = 0.95 },
-            wrap_text = true,
         }
     end
     addon.ShowOwnedTooltipLines(owner, lines, anchor)

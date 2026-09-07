@@ -10,20 +10,19 @@ local M = addon.aura_frames
 
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "short_threshold", "aura_visible_icon_tick",
-    "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline",
     "shared_options_enabled", "shared_test_auras", "disable_ooc_fade",
-    "shared_bar_text_font_size", "shared_bar_text_font_bold", "shared_bar_text_font_outline",
-    "shared_timer_text_font_size", "shared_timer_text_font_bold", "shared_timer_text_font_outline",
 }
 for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
     for _, picker in ipairs(column.pickers) do
         PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
     end
 end
-for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
-    for _, picker in ipairs(column.pickers) do
-        PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
-    end
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+    PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_color"
+    PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_font_key
+    PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_font_size"
+    PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_font_bold"
+    PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_font_outline"
 end
 local PROFILE_CATEGORY_PREFIXES = M.PRESENTATION_PROFILE_CATEGORY_PREFIXES
 local CUSTOM_PROFILE_KEYS = {

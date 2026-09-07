@@ -1,3 +1,0 @@
-# Aura Frames CPU Profile Inbox
-
-Replace this text with the complete output from `/lstprofile report 40`.

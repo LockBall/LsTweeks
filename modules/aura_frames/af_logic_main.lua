@@ -75,7 +75,9 @@ function M.resolve_text_options(category, text_type, local_options)
         bold = local_options.bold,
         outline = local_options.outline,
     }
-    local shared_prefix = text_type == "timer" and "shared_timer_text_" or "shared_bar_text_"
+    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE and M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+    if not text_def then return resolved end
+    local shared_prefix = text_def.shared_prefix .. "_"
     if M.db and M.db.shared_options_enabled == true then
         if M.get_text_color_sync_enabled(category) then
             resolved.color = M.db[shared_prefix .. "color"] or resolved.color
@@ -92,7 +94,7 @@ function M.resolve_text_options(category, text_type, local_options)
     return resolved
 end
 
-local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
+local function resolve_runtime_config(frame, cfg_db, category, timer_key, spacing_key)
     local cache = frame._runtime_config_cache
     if cache then return cache end
 
@@ -126,7 +128,6 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
         layout_show_timer_text = show_timer_text and not cooldown_icon_overlay,
         growth = growth_layout.value,
         max_limit = M.AURA_FRAME_LIMIT,
-        sort_mode = (not is_custom) and (cfg_db["sort_" .. category] or cfg_db["sort"] or "timeleft") or nil,
         color = {
             r = color.r or 1,
             g = color.g or 1,
@@ -433,7 +434,7 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
         return
     end
 
-    local runtime_config = resolve_runtime_config(self, cfg_db, category, is_custom, timer_key, spacing_key)
+    local runtime_config = resolve_runtime_config(self, cfg_db, category, timer_key, spacing_key)
     local bar_mode      = runtime_config.bar_mode
     local frame_width   = runtime_config.frame_width
     local spacing       = runtime_config.spacing
@@ -457,7 +458,6 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
         or (self._managed_cdm_backend ~= nil and not activity.needs_cdm_scan)
     )
     local max_limit     = runtime_config.max_limit
-    local sort_mode     = runtime_config.sort_mode
     local in_combat = InCombatLockdown and InCombatLockdown()
     local is_user_positioning = self._is_user_positioning == true
 
@@ -511,7 +511,7 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     end
 
     local display_count = M.render_aura_map(
-        self, render_map, bar_mode, color, barBgC, max_limit, aura_filter, sort_mode, show_timer_text, barTextC
+        self, render_map, bar_mode, color, barBgC, max_limit, show_timer_text, barTextC
     )
 
     local managed_cdm_aura_mode = false

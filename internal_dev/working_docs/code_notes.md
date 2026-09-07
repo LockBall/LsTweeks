@@ -4,6 +4,9 @@
 Something is wrong with how you receive commands. Ror commands, backslash underscore is just underscore.
 Run pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/agent-start.ps1 and follow its output.
 
+**Next Task — Required Helper Guard Audit**
+Perform a dedicated cross-addon audit of defensive addon-helper checks such as `if M.helper then`, `if addon.helper then`, and `M.helper and M.helper()`. Compare every candidate with `LsTweeks.toc` load order and the owning file: call guaranteed internal dependencies directly so missing or renamed helpers fail visibly, while retaining guards only for genuinely optional Blizzard APIs, lazily loaded Blizzard UI, debug/status facilities, and runtime objects that may legitimately be absent. Do not add migrations, compatibility aliases, or alternate fallback paths. Work in reviewable module batches, update isolated tests to load or stub required dependencies instead of depending on silent no-ops, document only durable ownership rules, and finish with the full test/static cleanup pass.
+
 ---
 
 **improve efficiency and speed of the lua analyzer**

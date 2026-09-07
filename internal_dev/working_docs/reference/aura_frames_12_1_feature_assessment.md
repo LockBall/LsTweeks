@@ -1,8 +1,8 @@
 # Aura Frames 12.1 Feature Assessment Reference
 Archived feature-level assessment for the Retail 12.1 managed-Aura migration. The
 migration closeout completed on 2026-09-01; current runtime contracts live in
-`internal_dev/working_docs/proj_mem/modules/aura_frames.md`, and intentionally
-deferred design work lives in `internal_dev/working_docs/ToDo/aura_frames_deferred_features.md`.
+`internal_dev/working_docs/proj_mem/modules/aura_frames.md`. Current follow-up
+work lives in `internal_dev/working_docs/ToDo/aura_frames_managed_custom_frames.md`.
 The numbered sections below retain the original assessment context and are not
 the current implementation status.
 
@@ -90,7 +90,7 @@ redesign.
 - **Presentation:** native duration swipes, timer/stack/bar styling, empty and populated Frame BG geometry, Move Mode, resizing, and addon-owned Test Aura previews passed live acceptance.
 - **Performance:** the accepted mode-aware CDM event predicate reduced `update_auras` from `10.56` to `6.30 calls/sec` and from `9.245` to `6.723ms/sec` combat-normalized. Broader record caching was rejected as unwarranted at the measured cost.
 - **Validation:** the closeout passed all 27 headless suites available at the time, focused live matrices, Lua/static checks, region checks, whitespace checks, and line-ending checks.
-- **Deferred by design:** AF12-06 custom-filter mapping, AF12-09 native timer formatters, and AF12-11 supported native sort mapping remain in `aura_frames_deferred_features.md`; they are not migration blockers.
+- **Deferred by design:** AF12-06 custom-filter mapping now has the dedicated `aura_frames_managed_custom_frames.md` plan. AF12-09 and AF12-11 were retired after Blizzard's default native duration formatting and ordering remained sufficient; no separate formatter or sorting feature is required.
 
 
 ## Numbered feature assessment
@@ -277,21 +277,14 @@ refresh mutable presentation settings while retaining valid profile fields.
 
 ### AF12-09 — Timer text formats
 
-**Assessment:** Likely preservable, including compact custom formats.
+**Assessment:** The legacy compact/decimal formats could be recreated with native
+numeric rules, but they are not required.
 
-**Status:** Managed duration text and its visibility/font styling are working,
-but the native binding currently uses Blizzard's default formatter. LsTweeks'
-addon compact/decimal formatter behavior has not been translated to a native
-numeric rule formatter.
-
-The managed duration-text binding accepts Blizzard numeric rule formatters.
-TellMeWhen already uses `C_StringUtil.CreateNumericRuleFormatter()` to format a
-secret duration without reading it. LsTweeks' current duration ranges and
-suffixes should be expressible as numeric formatter breakpoints and components.
-
-**Direction:** Build native numeric formatters corresponding to the current
-compact and decimal timer modes. Verify rounding and all boundary transitions
-with headless formatter tests and in-game secret Aura testing.
+**Status:** Retired. Managed duration text, visibility, and font styling use
+Blizzard's default formatter, which has remained readable and secret-safe through
+sustained use and live acceptance. Custom frames should adopt the same native
+binding during their managed migration rather than restore an unrequested legacy
+format and its boundary complexity.
 
 ### AF12-10 — Maximum icons, growth, spacing, columns, and positioning
 
@@ -316,16 +309,16 @@ anchored safely without observing protected children.
 
 ### AF12-11 — Aura sorting
 
-**Assessment:** Partially preservable.
+**Assessment:** Native methods support Default, Expiration, Name, Aura Instance
+ID, and the documented specialized orderings, but Aura Frames exposes no
+user-facing sort control.
 
-Expiration/time-left ordering and direction are supported by the managed sort
-API. Aura-instance ordering is also documented. Name sorting must be checked
-against the final live `AuraContainerSortMethod` enum before it is promised.
-Addon-defined comparators are impossible because protected Aura fields cannot be
-read.
-
-**Direction:** Map only to supported engine sort methods. Remove or migrate any
-sort choice that cannot be represented by the live enum.
+**Status:** Retired. Managed Short Buffs already use native
+`ExpirationOnly`/`Normal`; other managed groups use Blizzard's default ordering.
+Managed Custom Frames should also use the default unless a concrete user-facing
+sorting requirement appears. Unused addon `sort_*` state and generic sorting
+helpers were removed after the feature was retired; the remaining custom and
+CDM ordering helpers implement current display contracts.
 
 ### AF12-12 — Aura tooltips
 
@@ -486,4 +479,4 @@ unrelated modules without new evidence.
 - Current behavior and safety contracts were promoted to `aura_frames.md`.
 - Repeatable CDM acceptance remains in `internal_dev/tests_tools/aura_frames_cdm_regression.md`.
 - Raw and normalized performance evidence remains in `internal_dev/tests_tools/cpu_profiles/af_cpu_profiles.md`.
-- Only the explicitly deferred feature-design items remain active in `aura_frames_deferred_features.md`.
+- Active follow-up work is owned by `aura_frames_managed_custom_frames.md`; this assessment remains historical context only.

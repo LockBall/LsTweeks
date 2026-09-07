@@ -64,11 +64,45 @@ end
 -- Preset and custom panels use the same normalized presentation contract.
 -- These config builders map different backing stores to common logical keys
 -- so the shared panel builder does not branch on source type for common controls.
+local function add_text_setting_keys(keys, suffix)
+    for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+        keys[text_def.color_key] = text_def.color_key .. suffix
+        for _, field_suffix in ipairs({ "font", "font_size", "font_bold", "font_outline" }) do
+            local logical_key = text_def.local_prefix .. "_" .. field_suffix
+            keys[logical_key] = logical_key .. suffix
+        end
+    end
+end
+
 local function make_preset_frame_settings_config(data)
     local cat = data.show_key:sub(6)
     if M.WOW_COOLDOWN_CATEGORIES[cat] and M.refresh_cdm_default_positions then
         M.refresh_cdm_default_positions()
     end
+    local keys = {
+        show = data.show_key,
+        move = data.move_key,
+        move_bg_opt_out = "move_bg_opt_out_" .. cat,
+        timer = data.timer_key,
+        timer_swipe = "timer_swipe_" .. cat,
+        tooltip = "tooltip_" .. cat,
+        bg = data.bg_key,
+        scale = data.scale_key,
+        spacing = data.spacing_key,
+        width = "width_" .. cat,
+        bg_color = "bg_color_" .. cat,
+        color = "color_" .. cat,
+        bar_bg_color = "bar_bg_color_" .. cat,
+        fade_ooc = "fade_ooc_" .. cat,
+        ooc_alpha = "ooc_alpha_" .. cat,
+        fade_delay = "fade_delay_" .. cat,
+        fade_length = "fade_length_" .. cat,
+        bar_mode = "bar_mode_" .. cat,
+        growth_icon = "growth_icon_" .. cat,
+        growth_bar = "growth_bar_" .. cat,
+        test_aura = M.frame_supports_test_aura(cat) and ("test_aura_" .. cat) or nil,
+    }
+    add_text_setting_keys(keys, "_" .. cat)
     return {
         id = cat,
         is_custom = false,
@@ -79,44 +113,7 @@ local function make_preset_frame_settings_config(data)
         scale_key = data.scale_key,
         position_table = M.db.positions[cat],
         default_position = M.defaults.positions[cat],
-        keys = {
-            show = data.show_key,
-            move = data.move_key,
-            move_bg_opt_out = "move_bg_opt_out_" .. cat,
-            timer = data.timer_key,
-            timer_swipe = "timer_swipe_" .. cat,
-            tooltip = "tooltip_" .. cat,
-            bg = data.bg_key,
-            scale = data.scale_key,
-            spacing = data.spacing_key,
-            width = "width_" .. cat,
-            bg_color = "bg_color_" .. cat,
-            color = "color_" .. cat,
-            bar_text_color = "bar_text_color_" .. cat,
-            bar_text_font = "bar_text_font_" .. cat,
-            bar_text_font_size = "bar_text_font_size_" .. cat,
-            bar_text_font_bold = "bar_text_font_bold_" .. cat,
-            bar_text_font_outline = "bar_text_font_outline_" .. cat,
-            bar_bg_color = "bar_bg_color_" .. cat,
-            fade_ooc = "fade_ooc_" .. cat,
-            ooc_alpha = "ooc_alpha_" .. cat,
-            fade_delay = "fade_delay_" .. cat,
-            fade_length = "fade_length_" .. cat,
-            bar_mode = "bar_mode_" .. cat,
-            growth_icon = "growth_icon_" .. cat,
-            growth_bar = "growth_bar_" .. cat,
-            test_aura = M.frame_supports_test_aura(cat) and ("test_aura_" .. cat) or nil,
-            timer_number_font = "timer_number_font_" .. cat,
-            timer_number_font_size = "timer_number_font_size_" .. cat,
-            timer_number_font_bold = "timer_number_font_bold_" .. cat,
-            timer_number_font_outline = "timer_number_font_outline_" .. cat,
-            timer_color = "timer_color_" .. cat,
-            stack_number_font = "stack_number_font_" .. cat,
-            stack_number_font_size = "stack_number_font_size_" .. cat,
-            stack_number_font_bold = "stack_number_font_bold_" .. cat,
-            stack_number_font_outline = "stack_number_font_outline_" .. cat,
-            stack_color = "stack_color_" .. cat,
-        },
+        keys = keys,
     }
 end
 
@@ -135,6 +132,30 @@ local function make_custom_frame_settings_config(entry)
     if entry.ooc_alpha == nil then entry.ooc_alpha = addon.DEFAULT_FADE_ALPHA end
     if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
     if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
+    local keys = {
+        show = "show",
+        move = "move",
+        move_bg_opt_out = "move_bg_opt_out",
+        timer = "timer",
+        timer_swipe = "timer_swipe",
+        tooltip = "tooltip",
+        bg = "bg",
+        scale = "scale",
+        spacing = "spacing",
+        width = "width",
+        bg_color = "bg_color",
+        color = "color",
+        bar_bg_color = "bar_bg_color",
+        fade_ooc = "fade_ooc",
+        ooc_alpha = "ooc_alpha",
+        fade_delay = "fade_delay",
+        fade_length = "fade_length",
+        bar_mode = "bar_mode",
+        growth_icon = "growth_icon",
+        growth_bar = "growth_bar",
+        test_aura = "test_aura",
+    }
+    add_text_setting_keys(keys, "")
     return {
         id = id,
         is_custom = true,
@@ -144,44 +165,7 @@ local function make_custom_frame_settings_config(entry)
         scale_key = "scale",
         position_table = entry.position,
         default_position = default_position,
-        keys = {
-            show = "show",
-            move = "move",
-            move_bg_opt_out = "move_bg_opt_out",
-            timer = "timer",
-            timer_swipe = "timer_swipe",
-            tooltip = "tooltip",
-            bg = "bg",
-            scale = "scale",
-            spacing = "spacing",
-            width = "width",
-            bg_color = "bg_color",
-            color = "color",
-            bar_text_color = "bar_text_color",
-            bar_text_font = "bar_text_font",
-            bar_text_font_size = "bar_text_font_size",
-            bar_text_font_bold = "bar_text_font_bold",
-            bar_text_font_outline = "bar_text_font_outline",
-            bar_bg_color = "bar_bg_color",
-            fade_ooc = "fade_ooc",
-            ooc_alpha = "ooc_alpha",
-            fade_delay = "fade_delay",
-            fade_length = "fade_length",
-            bar_mode = "bar_mode",
-            growth_icon = "growth_icon",
-            growth_bar = "growth_bar",
-            test_aura = "test_aura",
-            timer_number_font = "timer_number_font",
-            timer_number_font_size = "timer_number_font_size",
-            timer_number_font_bold = "timer_number_font_bold",
-            timer_number_font_outline = "timer_number_font_outline",
-            timer_color = "timer_color",
-            stack_number_font = "stack_number_font",
-            stack_number_font_size = "stack_number_font_size",
-            stack_number_font_bold = "stack_number_font_bold",
-            stack_number_font_outline = "stack_number_font_outline",
-            stack_color = "stack_color",
-        },
+        keys = keys,
     }
 end
 
@@ -244,6 +228,26 @@ local function create_frame_font_picker(parent, frame_config, grid, update, conf
     return picker
 end
 
+local function create_frame_text_picker(parent, frame_config, grid, update, text_type, row, column, control_key)
+    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+    return create_frame_font_picker(parent, frame_config, grid, update, {
+        label = text_def.label,
+        popup_label = text_def.popup_label,
+        role = text_def.role,
+        row = row,
+        column = column,
+        control_key = control_key or (text_type .. "_text_options_" .. frame_config.id),
+        color_key = text_def.color_key,
+        color_default = { r = 1, g = 1, b = 1 },
+        font_key = text_def.local_prefix .. "_font",
+        size_key = text_def.local_prefix .. "_font_size",
+        size_default = text_def.default_size,
+        bold_key = text_def.local_prefix .. "_font_bold",
+        outline_key = text_def.local_prefix .. "_font_outline",
+        outline_default = text_def.default_outline,
+    })
+end
+
 local function create_frame_color_picker(parent, frame_config, grid, logical_key, has_alpha, label, row, column, update, control_key)
     local key = frame_setting_key(frame_config, logical_key)
     local picker = addon.CreateColorPicker(parent, frame_config.value_table, key, has_alpha, label, frame_config.defaults_table, update)
@@ -275,42 +279,13 @@ local function create_frame_timer_options(parent, frame_config, grid, update, la
     local timer_text_checkbox = create_bound_checkbox_control(
         parent, labels.timer_text_label or "Timer Text", frame_config.value_table, timer_key,
         grid, row, 1, labels.timer_text_control_key or timer_key, nil, update)
-    local timer_text_button = create_frame_font_picker(parent, frame_config, grid, update, {
-        label = "Timer Text",
-        popup_label = "Timer Text Options",
-        role = "timer",
-        row = row,
-        column = 3,
-        control_key = labels.font_control_key or ("timer_text_options_" .. frame_config.id),
-        color_key = "timer_color",
-        color_default = { r = 1, g = 1, b = 1 },
-        font_key = "timer_number_font",
-        size_key = "timer_number_font_size",
-        size_default = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-        bold_key = "timer_number_font_bold",
-        outline_key = "timer_number_font_outline",
-        outline_default = true,
-    })
+    local timer_text_button = create_frame_text_picker(
+        parent, frame_config, grid, update, "timer", row, 3, labels.font_control_key)
     return timer_text_checkbox, timer_text_button
 end
 
 local function create_frame_stack_options(parent, frame_config, grid, update)
-    return create_frame_font_picker(parent, frame_config, grid, update, {
-        label = "Stack Text",
-        popup_label = "Stack Text Options",
-        role = "stack",
-        row = 3,
-        column = 3,
-        control_key = "stack_text_options_" .. frame_config.id,
-        color_key = "stack_color",
-        color_default = { r = 1, g = 1, b = 1 },
-        font_key = "stack_number_font",
-        size_key = "stack_number_font_size",
-        size_default = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-        bold_key = "stack_number_font_bold",
-        outline_key = "stack_number_font_outline",
-        outline_default = true,
-    })
+    return create_frame_text_picker(parent, frame_config, grid, update, "stack", 3, 3)
 end
 
 local function create_frame_position_controls(parent, frame_config, grid, update, options)
@@ -933,22 +908,7 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     if opts.bar_color_control_key then
         M.controls[opts.bar_color_control_key] = bar_color_picker
     end
-    local bar_text_button = create_frame_font_picker(parent, frame_config, grid, update, {
-        label = "Bar Text",
-        popup_label = "Bar Text Options",
-        role = "body",
-        row = 3,
-        column = 3,
-        control_key = "bar_text_options_" .. frame_config.id,
-        color_key = "bar_text_color",
-        color_default = { r = 1, g = 1, b = 1 },
-        font_key = "bar_text_font",
-        size_key = "bar_text_font_size",
-        size_default = 10,
-        bold_key = "bar_text_font_bold",
-        outline_key = "bar_text_font_outline",
-        outline_default = false,
-    })
+    local bar_text_button = create_frame_text_picker(parent, frame_config, grid, update, "bar", 3, 3)
     local bar_bg_color_picker = bound_picker("bar_bg_color", true, "Bar BG Color", 3, 2)
     grid:stack_below(bar_bg_color_picker, bar_color_picker, { spacing = "picker" })
 

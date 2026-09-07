@@ -121,6 +121,7 @@ h.test("saved preset and custom colors normalize to readable RGBA", function()
     M.db = {
         color_static_long = { r = -1, g = 2, b = "0.5", a = 9 },
         stack_color_static_long = { r = 2, g = -1, b = "0.25" },
+        shared_stack_text_color = { r = -1, g = "0.4", b = 2 },
         bar_bg_color_static_long = "invalid",
         custom_frames = {
             {
@@ -140,6 +141,9 @@ h.test("saved preset and custom colors normalize to readable RGBA", function()
     h.eq(M.db.stack_color_static_long.r, 1, "preset stack red clamps to one")
     h.eq(M.db.stack_color_static_long.g, 0, "preset stack green clamps to zero")
     h.eq(M.db.stack_color_static_long.b, 0.25, "preset stack blue coerces to a number")
+    h.eq(M.db.shared_stack_text_color.r, 0, "shared Stack Text red clamps to zero")
+    h.eq(M.db.shared_stack_text_color.g, 0.4, "shared Stack Text green coerces to a number")
+    h.eq(M.db.shared_stack_text_color.b, 1, "shared Stack Text blue clamps to one")
     h.eq(M.db.custom_frames[1].color.r, 1, "custom red clamps to one")
     h.eq(M.db.custom_frames[1].color.g, 0, "custom green clamps to zero")
     h.eq(M.db.custom_frames[1].bg_color.a, 0, "custom alpha clamps to zero")

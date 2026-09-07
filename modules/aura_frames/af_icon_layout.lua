@@ -194,7 +194,7 @@ function M.setup_layout(self, show_key, spacing_key, bar_mode)
     if layout_show_timer_text == nil then
         layout_show_timer_text = show_timer_text and not cooldown_icon_overlay
     end
-    local timer_font_size = M.get_timer_number_font_size(category, self._cfg_db)
+    local timer_font_size = M.get_text_font_size(category, self._cfg_db, "timer")
     local bar_layout = M.get_bar_layout_params(timer_font_size)
     -- A fixed right edge prevents visible horizontal shifts when a countdown
     -- changes format (for example, 10.1m -> 9m59s).

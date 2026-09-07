@@ -66,6 +66,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 ## Engineering Rules
 - Keep defaults, category metadata, timing buckets, layout constants, and source-specific rules owned in one place.
+- For a setting family with multiple variants or consumers, define one canonical schema and derive defaults, UI bindings, runtime lookup, reset/profile fields, and generated tests from it. Keep one small independent product-contract assertion so omitting a variant from the schema itself still fails.
 - Prefer one deterministic runtime path. Centralize unavoidable branching and route callers through it.
 - Match existing file ownership and visible GUI unless the request explicitly changes behavior.
 - Avoid abstractions that hide WoW API, taint, combat, timing, or hot-path state.

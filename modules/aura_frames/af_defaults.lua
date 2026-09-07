@@ -288,7 +288,7 @@ M.CUSTOM_AURA_MODIFIERS = {
     { value = "INCLUDE_NAME_PLATE_ONLY", text = "INCLUDE_NAME_PLATE_ONLY" },
     { value = "MAW", text = "MAW" },
     { value = "CANCELABLE", text = "CANCELABLE", force_base = "HELPFUL" },
-    { value = "NOT_CANCELABLE", text = "NOT_CANCELABLE", force_base = "HELPFUL" },
+    { value = "!CANCELABLE", text = "!CANCELABLE", force_base = "HELPFUL" },
     { value = "BIG_DEFENSIVE", text = "BIG_DEFENSIVE", force_base = "HELPFUL" },
     { value = "EXTERNAL_DEFENSIVE", text = "EXTERNAL_DEFENSIVE", force_base = "HELPFUL" },
     { value = "CROWD_CONTROL", text = "CROWD_CONTROL", force_base = "HARMFUL" },
@@ -332,11 +332,6 @@ M.defaults = {
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
     learned_helpful_durations = {},
     aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
-    timer_number_font = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold = false,
-    timer_number_font_outline = true,
-
     -- SHORT
     show_short      = true,
     move_short      = true,
@@ -355,12 +350,6 @@ M.defaults = {
     fade_delay_short = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_short = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_short = default_bg_color(),
-    sort_short   = "timeleft",
-    timer_number_font_short = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_short = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_short = false,
-    timer_color_short = { r = 1, g = 1, b = 1 },
-    bar_text_color_short = { r = 1, g = 1, b = 1 },
 
     -- STATIC / LONG BUFFS
     show_static_long       = false,
@@ -380,12 +369,6 @@ M.defaults = {
     fade_delay_static_long = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_static_long = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_static_long = default_bg_color(),
-    sort_static_long = "timeleft",
-    timer_number_font_static_long = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_static_long = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_static_long = false,
-    timer_color_static_long = { r = 1, g = 1, b = 1 },
-    bar_text_color_static_long = { r = 1, g = 1, b = 1 },
 
     -- TIMED BUFFS
     show_timed       = false,
@@ -405,12 +388,6 @@ M.defaults = {
     fade_delay_timed = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_timed = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_timed = default_bg_color(),
-    sort_timed = "timeleft",
-    timer_number_font_timed = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_timed = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_timed = false,
-    timer_color_timed = { r = 1, g = 1, b = 1 },
-    bar_text_color_timed = { r = 1, g = 1, b = 1 },
 
     -- ESSENTIAL
     cooldown_mode_essential = false,
@@ -432,13 +409,7 @@ M.defaults = {
     fade_delay_essential = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_essential = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_essential = default_bg_color(),
-    sort_essential = "timeleft",
-    timer_number_font_essential = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_essential = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_essential = false,
-    timer_color_essential = { r = 1, g = 1, b = 1 },
     test_aura_essential = false,
-    bar_text_color_essential = { r = 1, g = 1, b = 1 },
 
     -- UTILITY
     cooldown_mode_utility = true,
@@ -460,13 +431,7 @@ M.defaults = {
     fade_delay_utility = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_utility = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_utility = default_bg_color(),
-    sort_utility = "timeleft",
-    timer_number_font_utility = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_utility = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_utility = false,
-    timer_color_utility = { r = 1, g = 1, b = 1 },
     test_aura_utility = false,
-    bar_text_color_utility = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BUFFS
     hide_blizz_cdm_tracked_buffs = false,
@@ -487,13 +452,7 @@ M.defaults = {
     fade_delay_tracked_buffs = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_buffs = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_tracked_buffs = default_bg_color(),
-    sort_tracked_buffs = "timeleft",
-    timer_number_font_tracked_buffs = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_tracked_buffs = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_tracked_buffs = false,
-    timer_color_tracked_buffs = { r = 1, g = 1, b = 1 },
     test_aura_tracked_buffs = false,
-    bar_text_color_tracked_buffs = { r = 1, g = 1, b = 1 },
 
     -- TRACKED BARS
     hide_blizz_cdm_tracked_bars = false,
@@ -514,13 +473,7 @@ M.defaults = {
     fade_delay_tracked_bars = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_tracked_bars = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_tracked_bars = default_bg_color(),
-    sort_tracked_bars = "timeleft",
-    timer_number_font_tracked_bars = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_tracked_bars = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_tracked_bars = false,
-    timer_color_tracked_bars = { r = 1, g = 1, b = 1 },
     test_aura_tracked_bars = false,
-    bar_text_color_tracked_bars = { r = 1, g = 1, b = 1 },
 
     -- DEBUFFS
     show_debuff     = true,
@@ -540,12 +493,6 @@ M.defaults = {
     fade_delay_debuff = M.DEFAULT_OOC_FADE_DELAY,
     fade_length_debuff = M.DEFAULT_OOC_FADE_LENGTH,
     bg_color_debuff = default_bg_color(),
-    sort_debuff  = "timeleft",
-    timer_number_font_debuff = M.DEFAULT_AURA_FONT_KEY,
-    timer_number_font_size_debuff = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold_debuff = false,
-    timer_color_debuff = { r = 1, g = 1, b = 1 },
-    bar_text_color_debuff = { r = 1, g = 1, b = 1 },
 
     -- Custom filtered frames (array of entry tables, see M.CUSTOM_FRAME_TEMPLATE)
     custom_frames = {},
@@ -570,18 +517,14 @@ for _, category in ipairs(M.CATEGORIES) do
     if M.frame_supports_test_aura(category) then
         M.defaults["test_aura_" .. category] = false
     end
-    M.defaults["bar_text_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
-    M.defaults["bar_text_font_size_" .. category] = 10
-    M.defaults["bar_text_font_bold_" .. category] = false
-    M.defaults["bar_text_font_outline_" .. category] = false
-    M.defaults["stack_number_font_" .. category] = M.DEFAULT_AURA_FONT_KEY
-    M.defaults["stack_number_font_size_" .. category] = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
-    M.defaults["stack_number_font_bold_" .. category] = false
-    M.defaults["stack_number_font_outline_" .. category] = true
-    M.defaults["stack_color_" .. category] = { r = 1, g = 1, b = 1 }
-end
-for _, category in ipairs(M.TIMER_CATEGORIES) do
-    M.defaults["timer_number_font_outline_" .. category] = true
+    for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+        local font_key = text_def.local_prefix .. "_font_" .. category
+        M.defaults[font_key] = M.DEFAULT_AURA_FONT_KEY
+        M.defaults[text_def.local_prefix .. "_font_size_" .. category] = text_def.default_size
+        M.defaults[text_def.local_prefix .. "_font_bold_" .. category] = false
+        M.defaults[text_def.local_prefix .. "_font_outline_" .. category] = text_def.default_outline
+        M.defaults[text_def.color_key .. "_" .. category] = { r = 1, g = 1, b = 1 }
+    end
 end
 
 M.defaults.shared_frame_background_color = { r = 0, g = 0, b = 0, a = 0.5 }
@@ -596,16 +539,13 @@ M.defaults.shared_debuff_bar_color = {
     g = M.defaults.color_debuff.g,
     b = M.defaults.color_debuff.b,
 }
-M.defaults.shared_bar_text_color = { r = 1, g = 1, b = 1 }
-M.defaults.shared_timer_text_color = { r = 1, g = 1, b = 1 }
-M.defaults.shared_bar_text_font = M.DEFAULT_AURA_FONT_KEY
-M.defaults.shared_timer_text_font = M.DEFAULT_AURA_FONT_KEY
-M.defaults.shared_bar_text_font_size = 10
-M.defaults.shared_bar_text_font_bold = false
-M.defaults.shared_bar_text_font_outline = false
-M.defaults.shared_timer_text_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE
-M.defaults.shared_timer_text_font_bold = false
-M.defaults.shared_timer_text_font_outline = true
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+    M.defaults[text_def.shared_prefix .. "_color"] = { r = 1, g = 1, b = 1 }
+    M.defaults[text_def.shared_font_key] = M.DEFAULT_AURA_FONT_KEY
+    M.defaults[text_def.shared_prefix .. "_font_size"] = text_def.default_size
+    M.defaults[text_def.shared_prefix .. "_font_bold"] = false
+    M.defaults[text_def.shared_prefix .. "_font_outline"] = text_def.default_outline
+end
 M.SHARED_COLOR_COLUMNS = {
     {
         title = "BG Colors",
@@ -643,43 +583,12 @@ M.SHARED_COLOR_COLUMNS = {
             },
         },
     },
-    {
-        title = "Text Colors",
-        column = 4,
-        pickers = {
-            {
-                label = "Bar Text",
-                db_key = "shared_bar_text_color",
-                control_key = "shared_options_bar_text_picker",
-                has_alpha = false,
-            },
-            {
-                label = "Timer Text",
-                db_key = "shared_timer_text_color",
-                control_key = "shared_options_timer_text_picker",
-                has_alpha = false,
-            },
-        },
-    },
 }
 M.SHARED_FONT_COLUMNS = {
     {
         title = "Text Options",
         column = 4,
-        pickers = {
-            {
-                label = "Bar Text",
-                db_key = "shared_bar_text_font",
-                control_key = "shared_options_bar_font_picker",
-                role = "body",
-            },
-            {
-                label = "Timer Text",
-                db_key = "shared_timer_text_font",
-                control_key = "shared_options_timer_font_picker",
-                role = "timer",
-            },
-        },
+        pickers = M.TEXT_OPTION_DEFS,
     },
 }
 M.defaults.shared_options_enabled = false
@@ -730,26 +639,17 @@ M.CUSTOM_FRAME_TEMPLATE = {
     sync_text_font = true,
     test_aura    = true,
 
-    -- Timer font (matches TIMER_CATEGORIES convention)
-    timer_number_font      = M.DEFAULT_AURA_FONT_KEY,
-    bar_text_font          = M.DEFAULT_AURA_FONT_KEY,
-    bar_text_font_size     = 10,
-    bar_text_font_bold     = false,
-    bar_text_font_outline  = false,
-    timer_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    timer_number_font_bold = false,
-    timer_number_font_outline = true,
-    timer_color     = { r = 1, g = 1, b = 1 },
-    stack_number_font      = M.DEFAULT_AURA_FONT_KEY,
-    stack_number_font_size = M.DEFAULT_TIMER_NUMBER_FONT_SIZE,
-    stack_number_font_bold = false,
-    stack_number_font_outline = true,
-    stack_color     = { r = 1, g = 1, b = 1 },
-    bar_text_color  = { r = 1, g = 1, b = 1 },
-
     -- Position
     position = { point = "TOPLEFT", x = 0, y = 50 },
 }
+
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+    M.CUSTOM_FRAME_TEMPLATE[text_def.color_key] = { r = 1, g = 1, b = 1 }
+    M.CUSTOM_FRAME_TEMPLATE[text_def.local_prefix .. "_font"] = M.DEFAULT_AURA_FONT_KEY
+    M.CUSTOM_FRAME_TEMPLATE[text_def.local_prefix .. "_font_size"] = text_def.default_size
+    M.CUSTOM_FRAME_TEMPLATE[text_def.local_prefix .. "_font_bold"] = false
+    M.CUSTOM_FRAME_TEMPLATE[text_def.local_prefix .. "_font_outline"] = text_def.default_outline
+end
 
 M.apply_custom_presentation_growth_defaults(M.CUSTOM_FRAME_TEMPLATE)
 

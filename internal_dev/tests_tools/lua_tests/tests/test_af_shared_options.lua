@@ -171,6 +171,7 @@ h.test("Shared Options tab owns the Aura frame participation matrix", function()
     h.ok(M.controls.shared_options_debuff_bar_picker, "Debuff bar picker is on Shared Options")
     h.ok(M.controls.shared_options_bar_font_picker, "Bar Text Options launcher is on Shared Options")
     h.ok(M.controls.shared_options_timer_font_picker, "Timer Text Options launcher is on Shared Options")
+    h.ok(M.controls.shared_options_stack_font_picker, "Stack Text Options launcher is on Shared Options")
     h.ok(M.controls.shared_options_enabled, "shared color section exposes its enable checkbox")
     h.ok(M.controls.shared_options_disable_ooc_fade, "shared tab exposes the linked global fade policy")
     h.ok(M.controls.shared_options_test_auras, "shared tab exposes shared test Auras")
@@ -419,10 +420,52 @@ h.test("Aura Frames resolves shared Buff and Debuff bar colors", function()
     M.destroy_custom_frame(custom.id)
 end)
 
-h.test("Aura Frames resolves shared Bar and Timer text colors", function()
+h.test("every required Aura text type reaches each schema consumer", function()
+    -- This product contract is intentionally independent from TEXT_OPTION_DEFS:
+    -- omitting a type from the production schema must fail instead of teaching
+    -- the test the same incomplete list.
+    local required = {
+        bar = { local_prefix = "bar_text", color_key = "bar_text_color" },
+        timer = { local_prefix = "timer_number", color_key = "timer_color" },
+        stack = { local_prefix = "stack_number", color_key = "stack_color" },
+    }
+    local definition_count = 0
+    for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+        definition_count = definition_count + 1
+        h.ok(required[text_def.text_type], text_def.text_type .. " is a required Aura text type")
+    end
+    h.eq(definition_count, 3, "the schema has exactly the three required Aura text types")
+    local saved = M.export_aura_frame_profile_data()
+
+    for text_type, expected in pairs(required) do
+        local text_def = M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+        h.ok(text_def, text_type .. " has a canonical text-option definition")
+        h.eq(text_def.local_prefix, expected.local_prefix, text_type .. " owns its local setting prefix")
+        h.eq(text_def.color_key, expected.color_key, text_type .. " owns its local color key")
+        h.ok(M.defaults[text_def.shared_prefix .. "_color"], text_type .. " has a shared color default")
+        h.ok(M.defaults[text_def.shared_font_key], text_type .. " has a shared font default")
+        h.ok(M.defaults[text_def.shared_prefix .. "_font_size"], text_type .. " has a shared size default")
+        h.ok(M.defaults[text_def.local_prefix .. "_font_short"], text_type .. " has a local font default")
+        h.ok(M.controls[text_def.shared_control_key], text_type .. " has a Shared Options control")
+
+        M.db[text_def.shared_font_key] = "morpheus"
+        M.sync_shared_options_controls()
+        h.eq(M.controls[text_def.shared_control_key]:GetValue(), "morpheus",
+            text_type .. " control resynchronizes from its shared font setting")
+
+        h.ok(saved[text_def.shared_prefix .. "_color"], text_type .. " shared color is profiled")
+        h.ok(saved[text_def.shared_font_key], text_type .. " shared font is profiled")
+        h.ok(saved[text_def.shared_prefix .. "_font_size"], text_type .. " shared size is profiled")
+        h.eq(saved[text_def.shared_prefix .. "_font_bold"] ~= nil, true, text_type .. " shared bold is profiled")
+        h.eq(saved[text_def.shared_prefix .. "_font_outline"] ~= nil, true, text_type .. " shared outline is profiled")
+    end
+end)
+
+h.test("Aura Frames resolves shared Bar, Timer, and Stack text colors", function()
     local local_color = { r = 0.1, g = 0.2, b = 0.3 }
     M.db.shared_bar_text_color = { r = 0.2, g = 0.4, b = 0.6 }
     M.db.shared_timer_text_color = { r = 0.8, g = 0.7, b = 0.3 }
+    M.db.shared_stack_text_color = { r = 0.3, g = 0.7, b = 0.8 }
     M.db.shared_options_enabled = true
     M.db.sync_text_color_short = true
 
@@ -430,19 +473,27 @@ h.test("Aura Frames resolves shared Bar and Timer text colors", function()
         "Bar Text uses the shared Aura color")
     h.eq(M.resolve_text_options("short", "timer", { color = local_color }).color, M.db.shared_timer_text_color,
         "Timer Text uses the shared Aura color")
+    h.eq(M.resolve_text_options("short", "stack", { color = local_color }).color, M.db.shared_stack_text_color,
+        "Stack Text uses the shared Aura color")
 
     M.db.sync_text_color_short = false
     h.eq(M.resolve_text_options("short", "bar", { color = local_color }).color, local_color,
         "deselected text target keeps its local color")
 end)
 
-h.test("Aura Frames resolves complete Bar and Timer text options through one pipeline", function()
+h.test("Aura Frames resolves complete Bar, Timer, and Stack text options through one pipeline", function()
     M.db.shared_bar_text_font = "game_default"
     M.db.shared_timer_text_font = "source_code_pro"
+    M.db.shared_stack_text_font = "morpheus"
     M.db.shared_bar_text_font_size = 12.5
     M.db.shared_bar_text_font_bold = true
     M.db.shared_bar_text_font_outline = true
+    M.db.shared_stack_text_font_size = 13
+    M.db.shared_stack_text_font_bold = false
+    M.db.shared_stack_text_font_outline = false
+    M.db.shared_stack_text_color = { r = 0.3, g = 0.5, b = 0.7 }
     M.db.shared_options_enabled = true
+    M.db.sync_text_color_short = true
     M.db.sync_text_font_short = true
 
     local bar_options = M.resolve_text_options("short", "bar", {
@@ -455,6 +506,24 @@ h.test("Aura Frames resolves complete Bar and Timer text options through one pip
         "Bar text uses the shared Bar Font")
     h.eq(M.resolve_text_options("short", "timer", { font = "game_default" }).font, "source_code_pro",
         "timer text uses the shared Timer Font")
+    local stack_options = M.resolve_text_options("short", "stack", {
+        font = "game_default",
+        size = 9,
+        bold = true,
+        outline = true,
+    })
+    h.eq(stack_options.font, "morpheus", "Stack text uses the shared Stack Font")
+    h.eq(stack_options.size, 13, "Stack text uses the shared font size")
+    h.eq(stack_options.bold, false, "Stack text preserves an explicit false bold preference")
+    h.eq(stack_options.outline, false, "Stack text preserves an explicit false outline preference")
+    local stack_preview = UIParent:CreateFontString(nil, "OVERLAY")
+    M.apply_stack_font_style(stack_preview, "short", M.db)
+    local stack_font_call = stack_preview:GetLastCall("SetFont")
+    local stack_color_call = stack_preview:GetLastCall("SetTextColor")
+    h.eq(stack_font_call[1], addon.GetFontDefinition("morpheus").path,
+        "shared Stack font reaches the runtime text path")
+    h.eq(stack_font_call[2], 13, "shared Stack size reaches the runtime text path")
+    h.eq(stack_color_call[1], 0.3, "shared Stack color reaches the runtime text path")
     h.eq(bar_options.size, 12.5,
         "Bar text uses the shared font size")
     h.eq(bar_options.bold, true,
@@ -474,14 +543,19 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_debuff_bar_color = { r = 0.7, g = 0.2, b = 0.1 }
     M.db.shared_bar_text_color = { r = 0.1, g = 0.3, b = 0.5 }
     M.db.shared_timer_text_color = { r = 0.9, g = 0.7, b = 0.5 }
+    M.db.shared_stack_text_color = { r = 0.4, g = 0.6, b = 0.8 }
     M.db.shared_bar_text_font = "game_default"
     M.db.shared_timer_text_font = "source_code_pro"
+    M.db.shared_stack_text_font = "morpheus"
     M.db.shared_bar_text_font_size = 12.5
     M.db.shared_bar_text_font_bold = true
     M.db.shared_bar_text_font_outline = true
     M.db.shared_timer_text_font_size = 14
     M.db.shared_timer_text_font_bold = true
     M.db.shared_timer_text_font_outline = false
+    M.db.shared_stack_text_font_size = 13
+    M.db.shared_stack_text_font_bold = true
+    M.db.shared_stack_text_font_outline = false
     M.db.shared_options_enabled = false
     M.db.shared_test_auras = true
     M.db.disable_ooc_fade = true
@@ -499,14 +573,19 @@ h.test("Aura profiles own shared color and target selections", function()
     M.db.shared_debuff_bar_color.r = 0.9
     M.db.shared_bar_text_color.r = 0.9
     M.db.shared_timer_text_color.r = 0.1
+    M.db.shared_stack_text_color.r = 0.1
     M.db.shared_bar_text_font = "source_code_pro"
     M.db.shared_timer_text_font = "game_default"
+    M.db.shared_stack_text_font = "game_default"
     M.db.shared_bar_text_font_size = 8
     M.db.shared_bar_text_font_bold = false
     M.db.shared_bar_text_font_outline = false
     M.db.shared_timer_text_font_size = 8
     M.db.shared_timer_text_font_bold = false
     M.db.shared_timer_text_font_outline = true
+    M.db.shared_stack_text_font_size = 8
+    M.db.shared_stack_text_font_bold = false
+    M.db.shared_stack_text_font_outline = true
     M.db.shared_options_enabled = true
     M.db.shared_test_auras = false
     M.db.disable_ooc_fade = false
@@ -525,14 +604,19 @@ h.test("Aura profiles own shared color and target selections", function()
     h.eq(M.db.shared_debuff_bar_color.r, 0.7, "Aura profile restores shared Debuff bar color")
     h.eq(M.db.shared_bar_text_color.r, 0.1, "Aura profile restores shared Bar Text color")
     h.eq(M.db.shared_timer_text_color.r, 0.9, "Aura profile restores shared Timer Text color")
+    h.eq(M.db.shared_stack_text_color.r, 0.4, "Aura profile restores shared Stack Text color")
     h.eq(M.db.shared_bar_text_font, "game_default", "Aura profile restores shared Bar Font")
     h.eq(M.db.shared_timer_text_font, "source_code_pro", "Aura profile restores shared Timer Font")
+    h.eq(M.db.shared_stack_text_font, "morpheus", "Aura profile restores shared Stack Font")
     h.eq(M.db.shared_bar_text_font_size, 12.5, "Aura profile restores shared Bar font size")
     h.eq(M.db.shared_bar_text_font_bold, true, "Aura profile restores shared Bar bold preference")
     h.eq(M.db.shared_bar_text_font_outline, true, "Aura profile restores shared Bar outline preference")
     h.eq(M.db.shared_timer_text_font_size, 14, "Aura profile restores shared Timer font size")
     h.eq(M.db.shared_timer_text_font_bold, true, "Aura profile restores shared Timer bold preference")
     h.eq(M.db.shared_timer_text_font_outline, false, "Aura profile restores shared Timer outline preference")
+    h.eq(M.db.shared_stack_text_font_size, 13, "Aura profile restores shared Stack font size")
+    h.eq(M.db.shared_stack_text_font_bold, true, "Aura profile restores shared Stack bold preference")
+    h.eq(M.db.shared_stack_text_font_outline, false, "Aura profile restores shared Stack outline preference")
     h.eq(M.db.shared_options_enabled, false, "Aura profile restores shared enablement")
     h.eq(M.db.shared_test_auras, true, "Aura profile restores shared Test Auras")
     h.eq(M.db.disable_ooc_fade, true, "Aura profile restores the shared OOC fade policy")

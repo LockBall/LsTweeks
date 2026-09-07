@@ -125,6 +125,7 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 5. Assert: state getters the module exposes (`get_runtime_status()`), frame getters (`PlayerFrame:GetAlpha()`), or recorded calls (`frame:GetLastCall("SetPoint")`).
 6. Finish with `h.run("<suite name>")`. Reset shared runtime between tests inside a suite (the pf_fade suite's `reset_runtime()` pattern) — tests in one file share one Lua process.
 7. Run just your suite while iterating: `run_tests.ps1 <substring>`.
+- For schema-driven feature families, iterate the production schema to verify every consumer, but also keep a small independent set of required variant names. Repeating the same incomplete production list in the test only proves internal consistency and will not catch a missing feature.
 
 
 ## Simulating Game State
@@ -162,6 +163,7 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 - Verb-prefix method rule: unknown frame keys become recorded no-op methods only when they start with a method verb (Set/Get/Is/Has/Register/Create/...). All other unknown keys read as nil, exactly like an unset field in game. This matters: a naive catch-all fallback turned data-field reads like `frame.NineSlice` or `button.minimapPos` into functions and broke guard clauses. If a legitimate method falls outside the prefix list, add the prefix or define the method explicitly.
 - Internal stub state lives in `__`-prefixed keys (`__alpha`, `__points`, `__calls`); the method fallback ignores them. Never name addon-visible fields with a `__` prefix in tests.
 - Process-per-suite is the isolation model: within one file, module-local state (upvalues like the fade state machine's `state`) persists across `h.test` blocks. Either order tests to tolerate that or reset explicitly at the top of each test.
+- Profile-schema coverage treats every module default as persisted unless it appears in an explicit session/cache/debug exclusion set. When adding a default, make that ownership decision in the same change.
 - Vendored `Libs/` load for real (they are plain Lua); their in-game behavior is not under test and should not be asserted on.
 - Load-time upvalue captures: many module files cache API functions as locals at load (`local UnitPower = UnitPower`). Patching a global or C_* field after `load_addon` does nothing for those callers — the stub must own the function (backed by a knob) before the addon loads. This is why `GetSpellCharges` reads `stub.spell_charges` instead of being replaced per test.
 - `h.near` over `h.eq` for alpha/positions: fade math accumulates float error across ticks; the pf_fade suite uses tolerance 0.011 for one-tick slack.

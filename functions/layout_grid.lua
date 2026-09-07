@@ -32,20 +32,6 @@ function addon.SetGridPoint(frame, parent, placement, cfg)
     frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 end
 
-function addon.CenterGridControl(frame, parent, placement, cfg)
-    if not frame or not parent or not placement then return end
-    local centered_placement = {
-        row = placement.row,
-        col = placement.col,
-        x = placement.x,
-        y = placement.y,
-        width = frame:GetWidth(),
-        center = placement.center,
-        align = placement.align,
-    }
-    addon.SetGridPoint(frame, parent, centered_placement, cfg)
-end
-
 --#endregion GRID ANCHOR HELPERS ==============================================
 
 --#region GRID PLACEMENT HELPERS =============================================

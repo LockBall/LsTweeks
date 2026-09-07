@@ -9,23 +9,58 @@ local M = addon.aura_frames
 
 --#region PROFILE SCHEMA ======================================================
 
+-- Canonical text-option family. Defaults, local/shared pickers, runtime,
+-- normalization, and profile schemas all consume this list.
+M.TEXT_OPTION_DEFS = {
+    {
+        text_type = "bar", label = "Bar Text", role = "body",
+        local_prefix = "bar_text", color_key = "bar_text_color",
+        default_size = 10, default_outline = false, max_size = 24,
+        shared_control_key = "shared_options_bar_font_picker",
+    },
+    {
+        text_type = "timer", label = "Timer Text", role = "timer",
+        local_prefix = "timer_number", color_key = "timer_color",
+        default_size = 10, default_outline = true, max_size = 18,
+        shared_control_key = "shared_options_timer_font_picker",
+    },
+    {
+        text_type = "stack", label = "Stack Text", role = "stack",
+        local_prefix = "stack_number", color_key = "stack_color",
+        default_size = 10, default_outline = true, max_size = 18,
+        shared_control_key = "shared_options_stack_font_picker",
+    },
+}
+M.TEXT_OPTION_DEFS_BY_TYPE = {}
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+    text_def.popup_label = text_def.label .. " Options"
+    text_def.shared_prefix = "shared_" .. text_def.text_type .. "_text"
+    text_def.shared_font_key = text_def.shared_prefix .. "_font"
+    M.TEXT_OPTION_DEFS_BY_TYPE[text_def.text_type] = text_def
+end
+
 M.PRESENTATION_PROFILE_CATEGORY_PREFIXES = {
     "show", "move", "move_bg_opt_out", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
-    "growth_icon", "growth_bar", "sort", "test_aura", "bar_text_color", "bar_text_font", "bar_text_font_size", "bar_text_font_bold", "bar_text_font_outline", "timer_number_font",
-    "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline", "timer_color", "cooldown_mode", "hide_blizz_cdm",
-    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_number_font_outline", "stack_color",
+    "growth_icon", "growth_bar", "test_aura", "cooldown_mode", "hide_blizz_cdm",
     "sync_bar_bg", "sync_bar_color", "sync_text_color", "sync_text_font",
 }
 
 M.CUSTOM_PRESENTATION_PROFILE_KEYS = {
     "show", "move", "move_bg_opt_out", "timer", "timer_swipe", "tooltip", "bg", "scale", "spacing", "width", "bar_mode",
     "color", "bar_bg_color", "fade_ooc", "ooc_alpha", "fade_delay", "fade_length", "bg_color",
-    "growth_icon", "growth_bar", "test_aura", "bar_text_color", "bar_text_font", "bar_text_font_size", "bar_text_font_bold", "bar_text_font_outline", "timer_number_font", "timer_number_font_size",
-    "timer_number_font_bold", "timer_number_font_outline", "timer_color", "sync_bar_bg", "sync_bar_color", "sync_text_color",
-    "sync_text_font",
-    "stack_number_font", "stack_number_font_size", "stack_number_font_bold", "stack_number_font_outline", "stack_color",
+    "growth_icon", "growth_bar", "test_aura", "sync_bar_bg", "sync_bar_color", "sync_text_color", "sync_text_font",
 }
+
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
+    for _, keys in ipairs({ M.PRESENTATION_PROFILE_CATEGORY_PREFIXES, M.CUSTOM_PRESENTATION_PROFILE_KEYS }) do
+        keys[#keys + 1] = text_def.color_key
+        keys[#keys + 1] = text_def.local_prefix .. "_font"
+        keys[#keys + 1] = text_def.local_prefix .. "_font_size"
+        keys[#keys + 1] = text_def.local_prefix .. "_font_bold"
+        keys[#keys + 1] = text_def.local_prefix .. "_font_outline"
+    end
+end
 
 --#endregion PROFILE SCHEMA ===================================================
 

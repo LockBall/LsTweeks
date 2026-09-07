@@ -15,10 +15,6 @@ local format        = format
 local table_sort    = table.sort
 local table_concat  = table.concat
 local wipe          = wipe
-local SORT_RULE_DEFAULT    = Enum.UnitAuraSortRule.Default
-local SORT_RULE_EXPIRATION = Enum.UnitAuraSortRule.ExpirationOnly
-local SORT_RULE_NAME       = Enum.UnitAuraSortRule.NameOnly
-local SORT_DIR_NORMAL      = Enum.UnitAuraSortDirection.Normal
 local TIMER_DIR_REMAINING  = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime
 
 addon.aura_frames = addon.aura_frames or {}
@@ -29,15 +25,9 @@ local set_shown_if_changed = M.set_shown_if_changed
 --#region RENDER CACHE =========================================================
 -- Scratch tables reused every render_aura_map call to avoid per-frame allocation.
 local _scratch_list      = {}
-local _scratch_seen      = {}
 local _scratch_seen_keys = {}
 local _scratch_timer_behaviors = {}
 local _scratch_render_signature = {}
-local _sorted_aura_ids_cache = {}
-
-function M.clear_sorted_aura_ids_cache()
-    wipe(_sorted_aura_ids_cache)
-end
 
 --#endregion RENDER CACHE ======================================================
 --#region TIME FORMATTING ======================================================
@@ -412,7 +402,6 @@ local function build_display_signature(
     bar_bg_color,
     bar_text_color,
     max_limit,
-    sort_mode,
     show_render_timer_text,
     show_timer_swipe,
     show_cooldown_overlay,
@@ -429,7 +418,6 @@ local function build_display_signature(
     parts[#parts + 1] = show_cooldown_overlay and "overlay" or "nooverlay"
     parts[#parts + 1] = tooltip_enabled and "tooltip" or "notooltip"
     parts[#parts + 1] = tostring(max_limit or "")
-    parts[#parts + 1] = sort_mode or ""
     parts[#parts + 1] = tostring(display_count)
 
     if not append_signature_value(parts, color and color.r) then return nil end
@@ -685,50 +673,6 @@ local function add_custom_entries_to_render_list(list, aura_map)
     end)
 end
 
-local function add_preset_entries_to_render_list(_frame, list, aura_map, aura_filter, sort_mode)
-    -- Resolve sort parameters for GetUnitAuraInstanceIDs.
-    local sort_rule = SORT_RULE_DEFAULT
-    local sort_dir  = SORT_DIR_NORMAL
-    if sort_mode == "timeleft" then
-        sort_rule = SORT_RULE_EXPIRATION
-        -- Normal = ascending expiration time = soonest to expire first (most urgent).
-    elseif sort_mode == "name" then
-        sort_rule = SORT_RULE_NAME
-    end
-
-    local wow_filter = (aura_filter and aura_filter:find("HARMFUL", 1, true)) and "HARMFUL" or "HELPFUL"
-    local cache_key = wow_filter .. sort_rule .. (sort_dir or 0)
-    local sorted_ids = _sorted_aura_ids_cache[cache_key]
-    if sorted_ids == nil then
-        sorted_ids = C_UnitAuras.GetUnitAuraInstanceIDs("player", wow_filter, nil, sort_rule, sort_dir)
-        _sorted_aura_ids_cache[cache_key] = sorted_ids or false
-    elseif sorted_ids == false then
-        sorted_ids = nil
-    end
-
-    -- Build display list in game-sorted order, filtered to entries in this frame's map.
-    if sorted_ids then
-        local seen = _scratch_seen
-        wipe(seen)
-        for _, iid in ipairs(sorted_ids) do
-            local entry = aura_map[iid]
-            if entry then
-                list[#list + 1] = entry
-                seen[iid] = true
-            end
-        end
-        for key, entry in pairs(aura_map) do
-            if not seen[key] then
-                list[#list + 1] = entry
-            end
-        end
-    else
-        -- Fallback: iterate map directly (sorted_ids nil = API unavailable).
-        for _, entry in pairs(aura_map) do list[#list + 1] = entry end
-        table_sort(list, function(a, b) return get_entry_sort_id(a) < get_entry_sort_id(b) end)
-    end
-end
-
 local function apply_short_frame_render_order(frame, list)
     frame._short_order_map = frame._short_order_map or {}
     frame._short_order_next = frame._short_order_next or 1
@@ -775,23 +719,17 @@ local function apply_cdm_frame_render_order(list)
     end)
 end
 
-local function build_render_list(frame, aura_map, aura_filter, sort_mode)
+local function build_render_list(frame, aura_map)
     local list = _scratch_list
     wipe(list)
 
     local is_cdm_frame = M.WOW_COOLDOWN_CATEGORIES[frame.category]
-    local is_managed_preset = frame._managed_aura_backend ~= nil
-    if is_cdm_frame or is_managed_preset then
-        -- Managed preset maps contain only addon-owned Test Aura entries; live
-        -- Auras remain inside Blizzard's AuraContainer.  Render the mock through
-        -- the common addon path without querying secret unit-Aura ordering.
-        for _, entry in pairs(aura_map) do
-            list[#list + 1] = entry
-        end
-    elseif frame.is_custom then
+    if frame.is_custom then
         add_custom_entries_to_render_list(list, aura_map)
     else
-        add_preset_entries_to_render_list(frame, list, aura_map, aura_filter, sort_mode)
+        -- Managed preset maps contain only addon-owned Test Aura entries, while
+        -- CDM cooldown maps already carry their native provider order.
+        for _, entry in pairs(aura_map) do list[#list + 1] = entry end
     end
 
     if frame.category == "short" then
@@ -842,8 +780,8 @@ end
 -- assign tooltip/ticker metadata, configure icon/bar visuals,
 -- update timer text/bar progress, then hide unused pooled icons.
 -- Keep source-specific decisions inside the helpers so this function remains a readable control flow.
-function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, aura_filter, sort_mode, show_timer_text, bar_text_color)
-    local list = build_render_list(self, aura_map, aura_filter, sort_mode)
+function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_limit, show_timer_text, bar_text_color)
+    local list = build_render_list(self, aura_map)
     local display_count = math_min(#list, math_min(max_limit, #self.icons))
     local now = GetTime()
     local show_cooldown_overlay = self._show_cooldown_overlay == true
@@ -862,7 +800,6 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
         bar_bg_color,
         bar_text_color,
         max_limit,
-        sort_mode,
         show_render_timer_text,
         show_timer_swipe,
         show_cooldown_overlay,

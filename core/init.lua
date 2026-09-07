@@ -253,7 +253,7 @@ SlashCmdList["LSTWEEKS"] = function(msg)
     end
     if tooltip_debug_action then
         tooltip_debug_action = tooltip_debug_action:lower()
-        if tooltip_debug_action == "clear" or tooltip_debug_action == "mark" then
+        if tooltip_debug_action == "mark" then
             if addon.MarkTooltipDebugTrace then
                 addon.MarkTooltipDebugTrace()
                 print("|cff33ff99LsTweeks tooltip trace|r: marker added; prior trace retained")

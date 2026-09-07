@@ -17,9 +17,12 @@ local HEADER_BAR_WIDTH = ((COLUMN_COUNT - 1) * COLUMN_GAP) + COLUMN_WIDTH
 local HEADER_BAR_HEIGHT = 24
 local HEADER_BAR_Y_OFFSET = 15
 -- Top edge of both color pickers in each row, measured from the panel top.
-local COLOR_PICKER_ROW_1_Y = -20
-local COLOR_PICKER_ROW_2_Y = -70
-local COLOR_PICKER_ROW_Y = { COLOR_PICKER_ROW_1_Y, COLOR_PICKER_ROW_2_Y }
+local CONTROL_ROW_1_Y = -20
+local CONTROL_ROW_2_Y = -70
+local TEXT_OPTIONS_ROW_3_Y = -120
+local CONTROL_ROW_Y = { CONTROL_ROW_1_Y, CONTROL_ROW_2_Y, TEXT_OPTIONS_ROW_3_Y }
+local MATRIX_HEADER_HEIGHT = 175
+local MATRIX_ROWS_OFFSET_Y = MATRIX_HEADER_HEIGHT + 8
 
 
 --#region SHARED OPTIONS STATE =================================================
@@ -106,8 +109,8 @@ function M.sync_shared_options_controls()
     end
     for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
         for _, picker_def in ipairs(column.pickers) do
-            local picker = M.controls[picker_def.control_key]
-            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.db_key]) end
+            local picker = M.controls[picker_def.shared_control_key]
+            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.shared_font_key]) end
             if picker then picker:SetEnabled(true) end
         end
     end
@@ -299,7 +302,6 @@ end
 local function build_shared_font_column(panel, header_grid, title_text, column, picker_defs)
     create_header_title(panel, header_grid, title_text, column)
     for index, picker_def in ipairs(picker_defs) do
-        local prefix = picker_def.role == "timer" and "shared_timer_text_" or "shared_bar_text_"
         local function binding(key, fallback)
             return {
                 get = function()
@@ -315,22 +317,22 @@ local function build_shared_font_column(panel, header_grid, title_text, column, 
         end
         local picker_control = addon.CreateFontPicker(panel, {
             label = picker_def.label,
-            popup_label = picker_def.label .. " Options",
+            popup_label = picker_def.popup_label,
             width = COLUMN_WIDTH,
             role = picker_def.role,
-            color = binding(prefix .. "color", { r = 1, g = 1, b = 1 }),
-            font = binding(picker_def.db_key, M.DEFAULT_AURA_FONT_KEY),
-            size = binding(prefix .. "font_size", picker_def.role == "timer" and M.DEFAULT_TIMER_NUMBER_FONT_SIZE or 10),
-            bold = binding(prefix .. "font_bold", false),
-            outline = binding(prefix .. "font_outline", picker_def.role == "timer"),
+            color = binding(picker_def.shared_prefix .. "_color", { r = 1, g = 1, b = 1 }),
+            font = binding(picker_def.shared_font_key, M.DEFAULT_AURA_FONT_KEY),
+            size = binding(picker_def.shared_prefix .. "_font_size", picker_def.default_size),
+            bold = binding(picker_def.shared_prefix .. "_font_bold", false),
+            outline = binding(picker_def.shared_prefix .. "_font_outline", picker_def.default_outline),
             on_preview = refresh_shared_options,
         })
         header_grid:place_at(picker_control, 1, column, nil, {
             width = COLUMN_WIDTH,
             align = "center",
-            y_offset = COLOR_PICKER_ROW_Y[index],
+            y_offset = CONTROL_ROW_Y[index],
         })
-        M.controls[picker_def.control_key] = picker_control
+        M.controls[picker_def.shared_control_key] = picker_control
 
     end
 end
@@ -352,7 +354,7 @@ local function build_shared_color_column(panel, header_grid, title_text, column,
         )
         header_grid:place_at(picker_control, 1, column, nil, {
             align = "center",
-            y_offset = COLOR_PICKER_ROW_Y[index],
+            y_offset = CONTROL_ROW_Y[index],
         })
         M.controls[picker_def.control_key] = picker_control
     end
@@ -369,7 +371,7 @@ local function build_participation_matrix(content, content_height)
         col_offset = 0,
         col_align = { "left", "center", "center", "center" },
         row_start = 0,
-        row_heights = { 125 },
+        row_heights = { MATRIX_HEADER_HEIGHT },
         row_gap = 0,
         content_rows = 1,
         separator_right_pad = 0,
@@ -384,16 +386,14 @@ local function build_participation_matrix(content, content_height)
 
     create_header_title(panel, header_grid, "Frame Name", 1)
     for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
-        if column.title ~= "Text Colors" then
-            build_shared_color_column(panel, header_grid, column.title, column.column, column.pickers)
-        end
+        build_shared_color_column(panel, header_grid, column.title, column.column, column.pickers)
     end
     for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
         build_shared_font_column(panel, header_grid, column.title, column.column, column.pickers)
     end
     local rows_parent = CreateFrame("Frame", nil, panel)
     rows_parent:SetSize(GROUP_WIDTH - 50, 1)
-    rows_parent:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -133)
+    rows_parent:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -MATRIX_ROWS_OFFSET_Y)
     M.shared_options_rows_parent = rows_parent
     M.shared_options_row_slots = {}
 

@@ -13,6 +13,17 @@ local function load_aura_frames()
     return h.addon.aura_frames
 end
 
+h.test("custom Aura filters expose only the current cancelable token", function()
+    local M = load_aura_frames()
+
+    h.is_nil(M.CUSTOM_AURA_MODIFIERS_BY_VALUE.NOT_CANCELABLE,
+        "deprecated NOT_CANCELABLE is not retained as an alias")
+    h.ok(M.CUSTOM_AURA_MODIFIERS_BY_VALUE["!CANCELABLE"],
+        "current !CANCELABLE token is available")
+    h.eq(M.get_custom_aura_filter({ aura_base_filter = "HELPFUL", aura_modifier = "!CANCELABLE" }),
+        "HELPFUL|!CANCELABLE", "custom filters use the current token directly")
+end)
+
 h.test("custom frame deletion clears its scan cache and controls", function()
     local M = load_aura_frames()
     local cache_clears = 0
@@ -92,6 +103,15 @@ h.test("category-specific false settings override flat Aura Frame fallbacks", fu
 
     h.eq(frame._bar_mode, false, "category false keeps icon mode")
     h.eq(frame._lstweeks_bg_a, 0, "category false hides background")
+end)
+
+h.test("custom frame settings do not inherit obsolete global presentation values", function()
+    local M = load_aura_frames()
+    M.db = { timer_number_font_size = 99 }
+    local custom = {}
+
+    h.eq(M.get_text_font_size("custom_test", custom, "timer"), 10,
+        "missing custom Timer size resolves through the canonical text default")
 end)
 
 h.test("shared frame and bar colors resolve through Aura runtime configuration", function()

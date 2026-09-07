@@ -85,27 +85,27 @@ local function unregister_runtime_frame(show_key)
     return frame
 end
 
-local function apply_number_text_style(font_target, category, cfg_db, setting_prefix, alpha)
+local function apply_text_style(font_target, category, cfg_db, text_type, alpha)
     if not font_target or not font_target.SetFont then return end
+    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+    if not text_def then return end
     local selected_key = M.get_setting(
         cfg_db,
         category,
-        setting_prefix .. "_number_font",
+        text_def.local_prefix .. "_font",
         M.DEFAULT_AURA_FONT_KEY
     )
-    local size = setting_prefix == "stack"
-        and M.get_stack_number_font_size(category, cfg_db)
-        or M.get_timer_number_font_size(category, cfg_db)
+    local size = M.get_text_font_size(category, cfg_db, text_type)
     local use_outline = M.get_setting(
         cfg_db,
         category,
-        setting_prefix .. "_number_font_outline",
-        true
-    ) ~= false
-    local bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true
-    local color = M.get_setting(cfg_db, category, setting_prefix .. "_color")
-    if setting_prefix == "timer" and M.resolve_text_options then
-        local options = M.resolve_text_options(category, "timer", {
+        text_def.local_prefix .. "_font_outline",
+        text_def.default_outline
+    ) == true
+    local bold = M.get_setting(cfg_db, category, text_def.local_prefix .. "_font_bold", false) == true
+    local color = M.get_setting(cfg_db, category, text_def.color_key)
+    if M.resolve_text_options then
+        local options = M.resolve_text_options(category, text_type, {
             color = color,
             font = selected_key,
             size = size,
@@ -120,66 +120,37 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
     end
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
-        role = setting_prefix,
+        role = text_def.role,
         size = size,
         bold = bold,
         outline = use_outline,
         min_size = 6,
-        max_size = 18,
+        max_size = text_def.max_size,
     })
 
     if cfg_db or M.db then
         if color then
-            font_target:SetTextColor(color.r or 1, color.g or 1, color.b or 1, alpha == nil and 1 or alpha)
+            font_target:SetTextColor(
+                color.r or 1,
+                color.g or 1,
+                color.b or 1,
+                alpha == nil and (color.a or 1) or alpha
+            )
         end
     end
 end
 
 
 function M.apply_number_font_style(font_target, category, cfg_db, alpha)
-    apply_number_text_style(font_target, category, cfg_db, "timer", alpha)
+    apply_text_style(font_target, category, cfg_db, "timer", alpha)
 end
 
 function M.apply_stack_font_style(font_target, category, cfg_db, alpha)
-    apply_number_text_style(font_target, category, cfg_db, "stack", alpha)
+    apply_text_style(font_target, category, cfg_db, "stack", alpha)
 end
 
 function M.apply_bar_text_style(font_target, category, cfg_db)
-    if not font_target or not font_target.SetFont then return end
-    local selected_key = M.get_setting(
-        cfg_db,
-        category,
-        "bar_text_font",
-        M.DEFAULT_AURA_FONT_KEY
-    )
-    local size = M.get_setting(cfg_db, category, "bar_text_font_size", 10)
-    local bold = M.get_setting(cfg_db, category, "bar_text_font_bold", false) == true
-    local outline = M.get_setting(cfg_db, category, "bar_text_font_outline", false) == true
-    local color = M.get_setting(cfg_db, category, "bar_text_color")
-    local options = M.resolve_text_options and M.resolve_text_options(category, "bar", {
-        color = color,
-        font = selected_key,
-        size = size,
-        bold = bold,
-        outline = outline,
-    }) or {}
-    selected_key = options.font or selected_key
-    size = options.size or size
-    if options.bold ~= nil then bold = options.bold == true end
-    if options.outline ~= nil then outline = options.outline == true end
-    color = options.color or color
-    addon.ApplySelectedFont(font_target, {
-        key = selected_key,
-        role = "body",
-        size = size,
-        bold = bold,
-        outline = outline,
-        min_size = 6,
-        max_size = 24,
-    })
-    if color and font_target.SetTextColor then
-        font_target:SetTextColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
-    end
+    apply_text_style(font_target, category, cfg_db, "bar")
 end
 
 function M.apply_number_font_to_text(font_string, category, cfg_db)
@@ -1138,17 +1109,13 @@ end
 -- and at runtime (when user clicks + Custom). The frame is keyed by entry.id.
 function M.create_custom_frame(entry)
     if not entry or not entry.id then return end
+    addon.apply_defaults(M.CUSTOM_FRAME_TEMPLATE, entry)
     local id       = entry.id
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
     if M.rebuild_shared_options_group then
         M.rebuild_shared_options_group()
     end
-    entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL" or entry.filter == "HARMFUL") and "HARMFUL" or "HELPFUL"
-    entry.aura_modifier = entry.aura_modifier or "NONE"
-    if entry.fade_ooc == nil then entry.fade_ooc = false end
-    if entry.ooc_alpha == nil then entry.ooc_alpha = addon.DEFAULT_FADE_ALPHA end
-    if entry.fade_delay == nil then entry.fade_delay = M.DEFAULT_OOC_FADE_DELAY end
-    if entry.fade_length == nil then entry.fade_length = M.DEFAULT_OOC_FADE_LENGTH end
+    entry.aura_base_filter = entry.aura_base_filter == "HARMFUL" and "HARMFUL" or "HELPFUL"
     local aura_filter = M.get_custom_aura_filter(entry)
 
     -- Custom frames use flat keys ("timer", "bg", etc.) inside the entry table,

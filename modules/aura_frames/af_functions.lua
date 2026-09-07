@@ -367,12 +367,13 @@ function M.stop_frame_drag(frame, scale_key)
 end
 
 function M.get_setting(cfg_db, category, key, fallback)
-    if cfg_db and cfg_db ~= M.db and cfg_db[key] ~= nil then return cfg_db[key] end
+    if cfg_db and cfg_db ~= M.db then
+        if cfg_db[key] ~= nil then return cfg_db[key] end
+        return fallback
+    end
     if category and M.db and M.db[key .. "_" .. category] ~= nil then
         return M.db[key .. "_" .. category]
     end
-    if cfg_db and cfg_db[key] ~= nil then return cfg_db[key] end
-    if M.db and M.db[key] ~= nil then return M.db[key] end
     return fallback
 end
 
@@ -380,11 +381,11 @@ local COLOR_COMPONENT_RANGE = { min = 0, max = 1 }
 local COLOR_KEYS = {
     { key = "color", has_alpha = true },
     { key = "bar_bg_color", has_alpha = true },
-    { key = "bar_text_color", has_alpha = false },
     { key = "bg_color", has_alpha = true },
-    { key = "timer_color", has_alpha = false },
-    { key = "stack_color", has_alpha = false },
 }
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+    COLOR_KEYS[#COLOR_KEYS + 1] = { key = text_def.color_key, has_alpha = false }
+end
 
 local function normalize_saved_color(color, fallback, has_alpha)
     color = type(color) == "table" and color or fallback or {}
@@ -411,6 +412,14 @@ function M.normalize_saved_colors(db)
                 picker.has_alpha
             )
         end
+    end
+    for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+        local color_key = text_def.shared_prefix .. "_color"
+        db[color_key] = normalize_saved_color(
+            db[color_key],
+            M.defaults and M.defaults[color_key],
+            false
+        )
     end
 
     for _, category in ipairs(M.CATEGORIES or {}) do
@@ -533,22 +542,18 @@ end
 
 function M.invalidate_aura_scan_caches()
     M.clear_custom_aura_scan_cache()
-    if M.clear_sorted_aura_ids_cache then
-        M.clear_sorted_aura_ids_cache()
-    end
 end
 
--- Frame-specific value -> category-specific value -> global value -> default global value.
-function M.get_timer_number_font_size(category, cfg_db)
-    local defaults = M.defaults or {}
-    local value = M.get_setting(cfg_db, category, "timer_number_font_size", defaults.timer_number_font_size or 10)
-    return tonumber(value) or 10
-end
-
-function M.get_stack_number_font_size(category, cfg_db)
-    local defaults = M.defaults or {}
-    local value = M.get_setting(cfg_db, category, "stack_number_font_size", defaults.stack_number_font_size or M.DEFAULT_TIMER_NUMBER_FONT_SIZE)
-    return tonumber(value) or M.DEFAULT_TIMER_NUMBER_FONT_SIZE
+function M.get_text_font_size(category, cfg_db, text_type)
+    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+    if not text_def then return nil end
+    local value = M.get_setting(
+        cfg_db,
+        category,
+        text_def.local_prefix .. "_font_size",
+        text_def.default_size
+    )
+    return tonumber(value) or text_def.default_size
 end
 
 local function next_custom_slot(field, prefix, fallback)

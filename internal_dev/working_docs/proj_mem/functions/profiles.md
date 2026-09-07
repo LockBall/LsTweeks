@@ -42,3 +42,4 @@ Durable contracts for shared profile storage and Profiles-tab UI in `functions/p
 ## Validation
 - Shared tests must prove independent deep copies, selected-name tracking, missing-storage rejection, invalid-export rejection, combat load rejection when modeled, and CRUD edge cases changed by a patch.
 - Impacted module tests must prove explicit snapshot restoration, `false` preservation, and required post-load runtime/control refresh. Profile UI changes also require visual verification of selection, confirmation, and status behavior.
+- `test_profiles.lua` compares each profiled module's exported snapshot with every non-session default. Add a setting to the profile schema or to the test's explicit session/cache/debug exclusion set; an unclassified default is a failing contract, not an implicit omission.

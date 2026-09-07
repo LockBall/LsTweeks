@@ -32,7 +32,7 @@ Slash command: `/lst`
 ### Aura Frames
 Aura Frames replace and extend the default player buff and debuff display. The module includes preset player-aura frames, WoW Cooldown Manager-backed frames, and custom filtered frames.
 
-The Aura Frames **Shared Options** tab provides shared **BG Colors**, **Bar Colors**, and compact **Text Options** launchers, with one participation checkbox per group for every built-in and custom frame. Shared Bar and Timer Text Options contain Color, Font, Font Size, Bold, and Outline; edits preview immediately on participating frames, Save retains them, Cancel restores the opening values, and Reset previews the defaults. The shared settings are disabled by default and included in Aura Frames profiles and resets. **Enable Test Auras**/Play/Pause and **Disable OOC Fade** are Aura-owned shared controls that remain available when shared styling is disabled; individual Test Aura controls remain available on every Aura frame tab.
+The Aura Frames **Shared Options** tab provides shared **BG Colors**, **Bar Colors**, and compact **Text Options** launchers, with one participation checkbox per group for every built-in and custom frame. Shared Bar, Timer, and Stack Text Options contain Color, Font, Font Size, Bold, and Outline; edits preview immediately on participating frames, Save retains them, Cancel restores the opening values, and Reset previews the defaults. The shared settings are disabled by default and included in Aura Frames profiles and resets. **Enable Test Auras**/Play/Pause and **Disable OOC Fade** are Aura-owned shared controls that remain available when shared styling is disabled; individual Test Aura controls remain available on every Aura frame tab.
 
 
 #### Preset Frames
