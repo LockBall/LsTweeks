@@ -1,7 +1,7 @@
 ## Interface: 120007, 120100
 ## Title: L's Tweeks
 ## Title-enUS: L's Tweeks
-## Version: 00.22.02
+## Version: 00.23.00
 ## Author: LockBall
 ## Notes: Configurable aura frames, sound controls, and UI tweaks
 ## Notes-enUS: Configurable aura frames, sound controls, and UI tweaks
