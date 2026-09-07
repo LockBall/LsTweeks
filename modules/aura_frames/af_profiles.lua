@@ -11,7 +11,7 @@ local M = addon.aura_frames
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "short_threshold", "aura_visible_icon_tick",
     "timer_number_font", "timer_number_font_size", "timer_number_font_bold", "timer_number_font_outline",
-    "shared_options_enabled",
+    "shared_options_enabled", "shared_test_auras", "disable_ooc_fade",
     "shared_bar_text_font_size", "shared_bar_text_font_bold", "shared_bar_text_font_outline",
     "shared_timer_text_font_size", "shared_timer_text_font_bold", "shared_timer_text_font_outline",
 }

@@ -17,7 +17,7 @@ addon.UI_THEME = {
     font_body     = "GameFontNormal",
 }
 
--- Shared by Aura Frames local defaults and All the Colors global overrides.
+-- Shared Aura Frames bar-color defaults.
 addon.AURA_BAR_COLOR_DEFAULTS = {
     buff = { r = 0, g = 0.5, b = 1, a = 1 },
     debuff = { r = 1, g = 0.2, b = 0.2, a = 1 },
@@ -65,7 +65,6 @@ addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket = addon.UPDATE_INTERVALS.tenth_sec
 
 addon.FEATURE_MODULES = {
-    { key = "all_the_colors", label = "All the Colors" },
     { key = "audio_volumes", label = "Audio Volumes" },
     { key = "aura_frames", label = "Buffs & Debuffs" },
     { key = "objectives", label = "Objectives" },

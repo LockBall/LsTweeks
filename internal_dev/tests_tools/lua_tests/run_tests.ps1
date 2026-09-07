@@ -122,7 +122,6 @@ function Get-ImpactedSuiteNames {
 
         switch -Regex ($path) {
             '^internal_dev/tests_tools/lua_tests/af_managed_fixture\.lua$' { & $add 'af_managed'; continue }
-            '^modules/background_color_sync/' { & $add @('bcs_sync', 'af_shared_options'); continue }
             '^modules/aura_frames/af_logic_native_visibility\.lua$' { & $add 'af_native_visibility'; continue }
             '^modules/aura_frames/af_profiles\.lua$' { & $add @('profiles', 'af_scan_config', 'af_shared_options'); continue }
             '^modules/aura_frames/' {
@@ -145,7 +144,10 @@ function Get-ImpactedSuiteNames {
             '^modules/skyriding_vigor/' { & $add 'sv_state'; continue }
             '^functions/tooltip\.lua$' { & $add @('tooltip', 'af_tooltip_integration'); continue }
             '^functions/table_utils\.lua$' { & $add @('table_utils', 'profiles'); continue }
-            '^functions/(buttons|checkbox|dropdown|slider)\.lua$' { & $add 'control_factories'; continue }
+            '^functions/(buttons|checkbox|color_picker|dropdown|slider)\.lua$' {
+                & $add @('control_factories', 'ob_background')
+                continue
+            }
             '^functions/profiles\.lua$' { & $add 'profiles'; continue }
             '^(core/|LsTweeks\.toc$)' { & $add 'smoke_load_all'; continue }
             '^(functions|modules)/.*\.lua$' { & $add 'smoke_load_all'; continue }

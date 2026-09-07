@@ -10,6 +10,7 @@ local InCombatLockdown = InCombatLockdown
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
+local TEXT_STYLE_SUFFIXES = { "size", "bold", "outline" }
 
 --#region RUNTIME CONFIGURATION AND FRAME STATE ================================
 function M.uses_cooldown_icon_overlay(category, bar_mode, db)
@@ -62,61 +63,33 @@ function M.resolve_bar_color(category, local_color)
         resolved = resolved or local_color
     end
 
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_module_color then
-        local color_key = M.is_debuff_frame_category(category)
-            and "aura_debuff_bar_color"
-            or "aura_buff_bar_color"
-        resolved = color_sync.resolve_module_color(
-            M.MODULE_KEY, color_key, resolved, M.get_color_consumer_group(category))
-    end
     return resolved
 end
 
-function M.resolve_text_color(category, text_type, local_color)
-    local resolved = local_color
-    if M.db
-        and M.db.shared_options_enabled == true
-        and M.get_text_color_sync_enabled(category)
-    then
-        resolved = text_type == "timer"
-            and M.db.shared_timer_text_color
-            or M.db.shared_bar_text_color
-        resolved = resolved or local_color
+function M.resolve_text_options(category, text_type, local_options)
+    local_options = local_options or {}
+    local resolved = {
+        color = local_options.color,
+        font = local_options.font,
+        size = local_options.size,
+        bold = local_options.bold,
+        outline = local_options.outline,
+    }
+    local shared_prefix = text_type == "timer" and "shared_timer_text_" or "shared_bar_text_"
+    if M.db and M.db.shared_options_enabled == true then
+        if M.get_text_color_sync_enabled(category) then
+            resolved.color = M.db[shared_prefix .. "color"] or resolved.color
+        end
+        if M.get_text_font_sync_enabled(category) then
+            resolved.font = M.db[shared_prefix .. "font"] or resolved.font
+            for _, suffix in ipairs(TEXT_STYLE_SUFFIXES) do
+                local shared_value = M.db[shared_prefix .. "font_" .. suffix]
+                if shared_value ~= nil then resolved[suffix] = shared_value end
+            end
+        end
     end
 
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_module_color then
-        local color_key = text_type == "timer"
-            and "aura_timer_text_color"
-            or "aura_bar_text_color"
-        resolved = color_sync.resolve_module_color(
-            M.MODULE_KEY, color_key, resolved, M.get_color_consumer_group(category))
-    end
     return resolved
-end
-
-function M.resolve_text_font(category, text_type, local_font)
-    if M.db
-        and M.db.shared_options_enabled == true
-        and M.get_text_font_sync_enabled(category)
-    then
-        return (text_type == "timer" and M.db.shared_timer_text_font or M.db.shared_bar_text_font)
-            or local_font
-    end
-    return local_font
-end
-
-function M.resolve_text_style_value(category, text_type, suffix, local_value)
-    if M.db
-        and M.db.shared_options_enabled == true
-        and M.get_text_font_sync_enabled(category)
-    then
-        local prefix = text_type == "timer" and "shared_timer_text_font_" or "shared_bar_text_font_"
-        local shared_value = M.db[prefix .. suffix]
-        if shared_value ~= nil then return shared_value end
-    end
-    return local_value
 end
 
 local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_key, spacing_key)
@@ -137,7 +110,7 @@ local function resolve_runtime_config(frame, cfg_db, category, is_custom, timer_
     local bar_text_color = M.get_setting(cfg_db, category, "bar_text_color", { r = 1, g = 1, b = 1 })
     local frame_bg_enabled, bg_color = M.resolve_frame_background(cfg_db, category)
     color = M.resolve_bar_color(category, color)
-    bar_text_color = M.resolve_text_color(category, "bar", bar_text_color)
+    bar_text_color = M.resolve_text_options(category, "bar", { color = bar_text_color }).color
     bar_bg_color = M.resolve_background_color(category, "bar", bar_bg_color)
 
     local growth_layout = addon.GetGrowthDirection(M.get_mode_growth(cfg_db, category, bar_mode))
@@ -327,10 +300,7 @@ local function refresh_frame_ooc_fade_for_state(frame, in_combat, activity, cfg_
 
     local category = frame.category
     local fade_ooc = M.get_setting(cfg_db, category, "fade_ooc", false) == true
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_ooc_fade then
-        fade_ooc = color_sync.resolve_ooc_fade(M.MODULE_KEY, fade_ooc)
-    end
+    if M.db and M.db.disable_ooc_fade == true then fade_ooc = false end
     if not fade_ooc
         and not frame._ooc_fade_timer
         and not frame._ooc_fade_state

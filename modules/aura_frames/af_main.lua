@@ -93,15 +93,9 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
         setting_prefix .. "_number_font",
         M.DEFAULT_AURA_FONT_KEY
     )
-    if setting_prefix == "timer" and M.resolve_text_font then
-        selected_key = M.resolve_text_font(category, "timer", selected_key)
-    end
     local size = setting_prefix == "stack"
         and M.get_stack_number_font_size(category, cfg_db)
         or M.get_timer_number_font_size(category, cfg_db)
-    if setting_prefix == "timer" and M.resolve_text_style_value then
-        size = M.resolve_text_style_value(category, "timer", "size", size)
-    end
     local use_outline = M.get_setting(
         cfg_db,
         category,
@@ -109,9 +103,20 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
         true
     ) ~= false
     local bold = M.get_setting(cfg_db, category, setting_prefix .. "_number_font_bold", false) == true
-    if setting_prefix == "timer" and M.resolve_text_style_value then
-        bold = M.resolve_text_style_value(category, "timer", "bold", bold) == true
-        use_outline = M.resolve_text_style_value(category, "timer", "outline", use_outline) ~= false
+    local color = M.get_setting(cfg_db, category, setting_prefix .. "_color")
+    if setting_prefix == "timer" and M.resolve_text_options then
+        local options = M.resolve_text_options(category, "timer", {
+            color = color,
+            font = selected_key,
+            size = size,
+            bold = bold,
+            outline = use_outline,
+        })
+        color = options.color
+        selected_key = options.font
+        size = options.size
+        bold = options.bold == true
+        use_outline = options.outline ~= false
     end
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
@@ -124,13 +129,8 @@ local function apply_number_text_style(font_target, category, cfg_db, setting_pr
     })
 
     if cfg_db or M.db then
-        local color_key = setting_prefix .. "_color"
-        local c = M.get_setting(cfg_db, category, color_key)
-        if c and setting_prefix == "timer" and M.resolve_text_color then
-            c = M.resolve_text_color(category, "timer", c)
-        end
-        if c then
-            font_target:SetTextColor(c.r or 1, c.g or 1, c.b or 1, alpha == nil and 1 or alpha)
+        if color then
+            font_target:SetTextColor(color.r or 1, color.g or 1, color.b or 1, alpha == nil and 1 or alpha)
         end
     end
 end
@@ -152,17 +152,22 @@ function M.apply_bar_text_style(font_target, category, cfg_db)
         "bar_text_font",
         M.DEFAULT_AURA_FONT_KEY
     )
-    if M.resolve_text_font then
-        selected_key = M.resolve_text_font(category, "bar", selected_key)
-    end
     local size = M.get_setting(cfg_db, category, "bar_text_font_size", 10)
     local bold = M.get_setting(cfg_db, category, "bar_text_font_bold", false) == true
     local outline = M.get_setting(cfg_db, category, "bar_text_font_outline", false) == true
-    if M.resolve_text_style_value then
-        size = M.resolve_text_style_value(category, "bar", "size", size)
-        bold = M.resolve_text_style_value(category, "bar", "bold", bold) == true
-        outline = M.resolve_text_style_value(category, "bar", "outline", outline) == true
-    end
+    local color = M.get_setting(cfg_db, category, "bar_text_color")
+    local options = M.resolve_text_options and M.resolve_text_options(category, "bar", {
+        color = color,
+        font = selected_key,
+        size = size,
+        bold = bold,
+        outline = outline,
+    }) or {}
+    selected_key = options.font or selected_key
+    size = options.size or size
+    if options.bold ~= nil then bold = options.bold == true end
+    if options.outline ~= nil then outline = options.outline == true end
+    color = options.color or color
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
         role = "body",
@@ -172,10 +177,6 @@ function M.apply_bar_text_style(font_target, category, cfg_db)
         min_size = 6,
         max_size = 24,
     })
-    local color = M.get_setting(cfg_db, category, "bar_text_color")
-    if color and M.resolve_text_color then
-        color = M.resolve_text_color(category, "bar", color)
-    end
     if color and font_target.SetTextColor then
         font_target:SetTextColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
     end
@@ -1139,10 +1140,6 @@ function M.create_custom_frame(entry)
     if not entry or not entry.id then return end
     local id       = entry.id
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
-    local custom_order = 1000 + (tonumber(id:match("(%d+)$")) or 0)
-    if M.register_background_color_targets then
-        M.register_background_color_targets(id, entry.name or id, custom_order)
-    end
     if M.rebuild_shared_options_group then
         M.rebuild_shared_options_group()
     end
@@ -1227,9 +1224,6 @@ function M.destroy_custom_frame(id)
     end
     if M.clear_custom_aura_scan_cache then
         M.clear_custom_aura_scan_cache()
-    end
-    if M.unregister_background_color_targets then
-        M.unregister_background_color_targets(id)
     end
     if M.rebuild_shared_options_group then
         M.rebuild_shared_options_group()
@@ -1439,6 +1433,9 @@ if addon.register_module_status then
             "hover_tickers=" .. tostring(hover_ticker_count),
             "cdm_forced_hidden=" .. tostring(cdm_forced_hidden_count),
             "grid=" .. tostring(M.grid_frame and M.grid_frame:IsShown() == true),
+            "shared_options=" .. tostring(M.db and M.db.shared_options_enabled == true),
+            "shared_test_auras=" .. tostring(M.is_shared_test_aura_enabled()),
+            "disable_ooc_fade=" .. tostring(M.db and M.db.disable_ooc_fade == true),
         }
         if M.get_managed_aura_status_fields then
             for _, field in ipairs(M.get_managed_aura_status_fields()) do

@@ -9,7 +9,6 @@ local M = addon.aura_frames
 
 --#region FRAME DEFINITIONS AND DEFAULTS ======================================
 M.MODULE_KEY = "aura_frames"
-M.COLOR_CONSUMER_GROUPS = { buffs = "buffs", debuffs = "debuffs" }
 M.DEFAULT_AURA_FONT_KEY = "game_default"
 M.TEXT_OPTIONS_OVERRIDE_NOTICES = {
     color_and_font = "Shared color & font are overriding.",
@@ -149,12 +148,6 @@ for _, frame_def in ipairs(M.FRAME_DEFS) do
     end
 end
 
-local color_sync = addon.all_the_colors
-
-function M.get_background_color_target_key(category, target_type)
-    return tostring(target_type) .. ":" .. tostring(category)
-end
-
 local function get_custom_frame_entry(category)
     for _, entry in ipairs(M.db and M.db.custom_frames or {}) do
         if entry.id == category then return entry end
@@ -219,64 +212,6 @@ function M.is_debuff_frame_category(category)
     if frame_def then return frame_def.is_debuff == true end
     local entry = get_custom_frame_entry(category)
     return entry ~= nil and entry.aura_base_filter == "HARMFUL"
-end
-
-function M.get_color_consumer_group(category)
-    return M.is_debuff_frame_category(category)
-        and M.COLOR_CONSUMER_GROUPS.debuffs
-        or M.COLOR_CONSUMER_GROUPS.buffs
-end
-
-function M.register_background_color_targets(category, label, order)
-    if not color_sync or not color_sync.register_target then return end
-    local row_label = label or category
-    color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"), {
-        label = row_label .. " Frame Background",
-        order = order,
-        default_enabled = true,
-        supports_visibility = true,
-        get_global_group = function() return M.get_color_consumer_group(category) end,
-    })
-    color_sync.register_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"), {
-        label = row_label .. " Bar Background",
-        order = order,
-        default_enabled = true,
-        supports_visibility = false,
-        get_global_group = function() return M.get_color_consumer_group(category) end,
-    })
-end
-
-function M.unregister_background_color_targets(category)
-    if not color_sync or not color_sync.unregister_target then return end
-    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "frame"))
-    color_sync.unregister_target(M.MODULE_KEY, M.get_background_color_target_key(category, "bar"))
-end
-
-if color_sync and color_sync.register_consumer then
-    color_sync.register_consumer(M.MODULE_KEY, {
-        label = "Buffs & Debuffs",
-        order = 100,
-        global_toggle = true,
-        global_order = 200,
-        default_global_enabled = true,
-        global_groups = {
-            { key = M.COLOR_CONSUMER_GROUPS.buffs, label = "Buffs", order = 1, default_enabled = true },
-            { key = M.COLOR_CONSUMER_GROUPS.debuffs, label = "Debuffs", order = 2, default_enabled = true },
-        },
-        supports_ooc_fade = true,
-        refresh = function()
-            if M.on_shared_options_changed then
-                M.on_shared_options_changed()
-            end
-        end,
-    })
-    for _, frame_def in ipairs(M.FRAME_DEFS) do
-        M.register_background_color_targets(
-            frame_def.key,
-            frame_def.frame_label or frame_def.label,
-            frame_def.tree_order
-        )
-    end
 end
 
 function M.get_frame_def(category)
@@ -748,6 +683,8 @@ M.SHARED_FONT_COLUMNS = {
     },
 }
 M.defaults.shared_options_enabled = false
+M.defaults.shared_test_auras = false
+M.defaults.disable_ooc_fade = false
 for _, category in ipairs(M.CATEGORIES) do
     M.defaults["move_bg_opt_out_" .. category] = false
     M.defaults["sync_bar_bg_" .. category] = true

@@ -478,12 +478,8 @@ local function read_frame_bool(cfg_db, key)
     return cfg_db[key] == true
 end
 
-function M.is_global_test_aura_enabled()
-    local color_sync = addon.all_the_colors
-    return color_sync
-        and color_sync.get_test_auras_enabled
-        and color_sync.get_test_auras_enabled()
-        or false
+function M.is_shared_test_aura_enabled()
+    return M.is_runtime_enabled() and M.db ~= nil and M.db.shared_test_auras == true
 end
 
 function M.get_frame_activity_state(frame, show_key, move_key)
@@ -507,7 +503,7 @@ function M.get_frame_activity_state(frame, show_key, move_key)
     activity.enabled = enabled
     activity.moving = enabled and read_frame_bool(cfg_db, moving_key)
     activity.test_aura = enabled and supports_test_aura
-        and (read_frame_bool(cfg_db, test_key) or M.is_global_test_aura_enabled())
+        and (read_frame_bool(cfg_db, test_key) or M.is_shared_test_aura_enabled())
     activity.is_custom = is_custom
     activity.is_cdm = is_cdm
     activity.needs_custom_scan = enabled and is_custom

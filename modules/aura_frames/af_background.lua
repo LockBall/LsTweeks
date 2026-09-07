@@ -24,18 +24,6 @@ function M.resolve_background_color(category, target_type, local_color)
         resolved = shared_color
     end
 
-    local color_sync = addon.all_the_colors
-    local consumer_group = M.get_color_consumer_group(category)
-    if target_type == "bar" and color_sync and color_sync.resolve_module_color then
-        return color_sync.resolve_module_color(M.MODULE_KEY, "aura_bar_bg_color", resolved, consumer_group)
-    end
-    if color_sync and color_sync.resolve_color then
-        return color_sync.resolve_color(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, target_type),
-            resolved
-        )
-    end
     return resolved
 end
 
@@ -49,14 +37,6 @@ function M.resolve_background_visibility(category, target_type, local_enabled)
         resolved = true
     end
 
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_visibility then
-        return color_sync.resolve_visibility(
-            M.MODULE_KEY,
-            M.get_background_color_target_key(category, target_type),
-            resolved
-        )
-    end
     return resolved
 end
 

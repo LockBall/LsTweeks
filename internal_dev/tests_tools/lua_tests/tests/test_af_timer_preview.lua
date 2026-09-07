@@ -78,7 +78,7 @@ h.test("rechecking test Aura discards a stale preview clock", function()
     h.eq(preview.aura_remaining, 20, "rechecked preview returns to its initial value")
 end)
 
-h.test("global test Aura playback keeps enabled preview clocks synchronized", function()
+h.test("shared test Aura playback keeps enabled preview clocks synchronized", function()
     local M = load_aura_frames()
     M.db = {
         show_essential = true, show_short = true, show_tracked_buffs = true,
@@ -86,17 +86,17 @@ h.test("global test Aura playback keeps enabled preview clocks synchronized", fu
     }
     M._test_preview_time_offsets, M._test_preview_paused_times, M._test_preview_started = {}, {}, {}
     M.refresh_test_aura_category = function() end
-    M.start_global_test_aura_previews_paused()
+    M.start_shared_test_aura_previews_paused()
     h.ok(M.is_test_preview_paused("show_essential"), "enabled preview-capable preset starts paused")
     h.ok(M.is_test_preview_paused("show_tracked_buffs"), "second preview-capable preset starts paused")
     h.ok(M.is_test_preview_paused("show_custom_1"), "enabled custom frame starts paused")
     h.ok(M.is_test_preview_paused("show_short"), "managed preset receives an addon-owned preview clock")
     h.ok(not M._test_preview_started.show_custom_2, "disabled custom frame has no preview clock")
-    h.eq(M.toggle_global_test_aura_previews(), false, "Play starts every enabled preview")
+    h.eq(M.toggle_shared_test_aura_previews_clock(), false, "Play starts every enabled preview")
     h.ok(not M.is_test_preview_paused("show_essential"), "preset preview is playing")
     h.ok(not M.is_test_preview_paused("show_custom_1"), "custom preview is playing")
-    h.eq(M.toggle_global_test_aura_previews(), true, "Pause stops every enabled preview")
-    h.ok(M.are_global_test_aura_previews_paused(), "all enabled previews report paused")
+    h.eq(M.toggle_shared_test_aura_previews_clock(), true, "Pause stops every enabled preview")
+    h.ok(M.are_shared_test_aura_previews_paused(), "all enabled previews report paused")
 end)
 
 h.test("test preview stacks tick live with the timer", function()

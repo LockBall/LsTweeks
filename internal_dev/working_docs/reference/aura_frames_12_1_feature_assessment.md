@@ -395,12 +395,12 @@ should not be injected into, or depend on, a managed live-Aura group.
 **Result:** Preview widgets remain separate from managed AuraButtons while using
 the shared addon presentation and formatter paths.
 
-### AF12-16 — Profiles, shared colors, move mode, and settings
+### AF12-16 — Profiles, Shared Options, move mode, and settings
 
 **Assessment:** Preservable.
 
 **Status:** Complete for the current managed presets. They have independent
-saved settings, positions, profile fields, shared-color
+saved settings, positions, profile fields, Shared Options
 participation, four-way icon growth, vertical bar growth, move borders, and
 resize grips. OOC changes update container layout and accessible presentation
 state without rebuilding managed groups. Addon-owned previews are supported
@@ -474,7 +474,7 @@ or the specifically reviewed removed APIs.
 passes, and extended in-game use has not produced another unresolved 12.1
 regression outside Aura Frames.
 
-Player Frame, Objectives, Audio Volumes, All the Colors, Skyriding Vigor, core
+Player Frame, Objectives, Audio Volumes, Skyriding Vigor, core
 navigation, and ordinary settings tooltips do not use the indexed Aura APIs
 identified in this failure.
 

@@ -107,13 +107,13 @@ local function for_each_enabled_test_preview(callback)
     end
 end
 
-function M.start_global_test_aura_previews_paused()
+function M.start_shared_test_aura_previews_paused()
     for_each_enabled_test_preview(function(_, show_key)
         M.start_test_preview_paused(show_key)
     end)
 end
 
-function M.are_global_test_aura_previews_paused()
+function M.are_shared_test_aura_previews_paused()
     local all_paused = true
     for_each_enabled_test_preview(function(_, show_key)
         if not M.is_test_preview_paused(show_key) then all_paused = false end
@@ -121,8 +121,8 @@ function M.are_global_test_aura_previews_paused()
     return all_paused
 end
 
-function M.toggle_global_test_aura_previews()
-    local pause_previews = not M.are_global_test_aura_previews_paused()
+function M.toggle_shared_test_aura_previews_clock()
+    local pause_previews = not M.are_shared_test_aura_previews_paused()
     for_each_enabled_test_preview(function(category, show_key)
         if M.is_test_preview_paused(show_key) ~= pause_previews then
             M.toggle_test_preview_pause(show_key)
@@ -131,6 +131,19 @@ function M.toggle_global_test_aura_previews()
     end)
     if M.sync_test_aura_controls then M.sync_test_aura_controls() end
     return pause_previews
+end
+
+function M.set_shared_test_auras_enabled(enabled)
+    if not M.db then return false end
+    M.db.shared_test_auras = enabled == true
+    if enabled then M.start_shared_test_aura_previews_paused() end
+    return true
+end
+
+function M.toggle_shared_test_aura_previews()
+    if not M.is_shared_test_aura_enabled() then return false end
+    M.toggle_shared_test_aura_previews_clock()
+    return true
 end
 
 function M.get_test_aura_binding(category)

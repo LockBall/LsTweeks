@@ -366,16 +366,16 @@ local function print_aura_profile_context()
         end
     end
 
-    local global_test_auras = M.is_global_test_aura_enabled
-        and M.is_global_test_aura_enabled()
+    local shared_test_auras = M.is_shared_test_aura_enabled
+        and M.is_shared_test_aura_enabled()
         or false
-    local global_test_auras_paused = M.are_global_test_aura_previews_paused
-        and M.are_global_test_aura_previews_paused()
+    local shared_test_auras_paused = M.are_shared_test_aura_previews_paused
+        and M.are_shared_test_aura_previews_paused()
         or false
     print(format(
-        "aura_test_auras global=%s paused=%s frames=%s",
-        bool_text(global_test_auras),
-        bool_text(global_test_auras_paused),
+        "aura_test_auras shared=%s paused=%s frames=%s",
+        bool_text(shared_test_auras),
+        bool_text(shared_test_auras_paused),
         #test_auras > 0 and table.concat(test_auras, ",") or "none"
     ))
     print(format(

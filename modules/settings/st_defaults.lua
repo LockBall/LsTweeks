@@ -15,7 +15,6 @@ M.defaults = {
     modules = {
         player_frame = true,
         objectives = true,
-        all_the_colors = true,
         aura_frames = true,
         audio_volumes = true,
         skyriding_vigor = true,

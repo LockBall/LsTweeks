@@ -23,27 +23,15 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     h.eq(buffs_backend.frame_background.texture:IsShown(), false,
         "disabling Static / Long Frame BG hides the managed background")
-    local color_sync = h.addon.all_the_colors
     M.db.shared_options_enabled = true
     M.db.sync_bar_bg_static_long = true
     M.db.shared_frame_background_color = { r = 0.6, g = 0.5, b = 0.4, a = 0.3 }
-    color_sync.get_db().global_enabled = false
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
     h.ok(buffs_backend.frame_background.texture:IsShown(),
         "Shared Options can show a managed background when local Frame BG is off")
     static_long_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
     h.eq(static_long_bg_color[1], 0.6, "managed Frame BG receives the Aura shared color")
 
-    color_sync.get_db().global_enabled = true
-    color_sync.set_global_participation_enabled(
-        M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs, true)
-    color_sync.get_db().global_color = { r = 0.9, g = 0.8, b = 0.7, a = 0.6 }
-    M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
-    static_long_bg_color = buffs_backend.frame_background.texture:GetLastCall("SetColorTexture")
-    h.eq(static_long_bg_color[1], 0.9, "All the Colors globally overrides managed Frame BG")
-    h.eq(static_long_bg_color[4], 0.6, "managed Frame BG receives global override alpha")
-
-    color_sync.get_db().global_enabled = false
     M.db.shared_options_enabled = false
     M.db.bg_static_long = true
     M.update_managed_preset_frame(buffs_frame, "show_static_long", "move_static_long")
@@ -121,12 +109,12 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
     h.eq(buffs_backend.container.__groups["buffs:icon"].active_max_frame_count, 0,
         "Static / Long Buff icon group is parked")
 
-    color_sync.set_test_auras_enabled(true)
-    color_sync.refresh_consumers()
+    M.set_shared_test_auras_enabled(true)
+    M.on_shared_options_changed()
     h.ok(buffs_frame.icons[1]:IsShown(),
-        "global Test Auras shows the Static / Long mock in Bar Mode")
+        "shared Test Auras shows the Static / Long mock in Bar Mode")
     h.eq(buffs_frame.icons[1].aura_name, "Test Static / Long Buff",
-        "global Bar Mode preview uses the Static / Long label")
+        "shared Bar Mode preview uses the Static / Long label")
     local preview_point, preview_relative_to = buffs_frame.icons[1]:GetPoint(1)
     h.eq(preview_point, "LEFT", "Static / Long Bar Mode preview uses its bar anchor")
     h.eq(preview_relative_to, buffs_frame._managed_test_preview_background_anchor,
@@ -137,10 +125,10 @@ h.test("managed Static / Long Buff presentation preserves native groups and OOC 
         "Static / Long Bar Mode preview remains opposite Down growth")
     h.eq(preview_anchor_relative_point, "TOPLEFT",
         "Static / Long Bar Mode preview stays outside the live bar path")
-    color_sync.set_test_auras_enabled(false)
-    color_sync.refresh_consumers()
+    M.set_shared_test_auras_enabled(false)
+    M.on_shared_options_changed()
     h.ok(not buffs_frame.icons[1]:IsShown(),
-        "disabling global Test Auras hides the Static / Long Bar Mode mock")
+        "disabling shared Test Auras hides the Static / Long Bar Mode mock")
 
     for _, aura_button in ipairs(buffs_backend.container.__groups["buffs:bar"].buttons) do
         aura_button.CanBeAccessedInContext = function() return true end

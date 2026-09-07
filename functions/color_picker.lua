@@ -4,8 +4,8 @@
 -- The callback reason is one of open/reset/swatch/alpha/cancel.
 -- has_alpha is always forced true; every picker exposes opacity regardless of the argument passed.
 -- Every picker also injects a row of preset swatches into the system ColorPickerFrame popup itself
--- (not a separate widget), defaulting to addon.all_the_colors.PRESET_OPTIONS / COLOR_PRESETS unless
--- opts.presets / opts.color_presets override the source. opts.on_select(value) overrides the default
+-- (not a separate widget), using the palette below unless opts.presets / opts.color_presets override
+-- the source. opts.on_select(value) overrides the default
 -- apply-RGB-preserve-alpha behavior when a preset swatch is clicked; it must write db_table[db_key] itself.
 
 
@@ -23,6 +23,30 @@ local RESET_H      = 16
 local GROUP_W      = BTN_SIZE + control_gap + RESET_W
 local AUTO_VISIBLE_DEFAULT = 0.75
 local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec or 0.1
+local DEFAULT_PRESET_OPTIONS = {
+    { value = "red", text = "Red" },
+    { value = "orange", text = "Orange" },
+    { value = "yellow", text = "Yellow" },
+    { value = "green", text = "Green" },
+    { value = "blue", text = "Blue" },
+    { value = "indigo", text = "Indigo" },
+    { value = "violet", text = "Violet" },
+    { value = "black", text = "Black" },
+    { value = "white", text = "White" },
+    { value = "grey", text = "Grey" },
+}
+local DEFAULT_COLOR_PRESETS = {
+    red = { r = 1, g = 0, b = 0 },
+    orange = { r = 1, g = 0.5, b = 0 },
+    yellow = { r = 1, g = 1, b = 0 },
+    green = { r = 0, g = 1, b = 0 },
+    blue = { r = 0, g = 0, b = 1 },
+    indigo = { r = 0.294, g = 0, b = 0.51 },
+    violet = { r = 0.56, g = 0, b = 1 },
+    black = { r = 0, g = 0, b = 0 },
+    white = { r = 1, g = 1, b = 1 },
+    grey = { r = 0.5, g = 0.5, b = 0.5 },
+}
 
 -- Popup
 -- All X/Y values position the element's bottom-left corner from the popup's bottom-left corner.
@@ -509,8 +533,8 @@ end
 function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text, defaults_table, callback, opts)
     has_alpha = true
     opts = opts or {}
-    local presets = opts.presets or (addon.all_the_colors and addon.all_the_colors.PRESET_OPTIONS)
-    local color_presets_lookup = opts.color_presets or (addon.all_the_colors and addon.all_the_colors.COLOR_PRESETS)
+    local presets = opts.presets or DEFAULT_PRESET_OPTIONS
+    local color_presets_lookup = opts.color_presets or DEFAULT_COLOR_PRESETS
     local has_presets = type(presets) == "table" and #presets > 0 and type(color_presets_lookup) == "table"
     local container = addon.CreateControlPanel(parent, CONTAINER_W, CONTAINER_H)
 

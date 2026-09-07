@@ -1,4 +1,4 @@
--- Aura Frames shared colors/fonts and per-frame participation matrix.
+-- Aura Frames Shared Options controls and per-frame participation matrix.
 
 
 local _, addon = ...
@@ -24,15 +24,7 @@ local COLOR_PICKER_ROW_Y = { COLOR_PICKER_ROW_1_Y, COLOR_PICKER_ROW_2_Y }
 
 --#region SHARED OPTIONS STATE =================================================
 
-local function get_color_sync_provider()
-    local color_sync = addon.all_the_colors
-    if not (color_sync and color_sync.ensure_consumer_db) then return nil end
-    return color_sync
-end
-
 local function refresh_shared_options()
-    local color_sync = get_color_sync_provider()
-    if color_sync and color_sync.sync_controls then color_sync.sync_controls() end
     if M.on_shared_options_changed then M.on_shared_options_changed() end
 end
 
@@ -102,17 +94,9 @@ local function refresh_participation_rows()
 end
 
 function M.sync_shared_options_controls()
-    local color_sync = get_color_sync_provider()
-    if not (color_sync and M.controls and M.db) then return end
-
-    local buffs_global_active = color_sync.is_global_color_active
-        and color_sync.is_global_color_active(M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.buffs)
-    local debuffs_global_active = color_sync.is_global_color_active
-        and color_sync.is_global_color_active(M.MODULE_KEY, M.COLOR_CONSUMER_GROUPS.debuffs)
-    local global_active = buffs_global_active and debuffs_global_active
+    if not (M.controls and M.db) then return end
     local shared_enabled = M.db.shared_options_enabled == true
-    local module_controls_enabled = not global_active
-    local shared_controls_enabled = shared_enabled and module_controls_enabled
+    local shared_controls_enabled = shared_enabled
     for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
         for _, picker_def in ipairs(column.pickers) do
             local picker = M.controls[picker_def.control_key]
@@ -133,18 +117,18 @@ function M.sync_shared_options_controls()
     end
     local fade_control = M.controls.shared_options_disable_ooc_fade
     if fade_control and fade_control.SetCheckedSilently then
-        fade_control:SetCheckedSilently(color_sync.get_disable_ooc_fade())
+        fade_control:SetCheckedSilently(M.db.disable_ooc_fade == true)
     end
     local test_aura_control = M.controls.shared_options_test_auras
     if test_aura_control and test_aura_control.SetState then
         test_aura_control:SetState(
-            color_sync.get_test_auras_enabled(),
-            color_sync.are_test_aura_previews_paused(),
+            M.is_shared_test_aura_enabled(),
+            M.are_shared_test_aura_previews_paused(),
             true
         )
     end
 
-    if enabled_control then enabled_control:SetEnabled(module_controls_enabled) end
+    if enabled_control then enabled_control:SetEnabled(true) end
     if fade_control then fade_control:SetEnabled(true) end
     if M.shared_options_matrix_group then M.shared_options_matrix_group:SetAlpha(1) end
 
@@ -179,7 +163,7 @@ local function create_header_title(panel, header_grid, text, column)
     header_grid:place_at(title, 1, column, nil, { y_offset = HEADER_BAR_Y_OFFSET })
 end
 
-local function build_color_controls(parent, color_sync)
+local function build_color_controls(parent)
     local content_height = math.max(360, (parent:GetHeight() or 0) - 20)
     local content = CreateFrame("Frame", nil, parent)
     content:SetSize(GROUP_WIDTH, content_height)
@@ -212,11 +196,10 @@ local function build_color_controls(parent, color_sync)
     local fade_control = addon.CreateCheckbox(
         content,
         "Disable OOC Fade",
-        color_sync.get_disable_ooc_fade(),
+        M.db.disable_ooc_fade == true,
         function(is_checked)
-            if color_sync.set_disable_ooc_fade(is_checked) then
-                refresh_shared_options()
-            end
+            M.db.disable_ooc_fade = is_checked == true
+            refresh_shared_options()
         end
     )
     grid:place_at(fade_control, 1, 2)
@@ -224,20 +207,20 @@ local function build_color_controls(parent, color_sync)
 
     local test_aura_control, test_aura_button = addon.CreateTestAuraControl(
         content,
-        color_sync.get_test_auras_enabled(),
+        M.is_shared_test_aura_enabled(),
         function(checked)
-            if color_sync.set_test_auras_enabled(checked) then
+            if M.set_shared_test_auras_enabled(checked) then
                 M.sync_shared_options_controls()
                 refresh_shared_options()
             end
         end,
         function()
-            if color_sync.toggle_test_aura_previews() then
+            if M.toggle_shared_test_aura_previews() then
                 M.sync_shared_options_controls()
                 refresh_shared_options()
             end
         end,
-        { paused = color_sync.are_test_aura_previews_paused() }
+        { paused = M.are_shared_test_aura_previews_paused() }
     )
     grid:place_at(test_aura_control, 1, 3)
     M.controls.shared_options_test_auras = test_aura_control
@@ -434,10 +417,9 @@ local function build_participation_matrix(content, content_height)
 end
 
 function M.build_shared_options_tab(parent)
-    local color_sync = get_color_sync_provider()
-    if not (color_sync and color_sync.get_color_preset and M.db) then return end
+    if not M.db then return end
     M.shared_background_color_parent = parent
-    local content, content_height = build_color_controls(parent, color_sync)
+    local content, content_height = build_color_controls(parent)
     M.shared_background_color_group = content
     M.shared_options_matrix_group = build_participation_matrix(content, content_height)
     M.sync_shared_options_controls()

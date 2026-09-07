@@ -846,13 +846,10 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     end
 
     local function on_fade_ooc_changed(is_checked)
-        local color_sync = addon.all_the_colors
-        if is_checked and color_sync and color_sync.set_disable_ooc_fade then
-            color_sync.set_disable_ooc_fade(false)
-            if color_sync.sync_controls then color_sync.sync_controls() end
-            if M.sync_shared_options_controls then M.sync_shared_options_controls() end
-            if color_sync.refresh_consumers then
-                color_sync.refresh_consumers()
+        if is_checked and M.db and M.db.disable_ooc_fade == true then
+            M.db.disable_ooc_fade = false
+            if M.on_shared_options_changed then
+                M.on_shared_options_changed()
                 return
             end
         end

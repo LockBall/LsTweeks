@@ -294,11 +294,11 @@ local function initialize_preset_bar(
     spell_name:SetWordWrap(false)
     if spell_name.SetMaxLines then spell_name:SetMaxLines(1) end
 
-    local bar_text_color = M.resolve_text_color(
+    local bar_text_color = M.resolve_text_options(
         category,
         "bar",
-        get_preset_setting(cfg_db, category, "bar_text_color")
-    )
+        { color = get_preset_setting(cfg_db, category, "bar_text_color") }
+    ).color
     -- Duration text inherits the category-owned FontObject so Timer Text color
     -- changes continue to propagate after the immutable native binding.
     spell_name:SetTextColor(bar_text_color.r, bar_text_color.g, bar_text_color.b, 1)

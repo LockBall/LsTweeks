@@ -96,8 +96,6 @@ end)
 
 h.test("shared frame and bar colors resolve through Aura runtime configuration", function()
     local M = load_aura_frames()
-    local addon = h.addon
-    local original_sync = addon.all_the_colors
     local original_activity = M.get_frame_activity_state
     local original_timer_text = M.is_timer_text_enabled
     local original_cooldown_overlay = M.uses_cooldown_icon_overlay
@@ -106,22 +104,6 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
     local original_refresh_ticker = M.refresh_visible_icon_ticker
     local rendered_bar_background
 
-    addon.all_the_colors = {
-        resolve_color = function(module_key, target_key, color)
-            h.eq(module_key, "aura_frames", "Aura Frames requests its module color")
-            if target_key == "frame:short" then
-                return { r = 0.21, g = 0.31, b = 0.41, a = 0.51 }
-            end
-            return color
-        end,
-        resolve_module_color = function(module_key, color_key, color)
-            h.eq(module_key, "aura_frames", "Aura Frames requests its module style color")
-            if color_key == "aura_bar_bg_color" then
-                return { r = 0.61, g = 0.71, b = 0.81, a = 0.91 }
-            end
-            return color
-        end,
-    }
     M.db = {
         short_threshold = 5,
         bar_mode_short = true,
@@ -134,6 +116,10 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
         bar_bg_color_short = { r = 0, g = 0, b = 0, a = 1 },
         bar_text_color_short = { r = 1, g = 1, b = 1 },
         bg_color_short = { r = 1, g = 0, b = 0, a = 0.5 },
+        shared_options_enabled = true,
+        sync_bar_bg_short = true,
+        shared_frame_background_color = { r = 0.21, g = 0.31, b = 0.41, a = 0.51 },
+        shared_bar_background_color = { r = 0.61, g = 0.71, b = 0.81, a = 0.91 },
     }
     local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     frame.category = "short"
@@ -166,7 +152,6 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
     local bar_red = rendered_bar_background and rendered_bar_background.r
     local bar_alpha = rendered_bar_background and rendered_bar_background.a
 
-    addon.all_the_colors = original_sync
     M.get_frame_activity_state = original_activity
     M.is_timer_text_enabled = original_timer_text
     M.uses_cooldown_icon_overlay = original_cooldown_overlay
@@ -174,10 +159,10 @@ h.test("shared frame and bar colors resolve through Aura runtime configuration",
     M.refresh_frame_ooc_fade = original_refresh_fade
     M.refresh_visible_icon_ticker = original_refresh_ticker
 
-    h.eq(frame_red, 0.21, "frame override reaches backdrop")
-    h.eq(frame_alpha, 0.51, "frame override preserves alpha")
-    h.eq(bar_red, 0.61, "bar override reaches renderer")
-    h.eq(bar_alpha, 0.91, "bar override preserves alpha")
+    h.eq(frame_red, 0.21, "shared frame color reaches backdrop")
+    h.eq(frame_alpha, 0.51, "shared frame color preserves alpha")
+    h.eq(bar_red, 0.61, "shared bar color reaches renderer")
+    h.eq(bar_alpha, 0.91, "shared bar color preserves alpha")
 end)
 
 h.test("custom helpful frames retain per-entry static short and long timer classes", function()

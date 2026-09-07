@@ -303,10 +303,6 @@ local function get_effective_background_color()
         color = DEFAULT_BACKGROUND_COLOR
     end
 
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_color then
-        color = color_sync.resolve_color(M.MODULE_KEY, "custom_background", color)
-    end
     return color
 end
 
@@ -419,10 +415,6 @@ local function should_show_background_color()
     if not M.is_runtime_enabled() then return false end
 
     local local_enabled = is_background_color_enabled(db)
-    local color_sync = addon.all_the_colors
-    if color_sync and color_sync.resolve_visibility then
-        return color_sync.resolve_visibility(M.MODULE_KEY, "custom_background", local_enabled)
-    end
     return local_enabled
 end
 
@@ -946,10 +938,6 @@ end
 
 
 --#region PUBLIC API ===========================================================
-
-function M.on_background_color_sync_changed()
-    apply_configured_background_color(true)
-end
 
 function M.apply_background()
     ensure_background_hooks()
