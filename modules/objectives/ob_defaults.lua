@@ -19,7 +19,7 @@ function M.get_db()
 end
 
 function M.is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+    return addon.is_module_enabled(M.MODULE_KEY)
 end
 
 function M.get_objective_tracker()

@@ -16,9 +16,6 @@ h.test("visible icon tick clamps and snaps from centralized range metadata", fun
     local M = load_aura_frames()
     local range = M.SETTING_RANGES.aura_visible_icon_tick
     h.ok(range, "range exists")
-    h.eq(M.MIN_VISIBLE_ICON_TICK, range.min, "min compatibility constant follows range")
-    h.eq(M.MAX_VISIBLE_ICON_TICK, range.max, "max compatibility constant follows range")
-    h.eq(M.VISIBLE_ICON_TICK_STEP, range.step, "step compatibility constant follows range")
     M.db = { aura_visible_icon_tick = range.min - range.step }
     h.eq(M.get_visible_icon_tick_interval(), range.min, "below range clamps to min")
     M.db.aura_visible_icon_tick = range.max + range.step

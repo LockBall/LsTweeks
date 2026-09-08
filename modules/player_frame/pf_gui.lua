@@ -105,7 +105,7 @@ M.CATEGORY_NAME = STRINGS.category_name
 
 function M.build_options_panel(parent)
     local cfg = UI_CONFIG
-    local db = M.get_db and M.get_db()
+    local db = M.get_db()
     local grid = addon.CreateSettingsGrid(parent, {
         column_count = #FADE_SLIDER_DEFS,
         col_gap = SLIDER_WITH_BOX_SIZE.width + cfg.slider_gap_x,

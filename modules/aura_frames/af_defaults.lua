@@ -17,7 +17,7 @@ M.TEXT_OPTIONS_OVERRIDE_NOTICES = {
 }
 
 function M.is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+    return addon.is_module_enabled(M.MODULE_KEY)
 end
 
 -- Single source for built-in Aura Frame categories. Derived tables below keep
@@ -240,7 +240,6 @@ function M.get_frame_def_from_show_key(show_key)
     return M.get_frame_def(category)
 end
 
-M.UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 M.DEFAULT_FRAME_WIDTH = 200
 M.MIN_FRAME_HEIGHT = 44
@@ -270,9 +269,6 @@ M.MAX_FRAME_WIDTH = M.SETTING_RANGES.width.max
 M.MIN_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.min
 M.MAX_WOW_COOLDOWN_OOC_ALPHA = M.SETTING_RANGES.ooc_alpha.max
 M.WOW_COOLDOWN_OOC_ALPHA_STEP = M.SETTING_RANGES.ooc_alpha.step
-M.MIN_VISIBLE_ICON_TICK = M.SETTING_RANGES.aura_visible_icon_tick.min
-M.MAX_VISIBLE_ICON_TICK = M.SETTING_RANGES.aura_visible_icon_tick.max
-M.VISIBLE_ICON_TICK_STEP = M.SETTING_RANGES.aura_visible_icon_tick.step
 
 M.CUSTOM_AURA_BASE_FILTERS = {
     { value = "HELPFUL", text = "HELPFUL" },
@@ -331,7 +327,7 @@ M.defaults = {
     show_bar_section_outlines = false,
     short_threshold = M.DEFAULT_SHORT_THRESHOLD,
     learned_helpful_durations = {},
-    aura_visible_icon_tick = M.UPDATE_INTERVALS.aura_visible_icon_tick,
+    aura_visible_icon_tick = addon.UPDATE_INTERVALS.aura_visible_icon_tick,
     -- SHORT
     show_short      = true,
     move_short      = true,

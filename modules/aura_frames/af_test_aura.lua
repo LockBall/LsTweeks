@@ -129,7 +129,7 @@ function M.toggle_shared_test_aura_previews_clock()
         end
         M.refresh_test_aura_category(category)
     end)
-    if M.sync_test_aura_controls then M.sync_test_aura_controls() end
+    M.sync_test_aura_controls()
     return pause_previews
 end
 
@@ -166,7 +166,7 @@ function M.refresh_test_aura_category(category)
     local _, _, _, show_key = M.get_test_aura_binding(category)
     local frame = show_key and M.frames and M.frames[show_key]
     local params = frame and frame.update_params
-    if M.invalidate_aura_scan_caches then M.invalidate_aura_scan_caches() end
+    M.invalidate_aura_scan_caches()
     if params then
         M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
             params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
@@ -185,7 +185,7 @@ function M.set_test_aura_enabled(category, enabled)
         M.stop_test_preview_clock(show_key)
     end
     M.refresh_test_aura_category(category)
-    if M.sync_test_aura_controls then M.sync_test_aura_controls(category) end
+    M.sync_test_aura_controls(category)
     return true
 end
 
@@ -194,7 +194,7 @@ function M.toggle_test_aura_preview(category)
     if not (value_table and value_table[test_key] == true) then return false end
     M.toggle_test_preview_pause(show_key)
     M.refresh_test_aura_category(category)
-    if M.sync_test_aura_controls then M.sync_test_aura_controls(category) end
+    M.sync_test_aura_controls(category)
     return true
 end
 

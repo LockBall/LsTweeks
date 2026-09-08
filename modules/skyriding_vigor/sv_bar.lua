@@ -232,9 +232,7 @@ function M.save_position()
     db.position.relativePoint = "CENTER"
     db.position.x = xOfs or 0
     db.position.y = yOfs or 0
-    if M.sync_position_controls then
-        M.sync_position_controls(db)
-    end
+    M.sync_position_controls(db)
 end
 
 function M.apply_position()
@@ -271,7 +269,7 @@ function M.get_render_context(db)
         style_key = style_key,
         style = style,
         frame_atlas = M.get_frame_atlas(db, style_key, style),
-        spark_atlas = M.get_spark_atlas and M.get_spark_atlas(db, style_key, style) or false,
+        spark_atlas = M.get_spark_atlas(db, style_key, style) or false,
     }
     M._render_context = context
     return context
@@ -338,13 +336,13 @@ local function set_spark_atlas(slot, atlas, db, style)
 
     local fill_width, fill_height = get_fill_size(style)
     local atlas_width, atlas_height = get_atlas_size(atlas)
-    local spark_size = M.get_spark_size and M.get_spark_size(db or get_db()) or 1
+    local spark_size = M.get_spark_size(db or get_db()) or 1
     local spark_height = max(1, min(fill_height * 2, atlas_height * (fill_width / max(1, atlas_width)) * spark_size))
 
     slot.spark:SetAtlas(atlas, false)
     slot.spark:SetSize(fill_width, spark_height)
     slot.spark:SetBlendMode("ADD")
-    local color = M.get_spark_color and M.get_spark_color(db or get_db()) or { r = 1, g = 1, b = 1, a = 1 }
+    local color = M.get_spark_color(db or get_db()) or { r = 1, g = 1, b = 1, a = 1 }
     slot.spark:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
     slot._spark_atlas = atlas
 end
@@ -391,7 +389,7 @@ local function update_slot_spark(slot, state, progress, style_key, style, db, sp
         set_spark_atlas(slot, spark_atlas, db, style)
         slot._spark_bounds_set = true
     else
-        local color = M.get_spark_color and M.get_spark_color(db) or { r = 1, g = 1, b = 1, a = 1 }
+        local color = M.get_spark_color(db) or { r = 1, g = 1, b = 1, a = 1 }
         slot.spark:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, color.a or 1)
     end
 
@@ -414,9 +412,7 @@ function M.apply_spark_settings()
             slot._render_spark_atlas = nil
         end
     end
-    if M.refresh then
-        M.refresh()
-    end
+    M.refresh()
 end
 
 function M.apply_fill_color()

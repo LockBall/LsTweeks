@@ -57,12 +57,11 @@ end
 
 local function is_quick_pick_active(quick_pick_key)
     local M = get_audio_volumes_module()
-    return M and M.is_quick_pick_active and M.is_quick_pick_active(quick_pick_key) or false
+    return M.is_quick_pick_active(quick_pick_key)
 end
 
 local function apply_quick_pick(quick_pick_key)
     local M = get_audio_volumes_module()
-    if not (M and M.set_quick_pick_from_menu) then return end
     M.set_quick_pick_from_menu(quick_pick_key, not is_quick_pick_active(quick_pick_key))
 end
 
@@ -114,7 +113,7 @@ local function build_quick_pick_menu(owner)
     local module_enabled = not (addon.is_module_enabled and M and M.MODULE_KEY)
         or addon.is_module_enabled(M.MODULE_KEY)
     show_menu(owner, module_enabled, function()
-        return M and M.get_quick_pick_menu_entries and M.get_quick_pick_menu_entries() or {}
+        return M.get_quick_pick_menu_entries()
     end)
 end
 

@@ -35,7 +35,7 @@ function M.apply_audio_volumes_profile_data(data)
     M._defaults_applied = nil
     M._target_defaults_applied = nil
     M.get_db()
-    if M.on_reset_complete then M.on_reset_complete() end
+    M.on_reset_complete()
     return true, "Loaded profile."
 end
 

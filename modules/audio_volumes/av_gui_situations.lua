@@ -28,7 +28,7 @@ end
 function M.sync_temporary_profile_controls()
     local focus_db = M.get_fishing_focus_db()
     local combat_db = M.get_combat_volumes_db()
-    local quiet_custom_db = M.get_quiet_custom_db and M.get_quiet_custom_db() or nil
+    local quiet_custom_db = M.get_quiet_custom_db() or nil
     set_checked_silently(M.controls.fishing_focus_enabled, focus_db.enabled)
     set_checked_silently(M.controls.combat_volumes_enabled, combat_db.enabled)
     if quiet_custom_db then
@@ -48,7 +48,7 @@ function M.sync_temporary_profile_controls()
             quiet_slider:SetValueSilently(quiet_custom_db[channel.key])
         end
     end
-    local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
+    local custom_situations = M.get_custom_situations_db() or {}
     for situation_id, situation in pairs(custom_situations) do
         local situation_key = "custom:" .. situation_id
         local enabled_control = M.controls[get_situation_control_key(situation_key, "enabled")]
@@ -91,16 +91,12 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
     play_button:SetSize(54, 20)
     play_button:SetPoint("RIGHT", title_bar, "RIGHT", -8, 0)
     play_button:SetText("Play")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(play_button)
-    end
+    addon.ApplyStandardButtonStyle(play_button)
     play_button:SetScript("OnClick", function()
         if opts.on_play then
             opts.on_play()
-        elseif M.play_situation_preview then
-            M.play_situation_preview(play_profile_key)
         else
-            M.play_fishing_bobber_preview(play_profile_key)
+            M.play_situation_preview(play_profile_key)
         end
     end)
 
@@ -109,9 +105,7 @@ local function create_situation_header_bar(parent, title_text, play_profile_key,
         action_button:SetSize(action.width or 84, 20)
         action_button:SetPoint("RIGHT", play_button, "LEFT", -6, 0)
         action_button:SetText(action.label or "")
-        if addon.ApplyStandardButtonStyle then
-            addon.ApplyStandardButtonStyle(action_button)
-        end
+        addon.ApplyStandardButtonStyle(action_button)
         action_button:SetScript("OnClick", action.on_click)
     end
 
@@ -236,7 +230,7 @@ function M.BuildSituationsTab(parent)
             on_select = function(value)
                 local entry = selected_key and get_situation_entry and get_situation_entry(selected_key)
                 if not (entry and entry.db) then return end
-                entry.db.test_sound = M.get_valid_test_sound_key and M.get_valid_test_sound_key(value, "bloodlust") or value
+                entry.db.test_sound = M.get_valid_test_sound_key(value, "bloodlust") or value
             end,
         }
     )
@@ -253,11 +247,7 @@ function M.BuildSituationsTab(parent)
 
     create_situation_header_bar(current_panel, "Normal", "current", nil, {
         on_play = function()
-            if M.play_situation_preview then
-                M.play_situation_preview("current", get_selected_test_sound_key())
-            else
-                M.play_fishing_bobber_preview("current")
-            end
+            M.play_situation_preview("current", get_selected_test_sound_key())
         end,
     })
 
@@ -307,7 +297,7 @@ function M.BuildSituationsTab(parent)
             M.resync_fishing_focus()
         elseif entry.key == "combat" then
             M.resync_combat_volumes()
-        elseif M.resync_manual_situation_profile then
+        else
             M.resync_manual_situation_profile(entry.key)
         end
     end
@@ -345,7 +335,7 @@ function M.BuildSituationsTab(parent)
         entries[#entries + 1] = { key = "combat", label = "Combat", db = combat_db, profile_key = "combat", trigger = "combat", group = "triggered" }
         entries[#entries + 1] = { label = "Quick Picks", header = true, group = "quick_picks", default_key = "quiet_custom" }
         entries[#entries + 1] = { key = "quiet_custom", label = quiet_custom_db.name or "Quiet Custom", db = quiet_custom_db, profile_key = "quiet_custom", renameable = true, group = "quick_picks" }
-        local custom_situations = M.get_custom_situations_db and M.get_custom_situations_db() or {}
+        local custom_situations = M.get_custom_situations_db() or {}
         local custom_ids = {}
         for situation_id in pairs(custom_situations) do
             custom_ids[#custom_ids + 1] = situation_id
@@ -511,7 +501,7 @@ function M.BuildSituationsTab(parent)
         end
 
         local fallback = "bloodlust"
-        entry.db.test_sound = M.get_valid_test_sound_key and M.get_valid_test_sound_key(entry.db.test_sound, fallback) or entry.db.test_sound
+        entry.db.test_sound = M.get_valid_test_sound_key(entry.db.test_sound, fallback) or entry.db.test_sound
         test_sound_dropdown:SetValue(entry.db.test_sound)
         test_sound_dropdown:Show()
     end
@@ -527,9 +517,7 @@ function M.BuildSituationsTab(parent)
             label = "Use Normal",
             width = 86,
             on_click = function()
-                if M.copy_current_sound_channels_to_situation then
-                    M.copy_current_sound_channels_to_situation(entry.key)
-                end
+                M.copy_current_sound_channels_to_situation(entry.key)
                 M.sync_temporary_profile_controls()
                 resync_situation_runtime(entry)
             end,
@@ -592,7 +580,7 @@ function M.BuildSituationsTab(parent)
                     situation_panels[delete_key]:Hide()
                     situation_panels[delete_key] = nil
                 end
-                if M.delete_custom_situation and M.delete_custom_situation(delete_key) then
+                if M.delete_custom_situation(delete_key) then
                     selected_key = selected_key == delete_key and "quiet_custom" or selected_key
                     rebuild_situation_list()
                     select_situation(get_situation_entry(selected_key) and selected_key or fallback_selection_key)
@@ -606,12 +594,10 @@ function M.BuildSituationsTab(parent)
     end
 
     situation_list_panel:SetGroupAction("quick_picks", "+ Custom", function()
-        if M.create_custom_situation then
-            local situation_key = M.create_custom_situation()
+        local situation_key = M.create_custom_situation()
             db[selection_db_key] = situation_key
             rebuild_situation_list()
             select_situation(situation_key)
-        end
     end, {
         width = UI.fishing_slider_width - 18,
         x = 9,

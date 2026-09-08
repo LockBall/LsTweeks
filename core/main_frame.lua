@@ -270,9 +270,7 @@ function addon.init_main_frame()
             btn:SetPoint("TOPLEFT", frame.sidebar, "TOPLEFT", 10, y)
             btn:SetText(cat.name)
             btn:SetEnabled(true)
-            if addon.ApplyStandardButtonStyle then
-                addon.ApplyStandardButtonStyle(btn)
-            end
+            addon.ApplyStandardButtonStyle(btn)
             btn._category = cat
             btn:SetScript("OnClick", function()
                 select_tab(cat, btn)
@@ -324,7 +322,7 @@ function addon.init_main_frame()
     -- Every time the main frame is shown, refresh the sidebar and apply saved alpha
     frame:SetScript("OnShow", function()
         RefreshSidebar()
-        if addon.apply_interface_alpha then addon.apply_interface_alpha() end
+        addon.apply_interface_alpha()
     end)
 end
 

@@ -89,7 +89,7 @@ end
 
 function M.get_visible_icon_tick_interval()
     local default_interval = M.defaults.aura_visible_icon_tick
-        or M.UPDATE_INTERVALS.aura_visible_icon_tick
+        or addon.UPDATE_INTERVALS.aura_visible_icon_tick
     local value = M.db and tonumber(M.db.aura_visible_icon_tick) or default_interval
     local range = M.SETTING_RANGES.aura_visible_icon_tick
     local min_interval = range.min
@@ -129,7 +129,7 @@ end
 -- Started on demand and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
     if M.is_runtime_enabled and not M.is_runtime_enabled() then
-        if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
+        M.stop_visible_icon_ticker()
         return false
     end
 

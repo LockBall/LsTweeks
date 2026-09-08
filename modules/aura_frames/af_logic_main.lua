@@ -33,10 +33,8 @@ end
 
 function M.on_shared_options_changed()
     M.invalidate_all_frame_runtime_config()
-    if M.sync_shared_options_controls then
-        M.sync_shared_options_controls()
-    end
-    if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+    M.sync_shared_options_controls()
+    M.apply_number_font_to_all()
     if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
 
     local frames_list = M.frames_list
@@ -334,9 +332,7 @@ function M.set_aura_frame_hovered(frame, hovered)
     hovered = hovered == true
     if frame._is_mouse_over == hovered then return end
     frame._is_mouse_over = hovered
-    if M.refresh_frame_ooc_fade then
-        M.refresh_frame_ooc_fade(frame)
-    end
+    M.refresh_frame_ooc_fade(frame)
 end
 
 local function apply_position_if_changed(frame, scale_key, fallback_y, scale)
@@ -412,25 +408,21 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     local preview_enabled = activity.test_aura == true
     if not activity.enabled then
         self._display_count = 0
-        if M.hide_managed_test_preview_background then
-            M.hide_managed_test_preview_background(self)
-        end
+        M.hide_managed_test_preview_background(self)
         if self._managed_cdm_backend and M.set_managed_aura_backend_enabled then
             M.set_managed_aura_backend_enabled(self._managed_cdm_backend, false)
         end
-        if M.apply_addon_frame_background then
-            M.apply_addon_frame_background(self, {
+        M.apply_addon_frame_background(self, {
                 display_count = 0,
                 enabled = false,
                 in_combat = InCombatLockdown and InCombatLockdown(),
                 is_moving = false,
             })
-        end
         cancel_frame_ooc_fade(self)
         set_alpha_if_changed(self, 1)
         set_shown_if_changed(self, false)
         M.update_aura_frame_move_controls(self, false)
-        if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
+        M.refresh_visible_icon_ticker()
         return
     end
 
@@ -517,12 +509,10 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     local managed_cdm_aura_mode = false
     if self._managed_cdm_backend and M.refresh_managed_cdm_backend then
         M.refresh_managed_cdm_backend(self, bar_mode)
-        if M.set_managed_cdm_move_outline_shown then
-            managed_cdm_aura_mode = M.set_managed_cdm_move_outline_shown(self, is_moving)
-        end
+        managed_cdm_aura_mode = M.set_managed_cdm_move_outline_shown(self, is_moving)
     end
 
-    if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
+    M.refresh_visible_icon_ticker()
 
     local new_height = M.get_aura_frame_height(
         self._layout_cache,
@@ -544,9 +534,9 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
         is_moving = is_moving,
         suppressed = managed_cdm_aura_mode or managed_preview,
     })
-    if managed_preview and M.apply_managed_test_preview_background then
+    if managed_preview then
         M.apply_managed_test_preview_background(self, cfg_db, category)
-    elseif M.hide_managed_test_preview_background then
+    else
         M.hide_managed_test_preview_background(self)
     end
 end

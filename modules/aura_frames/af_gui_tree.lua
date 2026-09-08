@@ -12,7 +12,7 @@ local GetTime = GetTime
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 function M.build_frames_tab(p, frames_data)
-    local UPDATE_INTERVALS = M.UPDATE_INTERVALS
+    local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
     -- Left tree list sidebar
     local TREE_W         = 140
@@ -42,7 +42,7 @@ function M.build_frames_tab(p, frames_data)
     M.apply_thin_border_backdrop(tree_frame, { r = 0.08, g = 0.08, b = 0.08, a = 0.9 }, { r = 0.4, g = 0.4, b = 0.4, a = 0.8 })
     addon.alpha_affected_frames = addon.alpha_affected_frames or {}
     table.insert(addon.alpha_affected_frames, { frame = tree_frame, r = 0.08, g = 0.08, b = 0.08 })
-    if addon.apply_interface_alpha then addon.apply_interface_alpha() end
+    addon.apply_interface_alpha()
 
     local show_grid_container = addon.CreateCheckbox(tree_frame, "Show Grid", M.db.show_grid == true,
         function(is_checked)
@@ -279,7 +279,7 @@ function M.build_frames_tab(p, frames_data)
                     if new_name and new_name ~= "" then
                         entry.name = new_name
                         cat_fs:SetText(new_name)
-                        if M.update_custom_frame_title then M.update_custom_frame_title(entry) end
+                        M.update_custom_frame_title(entry)
                         -- Rebuild cached settings panel so its header reflects the new name
                         invalidate_node(cat_key)
                         show_node(cat_key, function(pnl) M.build_custom_settings_panel(pnl, entry) end)
@@ -407,9 +407,7 @@ function M.build_frames_tab(p, frames_data)
             add_btn:SetSize(TREE_W - PAD * 2, ROW_H)
             add_btn:SetPoint("TOPLEFT", tree_frame, "TOPLEFT", PAD, add_y)
             add_btn:SetText("+ Custom")
-            if addon.ApplyStandardButtonStyle then
-                addon.ApplyStandardButtonStyle(add_btn)
-            end
+            addon.ApplyStandardButtonStyle(add_btn)
             add_btn:SetEnabled(not max_reached)
             add_btn:SetAlpha(max_reached and 0.4 or 1)
             add_btn:SetScript("OnClick", function()
@@ -474,9 +472,7 @@ function M.build_frames_tab(p, frames_data)
     cooldown_group_title_btn:SetSize(GROUP_TITLE_W, GROUP_TITLE_H)
     cooldown_group_title_btn:Hide()
     cooldown_group_title_btn:SetText("WoW Cooldown")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(cooldown_group_title_btn)
-    end
+    addon.ApplyStandardButtonStyle(cooldown_group_title_btn)
     addon.AttachTooltip(cooldown_group_title_btn, nil, "Use this to set auras in frames.")
     cooldown_group_title_btn:SetScript("OnClick", function()
         local function hook_cdm_settings_panel(panel)
@@ -513,9 +509,7 @@ function M.build_frames_tab(p, frames_data)
     sync_cdm_btn:SetSize(GROUP_TITLE_W, SYNC_CDM_H)
     sync_cdm_btn:Hide()
     sync_cdm_btn:SetText("Sync to CDM")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(sync_cdm_btn)
-    end
+    addon.ApplyStandardButtonStyle(sync_cdm_btn)
     sync_cdm_btn:SetScript("OnEnter", function(self)
         addon.ShowOwnedTooltipLines(self, {
             {

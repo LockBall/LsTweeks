@@ -201,14 +201,10 @@ local function on_event(self, _, name)
     init_db()
 
     -- Initialize the core UI frame
-    if addon.init_main_frame then
-        addon.init_main_frame()
-    end
+    addon.init_main_frame()
 
     -- Initialize the LDB/Minimap button
-    if addon.init_minimap_button then
-        addon.init_minimap_button()
-    end
+    addon.init_minimap_button()
 
     -- Note: Aura Frames will initialize themselves in af_main.lua
     -- using the Ls_Tweeks_DB.aura_frames table we ensured exists above.

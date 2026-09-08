@@ -13,7 +13,7 @@ local securecallfunction = securecallfunction
 --#region COOLDOWN MANAGER DATA ===============================================
 
 local function get_cdm_category(category)
-    local frame_def = M.get_frame_def and M.get_frame_def(category)
+    local frame_def = M.get_frame_def(category)
     local enum = Enum and Enum.CooldownViewerCategory
     return frame_def and enum and enum[frame_def.cdm_category_enum]
 end
@@ -42,7 +42,7 @@ local function read_effective_category_ids(get_ordered_ids, provider, category_e
 end
 
 local function get_effective_cooldown_ids(category_enum)
-    if M.ensure_blizz_cdm_loaded then M.ensure_blizz_cdm_loaded() end
+    M.ensure_blizz_cdm_loaded()
     local settings = CooldownViewerSettings
     local settings_mixin = CooldownViewerSettingsMixin
     local provider_mixin = CooldownViewerSettingsDataProviderMixin
@@ -430,8 +430,7 @@ function M.create_managed_cdm_backend(frame, cfg_db, category)
     backend.bar_regions = {}
     backend.icon_cooldowns = {}
     M.initialize_managed_frame_background(backend, frame)
-    backend.move_outline = M.create_managed_container_move_outline
-        and M.create_managed_container_move_outline(backend.container)
+    backend.move_outline = M.create_managed_container_move_outline(backend.container)
     frame._managed_cdm_backend = backend
 
     local source_records = get_ordered_cooldown_records(category)

@@ -67,9 +67,7 @@ local function is_frame_category_cancelable(frame)
 end
 
 local function refresh_aura_frames_after_cancel()
-    if M.invalidate_aura_scan_caches then
-        M.invalidate_aura_scan_caches()
-    end
+    M.invalidate_aura_scan_caches()
 
     local function refresh()
         if not M.update_auras then return end
@@ -86,7 +84,7 @@ local function refresh_aura_frames_after_cancel()
     end
 
     if C_Timer and C_Timer.After then
-        C_Timer.After(M.UPDATE_INTERVALS.next_frame, refresh)
+        C_Timer.After(addon.UPDATE_INTERVALS.next_frame, refresh)
     else
         refresh()
     end

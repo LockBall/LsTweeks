@@ -221,10 +221,8 @@ local function ensure_objective_border(tracker)
 end
 
 local function sync_objective_border()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+    if M.is_objectives_combat_locked() then
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -342,22 +340,10 @@ local function set_wow_background_opacity(opacity, update_edit_mode)
         local manager = EditModeManagerFrame
         if manager and manager.OnSystemSettingChange then
             background_alpha_applying = true
-            local ok = pcall(manager.OnSystemSettingChange, manager, tracker, setting, percent)
+            manager:OnSystemSettingChange(tracker, setting, percent)
             background_alpha_applying = false
-            if ok then
-                background_edit_mode_state = "edit_mode:" .. tostring(percent)
-                return true
-            end
-        end
-
-        if tracker.UpdateSystemSettingValue then
-            background_alpha_applying = true
-            local ok = pcall(tracker.UpdateSystemSettingValue, tracker, setting, percent)
-            background_alpha_applying = false
-            if ok then
-                background_edit_mode_state = "system_frame:" .. tostring(percent)
-                return true
-            end
+            background_edit_mode_state = "edit_mode:" .. tostring(percent)
+            return true
         end
     end
 
@@ -586,11 +572,9 @@ end
 
 local function apply_configured_background_color(force)
     if not M.is_runtime_enabled() then return end
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         background_color_state = "combat_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -690,11 +674,9 @@ local function check_collapsed_background_anchor(reason)
     local tracker = get_objective_tracker()
     local background = tracker and tracker.NineSlice
     if not tracker or not background or not M.is_runtime_enabled() then return end
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         background_last_state = "combat_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
     if not is_tracker_collapsed(tracker) then return end
@@ -721,11 +703,9 @@ local function sync_objective_background(reason)
         return
     end
 
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         background_last_state = "combat_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -941,11 +921,9 @@ end
 
 function M.apply_background()
     ensure_background_hooks()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         background_last_state = "combat_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -963,7 +941,7 @@ function M.apply_background()
 end
 
 function M.restore_background()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         background_last_state = "combat_restore_deferred"
         if M.restore_objective_move_mode then
             M.restore_objective_move_mode()
@@ -971,9 +949,7 @@ function M.restore_background()
         if M.restore_objective_position then
             M.restore_objective_position()
         end
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -1066,10 +1042,8 @@ local function set_customize_background(enabled)
     db.customize_background = enabled == true
     sync_background_controls()
     apply_configured_background_color(true)
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+    if M.is_objectives_combat_locked() then
+        M.defer_objectives_combat_update()
     end
     queue_background_sync("background setting changed")
 end

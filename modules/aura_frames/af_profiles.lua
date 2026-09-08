@@ -76,7 +76,7 @@ end
 
 function M.apply_aura_frame_profile_data(data)
     if not (M.db and data) then return false, "Profile data is missing." end
-    if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
+    addon.CloseFontOptionsPopup(false)
     apply_keys(data, M.db, PROFILE_GLOBAL_KEYS)
     for _, category in ipairs(M.CATEGORIES or {}) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
@@ -95,14 +95,12 @@ function M.apply_aura_frame_profile_data(data)
     M.db.positions = copy(data.positions or {})
     M.db.custom_frames = copy(data.custom_frames or {})
     addon.apply_defaults(M.defaults, M.db)
-    if M.normalize_saved_colors then M.normalize_saved_colors(M.db) end
-    if M.create_custom_frame then
-        for _, entry in ipairs(M.db.custom_frames) do
+    M.normalize_saved_colors(M.db)
+    for _, entry in ipairs(M.db.custom_frames) do
             local show_key = entry.id and ("show_" .. entry.id)
             if show_key and M.frames and not M.frames[show_key] then M.create_custom_frame(entry) end
         end
-    end
-    if M.on_reset_complete then M.on_reset_complete() end
+    M.on_reset_complete()
     return true, "Loaded profile."
 end
 

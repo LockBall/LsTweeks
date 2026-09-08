@@ -266,7 +266,7 @@ end
 -- entirely by compact managed Aura groups and therefore returns no map entries.
 function M.add_cooldown_viewer_category_entries(target_map, category)
     if not (M.db and M.db["cooldown_mode_" .. category]) then return end
-    local records = M.get_ordered_cdm_records and M.get_ordered_cdm_records(category)
+    local records = M.get_ordered_cdm_records(category)
     if not records then return end
 
     for _, record in ipairs(records) do

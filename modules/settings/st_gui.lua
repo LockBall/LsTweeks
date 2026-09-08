@@ -122,11 +122,9 @@ function M.build_settings_page(parent)
         local module_container = addon.CreateCheckbox(
             modules_group,
             row_module_def.label,
-            addon.is_module_enabled and addon.is_module_enabled(row_module_def.key),
+            addon.is_module_enabled(row_module_def.key),
             function(is_checked)
-                if addon.set_module_enabled then
-                    addon.set_module_enabled(row_module_def.key, is_checked)
-                end
+                addon.set_module_enabled(row_module_def.key, is_checked)
             end
         )
         M.controls["module_" .. row_module_def.key] = module_container
@@ -157,7 +155,7 @@ function M.sync_settings_controls()
     for _, module_def in ipairs(addon.FEATURE_MODULES) do
         local module_cb = M.controls["module_" .. module_def.key]
         if module_cb and module_cb.SetCheckedSilently then
-            module_cb:SetCheckedSilently(addon.is_module_enabled and addon.is_module_enabled(module_def.key))
+            module_cb:SetCheckedSilently(addon.is_module_enabled(module_def.key))
         end
     end
 end

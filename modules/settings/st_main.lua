@@ -41,9 +41,7 @@ function M.on_reset_complete()
     addon.apply_defaults(defaults, Ls_Tweeks_DB)
     apply_interface_alpha()
 
-    if M.sync_settings_controls then
-        M.sync_settings_controls()
-    end
+    M.sync_settings_controls()
 end
 
 -- Module initializer
@@ -54,9 +52,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         local defaults = addon.module_defaults.st
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
-        if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.build_settings_page, { order = 200 })
-        end
+        addon.register_category(M.CATEGORY_NAME, M.build_settings_page, { order = 200 })
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)
     end

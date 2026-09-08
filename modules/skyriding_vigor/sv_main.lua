@@ -89,30 +89,18 @@ local function normalize_db(db, include_race_controls)
     db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color and DEFAULTS.spark_color.g or 1, COLOR_COMPONENT_RANGE)
     db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color and DEFAULTS.spark_color.b or 1, COLOR_COMPONENT_RANGE)
     db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color and DEFAULTS.spark_color.a or 1, COLOR_COMPONENT_RANGE)
-    if M.get_valid_bar_style_key then
-        db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
-    else
-        db.style = db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT
+    db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
+    local style_layout = M.get_style_layout_table(db, db.style, true)
+    if style_layout then
+        style_layout.scale = clamp_number(style_layout.scale, M.get_style_layout_default(db.style, "scale"), SETTING_RANGES.scale)
+        local fill_add_default = M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
+        style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_RANGES.fill_add_alpha)
     end
-    if M.get_style_layout_table then
-        local style_layout = M.get_style_layout_table(db, db.style, true)
-        if style_layout then
-            style_layout.scale = clamp_number(style_layout.scale, M.get_style_layout_default(db.style, "scale"), SETTING_RANGES.scale)
-            local fill_add_default = M.get_style_layout_default and M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
-            style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_RANGES.fill_add_alpha)
-        end
-    end
-    if M.get_valid_decor_style_key then
-        db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
-    else
-        db.decor_style = db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT
-    end
-    if M.get_decor_layout_table then
-        local decor_layout = M.get_decor_layout_table(db, db.decor_style, true)
-        if decor_layout then
-            local decor_scale_default = M.get_decor_layout_default and M.get_decor_layout_default(db.decor_style, "scale") or 1
-            decor_layout.scale = clamp_number(decor_layout.scale, decor_scale_default, SETTING_RANGES.decor_scale)
-        end
+    db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
+    local decor_layout = M.get_decor_layout_table(db, db.decor_style, true)
+    if decor_layout then
+        local decor_scale_default = M.get_decor_layout_default(db.decor_style, "scale") or 1
+        decor_layout.scale = clamp_number(decor_layout.scale, decor_scale_default, SETTING_RANGES.decor_scale)
     end
     db.position = db.position or {}
     db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_RANGES.x_position)
@@ -175,9 +163,7 @@ local function get_db()
         M._active_db = active_db
         M._active_profile_key = profile_key
         M._active_profile_changed = true
-        if M.invalidate_layout then
-            M.invalidate_layout()
-        end
+        M.invalidate_layout()
     end
     return active_db
 end
@@ -190,7 +176,7 @@ M.get_db = get_db
 --#region RUNTIME LIFECYCLE ====================================================
 -- Start/stop helpers for module-owned events, frame visibility, and update work.
 function M.is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+    return addon.is_module_enabled(M.MODULE_KEY)
 end
 
 local function stop_progress_driver()
@@ -244,9 +230,7 @@ local function hide_runtime_frame(clear_test)
     if clear_test then
         M._fill_test_enabled = false
         M._fill_test_started_at = nil
-        if M.sync_fill_test_button then
-            M.sync_fill_test_button()
-        end
+        M.sync_fill_test_button()
     end
     if M.frame then
         M.restore_frame_alpha(M.frame)
@@ -266,9 +250,7 @@ function M.stop_runtime()
     M._race_profile_test_enabled = false
     M._race_active = false
     hide_runtime_frame(true)
-    if M.sync_race_profile_controls then
-        M.sync_race_profile_controls(get_root_db())
-    end
+    M.sync_race_profile_controls(get_root_db())
     sync_runtime_events(false)
 end
 --#endregion RUNTIME LIFECYCLE =================================================
@@ -281,10 +263,8 @@ function M.is_race_profile_active()
 end
 
 function M.set_race_profile_enabled(enabled)
-    if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-        if M.sync_settings_controls then
-            M.sync_settings_controls(get_db())
-        end
+    if M.is_settings_locked_by_flight() then
+        M.sync_settings_controls(get_db())
         return
     end
 
@@ -304,17 +284,13 @@ function M.set_race_profile_enabled(enabled)
 
     M._db_normalized = false
     refresh_runtime_event_registration()
-    if M.sync_race_profile_controls then
-        M.sync_race_profile_controls(root_db)
-    end
+    M.sync_race_profile_controls(root_db)
     M.refresh()
 end
 
 function M.set_race_profile_test_enabled(enabled)
-    if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-        if M.sync_settings_controls then
-            M.sync_settings_controls(get_db())
-        end
+    if M.is_settings_locked_by_flight() then
+        M.sync_settings_controls(get_db())
         return
     end
 
@@ -322,9 +298,7 @@ function M.set_race_profile_test_enabled(enabled)
     if not root_db or not root_db.race_profile_enabled then return end
 
     M._race_profile_test_enabled = enabled and true or false
-    if M.sync_race_profile_controls then
-        M.sync_race_profile_controls(root_db)
-    end
+    M.sync_race_profile_controls(root_db)
     M.refresh()
 end
 
@@ -413,7 +387,7 @@ local function is_real_active_flight(is_gliding, can_glide)
         if not M.get_gliding_state then return false end
         is_gliding, can_glide = M.get_gliding_state()
     end
-    return is_gliding or (can_glide and M.is_player_flying and M.is_player_flying()) or false
+    return is_gliding or (can_glide and M.is_player_flying()) or false
 end
 
 function M.refresh()
@@ -457,13 +431,9 @@ function M.refresh()
     if M._fill_test_enabled and is_real_active_flight(is_gliding, can_glide) then
         M._fill_test_enabled = false
         M._fill_test_started_at = nil
-        if M.sync_fill_test_button then
-            M.sync_fill_test_button()
-        end
+        M.sync_fill_test_button()
     end
-    if M.sync_settings_controls_enabled then
-        M.sync_settings_controls_enabled()
-    end
+    M.sync_settings_controls_enabled()
 
     local is_flying = can_glide and M.is_player_flying()
     local is_mounted_in_vigor_area = can_glide and not is_flying
@@ -491,7 +461,7 @@ function M.refresh()
     end
 
     local is_ridealong_passenger = not M._fill_test_enabled and not db.move_mode
-        and M.is_player_ridealong_passenger and M.is_player_ridealong_passenger()
+        and M.is_player_ridealong_passenger()
     local should_show = current and max_charges
         and not is_ridealong_passenger
         and visibility_state_active
@@ -517,7 +487,7 @@ function M.refresh()
         filling_slot_index = current + 1
     end
 
-    local render_context = M.get_render_context and M.get_render_context(db) or nil
+    local render_context = M.get_render_context(db) or nil
     for i = 1, max_slots do
         if i <= max_charges then
             M.set_slot_visible(i, true)
@@ -559,7 +529,7 @@ end
 
 if addon.register_module_status then
     addon.register_module_status(M.MODULE_KEY, function()
-        local root_db = M.get_root_db and M.get_root_db()
+        local root_db = M.get_root_db()
         return {
             "runtime_events=" .. tostring(M._runtime_events_registered == true),
             "frame_shown=" .. tostring(M.frame and M.frame:IsShown() == true),
@@ -584,10 +554,8 @@ function M.set_fill_test_enabled(enabled)
 
     enabled = enabled and true or false
     if M._fill_test_enabled == enabled then return end
-    if enabled and M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-        if M.sync_fill_test_button then
-            M.sync_fill_test_button()
-        end
+    if enabled and M.is_settings_locked_by_flight() then
+        M.sync_fill_test_button()
         return
     end
 
@@ -595,9 +563,7 @@ function M.set_fill_test_enabled(enabled)
     if enabled and (not db or not db.enabled) then return end
 
     M._fill_test_enabled = enabled
-    if M.sync_fill_test_button then
-        M.sync_fill_test_button()
-    end
+    M.sync_fill_test_button()
 
     if enabled then
         stop_progress_driver()
@@ -624,9 +590,7 @@ end
 
 local function reject_settings_change_during_flight()
     if not M.is_settings_locked_by_flight() then return false end
-    if M.sync_settings_controls then
-        M.sync_settings_controls(get_db())
-    end
+    M.sync_settings_controls(get_db())
     return true
 end
 
@@ -638,16 +602,10 @@ function M.on_reset_complete()
     M._db_normalized = false
     local db = get_db()
     if not db then return end
-    if M.invalidate_layout then
-        M.invalidate_layout()
-    end
+    M.invalidate_layout()
 
-    if M.sync_settings_controls then
-        M.sync_settings_controls(db)
-    end
-    if M.apply_fill_color then
-        M.apply_fill_color()
-    end
+    M.sync_settings_controls(db)
+    M.apply_fill_color()
     M.apply_position()
     M.refresh()
 end
@@ -665,48 +623,38 @@ function M.set_db_value(key, value)
         value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
     elseif key == "progress_update_hz" then
         value = clamp_number(value, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
-    elseif key == "style" and M.get_valid_bar_style_key then
+    elseif key == "style" then
         value = M.get_valid_bar_style_key(value)
-    elseif key == "scale" and M.set_style_scale then
+    elseif key == "scale" then
         M.set_style_scale(value)
         return
-    elseif key == "fill_add_alpha" and M.set_style_fill_add_alpha then
+    elseif key == "fill_add_alpha" then
         M.set_style_fill_add_alpha(value)
         return
-    elseif key == "node_color" and M.set_node_color then
+    elseif key == "node_color" then
         M.set_node_color(value)
         return
-    elseif key == "decor_style" and M.get_valid_decor_style_key then
+    elseif key == "decor_style" then
         value = M.get_valid_decor_style_key(value)
-    elseif key == "decor_color" and M.set_decor_color then
+    elseif key == "decor_color" then
         M.set_decor_color(value)
         return
     end
     db[key] = value
-    if key == "style" and M.get_style_layout_table then
+    if key == "style" then
         M.get_style_layout_table(db, value, true)
-        if M.sync_slider_controls then
-            M.sync_slider_controls(db)
-        end
-        if M.sync_style_color_controls then
-            M.sync_style_color_controls()
-        end
-        if M.sync_node_color_controls then
-            M.sync_node_color_controls()
-        end
+        M.sync_slider_controls(db)
+        M.sync_style_color_controls()
+        M.sync_node_color_controls()
     end
-    if key == "decor_style" and M.get_decor_layout_table then
+    if key == "decor_style" then
         M.get_decor_layout_table(db, value, true)
-        if M.sync_decor_position_controls then
-            M.sync_decor_position_controls(db)
-        end
-        if M.sync_decor_color_controls then
-            M.sync_decor_color_controls()
-        end
+        M.sync_decor_position_controls(db)
+        M.sync_decor_color_controls()
     end
     if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
         M.refresh_layout()
-    elseif key == "spark_size" and M.apply_spark_settings then
+    elseif key == "spark_size" then
         M.apply_spark_settings()
     else
         M.refresh()
@@ -716,9 +664,7 @@ end
 function M.refresh_layout()
     if reject_settings_change_during_flight() then return end
 
-    if M.invalidate_layout then
-        M.invalidate_layout()
-    end
+    M.invalidate_layout()
     M.refresh()
 end
 
@@ -766,9 +712,7 @@ function M.reset_position()
     addon.deep_copy_into(DEFAULTS.position or {}, db.position)
     M.apply_position()
     M.refresh()
-    if M.sync_position_controls then
-        M.sync_position_controls(db)
-    end
+    M.sync_position_controls(db)
 end
 --#endregion SETTINGS MUTATION =================================================
 
@@ -794,9 +738,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         local root_db = get_root_db()
         update_race_active_state(root_db)
-        if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 800, module_key = M.MODULE_KEY })
-        end
+        addon.register_category(M.CATEGORY_NAME, M.BuildSettings, { order = 800, module_key = M.MODULE_KEY })
         M.refresh()
         return
     end

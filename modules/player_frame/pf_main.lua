@@ -53,7 +53,7 @@ end
 --#region RUNTIME LOGIC ========================================================
 
 local function is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(MODULE_KEY)
+    return addon.is_module_enabled(MODULE_KEY)
 end
 
 local function get_hit_indicator()
@@ -232,9 +232,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         Ls_Tweeks_DB = Ls_Tweeks_DB or {}
         addon.apply_defaults(defaults, Ls_Tweeks_DB)
 
-        if addon.register_category then
-            addon.register_category(M.CATEGORY_NAME, M.build_options_panel, { order = 700, module_key = MODULE_KEY })
-        end
+        addon.register_category(M.CATEGORY_NAME, M.build_options_panel, { order = 700, module_key = MODULE_KEY })
     elseif event == "PLAYER_ENTERING_WORLD" then
         M.update_player_frame()
         init_complete(self)

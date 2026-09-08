@@ -14,27 +14,15 @@ local _UnmuteSoundFile = (C_Sound and C_Sound.UnmuteSoundFile) or UnmuteSoundFil
 --#region RUNTIME LIFECYCLE ====================================================
 
 function M.stop_runtime()
-    if M.stop_all_previews then
-        M.stop_all_previews()
-    end
-    if M.restore_fishing_focus then
-        M.restore_fishing_focus()
-    end
-    if M.restore_combat_volumes then
-        M.restore_combat_volumes()
-    end
-    if M.restore_manual_situation_profile then
-        M.restore_manual_situation_profile()
-    end
+    M.stop_all_previews()
+    M.restore_fishing_focus()
+    M.restore_combat_volumes()
+    M.restore_manual_situation_profile()
     M.unmute_all_sound_files()
     M._event_cache = {}
     M.sync_registered_events()
-    if M.sync_fishing_focus_events then
-        M.sync_fishing_focus_events()
-    end
-    if M.sync_combat_volumes_events then
-        M.sync_combat_volumes_events()
-    end
+    M.sync_fishing_focus_events()
+    M.sync_combat_volumes_events()
 end
 
 --#endregion RUNTIME LIFECYCLE =================================================
@@ -178,9 +166,7 @@ end
 function M.stop_all_previews()
     M.cancel_adjust_preview()
     M.stop_preview_sound()
-    if M.stop_fishing_bobber_preview then
-        M.stop_fishing_bobber_preview()
-    end
+    M.stop_fishing_bobber_preview()
 end
 
 function M.queue_adjust_preview(target_key)

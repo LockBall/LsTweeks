@@ -11,7 +11,7 @@ function M.BuildSettings(parent)
                 preserve_default = true,
                 preserve_keys = { "profiles", "last_profile_name" },
                 before_reset = function()
-                    return not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+                    return not (M.is_settings_locked_by_flight())
                 end,
                 after_reset = M.on_reset_complete,
             })

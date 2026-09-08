@@ -129,11 +129,9 @@ local function release_objective_position(tracker)
 end
 
 local function apply_objective_position()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         objective_position_state = "combat_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -168,11 +166,9 @@ end
 M.apply_objective_position = apply_objective_position
 
 local function restore_objective_position()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         objective_position_state = "combat_restore_deferred"
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -313,10 +309,8 @@ local function ensure_objective_move_hooks(tracker)
 end
 
 local function apply_objective_move_mode()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+    if M.is_objectives_combat_locked() then
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -341,10 +335,8 @@ end
 M.apply_objective_move_mode = apply_objective_move_mode
 
 local function restore_objective_move_mode()
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
-        if M.defer_objectives_combat_update then
-            M.defer_objectives_combat_update()
-        end
+    if M.is_objectives_combat_locked() then
+        M.defer_objectives_combat_update()
         return
     end
 
@@ -385,7 +377,7 @@ local function reset_objective_position()
     local db = M.get_db()
     if not db then return end
 
-    if M.is_background_border_enabled and M.is_background_border_enabled() then
+    if M.is_background_border_enabled() then
         if M.set_background_border_position_offsets then
             M.set_background_border_position_offsets()
         end

@@ -49,7 +49,7 @@ local function build_about_page(parent)
 
     local version = parent:CreateFontString(nil, "OVERLAY", theme.font_subtitle)
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, cfg.version_offset_y)
-    version:SetText(STRINGS.version_label .. (addon.get_version and addon.get_version() or "unknown"))
+    version:SetText(STRINGS.version_label .. (addon.get_version() or "unknown"))
 
     -- Create riveted panel for description
     local panelWidth = math.min(panel_style.panel_max_width, 741 - panel_style.panel_margin)
@@ -94,9 +94,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
 
         -- Register the GUI Category
-        if addon.register_category then
-            addon.register_category(STRINGS.category_name, build_about_page, { order = 100 })
-        end
+        addon.register_category(STRINGS.category_name, build_about_page, { order = 100 })
 
         self:UnregisterEvent("ADDON_LOADED")
         self:SetScript("OnEvent", nil)

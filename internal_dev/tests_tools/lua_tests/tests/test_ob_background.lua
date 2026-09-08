@@ -251,23 +251,17 @@ h.test("queued background sync rejects a disabled module before combat deferral"
     h.addon.set_module_enabled("objectives", true)
 end)
 
-h.test("system setting opacity fallback skips duplicate manager write", function()
+h.test("unloaded Edit Mode uses the Objective Tracker runtime manager", function()
     reset_runtime()
     fresh_db({ customize_background = false })
 
     Enum = { EditModeObjectiveTrackerSetting = { Opacity = 99 } }
     ObjectiveTrackerFrame.HasSetting = function(_, setting) return setting == 99 end
-    ObjectiveTrackerFrame.UpdateSystemSettingValue = function(self, setting, percent)
-        self.__system_setting_calls = self.__system_setting_calls or {}
-        self.__system_setting_calls[#self.__system_setting_calls + 1] = { setting = setting, percent = percent }
-        ObjectiveTrackerManager.__opacity = percent
-    end
 
     M.apply_background()
 
-    h.eq(ObjectiveTrackerManager:GetOpacity(), 0, "system setting path applies live opacity")
-    h.eq(ObjectiveTrackerFrame.__system_setting_calls[1].percent, 0, "system setting path writes opacity")
-    h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 0, "system setting path skips duplicate manager write")
+    h.eq(ObjectiveTrackerManager:GetOpacity(), 0, "runtime manager applies live opacity")
+    h.eq(#(ObjectiveTrackerManager:GetCalls("SetOpacity") or {}), 1, "runtime manager receives one opacity write")
 end)
 
 h.test("accepted color reset does not let later cancel clear border", function()

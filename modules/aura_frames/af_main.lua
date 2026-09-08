@@ -19,7 +19,7 @@ local math_max = math.max
 local GetTime = GetTime
 local issecretvalue = issecretvalue
 local WOW_COOLDOWN_CATEGORIES = M.CDM_CATEGORIES
-local UPDATE_INTERVALS = M.UPDATE_INTERVALS
+local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 local WOW_COOLDOWN_REFRESH_PROFILES = {
     immediate = {
@@ -104,8 +104,7 @@ local function apply_text_style(font_target, category, cfg_db, text_type, alpha)
     ) == true
     local bold = M.get_setting(cfg_db, category, text_def.local_prefix .. "_font_bold", false) == true
     local color = M.get_setting(cfg_db, category, text_def.color_key)
-    if M.resolve_text_options then
-        local options = M.resolve_text_options(category, text_type, {
+    local options = M.resolve_text_options(category, text_type, {
             color = color,
             font = selected_key,
             size = size,
@@ -117,7 +116,6 @@ local function apply_text_style(font_target, category, cfg_db, text_type, alpha)
         size = options.size
         bold = options.bold == true
         use_outline = options.outline ~= false
-    end
     addon.ApplySelectedFont(font_target, {
         key = selected_key,
         role = text_def.role,
@@ -205,9 +203,7 @@ local function run_wow_cooldown_refresh(refresh_config, category_filter)
         M.invalidate_aura_scan_caches()
     end
 
-    if M.update_all_blizz_cdm_visibility then
-        M.update_all_blizz_cdm_visibility()
-    end
+    M.update_all_blizz_cdm_visibility()
 
     for _, category in ipairs(WOW_COOLDOWN_CATEGORIES) do
         if not category_filter or category == category_filter then
@@ -521,7 +517,7 @@ end
 local function frame_uses_ooc_fade(frame)
     if not frame then return false end
     local params = frame.update_params
-    local cfg_db = M.get_frame_config_db and M.get_frame_config_db(frame)
+    local cfg_db = M.get_frame_config_db(frame)
     if not (params and cfg_db) then return false end
 
     local activity = M.get_frame_activity_state(frame, params.show_key, params.move_key)
@@ -531,9 +527,7 @@ end
 
 local function set_frame_hovered(frame, hovered)
     if hovered and not frame_uses_ooc_fade(frame) then return false end
-    if M.set_aura_frame_hovered then
-        M.set_aura_frame_hovered(frame, hovered)
-    end
+    M.set_aura_frame_hovered(frame, hovered)
     if not hovered then
         stop_frame_hover_check(frame)
     end
@@ -543,7 +537,7 @@ end
 local function handle_frame_mouse_enter(frame)
     if not set_frame_hovered(frame, true) then return end
     if frame and not frame._hover_check_ticker and C_Timer and C_Timer.NewTicker then
-        frame._hover_check_ticker = C_Timer.NewTicker(M.UPDATE_INTERVALS.aura_hover_check, function()
+        frame._hover_check_ticker = C_Timer.NewTicker(addon.UPDATE_INTERVALS.aura_hover_check, function()
             if not aura_frame_contains_mouse(frame) then
                 set_frame_hovered(frame, false)
             end
@@ -644,9 +638,7 @@ local function bind_icon_tooltip(obj)
         handle_frame_mouse_leave(self:GetParent())
     end)
     obj:SetScript("OnMouseUp", function(self, button)
-        if M.try_cancel_aura_icon then
-            M.try_cancel_aura_icon(self, button)
-        end
+        M.try_cancel_aura_icon(self, button)
     end)
 end
 
@@ -828,9 +820,7 @@ end
 local function refresh_aura_frame_after_resize(frame)
     local params = frame.update_params
     if not params then return end
-    if M.invalidate_frame_runtime_config then
-        M.invalidate_frame_runtime_config(frame)
-    end
+    M.invalidate_frame_runtime_config(frame)
     M.update_auras(frame, params.show_key, params.move_key, params.timer_key,
         params.bg_key, params.scale_key, params.spacing_key, params.aura_filter)
 end
@@ -997,9 +987,7 @@ local function handle_aura_frame_event(frame, event, unit)
 end
 
 local function handle_managed_aura_shell_event(frame, event)
-    if M.refresh_frame_fade_for_combat_state then
-        M.refresh_frame_fade_for_combat_state(frame, event == "PLAYER_REGEN_DISABLED")
-    end
+    M.refresh_frame_fade_for_combat_state(frame, event == "PLAYER_REGEN_DISABLED")
 end
 
 local function bind_managed_aura_shell_events(frame)
@@ -1049,13 +1037,13 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     create_aura_frame_resizer(frame, category)
 
     local managed_backend
-    if category == "debuff" and M.create_managed_debuff_backend then
+    if category == "debuff" then
         managed_backend = M.create_managed_debuff_backend(frame, cfg_db)
-    elseif category == "short" and M.create_managed_short_buff_backend then
+    elseif category == "short" then
         managed_backend = M.create_managed_short_buff_backend(frame, cfg_db)
-    elseif category == "static_long" and M.create_managed_learned_buff_backend then
+    elseif category == "static_long" then
         managed_backend = M.create_managed_learned_buff_backend(frame, cfg_db)
-    elseif category == "timed" and M.create_managed_timed_buff_backend then
+    elseif category == "timed" then
         managed_backend = M.create_managed_timed_buff_backend(frame, cfg_db)
     end
 
@@ -1063,13 +1051,11 @@ function M.create_aura_frame(show_key, move_key, timer_key, bg_key, scale_key, s
     -- retain their full pool for Cooldown Mode but share the managed preview cell.
     create_aura_icon_pool(frame, cfg_db, category, managed_backend and 1 or nil)
     if not managed_backend then
-        if M.WOW_COOLDOWN_CATEGORIES[category] and M.create_managed_cdm_backend then
+        if M.WOW_COOLDOWN_CATEGORIES[category] then
             M.create_managed_cdm_backend(frame, cfg_db, category)
         end
     end
-    if (managed_backend or frame._managed_cdm_backend)
-        and M.initialize_managed_test_preview_background
-    then
+    if managed_backend or frame._managed_cdm_backend then
         M.initialize_managed_test_preview_background(frame)
     end
 
@@ -1112,9 +1098,7 @@ function M.create_custom_frame(entry)
     addon.apply_defaults(M.CUSTOM_FRAME_TEMPLATE, entry)
     local id       = entry.id
     local show_key = "show_" .. id  -- e.g. "show_custom_1"
-    if M.rebuild_shared_options_group then
-        M.rebuild_shared_options_group()
-    end
+    M.rebuild_shared_options_group()
     entry.aura_base_filter = entry.aura_base_filter == "HARMFUL" and "HARMFUL" or "HELPFUL"
     local aura_filter = M.get_custom_aura_filter(entry)
 
@@ -1160,7 +1144,7 @@ function M.destroy_custom_frame(id)
     local show_key = "show_" .. id
     local frame = unregister_runtime_frame(show_key)
     if frame then
-        if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
+        M.cancel_frame_ooc_fade(frame)
         stop_frame_hover_check(frame)
         frame._display_count = 0
         frame._tooltip_cache_retry_count = 0
@@ -1168,7 +1152,7 @@ function M.destroy_custom_frame(id)
         frame:Hide()
         frame:UnregisterAllEvents()
         frame:SetScript("OnEvent", nil)
-        if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
+        M.refresh_visible_icon_ticker()
     end
     if M.db and M.db.custom_frames then
         for i, entry in ipairs(M.db.custom_frames) do
@@ -1189,12 +1173,8 @@ function M.destroy_custom_frame(id)
         M.controls["bar_color_sync:" .. id] = nil
         M.controls["text_color_sync:" .. id] = nil
     end
-    if M.clear_custom_aura_scan_cache then
-        M.clear_custom_aura_scan_cache()
-    end
-    if M.rebuild_shared_options_group then
-        M.rebuild_shared_options_group()
-    end
+    M.clear_custom_aura_scan_cache()
+    M.rebuild_shared_options_group()
 end
 
 --#endregion CUSTOM FRAME LIFECYCLE ============================================
@@ -1206,10 +1186,10 @@ local function prepare_aura_frame_db()
     local saved_db = Ls_Tweeks_DB
     if not saved_db.aura_frames then saved_db.aura_frames = {} end
     M.db = saved_db.aura_frames
-    if M.refresh_cdm_default_positions then M.refresh_cdm_default_positions() end
+    M.refresh_cdm_default_positions()
     if M.defaults then addon.apply_defaults(M.defaults, M.db) end
-    if M.normalize_saved_colors then M.normalize_saved_colors(M.db) end
-    if M.apply_cdm_default_positions_to_db then M.apply_cdm_default_positions_to_db() end
+    M.normalize_saved_colors(M.db)
+    M.apply_cdm_default_positions_to_db()
 end
 
 local function create_startup_aura_frames()
@@ -1253,22 +1233,14 @@ end
 local function start_aura_frame_runtime_services()
     M._module_runtime_enabled = true
     M.install_cdm_layout_refresh_hook()
-    if M.start_learned_buff_listener then
-        M.start_learned_buff_listener()
-    end
-    if M.set_managed_aura_runtime_enabled then
-        M.set_managed_aura_runtime_enabled(true)
-    end
+    M.start_learned_buff_listener()
+    M.set_managed_aura_runtime_enabled(true)
     -- Managed presentation owns no PLAYER_ENTERING_WORLD handler, so startup
     -- explicitly applies saved shell state after enabling the engine. The
     -- separate learned-buff listener only refreshes its native inclusion map.
-    if M.refresh_managed_preset_frames then
-        M.refresh_managed_preset_frames()
-    end
+    M.refresh_managed_preset_frames()
     M.apply_blizz_aura_frame_settings()
-    if M.update_all_blizz_cdm_visibility then
-        M.update_all_blizz_cdm_visibility()
-    end
+    M.update_all_blizz_cdm_visibility()
     M.queue_wow_cooldown_refresh("startup")
 
     if M.db.show_grid then
@@ -1292,25 +1264,17 @@ end
 
 local function stop_aura_frame_runtime_services()
     M._module_runtime_enabled = false
-    if M.stop_learned_buff_listener then
-        M.stop_learned_buff_listener()
-    end
-    if M.set_managed_aura_runtime_enabled then
-        M.set_managed_aura_runtime_enabled(false)
-    end
-    if M.stop_visible_icon_ticker then M.stop_visible_icon_ticker() end
-    if M.set_grid_visible then M.set_grid_visible(false) end
-    if M.restore_blizz_aura_frame_settings then
-        M.restore_blizz_aura_frame_settings()
-    end
-    if M.restore_blizz_cdm_viewer_settings then
-        M.restore_blizz_cdm_viewer_settings()
-    end
+    M.stop_learned_buff_listener()
+    M.set_managed_aura_runtime_enabled(false)
+    M.stop_visible_icon_ticker()
+    M.set_grid_visible(false)
+    M.restore_blizz_aura_frame_settings()
+    M.restore_blizz_cdm_viewer_settings()
     restore_cdm_viewer_visibility()
 
     for _, frame in ipairs(M.frames_list or {}) do
         if frame then
-            if M.cancel_frame_ooc_fade then M.cancel_frame_ooc_fade(frame) end
+            M.cancel_frame_ooc_fade(frame)
             stop_frame_hover_check(frame)
             frame:UnregisterAllEvents()
             frame:SetScript("OnEvent", nil)
@@ -1331,9 +1295,7 @@ local function rebind_existing_aura_frames()
         if frame and frame.update_params then
             bind_aura_frame_events(frame, frame.category)
             local p = frame.update_params
-            if M.invalidate_frame_runtime_config then
-                M.invalidate_frame_runtime_config(frame)
-            end
+            M.invalidate_frame_runtime_config(frame)
             M.update_auras(frame, p.show_key, p.move_key, p.timer_key, p.bg_key, p.scale_key, p.spacing_key, p.aura_filter)
         end
     end
@@ -1430,7 +1392,7 @@ loader:SetScript("OnEvent", function(self, _, name)
         -- normalize their saved data independently from frame/runtime startup.
         prepare_aura_frame_db()
         register_aura_frame_settings()
-        if M.is_runtime_enabled and M.is_runtime_enabled() then
+        if M.is_runtime_enabled() then
             ensure_module_started()
             start_aura_frame_runtime_services()
         else
@@ -1446,9 +1408,7 @@ end)
 
 local function apply_reset_runtime_state()
     M.apply_blizz_aura_frame_settings()
-    if M.update_all_blizz_cdm_visibility then
-        M.update_all_blizz_cdm_visibility()
-    end
+    M.update_all_blizz_cdm_visibility()
     M.apply_number_font_to_all()
     M.set_grid_visible(M.db.show_grid == true)
 end
@@ -1527,18 +1487,12 @@ function M.on_reset_complete()
     -- Reset conductor: recover runtime state, reconcile frame ownership, then
     -- refresh visible frames and settings controls from the replaced DB.
     apply_reset_runtime_state()
-    if M.note_learned_buff_cache_replaced then
-        M.note_learned_buff_cache_replaced()
-    end
-    if M.queue_learned_buff_scan then
-        M.queue_learned_buff_scan()
-    end
+    M.note_learned_buff_cache_replaced()
+    M.queue_learned_buff_scan()
     remove_orphan_custom_frames_after_reset()
     refresh_aura_frames_after_reset()
     refresh_aura_frame_settings_after_reset()
-    if M.restart_visible_icon_ticker then
-        M.restart_visible_icon_ticker()
-    end
+    M.restart_visible_icon_ticker()
 end
 
 --#endregion RESET ORCHESTRATION ===============================================

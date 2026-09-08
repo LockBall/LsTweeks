@@ -11,7 +11,7 @@ M.MODULE_KEY = "audio_volumes"
 M.controls = M.controls or {}
 
 function M.is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+    return addon.is_module_enabled(M.MODULE_KEY)
 end
 
 --#endregion MODULE STATE ======================================================

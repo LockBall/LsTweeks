@@ -28,7 +28,7 @@ local MATRIX_ROWS_OFFSET_Y = MATRIX_HEADER_HEIGHT + 8
 --#region SHARED OPTIONS STATE =================================================
 
 local function refresh_shared_options()
-    if M.on_shared_options_changed then M.on_shared_options_changed() end
+    M.on_shared_options_changed()
 end
 
 local function get_participation_rows()

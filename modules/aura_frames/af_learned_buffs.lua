@@ -32,9 +32,7 @@ end
 
 local function signal_learned_cache_changed()
     M._learned_buff_revision = (M._learned_buff_revision or 0) + 1
-    if M.refresh_managed_learned_buff_filters then
-        M.refresh_managed_learned_buff_filters()
-    end
+    M.refresh_managed_learned_buff_filters()
 end
 
 function M.note_learned_buff_cache_replaced()
@@ -122,7 +120,7 @@ function M.queue_learned_buff_scan()
         end
     end
     if C_Timer and C_Timer.After then
-        C_Timer.After(M.UPDATE_INTERVALS.aura_event_bucket, scan)
+        C_Timer.After(addon.UPDATE_INTERVALS.aura_event_bucket, scan)
     else
         scan()
     end

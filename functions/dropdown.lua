@@ -135,9 +135,7 @@ function addon.CreateDropdown(_name, parent, label_text, options, cfg)
 
     local btn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
     btn:SetAllPoints(container)
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(btn)
-    end
+    addon.ApplyStandardButtonStyle(btn)
     local btn_text = btn:GetFontString()
     local dropdown_icon = create_dropdown_icon(container, cfg)
 

@@ -61,7 +61,7 @@ local RANGES = M.FADE_SETTING_RANGES
 --#region RUNTIME HELPERS ======================================================
 
 local function is_runtime_enabled()
-    return not addon.is_module_enabled or addon.is_module_enabled(M.MODULE_KEY)
+    return addon.is_module_enabled(M.MODULE_KEY)
 end
 
 local function refresh_combat_state()

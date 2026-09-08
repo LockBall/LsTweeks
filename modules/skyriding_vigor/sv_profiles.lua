@@ -31,7 +31,7 @@ end
 M.profile_manager = addon.CreateProfileManager({
     label = "Skyriding Vigor",
     get_db = function()
-        return M.get_root_db and M.get_root_db()
+        return M.get_root_db()
     end,
     export_data = M.export_skyriding_vigor_profile_data,
     apply_data = M.apply_skyriding_vigor_profile_data,

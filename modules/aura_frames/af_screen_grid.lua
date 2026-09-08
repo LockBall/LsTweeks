@@ -9,7 +9,7 @@ local _, addon = ...
 
 addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
-local UPDATE_INTERVALS = M.UPDATE_INTERVALS
+local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
 local GRID_SIZE     = 20    -- matches Blizzard Edit Mode grid spacing
 local GRID_OFFSET_X = -1.5  -- right (positive, no + sign) or left (negative)

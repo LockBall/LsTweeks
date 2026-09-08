@@ -119,7 +119,7 @@ end
 
 local function make_custom_frame_settings_config(entry)
     local id = entry.id
-    local default_position = (M.get_default_custom_frame_position and M.get_default_custom_frame_position(id))
+    local default_position = (M.get_default_custom_frame_position(id))
         or M.CUSTOM_FRAME_TEMPLATE.position
     entry.position = entry.position or {
         point = default_position.point,
@@ -204,7 +204,7 @@ local function create_frame_font_picker(parent, frame_config, grid, update, conf
         end
     end
     local function refresh()
-        if M.apply_number_font_to_all then M.apply_number_font_to_all() end
+        M.apply_number_font_to_all()
         update()
     end
     local picker = addon.CreateFontPicker(parent, {
@@ -496,9 +496,7 @@ function M.build_general_tab(p)
         "aura_visible_icon_tick",
         M.defaults,
         function()
-            if M.restart_visible_icon_ticker then
-                M.restart_visible_icon_ticker()
-            end
+            M.restart_visible_icon_ticker()
         end,
         {
             display_decimals = 2,
@@ -524,10 +522,8 @@ function M.build_general_tab(p)
         preserve_default = true,
         preserve_keys = { "profiles", "last_profile_name" },
         before_reset = function()
-            if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
-            if M.refresh_cdm_default_positions then
-                M.refresh_cdm_default_positions()
-            end
+            addon.CloseFontOptionsPopup(false)
+            M.refresh_cdm_default_positions()
         end,
         after_reset = M.on_reset_complete,
     })
@@ -560,9 +556,7 @@ local function update_custom_frame(entry)
     local show_key = "show_" .. entry.id
     local frame = M.frames[show_key]
     if not frame then return end
-    if M.invalidate_frame_runtime_config then
-        M.invalidate_frame_runtime_config(frame)
-    end
+    M.invalidate_frame_runtime_config(frame)
     local aura_filter = M.get_custom_aura_filter(entry)
     frame.update_params.aura_filter = aura_filter
     M.update_auras(frame, show_key, "move", "timer", "bg", "scale", "spacing", aura_filter)
@@ -575,9 +569,7 @@ function M.update_custom_frame_title(entry)
     if frame.move_handle then
         frame.move_handle.title = entry.name or entry.id
     end
-    if M.rebuild_shared_options_group then
-        M.rebuild_shared_options_group()
-    end
+    M.rebuild_shared_options_group()
 end
 
 local function create_frame_name_control(parent, entry)
@@ -603,7 +595,7 @@ local function create_frame_name_control(parent, entry)
         if new_name ~= entry.name then
             entry.name = new_name
             M.update_custom_frame_title(entry)
-            if M.on_custom_frame_renamed then M.on_custom_frame_renamed(id, new_name) end
+            M.on_custom_frame_renamed(id, new_name)
         end
         name_box:ClearFocus()
     end
@@ -730,27 +722,12 @@ local function build_frame_settings_panel(parent, frame_config, opts)
         end
 
         test_aura_container = bound_cb("Test Aura", "test_aura", 1, 1, function(is_checked)
-            if M.set_test_aura_enabled then
-                M.set_test_aura_enabled(frame_config.id, is_checked)
-            else
-                if is_checked then
-                    value_table[frame_setting_key(frame_config, "show")] = true
-                    if M.start_test_preview_paused then M.start_test_preview_paused(preview_show_key) end
-                elseif M.stop_test_preview_clock then
-                    M.stop_test_preview_clock(preview_show_key)
-                end
-                update()
-            end
+            M.set_test_aura_enabled(frame_config.id, is_checked)
             if opts.on_test_aura_changed then opts.on_test_aura_changed(is_checked, enable_cb) end
             refresh_pause_test_aura_button()
         end)
         pause_test_aura_button = addon.CreatePlayPauseButton(parent, function()
-            if M.toggle_test_aura_preview then
-                M.toggle_test_aura_preview(frame_config.id)
-            else
-                M.toggle_test_preview_pause(preview_show_key)
-                update()
-            end
+            M.toggle_test_aura_preview(frame_config.id)
             refresh_pause_test_aura_button()
         end, { width = 32, height = 32 })
         pause_test_aura_button:SetPoint("LEFT", test_aura_container, "RIGHT", 6, 0)
@@ -934,9 +911,7 @@ function M.build_preset_frame_panel(p, data)
 
     local function update() -- refreshes current category frame preview
         M.invalidate_aura_scan_caches()
-        if M.invalidate_frame_runtime_config then
-            M.invalidate_frame_runtime_config(M.frames[data.show_key])
-        end
+        M.invalidate_frame_runtime_config(M.frames[data.show_key])
         M.update_auras(M.frames[data.show_key], data.show_key, data.move_key, data.timer_key, data.bg_key, data.scale_key, data.spacing_key, aura_filter)
     end
 
@@ -1017,9 +992,7 @@ function M.build_preset_frame_panel(p, data)
                 local short_threshold_range = get_setting_range("short_threshold")
                 local function update_short_threshold()
                     update()
-                    if M.refresh_managed_learned_buff_filters then
-                        M.refresh_managed_learned_buff_filters()
-                    end
+                    M.refresh_managed_learned_buff_filters()
                 end
                 local threshold = addon.CreateSliderWithBox(
                     addon_name .. "ShortMaxDuration",
@@ -1045,9 +1018,7 @@ function M.build_preset_frame_panel(p, data)
                 clear_learned:SetSize(130, 24)
                 clear_learned:SetText("Clear Learned Buffs")
                 clear_learned:SetScript("OnClick", function()
-                    if M.clear_learned_helpful_durations then
-                        M.clear_learned_helpful_durations()
-                    end
+                    M.clear_learned_helpful_durations()
                 end)
                 addon.AttachTooltip(
                     clear_learned,

@@ -139,7 +139,7 @@ local function ensure_popup_reset_button()
     local reset = CreateFrame("Button", nil, ColorPickerFrame, "UIPanelButtonTemplate")
     reset:SetSize(POPUP_BUTTON_W, 22)
     reset:SetText("Reset")
-    if addon.ApplyStandardButtonStyle then addon.ApplyStandardButtonStyle(reset) end
+    addon.ApplyStandardButtonStyle(reset)
     ColorPickerFrame._lstweeks_reset_button = reset
     return reset
 end
@@ -503,9 +503,7 @@ local function show_popup_presets(presets, color_presets_lookup, on_pick)
             if preset then
                 swatch:SetBackdropColor(preset.r, preset.g, preset.b, 1)
             end
-            if addon.AttachTooltip then
-                addon.AttachTooltip(swatch, nil, option.text or tostring(option.value))
-            end
+            addon.AttachTooltip(swatch, nil, option.text or tostring(option.value))
             swatch:SetScript("OnClick", function()
                 on_pick(option.value)
             end)
@@ -563,9 +561,7 @@ function addon.CreateColorPicker(parent, db_table, db_key, has_alpha, label_text
     local reset = CreateFrame("Button", nil, group, "UIPanelButtonTemplate")
     reset:SetSize(RESET_W, RESET_H)
     reset:SetText("Reset")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(reset)
-    end
+    addon.ApplyStandardButtonStyle(reset)
     reset:SetPoint("LEFT", button, "RIGHT", control_gap, 0)
 
     local preview_timer = nil

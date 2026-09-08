@@ -229,12 +229,12 @@ function M.sync_fill_test_button()
         end
     end
     if button then
-        set_control_enabled(button, M._fill_test_enabled or not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()))
+        set_control_enabled(button, M._fill_test_enabled or not (M.is_settings_locked_by_flight()))
     end
 end
 
 function M.sync_race_profile_controls(root_db)
-    root_db = root_db or (M.get_root_db and M.get_root_db())
+    root_db = root_db or (M.get_root_db())
     local checkbox = M.controls and M.controls.race_profile_enabled
     if checkbox and checkbox.SetCheckedSilently then
         checkbox:SetCheckedSilently(root_db and root_db.race_profile_enabled or false)
@@ -245,20 +245,18 @@ function M.sync_race_profile_controls(root_db)
         button:SetTextToFit(M._race_profile_test_enabled and STRINGS.stop_race_profile_test or STRINGS.race_profile_test)
     end
     local race_test_enabled = root_db and root_db.race_profile_enabled
-        and not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
+        and not (M.is_settings_locked_by_flight())
     set_control_enabled(button, race_test_enabled)
     sync_race_profile_panel_size()
-    if M.sync_fade_controls_enabled then
-        M.sync_fade_controls_enabled()
-    end
+    M.sync_fade_controls_enabled()
 end
 
 function M.sync_fade_controls_enabled()
     local controls = M.controls
     if not controls then return end
 
-    local enabled = not (M.is_settings_locked_by_flight and M.is_settings_locked_by_flight())
-        and not (M.is_race_profile_active and M.is_race_profile_active())
+    local enabled = not (M.is_settings_locked_by_flight())
+        and not (M.is_race_profile_active())
     for i = 1, #FADE_CONTROL_KEYS do
         local control = controls[FADE_CONTROL_KEYS[i]]
         if control then
@@ -296,7 +294,7 @@ local function sync_registered_control_enabled(control)
     local controls = M.flight_locked_controls
     if not controls then return end
 
-    local flight_locked = M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() or false
+    local flight_locked = M.is_settings_locked_by_flight() or false
     for i = 1, #controls do
         local entry = controls[i]
         if entry.control == control then
@@ -316,7 +314,7 @@ local function run_with_sync_guard(guard_key, callback)
 end
 
 function M.sync_settings_controls_enabled(force)
-    local flight_locked = M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() or false
+    local flight_locked = M.is_settings_locked_by_flight() or false
     if not force and M._settings_controls_flight_locked == flight_locked then return end
     M._settings_controls_flight_locked = flight_locked
 
@@ -359,9 +357,9 @@ function M.sync_slider_controls(db)
             local control = M.controls[key]
             if control and control.GetValue and control.SetValueSilently then
                 local value
-                if key == "scale" and M.get_style_scale then
+                if key == "scale" then
                     value = M.get_style_scale()
-                elseif key == "fill_add_alpha" and M.get_style_fill_add_alpha then
+                elseif key == "fill_add_alpha" then
                     value = M.get_style_fill_add_alpha()
                 else
                     value = db[key]
@@ -376,12 +374,12 @@ function M.sync_slider_controls(db)
 end
 
 function M.sync_decor_position_controls(db)
-    db = db or (M.get_db and M.get_db())
+    db = db or (M.get_db())
     if not db then return end
 
     local x_slider = M.controls.decor_x_position
     if x_slider and x_slider.GetValue and x_slider.SetValueSilently then
-        local value = M.get_decor_position_axis and M.get_decor_position_axis("x")
+        local value = M.get_decor_position_axis("x")
         if value ~= nil and x_slider:GetValue() ~= value then
             x_slider:SetValueSilently(value)
         end
@@ -389,7 +387,7 @@ function M.sync_decor_position_controls(db)
 
     local y_slider = M.controls.decor_y_position
     if y_slider and y_slider.GetValue and y_slider.SetValueSilently then
-        local value = M.get_decor_position_axis and M.get_decor_position_axis("y")
+        local value = M.get_decor_position_axis("y")
         if value ~= nil and y_slider:GetValue() ~= value then
             y_slider:SetValueSilently(value)
         end
@@ -397,7 +395,7 @@ function M.sync_decor_position_controls(db)
 
     local scale_slider = M.controls.decor_scale
     if scale_slider and scale_slider.GetValue and scale_slider.SetValueSilently then
-        local value = M.get_decor_scale and M.get_decor_scale()
+        local value = M.get_decor_scale()
         if value ~= nil and scale_slider:GetValue() ~= value then
             scale_slider:SetValueSilently(value)
         end
@@ -406,21 +404,21 @@ end
 
 function M.sync_style_color_controls()
     local picker = M.controls and M.controls.fill_color
-    if picker and picker.SetValue and M.get_style_fill_color then
+    if picker and picker.SetValue then
         picker:SetValue(M.get_style_fill_color())
     end
 end
 
 function M.sync_spark_color_controls()
     local picker = M.controls and M.controls.spark_color
-    if picker and picker.SetValue and M.get_spark_color then
+    if picker and picker.SetValue then
         picker:SetValue(M.get_spark_color())
     end
 end
 
 function M.sync_node_color_controls()
     local dropdown = M.controls and M.controls.node_color
-    if dropdown and dropdown.SetValue and M.get_node_color then
+    if dropdown and dropdown.SetValue then
         dropdown:SetValue(M.get_node_color())
         sync_registered_control_enabled(dropdown)
     end
@@ -428,14 +426,14 @@ end
 
 function M.sync_decor_color_controls()
     local dropdown = M.controls and M.controls.decor_color
-    if dropdown and dropdown.SetValue and M.get_decor_color then
+    if dropdown and dropdown.SetValue then
         dropdown:SetValue(M.get_decor_color())
         sync_registered_control_enabled(dropdown)
     end
 end
 
 function M.sync_settings_controls(db)
-    db = db or (M.get_db and M.get_db())
+    db = db or (M.get_db())
     if not db then return end
 
     local defaults = M.DEFAULTS or {}
@@ -496,9 +494,7 @@ local function build_top_row(parent, context)
     place_grid_control(enabled_container, CONTROL_GRID.enabled)
 
     local fill_test_button = addon.CreateTextButton(parent, M._fill_test_enabled and STRINGS.stop_fill_test or STRINGS.fill_test, function()
-        if M.toggle_fill_test then
-            M.toggle_fill_test()
-        end
+        M.toggle_fill_test()
     end, {
         fit_texts = { STRINGS.fill_test, STRINGS.stop_fill_test },
         height = cfg.button_height,
@@ -516,7 +512,7 @@ local function build_top_row(parent, context)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                local active_db = M.get_db and M.get_db()
+                local active_db = M.get_db()
                 return active_db and active_db.style or defaults.style or M.BAR_STYLE_DEFAULT
             end,
             on_select = function(value)
@@ -536,7 +532,7 @@ local function build_top_row(parent, context)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                return M.get_node_color and M.get_node_color() or M.NODE_COLOR_DEFAULT
+                return M.get_node_color() or M.NODE_COLOR_DEFAULT
             end,
             on_select = function(value)
                 M.set_db_value("node_color", value)
@@ -544,7 +540,7 @@ local function build_top_row(parent, context)
         }
     )
     M.controls.node_color = register_flight_locked_control(node_color_dropdown, function()
-        return not M.bar_style_supports_node_color or M.bar_style_supports_node_color()
+        return M.bar_style_supports_node_color()
     end)
     place_grid_control(node_color_dropdown, CONTROL_GRID.node_color)
     M.sync_node_color_controls()
@@ -552,7 +548,7 @@ local function build_top_row(parent, context)
     local fill_color_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "fill_color" then
-                return M.get_style_fill_color and M.get_style_fill_color() or { r = 1, g = 1, b = 1, a = 1 }
+                return M.get_style_fill_color() or { r = 1, g = 1, b = 1, a = 1 }
             end
             return nil
         end,
@@ -565,15 +561,13 @@ local function build_top_row(parent, context)
     local fill_color_defaults_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "fill_color" then
-                return M.get_style_fill_color_default and M.get_style_fill_color_default() or { r = 1, g = 1, b = 1, a = 1 }
+                return M.get_style_fill_color_default() or { r = 1, g = 1, b = 1, a = 1 }
             end
             return nil
         end,
     })
     local fill_color_picker = addon.CreateColorPicker(parent, fill_color_proxy, "fill_color", true, STRINGS.fill_color, fill_color_defaults_proxy, function()
-        if M.apply_fill_color then
-            M.apply_fill_color()
-        end
+        M.apply_fill_color()
     end)
     M.controls.fill_color = register_flight_locked_control(fill_color_picker)
     place_grid_control(fill_color_picker, CONTROL_GRID.fill_color)
@@ -581,7 +575,7 @@ local function build_top_row(parent, context)
     local fill_add_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "fill_add_alpha" then
-                return M.get_style_fill_add_alpha and M.get_style_fill_add_alpha() or 0.5
+                return M.get_style_fill_add_alpha() or 0.5
             end
             return nil
         end,
@@ -594,7 +588,7 @@ local function build_top_row(parent, context)
     local fill_add_defaults_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "fill_add_alpha" then
-                return M.get_style_fill_add_alpha_default and M.get_style_fill_add_alpha_default() or 0.5
+                return M.get_style_fill_add_alpha_default() or 0.5
             end
             return nil
         end,
@@ -640,9 +634,7 @@ local function build_position_row(parent, context)
     local reset_button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     reset_button:SetSize(110, 22)
     reset_button:SetText("Reset Position")
-    if addon.ApplyStandardButtonStyle then
-        addon.ApplyStandardButtonStyle(reset_button)
-    end
+    addon.ApplyStandardButtonStyle(reset_button)
     M.settings_grid:stack_below(reset_button, snap_container, {
         x = CONTROL_GRID.reset_position.x,
         y = CONTROL_GRID.reset_position.y,
@@ -735,9 +727,9 @@ local function build_decor_row(parent, context)
     local decor_position_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "x" or key == "y" then
-                return M.get_decor_position_axis and M.get_decor_position_axis(key) or 0
+                return M.get_decor_position_axis(key) or 0
             elseif key == "scale" then
-                return M.get_decor_scale and M.get_decor_scale() or 1
+                return M.get_decor_scale() or 1
             end
             return nil
         end,
@@ -752,9 +744,9 @@ local function build_decor_row(parent, context)
     local decor_position_defaults_proxy = setmetatable({}, {
         __index = function(_, key)
             if key == "x" or key == "y" then
-                return M.get_decor_position_default and M.get_decor_position_default(key) or 0
+                return M.get_decor_position_default(key) or 0
             elseif key == "scale" then
-                return M.get_decor_scale_default and M.get_decor_scale_default() or 1
+                return M.get_decor_scale_default() or 1
             end
             return nil
         end,
@@ -769,7 +761,7 @@ local function build_decor_row(parent, context)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                local active_db = M.get_db and M.get_db()
+                local active_db = M.get_db()
                 return active_db and active_db.decor_style or defaults.decor_style or M.DECOR_STYLE_DEFAULT
             end,
             on_select = function(value)
@@ -789,7 +781,7 @@ local function build_decor_row(parent, context)
             fit_to_text = true,
             text_padding_x = cfg.button_padding_x,
             get_value = function()
-                return M.get_decor_color and M.get_decor_color() or M.DECOR_COLOR_DEFAULT
+                return M.get_decor_color() or M.DECOR_COLOR_DEFAULT
             end,
             on_select = function(value)
                 M.set_db_value("decor_color", value)
@@ -797,7 +789,6 @@ local function build_decor_row(parent, context)
         }
     )
     M.controls.decor_color = register_flight_locked_control(decor_color_dropdown, function()
-        if not M.decor_style_supports_color then return true end
         local style_dropdown = M.controls and M.controls.decor_style
         local style_key = style_dropdown and style_dropdown.GetValue and style_dropdown:GetValue() or nil
         return M.decor_style_supports_color(style_key)
@@ -868,7 +859,7 @@ local function build_fade_row(parent, context)
         M.set_db_value("fade_when_full", is_checked)
     end)
     M.controls.fade_when_full = register_flight_locked_control(fade_container, function()
-        return not (M.is_race_profile_active and M.is_race_profile_active())
+        return not (M.is_race_profile_active())
     end)
     place_grid_control(fade_container, CONTROL_GRID.fade_when_full)
     addon.AttachTooltipToTargets(STRINGS.fade_when_full_tooltip, fade_container, fade_cb, fade_label)
@@ -888,7 +879,7 @@ local function build_fade_row(parent, context)
         { immediate_callback = true }
     )
     M.controls.fade_alpha = register_flight_locked_control(fade_alpha_slider, function()
-        return not (M.is_race_profile_active and M.is_race_profile_active())
+        return not (M.is_race_profile_active())
     end)
     place_grid_control(fade_alpha_slider, CONTROL_GRID.fade_alpha)
 
@@ -906,7 +897,7 @@ local function build_fade_row(parent, context)
         set_setting_from_slider("fade_length")
     )
     M.controls.fade_length = register_flight_locked_control(fade_length_slider, function()
-        return not (M.is_race_profile_active and M.is_race_profile_active())
+        return not (M.is_race_profile_active())
     end)
     place_grid_control(fade_length_slider, CONTROL_GRID.fade_length)
 
@@ -953,9 +944,7 @@ local function build_race_profile_panel(parent, context)
     )
 
     local race_profile_test_button = addon.CreateTextButton(race_profile_panel, M._race_profile_test_enabled and STRINGS.stop_race_profile_test or STRINGS.race_profile_test, function()
-        if M.toggle_race_profile_test then
-            M.toggle_race_profile_test()
-        end
+        M.toggle_race_profile_test()
     end, {
         fit_texts = { STRINGS.race_profile_test, STRINGS.stop_race_profile_test },
         height = cfg.button_height,
@@ -969,7 +958,7 @@ local function build_race_profile_panel(parent, context)
         CONTROL_GRID.race_profile_test.y
     )
     M.controls.race_profile_test_button = register_flight_locked_control(race_profile_test_button, function()
-        local active_root_db = M.get_root_db and M.get_root_db()
+        local active_root_db = M.get_root_db()
         return active_root_db and active_root_db.race_profile_enabled or false
     end)
     size_panel_to_controls(race_profile_panel, cfg, race_profile_container, race_profile_test_button)
@@ -1007,9 +996,7 @@ local function build_spark_row(parent, context)
         if M.controls.show_spark and M.controls.show_spark.SetCheckedSilently then
             M.controls.show_spark:SetCheckedSilently(true)
         end
-        if M.apply_spark_settings then
-            M.apply_spark_settings()
-        end
+        M.apply_spark_settings()
     end)
     M.controls.spark_color = register_flight_locked_control(spark_color_picker)
     place_grid_control(spark_color_picker, CONTROL_GRID.spark_color)
@@ -1064,8 +1051,8 @@ function M.BuildVigorTab(parent)
             ROWS.spark,
         },
     })
-    local db = M.get_db and M.get_db()
-    local root_db = M.get_root_db and M.get_root_db()
+    local db = M.get_db()
+    local root_db = M.get_root_db()
     local defaults = M.DEFAULTS or {}
     local x_range = get_setting_range("x_position")
     local y_range = get_setting_range("y_position")
@@ -1081,17 +1068,15 @@ function M.BuildVigorTab(parent)
     local spark_size_range = get_setting_range("spark_size")
     local active_profile_proxy = setmetatable({}, {
         __index = function(_, key)
-            local active_db = M.get_db and M.get_db()
+            local active_db = M.get_db()
             return active_db and active_db[key]
         end,
         __newindex = function(_, key, value)
-            if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-                if M.sync_settings_controls then
-                    M.sync_settings_controls(M.get_db and M.get_db())
-                end
+            if M.is_settings_locked_by_flight() then
+                M.sync_settings_controls(M.get_db())
                 return
             end
-            local active_db = M.get_db and M.get_db()
+            local active_db = M.get_db()
             if active_db then
                 active_db[key] = value
             end
@@ -1099,17 +1084,15 @@ function M.BuildVigorTab(parent)
     })
     local position_proxy = setmetatable({}, {
         __index = function(_, key)
-            local active_db = M.get_db and M.get_db()
+            local active_db = M.get_db()
             return active_db and active_db.position and active_db.position[key]
         end,
         __newindex = function(_, key, value)
-            if M.is_settings_locked_by_flight and M.is_settings_locked_by_flight() then
-                if M.sync_settings_controls then
-                    M.sync_settings_controls(M.get_db and M.get_db())
-                end
+            if M.is_settings_locked_by_flight() then
+                M.sync_settings_controls(M.get_db())
                 return
             end
-            local active_db = M.get_db and M.get_db()
+            local active_db = M.get_db()
             if not active_db then return end
             active_db.position = active_db.position or {}
             active_db.position[key] = value

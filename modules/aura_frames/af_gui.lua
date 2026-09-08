@@ -189,7 +189,7 @@ end
 -- Sync GUI control states from DB (used after reset flows).
 function M.sync_general_controls_from_db()
     if not M.controls or not M.db then return end
-    if addon.CloseFontOptionsPopup then addon.CloseFontOptionsPopup(false) end
+    addon.CloseFontOptionsPopup(false)
 
     local function set_checked(control_key, value)
         local control = M.controls[control_key]
@@ -205,7 +205,7 @@ function M.sync_general_controls_from_db()
 
     local visible_icon_tick = M.controls.aura_visible_icon_tick_slider
     if visible_icon_tick and visible_icon_tick.SetValueSilently then
-        visible_icon_tick:SetValueSilently(M.get_visible_icon_tick_interval and M.get_visible_icon_tick_interval()
+        visible_icon_tick:SetValueSilently(M.get_visible_icon_tick_interval()
             or M.db.aura_visible_icon_tick
             or M.defaults.aura_visible_icon_tick)
     end
@@ -244,11 +244,7 @@ function M.sync_general_controls_from_db()
     end
 
     set_checked("show_bar_section_outlines_checkbox", M.db.show_bar_section_outlines)
-    if M.rebuild_shared_options_group then
-        M.rebuild_shared_options_group()
-    elseif M.sync_shared_options_controls then
-        M.sync_shared_options_controls()
-    end
+    M.sync_shared_options_controls()
 
 end
 

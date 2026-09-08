@@ -34,15 +34,9 @@ function M.apply_objectives()
         return
     end
 
-    if M.apply_background then
-        M.apply_background()
-    end
-    if M.apply_auto_collapse then
-        M.apply_auto_collapse()
-    end
-    if M.apply_section_count then
-        M.apply_section_count()
-    end
+    M.apply_background()
+    M.apply_auto_collapse()
+    M.apply_section_count()
 end
 
 --#endregion OBJECTIVE TRACKER RUNTIME =========================================
@@ -51,24 +45,22 @@ end
 --#region PUBLIC MODULE HOOKS ==================================================
 
 function M.on_reset_complete()
-    if M.rebuild_tracker_tab then M.rebuild_tracker_tab() end
+    if M.rebuild_tracker_tab then
+        M.rebuild_tracker_tab()
+    end
     M.apply_objectives()
-    if M.refresh_profiles_tab then M.refresh_profiles_tab() end
+    if M.refresh_profiles_tab then
+        M.refresh_profiles_tab()
+    end
 end
 
 function M.set_module_enabled(enabled)
     if enabled then
         M.apply_objectives()
     else
-        if M.restore_auto_collapse then
-            M.restore_auto_collapse("module disabled")
-        end
-        if M.set_section_count_module_enabled then
-            M.set_section_count_module_enabled(false)
-        end
-        if M.restore_background then
-            M.restore_background()
-        end
+        M.restore_auto_collapse("module disabled")
+        M.set_section_count_module_enabled(false)
+        M.restore_background()
     end
 end
 
@@ -107,9 +99,7 @@ loader:SetScript("OnEvent", function(self, event, arg1)
         if arg1 == addon_name then
             Ls_Tweeks_DB = Ls_Tweeks_DB or {}
             addon.apply_defaults(DEFAULTS, Ls_Tweeks_DB)
-            if addon.register_category then
-                addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 600, module_key = MODULE_KEY })
-            end
+            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 600, module_key = MODULE_KEY })
         elseif arg1 == "Blizzard_ObjectiveTracker" then
             M.apply_objectives()
         end
@@ -127,12 +117,8 @@ loader:SetScript("OnEvent", function(self, event, arg1)
         if M.is_runtime_enabled() then
             M.apply_objectives()
         else
-            if M.restore_auto_collapse then
-                M.restore_auto_collapse("module disabled after combat")
-            end
-            if M.restore_background then
-                M.restore_background()
-            end
+            M.restore_auto_collapse("module disabled after combat")
+            M.restore_background()
         end
     end
 end)

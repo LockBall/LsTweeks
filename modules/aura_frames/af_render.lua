@@ -153,25 +153,17 @@ local function apply_cooldown_overlay(obj, duration_object, expiration, duration
     local cooldown = obj and obj.cooldown
     if not cooldown then return end
 
-    if duration_object and cooldown.SetCooldownFromDurationObject then
+    if duration_object then
         if cooldown._lstweeks_cd_kind == "duration_object"
             and cooldown._lstweeks_cd_duration_object == duration_object
             and cooldown:IsShown() then
             return
         end
         set_shown_if_changed(cooldown, true)
-        local ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object, true)
-        if ok then
-            cooldown._lstweeks_cd_kind = "duration_object"
-            cooldown._lstweeks_cd_duration_object = duration_object
-            return
-        end
-        ok = pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration_object)
-        if ok then
-            cooldown._lstweeks_cd_kind = "duration_object"
-            cooldown._lstweeks_cd_duration_object = duration_object
-            return
-        end
+        cooldown:SetCooldownFromDurationObject(duration_object, true)
+        cooldown._lstweeks_cd_kind = "duration_object"
+        cooldown._lstweeks_cd_duration_object = duration_object
+        return
     end
 
     if expiration and duration and duration > 0 then
@@ -628,7 +620,6 @@ local function sync_test_preview_cooldown_pause(obj, entry)
     if not (cooldown and cooldown.SetPaused) then return end
 
     local paused = entry.is_test_preview == true
-        and M.is_test_preview_paused
         and M.is_test_preview_paused(entry.test_preview_show_key)
         or false
     -- Cooldown widgets animate independently from the addon ticker.  Apply the

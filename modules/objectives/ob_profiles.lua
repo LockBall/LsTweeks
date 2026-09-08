@@ -31,7 +31,7 @@ function M.apply_objectives_profile_data(data)
             db[key] = copy(defaults[key])
         end
     end
-    if M.on_reset_complete then M.on_reset_complete() end
+    M.on_reset_complete()
     return true, "Loaded profile."
 end
 M.profile_manager = addon.CreateProfileManager({ label = "Objectives", get_db = M.get_db, export_data = M.export_objectives_profile_data, apply_data = M.apply_objectives_profile_data })

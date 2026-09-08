@@ -34,14 +34,12 @@ end
 
 --#region FLIGHT LOCK HELPERS ==================================================
 local function settings_locked_by_flight()
-    return M.is_settings_locked_by_flight and M.is_settings_locked_by_flight()
+    return M.is_settings_locked_by_flight()
 end
 
 local function reject_settings_change_during_flight()
     if not settings_locked_by_flight() then return false end
-    if M.sync_settings_controls then
-        M.sync_settings_controls(M.get_db and M.get_db())
-    end
+    M.sync_settings_controls(M.get_db())
     return true
 end
 
@@ -253,7 +251,7 @@ M.LAYOUT_SETTING_KEYS = {
 --#region SHARED ACCESSORS =====================================================
 
 local function get_db()
-    return M.get_db and M.get_db()
+    return M.get_db()
 end
 
 local function get_defaults()
@@ -425,7 +423,7 @@ end
 function M.apply_fill_boost_texture_color(texture, color)
     if not texture then return end
     color = color or { r = 1, g = 1, b = 1, a = 1 }
-    local add_alpha = M.get_style_fill_add_alpha and M.get_style_fill_add_alpha() or FILL_ADD_ALPHA
+    local add_alpha = M.get_style_fill_add_alpha() or FILL_ADD_ALPHA
     texture:SetDesaturated(true)
     texture:SetBlendMode("ADD")
     texture:SetVertexColor(color.r or 1, color.g or 1, color.b or 1, (color.a or 1) * add_alpha)
@@ -452,9 +450,7 @@ function M.set_node_color(value)
     if not layout then return end
 
     layout.node_color = get_valid_node_color_key(style, value)
-    if M.sync_node_color_controls then
-        M.sync_node_color_controls()
-    end
+    M.sync_node_color_controls()
     M.refresh_layout()
 end
 
@@ -542,11 +538,7 @@ function M.set_style_fill_color(color)
     if not layout then return end
 
     layout.fill_color = normalize_color(color, M.get_style_layout_default(style_key, "fill_color"))
-    if M.apply_fill_color then
-        M.apply_fill_color()
-    elseif M.refresh then
-        M.refresh()
-    end
+    M.apply_fill_color()
 end
 
 function M.get_style_fill_add_alpha()
@@ -580,11 +572,7 @@ function M.set_style_fill_add_alpha(value)
     if not layout then return end
 
     layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_RANGES and M.SETTING_RANGES.fill_add_alpha)
-    if M.apply_fill_color then
-        M.apply_fill_color()
-    elseif M.refresh then
-        M.refresh()
-    end
+    M.apply_fill_color()
 end
 
 local function get_decor_style(db)
@@ -783,16 +771,12 @@ function M.set_decor_color(value)
 
     if style and style.disabled then
         layout.decor_color = DEFAULT_DECOR_COLOR_KEY
-        if M.sync_decor_color_controls then
-            M.sync_decor_color_controls()
-        end
+        M.sync_decor_color_controls()
         return
     end
 
     layout.decor_color = get_valid_decor_color_key(style, value)
-    if M.sync_decor_color_controls then
-        M.sync_decor_color_controls()
-    end
+    M.sync_decor_color_controls()
     M.refresh_layout()
 end
 

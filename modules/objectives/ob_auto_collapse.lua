@@ -138,9 +138,7 @@ local function defer_tracker_update(def, action, reason)
     if not def then return end
     collapse_queued[def.key] = false
     deferred_tracker_updates[def.key] = { action = action, reason = reason }
-    if M.defer_objectives_combat_update then
-        M.defer_objectives_combat_update()
-    end
+    M.defer_objectives_combat_update()
 end
 
 local function ensure_manual_toggle_hook(tracker, def)
@@ -207,7 +205,7 @@ local function collapse_tracker(def, reason)
     collapse_queued[def.key] = false
     if not should_auto_collapse(def) then return end
 
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         defer_tracker_update(def, "collapse", reason)
         return
     end
@@ -235,7 +233,7 @@ local function expand_tracker(def, reason)
     if not def then return end
     collapse_queued[def.key] = false
 
-    if M.is_objectives_combat_locked and M.is_objectives_combat_locked() then
+    if M.is_objectives_combat_locked() then
         defer_tracker_update(def, "expand", reason)
         return
     end

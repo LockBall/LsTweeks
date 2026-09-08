@@ -285,7 +285,7 @@ local function initialize_preset_bar(
     local spell_name = text_overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     if backend.bar_font then
         spell_name:SetFontObject(backend.bar_font)
-    elseif M.apply_bar_text_style then
+    else
         M.apply_bar_text_style(spell_name, category, cfg_db)
     end
     spell_name:SetPoint("LEFT", stack_text, "RIGHT", 2, 0)
@@ -790,9 +790,7 @@ end
 function M.create_managed_short_buff_backend(frame, cfg_db)
     -- Load Blizzard_AuraContainer before resolving its public sort enums;
     -- this Lua file itself can load earlier in the addon startup sequence.
-    if M.is_managed_aura_supported then
-        M.is_managed_aura_supported()
-    end
+    M.is_managed_aura_supported()
     local sort_method = rawget(_G, "AuraContainerSortMethod")
     local sort_direction = rawget(_G, "AuraContainerSortDirection")
     return create_managed_preset_backend(
@@ -823,8 +821,7 @@ end
 
 function M.refresh_managed_learned_buff_filters()
     if InCombatLockdown and InCombatLockdown() then return false end
-    local backend = M.get_managed_aura_backend
-        and M.get_managed_aura_backend("preset:static_long")
+    local backend = M.get_managed_aura_backend("preset:static_long")
     if not backend then return false end
     apply_managed_preset_presentation(backend, backend.cfg_db or M.db)
     return true
@@ -851,13 +848,9 @@ local function hide_managed_mock_preview(frame)
         frame._render_display_signature = nil
         frame._layout_cache = nil
     end
-    if M.apply_addon_frame_background then
-        M.apply_addon_frame_background(frame, { enabled = false, suppressed = true })
-    end
-    if M.hide_managed_test_preview_background then
-        M.hide_managed_test_preview_background(frame)
-    end
-    if M.refresh_visible_icon_ticker then M.refresh_visible_icon_ticker() end
+    M.apply_addon_frame_background(frame, { enabled = false, suppressed = true })
+    M.hide_managed_test_preview_background(frame)
+    M.refresh_visible_icon_ticker()
 end
 
 function M.update_managed_preset_frame(frame, show_key, move_key)
@@ -882,9 +875,7 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
     end
     set_shell_controls_shown(frame, activity.enabled and activity.moving == true)
     M.set_managed_aura_backend_enabled(backend, activity.enabled)
-    if M.refresh_frame_ooc_fade then
-        M.refresh_frame_ooc_fade(frame, activity)
-    end
+    M.refresh_frame_ooc_fade(frame, activity)
 
     if not activity.enabled then
         set_shell_controls_shown(frame, false)

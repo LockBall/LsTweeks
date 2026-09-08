@@ -361,9 +361,7 @@ function addon.CreateGroupColumn(parent, opts)
             action = {}
             action.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
             action.button:SetFrameLevel(frame:GetFrameLevel() + 3)
-            if addon.ApplyStandardButtonStyle then
-                addon.ApplyStandardButtonStyle(action.button)
-            end
+            addon.ApplyStandardButtonStyle(action.button)
             group_actions[group_key] = action
         end
         action.width = action_opts.width or (width - (pad * 2))

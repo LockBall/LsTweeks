@@ -10,9 +10,7 @@ local CATEGORY_NAME = "Audio Volumes"
 --#region RESET AND MODULE HOOKS ===============================================
 
 function M.on_reset_complete()
-    if M.stop_all_previews then
-        M.stop_all_previews()
-    end
+    M.stop_all_previews()
     M.restore_combat_volumes()
     M.restore_fishing_focus()
     M._defaults_applied = nil
@@ -57,29 +55,19 @@ function M.on_reset_complete()
     if M.refresh_profiles_tab then
         M.refresh_profiles_tab()
     end
-    if M.sync_temporary_profile_controls then
-        M.sync_temporary_profile_controls()
-    end
+    M.sync_temporary_profile_controls()
     M.sync_fishing_focus_events()
     M.sync_combat_volumes_events()
-    if M.sync_manual_situation_profile then
-        M.sync_manual_situation_profile()
-    end
+    M.sync_manual_situation_profile()
 end
 
 function M.set_module_enabled(enabled)
     if enabled then
         M.get_db()
         M.apply_audio_volumes()
-        if M.sync_fishing_focus_events then
-            M.sync_fishing_focus_events()
-        end
-        if M.sync_combat_volumes_events then
-            M.sync_combat_volumes_events()
-        end
-        if M.sync_manual_situation_profile then
-            M.sync_manual_situation_profile()
-        end
+        M.sync_fishing_focus_events()
+        M.sync_combat_volumes_events()
+        M.sync_manual_situation_profile()
         return
     end
 
@@ -123,15 +111,9 @@ loader:SetScript("OnEvent", function(self, event, name)
         if name ~= addon_name then return end
         M.get_db()
         M.apply_audio_volumes()
-        if M.sync_fishing_focus_events then
-            M.sync_fishing_focus_events()
-        end
-        if M.sync_combat_volumes_events then
-            M.sync_combat_volumes_events()
-        end
-        if M.sync_manual_situation_profile then
-            M.sync_manual_situation_profile()
-        end
+        M.sync_fishing_focus_events()
+        M.sync_combat_volumes_events()
+        M.sync_manual_situation_profile()
         if addon.register_category and M.BuildSettings then
             addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 400, module_key = M.MODULE_KEY })
         end

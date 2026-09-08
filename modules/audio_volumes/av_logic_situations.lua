@@ -235,9 +235,7 @@ function M.delete_custom_situation(situation_key)
         db.last_situation_key = nil
     end
     db.next_custom_situation_id = get_next_custom_situation_id(situations)
-    if M.clear_custom_situation_controls then
-        M.clear_custom_situation_controls(situation_key)
-    end
+    M.clear_custom_situation_controls(situation_key)
     if was_enabled then
         M.sync_manual_situation_profile()
     end
@@ -406,9 +404,7 @@ function M.set_quick_pick_from_menu(situation_key, enabled)
         db.last_quick_pick_key = situation_key
         db.last_situation_key = situation_key
     end
-    if M.sync_temporary_profile_controls then
-        M.sync_temporary_profile_controls()
-    end
+    M.sync_temporary_profile_controls()
     return true
 end
 
@@ -657,9 +653,7 @@ function M.apply_fishing_focus()
 end
 
 function M.restore_fishing_focus()
-    if M.stop_fishing_bobber_preview then
-        M.stop_fishing_bobber_preview()
-    end
+    M.stop_fishing_bobber_preview()
     if not M._fishing_focus_active then return end
 
     M._fishing_focus_active = false
