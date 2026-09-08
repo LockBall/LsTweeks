@@ -148,6 +148,10 @@ try {
         & "internal_dev/tests_tools/check_memory_sections.ps1"
     }
 
+    Invoke-Step "Internal ownership contracts" {
+        & "internal_dev/tests_tools/check_internal_contracts.ps1"
+    }
+
     Invoke-Step "Whitespace diff check" {
         git diff --check
         git diff --cached --check

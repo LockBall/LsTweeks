@@ -1,7 +1,6 @@
 -- Objectives Background: background sizing, color/opacity, owned border, and Background settings.
 local addon_name, addon = ...
 
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
 --#region SETTINGS AND DEFAULTS ================================================
@@ -276,8 +275,8 @@ local function clear_background_border_position_offsets()
         return
     end
 
-    db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x or 0
-    db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y or 0
+    db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x
+    db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y
 end
 
 local function get_background_aware_position_default(key)
@@ -320,7 +319,7 @@ end
 
 local function get_background_opacity()
     local db = M.get_db()
-    return addon.clamp_number(db and db.background_alpha, DEFAULTS.objectives.background_alpha or 0.5, COLOR_RANGE)
+    return addon.clamp_number(db and db.background_alpha, DEFAULTS.objectives.background_alpha, COLOR_RANGE)
 end
 
 local function get_edit_mode_objective_opacity_setting()
@@ -331,7 +330,7 @@ local function get_edit_mode_objective_opacity_setting()
 end
 
 local function set_wow_background_opacity(opacity, update_edit_mode)
-    local alpha = addon.clamp_number(opacity, DEFAULTS.objectives.background_alpha or 0.5, COLOR_RANGE)
+    local alpha = addon.clamp_number(opacity, DEFAULTS.objectives.background_alpha, COLOR_RANGE)
     local percent = math.floor((alpha * 100) + 0.5)
     local tracker = get_objective_tracker()
     local setting = get_edit_mode_objective_opacity_setting()
@@ -904,9 +903,7 @@ function M.get_background_status()
     fields[#fields + 1] = "bg_nineslice_alpha=" .. tostring(get_objective_tracker() and get_objective_tracker().NineSlice and get_objective_tracker().NineSlice:GetAlpha() or nil)
     fields[#fields + 1] = "objective_border=" .. tostring(is_background_border_enabled() == true)
     fields[#fields + 1] = "objective_border_shown=" .. tostring(objective_border_frame and objective_border_frame.IsShown and objective_border_frame:IsShown() or false)
-    if M.append_objective_position_status then
-        M.append_objective_position_status(fields)
-    end
+    M.append_objective_position_status(fields)
     fields[#fields + 1] = "bg_adjustments=" .. tostring(background_adjustments)
     fields[#fields + 1] = "bg_last_reason=" .. tostring(background_last_reason)
     append_background_module_status(fields)
@@ -930,12 +927,8 @@ function M.apply_background()
     if not is_background_border_enabled() then
         clear_background_border_position_offsets()
     end
-    if M.apply_objective_position then
-        M.apply_objective_position()
-    end
-    if M.apply_objective_move_mode then
-        M.apply_objective_move_mode()
-    end
+    M.apply_objective_position()
+    M.apply_objective_move_mode()
     sync_objective_border()
     apply_configured_background_color()
 end
@@ -943,22 +936,14 @@ end
 function M.restore_background()
     if M.is_objectives_combat_locked() then
         background_last_state = "combat_restore_deferred"
-        if M.restore_objective_move_mode then
-            M.restore_objective_move_mode()
-        end
-        if M.restore_objective_position then
-            M.restore_objective_position()
-        end
+        M.restore_objective_move_mode()
+        M.restore_objective_position()
         M.defer_objectives_combat_update()
         return
     end
 
-    if M.restore_objective_move_mode then
-        M.restore_objective_move_mode()
-    end
-    if M.restore_objective_position then
-        M.restore_objective_position()
-    end
+    M.restore_objective_move_mode()
+    M.restore_objective_position()
     if objective_border_frame then
         objective_border_frame:Hide()
     end
@@ -1006,15 +991,11 @@ local function set_background_color(reason)
     if border_was_enabled ~= border_is_enabled or border_auto_enabled or reason == "reset" then
         if border_auto_enabled then
             set_background_border_position_offsets()
-            if M.apply_objective_position then
-                M.apply_objective_position()
-            end
-            if M.sync_objective_position_sliders then
-                M.sync_objective_position_sliders()
-            end
+            M.apply_objective_position()
+            M.sync_objective_position_sliders()
         end
         sync_objective_border()
-        if M.controls.objective_tracker_border_checkbox and M.controls.objective_tracker_border_checkbox.SetCheckedSilently then
+        if M.controls.objective_tracker_border_checkbox then
             M.controls.objective_tracker_border_checkbox:SetCheckedSilently(border_is_enabled)
         end
     end
@@ -1028,10 +1009,10 @@ local function sync_background_controls()
     local wow_enabled = should_customize_background()
     local db = M.get_db()
     local color_enabled = is_background_color_enabled(db)
-    if M.controls.background_color_picker and M.controls.background_color_picker.SetEnabled then
+    if M.controls.background_color_picker then
         M.controls.background_color_picker:SetEnabled(color_enabled)
     end
-    if M.controls.background_alpha_slider and M.controls.background_alpha_slider.SetEnabled then
+    if M.controls.background_alpha_slider then
         M.controls.background_alpha_slider:SetEnabled(wow_enabled)
     end
 end
@@ -1066,12 +1047,8 @@ local function set_objective_border(enabled)
     else
         clear_background_border_position_offsets()
     end
-    if M.apply_objective_position then
-        M.apply_objective_position()
-    end
-    if M.sync_objective_position_sliders then
-        M.sync_objective_position_sliders()
-    end
+    M.apply_objective_position()
+    M.sync_objective_position_sliders()
     sync_objective_border()
 end
 

@@ -4,7 +4,18 @@
 
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
+addon.aura_frames = {
+    _cdm_refresh_pending = {},
+    _managed_aura_backends = {},
+    _test_preview_paused_times = {},
+    _test_preview_started = {},
+    _test_preview_time_offsets = {},
+    _tooltip_data_lines_cache = {},
+    controls = {},
+    frames = {},
+    frames_list = {},
+    grid_lines = {},
+}
 local M = addon.aura_frames
 
 --#region PROFILE SCHEMA ======================================================
@@ -69,9 +80,9 @@ end
 function M.apply_presentation_growth_defaults(defaults, frame_defs)
     if not defaults then return end
     for _, frame_def in ipairs(frame_defs or {}) do
-        local growth = frame_def.growth or {}
-        defaults["growth_icon_" .. frame_def.key] = growth.icon or "DOWN"
-        defaults["growth_bar_" .. frame_def.key] = growth.bar or "DOWN"
+        local growth = frame_def.growth
+        defaults["growth_icon_" .. frame_def.key] = growth.icon
+        defaults["growth_bar_" .. frame_def.key] = growth.bar
     end
 end
 
@@ -95,9 +106,8 @@ function M.get_mode_growth(cfg_db, category, bar_mode)
     local fallback
     if bar_mode then
         fallback = cfg_db and cfg_db ~= M.db
-            and M.CUSTOM_FRAME_TEMPLATE and M.CUSTOM_FRAME_TEMPLATE[mode_key]
-            or M.defaults and M.defaults[mode_key .. "_" .. category]
-            or "DOWN"
+            and M.CUSTOM_FRAME_TEMPLATE[mode_key]
+            or M.defaults[mode_key .. "_" .. category]
     else
         fallback = "RIGHT"
     end

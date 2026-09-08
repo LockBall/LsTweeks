@@ -12,7 +12,6 @@
 local addon_name, addon = ...
 
 -- Ensure the unified module table is used
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local function build_profiles_tab(parent)
@@ -140,7 +139,7 @@ function M.BuildSettings(parent)
 end
 
 local function get_frame_test_control_keys(category)
-    if M.FRAME_DEFS_BY_KEY and M.FRAME_DEFS_BY_KEY[category] then
+    if M.FRAME_DEFS_BY_KEY[category] then
         local test_key = "test_aura_" .. category
         return test_key, test_key .. "_pause", "show_" .. category
     end
@@ -154,7 +153,7 @@ local function sync_test_aura_category(category)
     local enabled = value_table and value_table[test_key] == true
     local frame_test_key, frame_pause_key, frame_show_key = get_frame_test_control_keys(category)
     local frame_test_control = M.controls[frame_test_key]
-    if frame_test_control and frame_test_control.SetCheckedSilently then
+    if frame_test_control then
         frame_test_control:SetCheckedSilently(enabled)
     end
     local frame_pause_control = M.controls[frame_pause_key]
@@ -164,19 +163,19 @@ local function sync_test_aura_category(category)
     end
     if enabled then
         local frame_show_control = M.controls[frame_show_key]
-        if frame_show_control and frame_show_control.SetCheckedSilently then
+        if frame_show_control then
             frame_show_control:SetCheckedSilently(value_table[show_storage_key] == true)
         end
     end
 end
 
 function M.sync_test_aura_controls(category)
-    if not (M.controls and M.db and M.get_test_aura_binding) then return end
+    if not M.db then return end
     if category ~= nil then
         sync_test_aura_category(category)
         return
     end
-    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
         if frame_def.supports_test_aura ~= false then
             sync_test_aura_category(frame_def.key)
         end
@@ -188,12 +187,12 @@ end
 
 -- Sync GUI control states from DB (used after reset flows).
 function M.sync_general_controls_from_db()
-    if not M.controls or not M.db then return end
+    if not M.db then return end
     addon.CloseFontOptionsPopup(false)
 
     local function set_checked(control_key, value)
         local control = M.controls[control_key]
-        if control and control.SetCheckedSilently then
+        if control then
             control:SetCheckedSilently(value == true)
         end
     end
@@ -204,13 +203,13 @@ function M.sync_general_controls_from_db()
     set_checked("show_grid_checkbox", M.db.show_grid)
 
     local visible_icon_tick = M.controls.aura_visible_icon_tick_slider
-    if visible_icon_tick and visible_icon_tick.SetValueSilently then
+    if visible_icon_tick then
         visible_icon_tick:SetValueSilently(M.get_visible_icon_tick_interval()
             or M.db.aura_visible_icon_tick
             or M.defaults.aura_visible_icon_tick)
     end
 
-    for _, cat in ipairs(M.CATEGORIES or {}) do
+    for _, cat in ipairs(M.CATEGORIES) do
         local keys = {
             "show_" .. cat,
             "move_" .. cat,
@@ -239,7 +238,7 @@ function M.sync_general_controls_from_db()
     for _, cat in ipairs(M.CATEGORIES) do
         for _, prefix in ipairs({ "bar_text_options_", "timer_text_options_", "stack_text_options_" }) do
             local picker = M.controls[prefix .. cat]
-            if picker and picker.Refresh then picker:Refresh() end
+            if picker then picker:Refresh() end
         end
     end
 

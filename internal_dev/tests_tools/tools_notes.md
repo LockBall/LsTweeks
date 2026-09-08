@@ -188,7 +188,7 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_fast.ps1 -Package
 ```
 
-The first command runs Lua 5.1 syntax checks for addon-owned Lua files loaded by `LsTweeks.toc` excluding `libs/`, Lua region validation, and staged plus unstaged whitespace checks. The `-Changed` form narrows only the Lua syntax step to changed Lua files; region validation, whitespace diff, and line-ending checks still run normally. The `-Package` form also builds and verifies the release zip.
+The first command runs Lua 5.1 syntax checks for addon-owned Lua files loaded by `LsTweeks.toc` excluding `libs/`, Lua region validation, internal helper/table ownership checks, and staged plus unstaged whitespace checks. The ownership check rejects defensive addon-table initialization, repeated initialization of stable module tables, probing of TOC-guaranteed addon helpers, fallbacks around canonical constant/schema tables, and optional-method checks on addon-created controls. Its allowlists are limited to lazily installed settings callbacks, optional tooltip diagnostics, and runtime tables whose nil state has lifecycle meaning. Before extending an allowlist, classify and document the durable exception under `project.md` `### Deterministic Ownership And Optionality`; an isolated-test failure is not an exception. The `-Changed` form narrows only the Lua syntax step to changed Lua files; region validation, ownership checks, whitespace diff, and line-ending checks still run normally. The `-Package` form also builds and verifies the release zip.
 
 Lua region helper:
 

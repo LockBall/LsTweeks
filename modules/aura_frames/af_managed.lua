@@ -5,7 +5,6 @@
 
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local CreateFrame = CreateFrame
@@ -20,7 +19,6 @@ local type = type
 local MANAGED_CONTAINER_TEMPLATE = "CustomAuraContainerTemplate"
 local MANAGED_CONTAINER_ADDON = "Blizzard_AuraContainer"
 
-M._managed_aura_backends = M._managed_aura_backends or {}
 if M._managed_aura_runtime_enabled == nil then
     M._managed_aura_runtime_enabled = false
 end

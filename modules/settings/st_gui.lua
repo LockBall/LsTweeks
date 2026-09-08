@@ -5,11 +5,7 @@
 
 local addon_name, addon = ...
 
-addon.st = addon.st or {}
 local M = addon.st
-
-M.controls = M.controls or {}
-M.frames = M.frames or {}
 
 local math_max = math.max
 local math_ceil = math.ceil
@@ -141,20 +137,20 @@ function M.sync_settings_controls()
 
     local defaults = addon.module_defaults.st
     local minimap_cb = M.controls.minimap_checkbox
-    if minimap_cb and minimap_cb.SetCheckedSilently then
+    if minimap_cb then
         minimap_cb:SetCheckedSilently(not Ls_Tweeks_DB.minimap.hide)
     end
     local reload_cb = M.controls.open_on_reload_checkbox
-    if reload_cb and reload_cb.SetCheckedSilently then
+    if reload_cb then
         reload_cb:SetCheckedSilently(Ls_Tweeks_DB.open_on_reload or false)
     end
     local alpha_slider = M.controls.alpha_slider
-    if alpha_slider and alpha_slider.SetValueSilently then
-        alpha_slider:SetValueSilently(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha or 0.5)
+    if alpha_slider then
+        alpha_slider:SetValueSilently(Ls_Tweeks_DB.interface_alpha or defaults.interface_alpha)
     end
     for _, module_def in ipairs(addon.FEATURE_MODULES) do
         local module_cb = M.controls["module_" .. module_def.key]
-        if module_cb and module_cb.SetCheckedSilently then
+        if module_cb then
             module_cb:SetCheckedSilently(addon.is_module_enabled(module_def.key))
         end
     end

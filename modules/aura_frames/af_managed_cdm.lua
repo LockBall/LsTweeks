@@ -58,7 +58,7 @@ local function get_effective_cooldown_ids(category_enum)
     -- An empty category is authoritative once any sibling CDM category is
     -- populated. Only a provider that is empty across every addon CDM frame is
     -- treated as transiently uninitialized.
-    for _, category in ipairs(M.CDM_CATEGORIES or EMPTY_SPELL_IDS) do
+    for _, category in ipairs(M.CDM_CATEGORIES) do
         local sibling_enum = get_cdm_category(category)
         if sibling_enum ~= nil and sibling_enum ~= category_enum then
             local sibling_ids = read_effective_category_ids(get_ordered_ids, provider, sibling_enum)
@@ -308,19 +308,17 @@ local function apply_backend_style(backend)
     local cfg_db = backend.cfg_db
     local category = backend.category
     local show_timer_text = cfg_db["timer_" .. category] ~= false
-    if backend.duration_font and M.apply_number_font_style then
+    if backend.duration_font then
         M.apply_number_font_style(backend.duration_font, category, cfg_db, show_timer_text and 1 or 0)
     end
-    if backend.stack_font and M.apply_stack_font_style then
+    if backend.stack_font then
         M.apply_stack_font_style(backend.stack_font, category, cfg_db)
     end
     local metrics = M.MANAGED_PRESENTATION_METRICS
     local width = math.max(M.MIN_FRAME_WIDTH, cfg_db["width_" .. category] or M.DEFAULT_FRAME_WIDTH)
-        - ((metrics and metrics.bar_frame_inset or 6) * 2)
+        - (metrics.bar_frame_inset * 2)
     local bar_color = M.get_managed_presentation_bar_color(cfg_db, category)
-    if M.apply_managed_icon_swipe_style then
-        M.apply_managed_icon_swipe_style(backend, cfg_db)
-    end
+    M.apply_managed_icon_swipe_style(backend, cfg_db)
     M.for_each_accessible_managed_aura_button(backend, function(aura_button)
         local duration_bar = backend.bar_regions[aura_button]
         if duration_bar then
@@ -329,7 +327,7 @@ local function apply_backend_style(backend)
         end
     end)
     local aura_mode = cfg_db["cooldown_mode_" .. category] ~= true
-    if aura_mode and M.apply_managed_presentation_chrome then
+    if aura_mode then
         M.apply_managed_presentation_chrome(
             backend,
             cfg_db,
@@ -417,7 +415,7 @@ function M.refresh_managed_cdm_backend(frame, _bar_mode)
 end
 
 function M.create_managed_cdm_backend(frame, cfg_db, category)
-    if not (frame and cfg_db and category and M.create_managed_aura_backend) then return nil end
+    if not (frame and cfg_db and category) then return nil end
     local backend, backend_error = M.create_managed_aura_backend(
         frame,
         "cdm:" .. category,

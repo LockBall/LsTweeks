@@ -5,7 +5,6 @@ local _, addon = ...
 
 --#region PROFILE SCHEMA =======================================================
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 local PROFILE_KEYS = {
@@ -33,7 +32,7 @@ function M.apply_audio_volumes_profile_data(data)
         db[key] = data[key] ~= nil and copy(data[key]) or copy(defaults[key])
     end
     M._defaults_applied = nil
-    M._target_defaults_applied = nil
+    M._target_defaults_applied = {}
     M.get_db()
     M.on_reset_complete()
     return true, "Loaded profile."

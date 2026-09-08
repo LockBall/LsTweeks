@@ -10,11 +10,11 @@ local _, addon = ...
 --#region SLIDER CONSTANTS ====================================================
 
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
-local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE or {
+addon.SLIDER_WITH_BOX_SIZE = {
     width = 130,
     height = 95,
 }
-addon.SLIDER_WITH_BOX_SIZE = SLIDER_WITH_BOX_SIZE
+local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE
 
 --#endregion SLIDER CONSTANTS =================================================
 
@@ -43,15 +43,10 @@ function addon.CreateSliderWithBox(name, parent, label_text, min_v, max_v, step,
 
     local function style_slider_button(button, normal_font, highlight_font)
         if not button then return end
-        if addon.ApplyStandardButtonStyle then
-            addon.ApplyStandardButtonStyle(button, {
-                normal_font_object = normal_font,
-                highlight_font_object = highlight_font or normal_font,
-            })
-        else
-            button:SetNormalFontObject(normal_font)
-            button:SetHighlightFontObject(highlight_font or normal_font)
-        end
+        addon.ApplyStandardButtonStyle(button, {
+            normal_font_object = normal_font,
+            highlight_font_object = highlight_font or normal_font,
+        })
     end
 
     local slider = CreateFrame("Slider", name, container, "MinimalSliderTemplate")

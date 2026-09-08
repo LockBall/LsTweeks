@@ -2,11 +2,6 @@
 -- Frame construction, atlas sizing, positioning, layout, and slot rendering live here.
 local addon_name, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
-    controls = {},
-    slots = {},
-}
-
 local M = addon.skyriding_vigor
 
 local C_Texture_GetAtlasInfo = C_Texture and C_Texture.GetAtlasInfo
@@ -98,7 +93,7 @@ end
 
 local function get_saved_center(db)
     local defaults = get_defaults()
-    local pos = db and db.position or defaults.position or {}
+    local pos = db and db.position or defaults.position
     return pos.x or 0, pos.y or 0
 end
 
@@ -179,7 +174,7 @@ end
 
 local function get_spacing_pixels(db, style)
     local defaults = get_defaults()
-    local default_spacing = defaults.spacing or 5
+    local default_spacing = defaults.spacing
     local spacing_setting = db and db.spacing
     if spacing_setting == nil then
         spacing_setting = default_spacing
@@ -371,7 +366,7 @@ local function update_slot_spark(slot, state, progress, style_key, style, db, sp
     if not slot or not slot.spark then return end
 
     db = db or get_db()
-    if spark_atlas == nil and M.get_spark_atlas then
+    if spark_atlas == nil then
         spark_atlas = M.get_spark_atlas(db, style_key, style)
     end
     local show_spark = SHOW_SPARK_LAYER and db and db.show_spark and state == "filling"
@@ -777,7 +772,7 @@ function M.apply_layout()
     local defaults = get_defaults()
     local style_key, style = M.get_bar_style(db)
     local spacing = get_spacing_pixels(db, style)
-    local scale = M.get_style_layout_number(db, style_key, "scale") or defaults.scale or 1
+    local scale = M.get_style_layout_number(db, style_key, "scale") or defaults.scale
     local width, height = get_node_size(style)
     local frame_width, frame_height = get_frame_size(style)
     local decor_style_key, decor_style = M.get_decor_style(db)

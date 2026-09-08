@@ -2,11 +2,6 @@
 -- Runtime event routing and rendering decisions live in sv_main.lua.
 local _, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
-    controls = {},
-    slots = {},
-}
-
 local M = addon.skyriding_vigor
 
 local C_PlayerInfo_GetGlidingInfo = C_PlayerInfo and C_PlayerInfo.GetGlidingInfo

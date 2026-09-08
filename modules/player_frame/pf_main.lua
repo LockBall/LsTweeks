@@ -1,11 +1,6 @@
 -- Player Frame main controller: portrait combat text, lifecycle, and events.
 -- Registers the "Player Frame" settings category and applies changes immediately.
 local addon_name, addon = ...
-addon.player_frame = addon.player_frame or {
-    controls = {},
-    frames = {}
-}
-
 local M = addon.player_frame
 
 local math_min = math.min
@@ -130,7 +125,7 @@ end
 M.set_player_frame_setting = set_player_frame_setting
 
 local function on_fade_slider_changed(key)
-    if is_runtime_enabled() and M.fade.on_fade_setting_changed then
+    if is_runtime_enabled() then
         M.fade.on_fade_setting_changed(get_player_frame_db(), key)
     end
     M.update_player_frame()
@@ -194,23 +189,21 @@ function M.set_module_enabled(enabled)
     stop_runtime()
 end
 
-if addon.register_module_status then
-    addon.register_module_status(MODULE_KEY, function()
-        local fade_status = M.fade and M.fade.get_runtime_status and M.fade.get_runtime_status()
-        local fields = {
-            "fade_events=" .. tostring(fadeEventsRegistered == true),
-            "loader_event_script=" .. tostring(loader and loader:GetScript("OnEvent") ~= nil),
-            "hide_portrait_text=" .. tostring(hidePortraitText == true),
-        }
-        if fade_status then
-            fields[#fields + 1] = "fade_state=" .. tostring(fade_status.state)
-            fields[#fields + 1] = "fade_delay_timer=" .. tostring(fade_status.fade_delay_timer == true)
-            fields[#fields + 1] = "fade_ticker=" .. tostring(fade_status.fade_ticker == true)
-            fields[#fields + 1] = "queued_health_timer=" .. tostring(fade_status.queued_health_timer == true)
-        end
-        return fields
-    end)
-end
+addon.register_module_status(MODULE_KEY, function()
+    local fade_status = M.fade.get_runtime_status()
+    local fields = {
+        "fade_events=" .. tostring(fadeEventsRegistered == true),
+        "loader_event_script=" .. tostring(loader and loader:GetScript("OnEvent") ~= nil),
+        "hide_portrait_text=" .. tostring(hidePortraitText == true),
+    }
+    if fade_status then
+        fields[#fields + 1] = "fade_state=" .. tostring(fade_status.state)
+        fields[#fields + 1] = "fade_delay_timer=" .. tostring(fade_status.fade_delay_timer == true)
+        fields[#fields + 1] = "fade_ticker=" .. tostring(fade_status.fade_ticker == true)
+        fields[#fields + 1] = "queued_health_timer=" .. tostring(fade_status.queued_health_timer == true)
+    end
+    return fields
+end)
 
 --#endregion PUBLIC MODULE HOOKS ===============================================
 

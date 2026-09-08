@@ -1,6 +1,5 @@
 -- Objectives settings tab host.
 local _, addon = ...
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
 --#region GENERAL TAB ==========================================================

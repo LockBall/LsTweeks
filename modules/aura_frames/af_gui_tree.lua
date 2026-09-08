@@ -9,7 +9,6 @@ local _, addon = ...
 
 local GetTime = GetTime
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 function M.build_frames_tab(p, frames_data)
     local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
@@ -40,7 +39,6 @@ function M.build_frames_tab(p, frames_data)
     tree_frame:SetSize(TREE_W, TREE_H)
     M.frames_tree_frame  = tree_frame                             -- shared bottom anchor for child panels
     M.apply_thin_border_backdrop(tree_frame, { r = 0.08, g = 0.08, b = 0.08, a = 0.9 }, { r = 0.4, g = 0.4, b = 0.4, a = 0.8 })
-    addon.alpha_affected_frames = addon.alpha_affected_frames or {}
     table.insert(addon.alpha_affected_frames, { frame = tree_frame, r = 0.08, g = 0.08, b = 0.08 })
     addon.apply_interface_alpha()
 
@@ -489,7 +487,7 @@ function M.build_frames_tab(p, frames_data)
         local panel = _G["CooldownViewerSettings"]
         hook_cdm_settings_panel(panel)
         queue_cdm_refreshes()
-        if panel and panel.Show then
+        if panel then
             panel:Show()
             if panel.Raise then panel:Raise() end
             return

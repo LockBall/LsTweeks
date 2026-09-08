@@ -7,7 +7,6 @@
 
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 local UPDATE_INTERVALS = addon.UPDATE_INTERVALS
 
@@ -60,7 +59,6 @@ local function build_grid_lines()
     -- Reuse pooled textures; only allocate when pool is exhausted.
     -- WoW cannot destroy textures, so the pool grows to the high-water mark
     -- and stabilises there — no unbounded accumulation across rebuilds.
-    M.grid_lines = M.grid_lines or {}
     local pool = M.grid_lines
     for i = 1, spec_count do
         local s = _grid_line_specs[i]

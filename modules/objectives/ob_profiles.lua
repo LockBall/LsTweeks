@@ -1,6 +1,5 @@
 -- Objectives profile schema and runtime application.
 local _, addon = ...
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
 --#region PROFILE SCHEMA =======================================================

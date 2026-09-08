@@ -8,7 +8,6 @@ local C_Timer        = C_Timer
 local wipe           = wipe
 local InCombatLockdown = InCombatLockdown
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 local TEXT_STYLE_SUFFIXES = { "size", "bold", "outline" }
 
@@ -35,7 +34,7 @@ function M.on_shared_options_changed()
     M.invalidate_all_frame_runtime_config()
     M.sync_shared_options_controls()
     M.apply_number_font_to_all()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+    if not M.is_runtime_enabled() then return end
 
     local frames_list = M.frames_list
     if not frames_list then return end
@@ -73,7 +72,7 @@ function M.resolve_text_options(category, text_type, local_options)
         bold = local_options.bold,
         outline = local_options.outline,
     }
-    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE and M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
+    local text_def = M.TEXT_OPTION_DEFS_BY_TYPE[text_type]
     if not text_def then return resolved end
     local shared_prefix = text_def.shared_prefix .. "_"
     if M.db and M.db.shared_options_enabled == true then
@@ -386,8 +385,8 @@ end
 -- Custom frames set frame.is_custom = true and frame.custom_entry = <entry table>.
 
 function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key, spacing_key, aura_filter)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
-    if self and self._managed_aura_backend and M.update_managed_preset_frame then
+    if not M.is_runtime_enabled() then return end
+    if self and self._managed_aura_backend then
         M.update_managed_preset_frame(self, show_key, move_key)
         local managed_activity = M.get_frame_activity_state(self, show_key, move_key)
         if managed_activity.test_aura ~= true then return end
@@ -409,7 +408,7 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     if not activity.enabled then
         self._display_count = 0
         M.hide_managed_test_preview_background(self)
-        if self._managed_cdm_backend and M.set_managed_aura_backend_enabled then
+        if self._managed_cdm_backend then
             M.set_managed_aura_backend_enabled(self._managed_cdm_backend, false)
         end
         M.apply_addon_frame_background(self, {
@@ -479,9 +478,7 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     if needs_layout and not in_combat and not is_user_positioning then
         M.setup_layout(self, show_key, spacing_key, bar_mode)
     end
-    if managed_preview and not in_combat and not is_user_positioning
-        and M.position_managed_test_preview
-    then
+    if managed_preview and not in_combat and not is_user_positioning then
         M.position_managed_test_preview(self, growth)
     end
 
@@ -507,7 +504,7 @@ function M.update_auras(self, show_key, move_key, timer_key, _bg_key, scale_key,
     )
 
     local managed_cdm_aura_mode = false
-    if self._managed_cdm_backend and M.refresh_managed_cdm_backend then
+    if self._managed_cdm_backend then
         M.refresh_managed_cdm_backend(self, bar_mode)
         managed_cdm_aura_mode = M.set_managed_cdm_move_outline_shown(self, is_moving)
     end

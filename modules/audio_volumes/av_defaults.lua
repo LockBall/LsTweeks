@@ -7,7 +7,12 @@
 
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
+addon.audio_volumes = {
+    controls = {},
+    _event_cache = {},
+    _registered_events = {},
+    _target_defaults_applied = {},
+}
 local M = addon.audio_volumes
 
 M.REPLACEMENT_FILE_MIN_LEVEL = 0
@@ -36,7 +41,7 @@ local function build_numbered_replacement_paths(asset_key, min_level, max_level)
 end
 
 local function apply_replacement_paths(targets)
-    for _, target in pairs(targets or {}) do
+    for _, target in pairs(targets) do
         if target.replacement_asset and not target.replacement_paths then
             target.replacement_paths = build_numbered_replacement_paths(
                 target.replacement_asset,
@@ -101,7 +106,7 @@ M.SOUND_EVENT_TARGETS = {}
 -- Each event intentionally belongs to one target. handle_event plays only the
 -- first cached slot, so revisit that handler before assigning an event twice.
 for target_key, target in pairs(M.SOUND_TARGETS) do
-    for _, event_name in ipairs(target.events or {}) do
+    for _, event_name in ipairs(target.events) do
         local event_targets = M.SOUND_EVENT_TARGETS[event_name]
         if not event_targets then
             event_targets = {}
@@ -149,7 +154,6 @@ M.defaults = {
     },
 }
 
-addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.audio_volumes = M.defaults
 
 --#endregion FILE CONTENTS ===================================================

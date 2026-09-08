@@ -219,7 +219,7 @@ h.test("WoW background toggle never invokes Blizzard tracker Update", function()
         "owned background refresh does not execute Blizzard tracker Update")
 end)
 
-h.test("absent border clears only the legacy automatic position shift", function()
+h.test("disabled border clears only the addon-owned automatic position shift", function()
     reset_runtime()
     local db = fresh_db({
         background_color = { r = 0.4, g = 0.3, b = 0.2, a = 0.7 },
@@ -230,8 +230,8 @@ h.test("absent border clears only the legacy automatic position shift", function
     M.apply_background()
 
     h.is_nil(objective_border_frame(), "saved color alone does not imply an enabled border")
-    h.eq(db.objective_tracker_offset_x, 0, "absent border clears its legacy automatic X shift")
-    h.eq(db.objective_tracker_offset_y, 0, "absent border clears its legacy automatic Y shift")
+    h.eq(db.objective_tracker_offset_x, 0, "disabled border clears its addon-owned automatic X shift")
+    h.eq(db.objective_tracker_offset_y, 0, "disabled border clears its addon-owned automatic Y shift")
 end)
 
 h.test("queued background sync rejects a disabled module before combat deferral", function()

@@ -8,10 +8,6 @@ local M = addon.aura_frames
 
 --#region MODULE STATE AND COOLDOWN REFRESH ====================================
 -- Runtime state tables. The saved DB is attached during ADDON_LOADED.
-M.frames = M.frames or {}
-M.frames_list = M.frames_list or {}
-M.controls = M.controls or {}
-
 -- CACHED GLOBALS AND CONSTANTS
 local format = string.format
 local floor = math.floor
@@ -196,10 +192,9 @@ function M.apply_number_font_to_all()
 end
 
 local function run_wow_cooldown_refresh(refresh_config, category_filter)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
-    if not M.frames then return end
+    if not M.is_runtime_enabled() then return end
 
-    if refresh_config.mark_scan_dirty and M.invalidate_aura_scan_caches then
+    if refresh_config.mark_scan_dirty then
         M.invalidate_aura_scan_caches()
     end
 
@@ -219,7 +214,6 @@ end
 
 local function schedule_wow_cooldown_refresh(delay, refresh_config, category_filter)
     delay = delay or 0
-    M._cdm_refresh_pending = M._cdm_refresh_pending or {}
     local key = tostring(delay)
         .. "|" .. tostring(refresh_config.defer_zero == true)
         .. "|" .. tostring(refresh_config.mark_scan_dirty == true)
@@ -260,7 +254,7 @@ function M.install_cdm_layout_refresh_hook()
     end
 
     hooksecurefunc(cdm_api, "SetLayoutData", function()
-        if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+        if not M.is_runtime_enabled() then return end
         M.queue_wow_cooldown_refresh("settings")
     end)
     M._cdm_layout_refresh_hooked = true
@@ -354,7 +348,6 @@ end
 local function cache_tooltip_data_lines_for_identity(aura_instance_id, spell_id)
     local aura_key, spell_key = get_aura_tooltip_cache_keys_for_identity(aura_instance_id, spell_id)
     if not aura_key and not spell_key then return nil end
-    M._tooltip_data_lines_cache = M._tooltip_data_lines_cache or {}
     local aura_cached = aura_key and M._tooltip_data_lines_cache[aura_key]
     local spell_cached = spell_key and M._tooltip_data_lines_cache[spell_key]
     local cached = aura_cached or spell_cached
@@ -394,7 +387,7 @@ function M.clear_aura_tooltip_instance_cache()
 end
 
 function M.prewarm_aura_tooltip_cache(frame)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return end
+    if not M.is_runtime_enabled() then return end
     if InCombatLockdown and InCombatLockdown() then return end
     local icons = frame and frame.icons
     if not icons then return end
@@ -430,7 +423,7 @@ function M.prewarm_aura_tooltip_cache(frame)
     local retry_frame = frame
     C_Timer.After(UPDATE_INTERVALS.fifth_sec, function()
         retry_frame._tooltip_cache_retry_pending = false
-        if not (InCombatLockdown and InCombatLockdown()) and M.prewarm_aura_tooltip_cache then
+        if not (InCombatLockdown and InCombatLockdown()) then
             M.prewarm_aura_tooltip_cache(retry_frame)
         end
     end)
@@ -810,7 +803,6 @@ local function save_aura_frame_width(frame, category, width)
 end
 
 local function get_width_slider_control(frame, category)
-    if not M.controls then return nil end
     if frame.is_custom and frame.custom_entry and frame.custom_entry.id then
         return M.controls["custom_" .. frame.custom_entry.id .. "_width"]
     end
@@ -865,7 +857,7 @@ local function create_aura_frame_resizer(frame, category)
             s._clamping_size = nil
             w = M.MIN_FRAME_WIDTH
         end
-        if w and M.update_managed_move_outline_width then
+        if w then
             M.update_managed_move_outline_width(s, w)
         end
     end)
@@ -882,7 +874,7 @@ local function create_aura_frame_resizer(frame, category)
         save_aura_frame_width(frame, category, clamped_width)
 
         local width_slider = get_width_slider_control(frame, category)
-        if width_slider and width_slider.SetValueSilently then
+        if width_slider then
             width_slider:SetValueSilently(clamped_width)
         end
 
@@ -959,7 +951,7 @@ local function handle_aura_frame_event(frame, event, unit)
     if not params then return end
     if not is_aura_frame_event_relevant(event, unit) then return end
 
-    if event == "PLAYER_ENTERING_WORLD" and M.clear_aura_tooltip_instance_cache then
+    if event == "PLAYER_ENTERING_WORLD" then
         M.clear_aura_tooltip_instance_cache()
     end
 
@@ -968,7 +960,7 @@ local function handle_aura_frame_event(frame, event, unit)
         return
     end
 
-    if event == "PLAYER_REGEN_DISABLED" and M.prewarm_aura_tooltip_cache then
+    if event == "PLAYER_REGEN_DISABLED" then
         M.prewarm_aura_tooltip_cache(frame)
     end
 
@@ -1162,17 +1154,15 @@ function M.destroy_custom_frame(id)
             end
         end
     end
-    if M.controls then
-        local prefix = "custom_" .. id .. "_"
-        for key in pairs(M.controls) do
-            if type(key) == "string" and key:sub(1, #prefix) == prefix then
-                M.controls[key] = nil
-            end
+    local prefix = "custom_" .. id .. "_"
+    for key in pairs(M.controls) do
+        if type(key) == "string" and key:sub(1, #prefix) == prefix then
+            M.controls[key] = nil
         end
-        M.controls["shared_options:bg:" .. id] = nil
-        M.controls["bar_color_sync:" .. id] = nil
-        M.controls["text_color_sync:" .. id] = nil
     end
+    M.controls["shared_options:bg:" .. id] = nil
+    M.controls["bar_color_sync:" .. id] = nil
+    M.controls["text_color_sync:" .. id] = nil
     M.clear_custom_aura_scan_cache()
     M.rebuild_shared_options_group()
 end
@@ -1222,12 +1212,10 @@ local function ensure_module_started()
 end
 
 local function register_aura_frame_settings()
-    if addon.register_category and M.BuildSettings then
-        addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
-            order = 500,
-            module_key = M.MODULE_KEY,
-        })
-    end
+    addon.register_category("Buffs & Debuffs", function(parent) M.BuildSettings(parent) end, {
+        order = 500,
+        module_key = M.MODULE_KEY,
+    })
 end
 
 local function start_aura_frame_runtime_services()
@@ -1272,7 +1260,7 @@ local function stop_aura_frame_runtime_services()
     M.restore_blizz_cdm_viewer_settings()
     restore_cdm_viewer_visibility()
 
-    for _, frame in ipairs(M.frames_list or {}) do
+    for _, frame in ipairs(M.frames_list) do
         if frame then
             M.cancel_frame_ooc_fade(frame)
             stop_frame_hover_check(frame)
@@ -1291,7 +1279,7 @@ function M.stop_runtime()
 end
 
 local function rebind_existing_aura_frames()
-    for _, frame in ipairs(M.frames_list or {}) do
+    for _, frame in ipairs(M.frames_list) do
         if frame and frame.update_params then
             bind_aura_frame_events(frame, frame.category)
             local p = frame.update_params
@@ -1320,7 +1308,7 @@ local function count_aura_runtime_status()
     local event_script_count = 0
     local scan_pending_count = 0
     local hover_ticker_count = 0
-    for _, frame in ipairs(M.frames_list or {}) do
+    for _, frame in ipairs(M.frames_list) do
         if frame then
             frame_count = frame_count + 1
             if frame.IsShown and frame:IsShown() then
@@ -1348,39 +1336,33 @@ local function count_aura_runtime_status()
     return frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count
 end
 
-if addon.register_module_status then
-    addon.register_module_status(M.MODULE_KEY, function()
-        local frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count =
-            count_aura_runtime_status()
-        local fields = {
-            "runtime=" .. tostring(M._module_runtime_enabled == true),
-            "frames=" .. tostring(frame_count),
-            "shown=" .. tostring(shown_count),
-            "event_scripts=" .. tostring(event_script_count),
-            "visible_icon_ticker=" .. tostring(M._visible_icon_ticker ~= nil),
-            "scan_pending=" .. tostring(scan_pending_count),
-            "hover_tickers=" .. tostring(hover_ticker_count),
-            "cdm_forced_hidden=" .. tostring(cdm_forced_hidden_count),
-            "grid=" .. tostring(M.grid_frame and M.grid_frame:IsShown() == true),
-            "shared_options=" .. tostring(M.db and M.db.shared_options_enabled == true),
-            "shared_test_auras=" .. tostring(M.is_shared_test_aura_enabled()),
-            "disable_ooc_fade=" .. tostring(M.db and M.db.disable_ooc_fade == true),
-        }
-        if M.get_managed_aura_status_fields then
-            for _, field in ipairs(M.get_managed_aura_status_fields()) do
-                fields[#fields + 1] = field
-            end
-        end
-        if M.get_blizz_aura_suppression_status then
-            local suppressed, suppression_error = M.get_blizz_aura_suppression_status()
-            fields[#fields + 1] = "blizz_aura_suppressed=" .. tostring(suppressed)
-            if suppression_error then
-                fields[#fields + 1] = "blizz_aura_error=" .. suppression_error
-            end
-        end
-        return fields
-    end)
-end
+addon.register_module_status(M.MODULE_KEY, function()
+    local frame_count, shown_count, event_script_count, scan_pending_count, hover_ticker_count, cdm_forced_hidden_count =
+        count_aura_runtime_status()
+    local fields = {
+        "runtime=" .. tostring(M._module_runtime_enabled == true),
+        "frames=" .. tostring(frame_count),
+        "shown=" .. tostring(shown_count),
+        "event_scripts=" .. tostring(event_script_count),
+        "visible_icon_ticker=" .. tostring(M._visible_icon_ticker ~= nil),
+        "scan_pending=" .. tostring(scan_pending_count),
+        "hover_tickers=" .. tostring(hover_ticker_count),
+        "cdm_forced_hidden=" .. tostring(cdm_forced_hidden_count),
+        "grid=" .. tostring(M.grid_frame and M.grid_frame:IsShown() == true),
+        "shared_options=" .. tostring(M.db and M.db.shared_options_enabled == true),
+        "shared_test_auras=" .. tostring(M.is_shared_test_aura_enabled()),
+        "disable_ooc_fade=" .. tostring(M.db and M.db.disable_ooc_fade == true),
+    }
+    for _, field in ipairs(M.get_managed_aura_status_fields()) do
+        fields[#fields + 1] = field
+    end
+    local suppressed, suppression_error = M.get_blizz_aura_suppression_status()
+    fields[#fields + 1] = "blizz_aura_suppressed=" .. tostring(suppressed)
+    if suppression_error then
+        fields[#fields + 1] = "blizz_aura_error=" .. suppression_error
+    end
+    return fields
+end)
 
 -- Startup conductor: keep addon-loaded work in order while each step
 -- owns one broad responsibility.
@@ -1444,12 +1426,7 @@ local function refresh_frame_after_reset(frame)
     local p = frame.update_params
     if not p then return end
 
-    if M.invalidate_frame_runtime_config then
-        M.invalidate_frame_runtime_config(frame)
-    else
-        frame._layout_cache = nil
-        frame._runtime_config_cache = nil
-    end
+    M.invalidate_frame_runtime_config(frame)
 
     -- Re-link custom entry reference in case DB was replaced by reset.
     if frame.is_custom and frame.custom_entry then

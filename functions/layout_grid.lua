@@ -3,7 +3,7 @@
 
 local _, addon = ...
 
-addon.CONTROL_STACK_SPACING = addon.CONTROL_STACK_SPACING or {
+addon.CONTROL_STACK_SPACING = {
     checkbox = 0,
     nested = 4,
     picker = 4,

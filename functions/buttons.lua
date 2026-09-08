@@ -318,7 +318,7 @@ function addon.CreateMoveResetButton(parent, anchor_to, opts)
             anchor_to,
             "BOTTOMLEFT",
             opts.x or 0,
-            opts.y or -(addon.CONTROL_STACK_SPACING and addon.CONTROL_STACK_SPACING.button or 6)
+            opts.y or -addon.CONTROL_STACK_SPACING.button
         )
     end
     button:SetText("Move Reset")

@@ -6,8 +6,9 @@
 
 local _, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
+addon.skyriding_vigor = {
     controls = {},
+    flight_locked_controls = {},
     slots = {},
 }
 
@@ -60,7 +61,6 @@ defs.defaults = {
     skyriding_vigor = normal_profile,
 }
 
-addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.sv = defs.defaults
 
 return defs

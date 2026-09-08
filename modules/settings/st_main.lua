@@ -6,15 +6,7 @@
 
 local addon_name, addon = ...
 
--- Initialize module table
-addon.st = addon.st or {
-    controls = {},
-    frames = {}
-}
-
 local M = addon.st
-M.controls = M.controls or {}
-M.frames = M.frames or {}
 
 -- Apply saved interface transparency to the main frame — called on every Show
 local function apply_interface_alpha()
@@ -25,11 +17,9 @@ local function apply_interface_alpha()
     if addon.main_frame.title_bar    then addon.main_frame.title_bar:SetBackdropColor(0.12, 0.12, 0.12, a) end
     if addon.main_frame.sidebar      then addon.main_frame.sidebar:SetBackdropColor(0.10, 0.10, 0.10, a) end
     if addon.main_frame.content_area then addon.main_frame.content_area:SetBackdropColor(0.08, 0.08, 0.08, a) end
-    if addon.alpha_affected_frames then
-        for _, entry in ipairs(addon.alpha_affected_frames) do
-            if entry.frame and entry.frame.SetBackdropColor then
-                entry.frame:SetBackdropColor(entry.r, entry.g, entry.b, a)
-            end
+    for _, entry in ipairs(addon.alpha_affected_frames) do
+        if entry.frame then
+            entry.frame:SetBackdropColor(entry.r, entry.g, entry.b, a)
         end
     end
 end

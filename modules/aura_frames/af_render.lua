@@ -17,7 +17,6 @@ local table_concat  = table.concat
 local wipe          = wipe
 local TIMER_DIR_REMAINING  = Enum.StatusBarTimerDirection and Enum.StatusBarTimerDirection.RemainingTime
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 local clear_timer_text = M.clear_timer_text
 local set_shown_if_changed = M.set_shown_if_changed
@@ -798,7 +797,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
     )
     if display_signature and self._render_display_signature == display_signature then
         self._display_count = display_count
-        if tooltip_enabled and M.prewarm_aura_tooltip_cache then
+        if tooltip_enabled then
             M.prewarm_aura_tooltip_cache(self)
         end
         return display_count
@@ -870,7 +869,7 @@ function M.render_aura_map(self, aura_map, bar_mode, color, bar_bg_color, max_li
 
     hide_unused_icons(self.icons, display_count + 1)
     self._display_count = display_count
-    if tooltip_enabled and M.prewarm_aura_tooltip_cache then
+    if tooltip_enabled then
         M.prewarm_aura_tooltip_cache(self)
     end
 

@@ -3,7 +3,6 @@
 
 local addon_name, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 --#region SHARED FRAME PANEL HELPERS ===========================================
@@ -76,7 +75,7 @@ end
 
 local function make_preset_frame_settings_config(data)
     local cat = data.show_key:sub(6)
-    if M.WOW_COOLDOWN_CATEGORIES[cat] and M.refresh_cdm_default_positions then
+    if M.WOW_COOLDOWN_CATEGORIES[cat] then
         M.refresh_cdm_default_positions()
     end
     local keys = {
@@ -321,15 +320,15 @@ local function create_frame_position_controls(parent, frame_config, grid, update
         options.move_control_key,
         function(is_checked)
             if is_checked then
-                local enable_cb = M.controls and M.controls[options.show_control_key]
-                if enable_cb and enable_cb.SetCheckedSilently and enable_cb.GetChecked and not enable_cb:GetChecked() then
+                local enable_cb = M.controls[options.show_control_key]
+                if enable_cb and not enable_cb:GetChecked() then
                     enable_cb:SetCheckedSilently(true)
                     value_table[show_key] = true
                 end
                 if value_table[move_bg_opt_out_key] ~= true and value_table[bg_key] ~= true then
                     value_table[bg_key] = true
-                    local bg_cb = M.controls and M.controls[options.bg_control_key]
-                    if bg_cb and bg_cb.SetCheckedSilently then
+                    local bg_cb = M.controls[options.bg_control_key]
+                    if bg_cb then
                         bg_cb:SetCheckedSilently(true)
                     end
                 end
@@ -403,9 +402,9 @@ local function create_frame_position_controls(parent, frame_config, grid, update
             local f = M.frames[frame_show_key]
             if not f then return end
             local reset_default_position = default_position
-            if M.WOW_COOLDOWN_CATEGORIES[id] and M.refresh_cdm_default_positions then
+            if M.WOW_COOLDOWN_CATEGORIES[id] then
                 M.refresh_cdm_default_positions()
-            elseif frame_config.is_custom and M.get_default_custom_frame_position then
+            elseif frame_config.is_custom then
                 reset_default_position = M.get_default_custom_frame_position(id)
             end
             M.reset_frame_move_placement(f, {
@@ -509,9 +508,7 @@ function M.build_general_tab(p)
     local outlines_container = addon.CreateCheckbox(p, "Show Bar Section Outlines", M.db.show_bar_section_outlines == true,
         function(is_checked)
             M.db.show_bar_section_outlines = is_checked
-            if addon.aura_frames and addon.aura_frames.refresh_section_outlines then
-                addon.aura_frames.refresh_section_outlines()
-            end
+            M.refresh_section_outlines()
         end
     )
     M.controls.show_bar_section_outlines_checkbox = outlines_container
@@ -800,10 +797,8 @@ local function build_frame_settings_panel(parent, frame_config, opts)
     local function on_fade_ooc_changed(is_checked)
         if is_checked and M.db and M.db.disable_ooc_fade == true then
             M.db.disable_ooc_fade = false
-            if M.on_shared_options_changed then
-                M.on_shared_options_changed()
-                return
-            end
+            M.on_shared_options_changed()
+            return
         end
         update()
     end
@@ -950,8 +945,8 @@ function M.build_preset_frame_panel(p, data)
             if is_checked or not hide_blizz_cdm_label then return end
             local hide_key = "hide_blizz_cdm_" .. cat
             M.db[hide_key] = false
-            local hide_cb = M.controls and M.controls[hide_key]
-            if hide_cb and hide_cb.SetCheckedSilently then
+            local hide_cb = M.controls[hide_key]
+            if hide_cb then
                 hide_cb:SetCheckedSilently(false)
             end
             M.update_blizz_cdm_visibility(cat)
@@ -1086,14 +1081,14 @@ function M.build_custom_child_panel(p, entry)
 
     local function set_base(value)
         entry.aura_base_filter = (value == "HARMFUL") and "HARMFUL" or "HELPFUL"
-        if base_dd and base_dd.SetValue then base_dd:SetValue(entry.aura_base_filter) end
+        if base_dd then base_dd:SetValue(entry.aura_base_filter) end
     end
 
     local function set_modifier(value)
         entry.aura_modifier = value or "NONE"
         local def = M.get_custom_modifier_def(entry.aura_modifier)
         if def and def.force_base then set_base(def.force_base) end
-        if modifier_dd and modifier_dd.SetValue then modifier_dd:SetValue(entry.aura_modifier) end
+        if modifier_dd then modifier_dd:SetValue(entry.aura_modifier) end
     end
 
     entry.aura_base_filter = (entry.aura_base_filter == "HARMFUL") and "HARMFUL" or "HELPFUL"

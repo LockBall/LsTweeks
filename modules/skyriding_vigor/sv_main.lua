@@ -3,11 +3,6 @@
 -- Alpha fade helpers live in sv_fade.lua.
 local addon_name, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
-    controls = {},
-    slots = {},
-}
-
 local M = addon.skyriding_vigor
 
 local C_Item_GetItemCount = C_Item and C_Item.GetItemCount
@@ -76,35 +71,35 @@ local function normalize_db(db, include_race_controls)
         db.race_profile_enabled = nil
         db.race_profile = nil
     end
-    db.spacing = clamp_number(db.spacing, DEFAULTS.spacing or 5, SETTING_RANGES.spacing)
+    db.spacing = clamp_number(db.spacing, DEFAULTS.spacing, SETTING_RANGES.spacing)
     db.fade_alpha = clamp_number(db.fade_alpha, DEFAULTS.fade_alpha or addon.DEFAULT_FADE_ALPHA, SETTING_RANGES.fade_alpha)
-    db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length or 3, SETTING_RANGES.fade_length)
-    db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
-    db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
+    db.fade_length = clamp_number(db.fade_length, DEFAULTS.fade_length, SETTING_RANGES.fade_length)
+    db.spark_size = clamp_number(db.spark_size, DEFAULTS.spark_size, SETTING_RANGES.spark_size)
+    db.progress_update_hz = clamp_number(db.progress_update_hz, DEFAULTS.progress_update_hz, SETTING_RANGES.progress_update_hz)
     if type(db.spark_color) ~= "table" then
-        local color = DEFAULTS.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+        local color = DEFAULTS.spark_color
         db.spark_color = { r = color.r or 1, g = color.g or 1, b = color.b or 1, a = color.a or 1 }
     end
-    db.spark_color.r = clamp_number(db.spark_color.r, DEFAULTS.spark_color and DEFAULTS.spark_color.r or 1, COLOR_COMPONENT_RANGE)
-    db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color and DEFAULTS.spark_color.g or 1, COLOR_COMPONENT_RANGE)
-    db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color and DEFAULTS.spark_color.b or 1, COLOR_COMPONENT_RANGE)
-    db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color and DEFAULTS.spark_color.a or 1, COLOR_COMPONENT_RANGE)
-    db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style or M.BAR_STYLE_DEFAULT)
+    db.spark_color.r = clamp_number(db.spark_color.r, DEFAULTS.spark_color.r, COLOR_COMPONENT_RANGE)
+    db.spark_color.g = clamp_number(db.spark_color.g, DEFAULTS.spark_color.g, COLOR_COMPONENT_RANGE)
+    db.spark_color.b = clamp_number(db.spark_color.b, DEFAULTS.spark_color.b, COLOR_COMPONENT_RANGE)
+    db.spark_color.a = clamp_number(db.spark_color.a, DEFAULTS.spark_color.a, COLOR_COMPONENT_RANGE)
+    db.style = M.get_valid_bar_style_key(db.style or DEFAULTS.style)
     local style_layout = M.get_style_layout_table(db, db.style, true)
     if style_layout then
         style_layout.scale = clamp_number(style_layout.scale, M.get_style_layout_default(db.style, "scale"), SETTING_RANGES.scale)
         local fill_add_default = M.get_style_layout_default(db.style, "fill_add_alpha") or 0.5
         style_layout.fill_add_alpha = clamp_number(style_layout.fill_add_alpha, fill_add_default, SETTING_RANGES.fill_add_alpha)
     end
-    db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style or M.DECOR_STYLE_DEFAULT)
+    db.decor_style = M.get_valid_decor_style_key(db.decor_style or DEFAULTS.decor_style)
     local decor_layout = M.get_decor_layout_table(db, db.decor_style, true)
     if decor_layout then
         local decor_scale_default = M.get_decor_layout_default(db.decor_style, "scale") or 1
         decor_layout.scale = clamp_number(decor_layout.scale, decor_scale_default, SETTING_RANGES.decor_scale)
     end
     db.position = db.position or {}
-    db.position.x = clamp_number(db.position.x, DEFAULTS.position and DEFAULTS.position.x or 0, SETTING_RANGES.x_position)
-    db.position.y = clamp_number(db.position.y, DEFAULTS.position and DEFAULTS.position.y or 0, SETTING_RANGES.y_position)
+    db.position.x = clamp_number(db.position.x, DEFAULTS.position.x, SETTING_RANGES.x_position)
+    db.position.y = clamp_number(db.position.y, DEFAULTS.position.y, SETTING_RANGES.y_position)
     db.position.point = "CENTER"
     db.position.relativePoint = "CENTER"
 end
@@ -321,7 +316,7 @@ local function get_fill_test_charge_info()
 end
 
 local function get_progress_update_seconds(db)
-    local hz = clamp_number(db and db.progress_update_hz, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
+    local hz = clamp_number(db and db.progress_update_hz, DEFAULTS.progress_update_hz, SETTING_RANGES.progress_update_hz)
     return 1 / hz
 end
 
@@ -384,7 +379,6 @@ end
 -- Main runtime render path: visibility decisions, slot state, alpha, and ticking.
 local function is_real_active_flight(is_gliding, can_glide)
     if is_gliding == nil or can_glide == nil then
-        if not M.get_gliding_state then return false end
         is_gliding, can_glide = M.get_gliding_state()
     end
     return is_gliding or (can_glide and M.is_player_flying()) or false
@@ -416,12 +410,8 @@ function M.refresh()
         M._active_profile_changed = false
         M.restore_frame_alpha(frame)
         M.apply_position()
-        if M.apply_fill_color then
-            M.apply_fill_color()
-        end
-        if M.sync_settings_controls then
-            M.sync_settings_controls(db)
-        end
+        M.apply_fill_color()
+        M.sync_settings_controls(db)
     end
 
     M.apply_layout()
@@ -527,24 +517,22 @@ function M.set_module_enabled(enabled)
     M.stop_runtime()
 end
 
-if addon.register_module_status then
-    addon.register_module_status(M.MODULE_KEY, function()
-        local root_db = M.get_root_db()
-        return {
-            "runtime_events=" .. tostring(M._runtime_events_registered == true),
-            "frame_shown=" .. tostring(M.frame and M.frame:IsShown() == true),
-            "mouse_enabled=" .. tostring(M.frame and M.frame._mouse_enabled == true),
-            "progress_onupdate=" .. tostring(progress_driver and progress_driver:GetScript("OnUpdate") ~= nil),
-            "progress_driver_shown=" .. tostring(progress_driver and progress_driver:IsShown() == true),
-            "fill_test=" .. tostring(M._fill_test_enabled == true),
-            "race_profile_enabled=" .. tostring(root_db and root_db.race_profile_enabled == true),
-            "race_profile_test=" .. tostring(M._race_profile_test_enabled == true),
-            "race_active=" .. tostring(M._race_active == true),
-            "active_profile=" .. tostring(M._active_profile_key or "normal"),
-            "progress_slot=" .. tostring(M._progress_slot_index ~= nil),
-        }
-    end)
-end
+addon.register_module_status(M.MODULE_KEY, function()
+    local root_db = M.get_root_db()
+    return {
+        "runtime_events=" .. tostring(M._runtime_events_registered == true),
+        "frame_shown=" .. tostring(M.frame and M.frame:IsShown() == true),
+        "mouse_enabled=" .. tostring(M.frame and M.frame._mouse_enabled == true),
+        "progress_onupdate=" .. tostring(progress_driver and progress_driver:GetScript("OnUpdate") ~= nil),
+        "progress_driver_shown=" .. tostring(progress_driver and progress_driver:IsShown() == true),
+        "fill_test=" .. tostring(M._fill_test_enabled == true),
+        "race_profile_enabled=" .. tostring(root_db and root_db.race_profile_enabled == true),
+        "race_profile_test=" .. tostring(M._race_profile_test_enabled == true),
+        "race_active=" .. tostring(M._race_active == true),
+        "active_profile=" .. tostring(M._active_profile_key or "normal"),
+        "progress_slot=" .. tostring(M._progress_slot_index ~= nil),
+    }
+end)
 
 function M.set_fill_test_enabled(enabled)
     if not M.is_runtime_enabled() then
@@ -620,9 +608,9 @@ function M.set_db_value(key, value)
     elseif key == "show_spark" then
         value = value and true or false
     elseif key == "spark_size" then
-        value = clamp_number(value, DEFAULTS.spark_size or 1, SETTING_RANGES.spark_size)
+        value = clamp_number(value, DEFAULTS.spark_size, SETTING_RANGES.spark_size)
     elseif key == "progress_update_hz" then
-        value = clamp_number(value, DEFAULTS.progress_update_hz or 20, SETTING_RANGES.progress_update_hz)
+        value = clamp_number(value, DEFAULTS.progress_update_hz, SETTING_RANGES.progress_update_hz)
     elseif key == "style" then
         value = M.get_valid_bar_style_key(value)
     elseif key == "scale" then
@@ -652,7 +640,7 @@ function M.set_db_value(key, value)
         M.sync_decor_position_controls(db)
         M.sync_decor_color_controls()
     end
-    if M.LAYOUT_SETTING_KEYS and M.LAYOUT_SETTING_KEYS[key] then
+    if M.LAYOUT_SETTING_KEYS[key] then
         M.refresh_layout()
     elseif key == "spark_size" then
         M.apply_spark_settings()
@@ -709,7 +697,7 @@ function M.reset_position()
     local db = get_db()
     if not db then return end
     db.position = {}
-    addon.deep_copy_into(DEFAULTS.position or {}, db.position)
+    addon.deep_copy_into(DEFAULTS.position, db.position)
     M.apply_position()
     M.refresh()
     M.sync_position_controls(db)

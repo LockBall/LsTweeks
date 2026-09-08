@@ -173,7 +173,6 @@ function addon.init_main_frame()
     local function is_category_locked(cat)
         return cat
             and cat.module_key
-            and addon.is_module_enabled
             and not addon.is_module_enabled(cat.module_key)
     end
 

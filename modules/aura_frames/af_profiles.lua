@@ -5,19 +5,18 @@ local _, addon = ...
 
 --#region PROFILE SCHEMA =======================================================
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local PROFILE_GLOBAL_KEYS = {
     "enable_blizz_buffs", "enable_blizz_debuffs", "short_threshold", "aura_visible_icon_tick",
     "shared_options_enabled", "shared_test_auras", "disable_ooc_fade",
 }
-for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+for _, column in ipairs(M.SHARED_COLOR_COLUMNS) do
     for _, picker in ipairs(column.pickers) do
         PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = picker.db_key
     end
 end
-for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
     PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_color"
     PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_font_key
     PROFILE_GLOBAL_KEYS[#PROFILE_GLOBAL_KEYS + 1] = text_def.shared_prefix .. "_font_size"
@@ -56,7 +55,7 @@ function M.export_aura_frame_profile_data()
     if not M.db then return nil end
     local data = {}
     copy_keys(M.db, data, PROFILE_GLOBAL_KEYS)
-    for _, category in ipairs(M.CATEGORIES or {}) do
+    for _, category in ipairs(M.CATEGORIES) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
             if should_profile_category_prefix(category, prefix) then
                 local key = prefix .. "_" .. category
@@ -78,7 +77,7 @@ function M.apply_aura_frame_profile_data(data)
     if not (M.db and data) then return false, "Profile data is missing." end
     addon.CloseFontOptionsPopup(false)
     apply_keys(data, M.db, PROFILE_GLOBAL_KEYS)
-    for _, category in ipairs(M.CATEGORIES or {}) do
+    for _, category in ipairs(M.CATEGORIES) do
         for _, prefix in ipairs(PROFILE_CATEGORY_PREFIXES) do
             if should_profile_category_prefix(category, prefix) then
                 local key = prefix .. "_" .. category
@@ -98,7 +97,7 @@ function M.apply_aura_frame_profile_data(data)
     M.normalize_saved_colors(M.db)
     for _, entry in ipairs(M.db.custom_frames) do
             local show_key = entry.id and ("show_" .. entry.id)
-            if show_key and M.frames and not M.frames[show_key] then M.create_custom_frame(entry) end
+            if show_key and not M.frames[show_key] then M.create_custom_frame(entry) end
         end
     M.on_reset_complete()
     return true, "Loaded profile."

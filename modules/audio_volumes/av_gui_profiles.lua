@@ -1,7 +1,6 @@
 -- Audio Volumes Profiles tab UI.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 --#region PROFILES TAB =========================================================

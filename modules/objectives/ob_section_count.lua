@@ -1,10 +1,7 @@
 -- Objectives Section Count: optional low-cost counters in Blizzard tracker titles.
 local _, addon = ...
 
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
-
-M.controls = M.controls or {}
 
 --#region SETTINGS AND DEFAULTS ================================================
 

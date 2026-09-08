@@ -1,10 +1,7 @@
 -- Objectives Auto-Collapse: startup collapse controls for Blizzard tracker sections.
 local addon_name, addon = ...
 
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
-
-M.controls = M.controls or {}
 
 --#region SETTINGS AND DEFAULTS ================================================
 

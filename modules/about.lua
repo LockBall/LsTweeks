@@ -7,10 +7,9 @@
 
 local addon_name, addon = ...
 
--- Initialize module table
-addon.about = addon.about or {
+addon.about = {
     controls = {},
-    frames = {}
+    frames = {},
 }
 
 -- UI Configuration Constants (module-specific)

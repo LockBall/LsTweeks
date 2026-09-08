@@ -8,6 +8,9 @@
 
 local addon_name, addon = ...
 addon.name = addon_name
+addon.module_defaults = {}
+addon.module_status_builders = {}
+addon.alpha_affected_frames = {}
 
 -- Shared UI font tokens used across all modules.
 -- Rivet panel layout constants (padding, sizing, positioning) live in addon.RIVETED_PANEL_STYLE in panel_riveted.lua.
@@ -75,7 +78,7 @@ addon.FEATURE_MODULES = {
 local function ensure_module_flags()
     if not Ls_Tweeks_DB then return end
     Ls_Tweeks_DB.modules = Ls_Tweeks_DB.modules or {}
-    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+    for _, module_def in ipairs(addon.FEATURE_MODULES) do
         if Ls_Tweeks_DB.modules[module_def.key] == nil then
             Ls_Tweeks_DB.modules[module_def.key] = true
         end
@@ -96,16 +99,11 @@ function addon.set_module_enabled(module_key, enabled)
     if Ls_Tweeks_DB.modules[module_key] == enabled then return end
     Ls_Tweeks_DB.modules[module_key] = enabled
 
-    local module_table = addon[module_key]
-    if module_table and module_table.set_module_enabled then
-        module_table.set_module_enabled(enabled)
-    end
-    if addon.main_frame and addon.main_frame.RefreshSidebar then
+    addon[module_key].set_module_enabled(enabled)
+    if addon.main_frame then
         addon.main_frame:RefreshSidebar()
     end
 end
-
-addon.module_status_builders = addon.module_status_builders or {}
 
 function addon.register_module_status(module_key, builder)
     if not module_key or type(builder) ~= "function" then return end
@@ -138,11 +136,11 @@ function addon.print_module_status(filter)
     local heading_suffix = filter ~= "" and (" (" .. filter .. ")") or ""
     print("|cff33ff99LsTweeks module status|r" .. heading_suffix)
     local printed = 0
-    for _, module_def in ipairs(addon.FEATURE_MODULES or {}) do
+    for _, module_def in ipairs(addon.FEATURE_MODULES) do
         if status_module_matches(module_def, filter) then
             local key = module_def.key
             local fields = { "enabled=" .. tostring(addon.is_module_enabled(key)) }
-            local builder = addon.module_status_builders and addon.module_status_builders[key]
+            local builder = addon.module_status_builders[key]
             if builder then
                 local ok, result = pcall(builder)
                 if ok then

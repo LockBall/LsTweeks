@@ -1,7 +1,6 @@
 -- Objectives Position: All Objectives tracker offsets, move mode, snap-to-grid, and Position settings.
 local addon_name, addon = ...
 
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
 --#region SETTINGS AND DEFAULTS ================================================
@@ -74,13 +73,13 @@ local function save_objective_offset(axis, value)
 end
 
 local function sync_objective_position_sliders()
-    local x_slider = M.controls and M.controls.objective_tracker_offset_x_slider
-    if x_slider and x_slider.SetValueSilently then
+    local x_slider = M.controls.objective_tracker_offset_x_slider
+    if x_slider then
         x_slider:SetValueSilently(get_objective_offset("x"))
     end
 
-    local y_slider = M.controls and M.controls.objective_tracker_offset_y_slider
-    if y_slider and y_slider.SetValueSilently then
+    local y_slider = M.controls.objective_tracker_offset_y_slider
+    if y_slider then
         y_slider:SetValueSilently(get_objective_offset("y"))
     end
 end
@@ -378,12 +377,10 @@ local function reset_objective_position()
     if not db then return end
 
     if M.is_background_border_enabled() then
-        if M.set_background_border_position_offsets then
-            M.set_background_border_position_offsets()
-        end
+        M.set_background_border_position_offsets()
     else
-        db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x or 0
-        db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y or 0
+        db.objective_tracker_offset_x = DEFAULTS.objectives.objective_tracker_offset_x
+        db.objective_tracker_offset_y = DEFAULTS.objectives.objective_tracker_offset_y
     end
     apply_objective_position()
     sync_objective_position_sliders()
@@ -404,10 +401,7 @@ local function set_objective_snap_to_grid(enabled)
 end
 
 local function get_objective_position_default(key)
-    if M.get_background_aware_position_default then
-        return M.get_background_aware_position_default(key)
-    end
-    return DEFAULTS.objectives[key]
+    return M.get_background_aware_position_default(key)
 end
 
 function M.BuildPositionSettings(parent)

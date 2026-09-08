@@ -206,7 +206,6 @@ h.test("layout-owned Aura height calculation covers bars and icon growth", funct
     layout.growth = "RIGHT"
     h.eq(M.get_aura_frame_height(layout, 3, false, 2, true), 104, "horizontal icons use wrapped rows")
     h.eq(M.get_aura_frame_height(layout, 0, false, 2, false), 44, "empty icon frame keeps its base footprint")
-    h.eq(M.get_aura_frame_height(nil, 3, false, 2, true), 132, "missing layout retains the stable compatibility fallback")
 end)
 
 

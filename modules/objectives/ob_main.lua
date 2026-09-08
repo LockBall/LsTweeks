@@ -1,7 +1,6 @@
 -- Objectives module shell: composes Objective feature settings, lifecycle, and status.
 local addon_name, addon = ...
 
-addon.objectives = addon.objectives or {}
 local M = addon.objectives
 
 local MODULE_KEY = M.MODULE_KEY
@@ -64,27 +63,19 @@ function M.set_module_enabled(enabled)
     end
 end
 
-if addon.register_module_status then
-    addon.register_module_status(MODULE_KEY, function()
-        local fields = {}
-        if M.get_auto_collapse_status then
-            for _, field in ipairs(M.get_auto_collapse_status()) do
-                fields[#fields + 1] = field
-            end
-        end
-        if M.get_background_status then
-            for _, field in ipairs(M.get_background_status()) do
-                fields[#fields + 1] = field
-            end
-        end
-        if M.get_section_count_status then
-            for _, field in ipairs(M.get_section_count_status()) do
-                fields[#fields + 1] = field
-            end
-        end
-        return fields
-    end)
-end
+addon.register_module_status(MODULE_KEY, function()
+    local fields = {}
+    for _, field in ipairs(M.get_auto_collapse_status()) do
+        fields[#fields + 1] = field
+    end
+    for _, field in ipairs(M.get_background_status()) do
+        fields[#fields + 1] = field
+    end
+    for _, field in ipairs(M.get_section_count_status()) do
+        fields[#fields + 1] = field
+    end
+    return fields
+end)
 
 --#endregion PUBLIC MODULE HOOKS ===============================================
 

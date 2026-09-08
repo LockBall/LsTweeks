@@ -5,11 +5,12 @@
 
 local _, addon = ...
 
-local M = addon.player_frame or {}
-addon.player_frame = M
-
-M.controls = M.controls or {}
-M.frames = M.frames or {}
+addon.player_frame = {
+    controls = {},
+    fade = {},
+    frames = {},
+}
+local M = addon.player_frame
 M.MODULE_KEY = "player_frame"
 
 M.FADE_DEFAULTS = {

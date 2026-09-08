@@ -45,9 +45,9 @@ local function toggle_main_frame()
         else
             addon.main_frame:Show()
         end
-    elseif addon.init_main_frame then
+    else
         addon.init_main_frame()
-        if addon.main_frame then addon.main_frame:Show() end
+        addon.main_frame:Show()
     end
 end
 
@@ -110,8 +110,7 @@ end
 
 local function build_quick_pick_menu(owner)
     local M = get_audio_volumes_module()
-    local module_enabled = not (addon.is_module_enabled and M and M.MODULE_KEY)
-        or addon.is_module_enabled(M.MODULE_KEY)
+    local module_enabled = addon.is_module_enabled(M.MODULE_KEY)
     show_menu(owner, module_enabled, function()
         return M.get_quick_pick_menu_entries()
     end)

@@ -24,7 +24,7 @@ local managed_stack_fonts = {}
 local managed_bar_fonts = {}
 local TIMED_BUFF_CANDIDATE_FILTERS = { maxDuration = math.huge }
 
-M.MANAGED_PRESENTATION_METRICS = M.MANAGED_PRESENTATION_METRICS or {
+M.MANAGED_PRESENTATION_METRICS = {
     icon_size = ICON_SIZE,
     icon_cell_height = ICON_CELL_HEIGHT,
     bar_row_height = BAR_ROW_HEIGHT,
@@ -593,13 +593,13 @@ local function apply_managed_preset_presentation(backend, cfg_db)
     if backend.owner:GetWidth() ~= width then
         backend.owner:SetWidth(width)
     end
-    if backend.duration_font and M.apply_number_font_style then
+    if backend.duration_font then
         M.apply_number_font_style(backend.duration_font, category, cfg_db, show_timer_text and 1 or 0)
     end
-    if backend.stack_font and M.apply_stack_font_style then
+    if backend.stack_font then
         M.apply_stack_font_style(backend.stack_font, category, cfg_db)
     end
-    if backend.bar_font and M.apply_bar_text_style then
+    if backend.bar_font then
         M.apply_bar_text_style(backend.bar_font, category, cfg_db)
     end
     local bar_color = get_preset_bar_color(cfg_db, category)
@@ -653,7 +653,7 @@ local function create_managed_preset_backend(
     sort_method,
     sort_direction
 )
-    if not (frame and cfg_db and M.create_managed_aura_backend) then return nil end
+    if not (frame and cfg_db) then return nil end
 
     local backend, backend_error = M.create_managed_aura_backend(
         frame,
@@ -697,13 +697,13 @@ local function create_managed_preset_backend(
 
     local max_frame_count = M.AURA_FRAME_LIMIT
     local show_timer_text = get_preset_setting(cfg_db, category, "timer", true) ~= false
-    if duration_font and M.apply_number_font_style then
+    if duration_font then
         M.apply_number_font_style(duration_font, category, cfg_db, show_timer_text and 1 or 0)
     end
-    if stack_font and M.apply_stack_font_style then
+    if stack_font then
         M.apply_stack_font_style(stack_font, category, cfg_db)
     end
-    if bar_font and M.apply_bar_text_style then
+    if bar_font then
         M.apply_bar_text_style(bar_font, category, cfg_db)
     end
     local bar_layout = configure_preset_layout(
@@ -859,7 +859,7 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
 
     local activity = M.get_frame_activity_state(frame, show_key, move_key)
     local params = frame.update_params
-    if activity.enabled and M.apply_aura_frame_shell_transform then
+    if activity.enabled then
         M.apply_aura_frame_shell_transform(
             frame,
             backend.cfg_db or M.db,
@@ -892,7 +892,7 @@ function M.update_managed_preset_frame(frame, show_key, move_key)
 end
 
 function M.refresh_managed_preset_frames()
-    for _, frame in ipairs(M.frames_list or {}) do
+    for _, frame in ipairs(M.frames_list) do
         local params = frame and frame.update_params
         if frame and frame._managed_aura_backend and params then
             M.update_managed_preset_frame(frame, params.show_key, params.move_key)

@@ -6,7 +6,7 @@ local _, addon = ...
 
 --#region RIVETED PANEL STYLE =================================================
 
-addon.RIVETED_PANEL_STYLE = addon.RIVETED_PANEL_STYLE or {
+addon.RIVETED_PANEL_STYLE = {
     -- Backdrop appearance
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
     tileSize = 256,

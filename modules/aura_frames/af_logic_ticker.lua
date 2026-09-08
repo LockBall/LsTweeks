@@ -9,7 +9,6 @@ local issecretvalue = issecretvalue
 local C_UnitAuras   = C_UnitAuras
 local C_Timer       = C_Timer
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local clear_timer_text = M.clear_timer_text
@@ -128,7 +127,7 @@ end
 -- Shared ticker update path for all visible aura icon objects.
 -- Started on demand and keeps timer/bar text fresh between scans.
 function M.tick_visible_icons(now)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_visible_icon_ticker()
         return false
     end
@@ -151,7 +150,7 @@ function M.tick_visible_icons(now)
             for i = 1, display_count do
                 local obj = icons[i]
                     if obj:IsShown() then
-                    if obj.is_test_preview and M.update_test_preview_state then
+                    if obj.is_test_preview then
                         M.update_test_preview_state(obj, obj.test_preview_show_key or ("show_" .. frame.category), now)
                     end
                     local is_static_entry = obj.aura_is_static == true

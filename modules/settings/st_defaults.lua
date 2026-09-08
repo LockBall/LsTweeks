@@ -6,7 +6,11 @@
 
 local _, addon = ...
 
-local M = {}
+addon.st = {
+    controls = {},
+    frames = {},
+}
+local M = addon.st
 
 M.defaults = {
     minimap = { hide = false },
@@ -21,7 +25,6 @@ M.defaults = {
     },
 }
 
-addon.module_defaults = addon.module_defaults or {}
 addon.module_defaults.st = M.defaults
 
 return M

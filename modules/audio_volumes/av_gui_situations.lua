@@ -1,7 +1,6 @@
 -- Situations tab UI for the Audio Volumes module.
 local addon_name, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 local STRINGS = M.GUI_STRINGS
 local UI = M.GUI_LAYOUT
@@ -9,7 +8,7 @@ local UI = M.GUI_LAYOUT
 --#region CONTROL SYNCHRONIZATION ==============================================
 
 local function set_checked_silently(control, value)
-    if control and control.SetCheckedSilently then
+    if control then
         control:SetCheckedSilently(value == true)
     end
 end
@@ -20,7 +19,7 @@ end
 
 function M.clear_custom_situation_controls(situation_key)
     M.controls[get_situation_control_key(situation_key, "enabled")] = nil
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         M.controls[get_situation_control_key(situation_key, channel.key)] = nil
     end
 end
@@ -34,17 +33,17 @@ function M.sync_temporary_profile_controls()
     if quiet_custom_db then
         set_checked_silently(M.controls.quiet_custom_enabled, quiet_custom_db.enabled)
     end
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         local slider = M.controls["fishing_focus_" .. channel.key]
-        if slider and slider.SetValueSilently then
+        if slider then
             slider:SetValueSilently(focus_db[channel.key])
         end
         local combat_slider = M.controls["combat_volumes_" .. channel.key]
-        if combat_slider and combat_slider.SetValueSilently then
+        if combat_slider then
             combat_slider:SetValueSilently(combat_db[channel.key])
         end
         local quiet_slider = M.controls["situation_quiet_custom_" .. channel.key]
-        if quiet_slider and quiet_slider.SetValueSilently and quiet_custom_db then
+        if quiet_slider and quiet_custom_db then
             quiet_slider:SetValueSilently(quiet_custom_db[channel.key])
         end
     end
@@ -53,9 +52,9 @@ function M.sync_temporary_profile_controls()
         local situation_key = "custom:" .. situation_id
         local enabled_control = M.controls[get_situation_control_key(situation_key, "enabled")]
         set_checked_silently(enabled_control, situation.enabled)
-        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
             local slider = M.controls[get_situation_control_key(situation_key, channel.key)]
-            if slider and slider.SetValueSilently then
+            if slider then
                 slider:SetValueSilently(situation[channel.key])
             end
         end
@@ -123,7 +122,7 @@ function M.BuildSituationsTab(parent)
     local combat_defaults = {}
     local quiet_custom_defaults = {}
     local control_scope = "Situation"
-    local slider_count = #(M.FISHING_FOCUS_CHANNELS or {})
+    local slider_count = #M.FISHING_FOCUS_CHANNELS
     local slider_col_align = {}
     for i = 1, slider_count do slider_col_align[i] = "left" end
     local situation_panels = {}
@@ -220,7 +219,7 @@ function M.BuildSituationsTab(parent)
         addon_name .. "_" .. control_scope .. "TestSound",
         parent,
         "Test Sound",
-        M.TEST_SOUND_OPTIONS or {},
+        M.TEST_SOUND_OPTIONS,
         {
             width = 190,
             get_value = function()
@@ -265,7 +264,7 @@ function M.BuildSituationsTab(parent)
     end
 
     local function refresh_current_values()
-        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
             local current_percent = M.get_current_sound_channel_percent(channel)
             current_values[channel.key] = current_percent
             seed_situation_defaults(channel, current_percent, true)
@@ -273,7 +272,7 @@ function M.BuildSituationsTab(parent)
                 current_defaults[channel.key] = current_percent
             end
             local slider = current_sliders[channel.key]
-            if slider and slider.SetValueSilently then
+            if slider then
                 slider:SetValueSilently(current_percent)
             end
         end
@@ -302,7 +301,7 @@ function M.BuildSituationsTab(parent)
         end
     end
 
-    for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         current_values[channel.key] = M.get_current_sound_channel_percent(channel)
         current_defaults[channel.key] = current_values[channel.key]
         seed_situation_defaults(channel, current_values[channel.key], true)
@@ -394,12 +393,8 @@ function M.BuildSituationsTab(parent)
                     and "quiet_custom_enabled"
                     or get_situation_control_key(entry.key, "enabled"),
                 on_click = function(is_checked)
-                    if M.set_manual_situation_enabled then
-                        M.set_manual_situation_enabled(entry.key, is_checked == true)
-                        M.sync_temporary_profile_controls()
-                    else
-                        entry.db.enabled = is_checked == true
-                    end
+                    M.set_manual_situation_enabled(entry.key, is_checked == true)
+                    M.sync_temporary_profile_controls()
                 end,
             }
         end
@@ -425,8 +420,6 @@ function M.BuildSituationsTab(parent)
         end)
 
         local function commit_situation_name(self)
-            if not M.rename_situation then return end
-
             local previous_label = entry.label
             M.rename_situation(entry.key, self:GetText())
             entry.label = entry.db.name or entry.label
@@ -469,7 +462,7 @@ function M.BuildSituationsTab(parent)
         local slider_name_key = entry.key:gsub("[^%w_]", "_")
         local slider_defaults = get_situation_slider_defaults(entry)
 
-        for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        for i, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
             local slider = addon.CreateSliderWithBox(
                 addon_name .. "_Situation_" .. slider_name_key .. "_" .. channel.key,
                 panel,
@@ -524,11 +517,7 @@ function M.BuildSituationsTab(parent)
         }, {
             enable_control = create_enable_control(entry),
             on_play = function()
-                if M.play_situation_preview then
-                    M.play_situation_preview(entry.profile_key, entry.db and entry.db.test_sound)
-                else
-                    M.play_fishing_bobber_preview(entry.profile_key)
-                end
+                M.play_situation_preview(entry.profile_key, entry.db and entry.db.test_sound)
             end,
         })
 

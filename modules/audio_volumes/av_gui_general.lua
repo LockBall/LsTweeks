@@ -1,7 +1,6 @@
 -- General tab UI for the Audio Volumes module.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 local UI = M.GUI_LAYOUT
 

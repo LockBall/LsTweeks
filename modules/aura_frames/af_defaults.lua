@@ -4,7 +4,6 @@
 -- or default settings.
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 --#region FRAME DEFINITIONS AND DEFAULTS ======================================

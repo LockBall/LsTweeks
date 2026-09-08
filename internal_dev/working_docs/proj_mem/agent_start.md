@@ -24,7 +24,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Ketho/LuaLS setup or annotation lookup | `project.md` `### Ketho / LuaLS` |
 | Packaging, release zip, or `package-policy.json` | `project.md` `### Packaging / Release` |
 | AddOn identity, slash command, SavedVariables, version edit point, or top-level file/folder ownership | `project.md` `### AddOn Summary` or `### File Map` |
-| Module pattern, file naming, registration, or module toggles | `project.md` `### Module Structure And Registration` |
+| Module pattern, file naming, registration, module toggles, helper availability, table ownership, fallbacks, or optionality | `project.md` `### Deterministic Ownership And Optionality`, then `### Module Structure And Registration` when applicable |
 | Runtime contracts, events/timers/hot paths, taint, or combat guards | `project.md` `### Runtime And Performance Rules` |
 | Defaults, DB handling, resets, or profiles | `project.md` `### Data, Resets, And Profiles` |
 | Shared GUI/layout rules, widget anchoring, or settings-grid usage | `project.md` `### GUI/Layout Rules` |
@@ -65,6 +65,7 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 
 
 ## Engineering Rules
+- Before adding a nil guard, fallback, `or {}`, helper alias, method probe, or `pcall`, classify the dependency with `project.md` `### Deterministic Ownership And Optionality`. Required internal contracts use one direct path and fail visibly; tests must model that contract instead of weakening it.
 - Keep defaults, category metadata, timing buckets, layout constants, and source-specific rules owned in one place.
 - For a setting family with multiple variants or consumers, define one canonical schema and derive defaults, UI bindings, runtime lookup, reset/profile fields, and generated tests from it. Keep one small independent product-contract assertion so omitting a variant from the schema itself still fails.
 - Prefer one deterministic runtime path. Centralize unavoidable branching and route callers through it.

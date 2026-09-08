@@ -5,10 +5,7 @@
 
 local addon_name, addon = ...
 
-local M = addon.player_frame or {}
-addon.player_frame = M
-
-M.controls = M.controls or {}
+local M = addon.player_frame
 
 local math_abs = math.abs
 local SLIDER_WITH_BOX_SIZE = addon.SLIDER_WITH_BOX_SIZE

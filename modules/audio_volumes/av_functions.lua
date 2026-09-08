@@ -2,13 +2,11 @@
 -- target ordering, and target activity predicates.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 --#region MODULE STATE =========================================================
 
 M.MODULE_KEY = "audio_volumes"
-M.controls = M.controls or {}
 
 function M.is_runtime_enabled()
     return addon.is_module_enabled(M.MODULE_KEY)
@@ -36,19 +34,15 @@ function M.get_target_db(target_key)
     local db = M.get_db()
     db.targets[target_key] = db.targets[target_key] or {}
     local target = M.SOUND_TARGETS[target_key]
-    local defaults = M.defaults
-        and M.defaults.audio_volumes
-        and M.defaults.audio_volumes.targets
-        and M.defaults.audio_volumes.targets[target_key]
-    M._target_defaults_applied = M._target_defaults_applied or {}
-    if defaults and not M._target_defaults_applied[target_key] then
+    local defaults = M.defaults.audio_volumes.targets[target_key]
+    if not M._target_defaults_applied[target_key] then
         addon.apply_defaults(defaults, db.targets[target_key])
         M._target_defaults_applied[target_key] = true
     end
     if not M.is_valid_preset_value(db.targets[target_key].preset) then
-        db.targets[target_key].preset = target and target.default_preset or "0"
+        db.targets[target_key].preset = target.default_preset
     end
-    if target and not target.preview_soundkit and #(target.original_file_ids or {}) == 0 then
+    if not target.preview_soundkit and #target.original_file_ids == 0 then
         db.targets[target_key].use_original = false
     end
     return db.targets[target_key]

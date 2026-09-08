@@ -1,7 +1,6 @@
 -- Shared settings UI support for the Audio Volumes module.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 --#region CONFIGURATION ========================================================
@@ -91,7 +90,7 @@ local function format_percent(option)
 end
 
 local function has_original_playback(target)
-    return target and (target.preview_soundkit or #(target.original_file_ids or {}) > 0)
+    return target and (target.preview_soundkit or #target.original_file_ids > 0)
 end
 
 function M.BuildSoundTargetSliderPanel(parent, target_key, target)
@@ -113,7 +112,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
     slider_container:SetPoint("TOP", slider_panel, "TOP", 0, -36)
 
     local current_preset = M.get_preset_by_value(initial_target_db.preset)
-    local preset_options = M.PRESET_OPTIONS or {}
+    local preset_options = M.PRESET_OPTIONS
     local slider_min = 0
     local slider_max = math.max(#preset_options - 1, 0)
     local slider_steps = slider_max - slider_min
@@ -150,7 +149,7 @@ function M.BuildSoundTargetSliderPanel(parent, target_key, target)
         local target_db = M.get_target_db(target_key)
         if target_db.use_original ~= true then return end
         target_db.use_original = false
-        if original_container and original_container.SetCheckedSilently then
+        if original_container then
             original_container:SetCheckedSilently(false)
         end
         sync_original_inactive_state()

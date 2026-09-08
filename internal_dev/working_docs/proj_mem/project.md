@@ -14,6 +14,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
   - [AddOn Summary](#addon-summary)
   - [File Map](#file-map)
 - [Shared Architecture](#shared-architecture)
+  - [Deterministic Ownership And Optionality](#deterministic-ownership-and-optionality)
   - [Module Structure And Registration](#module-structure-and-registration)
   - [Runtime And Performance Rules](#runtime-and-performance-rules)
   - [Data, Resets, And Profiles](#data-resets-and-profiles)
@@ -153,6 +154,18 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 
 
 ## Shared Architecture
+### Deterministic Ownership And Optionality
+- Establish the contract before writing a guard or fallback: inspect `LsTweeks.toc`, the source responsibility headers/outlines, and the canonical defaults/schema owner. A dependency loaded by the TOC is required even when its function is defined later and invoked only after addon load.
+- Required addon helpers have one name, owner, signature, and direct call path. Do not probe them with `if helper`, compound conditions, `and helper()`, `type(...)`, `pcall`, alternate helpers, or fallback signatures. A missing or renamed dependency must fail visibly at its consumer.
+- Optional guards require a named lifecycle or platform reason: a genuinely optional Blizzard API, a LoadOnDemand Blizzard UI that is not loaded yet, a runtime object not yet constructed or already released, a callback installed only by lazy settings construction, or an explicitly optional debug/status facility. Partial test loading is not optional production behavior.
+- Allocate each stable addon/module table and nested registry once in its earliest TOC owner. Later files reference and mutate that identity directly; do not recreate it with `or {}`, replace it defensively, or maintain aliases. Only runtime state whose `nil` value has explicit lifecycle meaning may be created lazily or cleared.
+- Addon-created object contracts are definitive: guard the object only when its lifecycle permits absence, then call its factory-guaranteed methods directly. Do not probe methods to compensate for an incomplete factory or test stub.
+- Defaults, metadata, constant tables, and variant schemas have one canonical owner. Consumers may resolve absent saved data through that owner, but must not add hardcoded default-of-default values, guarded canonical-table reads, compatibility aliases, or parallel schemas.
+- Use `pcall`/`xpcall` only at a documented external boundary: Secret Values or constrained Blizzard objects, cleanup followed by rethrow, or deliberate isolation of optional diagnostics/status. Never use protected calls to try internal code paths, suppress contract failures, or select whichever implementation happens to work.
+- Isolated tests load required owners in TOC order or install an explicit contract-faithful stub before the consumer loads. Fix missing test dependencies in the harness; do not weaken production contracts to make partial loading pass.
+- Review sequence: identify the owner, classify every possible `nil`, choose the single required path, update all consumers/tests, then run the internal-contract checker and the impact-selected test/static pass. Add an allowlist only when the optional lifecycle is durable and documented beside the exception.
+
+
 ### Module Structure And Registration
 - Module pattern: `local addon_name, addon = ...`; share state through `addon` and `addon.aura_frames` (`M`).
 - Avoid accidental globals in addon files. Keep helpers, constants, builder functions, and cached API references `local` by default; expose values through `addon` or a module table `M` only when another file genuinely needs that public contract.
@@ -162,7 +175,7 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 - Runtime modules that have side effects implement `M.set_module_enabled(enabled)` so Settings tab toggles can stop/restart owned runtime state without changing each module's own feature-level settings.
 - Current module toggles are soft-disable gates after addon files have loaded; they stop owned runtime work but do not unload code or free all memory. `/lst status` reports each feature module's enabled flag and module-owned runtime signals such as registered events, tickers/timers, preview handles, and visible frames. Use `/lst status <module key or label>` for focused diagnostics, such as `/lst status objectives`. Reopen lazy construction or LoadOnDemand child addons only with an explicit memory-footprint target in the review folder.
 - When a factory is constructed before a provider function exists in TOC order, pass a closure that resolves the provider at call time. Passing the current field value captures `nil` permanently even if the module defines that function later.
-- Addon helper availability follows `LsTweeks.toc`: call file-load-defined dependencies directly, including helpers defined later but invoked only after addon load. Never probe, `pcall`, or select fallback addon helpers; one owner provides the canonical path and missing required helpers fail visibly. Guard only helpers installed by lazy settings-page construction, optional debug/status facilities, and runtime objects that may legitimately be absent.
+- Required helper and table ownership follows `### Deterministic Ownership And Optionality`; module registration and lifecycle code must preserve those direct TOC contracts.
 - Before handoff, do a focused cleanup pass for duplicated helpers, stale fallbacks, dead status fields, repeated formatting, and broad API fallbacks.
 
 
@@ -189,8 +202,8 @@ Lua section headers use VS Code foldable region markers with visual dividers: `-
 ### Data, Resets, And Profiles
 - LsTweeks currently has one developer/user. Do not add saved-data or profile schema migrations unless the user explicitly asks to preserve existing local values; prefer direct new defaults and a one-time manual reconfiguration for breaking development changes.
 - Stateful modules implement `on_reset_complete()` and resync controls/runtime after reset. Module reset panels use `CreateModuleReset()` and pass `opts.after_reset = M.on_reset_complete` so only that module is synchronized.
-- Apply defaults with `addon.apply_defaults(defaults, db)`; guard DB tables with `or {}`.
-- Use shared/default registries only when another path consumes that public key. Treat TOC-ordered defaults, metadata, and module helpers as required dependencies; keep fallback literals and absence guards only for optional/status/debug paths that intentionally tolerate partial load.
+- At the saved-variable initialization boundary, create a missing DB table once and apply defaults with `addon.apply_defaults(defaults, db)`. After initialization, consumers use the established DB table directly rather than recreating it with `or {}`.
+- Use shared/default registries only when another path consumes that public key; required defaults and fallback ownership follow `### Deterministic Ownership And Optionality`.
 - Keep setting ranges, shared widget footprints, runtime clamp metadata, and tolerance constants single-owned and domain-named.
 - Multi-variant setting families require one canonical definition that owns variant identity, keys, defaults, UI metadata, and runtime metadata. Consumers derive their bindings and profile fields from that definition; do not maintain parallel Bar/Timer/Stack-style lists. Pair this with an independent required-variant test plus schema-driven consumer coverage, because a test generated only from an incomplete schema cannot detect an omitted variant.
 - `addon.DEFAULT_FADE_ALPHA` in `core/init.lua` is the single project-wide Fade Alpha default (`0.50`). Every fade consumer must use it for normal/profile defaults, new instances, missing-value fallback, and slider/module Reset; do not introduce module-local Fade Alpha default literals.

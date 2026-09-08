@@ -7,7 +7,6 @@
 
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local MAIN_FRAME_FALLBACK_HALF_WIDTH = 475
@@ -70,7 +69,6 @@ local function refresh_aura_frames_after_cancel()
     M.invalidate_aura_scan_caches()
 
     local function refresh()
-        if not M.update_auras then return end
         local frames_list = M.frames_list
         if not frames_list then return end
         for i = 1, #frames_list do
@@ -291,13 +289,13 @@ function M.reset_frame_move_placement(frame, opts)
     local x_slider = opts.x_slider
     local y_slider = opts.y_slider
     local width_slider = opts.width_slider
-    if x_slider and x_slider.SetValueSilently and pos and pos.x ~= nil then
+    if x_slider and pos and pos.x ~= nil then
         x_slider:SetValueSilently(pos.x)
     end
-    if y_slider and y_slider.SetValueSilently and pos and pos.y ~= nil then
+    if y_slider and pos and pos.y ~= nil then
         y_slider:SetValueSilently(pos.y)
     end
-    if width_slider and width_slider.SetValueSilently and default_width then
+    if width_slider and default_width then
         width_slider:SetValueSilently(default_width)
     end
 
@@ -328,7 +326,7 @@ function M.read_frame_position(frame)
 end
 
 function M.sync_frame_position_to_db(frame, pos_table)
-    if not (frame and pos_table and M.read_frame_position) then return nil, nil end
+    if not (frame and pos_table) then return nil, nil end
     local x, y = M.read_frame_position(frame)
     if not (x and y) then return nil, nil end
     pos_table.point = "TOPLEFT"
@@ -381,7 +379,7 @@ local COLOR_KEYS = {
     { key = "bar_bg_color", has_alpha = true },
     { key = "bg_color", has_alpha = true },
 }
-for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
     COLOR_KEYS[#COLOR_KEYS + 1] = { key = text_def.color_key, has_alpha = false }
 end
 
@@ -402,7 +400,7 @@ end
 function M.normalize_saved_colors(db)
     if type(db) ~= "table" then return end
 
-    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS) do
         for _, picker in ipairs(column.pickers) do
             db[picker.db_key] = normalize_saved_color(
                 db[picker.db_key],
@@ -411,7 +409,7 @@ function M.normalize_saved_colors(db)
             )
         end
     end
-    for _, text_def in ipairs(M.TEXT_OPTION_DEFS or {}) do
+    for _, text_def in ipairs(M.TEXT_OPTION_DEFS) do
         local color_key = text_def.shared_prefix .. "_color"
         db[color_key] = normalize_saved_color(
             db[color_key],
@@ -420,10 +418,10 @@ function M.normalize_saved_colors(db)
         )
     end
 
-    for _, category in ipairs(M.CATEGORIES or {}) do
+    for _, category in ipairs(M.CATEGORIES) do
         for _, color_def in ipairs(COLOR_KEYS) do
             local key = color_def.key .. "_" .. category
-            db[key] = normalize_saved_color(db[key], M.defaults and M.defaults[key], color_def.has_alpha)
+            db[key] = normalize_saved_color(db[key], M.defaults[key], color_def.has_alpha)
         end
     end
 
@@ -431,7 +429,7 @@ function M.normalize_saved_colors(db)
         for _, color_def in ipairs(COLOR_KEYS) do
             entry[color_def.key] = normalize_saved_color(
                 entry[color_def.key],
-                M.CUSTOM_FRAME_TEMPLATE and M.CUSTOM_FRAME_TEMPLATE[color_def.key],
+                M.CUSTOM_FRAME_TEMPLATE[color_def.key],
                 color_def.has_alpha
             )
         end

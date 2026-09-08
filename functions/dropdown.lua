@@ -112,7 +112,7 @@ function addon.CreateDropdown(_name, parent, label_text, options, cfg)
     end
 
     local width = cfg.width or 180
-    if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
+    if cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options then
         local text_values = cfg.fit_to_options and {} or { label_text }
         for _, option in ipairs(options) do
             text_values[#text_values + 1] = get_option_text(option)
@@ -301,7 +301,7 @@ function addon.CreateCyclingDropdown(name, parent, label_text, options, cfg)
     local arrow_size = cfg.arrow_size or 32
     local arrow_gap = cfg.arrow_gap or 4
     local dropdown_width = cfg.width or 180
-    if (cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options) and addon.GetTextFitWidth then
+    if cfg.fit_to_text or cfg.fit_width_to_text or cfg.fit_to_options then
         local text_values = cfg.fit_to_options and {} or { label_text }
         for _, option in ipairs(options) do
             local option_text = cfg.get_option_text and cfg.get_option_text(option)

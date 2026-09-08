@@ -11,7 +11,6 @@ local math_max       = math.max
 local math_ceil      = math.ceil
 local InCombatLockdown = InCombatLockdown
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local BAR_ROW_HEIGHT = 18
@@ -65,8 +64,6 @@ end
 
 -- Mirrors setup_layout() so update_auras() does not duplicate content dimensions.
 function M.get_aura_frame_height(layout, display_count, bar_mode, spacing, layout_show_timer_text)
-    local has_layout = layout ~= nil
-    layout = layout or {}
     display_count = tonumber(display_count) or 0
     spacing = tonumber(spacing) or layout.spacing or 0
 
@@ -87,14 +84,14 @@ function M.get_aura_frame_height(layout, display_count, bar_mode, spacing, layou
 
     local row_height = icon_size + spacing + timer_height
     local growth_layout = layout.growth_layout or addon.GetGrowthDirection(layout.growth)
-    if has_layout and growth_layout.vertical then
+    if growth_layout.vertical then
         return display_count * row_height - spacing + bottom_padding
     end
-    if has_layout and layout.icons_per_row then
+    if layout.icons_per_row then
         local rows = math_ceil(display_count / layout.icons_per_row)
         return rows * row_height - spacing + bottom_padding
     end
-    return display_count * (ICON_SIZE + FRAME_BOTTOM_PADDING)
+    error("Aura frame layout is missing icons_per_row for horizontal growth", 2)
 end
 
 --#endregion FRAME HEIGHT LAYOUT ===============================================

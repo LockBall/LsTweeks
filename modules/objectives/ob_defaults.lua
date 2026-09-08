@@ -5,8 +5,10 @@
 
 local _, addon = ...
 
-local M = addon.objectives or {}
-addon.objectives = M
+addon.objectives = {
+    controls = {},
+}
+local M = addon.objectives
 
 M.MODULE_KEY = "objectives"
 

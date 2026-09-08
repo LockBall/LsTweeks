@@ -1,11 +1,6 @@
 -- Skyriding Vigor fade helpers: alpha transitions and full-charge fade policy.
 local _, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
-    controls = {},
-    slots = {},
-}
-
 local M = addon.skyriding_vigor
 
 local CreateFrame = CreateFrame
@@ -110,9 +105,9 @@ end
 --#region FULL-CHARGE POLICY ===================================================
 
 function M.apply_full_charge_fade(frame, db, charges_full, is_active_flight)
-    local defaults = M.DEFAULTS or {}
+    local defaults = M.DEFAULTS
     if db.fade_when_full and not M._fill_test_enabled and not db.move_mode and charges_full and not is_active_flight then
-        M.fade_frame_alpha(frame, db.fade_alpha or defaults.fade_alpha or addon.DEFAULT_FADE_ALPHA, db.fade_length or defaults.fade_length or 3)
+        M.fade_frame_alpha(frame, db.fade_alpha or defaults.fade_alpha, db.fade_length or defaults.fade_length)
     else
         M.restore_frame_alpha(frame)
     end

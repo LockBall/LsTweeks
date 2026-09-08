@@ -138,6 +138,7 @@ Game state knobs (set directly, then fire the matching event or call the entry p
 
 ## Extending The Stub
 - The smoke suite prints "globals the stub returned nil for" — that list is the live gap report. Extend only when a gap changes behavior under test; a nil global that the addon already guards against is faithful to a missing in-game API.
+- Isolated suites must load required addon owners in TOC order or define the required contract in the stub before loading a consumer. Never add a production helper/table/method guard or fallback solely because a partial test fixture omitted its dependency; ownership and optionality are defined in `project.md` `### Deterministic Ownership And Optionality`.
 - New global function or C_* namespace: add it to the matching stub region with the smallest plausible behavior and realistic return types. Use `api_lookup.ps1 <ApiName>` for patch-matched stable signatures; for patch-sensitive APIs, first refresh the matching `wow-ui-source` channel and verify the generated declaration/runtime source before modeling it.
 - New frame method that must return a real value: add it to `frame_methods` explicitly. Unknown verb-prefixed methods already no-op safely, but their nil return breaks arithmetic/indexing on the result.
 - New Blizzard sub-frame the addon walks (`Frame.Child.GrandChild`): build it in the "common globals" region next to the existing PlayerFrame/ObjectiveTrackerFrame trees.

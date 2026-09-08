@@ -2,11 +2,6 @@
 -- Visual frame construction and runtime layout live in sv_bar.lua.
 local _, addon = ...
 
-addon.skyriding_vigor = addon.skyriding_vigor or {
-    controls = {},
-    slots = {},
-}
-
 local M = addon.skyriding_vigor
 
 local C_Texture_GetAtlasInfo = C_Texture and C_Texture.GetAtlasInfo
@@ -191,7 +186,6 @@ local POSITION_RANGE = { min = -1000, max = 1000, step = 1 }
 local FILL_ADD_ALPHA = 0.5
 
 M.MAX_SLOTS = MAX_SLOTS
-M.BAR_STYLE_DEFAULT = DEFAULT_STYLE_KEY
 M.BAR_STYLE_OPTIONS = {}
 for _, key in ipairs(BAR_STYLE_ORDER) do
     M.BAR_STYLE_OPTIONS[#M.BAR_STYLE_OPTIONS + 1] = {
@@ -215,7 +209,6 @@ for _, key in ipairs(DECOR_COLOR_ORDER) do
         text = DECOR_COLORS[key].label,
     }
 end
-M.DECOR_STYLE_DEFAULT = DEFAULT_DECOR_STYLE_KEY
 M.DECOR_STYLE_OPTIONS = {}
 for _, key in ipairs(DECOR_STYLE_ORDER) do
     M.DECOR_STYLE_OPTIONS[#M.DECOR_STYLE_OPTIONS + 1] = {
@@ -255,7 +248,7 @@ local function get_db()
 end
 
 local function get_defaults()
-    return M.DEFAULTS or {}
+    return M.DEFAULTS
 end
 
 local function atlas_exists(atlas)
@@ -312,7 +305,7 @@ end
 
 local function get_bar_style(db)
     local defaults = get_defaults()
-    local key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local key = db and db.style or defaults.style
     local style = BAR_STYLES[key]
     if is_valid_style(style) then
         return key, style
@@ -332,7 +325,7 @@ end
 function M.bar_style_supports_node_color(style_key)
     local db = get_db()
     local defaults = get_defaults()
-    style_key = M.get_valid_bar_style_key(style_key or (db and db.style) or defaults.style or DEFAULT_STYLE_KEY)
+    style_key = M.get_valid_bar_style_key(style_key or (db and db.style) or defaults.style)
     local style = BAR_STYLES[style_key]
     if not style or not style.frame_colors then return false end
 
@@ -347,7 +340,7 @@ end
 function M.get_style_layout_default(style_key, field)
     local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
     if field == "scale" then
-        return (get_defaults().scale or 1)
+        return get_defaults().scale
     elseif field == "node_color" then
         return get_valid_node_color_key(style, style and style.default_node_color or DEFAULT_NODE_COLOR_KEY)
     elseif field == "fill_color" then
@@ -432,7 +425,7 @@ end
 function M.get_node_color()
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db and db.style or defaults.style
     local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
     local layout = M.get_style_layout_table(db, style_key, true)
     return get_valid_node_color_key(style, layout and layout.node_color or M.get_style_layout_default(style_key, "node_color"))
@@ -444,7 +437,7 @@ function M.set_node_color(value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db.style or defaults.style
     local style = BAR_STYLES[style_key] or BAR_STYLES[DEFAULT_STYLE_KEY]
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
@@ -473,27 +466,27 @@ end
 function M.get_spark_color(db)
     db = db or get_db()
     local defaults = get_defaults()
-    return db and db.spark_color or defaults.spark_color or { r = 1, g = 1, b = 1, a = 1 }
+    return db and db.spark_color or defaults.spark_color
 end
 
 function M.get_spark_size(db)
     db = db or get_db()
     local defaults = get_defaults()
-    local fallback = defaults.spark_size or 1
-    return clamp_number(db and db.spark_size, fallback, M.SETTING_RANGES and M.SETTING_RANGES.spark_size)
+    local fallback = defaults.spark_size
+    return clamp_number(db and db.spark_size, fallback, M.SETTING_RANGES.spark_size)
 end
 
 function M.get_style_scale()
     local db = get_db()
     local defaults = get_defaults()
-    if not db then return defaults.scale or 1 end
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    if not db then return defaults.scale end
+    local style_key = db.style or defaults.style
     local layout = M.get_style_layout_table(db, style_key, true)
     local value = layout and layout.scale
     if value == nil then
         value = M.get_style_layout_default(style_key, "scale")
     end
-    return value or defaults.scale or 1
+    return value or defaults.scale
 end
 
 function M.set_style_scale(value)
@@ -502,12 +495,12 @@ function M.set_style_scale(value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
-    local fallback = db.scale or defaults.scale or 1
+    local style_key = db.style or defaults.style
+    local fallback = db.scale or defaults.scale
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES.scale)
+    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES.scale)
     db.scale = layout.scale
     M.refresh_layout()
 end
@@ -516,14 +509,14 @@ function M.get_style_fill_color()
     local db = get_db()
     if not db then return { r = 1, g = 1, b = 1, a = 1 } end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db.style or defaults.style
     return M.get_style_fill_color_value(db, style_key) or { r = 1, g = 1, b = 1, a = 1 }
 end
 
 function M.get_style_fill_color_default()
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db and db.style or defaults.style
     return M.get_style_layout_default(style_key, "fill_color") or { r = 1, g = 1, b = 1, a = 1 }
 end
 
@@ -533,7 +526,7 @@ function M.set_style_fill_color(color)
     local db = get_db()
     if not db or type(color) ~= "table" then return end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db.style or defaults.style
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
@@ -545,19 +538,19 @@ function M.get_style_fill_add_alpha()
     local db = get_db()
     if not db then return FILL_ADD_ALPHA end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db.style or defaults.style
     local layout = M.get_style_layout_table(db, style_key, true)
     local value = layout and layout.fill_add_alpha
     if value == nil then
         value = M.get_style_layout_default(style_key, "fill_add_alpha")
     end
-    return clamp_number(value, FILL_ADD_ALPHA, M.SETTING_RANGES and M.SETTING_RANGES.fill_add_alpha)
+    return clamp_number(value, FILL_ADD_ALPHA, M.SETTING_RANGES.fill_add_alpha)
 end
 
 function M.get_style_fill_add_alpha_default()
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db and db.style or defaults.style
     return M.get_style_layout_default(style_key, "fill_add_alpha") or FILL_ADD_ALPHA
 end
 
@@ -567,17 +560,17 @@ function M.set_style_fill_add_alpha(value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.style or defaults.style or DEFAULT_STYLE_KEY
+    local style_key = db.style or defaults.style
     local layout = M.get_style_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_RANGES and M.SETTING_RANGES.fill_add_alpha)
+    layout.fill_add_alpha = clamp_number(value, M.get_style_fill_add_alpha_default(), M.SETTING_RANGES.fill_add_alpha)
     M.apply_fill_color()
 end
 
 local function get_decor_style(db)
     local defaults = get_defaults()
-    local key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local key = db and db.decor_style or defaults.decor_style
     local style = DECOR_STYLES[key]
     if is_valid_decor_style(style) then
         return key, style
@@ -597,7 +590,7 @@ end
 function M.decor_style_supports_color(style_key)
     local db = get_db()
     local defaults = get_defaults()
-    style_key = M.get_valid_decor_style_key(style_key or (db and db.decor_style) or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY)
+    style_key = M.get_valid_decor_style_key(style_key or (db and db.decor_style) or defaults.decor_style)
     local style = DECOR_STYLES[style_key]
     if not style or style.disabled or not style.atlas_colors then return false end
 
@@ -678,7 +671,7 @@ function M.get_decor_position_axis(axis)
     local db = get_db()
     if not db then return 0 end
     local defaults = get_defaults()
-    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db.decor_style or defaults.decor_style
     local layout = M.get_decor_layout_table(db, style_key, true)
     local value = layout and layout[field]
     if value == nil then
@@ -692,7 +685,7 @@ function M.get_decor_position_default(axis)
     if not field then return 0 end
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db and db.decor_style or defaults.decor_style
     return M.get_decor_layout_default(style_key, field) or 0
 end
 
@@ -704,12 +697,12 @@ function M.set_decor_position_axis(axis, value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db.decor_style or defaults.decor_style
     local fallback = M.get_decor_layout_default(style_key, field) or 0
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout[field] = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES[range_key])
+    layout[field] = clamp_number(value, fallback, M.SETTING_RANGES[range_key])
     M.refresh_layout()
 end
 
@@ -717,7 +710,7 @@ function M.get_decor_scale()
     local db = get_db()
     if not db then return 1 end
     local defaults = get_defaults()
-    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db.decor_style or defaults.decor_style
     local layout = M.get_decor_layout_table(db, style_key, true)
     local value = layout and layout.scale
     if value == nil then
@@ -729,7 +722,7 @@ end
 function M.get_decor_scale_default()
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db and db.decor_style or defaults.decor_style
     return M.get_decor_layout_default(style_key, "scale") or 1
 end
 
@@ -739,19 +732,19 @@ function M.set_decor_scale(value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db.decor_style or defaults.decor_style
     local fallback = M.get_decor_layout_default(style_key, "scale") or 1
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end
 
-    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES and M.SETTING_RANGES.decor_scale)
+    layout.scale = clamp_number(value, fallback, M.SETTING_RANGES.decor_scale)
     M.refresh_layout()
 end
 
 function M.get_decor_color()
     local db = get_db()
     local defaults = get_defaults()
-    local style_key = db and db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db and db.decor_style or defaults.decor_style
     local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
     if style and style.disabled then return DEFAULT_DECOR_COLOR_KEY end
     local layout = M.get_decor_layout_table(db, style_key, true)
@@ -764,7 +757,7 @@ function M.set_decor_color(value)
     local db = get_db()
     if not db then return end
     local defaults = get_defaults()
-    local style_key = db.decor_style or defaults.decor_style or DEFAULT_DECOR_STYLE_KEY
+    local style_key = db.decor_style or defaults.decor_style
     local style = DECOR_STYLES[style_key] or DECOR_STYLES[DEFAULT_DECOR_STYLE_KEY]
     local layout = M.get_decor_layout_table(db, style_key, true)
     if not layout then return end

@@ -22,7 +22,7 @@ local RESET_W      = 45
 local RESET_H      = 16
 local GROUP_W      = BTN_SIZE + control_gap + RESET_W
 local AUTO_VISIBLE_DEFAULT = 0.75
-local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS and addon.UPDATE_INTERVALS.tenth_sec or 0.1
+local PREVIEW_DEBOUNCE = addon.UPDATE_INTERVALS.tenth_sec
 local DEFAULT_PRESET_OPTIONS = {
     { value = "red", text = "Red" },
     { value = "orange", text = "Orange" },

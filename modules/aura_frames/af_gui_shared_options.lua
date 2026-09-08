@@ -3,7 +3,6 @@
 
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local GROUP_WIDTH = 700
@@ -33,7 +32,7 @@ end
 
 local function get_participation_rows()
     local rows = {}
-    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
         rows[#rows + 1] = {
             category = frame_def.key,
             label = frame_def.frame_label or frame_def.label or frame_def.key,
@@ -54,7 +53,7 @@ local function get_participation_rows()
 end
 
 local function clear_participation_control_keys()
-    for key in pairs(M.controls or {}) do
+    for key in pairs(M.controls) do
         if type(key) == "string"
             and (
                 key:match("^shared_options:[^:]+:")
@@ -97,33 +96,33 @@ local function refresh_participation_rows()
 end
 
 function M.sync_shared_options_controls()
-    if not (M.controls and M.db) then return end
+    if not M.db then return end
     local shared_enabled = M.db.shared_options_enabled == true
     local shared_controls_enabled = shared_enabled
-    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS) do
         for _, picker_def in ipairs(column.pickers) do
             local picker = M.controls[picker_def.control_key]
-            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.db_key]) end
+            if picker then picker:SetValue(M.db[picker_def.db_key]) end
             if picker then picker:SetEnabled(shared_controls_enabled) end
         end
     end
-    for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
+    for _, column in ipairs(M.SHARED_FONT_COLUMNS) do
         for _, picker_def in ipairs(column.pickers) do
             local picker = M.controls[picker_def.shared_control_key]
-            if picker and picker.SetValue then picker:SetValue(M.db[picker_def.shared_font_key]) end
+            if picker then picker:SetValue(M.db[picker_def.shared_font_key]) end
             if picker then picker:SetEnabled(true) end
         end
     end
     local enabled_control = M.controls.shared_options_enabled
-    if enabled_control and enabled_control.SetCheckedSilently then
+    if enabled_control then
         enabled_control:SetCheckedSilently(M.db.shared_options_enabled == true)
     end
     local fade_control = M.controls.shared_options_disable_ooc_fade
-    if fade_control and fade_control.SetCheckedSilently then
+    if fade_control then
         fade_control:SetCheckedSilently(M.db.disable_ooc_fade == true)
     end
     local test_aura_control = M.controls.shared_options_test_auras
-    if test_aura_control and test_aura_control.SetState then
+    if test_aura_control then
         test_aura_control:SetState(
             M.is_shared_test_aura_enabled(),
             M.are_shared_test_aura_previews_paused(),
@@ -385,10 +384,10 @@ local function build_participation_matrix(content, content_height)
     header_grid:place_at(header_bar, 1, 1, nil, { y_offset = HEADER_BAR_Y_OFFSET })
 
     create_header_title(panel, header_grid, "Frame Name", 1)
-    for _, column in ipairs(M.SHARED_COLOR_COLUMNS or {}) do
+    for _, column in ipairs(M.SHARED_COLOR_COLUMNS) do
         build_shared_color_column(panel, header_grid, column.title, column.column, column.pickers)
     end
-    for _, column in ipairs(M.SHARED_FONT_COLUMNS or {}) do
+    for _, column in ipairs(M.SHARED_FONT_COLUMNS) do
         build_shared_font_column(panel, header_grid, column.title, column.column, column.pickers)
     end
     local rows_parent = CreateFrame("Frame", nil, panel)
@@ -397,7 +396,7 @@ local function build_participation_matrix(content, content_height)
     M.shared_options_rows_parent = rows_parent
     M.shared_options_row_slots = {}
 
-    local slot_count = #(M.FRAME_DEFS or {}) + (M.MAX_CUSTOM_FRAMES or 0)
+    local slot_count = #M.FRAME_DEFS + M.MAX_CUSTOM_FRAMES
     local row_grid = addon.CreateSettingsGrid(rows_parent, {
         column_count = 1,
         col_width = GROUP_WIDTH - 50,

@@ -2,7 +2,6 @@
 -- replacements, and wires WoW events to selected replacement sounds.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 local _PlaySoundFile   = (C_Sound and C_Sound.PlaySoundFile)   or PlaySoundFile
@@ -30,7 +29,7 @@ end
 --#region PLAYBACK HELPERS =====================================================
 
 local function play_preview_soundkit(target)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then return false end
+    if not M.is_runtime_enabled() then return false end
 
     local soundkit_id = M.resolve_soundkit_id(target and target.preview_soundkit)
     if not soundkit_id then return false end
@@ -59,7 +58,7 @@ local function play_original_file(target)
 
     -- apply_audio_volumes normally leaves Original files unmuted, but keep
     -- this preview path self-contained when called after a stale UI/runtime sequence.
-    for _, original_file_id in ipairs(original_file_ids or {}) do
+    for _, original_file_id in ipairs(original_file_ids) do
         _UnmuteSoundFile(original_file_id)
     end
 
@@ -77,14 +76,14 @@ end
 
 function M.unmute_all_sound_files()
     for _, target in pairs(M.SOUND_TARGETS) do
-        for _, file_id in ipairs(target.original_file_ids or {}) do
+        for _, file_id in ipairs(target.original_file_ids) do
             _UnmuteSoundFile(file_id)
         end
     end
 end
 
 function M.refresh_audio_event_cache()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_runtime()
         return
     end
@@ -94,7 +93,7 @@ function M.refresh_audio_event_cache()
 end
 
 function M.apply_audio_volumes()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_runtime()
         return
     end
@@ -103,7 +102,7 @@ function M.apply_audio_volumes()
     for target_key, target in pairs(M.SOUND_TARGETS) do
         local target_db = M.get_target_db(target_key)
         local mute = M.should_mute_original(target_db)
-        for _, file_id in ipairs(target.original_file_ids or {}) do
+        for _, file_id in ipairs(target.original_file_ids) do
             if mute then
                 _MuteSoundFile(file_id)
             else
@@ -119,7 +118,7 @@ end
 --#region PREVIEWS =============================================================
 
 function M.play_replacement(target_key)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_all_previews()
         return false
     end
@@ -170,7 +169,7 @@ function M.stop_all_previews()
 end
 
 function M.queue_adjust_preview(target_key)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_all_previews()
         return
     end
@@ -188,7 +187,7 @@ end
 --#region EVENT ROUTING ========================================================
 
 local function handle_event(_, event)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.stop_runtime()
         return
     end
@@ -214,9 +213,8 @@ local function handle_event(_, event)
 end
 
 function M.sync_registered_events()
-    local registered = M._registered_events or {}
-    M._registered_events = registered
-    local desired = (M.is_runtime_enabled and not M.is_runtime_enabled()) and {} or (M._event_cache or {})
+    local registered = M._registered_events
+    local desired = M.is_runtime_enabled() and M._event_cache or {}
 
     if not M.event_frame and next(desired) == nil then
         return

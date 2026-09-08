@@ -2,7 +2,6 @@
 -- Preview entries are rendered by the normal aura-frame renderer/ticker path.
 local _, addon = ...
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local math_floor = math.floor
@@ -22,10 +21,6 @@ local CFG = {
     stack_max       = 4,    -- highest stack count shown during the cycle
     min_remaining   = 0.1,
 }
-
-M._test_preview_time_offsets = M._test_preview_time_offsets or {}
-M._test_preview_paused_times = M._test_preview_paused_times or {}
-M._test_preview_started = M._test_preview_started or {}
 
 local function get_test_preview_clock(show_key, now)
     local paused_time = M._test_preview_paused_times[show_key]
@@ -96,7 +91,7 @@ end
 
 local function for_each_enabled_test_preview(callback)
     if not (M.db and callback) then return end
-    for _, frame_def in ipairs(M.FRAME_DEFS or {}) do
+    for _, frame_def in ipairs(M.FRAME_DEFS) do
         local show_key = "show_" .. frame_def.key
         if frame_def.supports_test_aura ~= false and M.db[show_key] == true then
             callback(frame_def.key, show_key)
@@ -149,7 +144,7 @@ end
 function M.get_test_aura_binding(category)
     if not (category and M.db) then return nil end
     local show_key = "show_" .. category
-    if M.FRAME_DEFS_BY_KEY and M.FRAME_DEFS_BY_KEY[category]
+    if M.FRAME_DEFS_BY_KEY[category]
         and M.frame_supports_test_aura(category)
     then
         return M.db, "test_aura_" .. category, show_key, show_key
@@ -164,7 +159,7 @@ end
 
 function M.refresh_test_aura_category(category)
     local _, _, _, show_key = M.get_test_aura_binding(category)
-    local frame = show_key and M.frames and M.frames[show_key]
+    local frame = show_key and M.frames[show_key]
     local params = frame and frame.update_params
     M.invalidate_aura_scan_caches()
     if params then

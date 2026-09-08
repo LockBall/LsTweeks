@@ -10,7 +10,6 @@ local C_UnitAuras   = C_UnitAuras
 local C_Spell       = C_Spell
 local GCD_GREY_THRESHOLD = 2.0
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 local _scratch_custom_old_map = {}

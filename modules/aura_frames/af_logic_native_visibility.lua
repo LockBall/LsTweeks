@@ -5,7 +5,6 @@ local addon_name, addon = ...
 
 local InCombatLockdown = InCombatLockdown
 
-addon.aura_frames = addon.aura_frames or {}
 local M = addon.aura_frames
 
 --#region BLIZZARD BUFF/DEBUFF FRAME TOGGLES ===================================

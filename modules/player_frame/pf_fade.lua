@@ -4,11 +4,8 @@
 --#region MODULE SETUP =========================================================
 
 local _, addon = ...
-addon.player_frame = addon.player_frame or { controls = {}, frames = {} }
-
 local M = addon.player_frame
-local F = M.fade or {}
-M.fade = F
+local F = M.fade
 
 local math_min = math.min
 local math_max = math.max
@@ -73,12 +70,7 @@ end
 
 local function get_clamped_db(db, key)
     local range = RANGES[key]
-    if M.get_clamped_fade_value then
-        return M.get_clamped_fade_value(db, key, range.min, range.max)
-    end
-
-    local v = tonumber(db and db[key]) or DEFAULTS[key]
-    return math_max(range.min, math_min(range.max, v))
+    return M.get_clamped_fade_value(db, key, range.min, range.max)
 end
 
 local function get_fade_delay(db)  return get_clamped_db(db, "fade_delay") end

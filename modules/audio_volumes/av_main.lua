@@ -2,7 +2,6 @@
 -- registers the settings category, and resyncs controls after reset.
 local addon_name, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 local CATEGORY_NAME = "Audio Volumes"
@@ -14,7 +13,7 @@ function M.on_reset_complete()
     M.restore_combat_volumes()
     M.restore_fishing_focus()
     M._defaults_applied = nil
-    M._target_defaults_applied = nil
+    M._target_defaults_applied = {}
     local db = M.get_db()
     if not (db.last_sound_key and M.SOUND_TARGETS[db.last_sound_key]) then
         db.last_sound_key = M.defaults.audio_volumes.last_sound_key
@@ -27,7 +26,7 @@ function M.on_reset_complete()
     for target_key in pairs(M.SOUND_TARGETS) do
         local target_db = M.get_target_db(target_key)
         local preset = M.controls[target_key .. "_preset"]
-        if preset and preset.SetValue then
+        if preset then
             local option = M.get_preset_by_value(target_db.preset)
             local slider_value = target_db.sound_off == true and 0 or (option and option.slider_value or 0)
             if preset._lstweeks_set_sound_level_value then
@@ -37,14 +36,14 @@ function M.on_reset_complete()
             end
         end
         local play_on_adjust = M.controls[target_key .. "_play_on_adjust"]
-        if play_on_adjust and play_on_adjust.SetCheckedSilently then
+        if play_on_adjust then
             play_on_adjust:SetCheckedSilently(target_db.play_on_adjust == true)
         end
         local use_original = M.controls[target_key .. "_use_original"]
-        if use_original and use_original.SetCheckedSilently then
+        if use_original then
             use_original:SetCheckedSilently(target_db.use_original == true)
         end
-        if preset and preset._lstweeks_sync_original_state then
+        if preset then
             preset:_lstweeks_sync_original_state()
         end
     end
@@ -82,22 +81,20 @@ local function count_pairs(t)
     return count
 end
 
-if addon.register_module_status then
-    addon.register_module_status(M.MODULE_KEY, function()
-        return {
-            "registered_events=" .. tostring(count_pairs(M._registered_events)),
-            "event_cache=" .. tostring(count_pairs(M._event_cache)),
-            "preview_handle=" .. tostring(M._preview_sound_handle ~= nil),
-            "adjust_preview_timer=" .. tostring(M._adjust_preview_timer ~= nil),
-            "fishing_events=" .. tostring(M._fishing_focus_events_registered == true),
-            "fishing_active=" .. tostring(M._fishing_focus_active == true),
-            "combat_volume_events=" .. tostring(M._combat_volumes_events_registered == true),
-            "combat_volume_active=" .. tostring(M._combat_volumes_active == true),
-            "bobber_preview_timer=" .. tostring(M._fishing_bobber_preview_timer ~= nil),
-            "bobber_preview_handle=" .. tostring(M._fishing_bobber_preview_handle ~= nil),
-        }
-    end)
-end
+addon.register_module_status(M.MODULE_KEY, function()
+    return {
+        "registered_events=" .. tostring(count_pairs(M._registered_events)),
+        "event_cache=" .. tostring(count_pairs(M._event_cache)),
+        "preview_handle=" .. tostring(M._preview_sound_handle ~= nil),
+        "adjust_preview_timer=" .. tostring(M._adjust_preview_timer ~= nil),
+        "fishing_events=" .. tostring(M._fishing_focus_events_registered == true),
+        "fishing_active=" .. tostring(M._fishing_focus_active == true),
+        "combat_volume_events=" .. tostring(M._combat_volumes_events_registered == true),
+        "combat_volume_active=" .. tostring(M._combat_volumes_active == true),
+        "bobber_preview_timer=" .. tostring(M._fishing_bobber_preview_timer ~= nil),
+        "bobber_preview_handle=" .. tostring(M._fishing_bobber_preview_handle ~= nil),
+    }
+end)
 
 --#endregion RESET AND MODULE HOOKS ============================================
 
@@ -114,9 +111,7 @@ loader:SetScript("OnEvent", function(self, event, name)
         M.sync_fishing_focus_events()
         M.sync_combat_volumes_events()
         M.sync_manual_situation_profile()
-        if addon.register_category and M.BuildSettings then
-            addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 400, module_key = M.MODULE_KEY })
-        end
+        addon.register_category(CATEGORY_NAME, M.BuildSettings, { order = 400, module_key = M.MODULE_KEY })
         self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGOUT" then
         M.stop_runtime()

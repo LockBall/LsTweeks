@@ -2,7 +2,6 @@
 -- temporary channel CVars, situation previews, and situation event routing.
 local _, addon = ...
 
-addon.audio_volumes = addon.audio_volumes or {}
 local M = addon.audio_volumes
 
 local FISHING_CHANNEL_SPELL_ID = 131476
@@ -30,7 +29,7 @@ M.TEST_SOUND_OPTIONS = {
 }
 
 function M.get_test_sound_option(sound_key)
-    for _, option in ipairs(M.TEST_SOUND_OPTIONS or {}) do
+    for _, option in ipairs(M.TEST_SOUND_OPTIONS) do
         if option.value == sound_key then
             return option
         end
@@ -46,7 +45,7 @@ function M.get_valid_test_sound_key(sound_key, fallback)
     if M.get_test_sound_option(fallback) then
         return fallback
     end
-    return (M.TEST_SOUND_OPTIONS and M.TEST_SOUND_OPTIONS[1] and M.TEST_SOUND_OPTIONS[1].value) or DEFAULT_TEST_SOUND_KEY
+    return M.TEST_SOUND_OPTIONS[1].value
 end
 
 --#endregion CONFIGURATION =====================================================
@@ -107,12 +106,12 @@ function M.get_fishing_focus_db()
         addon.apply_defaults(defaults, db.fishing_focus)
     end
     if db.fishing_focus.initialized_from_current ~= true then
-        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
             db.fishing_focus[channel.key] = M.get_default_fishing_focus_channel_percent(channel)
         end
         db.fishing_focus.initialized_from_current = true
     end
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         local value = tonumber(db.fishing_focus[channel.key])
         if not value then
             value = M.get_default_fishing_focus_channel_percent(channel)
@@ -131,12 +130,12 @@ function M.get_combat_volumes_db()
         addon.apply_defaults(defaults, db.combat_volumes)
     end
     if db.combat_volumes.initialized_from_current ~= true then
-        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+        for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
             db.combat_volumes[channel.key] = read_channel_percent(channel)
         end
         db.combat_volumes.initialized_from_current = true
     end
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         local value = tonumber(db.combat_volumes[channel.key])
         if not value then
             value = read_channel_percent(channel)
@@ -166,7 +165,7 @@ function M.get_quiet_custom_db()
     db.quiet_custom.name = sanitize_custom_situation_name(db.quiet_custom.name, "Quiet Custom")
     db.quiet_custom.enabled = db.quiet_custom.enabled == true
     db.quiet_custom.test_sound = M.get_valid_test_sound_key(db.quiet_custom.test_sound, "bloodlust")
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         local value = tonumber(db.quiet_custom[channel.key])
         if not value then
             value = 25
@@ -213,7 +212,7 @@ function M.create_custom_situation(name)
         enabled = false,
         test_sound = "bloodlust",
     }
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         situation[channel.key] = read_channel_percent(channel)
     end
     situations[id] = situation
@@ -272,7 +271,7 @@ function M.get_situation_profile_db(situation_key)
     if not situation then return nil end
     situation.enabled = situation.enabled == true
     situation.test_sound = M.get_valid_test_sound_key(situation.test_sound, "bloodlust")
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         local value = tonumber(situation[channel.key])
         if not value then
             value = read_channel_percent(channel)
@@ -411,7 +410,7 @@ end
 function M.copy_current_sound_channels_to_situation(situation_key)
     local profile_db = M.get_situation_profile_db(situation_key)
     if not profile_db then return nil end
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         profile_db[channel.key] = read_channel_percent(channel)
     end
     return profile_db
@@ -462,7 +461,7 @@ function M.stop_fishing_bobber_preview()
 end
 
 function M.play_fishing_bobber_preview(profile_key)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         restore_bobber_preview_profile()
         return false
     end
@@ -479,7 +478,7 @@ function M.play_fishing_bobber_preview(profile_key)
     end
 
     local cached = {}
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         cached[channel.cvar] = get_cvar(channel.cvar)
         local percent = profile_db[channel.key]
         set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
@@ -497,7 +496,7 @@ function M.play_situation_preview(profile_key, test_sound_key)
     if profile_key == "fishing" or (profile_key == "current" and not test_sound_key) then
         return M.play_fishing_bobber_preview(profile_key)
     end
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         restore_bobber_preview_profile()
         return false
     end
@@ -508,8 +507,7 @@ function M.play_situation_preview(profile_key, test_sound_key)
     local test_sound = M.get_test_sound_option(test_sound_key)
         or M.get_test_sound_option(profile_db and profile_db.test_sound)
         or M.get_test_sound_option(DEFAULT_TEST_SOUND_KEY)
-        or (M.TEST_SOUND_OPTIONS and M.TEST_SOUND_OPTIONS[1])
-    if not test_sound then return false end
+        or M.TEST_SOUND_OPTIONS[1]
 
     if not profile_db then
         local did_play, sound_handle
@@ -524,7 +522,7 @@ function M.play_situation_preview(profile_key, test_sound_key)
     end
 
     local cached = {}
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         cached[channel.cvar] = get_cvar(channel.cvar)
         local percent = profile_db[channel.key]
         set_cvar(channel.cvar, tostring((tonumber(percent) or 0) / 100))
@@ -549,7 +547,7 @@ end
 
 local function ensure_temporary_sound_profile_cache()
     M._temporary_sound_profile_cached = M._temporary_sound_profile_cached or {}
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         if M._temporary_sound_profile_cached[channel.cvar] == nil then
             M._temporary_sound_profile_cached[channel.cvar] = get_cvar(channel.cvar)
         end
@@ -558,7 +556,7 @@ end
 
 local function apply_channel_profile(profile_db)
     ensure_temporary_sound_profile_cache()
-    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS or {}) do
+    for _, channel in ipairs(M.FISHING_FOCUS_CHANNELS) do
         set_cvar(channel.cvar, tostring((tonumber(profile_db[channel.key]) or 0) / 100))
     end
 end
@@ -575,7 +573,7 @@ end
 function M.apply_active_sound_channel_profile()
     restore_bobber_preview_profile()
 
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M._fishing_focus_active = false
         M._combat_volumes_active = false
         M._manual_situation_active_key = nil
@@ -603,7 +601,7 @@ function M.apply_active_sound_channel_profile()
 end
 
 function M.sync_manual_situation_profile()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M._manual_situation_active_key = nil
         M.apply_active_sound_channel_profile()
         return
@@ -628,7 +626,7 @@ function M.restore_manual_situation_profile()
 end
 
 function M.resync_manual_situation_profile(situation_key)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_manual_situation_profile()
         return
     end
@@ -640,7 +638,7 @@ function M.resync_manual_situation_profile(situation_key)
 end
 
 function M.apply_fishing_focus()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_fishing_focus()
         return
     end
@@ -661,7 +659,7 @@ function M.restore_fishing_focus()
 end
 
 function M.resync_fishing_focus()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_fishing_focus()
         return
     end
@@ -672,7 +670,7 @@ function M.resync_fishing_focus()
 end
 
 function M.apply_combat_volumes()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_combat_volumes()
         return
     end
@@ -693,7 +691,7 @@ function M.restore_combat_volumes()
 end
 
 function M.resync_combat_volumes()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_combat_volumes()
         return
     end
@@ -708,7 +706,7 @@ end
 --#region EVENT ROUTING ========================================================
 
 local function handle_fishing_focus_event(_, event, _, _, spell_id)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.sync_fishing_focus_events()
         return
     end
@@ -722,7 +720,7 @@ local function handle_fishing_focus_event(_, event, _, _, spell_id)
 end
 
 local function handle_combat_volumes_event(_, event)
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.sync_combat_volumes_events()
         return
     end
@@ -735,7 +733,7 @@ local function handle_combat_volumes_event(_, event)
 end
 
 function M.sync_fishing_focus_events()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_fishing_focus()
         if M._fishing_focus_events_registered and M.fishing_focus_frame then
             M.fishing_focus_frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
@@ -776,7 +774,7 @@ function M.sync_fishing_focus_events()
 end
 
 function M.sync_combat_volumes_events()
-    if M.is_runtime_enabled and not M.is_runtime_enabled() then
+    if not M.is_runtime_enabled() then
         M.restore_combat_volumes()
         if M._combat_volumes_events_registered and M.combat_volumes_frame then
             M.combat_volumes_frame:UnregisterEvent("PLAYER_REGEN_DISABLED")
