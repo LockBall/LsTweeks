@@ -1,9 +1,7 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("live", "ptr", "beta")]
+    [ValidateSet("live", "ptr")]
     [string]$Channel = "live",
-
-    [switch]$SkipKethoUpdate,
 
     [switch]$StatusOnly,
 
@@ -21,7 +19,7 @@ param(
     [string]$TocFile,
 
     [Parameter(DontShow = $true)]
-    [string]$ExtensionsDirectory
+    [switch]$SkipAnnotations
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,8 +29,9 @@ $cacheRoot = if ($CacheDirectory) { $CacheDirectory } else { Join-Path $PSScript
 $sourceRoot = Join-Path $cacheRoot $Channel
 $sourceRepo = if ($SourceRepository) { $SourceRepository } else { "https://github.com/Gethe/wow-ui-source.git" }
 $tocPath = if ($TocFile) { $TocFile } else { Join-Path $repoRoot "LsTweeks.toc" }
-$extensionsRoot = if ($ExtensionsDirectory) { $ExtensionsDirectory } else { Join-Path $env:USERPROFILE ".vscode\extensions" }
 $statePath = Join-Path $cacheRoot "sync-state-$Channel.json"
+$annotationStatePath = Join-Path $cacheRoot "annotation-state-$Channel.json"
+$annotationScript = Join-Path $PSScriptRoot "sync_wow_annotations.ps1"
 
 function Invoke-NativeVisible {
     param(
@@ -105,48 +104,6 @@ function Get-SyncState {
     }
 }
 
-function Get-KethoInfo {
-    $candidates = Get-ChildItem -LiteralPath $extensionsRoot -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -like "ketho.wow-api-*" } |
-        ForEach-Object {
-            $packagePath = Join-Path $_.FullName "package.json"
-            if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) { return }
-
-            $package = Get-Content -Raw -LiteralPath $packagePath | ConvertFrom-Json
-            try {
-                $semanticVersion = [version]$package.version
-            }
-            catch {
-                return
-            }
-
-            [pscustomobject]@{
-                Path = $_.FullName
-                Version = [string]$package.version
-                SemanticVersion = $semanticVersion
-            }
-        } |
-        Sort-Object SemanticVersion -Descending
-
-    $current = $candidates | Select-Object -First 1
-    if (-not $current) { return $null }
-
-    $declaredMainline = $null
-    $readmePath = Join-Path $current.Path "README.md"
-    if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
-        $readme = [System.IO.File]::ReadAllText($readmePath)
-        if ($readme -match "mainline-([0-9]+(?:\.[0-9]+)+)-") {
-            $declaredMainline = $Matches[1]
-        }
-    }
-
-    return [pscustomobject]@{
-        Path = $current.Path
-        Version = $current.Version
-        DeclaredMainline = $declaredMainline
-    }
-}
-
 function Get-SourceInfo {
     if (-not (Test-Path -LiteralPath $sourceRoot -PathType Container)) {
         return $null
@@ -181,7 +138,6 @@ function Get-SourceInfo {
 
 function Write-SyncState {
     param(
-        [Parameter(Mandatory = $true)][AllowNull()]$Ketho,
         [Parameter(Mandatory = $true)]$Source
     )
 
@@ -190,7 +146,7 @@ function Write-SyncState {
     }
 
     $state = [ordered]@{
-        schemaVersion = 1
+        schemaVersion = 2
         refreshedAtUtc = [DateTime]::UtcNow.ToString("o")
         channel = $Channel
         sourceVersion = $Source.Version
@@ -198,8 +154,6 @@ function Write-SyncState {
         sourceCommit = $Source.Commit
         sourceCommitDate = $Source.CommitDate
         tocInterfaces = @($Source.TocInterfaces)
-        kethoVersion = if ($Ketho) { $Ketho.Version } else { $null }
-        kethoDeclaredMainline = if ($Ketho) { $Ketho.DeclaredMainline } else { $null }
     }
     $json = $state | ConvertTo-Json -Depth 3
     $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
@@ -207,9 +161,14 @@ function Write-SyncState {
 }
 
 function Write-ReferenceStatus {
-    $ketho = Get-KethoInfo
     $source = Get-SourceInfo
     $state = Get-SyncState
+    $annotationState = if (Test-Path -LiteralPath $annotationStatePath -PathType Leaf) {
+        Get-Content -LiteralPath $annotationStatePath -Raw | ConvertFrom-Json
+    } else { $null }
+    $annotationGeneratedUtc = if ($annotationState -and $annotationState.generatedAtUtc -is [DateTime]) {
+        $annotationState.generatedAtUtc.ToUniversalTime().ToString("o")
+    } elseif ($annotationState) { [string]$annotationState.generatedAtUtc } else { $null }
     $refreshUtc = if ($state -and $state.refreshedAtUtc -is [DateTime]) {
         $state.refreshedAtUtc.ToUniversalTime().ToString("o")
     }
@@ -221,33 +180,21 @@ function Write-ReferenceStatus {
     }
 
     if ($CompactStatus) {
-        $kethoSummary = if ($ketho) { "$($ketho.Version)/$($ketho.DeclaredMainline)" } else { "missing" }
+        $annotationSummary = if ($annotationState) { $annotationState.generatorCommit.Substring(0, 8) } else { "missing" }
         if ($source) {
             $match = if ($source.InterfaceMatchesToc) { "toc-match" } else { "TOC-MISMATCH" }
             $receipt = if ($state) { $refreshUtc } else { "missing-receipt" }
-            Write-Output "WoW API reference: $Channel $($source.Version) $($source.Commit.Substring(0, 8)) $match; refreshed=$receipt; Ketho=$kethoSummary"
+            Write-Output "WoW API reference: $Channel $($source.Version) $($source.Commit.Substring(0, 8)) $match; refreshed=$receipt; annotations=$annotationSummary"
             if ($state -and $state.sourceCommit -ne $source.Commit) {
                 Write-Warning "The source checkout commit differs from its last successful refresh receipt."
             }
         }
         else {
-            Write-Output "WoW API reference: $Channel source missing; Ketho=$kethoSummary"
+            Write-Output "WoW API reference: $Channel source missing; annotations=$annotationSummary"
         }
         return
     }
 
-    Write-Output "Ketho annotations"
-    if ($ketho) {
-        $declared = if ($ketho.DeclaredMainline) { $ketho.DeclaredMainline } else { "unknown" }
-        Write-Output "  Extension: $($ketho.Version)"
-        Write-Output "  Declared mainline: $declared"
-        Write-Output "  Path: $($ketho.Path)"
-    }
-    else {
-        Write-Output "  Missing"
-    }
-
-    Write-Output ""
     Write-Output "WoW UI source ($Channel)"
     if ($source) {
         Write-Output "  Client: $($source.Version)"
@@ -274,34 +221,29 @@ function Write-ReferenceStatus {
         Write-Output "  Missing"
     }
 
+    Write-Output ""
+    if ($annotationState) {
+        Write-Output "Generated LuaLS annotations"
+        Write-Output "  Generated: $annotationGeneratedUtc"
+        Write-Output "  WoW source: $($annotationState.sourceCommit)"
+        Write-Output "  Ketho generator: $($annotationState.generatorCommit)"
+        Write-Output "  Local generator wrapper: $($annotationState.wrapperHash)"
+        Write-Output "  BlizzardInterfaceResources: $($annotationState.blizzardResourcesCommit)"
+        Write-Output "  FrameXML annotations: $($annotationState.frameXmlCommit)"
+    }
+    else {
+        Write-Output "Generated LuaLS annotations: missing"
+    }
+
     if ($source -and -not $source.InterfaceMatchesToc) {
         Write-Warning "The $Channel source interface $($source.Interface) is not declared in LsTweeks.toc ($($source.TocInterfaces -join ', '))."
     }
 
-    if ($ketho -and $source -and $ketho.DeclaredMainline) {
-        $sourcePatch = (($source.Version -split "\.")[0..2] -join ".")
-        if ($ketho.DeclaredMainline -ne $sourcePatch) {
-            Write-Warning "Ketho declares $($ketho.DeclaredMainline), but the $Channel source is $sourcePatch. Treat Ketho as a typing aid only for patch-sensitive APIs."
-        }
-    }
 }
 
 if ($StatusOnly) {
     Write-ReferenceStatus
     exit 0
-}
-
-if (-not $SkipKethoUpdate) {
-    $codeCommand = Get-Command code.cmd -ErrorAction SilentlyContinue
-    if (-not $codeCommand) {
-        $codeCommand = Get-Command code -ErrorAction SilentlyContinue
-    }
-    if (-not $codeCommand) {
-        throw "VS Code CLI was not found. Rerun with -SkipKethoUpdate to refresh only the WoW UI source."
-    }
-
-    Write-Output "==> Refreshing the published Ketho extension"
-    Invoke-NativeVisible -Command $codeCommand.Source -Arguments @("--install-extension", "ketho.wow-api", "--force")
 }
 
 if (Test-Path -LiteralPath $sourceRoot) {
@@ -349,7 +291,15 @@ $refreshedSource = Get-SourceInfo
 if (-not $refreshedSource.InterfaceMatchesToc -and -not $AllowInterfaceMismatch) {
     throw "The $Channel source interface $($refreshedSource.Interface) is not declared in LsTweeks.toc ($($refreshedSource.TocInterfaces -join ', ')). Use -AllowInterfaceMismatch only for intentional future-channel research."
 }
-Write-SyncState -Ketho (Get-KethoInfo) -Source $refreshedSource
+Write-SyncState -Source $refreshedSource
+
+if (-not $SkipAnnotations) {
+    Write-Output ""
+    & $annotationScript -Channel $Channel -CacheDirectory $cacheRoot -SourceDirectory $sourceRoot
+    if ($LASTEXITCODE -ne 0) {
+        throw "Annotation refresh failed with exit code $LASTEXITCODE."
+    }
+}
 
 Write-Output ""
 Write-ReferenceStatus

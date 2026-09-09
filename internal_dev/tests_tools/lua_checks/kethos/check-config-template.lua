@@ -27,6 +27,7 @@ return {
             "internal_dev/tests_tools/lua_checks/.luals-check",
             "internal_dev/tests_tools/lua_checks/.luacheck-logs",
             "internal_dev/tests_tools/lua_checks/.luacheck-meta",
+            "__WOW_API_CACHE__",
         },
     },
     diagnostics = {
@@ -50,6 +51,10 @@ return {
             "PlayerFrame",
             "MinimalSliderWithSteppersMixin",
             "CreateMinimalSliderFormatter",
+            "MenuResponse",
+            "CurveConstants",
+            "GenericTraitUI_LoadUI",
+            "ToggleFrame",
         },
         disable = {
             "assign-type-mismatch",

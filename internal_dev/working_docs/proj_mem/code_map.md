@@ -46,10 +46,11 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Diff whitespace checks: `git diff --check` and `git diff --cached --check`
 - Fast validation plus package build/verify: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Package`
 - Full LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1`
-- Changed-file LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`; multiple changed files use one smallest-common workspace so Ketho initializes once while retaining cross-file diagnostics.
+- Changed-file LuaLS/Ketho check: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Changed`; multiple changed files use one common workspace so Ketho initializes once while retaining cross-file diagnostics. If that workspace would contain the managed API cache, the checker widens to the repository root so the cache remains a library rather than a diagnostic target.
 - Targeted LuaLS/Ketho check for one specific file: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/lua_checks/kethos/run_luals_ketho.ps1 -Files <lua-file>`; use `-Changed` for several changed Lua files.
-- Ketho API lookup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName>`
-- Refresh Ketho plus the branch-matched local API/FrameXML source: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/sync_wow_api_reference.ps1 [-Channel live|ptr|beta]`; use `-StatusOnly` for an offline version/commit report and `-SkipKethoUpdate` to refresh only source.
+- Current-source-first API lookup with exact generated annotations: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/api_lookup.ps1 <ApiName> [-Channel live|ptr]`
+- Refresh branch-matched API/FrameXML source and generated annotations: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/sync_wow_api_reference.ps1 [-Channel live|ptr]`; use `-StatusOnly` for an offline provenance report.
+- One-time WSL annotation toolchain setup: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/setup_wow_annotations_wsl.ps1`
 - WoW API reference updater regression tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/test_sync_wow_api_reference.ps1`
 - Search the refreshed source snapshot: `rg -n <API-or-symbol> internal_dev/tests_tools/.wow-api-source/<channel>/Interface`
 - Condense repeated WoW Lua errors: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/condense_lua_errors.ps1 -Path <error-export.txt> [-OutputPath <report.md>]`; add `-IncludeLocals` only for deeper follow-up.
@@ -113,8 +114,10 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - `ToDo/`: temporary focused TODO/review notes; read only when the task touches that area.
 - `internal_dev/tests_tools/tools_notes.md`: shell, sandbox, LuaLS/Ketho, packaging, and tool recovery notes.
 - `internal_dev/tests_tools/lua_tests/`: headless Lua 5.1 tests against a stubbed WoW API; see `lua_tests/tests_nfo.md` for the stub, harness, and test-writing rules.
-- `api_lookup.ps1`: prints exact Ketho annotation blocks for WoW API functions.
-- `sync_wow_api_reference.ps1`: performs the managed online Ketho/source refresh, enforces TOC interface compatibility, and writes/reports an ignored version/commit receipt; branch caches live under `.wow-api-source/` and are never packaged.
+- `api_lookup.ps1`: searches refreshed channel source first, reports exact provenance, and then prints the matching generated LuaLS annotation block.
+- `sync_wow_api_reference.ps1`: performs the single managed source/annotation refresh, enforces TOC compatibility, skips generation when input commits are unchanged, and writes ignored provenance receipts; caches live under `.wow-api-source/` and are never packaged.
+- `sync_wow_annotations.ps1` and `lua_checks/kethos/generate_annotations.lua`: internal annotation stage; reuse the one Gethe checkout, pin two required BlizzardInterfaceResources files by commit, retain Numy's annotations-only output, and generate Ketho Core annotations from a sparse checkout without extension packaging, TypeScript/editor assets, scratch residue, locale, or duplicate source work.
+- `setup_wow_annotations_wsl.ps1`: installs the one-time WSL prerequisites and self-contained Lua 5.4/LuaRocks toolchain.
 - `test_sync_wow_api_reference.ps1`: isolated local-Git regression coverage for initial/repeat refresh, alternate channels, TOC mismatch override, dirty caches, wrong remotes, and wrong branches.
 - `condense_lua_errors.ps1`: groups WoW Lua error exports by message and stack variant, surfaces taint/addon ownership signals, and omits repetitive locals by default; `test_condense_lua_errors.ps1` owns focused regression checks.
 - `check_fast.ps1`: quick local verification wrapper.

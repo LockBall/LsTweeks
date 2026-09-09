@@ -46,7 +46,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Internal docs: `internal_dev/`.
 - Active working docs: `working_docs/`; project/module/function memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
-- Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Add unresolved addon-wide checks to `ToDo/cross_module_followups.md` immediately; keep only durable generalized lessons in this file.
+- Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Put unresolved work in a focused `ToDo/` note immediately; keep only durable generalized lessons in this file.
 - Public docs: root markdown.
 - Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
@@ -90,14 +90,18 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 
 
 ### Ketho / LuaLS
-- Use VS Code WoW API (`ketho.wow-api`) with LuaLS (`sumneko.lua`) for Blizzard API reviews. Enable `wowAPI.luals.frameXML` for FrameXML/CDM/widget work.
-- Refresh cadence follows `agent_start.md`: run `sync_wow_api_reference.ps1` once per session/channel before the first patch-sensitive API task, retain the reported client version/commit in session context, and reuse that snapshot unless the target changes or evidence indicates upstream moved. The script refreshes the published Ketho extension and an ignored local `wow-ui-source` checkout; if refresh cannot complete, disclose the cached version/commit instead of calling it current.
-- Ketho is the typed/signature layer only when its declared mainline matches the target patch. When it lags, use the refreshed local checkout of the online maintained Blizzard-generated docs/FrameXML mirror as the declared/runtime source reference and retain in-game evidence as the authority for taint, Secret Values, combat, and undocumented behavior.
+- Tool ownership is intentionally separate: Gethe mirrors Blizzard's shipped UI source and generated API declarations; KethoDoc is the in-game extractor; BlizzardInterfaceResources publishes KethoDoc's runtime dumps; Ketho's `vscode-wow-api` repository owns the generator and curated Core annotations; Numy supplies supplemental FrameXML mixin/template annotations; LuaLS consumes annotations but is not an API authority.
+- LuaLS (`sumneko.lua`) consumes generated Ketho Core and Numy supplemental annotations; the Ketho Marketplace extension is not required. Gethe remains the code authority for source-first lookup and review, without making its full tree another LuaLS library. The one-time WSL toolchain setup and normal refresh commands live in `code_map.md`.
+- Refresh cadence follows `agent_start.md`: run `sync_wow_api_reference.ps1` once per session/channel before the first patch-sensitive API task. One command fast-forwards the branch-matched `wow-ui-source`, Ketho generator, and Numy FrameXML annotations, resolves the current BlizzardInterfaceResources commit, and regenerates only when an input commit changed. Retain the reported commits in session context and reuse the snapshot unless the target changes or evidence indicates upstream moved.
+- Provenance is a chain, not a cross-product version comparison: Gethe owns the shipped Blizzard API declarations and FrameXML implementation; KethoDoc extracts runtime resources; BlizzardInterfaceResources publishes those dumps; Ketho's generator converts the current source/resources into LuaLS Core annotations; Numy owns supplemental FrameXML annotations. Receipts record every exact input commit. The Marketplace extension is only an optional editor-delivery layer and its package version must not be compared with WoW build versions.
+- A managed channel exists only when every required upstream publishes the matching channel. `live` and `ptr` currently satisfy that contract; do not make `beta` appear supported by substituting another channel's BlizzardInterfaceResources data.
+- The refreshed `wow-ui-source` checkout remains the primary patch-current code reference. Generated annotations provide types/signatures and diagnostics; they do not override source or in-game evidence for taint, Secret Values, combat, and undocumented behavior.
 - Treat LuaLS diagnostics as review prompts, not automatic change requests.
-- Shell LuaLS checks can run with `--check`, but need explicit Ketho `Annotations/Core` and `Annotations/FrameXML` library paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `lua_checks/`.
+- Shell LuaLS checks use the generated Core and FrameXML receipt paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `lua_checks/`.
 - Preferred shell helper: Ketho/LuaLS helper in `code_map.md`.
-- Direct annotation root: `%USERPROFILE%\.vscode\extensions\ketho.wow-api-<version>\Annotations\`.
-- For stable APIs, grep annotations by name and cross-check call sites before changing code. For patch-sensitive APIs, search the refreshed channel checkout too.
+- Generated annotation roots live under ignored `.wow-api-source/ketho-<channel>/Annotations/Core` and `.wow-api-source/framexml-annotations-<channel>/Annotations`; use `.wow-api-source/<channel>/Interface` for authoritative source lookup rather than indexing it again in LuaLS or retaining a duplicated source-mixed annotation tree. Never hand-edit managed cache contents.
+- Use `api_lookup.ps1` for one current-source-first lookup plus its exact generated annotation block. Cross-check implementation call sites before changing code.
+- Work local-first after a successful channel refresh: use the receipt, `api_lookup.ps1`, and `rg` against `.wow-api-source/<channel>/Interface`. Do not browse GitHub, query remote branches, rerun the refresh, or reload broad source files for routine follow-up questions. Contact upstream only when the cache/receipt is missing, the channel changes, the prior refresh failed, or concrete evidence indicates the snapshot is stale or incomplete.
 
 
 ### Packaging / Release
@@ -112,7 +116,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Supported client line: Retail 12.0.7 and 12.1 (`Interface` 120007/120100); `LsTweeks.toc` owns the exact interface values.
 - Active API boundary: retail 12.x Secret Values affect Aura, tooltip, player-health, and Objective Tracker paths; never assume a value is readable from combat state or API provenance alone.
 - Managed Auras: WoW 12.1 migrated displays use Blizzard `AuraContainer`/`AuraButton` native bindings; detailed contracts remain in `### Key WoW APIs And Lessons`, `modules/aura_frames.md`, and `functions/tooltip.md`.
-- Treat compatibility notes as current hypotheses, not authority. Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory. Use Ketho only when its declared client version matches the target patch; otherwise verify against matching Blizzard-generated docs/FrameXML and available in-game evidence.
+- Treat compatibility notes as current hypotheses, not authority. Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory. Verify patch-sensitive claims against the refreshed Blizzard-generated docs/FrameXML and available in-game evidence; use generated annotations for types and signatures.
 - Keep this startup sentinel current and compact: replace obsolete alerts instead of accumulating history or incident detail.
 
 

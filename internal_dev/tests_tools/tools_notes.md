@@ -236,18 +236,18 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/test_
 The LuaLS CLI may not be on `PATH`. On this machine the working binary is installed by the Sumneko VS Code extension:
 
 ```text
-%USERPROFILE%\.vscode\extensions\sumneko.lua-3.18.2-win32-x64\server\bin\lua-language-server.exe
+%USERPROFILE%\.vscode\extensions\sumneko.lua-<version>-win32-x64\server\bin\lua-language-server.exe
 ```
 
 Check tool locations:
 
 ```powershell
 Get-Command lua-language-server, lua-language-server.exe -ErrorAction SilentlyContinue
-Get-ChildItem -Path "$env:USERPROFILE\.vscode\extensions" -Directory | Where-Object { $_.Name -match 'lua|sumneko|ketho|wow-api' }
+Get-ChildItem -Path "$env:USERPROFILE\.vscode\extensions" -Directory | Where-Object { $_.Name -match 'lua|sumneko' }
 Get-ChildItem -Path "$env:USERPROFILE\.vscode\extensions" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'lua-language-server(\.exe)?$' } | Select-Object -First 10 FullName
 ```
 
-Do not rely on LuaLS automatically loading `.vscode/settings.json` during `--check`. A plain `--check` run ignored the Ketho libraries and produced hundreds of false undefined-global warnings. Use an explicit config file with absolute Ketho library paths.
+Do not rely on LuaLS automatically loading `.vscode/settings.json` during `--check`. Use the helper's explicit config containing the generated Core and FrameXML receipt paths.
 
 Preferred helper script:
 
@@ -255,7 +255,7 @@ Preferred helper script:
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1
 ```
 
-The script finds the local Sumneko LuaLS binary and Ketho extension, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`.
+The script finds the local Sumneko LuaLS binary, requires the repo-managed live annotation receipt, generates the ignored config file below, and writes logs/meta under `internal_dev/tests_tools/lua_checks/.lua-language-server/`. LuaLS reads Ketho Core for generated API types and Numy for supplemental mixin/template annotations; Gethe remains the source authority used by lookup and review rather than a second large LuaLS input. It has no dependency on the Ketho VS Code extension.
 
 Targeted helper modes:
 
@@ -266,13 +266,13 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_c
 
 Use `-Files` for exact one-off file checks. Use `-Changed` for iteration after a work pass; if multiple changed Lua files share a module directory, the helper checks that directory once to avoid repeated LuaLS startup cost. Use the full helper before commit-level validation, after load-order changes, or after broad refactors because targeted runs do not replace whole-workspace diagnostics.
 
-Ketho API lookup:
+Current-source-first API lookup:
 
 ```powershell
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\api_lookup.ps1 C_Spell.GetSpellInfo
 ```
 
-Use this for stable API signatures and return types. It prints exact function annotation blocks from the installed Ketho Core and FrameXML annotation folders; it does not prove that the installed Ketho release matches the current client patch.
+The lookup reports the refreshed channel source version/commit, searches current generated docs and FrameXML first, then prints an exact function block from the generated Core or FrameXML annotations. Source remains the code authority; annotations provide a compact typed view.
 
 Patch-sensitive API reference refresh:
 
@@ -282,13 +282,29 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\sync_
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\test_sync_wow_api_reference.ps1
 ```
 
-Run the refresh once per session/channel before the first patch-sensitive API task, retain its reported client version/commit in session context, and reuse that snapshot for later work in the same session. Rerun only when the channel/target changes, the first refresh failed, or evidence indicates upstream moved. The command updates the published `ketho.wow-api` extension through the VS Code CLI and creates or fast-forwards an ignored shallow checkout at `internal_dev/tests_tools/.wow-api-source/<channel>/`. That checkout is a disposable synchronized cache of the online maintained mirror, not an independently maintained API source; never hand-edit it. The command reports the Ketho release and declared mainline alongside the source checkout's exact client version, commit, and commit date. A mismatch makes Ketho a typing aid only; search the matching source checkout for current generated API declarations and FrameXML implementation:
+Run the refresh once per session/channel before the first patch-sensitive API task, retain its reported commits in session context, and reuse that snapshot for later work in the same session. Rerun only when the channel/target changes, the first refresh failed, or evidence indicates upstream moved. One command updates the Gethe source, Ketho generator, and Numy FrameXML annotation checkouts, resolves the current BlizzardInterfaceResources commit, and regenerates only when an input commit changed. It records the source, generator, resource, and FrameXML commits independently; never compare a VS Code extension package version with a WoW build version.
+
+After a successful refresh, keep API investigation local. Prefer `api_lookup.ps1` for the declaration-plus-annotation view and focused `rg` searches in the cached `Interface` tree for implementation and call sites. Do not repeatedly browse the hosted repositories, query their refs, or rerun the refresh during the same task unless the channel changes or local evidence demonstrates that the receipt is stale or incomplete. Keep tool output focused so large generated trees do not consume working context.
+
+The cache stores each necessary dataset once: one Gethe source checkout, one sparse Ketho generator/Core checkout, and Numy's annotations-only checkout per channel. Generation reuses the Gethe checkout through a managed junction, and lookup searches that same checkout directly; LuaLS consumes only the smaller generated annotation roots. The refresh downloads only `LuaEnum.lua` and `CVars.lua` from BlizzardInterfaceResources at the recorded commit, and clears generator scratch output after use. It skips Ketho's extension packaging, TypeScript, editor/image assets, locale assets, wiki refresh, duplicate Gethe clone/pull, Numy's source-mixed branch, and a full BlizzardInterfaceResources clone. Generated and upstream cache files are disposable and must never be hand-edited.
+
+Expose a refresh channel only when every required upstream publishes that channel. The managed pipeline currently supports `live` and `ptr`; BlizzardInterfaceResources does not publish `beta`, so there is deliberately no beta fallback to another channel's resource data.
+
+One-time WSL setup:
+
+```powershell
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\setup_wow_annotations_wsl.ps1
+```
+
+The setup installs WSL compiler/SSL prerequisites and a self-contained, version-pinned Lua 5.4/LuaRocks toolchain under `~/.local/share/lstweeks-ketho/.lua`. Its temporary Python/hererocks build environment is removed when setup finishes, and normal refreshes do not reinstall it. The Ketho Marketplace extension is optional editor UI and is not used by lookup, generation, or validation.
+
+Search the matching source checkout for current declarations and implementation:
 
 ```powershell
 rg -n "C_UnitAuras|AuraContainer" internal_dev\tests_tools\.wow-api-source\live\Interface
 ```
 
-The updater fails rather than replacing a non-Git directory, changing branches, overwriting local cache edits, accepting an unexpected remote, resolving a non-fast-forward update, or accepting a source interface absent from `LsTweeks.toc`. `-AllowInterfaceMismatch` is only for intentional future-channel research. Each successful managed refresh writes an ignored receipt with its UTC time, source version/commit, TOC interfaces, and Ketho version; startup prints a compact offline summary. If network refresh is unavailable, use `-StatusOnly` and report the cached version/commit instead of describing it as current. Use `-SkipKethoUpdate` only when the published extension update is intentionally unnecessary or unavailable. Run the focused regression test after updater changes; it uses isolated local Git repositories and never contacts upstream.
+The updater fails rather than replacing a non-Git directory, changing branches, accepting an unexpected remote, overwriting source or Numy cache edits, accepting unexpected Ketho generator edits, resolving a non-fast-forward update, or accepting a source interface absent from `LsTweeks.toc`. `-AllowInterfaceMismatch` is only for intentional future-channel research. Startup prints a compact offline source/annotation summary. If network refresh is unavailable, use `-StatusOnly` and report cached commits instead of describing them as current. Run the focused source-updater regression test after updater changes; it uses isolated local Git repositories and skips the online annotation stage.
 
 Working local config path:
 
@@ -296,7 +312,7 @@ Working local config path:
 internal_dev\tests_tools\lua_checks\.lua-language-server\check-config.lua
 ```
 
-That folder is ignored by git. If the generated file is missing or stale, rerun the helper; it renders `internal_dev/tests_tools/lua_checks/kethos/check-config-template.lua` with machine-local Ketho annotation paths.
+That folder is ignored by git. If the generated file is missing or stale, rerun the reference refresh; the helper renders `internal_dev/tests_tools/lua_checks/kethos/check-config-template.lua` with receipt-owned annotation paths.
 
 Manual diagnostics command from the repo root:
 

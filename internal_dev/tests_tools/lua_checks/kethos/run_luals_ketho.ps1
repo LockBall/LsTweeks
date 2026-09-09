@@ -9,6 +9,8 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")
 $extensionsRoot = Join-Path $env:USERPROFILE ".vscode\extensions"
+$annotationStatePath = Join-Path $repoRoot "internal_dev\tests_tools\.wow-api-source\annotation-state-live.json"
+$apiCacheRoot = Split-Path -Parent $annotationStatePath
 
 $luaServer = Get-ChildItem -Path $extensionsRoot -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -eq "lua-language-server.exe" -and $_.FullName -match "sumneko\.lua" } |
@@ -19,22 +21,13 @@ if (-not $luaServer) {
     throw "Could not find Sumneko lua-language-server.exe under $extensionsRoot"
 }
 
-$kethoExtension = Get-ChildItem -Path $extensionsRoot -Directory -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -like "ketho.wow-api-*" } |
-    Sort-Object {
-        if ($_.Name -match "^ketho\.wow-api-([0-9]+(?:\.[0-9]+)+)") {
-            return [version]$Matches[1]
-        }
-        return [version]"0.0"
-    } -Descending |
-    Select-Object -First 1
-
-if (-not $kethoExtension) {
-    throw "Could not find ketho.wow-api extension under $extensionsRoot"
+if (-not (Test-Path -LiteralPath $annotationStatePath -PathType Leaf)) {
+    throw "Generated WoW annotations are missing. Run sync_wow_api_reference.ps1 -Channel live."
 }
 
-$annotationsCore = Join-Path $kethoExtension.FullName "Annotations\Core"
-$annotationsFrameXML = Join-Path $kethoExtension.FullName "Annotations\FrameXML"
+$annotationState = Get-Content -LiteralPath $annotationStatePath -Raw | ConvertFrom-Json
+$annotationsCore = [string]$annotationState.corePath
+$annotationsFrameXML = [string]$annotationState.frameXmlPath
 
 if (-not (Test-Path -LiteralPath $annotationsCore)) {
     throw "Missing Ketho Core annotations: $annotationsCore"
@@ -132,6 +125,11 @@ function Resolve-CheckTargets {
         if ($commonDirectory -eq ".") {
             return @($repoRoot.Path)
         }
+        $commonPath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $commonDirectory)).TrimEnd("\") + "\"
+        $cachePath = [System.IO.Path]::GetFullPath($apiCacheRoot).TrimEnd("\") + "\"
+        if ($cachePath.StartsWith($commonPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return @($repoRoot.Path)
+        }
         return @($commonDirectory)
     }
 
@@ -150,17 +148,20 @@ function Resolve-CheckTargets {
 
 $coreLua = Convert-ToLuaString $annotationsCore
 $frameLua = Convert-ToLuaString $annotationsFrameXML
+$apiCacheLua = Convert-ToLuaString $apiCacheRoot
 
 $config = (Get-Content -LiteralPath $configTemplatePath -Raw).
     Replace('"__KETHO_CORE__"', $coreLua).
-    Replace('"__KETHO_FRAMEXML__"', $frameLua)
+    Replace('"__KETHO_FRAMEXML__"', $frameLua).
+    Replace('"__WOW_API_CACHE__"', $apiCacheLua)
 
 Set-Content -LiteralPath $configPath -Value $config -Encoding UTF8
 
 Push-Location $repoRoot
 try {
     Write-Host "LuaLS:" $luaServer.FullName
-    Write-Host "Ketho:" $kethoExtension.FullName
+    Write-Host "Annotations:" $annotationsCore
+    Write-Host "Provenance: source=$($annotationState.sourceCommit.Substring(0, 8)) generator=$($annotationState.generatorCommit.Substring(0, 8)) resources=$($annotationState.blizzardResourcesCommit.Substring(0, 8)) FrameXML=$($annotationState.frameXmlCommit.Substring(0, 8))"
     Write-Host "Config:" $configPath
     Write-Host ""
 

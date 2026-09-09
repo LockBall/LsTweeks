@@ -755,13 +755,13 @@ MinimalSliderWithSteppersMixin = {
     Label = { Left = 1, Right = 2, Top = 3, Min = 4, Max = 5 },
     Event = { OnValueChanged = "OnValueChanged" },
 }
-function CreateMinimalSliderFormatter() return {} end
-function PanelTemplates_TabResize() end
-function PanelTemplates_SetTab() end
-function PanelTemplates_SelectTab() end
-function PanelTemplates_DeselectTab() end
-function PanelTemplates_SetNumTabs() end
-function PanelTemplates_UpdateTabs() end
+function CreateMinimalSliderFormatter(label, formatter) return {} end
+function PanelTemplates_TabResize(tab, padding, absoluteSize, minWidth, maxWidth, absoluteTextSize) end
+function PanelTemplates_SetTab(frame, id) end
+function PanelTemplates_SelectTab(tab) end
+function PanelTemplates_DeselectTab(tab) end
+function PanelTemplates_SetNumTabs(frame, numTabs) end
+function PanelTemplates_UpdateTabs(frame) end
 SOUNDKIT = setmetatable({}, { __index = function() return 0 end })
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 GameFontNormal, GameFontHighlight, GameFontHighlightSmall, GameFontNormalSmall, GameFontNormalLarge, GameFontDisable, GameFontDisableSmall,

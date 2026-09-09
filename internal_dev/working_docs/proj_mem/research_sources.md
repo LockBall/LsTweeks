@@ -59,8 +59,12 @@ Internal research and implementation references for coding agents. Public credit
 
 ## Tools
 - CascView download page: https://www.zezula.net/en/casc/main.html
-- Ketho WoW API VS Code extension: https://marketplace.visualstudio.com/items?itemName=ketho.wow-api
-- Ketho FrameXML annotations source mirror: https://github.com/Gethe/wow-ui-source
+- Optional Ketho WoW API VS Code delivery extension: https://marketplace.visualstudio.com/items?itemName=ketho.wow-api
+- Ketho LuaLS annotation generator and baseline source: https://github.com/Ketho/vscode-wow-api
+- KethoDoc in-game API dumper: https://github.com/ketho-wow/KethoDoc
+- Ketho BlizzardInterfaceResources generated API data: https://github.com/Ketho/BlizzardInterfaceResources
+- Numy FrameXML LuaLS annotations: https://github.com/NumyAddon/FramexmlAnnotations
+- Branch-matched generated API docs and FrameXML source mirror: https://github.com/Gethe/wow-ui-source
 
 
 ## Addon Research

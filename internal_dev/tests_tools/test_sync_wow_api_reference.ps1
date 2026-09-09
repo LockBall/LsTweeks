@@ -76,20 +76,15 @@ function Invoke-TestSync {
         [string[]]$ExtraArguments = @()
     )
 
-    $extensions = Join-Path $testRoot "empty-extensions"
-    if (-not (Test-Path -LiteralPath $extensions)) {
-        New-Item -ItemType Directory -Path $extensions | Out-Null
-    }
     $arguments = @(
         "-NoProfile",
         "-ExecutionPolicy", "Bypass",
         "-File", $syncScript,
         "-Channel", $Channel,
-        "-SkipKethoUpdate",
         "-SourceRepository", $Origin,
         "-CacheDirectory", $Cache,
         "-TocFile", $Toc,
-        "-ExtensionsDirectory", $extensions
+        "-SkipAnnotations"
     ) + $ExtraArguments
 
     $output = & pwsh.exe @arguments 2>&1
@@ -142,11 +137,11 @@ try {
     Assert-Contains -Text $ptr -Pattern "WoW UI source \(ptr\)" -Label "alternate channel"
     Pass "alternate channel uses isolated cache"
 
-    $betaOrigin = New-TestOrigin -Name "beta" -Channel "beta" -Version "13.0.0.70002"
-    $betaCache = Join-Path $testRoot "cache-beta"
-    $mismatch = Invoke-TestSync -Channel "beta" -Origin $betaOrigin -Cache $betaCache -Toc $toc120100 -ExpectedExitCode 1
+    $futurePtrOrigin = New-TestOrigin -Name "future-ptr" -Channel "ptr" -Version "13.0.0.70002"
+    $futurePtrCache = Join-Path $testRoot "cache-future-ptr"
+    $mismatch = Invoke-TestSync -Channel "ptr" -Origin $futurePtrOrigin -Cache $futurePtrCache -Toc $toc120100 -ExpectedExitCode 1
     Assert-Contains -Text $mismatch -Pattern "is not declared in LsTweeks\.toc" -Label "interface mismatch"
-    $allowed = Invoke-TestSync -Channel "beta" -Origin $betaOrigin -Cache $betaCache -Toc $toc120100 -ExtraArguments @("-AllowInterfaceMismatch")
+    $allowed = Invoke-TestSync -Channel "ptr" -Origin $futurePtrOrigin -Cache $futurePtrCache -Toc $toc120100 -ExtraArguments @("-AllowInterfaceMismatch")
     Assert-Contains -Text $allowed -Pattern "MISMATCH" -Label "allowed interface mismatch"
     Pass "interface mismatch fails unless explicitly allowed"
 

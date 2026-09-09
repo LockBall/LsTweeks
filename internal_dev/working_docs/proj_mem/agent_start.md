@@ -75,10 +75,11 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 - Treat aura scanning, rendering, layout, and GUI rebuilds as budgeted work. Cache hot globals, batch noisy events, skip disabled frames early, and avoid frame churn.
 - Use modern PowerShell via `pwsh.exe` unless a command explicitly needs another shell.
 - Before the first patch-sensitive WoW API task in a session, run `sync_wow_api_reference.ps1` once for the matching channel, retain its reported client version and commit in session context, and reuse that snapshot. Rerun only when the channel/target changes, the refresh failed, or evidence indicates upstream moved; details live in `project.md` `### Ketho / LuaLS`.
+- After that refresh, investigate locally with `api_lookup.ps1` and focused `rg` searches under `.wow-api-source/<channel>/Interface`. Do not browse or query upstream again for routine follow-ups; preserve context by reporting concise findings instead of pasting broad generated/source output.
 - Vendored libraries under `libs/` are third-party dependencies. Do not edit them for style or type warnings unless intentionally updating the dependency.
 - Runtime-logic bugs: reproduce as a failing headless Lua test (`internal_dev/tests_tools/lua_tests/`) before fixing when the bug is testable there (timers, events, state machines, DB handling); taint/visual/event-order bugs stay in-game-only. The fix then keeps the test as permanent regression coverage.
 - Headless validation is one-pass and impact-selected: run the smallest red-to-green suite once, then only the remaining non-test checks; use all suites only when broad or uncertain impact justifies them. Commands live in `code_map.md` `## Fast Commands`; detailed selection policy lives in `tests_nfo.md` `## Workflow Integration`.
-- LuaLS/Ketho changed-file validation uses one smallest-common workspace, not one process per directory; repeated language-server initialization is slower than a broader single pass and provides no additional diagnostics.
+- LuaLS/Ketho changed-file validation uses one common workspace, not one process per directory; if that workspace would include the managed API cache, use the repository root so the cache remains library input instead of a diagnostic target. Repeated language-server initialization is slower than one broader pass.
 
 
 ## Handoff Audit

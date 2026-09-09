@@ -1,9 +1,8 @@
-# Cross-Module Followups
-Unresolved addon-wide checks discovered while closing module review findings. Add an item here when a resolved finding's cause or fix pattern can recur outside its module; remove items once verified or promoted to a durable rule in `project.md`.
+# New Chat Copy Module
+Deferred design notes for a dedicated LsTweeks chat copy/export module.
 
 
-## Open Items
-### CHAT-01 — Formatted chat export module
+## Formatted Chat Export
 - **Goal:** Build an LsTweeks chat copy/export module with a distinct user-facing name instead of depending on the current third-party chat copy/paste addon.
 - **UX:** Preserve intentional line breaks, offer readable formatting controls, and expose selected output through an addon-owned text box for manual Ctrl+C.
 - **Safety boundary:** Never call restricted `CopyToClipboard` from addon code; Retail blocks it as a Blizzard-UI-only action.
