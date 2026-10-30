@@ -108,6 +108,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 ### Packaging / Release
 - Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
 - Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
+- Repeatable release sequence: `package_me.md` `## Release Routine` owns source/API review, version/changelog decisions, candidate validation, separate in-game acceptance, packaging, and publication closeout.
 - Public release history lives in root `CHANGELOG.md`, newest version first, linked from README and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - README image assets and Audio Volumes reference/log files are public-facing and included.

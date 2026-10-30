@@ -4,6 +4,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 
 ## Table of Contents
 - [Files](#files)
+- [Release Routine](#release-routine)
 - [Build](#build)
 - [Package Rules](#package-rules)
 - [Verify](#verify)
@@ -13,6 +14,19 @@ Tools in this folder build the public CurseForge/manual release zip.
 - `package.ps1`: builds the release zip.
 - `package-policy.json`: single source of truth for package include/exclude behavior.
 - `verify-package.ps1`: verifies a generated release zip against `package-policy.json`.
+
+
+## Release Routine
+
+Use this sequence for an addon release. Internal tooling or documentation maintenance alone does not require an addon version bump or public changelog entry. Commands are owned by `code_map.md` `## Fast Commands`; the build and verifier commands below own packaging details.
+
+1. Establish scope: review the diff and working-tree status, intended client family/channel/build, and current TOC version/interfaces. Identify unrelated or untracked files before packaging; resolve their disposition explicitly rather than including them by accident.
+2. For a client compatibility update or patch-sensitive API change, follow project memory's Ketho / LuaLS refresh procedure. Compare the previous and refreshed Blizzard API/FrameXML snapshots for affected addon paths, record source and annotation provenance, and investigate required migrations. A successful refresh or interface-mismatch override does not establish support.
+3. For a release containing public behavior or declared compatibility changes, choose the next addon version using the existing TOC format and add a matching newest-first changelog entry. Record concrete user-facing changes; distinguish source review from in-game verification. Add TOC interface declarations only when supported by the compatibility review, not to silence a preparation guard.
+4. Validate the final candidate: run impact-selected headless tests and fast checks, plus LuaLS against the appropriate refreshed annotations when Lua/API compatibility is affected. A broad client compatibility review warrants all headless suites and full LuaLS. Record passes, failures, and deliberate skips against the candidate; rerun affected checks if subsequent edits invalidate them. Static/headless passes do not prove combat, taint, rendering, or event-order behavior.
+5. Track in-game acceptance in a focused compatibility/feature review under `working_docs/ToDo/`, with client build, addon version, affected scenarios, and results. Cover reload, relevant combat transitions, settings/module toggles, and normal gameplay as applicable. Keep pending items explicit; only claim acceptance after their results are recorded. Consolidate durable findings and retire the review when complete.
+6. Build the release zip and require its automatic verifier to pass. Confirm its filename/version, public changelog, and intended contents. Packaging can prepare a candidate while in-game checks are pending; it is not publication approval. Rebuild after changes to packaged files so the final artifact matches the tested candidate.
+7. Before publication, confirm the final candidate has passing required checks and recorded in-game acceptance, review the final diff/status, and identify the exact artifact and version being released. Commit, push, tag, or upload only within the user's authorized scope. Report remaining limitations and the actual publication outcome separately from package creation.
 
 
 ## Build
