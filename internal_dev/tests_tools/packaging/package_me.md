@@ -51,6 +51,7 @@ Currently included public files:
 
 - `LICENSE`
 - `README.md`
+- `CHANGELOG.md`
 - `sources.md`
 - `<toc>` placeholder, resolved to the root `.toc` filename
 

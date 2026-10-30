@@ -3,6 +3,8 @@ L's Tweeks is a modular World of Warcraft Retail UI addon for configurable playe
 
 Slash command: `/lst`
 
+Release history: [Changelog](CHANGELOG.md)
+
 
 ## Table of Contents
 - [Modules](#modules)

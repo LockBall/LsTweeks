@@ -1,7 +1,7 @@
 <!-- User-owned personal scratch notes. Agents must not modify, reorganize, or delete this file unless the user explicitly requests it. -->
 
 **Agent Read-In**
-Something is wrong with how you receive commands. Ror commands, backslash underscore is just underscore.
+Something might be wrong with how you receive commands. for commands, backslash underscore is just underscore.
 Run pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/agent-start.ps1 and follow its output.
 
 **Next Task — Required Helper Guard Audit**

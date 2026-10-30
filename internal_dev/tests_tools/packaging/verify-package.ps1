@@ -25,6 +25,7 @@ $addonName = [System.IO.Path]::GetFileNameWithoutExtension($tocFile.Name)
 $invariantRequiredFiles = @(
     $tocFile.Name,
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "sources.md"
 )

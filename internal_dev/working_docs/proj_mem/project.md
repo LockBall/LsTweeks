@@ -107,13 +107,15 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 ### Packaging / Release
 - Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
 - Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
+- Public release history lives in root `CHANGELOG.md`, newest version first, linked from README and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - README image assets and Audio Volumes reference/log files are public-facing and included.
 
 
 ## Project Overview
 ### Active Compatibility Sentinel
-- Supported client line: Retail 12.0.7 and 12.1 (`Interface` 120007/120100); `LsTweeks.toc` owns the exact interface values.
+- Declared client interfaces: Retail 12.0.7, 12.1, and 12.1.5 (`Interface` 120007/120100/120105); `LsTweeks.toc` owns the exact interface values. Current compatibility review targets live 12.1.5.70575; earlier declarations are retained.
+- 12.1.5 source review found no required runtime API migration against Blizzard source `15881d52` (previous snapshot `8ea15b61`). Pending in-game acceptance and review evidence live in `../ToDo/wow_12_1_5_compatibility.md`; static/headless checks cannot establish taint safety.
 - Active API boundary: retail 12.x Secret Values affect Aura, tooltip, player-health, and Objective Tracker paths; never assume a value is readable from combat state or API provenance alone.
 - Managed Auras: WoW 12.1 migrated displays use Blizzard `AuraContainer`/`AuraButton` native bindings; detailed contracts remain in `### Key WoW APIs And Lessons`, `modules/aura_frames.md`, and `functions/tooltip.md`.
 - Treat compatibility notes as current hypotheses, not authority. Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory. Verify patch-sensitive claims against the refreshed Blizzard-generated docs/FrameXML and available in-game evidence; use generated annotations for types and signatures.

@@ -9,6 +9,7 @@
   "includeFiles": [
     "LICENSE",
     "README.md",
+    "CHANGELOG.md",
     "sources.md",
     "<toc>"
   ],
