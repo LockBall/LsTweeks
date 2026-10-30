@@ -36,6 +36,8 @@ PowerShell notes for repo-local scripts, validation helpers, and coding-agent sh
 - Use `pwsh.exe` for project validation and helper scripts unless a command explicitly needs another shell.
 - `check_regions.ps1` currently uses `[System.IO.Path]::GetRelativePath`. Windows PowerShell can fail on this machine when its loaded .NET runtime does not expose that method.
 - If Windows PowerShell compatibility becomes required, add a relative-path fallback to `check_regions.ps1` and verify both `powershell.exe` and `pwsh.exe`.
+- Inspect a helper's parameter block or help before batching arguments. Prefer named parameters for documentation reads; `doc_section.ps1` accepts one `-Heading` string per invocation. The exact invocation is owned in `code_map.md`.
+- PowerShell does not expand wildcard file arguments for native tools as a Unix shell would. For `rg`, pass an existing directory and a quoted tool-owned filter, such as `rg -l -g 'af_managed*.lua' 'SetAuraGroup' modules/aura_frames`; do not pass `modules/aura_frames/af_managed*.lua` as a literal path. PowerShell cmdlets have their own `-Path` wildcard behavior; use `-LiteralPath` for literal filenames.
 
 
 ## Validation Commands

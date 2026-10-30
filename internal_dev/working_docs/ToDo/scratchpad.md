@@ -9,7 +9,9 @@ A few things needed correction:
     - Foundation evidence is in `internal_dev/memory/extraction_provenance.md`, section `WoW Interface Mismatch Review Lesson`. Default mismatch rejection and origin/branch/dirty-cache checks are unchanged. Both local-origin updater suites passed all 7 cases; no live refresh was repeated. These changes are uncommitted; add the foundation commit reference after committing.
     - Verification environment incident: both suites initially failed because Git sh.exe could not create a signal pipe (Win32 error 5) in the restricted context. Both passed in the approved context. This is separate from item 1's proxy failure: these tests clone local fixtures and use no internet. The precise tool-host cause remains unverified; no machine configuration was changed.
 
-3) I made a few command-format mistakes with section-reader arguments and Windows wildcard paths. Corrected commands worked.
+3) Reviewed: command-usage errors, not broken tools. Both documentation readers accept one heading per invocation; use explicit named parameters and inspect the actual helper contract rather than assume multi-heading support. LsTweeks normalizes Markdown heading markers; the foundation reader matches heading text. Verified one section read through each reader. For native rg on Windows, pass an existing directory plus a quoted `-g` filter instead of a wildcard-bearing path argument; verified both Markdown and managed-Aura Lua searches.
+
+    - Local guidance updated in `code_map.md` (section-reader invocation) and `tests_tools/powershell.md` (argument/glob handling). Persistent guidance added to foundation `languages/powershell/powershell_guide.md` and `internal_dev/tests_tools/development_tools.md`; evidence is recorded in `internal_dev/memory/extraction_provenance.md`, section `Command Contracts and Native Globs Lesson`. No helper implementation changed or additional tests were introduced for this documentation correction. Both repositories passed whitespace checks; local memory section checks passed. Changes remain uncommitted.
 
 4) Some large outputs were truncated; I followed up with narrower reads.
 
