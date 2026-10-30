@@ -289,7 +289,7 @@ else {
 
 $refreshedSource = Get-SourceInfo
 if (-not $refreshedSource.InterfaceMatchesToc -and -not $AllowInterfaceMismatch) {
-    throw "The $Channel source interface $($refreshedSource.Interface) is not declared in LsTweeks.toc ($($refreshedSource.TocInterfaces -join ', ')). Use -AllowInterfaceMismatch only for intentional future-channel research."
+    throw "The $Channel source interface $($refreshedSource.Interface) is not declared in LsTweeks.toc ($($refreshedSource.TocInterfaces -join ', ')). Use -AllowInterfaceMismatch only for an intentional newer-patch compatibility review or future-channel research; confirm the target channel/build first. This prepares references without declaring addon support."
 }
 Write-SyncState -Source $refreshedSource
 
