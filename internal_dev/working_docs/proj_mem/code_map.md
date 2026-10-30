@@ -15,7 +15,7 @@ Compact routing map for coding agents. Start at `agent_start.md`; use this file 
 
 ## Read-In Shortcuts
 Reference routes not covered by the `agent_start.md` routing table; that table is the primary router.
-- Section reader: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 -Path <markdown-file> -Heading "<heading>"`; one heading per invocation, or `-Path <markdown-file> -List` to list stable `##` headings. This reader accepts heading text with or without Markdown markers; do not assume another reader normalizes them.
+- Section reader: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/doc_section.ps1 -Path <markdown-file> -Heading "<heading>"`; one heading per invocation, or `-Path <markdown-file> -List` to list stable `##` headings. Heading text may include Markdown markers.
 
 | Request trigger | Next targeted read |
 | --- | --- |

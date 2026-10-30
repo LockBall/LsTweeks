@@ -53,6 +53,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Tool recovery: `internal_dev/tests_tools/tools_notes.md`.
 - PowerShell/newlines/line endings/regions: `internal_dev/tests_tools/powershell.md`.
 - Validation commands: `code_map.md` `## Fast Commands`.
+- Foundation review: startup uses the local copied `foundation_update_status.ps1`, tracked `foundation_review.json` beside this memory, and ignored `internal_dev/foundation_checkout.json` for the machine's checkout path. This independently developed project tracks forward from `foundationReview.trackingStartCommit`; that is a comparison boundary, not a missing adoption baseline or claim that older guidance was reviewed. Completed reviews set `lastReviewedCommit`, which takes precedence. Preserve local contracts and scoped decisions in `overrides`; already-present contributions need no copy-back. Review/adoption is task-scoped, not automatic synchronization. Foundation internals never register this project.
 - CPU profiling: workflow in `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, run history in `internal_dev/tests_tools/cpu_profiles/`, durable conclusions in module memory.
 
 

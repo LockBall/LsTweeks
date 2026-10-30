@@ -1,5 +1,5 @@
 # One-shot coding-agent session baseline: prints agent_start.md, the active
-# compatibility sentinel, offline API-reference status, worktree status, and
+# compatibility sentinel, offline API/foundation status, worktree status, and
 # code_map Read-In Shortcuts.
 # Read-only; never writes files.
 
@@ -16,6 +16,9 @@ Write-Output "===== project.md Active Compatibility Sentinel ====="
 
 Write-Output "===== WoW API reference status ====="
 & (Join-Path $testsTools "sync_wow_api_reference.ps1") -Channel live -StatusOnly -CompactStatus
+
+Write-Output "===== Foundation review status ====="
+& (Join-Path $testsTools "foundation_update_status.ps1") -Root $repoRoot -ManifestFile "internal_dev/working_docs/proj_mem/foundation_review.json"
 
 Write-Output "===== git status --short ====="
 $status = git -C $repoRoot status --short

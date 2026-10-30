@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "foundationCommit": null,
+  "foundationSourceDirty": false,
+  "selectedPackages": ["lua", "lua_wow", "powershell"],
+  "selectedEnvironments": ["powershell", "wow"],
+  "personalPreferencesAdopted": false,
+  "foundationReview": {
+    "trackingStartCommit": "2020fe28dc13ef69bf075598ae1598767d079e53",
+    "lastReviewedCommit": null
+  },
+  "overrides": [
+    {
+      "scope": "existing-project",
+      "disposition": "retained",
+      "reason": "No full foundation snapshot has been adopted. Existing project guidance and tool contracts remain authoritative; review applicable upstream candidates before changing them."
+    }
+  ]
+}
