@@ -1,5 +1,5 @@
 # Tools Notes
-Date: 2026-06-02
+Last shell review: 2026-10-30
 
 Durable notes for fixing Codex shell execution, local tool checks, Ketho/LuaLS diagnostics, and the local Python venv in this repo.
 
@@ -22,7 +22,7 @@ Repo path:
 <repo root>
 ```
 
-Observed working tools:
+Historical tool observations (2026-06-02; not current version requirements):
 
 ```text
 cmd         -> ver                  -> Microsoft Windows 10.0.26200.8457
@@ -33,11 +33,14 @@ powershell  -> $PSVersionTable...   -> PowerShell 7.6.2 in Codex shell mapping; 
 
 
 ## Codex Shell Fix
-Codex native shell execution on this machine requires:
+The 2026-10-30 review supersedes the June workaround that prescribed `unelevated`. The current verified local selection is:
 
 ```toml
 [windows]
-sandbox = "unelevated"
+sandbox = "elevated"
+
+[features]
+prefer_mxc = false
 ```
 
 Global config:
@@ -46,44 +49,19 @@ Global config:
 %USERPROFILE%\.codex\config.toml
 ```
 
-Use the Codex "setup sandbox" button only when intentionally retesting sandbox setup. It has repeatedly restored:
+Evidence: the active VS Code extension uses Codex CLI `0.164.0-alpha.11.1`. Under `unelevated`, Git metadata worked but Git for Windows 2.51.2/MSYS 3.6.5 shell startup failed with a signal-pipe access denial. A .NET named-pipe server could be created but its same-process client was denied connection; the approved-context control succeeded. The official one-command MXC startup probe passed, but the actual MSYS shell still failed creating its named-object directory. Basic sandbox startup therefore did not establish tool compatibility.
 
-```toml
-[windows]
-sandbox = "elevated"
-```
+The already-provisioned legacy `elevated` sandbox passed the same Git shell probe and both repositories' local-origin updater suites (7/7 each), using managed workspace permissions. These tests ran sandboxed, not unrestricted. A fresh Codex process then passed the shell probe using the saved configuration with no selection overrides. After the VS Code window reload, ordinary agent execution also passed the direct Git shell probe and both updater suites (7/7 each). Live-session acceptance is complete for these previously failing workloads.
 
-That broken mode failed before commands could start:
+The user config was backed up beside itself as `config.toml.before-sandbox-repair-20261030T103918`. Only the sandbox selection and MXC preference were changed; no global ACL, proxy, Git installation, or full-access setting was changed. The June `spawn setup refresh` failure is historical evidence, not a current prohibition on `elevated`. Do not rerun the old `repair_codex_config.ps1` helper that forces `unelevated` without reviewing/updating it.
 
-```text
-windows sandbox failed: spawn setup refresh
-Failed to create unified exec process: spawn setup refresh
-```
+This is a machine/tool-version-specific verified selection, not a universal sandbox requirement. Current [official Windows sandbox guidance](https://learn.chatgpt.com/docs/windows/windows-sandbox) prefers MXC when compatible, then legacy `elevated`; commands in legacy `elevated` use lower-privilege sandbox accounts rather than administrator execution. Re-evaluate after host/tool updates using the actual failing workload, not only a version command.
 
-Check the active setting:
+Saved-config diagnostic (uses the configured selection, not a per-command sandbox override):
 
 ```powershell
-Select-String -Path "$env:USERPROFILE\.codex\config.toml" -Pattern '^\[windows\]|^sandbox\s*=|sandbox|windows'
+codex sandbox --include-managed-config --permission-profile :workspace -- "C:\Program Files\Git\usr\bin\sh.exe" -c "exit 0"
 ```
-
-Expected output:
-
-```text
-[windows]
-sandbox = "unelevated"
-```
-
-If the config reverts to `elevated`, repair it from the helper workspace:
-
-```text
-<local helper workspace>\agent_config
-```
-
-```cmd
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File repair_codex_config.ps1
-```
-
-The script backs up `%USERPROFILE%\.codex\config.toml`, removes any existing `[windows]` block, and appends the working `sandbox = "unelevated"` block.
 
 
 ## Shell Verification
