@@ -141,6 +141,7 @@ function Get-ImpactedSuiteNames {
             '^modules/objectives/ob_section_count\.lua$' { & $add 'ob_section_count'; continue }
             '^modules/objectives/' { & $add @('ob_auto_collapse', 'ob_background', 'ob_section_count'); continue }
             '^modules/player_frame/' { & $add 'pf_fade'; continue }
+            '^modules/chat_copy_sghetti/' { & $add @('chat_copy_sghetti', 'smoke_load_all'); continue }
             '^modules/skyriding_vigor/' { & $add 'sv_state'; continue }
             '^functions/tooltip\.lua$' { & $add @('tooltip', 'af_tooltip_integration'); continue }
             '^functions/table_utils\.lua$' { & $add @('table_utils', 'profiles'); continue }

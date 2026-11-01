@@ -78,6 +78,17 @@ h.test("report stub API gaps hit during full load", function()
     end
 end)
 
+h.test("category shortcut opens and expands settings to ChatCopySghetti", function()
+    local frame = h.addon.main_frame
+    frame:SetCollapsed(true)
+    frame:Hide()
+    frame:OpenCategory(h.addon.chat_copy_sghetti.CATEGORY_NAME)
+    h.ok(frame:IsShown())
+    h.ok(frame.content_area:IsShown())
+    h.ok(frame.tabs.ChatCopySghetti:IsShown())
+    h.eq(Ls_Tweeks_DB.last_open_module, "ChatCopySghetti")
+end)
+
 h.run("smoke_load_all")
 
 --#endregion FILE CONTENTS ===================================================

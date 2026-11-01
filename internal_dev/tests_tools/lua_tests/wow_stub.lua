@@ -573,6 +573,12 @@ function CreateFrame(kind, name, parent, template)
     end
     stub.frames[#stub.frames + 1] = f
     -- minimal template affordances used by shared factories
+    if template and template:find("UIPanelInputScrollFrameTemplate") then
+        f.EditBox = new_region("EditBox", nil, f)
+        f.EditBox.Instructions = new_region("FontString", nil, f.EditBox)
+        f.CharCount = new_region("FontString", nil, f)
+        f.ScrollBar = new_region("Slider", nil, f)
+    end
     if template and template:find("UIPanelScrollFrameTemplate") then
         f.ScrollBar = new_region("Slider", name and (name .. "ScrollBar") or nil, f)
     end
@@ -997,6 +1003,26 @@ end
 function issecretvalue(value)
     return type(value) == "table" and value.__lstweeks_test_secret_value == true
 end
+-- ChatCopySghetti uses retained history on demand; tests supply individual frames.
+CHAT_FRAMES = {}
+C_ChatInfo = { InChatMessagingLockdown = function() return stub.chat_lockdown == true end }
+C_StringUtil = {
+    -- Only the readable fixture subset is modeled; native markup requires in-game checks.
+    StripHyperlinks = function(text, colors, brackets, strip_newlines, atlases, textures)
+        assert(strip_newlines == false and atlases == false and textures == false)
+        text = text:gsub("|H.-|h(.-)|h", "%1")
+        if not colors then text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") end
+        text = text:gsub("|T.-|t", ""):gsub("|A.-|a", "")
+        if not brackets then text = text:gsub("[%[%]]", "") end
+        return text
+    end,
+}
+C_ColorUtil = {
+    GenerateTextColorCode = function(color)
+        return string.format("ff%02x%02x%02x", math.floor(color.r * 255), math.floor(color.g * 255), math.floor(color.b * 255))
+    end,
+    WrapTextInColorCode = function(text, code) return "|c" .. code .. text .. "|r" end,
+}
 function MuteSoundFile() end
 function UnmuteSoundFile() end
 function StopSound() end

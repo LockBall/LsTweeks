@@ -1,5 +1,5 @@
 # Retail 12.1.5 Compatibility Review
-Active acceptance review for LsTweeks 00.23.01. No runtime changes were required by the source comparison; the TOC adds interface 120105 while retaining earlier declarations.
+Active client acceptance review originally prepared for LsTweeks 00.23.01. No runtime changes were required by that source comparison; the TOC adds interface 120105 while retaining earlier declarations. The current candidate is 00.24.00, adding ChatCopySghetti with separate acceptance in `new_chat_copy.md`; the source-review evidence below retains its original scope.
 
 
 ## Table of Contents
@@ -32,7 +32,7 @@ Active acceptance review for LsTweeks 00.23.01. No runtime changes were required
 
 
 ## 4. Pending In-Game Acceptance
-- [ ] **a** Fresh reload with script errors enabled. Confirm the installed client interface with `/dump (select(4, GetBuildInfo()))`, addon version 00.23.01, and `/lst status`. Report a differing client build before claiming acceptance.
+- [ ] **a** Fresh reload with script errors enabled. Confirm the installed client interface with `/dump (select(4, GetBuildInfo()))`, current candidate addon version 00.24.00, and `/lst status`. Report a differing client build before claiming acceptance.
 - [ ] **b** Preset Auras: Short, Static / Long, Timed, and Debuffs in Icon/Bar modes; apply, refresh, expire, and cancel supported buffs; exercise combat entry/exit, OOC fade, native hover, growth, mode switches OOC, and frame/module disable plus reload. Confirm no duplicate modes, stale swipes, invisible hitboxes, or blocked actions.
 - [ ] **c** CDM: Essential, Utility, Tracked Buffs, and Tracked Bars in Aura/Cooldown and Icon/Bar modes. Exercise active-Aura-to-cooldown handoff, cooldown start/finish in combat, charge changes, settings reorder/category moves, and specialization changes OOC. Confirm order, overlay placement, timer cleanup, and no errors.
 - [ ] **d** Player Frame: portrait combat text suppression, low-health visibility, OOC delay/fade, combat re-entry during fade, and module disable/restore.

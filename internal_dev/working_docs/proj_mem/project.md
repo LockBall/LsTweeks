@@ -118,6 +118,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 ### Active Compatibility Sentinel
 - Declared client interfaces: Retail 12.0.7, 12.1, and 12.1.5 (`Interface` 120007/120100/120105); `LsTweeks.toc` owns the exact interface values. Current compatibility review targets live 12.1.5.70575; earlier declarations are retained.
 - 12.1.5 source review found no required runtime API migration against Blizzard source `15881d52` (previous snapshot `8ea15b61`). Pending in-game acceptance and review evidence live in `../ToDo/wow_12_1_5_compatibility.md`; static/headless checks cannot establish taint safety.
+- ChatCopySghetti is new in 00.24.00; manual export awaits in-game acceptance in `../ToDo/new_chat_copy.md`.
 - Active API boundary: retail 12.x Secret Values affect Aura, tooltip, player-health, and Objective Tracker paths; never assume a value is readable from combat state or API provenance alone.
 - Managed Auras: WoW 12.1 migrated displays use Blizzard `AuraContainer`/`AuraButton` native bindings; detailed contracts remain in `### Key WoW APIs And Lessons`, `modules/aura_frames.md`, and `functions/tooltip.md`.
 - Treat compatibility notes as current hypotheses, not authority. Before changing a named high-risk path, read `### Key WoW APIs And Lessons` plus its matching module/function memory. Verify patch-sensitive claims against the refreshed Blizzard-generated docs/FrameXML and available in-game evidence; use generated annotations for types and signatures.
@@ -146,6 +147,7 @@ modules/                feature modules; deeper ownership notes live in the modu
   audio_volumes/         Audio Volumes preset replacements and temporary situations
   skyriding_vigor/      restored vigor display, style/layout state, charge detection, fade, and GUI
   settings/             general addon settings
+  chat_copy_sghetti/         retained chat export, manual-copy popup
   aura_frames/          aura scanning/rendering, CDM integration, frame settings, profiles, and GUI
 
 libs/                   embedded libraries, publicly credited in sources.md

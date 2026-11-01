@@ -16,7 +16,7 @@ local CONFIG = {
    -- icon = "Interface\\AddOns\\LsTweeks\\media\\icon_256",
    -- Inv_misc_enggizmos_swissarmy
    -- Inv_misc_wrench_01
-    icon = "Interface\\Icons\\Trade_engineering",
+    icon = addon.SETTINGS_ICON_TEXTURE,
     title = "L's Tweeks",
     tooltip_left_click = "Left-click: Open main window",
     tooltip_right_click = "Right-click: Quick Picks",

@@ -1,7 +1,7 @@
 ## Interface: 120007, 120100, 120105
 ## Title: L's Tweeks
 ## Title-enUS: L's Tweeks
-## Version: 00.23.01
+## Version: 00.24.00
 ## Author: LockBall
 ## Notes: Configurable aura frames, sound controls, and UI tweaks
 ## Notes-enUS: Configurable aura frames, sound controls, and UI tweaks
@@ -45,6 +45,10 @@ modules\about.lua
 modules\settings\st_defaults.lua
 modules\settings\st_gui.lua
 modules\settings\st_main.lua
+modules\chat_copy_sghetti\ccs_defaults.lua
+modules\chat_copy_sghetti\ccs_logic_export.lua
+modules\chat_copy_sghetti\ccs_gui.lua
+modules\chat_copy_sghetti\ccs_main.lua
 modules\player_frame\pf_defaults.lua
 modules\player_frame\pf_gui.lua
 modules\player_frame\pf_main.lua

@@ -73,7 +73,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 ## Core And Shared Helpers
 - `core/init.lua`: addon table bootstrap, saved-variable defaults entry points, slash command, feature module registry, timing buckets, shared Aura bar-color defaults.
-- `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior.
+- `core/main_frame.lua`: settings shell, sidebar categories, disabled-module sidebar behavior. `addon.main_frame:OpenCategory(name)` opens/expands the existing shell and selects a registered page; callers use this route instead of manipulating sidebar buttons.
 - `core/minimap_button.lua`: LibDataBroker/LibDBIcon minimap launcher.
 - `functions/checkbox.lua`: shared checkbox factory. Memory: `proj_mem/functions/controls.md`.
 - `functions/buttons.lua`: shared button style, text-fit, page-arrow, play/pause, and Move Reset helpers. Memory: `proj_mem/functions/controls.md`; assets: `media/media_notes.md`.
@@ -93,6 +93,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 
 ## Feature Modules
+- `modules/chat_copy_sghetti/`: bounded retained chat export, manual Ctrl+C popup. Memory: `proj_mem/modules/chat_copy_sghetti.md`.
 - `modules/settings/`: general addon settings and module toggles; `st_defaults.lua` owns defaults, `st_gui.lua` owns settings UI, and `st_main.lua` owns alpha runtime/reset/category registration.
 - `modules/player_frame/`: PlayerFrame portrait combat text and out-of-combat fade. Memory: `proj_mem/modules/player_frame.md`.
 - `modules/objectives/`: All Objectives tracker behavior tweaks. Memory: `proj_mem/modules/objectives.md`.

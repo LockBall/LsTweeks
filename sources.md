@@ -9,6 +9,9 @@ Public credits, attribution, and embedded third-party library sources for L's Tw
 
 
 ## Addon References
+- Chat Copy Paste (ChatCopyPaste), by Venomisto / Novaspark: https://www.curseforge.com/wow/addons/chat-copy-paste
+  - Referenced for ChatCopySghetti chat history export, copy-button interaction, and formatting requirements.
+  - Chat Copy Paste is All Rights Reserved. It is reference material only; no code, icons, fonts, or other assets are copied into LsTweeks.
 - Elkano's BuffBars: https://www.curseforge.com/wow/addons/elkbuffbars
   - Referenced for Aura Frames inspiration, especially buff/debuff bar presentation, grouping/bucketing, and configurable aura display behavior.
 - Angleur: https://www.curseforge.com/wow/addons/angleur

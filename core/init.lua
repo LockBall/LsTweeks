@@ -9,6 +9,7 @@
 local addon_name, addon = ...
 addon.name = addon_name
 addon.module_defaults = {}
+addon.SETTINGS_ICON_TEXTURE = "Interface\\Icons\\Trade_engineering"
 addon.module_status_builders = {}
 addon.alpha_affected_frames = {}
 
@@ -68,6 +69,7 @@ addon.UPDATE_INTERVALS.skyriding_vigor_progress = 1 / 20
 addon.UPDATE_INTERVALS.skyriding_vigor_event_bucket = addon.UPDATE_INTERVALS.tenth_sec
 
 addon.FEATURE_MODULES = {
+    { key = "chat_copy_sghetti", label = "ChatCopySghetti" },
     { key = "audio_volumes", label = "Audio Volumes" },
     { key = "aura_frames", label = "Buffs & Debuffs" },
     { key = "objectives", label = "Objectives" },

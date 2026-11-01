@@ -1,0 +1,29 @@
+# ChatCopySghetti Memory
+
+## Table of Contents
+- [Ownership And Settings](#ownership-and-settings)
+- [Runtime And Safety](#runtime-and-safety)
+- [Validation](#validation)
+
+
+## Ownership And Settings
+- Settings grid uses the shared slider footprint, 18px column spacing, explicit left alignment, section-spacing row budgets, and separators after the checkbox and slider/picker rows. Reset occupies its own taller third row; row budgets must accommodate the 95px slider rather than the former undersized 86px row.
+- Popup Background uses the shared color-picker factory to the right of Recent Lines. Persisted RGBA directly colors a solid popup background, preserving chat text and border opacity; default is opaque dark grey. Multiplicative tinting of the Marble texture obscured selected colors, so this popup replaces that texture with SetColorTexture. Startup clamps RGBA components, preview/cancel/reset updates an existing popup live, and changing color does not create a popup.
+- Module key `chat_copy_sghetti`; category ChatCopySghetti, order 650. `ccs_defaults.lua` allocates the module, controls/buttons registries, default settings, message range, and output bound once. `ccs_logic_export.lua` owns normalization/collection, `ccs_gui.lua` owns lazy popup/settings composition, and `ccs_main.lua` owns initialization, copy icons, and lifecycle/status.
+- Copy icons follow module enablement. Defaults: link brackets preserved, 250 recent lines. Range 25–1000; output bound 200000 bytes retaining complete recent messages. No chat text is stored in SavedVariables. Shared factories own settings controls, grid placement, popup chrome, reset, and tooltips; Blizzard's UIPanelInputScrollFrameTemplate owns multiline editing/scrolling. The two-page icon is independently drawn from colored regions.
+
+
+## Runtime And Safety
+- The title-bar minimize/restore button sits left of the close X and follows the main settings panel's underscore/square convention. Minimized height is session-only (40); content and resize grip hide, chat text stays available until close, and keyboard focus clears. Dragging while minimized saves position relative to the full-size window; collapsed height never overwrites saved height. New exports restore the expanded window.
+- `window` settings persist only width, height, and center offsets relative to UIParent, defaulting to 720×460 centered. Native bottom-right sizing has a 600×300 minimum (bounded by screen dimensions); restore clamps both size and position to the current screen. Drag/resize completion and interrupted positioning on hide save geometry; ordinary close does not overwrite reset defaults. Popup width changes reflow the native edit box. Geometry is restored on each export; module reset restores defaults on next open. Chat text is never part of these saved settings.
+- Collection is user-triggered through the chat frame's copy icon. Settings do not provide a second popup-opening action. Reads retained history through `GetNumMessages`/`GetMessageInfo`; never uses rendered line wrapping as export separators. Traverses newest first for size bounding, then emits chronological complete messages. The interface calls stored entries lines, independent of visual wrapping. Reports one skipped-line total equal to retained history count minus exported count, covering unreadable/private entries and both history/output limits without reason categories.
+- Reject secret text before string operations and omit private-name `|K` payloads without reconstructing identities. Use `C_StringUtil.StripHyperlinks` with color retention for native normalization, then normalize actual CR/LF and encoded `|n`. Preserve inline colors and use readable per-message RGB with native C_ColorUtil generation/wrapping to restore the base chat color after inline resets. Unavailable/secret RGB is never inspected or converted; readable text and its inline colors can still be shown. Each colored message closes its own markup to prevent cross-message color bleed. The byte cap includes color markup.
+- Secret-argument permission does not declassify native results. Direct addon clipboard calls are excluded; manual Ctrl+C occurs in an addon-owned edit box. Colors in that interface are required; actual clipboard formatting depends on native client behavior and the destination and needs in-game verification.
+- Export stops in combat/chat messaging lockdown. Combat, close, reset, and disable hide/clear the export. No native chat selection state is modified.
+- Runtime events are regen disabled/enabled while the module is enabled; startup listeners are released after initialization. Permanent hooks on FCF_OpenNewWindow/FCF_OpenTemporaryWindow return before work when disabled; frame creation/placement waits for OOC. There are no module timers, tickers, polling loops, incoming-message filters, hyperlink overrides, or persistent message archive. The native input template owns its visible edit-box OnUpdate/cursor handling. Combat log ChatFrame2 is excluded; temporary/absent frame objects are lifecycle optional.
+- `/lst status ChatCopySghetti` reports visible icons, popup, installed chat hooks, and combat listener state. Disabled pages follow core's standard visible/locked behavior.
+
+
+## Validation
+- `test_chat_copy_sghetti.lua` covers history/order/separator bounds, secrets/private markup, complete-message size limits, unavailable history counts, popup text cleanup, lockdown, module disable/events, and settings synchronization. Native markup processing is a fixture stub, not proof of actual client output.
+- Active implementation and in-game acceptance are tracked in `../../ToDo/new_chat_copy.md`. Clipboard content, visual layout, native security, wrapping, and delayed chat/tooltip behavior require the real client. Attribution belongs in root sources.md; ChatCopyPaste code/assets are not dependencies.

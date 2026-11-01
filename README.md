@@ -29,6 +29,16 @@ Release history: [Changelog](CHANGELOG.md)
 - [Skyriding Vigor](#skyriding-vigor): restored compact player vigor display with adjustable style and behavior.
 - [Audio Volumes](#audio-volumes): quieter replacement sounds and temporary channel-volume situations.
 - [Settings](#settings): minimap button, open-on-reload, and main panel transparency.
+- [ChatCopySghetti](#chatcopysghetti): selected chat history export for manual copying.
+
+
+### ChatCopySghetti
+- Click the two-page copy icon just outside a regular chat window's top-left corner to open its copy popup.
+- Select text in the export window and press **Ctrl+C**. **Select All** selects the full export; **Escape** or the top-right **X** dismisses it and clears the text.
+- Drag the popup to move it and drag its bottom-right grip to resize it. Size and position are remembered across reloads; module reset restores the default centered layout.
+- Use the top-left gear to open this module's settings. Configure Recent Lines, Keep Link Brackets, and Popup BG color/transparency. Copy icons follow module enablement. The copy window preserves chat colors and intentional line breaks while removing inline artwork; Ctrl+C copies the selected text.
+- The button beside the X minimizes the popup to its title bar and restores it without losing the displayed text. New exports reopen the expanded window.
+- Exports retained readable chat lines. All skipped lines are counted together, including lines excluded by the recent-line or output-size limit. A line means one stored chat entry, regardless of visual wrapping. The combat log, combat-time export, and chat messaging lockdown are excluded. Chat history is not saved.
 
 
 ### Aura Frames
@@ -201,6 +211,7 @@ The WoW addon community:
 - Angleur: fishing audio profiles
 - Quest Log Collapse: research lead for the rejected securecall Objective Tracker experiment
 - DragonRider: restored vigor-display
+- Chat Copy Paste: chat-copy interaction and formatting inspiration; independently implemented as ChatCopySghetti
 
 #### Hoomans
 - Design and implementation by **LockBall**

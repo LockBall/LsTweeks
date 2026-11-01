@@ -140,8 +140,9 @@ local function create_main_frame()
     if collapse_btn:GetNormalTexture()   then collapse_btn:GetNormalTexture():SetVertexColor(0.9, 0.9, 0.9) end
     if collapse_btn:GetPushedTexture()   then collapse_btn:GetPushedTexture():SetVertexColor(0.6, 0.6, 0.6) end
     if collapse_btn:GetHighlightTexture() then collapse_btn:GetHighlightTexture():SetVertexColor(0.8, 0.8, 0.8) end
-    collapse_btn:SetScript("OnClick", function()
-        collapsed = not collapsed
+    function frame:SetCollapsed(value)
+        if collapsed == value then return end
+        collapsed = value
         if collapsed then
             full_height = select(2, frame:GetSize())
             frame:SetHeight(collapsed_height)
@@ -154,7 +155,8 @@ local function create_main_frame()
             content_area:Show()
             collapse_btn:GetFontString():SetText("_")
         end
-    end)
+    end
+    collapse_btn:SetScript("OnClick", function() frame:SetCollapsed(not collapsed) end)
 
     frame.title_bar = title_bar
     addon.main_frame = frame
@@ -317,6 +319,17 @@ function addon.init_main_frame()
         end
     end
     frame.RefreshSidebar = RefreshSidebar
+    function frame:OpenCategory(name)
+        self:SetCollapsed(false)
+        self:Show()
+        for _, button in ipairs(self.buttons) do
+            if button._category.name == name then
+                select_tab(button._category, button)
+                return
+            end
+        end
+        error("Unknown settings category: " .. name)
+    end
 
     -- Every time the main frame is shown, refresh the sidebar and apply saved alpha
     frame:SetScript("OnShow", function()
