@@ -59,7 +59,7 @@ pkgmeta.yml
 .cataclysm/
 .toc.bak
 
-# CurseForge packager output
-dist/
+# Local release packages and staging output
+releases/
 *.zip
 *.zipped

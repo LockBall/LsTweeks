@@ -28,7 +28,7 @@ Active client acceptance review originally prepared for LsTweeks 00.23.01. No ru
 ## 3. Automated Validation
 - **a** All 27 headless Lua suites passed against the existing runtime code. These model addon contracts, not Blizzard taint or actual rendering.
 - **b** Full LuaLS check against refreshed annotations passed with no diagnostics.
-- **c** Fast non-test validation passed: region markers, memory section sizes, internal ownership contracts, whitespace, and line endings. No Lua files changed. Release package `dist/LsTweeks-00.23.01.zip` rebuilt with the public changelog and verified successfully (149 entries); no publishing was performed.
+- **c** Fast non-test validation passed: region markers, memory section sizes, internal ownership contracts, whitespace, and line endings. No Lua files changed. Release package `releases/LsTweeks-00.23.01.zip` rebuilt with the public changelog and verified successfully (149 entries); no publishing was performed.
 
 
 ## 4. Pending In-Game Acceptance

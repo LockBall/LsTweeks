@@ -43,7 +43,7 @@ $invariantForbiddenRoots = @(
     ".github",
     ".venv",
     ".vscode",
-    "dist",
+    "releases",
     "internal_dev"
 )
 

@@ -39,8 +39,10 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packa
 Output:
 
 ```text
-dist/<toc-name>-<version>.zip
+releases/<toc-name>-<version>.zip
 ```
+
+`releases/` is the single local destination for generated packages and temporary staging. It is ignored by Git and excluded from addon zips; keep prior version archives there rather than maintaining a second output folder.
 
 The addon package name comes from the root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
 
@@ -74,6 +76,7 @@ Currently excluded workspace/private paths:
 - `.git/`
 - `.github/`
 - `internal_dev/`
+- `releases/`
 - `.gitignore`
 
 Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
@@ -85,7 +88,7 @@ README image assets under `media/readme_images/` and `media/svg/` are public-fac
 Run verification directly with:
 
 ```powershell
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/verify-package.ps1 dist/<toc-name>-<version>.zip
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/verify-package.ps1 releases/<toc-name>-<version>.zip
 ```
 
 The verifier checks:
@@ -101,4 +104,4 @@ The verifier checks:
 - all Lua/XML files referenced by the root `.toc` file exist inside the zip
 - entries do not use unsafe rooted or parent-traversal paths
 
-After building, inspect `dist/<toc-name>-<version>.zip` externally if desired.
+After building, inspect `releases/<toc-name>-<version>.zip` externally if desired.

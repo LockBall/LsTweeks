@@ -16,7 +16,8 @@
   "excludeDirectories": [
     ".git",
     ".github",
-    "internal_dev"
+    "internal_dev",
+    "releases"
   ],
   "excludeFiles": [
     ".editorconfig",

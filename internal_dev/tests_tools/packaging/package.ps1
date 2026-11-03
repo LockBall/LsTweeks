@@ -1,5 +1,5 @@
 param(
-    [string]$OutputDir = "dist",
+    [string]$OutputDir = "releases",
     [switch]$KeepStage
 )
 

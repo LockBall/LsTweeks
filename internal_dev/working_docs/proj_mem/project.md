@@ -106,7 +106,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 
 
 ### Packaging / Release
-- Release package command: `release package only` in `code_map.md`. It writes `dist/<toc-name>-<version>.zip` and runs the verifier.
+- Release package command: `release package only` in `code_map.md`. It writes `releases/<toc-name>-<version>.zip` and runs the verifier.
 - Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
 - Repeatable release sequence: `package_me.md` `## Release Routine` owns source/API review, version/changelog decisions, candidate validation, separate in-game acceptance, packaging, and publication closeout.
 - Public release history lives in root `CHANGELOG.md`, newest version first, linked from README and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
@@ -155,7 +155,7 @@ media/                  public addon/readme assets
 internal_dev/          internal docs excluded from release zips
   tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, CPU profiles, and tool notes
   working_docs/         active project docs, scratch notes, review notes, and proj_mem/
-dist/                   generated package output, ignored
+releases/                   generated package output, ignored
 ```
 
 Every project Lua file starts with a short responsibility header before code, and each declared function belongs to a named `--#region` so source outlines form a complete source TOC. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
