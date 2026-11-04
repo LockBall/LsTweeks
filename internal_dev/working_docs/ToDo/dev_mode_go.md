@@ -22,7 +22,7 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - [x] User confirmed the installed addon is an extraction of the latest release; the repository previously lived in AddOns.
 - [x] Game AddOns directory supplied: `G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns`.
 - [x] Existing migration note expanded into this checklist.
-- Structural split implemented and validated. GitHub repository renamed to dev_LsTweeks and origin updated; nothing pushed. Local outer rename and game junction remain pending. The installed release is unchanged.
+- Structural split committed as e17ac19. GitHub repository and outer workspace are dev_LsTweeks; origin is updated. Live game junction created and statically verified. Previous physical installation preserved outside AddOns. In-game acceptance remains pending; no push performed by the agent.
 
 
 ## Migration Checklist
@@ -58,11 +58,11 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - [x] Local relocation complete; game junction still pending.
 
 ### 5. Connect The Live Game Installation
-- [ ] Preserve the installed release as a rollback copy outside the active AddOns scan location.
-- [ ] Create `AddOns/LsTweeks` as a Windows junction to the final workspace's inner `LsTweeks/` folder.
-- [ ] Verify the junction target and confirm development files remain outside it.
-- [ ] Verify TOC entries and runtime assets through the game-facing path.
-- [ ] Preserve saved settings; keep the addon SavedVariables identity and files intact.
+- [x] Preserve the installed release as a rollback copy outside the active AddOns scan location.
+- [x] Create `AddOns/LsTweeks` as a Windows junction to the final workspace's inner `LsTweeks/` folder.
+- [x] Verify the junction target and confirm development files remain outside it.
+- [x] Verify TOC entries and runtime assets through the game-facing path.
+- [x] Preserve saved settings; keep the addon SavedVariables identity and files intact.
 
 ### 6. Verify In Game And Close Out
 - [ ] User confirms discovery and loading; restart the client if needed for the initial installation change.
@@ -81,16 +81,17 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - Releases are built from the inner payload and pass package verification.
 - Baseline comparison and in-game acceptance confirm the working addon is preserved.
 
-Baseline commit: 19da6202818b132770b037c4e728d1bfca69c96a. Tested preparation commit: 581734a (committed by user). Rollback artifacts remain under releases/migration_baseline.
+Baseline commit: 19da6202818b132770b037c4e728d1bfca69c96a. Preparation checkpoint: 581734a. Structural split and documentation naming checkpoint: e17ac19. Local rollback artifacts remain under releases/migration_baseline.
 
-Validation after the split: all 153 moved payload hashes unchanged; all 28 headless suites and fast checks passed; isolated packaging regression checks passed; candidate zip under releases/migration_candidate verified and its entry contents matched the baseline exactly. Targeted LuaLS check of LsTweeks/core/init.lua completed with no problems.
+Validation: all 153 original file contents preserved, with README.md intentionally renamed to ADDON_GUIDE.md. All 28 headless suites, fast checks, packaging regression checks, package verification, and targeted LuaLS checks passed during preparation. Candidate archive contents matched the baseline before the guide filename change; the guide rename candidate also passed packaging verification. Offline annotation relocation retained the pinned API snapshot and provenance after the workspace move.
 
-Annotation receipts had stale absolute paths from the former game-directory workspace. Added sync_wow_annotations.ps1 -Relocate to validate cached source/generator/FrameXML commit identity before updating only receipt paths offline. Matching relocation and refusal-without-write regression checks passed. Run relocation again after the outer workspace rename. API snapshot and generation provenance are unchanged.
+Live installation switch completed November 4, 2026, with WoW closed:
+- Junction: G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns\LsTweeks
+- Target: F:\from_git\dev_LsTweeks\LsTweeks
+- Rollback copy: G:\Games\Blizzard\World of Warcraft\_retail_\Interface\LsTweeks_dev_backups\20261104_210036_release_00.24.00
+- Verified all 153 payload hashes through the junction, TOC file references, and exclusion of internal_dev, .git, and releases. SavedVariables files were not accessed or changed.
+- In-game acceptance is pending. Start WoW, verify the addon is enabled and loads with existing settings, run /lst status, inspect normal module behavior and media, and report any Lua errors. After initial acceptance, verify a harmless visible edit through manual reload and restore it.
 
-Remaining handoff: local outer directory rename and workspace reopen, then close WoW before replacing the installed release with a junction. WoW was running during this stage; no installation changes were attempted. Verify commands from the final location before switching the game path.
+Rollback while WoW is closed: inspect and remove only the AddOns/LsTweeks junction itself (never recursively delete its target), then move the preserved physical release directory back to AddOns/LsTweeks. Keep backups until in-game and live-edit acceptance are complete.
 
-Outer rename attempt: Windows refused moving F:\from_git\LsTweeks to F:\from_git\dev_LsTweeks because another process holds the directory open. No relocation occurred. Close the active workspace/editor, rename the outer folder, and reopen it at the new location; then run the offline annotation relocation command and verify Git/tooling before creating the game junction. The destination did not already exist at preflight. This was an operating-system file lock, not an approval rejection.
-
-Local rename verified: F:\from_git\dev_LsTweeks exists, old outer path is absent, origin is https://github.com/LockBall/dev_LsTweeks.git, and addon payload hashes and package verification remain clean. Annotation receipt paths rebased to the renamed workspace. No WoW process was detected at this verification; installed AddOns/LsTweeks remains a physical release directory. This session still has the old workspace write boundary, so writes to the renamed directory require escalation until the workspace is reopened/reselected.
-
-Documentation naming: root README.md is the development guide; LsTweeks/ADDON_GUIDE.md is the complete original player README, renamed with its contents preserved byte for byte. Packaging rules, invariants, fixtures, editor configuration, and documentation routes updated. Baseline payload comparisons must map the original README.md entry to ADDON_GUIDE.md; this filename change is intentional.
+Documentation ownership: root README.md is the development guide; LsTweeks/ADDON_GUIDE.md is the complete original player README, with unchanged contents. Packaging and documentation routes use the new filename.
