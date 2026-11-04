@@ -137,6 +137,7 @@ try {
             Write-Host "No changed Lua files."
         } else {
             & $luac -p @luaFiles
+            if ($LASTEXITCODE -ne 0) { throw "Lua syntax check failed." }
         }
     }
 
@@ -154,7 +155,9 @@ try {
 
     Invoke-Step "Whitespace diff check" {
         git diff --check
+        if ($LASTEXITCODE -ne 0) { throw "Working-tree whitespace check failed." }
         git diff --cached --check
+        if ($LASTEXITCODE -ne 0) { throw "Staged whitespace check failed." }
     }
 
     Invoke-Step "Line endings" {
@@ -184,6 +187,7 @@ try {
     if ($Package) {
         Invoke-Step "Package build and verification" {
             pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "internal_dev/tests_tools/packaging/package.ps1"
+            if ($LASTEXITCODE -ne 0) { throw "Package build or verification failed." }
         }
     }
 

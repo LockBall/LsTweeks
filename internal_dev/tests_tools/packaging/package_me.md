@@ -14,6 +14,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 - `package.ps1`: builds the release zip.
 - `package-policy.json`: single source of truth for package include/exclude behavior.
 - `verify-package.ps1`: verifies a generated release zip against `package-policy.json`.
+- `test_packaging.ps1`: isolated fixture checks for development-folder exclusion and nonzero builder exit when verification fails. Run with `pwsh.exe -NoProfile -File internal_dev/tests_tools/packaging/test_packaging.ps1`; its deliberate failure case prints an expected verification exception before the final pass message.
 
 
 ## Release Routine
@@ -47,6 +48,7 @@ releases/<toc-name>-<version>.zip
 The addon package name comes from the root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
 
 `package.ps1` automatically runs `verify-package.ps1` after building.
+Verifier failure produces a nonzero builder exit; fast validation also fails when its package step fails.
 
 
 ## Package Rules
@@ -74,6 +76,8 @@ Currently included public files:
 Currently excluded workspace/private paths:
 
 - `.git/`
+- `.agents/`
+- `.claude/`
 - `.github/`
 - `internal_dev/`
 - `releases/`

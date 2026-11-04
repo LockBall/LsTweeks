@@ -39,6 +39,8 @@ $invariantRequiredRoots = @(
 )
 
 $invariantForbiddenRoots = @(
+    ".agents",
+    ".claude",
     ".git",
     ".github",
     ".venv",

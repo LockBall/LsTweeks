@@ -111,6 +111,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Repeatable release sequence: `package_me.md` `## Release Routine` owns source/API review, version/changelog decisions, candidate validation, separate in-game acceptance, packaging, and publication closeout.
 - Public release history lives in root `CHANGELOG.md`, newest version first, linked from README and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
+- Agent configuration folders `.agents/` and `.claude/` are explicitly excluded and invariant-forbidden. Builder and fast validation propagate package failures; isolated packaging regression checks live beside the builder (see `package_me.md`).
 - README image assets and Audio Volumes reference/log files are public-facing and included.
 
 

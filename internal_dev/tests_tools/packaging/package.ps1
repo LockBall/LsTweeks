@@ -144,4 +144,7 @@ Write-Host "Created $($zipItem.FullName)"
 Write-Host "Version $version"
 Write-Host "Size $([Math]::Round($zipItem.Length / 1MB, 2)) MB"
 
-& $verifyScriptPath $zipPath
+& pwsh.exe -NoProfile -File $verifyScriptPath $zipPath
+if ($LASTEXITCODE -ne 0) {
+    throw "Package verification failed with exit code $LASTEXITCODE."
+}
