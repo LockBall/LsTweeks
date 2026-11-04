@@ -6,11 +6,12 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
+$addonRoot = Join-Path $repoRoot "LsTweeks"
 $policyPath = Join-Path $PSScriptRoot "package-policy.json"
 $verifyScriptPath = Join-Path $PSScriptRoot "verify-package.ps1"
 
 function Get-AddonToc {
-    $tocFiles = @(Get-ChildItem -LiteralPath $repoRoot -File -Filter "*.toc")
+    $tocFiles = @(Get-ChildItem -LiteralPath $addonRoot -File -Filter "*.toc")
     if ($tocFiles.Count -eq 0) {
         throw "Missing root TOC file."
     }
@@ -76,7 +77,7 @@ function Copy-PublicItem {
         return
     }
 
-    $source = Join-Path $repoRoot $RelativePath
+    $source = Join-Path $addonRoot $RelativePath
     if (-not (Test-Path -LiteralPath $source)) {
         throw "Missing public package item: $RelativePath"
     }
@@ -97,7 +98,7 @@ function Test-TocReferences {
         }
 
         if ($line -match '\.(lua|xml)$') {
-            $path = Join-Path $repoRoot $line
+            $path = Join-Path $addonRoot $line
             if (-not (Test-Path -LiteralPath $path)) {
                 $missing += $line
             }

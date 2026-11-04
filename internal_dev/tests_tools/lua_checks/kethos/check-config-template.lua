@@ -22,7 +22,8 @@ return {
         },
         ignoreDir = {
             ".vscode",
-            "libs",
+            "LsTweeks/libs",
+            "releases",
             "internal_dev/tests_tools/lua_checks/.lua-language-server",
             "internal_dev/tests_tools/lua_checks/.luals-check",
             "internal_dev/tests_tools/lua_checks/.luacheck-logs",

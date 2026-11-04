@@ -20,8 +20,8 @@ Reference routes not covered by the `agent_start.md` routing table; that table i
 | Request trigger | Next targeted read |
 | --- | --- |
 | Aura Frames CDM regression | `internal_dev/tests_tools/aura_frames_cdm_regression.md` |
-| Audio Volumes public sound asset or preset | `modules/audio_volumes/sounds/sound_reference.md` |
-| Public credits/attribution | `sources.md` |
+| Audio Volumes public sound asset or preset | `LsTweeks/modules/audio_volumes/sounds/sound_reference.md` |
+| Public credits/attribution | `LsTweeks/sources.md` |
 | Internal API/FrameXML/tool/release reference links | `research_sources.md` |
 | CPU profiling workflow or run history | `internal_dev/tests_tools/cpu_profiles/profiling_workflow.md`, then `internal_dev/tests_tools/cpu_profiles/` |
 | Sound ID lookup | `internal_dev/working_docs/SoundKitConstants.lua` |
@@ -36,6 +36,9 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 - Session baseline (agent_start.md + compatibility/API status + worktree status + Read-In Shortcuts in one call): `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/agent-start.ps1`
 - Worktree check: `git status --short`
 - Repo search: `rg <pattern>` or `rg --files`
+- Paths: development commands run from the repository root; addon source arguments start with `LsTweeks/`. Feature-memory paths are addon-relative unless stated otherwise.
+- Annotation relocation regression checks: `pwsh.exe -NoProfile -File internal_dev/tests_tools/test_annotation_relocation.ps1` (deliberate refusal prints an expected exception).
+- Offline annotation receipt relocation after moving the workspace: `pwsh.exe -NoProfile -File internal_dev/tests_tools/sync_wow_annotations.ps1 -Channel live -Relocate`.
 - In-game status: `/lst status` for a compact all-module summary; `/lst status <module key or label>` for readable multiline fields from one module, such as `/lst status objectives`. Do not call restricted `CopyToClipboard` from the addon slash handler; Retail blocks it as a Blizzard-UI-only action even when the user entered the command.
 - Line-ending and PowerShell write rules: `internal_dev/tests_tools/powershell.md`.
 - Fast validation with impact-selected headless tests: `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/check_fast.ps1 -Changed`
@@ -65,7 +68,7 @@ These are repo-local or project-specific commands. Platform-provided agent tools
 
 
 ## Public Surface
-- `README.md`: public feature names, install/use wording, release-facing behavior.
+- `LsTweeks/ADDON_GUIDE.md`: public feature names, install/use wording, release-facing behavior.
 - `sources.md`: public credits and embedded-library attribution.
 - `LsTweeks.toc`: addon metadata, version, interface number, and Lua/XML load order.
 - `LICENSE`: release license.

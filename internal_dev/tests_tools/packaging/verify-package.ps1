@@ -6,10 +6,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
+$addonRoot = Join-Path $repoRoot "LsTweeks"
 $policyPath = Join-Path $PSScriptRoot "package-policy.json"
 
 function Get-AddonToc {
-    $tocFiles = @(Get-ChildItem -LiteralPath $repoRoot -File -Filter "*.toc")
+    $tocFiles = @(Get-ChildItem -LiteralPath $addonRoot -File -Filter "*.toc")
     if ($tocFiles.Count -eq 0) {
         throw "Missing root TOC file."
     }
@@ -24,7 +25,7 @@ $addonName = [System.IO.Path]::GetFileNameWithoutExtension($tocFile.Name)
 
 $invariantRequiredFiles = @(
     $tocFile.Name,
-    "README.md",
+    "ADDON_GUIDE.md",
     "CHANGELOG.md",
     "LICENSE",
     "sources.md"
@@ -91,7 +92,7 @@ function Test-UnderAnyRoot {
 function Get-RepoRelativePath {
     param([System.IO.FileSystemInfo]$Item)
 
-    $root = $repoRoot.TrimEnd("\")
+    $root = $addonRoot.TrimEnd("\")
     $fullName = $Item.FullName
     if ($fullName.Length -le $root.Length) {
         return ""
@@ -110,7 +111,7 @@ function Test-GitIgnored {
         $relative = "$relative/"
     }
 
-    & git -C $repoRoot check-ignore --quiet --no-index -- $relative
+    & git -C $repoRoot check-ignore --quiet --no-index -- "LsTweeks/$relative"
     return $LASTEXITCODE -eq 0
 }
 
@@ -139,7 +140,7 @@ function Get-PolicyCoverageInventory {
     $excludedFiles = New-Object System.Collections.Generic.List[string]
     $excludedDirectories = New-Object System.Collections.Generic.List[string]
 
-    $rootItems = @(Get-ChildItem -LiteralPath $repoRoot -Force)
+    $rootItems = @(Get-ChildItem -LiteralPath $addonRoot -Force)
     foreach ($item in $rootItems) {
         $relative = Get-RepoRelativePath $item
         if ($item.PSIsContainer) {

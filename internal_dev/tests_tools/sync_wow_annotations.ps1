@@ -4,6 +4,8 @@ param(
     [string]$Channel = "live",
 
     [switch]$StatusOnly,
+    # Offline relocation of receipt paths; validates the existing pinned checkouts.
+    [switch]$Relocate,
 
     [Parameter(DontShow = $true)]
     [string]$CacheDirectory,
@@ -143,6 +145,33 @@ function Write-AnnotationStatus {
     Write-Output "  FrameXML annotations: $($state.frameXmlCommit)"
     Write-Output "  Core: $($state.corePath)"
     Write-Output "  FrameXML: $($state.frameXmlPath)"
+}
+
+if ($Relocate) {
+    if ($StatusOnly) { throw 'Use either -Relocate or -StatusOnly.' }
+    $state = Get-AnnotationState
+    if (-not $state -or $state.schemaVersion -ne 2) {
+        throw 'Relocation requires an existing schema-2 annotation receipt.'
+    }
+    foreach ($inputPair in @(
+        @{ Path = $sourceRoot; Commit = $state.sourceCommit },
+        @{ Path = $generatorRoot; Commit = $state.generatorCommit },
+        @{ Path = $frameXmlRoot; Commit = $state.frameXmlCommit }
+    )) {
+        if ((Get-GitCommit -Path $inputPair.Path) -ne $inputPair.Commit) {
+            throw "Relocation refused: checkout differs from receipt at $($inputPair.Path)."
+        }
+    }
+    $relocatedCore = Join-Path $generatorRoot 'Annotations/Core'
+    if (-not (Test-Path -LiteralPath $relocatedCore -PathType Container)) {
+        throw "Relocation requires existing generated annotations: $relocatedCore"
+    }
+    $state.sourceInterfacePath = Join-Path $sourceRoot 'Interface'
+    $state.corePath = $relocatedCore
+    $state.frameXmlPath = $frameXmlRoot
+    [IO.File]::WriteAllText($statePath, ($state | ConvertTo-Json -Depth 3) + "`n", [Text.UTF8Encoding]::new($false))
+    Write-AnnotationStatus
+    exit 0
 }
 
 if ($StatusOnly) {

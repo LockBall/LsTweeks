@@ -48,7 +48,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
 - Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Put unresolved work in a focused `ToDo/` note immediately; keep only durable generalized lessons in this file.
 - Public docs: root markdown.
-- Public source credits: root `sources.md`. Internal research references: `research_sources.md`.
+- Public source credits: `LsTweeks/sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
 - Tool recovery: `internal_dev/tests_tools/tools_notes.md`.
 - PowerShell/newlines/line endings/regions: `internal_dev/tests_tools/powershell.md`.
@@ -79,7 +79,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Rule phrasing: prefer positive gating (`Only do X when Y`) for conditional guidance; keep direct negative language for hard prohibitions.
 - `ToDo/`: temporary active review context and TODO/follow-up items.
 - Future work: active/dormant TODOs belong in review notes; durable `proj_mem` can point to them but should not be the only owner.
-- Root-level markdown files such as `README.md` and `sources.md` are public-facing release/user docs, not internal agent memory.
+- Repository `README.md` introduces development. Public release/user documentation lives under `LsTweeks/`; internal agent memory stays under `internal_dev/`.
 - Forbidden doc content: secrets, personal data, machine-local scratch notes, session logs.
 - Durable markdown spacing: no blank lines between list items or between a section heading and its first item; two blank lines between sections. Active scratchpads/working notes may use readable spacing while being edited; compact before promotion to durable memory.
 
@@ -99,6 +99,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - The refreshed `wow-ui-source` checkout remains the primary patch-current code reference. Generated annotations provide types/signatures and diagnostics; they do not override source or in-game evidence for taint, Secret Values, combat, and undocumented behavior.
 - Treat LuaLS diagnostics as review prompts, not automatic change requests.
 - Shell LuaLS checks use the generated Core and FrameXML receipt paths plus workspace-local `--logpath`/`--metapath`; keep Lua check output under `lua_checks/`.
+- After moving the workspace, use the annotation relocation command in `code_map.md` to rebase receipt paths offline. It requires matching source/generator/FrameXML checkout commits, retains generation provenance, and changes only path metadata; it does not claim a fresh API review.
 - Preferred shell helper: Ketho/LuaLS helper in `code_map.md`.
 - Generated annotation roots live under ignored `.wow-api-source/ketho-<channel>/Annotations/Core` and `.wow-api-source/framexml-annotations-<channel>/Annotations`; use `.wow-api-source/<channel>/Interface` for authoritative source lookup rather than indexing it again in LuaLS or retaining a duplicated source-mixed annotation tree. Never hand-edit managed cache contents.
 - Use `api_lookup.ps1` for one current-source-first lookup plus its exact generated annotation block. Cross-check implementation call sites before changing code.
@@ -109,7 +110,8 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Release package command: `release package only` in `code_map.md`. It writes `releases/<toc-name>-<version>.zip` and runs the verifier.
 - Packaging docs and policy live in `internal_dev/tests_tools/packaging/package_me.md` and `internal_dev/tests_tools/packaging/package-policy.json`.
 - Repeatable release sequence: `package_me.md` `## Release Routine` owns source/API review, version/changelog decisions, candidate validation, separate in-game acceptance, packaging, and publication closeout.
-- Public release history lives in root `CHANGELOG.md`, newest version first, linked from README and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
+- Public release history lives in `LsTweeks/CHANGELOG.md`, newest version first, linked from the addon guide and required in release packages. Record user-facing changes and distinguish automated validation from pending in-game acceptance.
+- Repository root and addon root are separate: package sources and coverage inventory use `LsTweeks/`; scripts, policy, caches, and output remain repository-relative. The root development README is excluded by this boundary.
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - Agent configuration folders `.agents/` and `.claude/` are explicitly excluded and invariant-forbidden. Builder and fast validation propagate package failures; isolated packaging regression checks live beside the builder (see `package_me.md`).
 - README image assets and Audio Volumes reference/log files are public-facing and included.
@@ -131,12 +133,23 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 
 - Slash command: `/lst` (`SLASH_LSTWEEKS1`)
 - SavedVariables: `Ls_Tweeks_DB`
-- Version edit point: `LsTweeks.toc` only; verify interface number in-game with `/dump (select(4, GetBuildInfo()))`
+- Version edit point: `LsTweeks/LsTweeks.toc` only; verify interface number in-game with `/dump (select(4, GetBuildInfo()))`
 
 
 ### File Map
+The repository is `dev_LsTweeks`; the installable addon is its inner `LsTweeks/` directory. Unless explicitly repository-relative (commands, `internal_dev/`, or configuration), runtime paths such as `modules/`, `functions/`, `media/`, `libs/`, and `LsTweeks.toc` in feature memory are relative to the addon root. Existing incident archives retain historical paths.
+
+Repository layout:
 ```
-README.md               public release/readme documentation
+README.md               development entry point
+LsTweeks/               addon payload, public addon guide, changelog, license, and sources
+internal_dev/           project memory, planning, tools, tests, packaging, and API caches
+releases/               ignored package output and local rollback artifacts
+```
+
+Addon-relative layout:
+```
+ADDON_GUIDE.md          full public addon documentation
 sources.md              public source credits and embedded-library attribution
 LsTweeks.toc            addon metadata, interface number, version, and load order
 
@@ -153,11 +166,9 @@ modules/                feature modules; deeper ownership notes live in the modu
 
 libs/                   embedded libraries, publicly credited in sources.md
 media/                  public addon/readme assets
-internal_dev/          internal docs excluded from release zips
-  tests_tools/          probes, test helpers, diagnostics helpers, packaging helpers, CPU profiles, and tool notes
-  working_docs/         active project docs, scratch notes, review notes, and proj_mem/
-releases/                   generated package output, ignored
 ```
+
+Live development uses a Windows directory junction from `Interface/AddOns/LsTweeks` to the inner addon directory. Keep the addon folder name and SavedVariables identity unchanged. Reload picks up edits; initial installation changes may need a client restart. Preserve a rollback release outside AddOns before replacing an installed copy. Migration progress is owned by `../ToDo/dev_mode_go.md`.
 
 Every project Lua file starts with a short responsibility header before code, and each declared function belongs to a named `--#region` so source outlines form a complete source TOC. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
 

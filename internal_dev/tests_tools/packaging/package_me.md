@@ -31,7 +31,7 @@ Use this sequence for an addon release. Internal tooling or documentation mainte
 
 
 ## Build
-Run from the addon root:
+Run from the repository root:
 
 ```powershell
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packaging/package.ps1
@@ -45,16 +45,16 @@ releases/<toc-name>-<version>.zip
 
 `releases/` is the single local destination for generated packages and temporary staging. It is ignored by Git and excluded from addon zips; keep prior version archives there rather than maintaining a second output folder.
 
-The addon package name comes from the root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
+The addon package name comes from the addon-root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
 
 `package.ps1` automatically runs `verify-package.ps1` after building.
 Verifier failure produces a nonzero builder exit; fast validation also fails when its package step fails.
 
 
 ## Package Rules
-The zip must contain one top-level folder matching the root `.toc` filename.
+The zip must contain one top-level folder matching the addon-root `.toc` filename.
 
-Included and excluded paths are defined in `package-policy.json`.
+Included and excluded paths are defined in `package-policy.json` relative to the inner `LsTweeks/` directory. Repository development files are outside the source boundary.
 Top-level files or folders ignored by `.gitignore` are treated as excluded by the verifier, so local cache/build artifacts do not need duplicate entries in `package-policy.json`.
 
 Currently included public roots:
@@ -68,10 +68,10 @@ Currently included public roots:
 Currently included public files:
 
 - `LICENSE`
-- `README.md`
+- `ADDON_GUIDE.md`
 - `CHANGELOG.md`
 - `sources.md`
-- `<toc>` placeholder, resolved to the root `.toc` filename
+- `<toc>` placeholder, resolved to the addon-root `.toc` filename
 
 Currently excluded workspace/private paths:
 
@@ -98,14 +98,14 @@ pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev/tests_tools/packa
 The verifier checks:
 
 - the zip opens successfully
-- the zip has one top-level folder matching the root `.toc` filename
+- the zip has one top-level folder matching the addon-root `.toc` filename
 - required included roots/files from `package-policy.json` are present
 - excluded roots/files from `package-policy.json` are absent
-- every top-level workspace file/folder is accounted for by an include rule, an explicit exclude rule, or `.gitignore`
+- every top-level addon file/folder is accounted for by an include rule, an explicit exclude rule, or `.gitignore`
 - the zip file count matches the number of policy-included workspace files
 - invariant required public files/roots are present even if the policy is edited incorrectly
 - invariant forbidden private/workspace roots are absent even if the policy is edited incorrectly
-- all Lua/XML files referenced by the root `.toc` file exist inside the zip
+- all Lua/XML files referenced by the addon-root `.toc` file exist inside the zip
 - entries do not use unsafe rooted or parent-traversal paths
 
 After building, inspect `releases/<toc-name>-<version>.zip` externally if desired.

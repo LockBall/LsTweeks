@@ -3,26 +3,26 @@ root = true
 [*]
 charset = utf-8
 
-[{README.md,sources.md,LsTweeks.toc}]
+[{README.md,LsTweeks/ADDON_GUIDE.md,LsTweeks/sources.md,LsTweeks/LsTweeks.toc}]
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[{core,functions,modules,internal_dev}/**]
+[{LsTweeks/core,LsTweeks/functions,LsTweeks/modules,internal_dev}/**]
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[media/**]
+[LsTweeks/media/**]
 insert_final_newline = false
 trim_trailing_whitespace = false
 
-[media/**/*.md]
+[LsTweeks/media/**/*.md]
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[media/svg/**]
+[LsTweeks/media/svg/**]
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true

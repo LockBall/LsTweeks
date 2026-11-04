@@ -172,7 +172,7 @@ Lua region helper:
 
 ```powershell
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline modules\aura_frames\af_render.lua
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\check_regions.ps1 -Outline LsTweeks/modules\aura_frames\af_render.lua
 ```
 
 The `-Outline` form prints region ranges plus named function declarations inside each region.
@@ -239,7 +239,7 @@ Targeted helper modes:
 
 ```powershell
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1 -Changed
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1 -Files modules\audio_volumes\av_gui_situations.lua
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File internal_dev\tests_tools\lua_checks\kethos\run_luals_ketho.ps1 -Files LsTweeks/modules\audio_volumes\av_gui_situations.lua
 ```
 
 Use `-Files` for exact one-off file checks. Use `-Changed` for iteration after a work pass; if multiple changed Lua files share a module directory, the helper checks that directory once to avoid repeated LuaLS startup cost. Use the full helper before commit-level validation, after load-order changes, or after broad refactors because targeted runs do not replace whole-workspace diagnostics.

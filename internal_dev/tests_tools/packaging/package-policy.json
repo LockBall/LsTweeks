@@ -8,7 +8,7 @@
   ],
   "includeFiles": [
     "LICENSE",
-    "README.md",
+    "ADDON_GUIDE.md",
     "CHANGELOG.md",
     "sources.md",
     "<toc>"
@@ -30,7 +30,8 @@
     "README image assets under media/readme_images and media/svg are public-facing and included.",
     "Sound reference/log files under modules/audio_volumes/sounds are public-facing and included.",
     "Internal docs live under internal_dev and are excluded.",
-    "The package must contain one top-level folder matching the root .toc filename."
+    "All include/exclude paths are relative to the inner LsTweeks addon directory, not the repository root.",
+    "The package must contain one top-level folder matching the addon-root .toc filename."
   ]
 }
 

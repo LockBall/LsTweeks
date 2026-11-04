@@ -29,14 +29,14 @@ Start here for a new coding-agent session. This file is the lead-in, not the pro
 | Defaults, DB handling, resets, or profiles | `project.md` `### Data, Resets, And Profiles` |
 | Shared GUI/layout rules, widget anchoring, or settings-grid usage | `project.md` `### GUI/Layout Rules` |
 | WoW API usage, taint, combat guard, or Lua gotcha | `project.md` `### Ketho / LuaLS`, then `### Key WoW APIs And Lessons` |
-| Public install/use steps, embedded libraries, license, or credits | `README.md` `## Installation`, `## Use Notes`, `## Embedded Libraries`, `## License`, or `## Credits` via `doc_section.ps1` |
-| Public Aura Frames behavior, names, or terminology | `README.md` `### Aura Frames` via `doc_section.ps1` |
-| Public Player Frame behavior, names, or terminology | `README.md` `### Player Frame` via `doc_section.ps1` |
-| Public Objectives behavior, names, or terminology | `README.md` `### Objectives` via `doc_section.ps1` |
-| Public Skyriding Vigor behavior, names, or terminology | `README.md` `### Skyriding Vigor` via `doc_section.ps1` |
-| Public Audio Volumes behavior, names, or terminology | `README.md` `### Audio Volumes` via `doc_section.ps1` |
-| Public Settings behavior, names, or terminology | `README.md` `### Settings` via `doc_section.ps1` |
-| Full public capability overview across modules, or unclear which module a README request routes to | `README.md` `## Modules` via `doc_section.ps1`, then the matching row above |
+| Public install/use steps, embedded libraries, license, or credits | `LsTweeks/ADDON_GUIDE.md` `## Installation`, `## Use Notes`, `## Embedded Libraries`, `## License`, or `## Credits` via `doc_section.ps1` |
+| Public Aura Frames behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Aura Frames` via `doc_section.ps1` |
+| Public Player Frame behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Player Frame` via `doc_section.ps1` |
+| Public Objectives behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Objectives` via `doc_section.ps1` |
+| Public Skyriding Vigor behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Skyriding Vigor` via `doc_section.ps1` |
+| Public Audio Volumes behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Audio Volumes` via `doc_section.ps1` |
+| Public Settings behavior, names, or terminology | `LsTweeks/ADDON_GUIDE.md` `### Settings` via `doc_section.ps1` |
+| Full public capability overview across modules, or unclear which module a README request routes to | `LsTweeks/ADDON_GUIDE.md` `## Modules` via `doc_section.ps1`, then the matching row above |
 | Focused active review or follow-up | Matching `ToDo/` note |
 | Raw WoW Lua error export (including a directed `ToDo/new_issue.txt`) | First run `condense_lua_errors.ps1 -Path <error-export.txt>` from `code_map.md` `## Fast Commands`; use raw locals only for follow-up |
 | Tool, LuaLS, packaging, or sandbox problem | `internal_dev/tests_tools/tools_notes.md` |

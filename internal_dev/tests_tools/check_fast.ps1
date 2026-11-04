@@ -40,8 +40,8 @@ function Invoke-Step {
 
 function Get-ProjectTextFiles {
     $extensions = @(".json", ".lua", ".md", ".ps1", ".svg", ".toc")
-    $projectRoots = @("core/", "functions/", "internal_dev/", "media/", "modules/")
-    $rootFiles = @("LsTweeks.toc", "README.md", "sources.md")
+    $projectRoots = @("LsTweeks/core/", "LsTweeks/functions/", "internal_dev/", "LsTweeks/media/", "LsTweeks/modules/")
+    $rootFiles = @("LsTweeks/LsTweeks.toc", "README.md", "LsTweeks/ADDON_GUIDE.md", "LsTweeks/CHANGELOG.md", "LsTweeks/sources.md")
     $gitFiles = @(
         git ls-files
         git ls-files --others --exclude-standard
@@ -90,7 +90,7 @@ function Get-AddonLuaFilesFromToc {
         if ($normalized -notmatch "(?i)\.lua$") { continue }
         if ($normalized -match "(?i)^libs/") { continue }
 
-        $normalized
+        "LsTweeks/$normalized"
     }
 }
 
@@ -124,7 +124,7 @@ try {
     $luaFiles = if ($Changed) {
         @(Get-ChangedLuaFiles | Sort-Object -Unique)
     } else {
-        @(Get-AddonLuaFilesFromToc "LsTweeks.toc")
+        @(Get-AddonLuaFilesFromToc "LsTweeks/LsTweeks.toc")
     }
 
     $missing = @($luaFiles | Where-Object { -not (Test-Path -LiteralPath $_) })

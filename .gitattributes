@@ -2,11 +2,11 @@
 
 /README.md text eol=lf
 /sources.md text eol=lf
-/LsTweeks.toc text eol=lf
+/LsTweeks/LsTweeks.toc text eol=lf
 
-/core/** text eol=lf
-/functions/** text eol=lf
-/modules/** text eol=lf
+/LsTweeks/core/** text eol=lf
+/LsTweeks/functions/** text eol=lf
+/LsTweeks/modules/** text eol=lf
 /internal_dev/** text eol=lf
 
 *.md text eol=lf
@@ -25,4 +25,4 @@
 *.zip binary
 
 # Vendored libraries keep upstream line endings unless intentionally updated.
-/libs/** -text -eol
+/LsTweeks/libs/** -text -eol

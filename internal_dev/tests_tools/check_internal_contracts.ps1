@@ -27,13 +27,14 @@ function Add-HelperDefinition {
     [void]$Definitions.Add("${Owner}:${Name}")
 }
 
-$tocPath = Join-Path $RepoRoot "LsTweeks.toc"
+$addonRoot = Join-Path $RepoRoot "LsTweeks"
+$tocPath = Join-Path $addonRoot "LsTweeks.toc"
 $luaFiles = @(Get-AddonLuaFilesFromToc $tocPath)
 $ownersByFile = @{}
 $helperDefinitions = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
 
 foreach ($relativePath in $luaFiles) {
-    $fullPath = Join-Path $RepoRoot $relativePath
+    $fullPath = Join-Path $addonRoot $relativePath
     $text = [System.IO.File]::ReadAllText($fullPath)
     $ownerMatch = [regex]::Match($text, "(?m)^\s*local M = addon\.([A-Za-z_][A-Za-z0-9_]*)\s*$")
     $owner = if ($ownerMatch.Success) { $ownerMatch.Groups[1].Value } else { $null }
@@ -99,7 +100,7 @@ $allowedLazyTables = [System.Collections.Generic.HashSet[string]]::new(
 $violations = [System.Collections.Generic.List[string]]::new()
 
 foreach ($relativePath in $luaFiles) {
-    $fullPath = Join-Path $RepoRoot $relativePath
+    $fullPath = Join-Path $addonRoot $relativePath
     $owner = $ownersByFile[$relativePath]
     $lines = [System.IO.File]::ReadAllLines($fullPath)
 

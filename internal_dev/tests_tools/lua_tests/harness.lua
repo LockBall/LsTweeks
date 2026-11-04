@@ -10,9 +10,10 @@ local ADDON_NAME = "LsTweeks"
 
 -- Resolve the addon root from this file's own path so tests run from any cwd.
 local this_file = debug.getinfo(1, "S").source:match("^@(.*)$")
-local ADDON_ROOT = this_file:gsub("[\\/]internal_dev[\\/].*$", "")
+local REPO_ROOT = this_file:gsub("[\\/]internal_dev[\\/].*$", "")
+local ADDON_ROOT = REPO_ROOT .. "/LsTweeks"
 
-package.path = ADDON_ROOT .. "/internal_dev/tests_tools/lua_tests/?.lua;" .. package.path
+package.path = REPO_ROOT .. "/internal_dev/tests_tools/lua_tests/?.lua;" .. package.path
 
 local stub = require("wow_stub")
 

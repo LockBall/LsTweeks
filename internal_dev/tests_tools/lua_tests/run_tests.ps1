@@ -89,6 +89,8 @@ function Get-ImpactedSuiteNames {
     }
 
     foreach ($path in $Paths) {
+        # Selection patterns below describe addon-relative paths; tooling stays repo-relative.
+        $path = $path -replace '^LsTweeks/', ''
         if ($path -match '^internal_dev/tests_tools/lua_tests/tests/test_(.+)\.lua$') {
             & $add $Matches[1]
             continue
