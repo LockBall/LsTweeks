@@ -26,4 +26,4 @@
 
 ## Validation
 - `test_chat_copy_sghetti.lua` covers history/order/separator bounds, secrets/private markup, complete-message size limits, unavailable history counts, popup text cleanup, lockdown, module disable/events, and settings synchronization. Native markup processing is a fixture stub, not proof of actual client output.
-- Active implementation and in-game acceptance are tracked in `../../ToDo/new_chat_copy.md`. Clipboard content, visual layout, native security, wrapping, and delayed chat/tooltip behavior require the real client. Attribution belongs in root sources.md; ChatCopyPaste code/assets are not dependencies.
+- Active implementation and in-game acceptance are tracked in `../../ToDo/new_chat_copy.md`. Clipboard content, visual layout, native security, wrapping, and delayed chat/tooltip behavior require the real client. Attribution belongs in LsTweeks/sources.md; ChatCopyPaste code/assets are not dependencies.

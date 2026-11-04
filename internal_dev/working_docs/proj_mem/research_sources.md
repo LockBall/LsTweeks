@@ -1,5 +1,5 @@
 # Research Sources
-Internal research and implementation references for coding agents. Public credit and embedded-library attribution stays in root `sources.md`.
+Internal research and implementation references for coding agents. Public credit and embedded-library attribution stays in `LsTweeks/sources.md`.
 
 
 ## Table of Contents

@@ -145,9 +145,15 @@ Verify:
 rg -a "Ls_Tweeks|LsTweeks" .venv\Scripts\pip.exe .venv\Scripts\pip3.exe .venv\Scripts\pip3.13.exe
 ```
 
-The current `LsTweeks` path should be present. The old `Ls_Tweeks` path should not be embedded.
+The current outer workspace path ending in `dev_LsTweeks\.venv` should be embedded; former game-install and workspace paths should not be embedded.
 
-If activation reports the wrong `$env:VIRTUAL_ENV`, check:
+A metadata upgrade alone may leave activation scripts and non-pip console launchers stale. After a workspace move, verify the selected environment Python, every installed console launcher actually used by tools, and activation separately. Use python -m pip for reliable package access while diagnosing launcher failures.
+
+The migration audit repaired activation using the selected base interpreter's venv.EnvBuilder.setup_scripts and rebuilt the existing pip/fontTools entry points from installed metadata using the bundled ScriptMaker. This was an offline local-environment repair, not an addon dependency or a package upgrade. Package names/versions stayed unchanged; all seven console launchers passed invocation checks. pyftmerge has no --help option: its normal no-argument usage response is the suitable startup probe.
+
+Before such a repair, preserve launcher/activation files and installed package versions; prefer recreating a disposable environment from reviewed dependency declarations when available. Local audit backups and logs are under ignored releases/final_audit.
+
+If activation reports the wrong $env:VIRTUAL_ENV, check:
 
 ```text
 .venv\Scripts\Activate.ps1

@@ -22,7 +22,7 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - [x] User confirmed the installed addon is an extraction of the latest release; the repository previously lived in AddOns.
 - [x] Game AddOns directory supplied: `G:\Games\Blizzard\World of Warcraft\_retail_\Interface\AddOns`.
 - [x] Existing migration note expanded into this checklist.
-- Structural split committed as e17ac19. GitHub repository and outer workspace are dev_LsTweeks; origin is updated. Live game junction created and statically verified. Previous physical installation preserved outside AddOns. In-game acceptance remains pending; no push performed by the agent.
+- Structural split committed as e17ac19. GitHub repository and outer workspace are dev_LsTweeks; origin is updated. Live game junction created and statically verified. Previous physical installation preserved outside AddOns. User confirmed successful game loading and live edits through /reload; temporary code restored. Migration accepted, rollback retained, and no push performed by the agent.
 
 
 ## Migration Checklist
@@ -55,7 +55,7 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - [x] User renamed the outer local directory to dev_LsTweeks; old path is absent and new path verified.
 - [x] Renamed GitHub repository to LockBall/dev_LsTweeks and updated origin; verified remotely. No push performed.
 - [x] Verified Git, fast non-test checks, candidate package verification, and all 153 payload hashes from the renamed directory. Rebased annotation receipt paths offline.
-- [x] Local relocation complete; game junction still pending.
+- [x] Local relocation complete; game junction subsequently created and verified in stage 5.
 
 ### 5. Connect The Live Game Installation
 - [x] Preserve the installed release as a rollback copy outside the active AddOns scan location.
@@ -65,12 +65,12 @@ Keep existing development folders together rather than introducing new ToDo/docs
 - [x] Preserve saved settings; keep the addon SavedVariables identity and files intact.
 
 ### 6. Verify In Game And Close Out
-- [ ] User confirms discovery and loading; restart the client if needed for the initial installation change.
-- [ ] User confirms saved settings, expected module behavior, media, and absence of new Lua errors.
-- [ ] Confirm a harmless visible edit appears after manual reload, then restore that edit.
-- [ ] Record final layout and validation evidence in owning documentation.
-- [ ] Review the final diff and provide one combined commit message.
-- [ ] Retain rollback files until the live workflow is confirmed working.
+- [x] User confirmed the game loaded and addon appeared as expected through the junction.
+- [x] User reported everything perfect so far after being asked about existing settings and new Lua errors; no issues reported. Extended gameplay remains normal observation, not exhaustive scenario coverage.
+- [x] User confirmed the temporary About title appeared after /reload. Original title restored; About source matches HEAD exactly. One final /reload returns the displayed UI to normal.
+- [x] Final layout and live-reload acceptance recorded in project memory and this checklist.
+- [x] Final addon diff reviewed: documentation only, with no temporary runtime changes. Closeout commit message: Record successful junction migration and live reload acceptance.
+- [x] Rollback copy retained after successful live-workflow acceptance; deletion is not required for completion.
 
 
 ## Completion Criteria
@@ -90,8 +90,20 @@ Live installation switch completed November 4, 2026, with WoW closed:
 - Target: F:\from_git\dev_LsTweeks\LsTweeks
 - Rollback copy: G:\Games\Blizzard\World of Warcraft\_retail_\Interface\LsTweeks_dev_backups\20261104_210036_release_00.24.00
 - Verified all 153 payload hashes through the junction, TOC file references, and exclusion of internal_dev, .git, and releases. SavedVariables files were not accessed or changed.
-- In-game acceptance is pending. Start WoW, verify the addon is enabled and loads with existing settings, run /lst status, inspect normal module behavior and media, and report any Lua errors. After initial acceptance, verify a harmless visible edit through manual reload and restore it.
+- User confirmed successful loading and no issues so far, then confirmed the temporary About title appeared after /reload. The temporary source edit was restored exactly to HEAD; final /reload clears its cached display. This validates the requested live development workflow without claiming exhaustive combat, taint, or module scenario coverage.
 
 Rollback while WoW is closed: inspect and remove only the AddOns/LsTweeks junction itself (never recursively delete its target), then move the preserved physical release directory back to AddOns/LsTweeks. Keep backups until in-game and live-edit acceptance are complete.
 
 Documentation ownership: root README.md is the development guide; LsTweeks/ADDON_GUIDE.md is the complete original player README, with unchanged contents. Packaging and documentation routes use the new filename.
+
+Live-edit acceptance completed November 4, 2026: changed only the About title to LIVE LINK TEST - working copy loaded, verified Lua syntax and the same file through the junction, and received user confirmation after /reload. Restored the original title and verified no About source diff remains. Keep rollback material; no temporary test code should be committed.
+
+Closeout: migration and live-edit workflow accepted November 4, 2026. Foundation guidance is separately pending commit in dev_foundation. Addon commit f0651d0 contains the installation-switch checklist despite its foundation-oriented message; no history rewrite was performed. This repository's remaining closeout diff is documentation only.
+
+Final audit: all 28 headless suites, fast checks, final package verification, packaging regression checks, annotation-relocation regression checks, and full-workspace LuaLS passed. All 153 source, live-linked, rollback, and final-package contents match the original baseline, mapping README.md to ADDON_GUIDE.md. No runtime source changes remain.
+
+Cleanup: removed redundant migration_candidate and guide_rename_candidate output folders after verifying their payloads against the retained final archive. Baseline artifacts, final package, rollback installation, and audit/repair backups remain. Corrected stale sources.md locations and marked a pre-existing absent historical capture instead of retaining a broken link or inventing evidence.
+
+Environment audit: the ignored Python environment had stale executable and activation paths after relocation. Backed up launchers/metadata, refreshed local metadata/activation, regenerated seven console launchers from installed entry points, reconciled their RECORD hashes, and verified invocation and pip dependency checks. Installed package versions were unchanged; no network or machine-wide repair was used. Tool-owned recovery guidance is in tools_notes.md; the foundation owns the reusable lesson.
+
+Remaining repository actions: commit addon documentation cleanup and foundation guidance separately from their own repository roots. Existing f0651d0 was not rewritten; its message is broader than its addon-checklist contents. No commit or push was performed during this audit. This active tool session still advertises the old workspace write boundary; future sessions should select dev_LsTweeks directly.

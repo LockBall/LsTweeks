@@ -265,7 +265,7 @@ Reject the candidate and restore the backed-up visibility implementation if any 
 Add dated entries while testing; keep each entry concise and link archived raw evidence when present.
 
 ### 2026-08-22 — Phase 1g status capture
-- Raw evidence: [`objectives_height_compaction_1g_status.txt`](objectives_height_compaction_1g_status.txt).
+- Referenced capture: `objectives_height_compaction_1g_status.txt` (absent from the repository, including the pre-migration baseline; observations below are retained from the original note).
 - All three Auto-Collapse settings were disabled, providing the requested unmodified baseline.
 - `QuestObjectiveTracker` was shown and displayable with approximately `489.67` height and `489.67` contents height; `has_skipped_blocks=true` shows that it exhausted the remaining tracker budget.
 - `AchievementObjectiveTracker` was not shown or displayable, had `contents_height=0`, and remained in state `1` despite `collapsed=false`.

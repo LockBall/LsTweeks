@@ -168,7 +168,7 @@ libs/                   embedded libraries, publicly credited in sources.md
 media/                  public addon/readme assets
 ```
 
-Live development uses a Windows directory junction from `Interface/AddOns/LsTweeks` to the inner addon directory. Keep the addon folder name and SavedVariables identity unchanged. Reload picks up edits; initial installation changes may need a client restart. Preserve a rollback release outside AddOns before replacing an installed copy. Migration progress is owned by `../ToDo/dev_mode_go.md`.
+Live development uses a Windows directory junction from `Interface/AddOns/LsTweeks` to the inner addon directory. Keep the addon folder name and SavedVariables identity unchanged. User verified game loading and a visible working-copy edit through /reload on November 4, 2026; the temporary edit was restored. This establishes the development workflow, not exhaustive runtime compatibility. Preserve the rollback release outside AddOns; migration evidence and rollback location are recorded in `../ToDo/dev_mode_go.md`.
 
 Every project Lua file starts with a short responsibility header before code, and each declared function belongs to a named `--#region` so source outlines form a complete source TOC. `code_map.md` owns source/memory outline commands; keep durable ownership notes there or in the relevant module memory file instead of expanding this map.
 
