@@ -12,7 +12,7 @@ Development workspace for the L's Tweeks World of Warcraft addon.
 - [Previous versions](releases/previous_versions/) for rollback when needed. This folder is empty until the next version is released.
 - [Addon guide and installation instructions](LsTweeks/ADDON_GUIDE.md#installation)
 
-Extract the release zip into your WoW Interface/AddOns directory so it contains LsTweeks/LsTweeks.toc. Exit the game before replacing an installed version. Your settings are stored separately in WoW SavedVariables.
+Extract the release LsTweeks-version#.zip file into your WoW Interface/AddOns directory. Reload (/reload) the game after the LsTweeks folder has been successfully extracted. Your settings are stored separately in WoW SavedVariables.
 
 
 ## Layout
