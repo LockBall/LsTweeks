@@ -63,3 +63,6 @@ pkgmeta.yml
 releases/
 *.zip
 *.zipped
+
+# Private local history, rollback files, audit reports, and disposable tests
+internal_dev/local_artifacts/

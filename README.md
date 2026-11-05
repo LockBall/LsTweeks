@@ -9,7 +9,8 @@ Development workspace for the L's Tweeks World of Warcraft addon.
 ## Layout
 - `LsTweeks/`: installable addon and public documentation. See the [full addon guide](LsTweeks/ADDON_GUIDE.md), [changelog](LsTweeks/CHANGELOG.md), [license](LsTweeks/LICENSE), and [credits](LsTweeks/sources.md).
 - `internal_dev/`: project memory, planning, tools, tests, and packaging scripts.
-- `releases/`: ignored generated packages and local rollback artifacts.
+- `releases/`: current generated addon package and temporary build staging.
+- `internal_dev/local_artifacts/`: ignored private release history, rollback snapshots, audit reports, and disposable test runs.
 
 
 ## Development

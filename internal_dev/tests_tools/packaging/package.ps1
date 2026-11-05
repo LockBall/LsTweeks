@@ -110,7 +110,57 @@ function Test-TocReferences {
     }
 }
 
-Assert-UnderRoot -Root $repoRoot -Path $outputRoot
+# Releases are distributable build output; persistent history and private data live elsewhere.
+$releaseRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'releases'))
+$outputRoot = [IO.Path]::GetFullPath($outputRoot)
+$releasePrefix = $releaseRoot.TrimEnd('') + [IO.Path]::DirectorySeparatorChar
+if ($outputRoot -ine $releaseRoot -and -not $outputRoot.StartsWith($releasePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Package output must be under releases; private artifacts belong under internal_dev/local_artifacts.'
+}
+$historyRoot = Join-Path $repoRoot 'internal_dev/local_artifacts/release_history'
+
+function Assert-PlainRepositoryPath {
+    param([string]$Path)
+    Assert-UnderRoot -Root $repoRoot -Path $Path
+    $cursor = [IO.Path]::GetFullPath($Path)
+    while ($true) {
+        if (Test-Path -LiteralPath $cursor) {
+            if ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Refusing package operations through a filesystem link: $cursor"
+            }
+        }
+        if ($cursor -ieq $repoRoot) { break }
+        $cursor = Split-Path -Parent $cursor
+    }
+}
+
+Assert-PlainRepositoryPath $outputRoot
+Assert-PlainRepositoryPath $historyRoot
+Assert-PlainRepositoryPath $stageRoot
+if (Test-Path -LiteralPath $stageRoot) {
+    $links = @(Get-ChildItem -LiteralPath $stageRoot -Force -Recurse | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint })
+    if ($links.Count) { throw 'Refusing to clean linked package staging contents.' }
+}
+$archivePlan = @()
+if (Test-Path -LiteralPath $outputRoot) {
+    $unexpected = @(Get-ChildItem -LiteralPath $outputRoot -Force | Where-Object {
+        if ($_.PSIsContainer) { $_.Name -ne 'stage' }
+        else { $_.Extension -ne '.zip' -and $_.Name -ne '.gitkeep' }
+    })
+    if ($unexpected.Count) { throw "Non-release artifacts in output: $($unexpected.Name -join ', ')" }
+    foreach ($old in Get-ChildItem -LiteralPath $outputRoot -File -Filter '*.zip') {
+        if ($old.FullName -ieq $zipPath) { continue }
+        $destination = Join-Path $historyRoot $old.Name
+        Assert-PlainRepositoryPath $old.FullName
+        Assert-PlainRepositoryPath $destination
+        $hash = (Get-FileHash -LiteralPath $old.FullName).Hash
+        $alreadyArchived = Test-Path -LiteralPath $destination
+        if ($alreadyArchived -and (Get-FileHash -LiteralPath $destination).Hash -ne $hash) {
+            throw "Historical package collision; refusing to overwrite: $($old.Name)"
+        }
+        $archivePlan += [pscustomobject]@{ Source = $old.FullName; Destination = $destination; Hash = $hash; AlreadyArchived = $alreadyArchived }
+    }
+}
 Test-TocReferences
 
 if (Test-Path -LiteralPath $stageRoot) {
@@ -128,24 +178,35 @@ foreach ($root in $publicRoots) {
     Copy-PublicItem -RelativePath $root
 }
 
-New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
-if (Test-Path -LiteralPath $zipPath) {
-    Assert-UnderRoot -Root $repoRoot -Path $zipPath
-    Remove-Item -LiteralPath $zipPath -Force
+# Verify a candidate before replacing the current distributable or archiving history.
+$candidateZip = Join-Path $stageRoot "$addonName-$version.zip"
+Compress-Archive -LiteralPath $stageAddonRoot -DestinationPath $candidateZip -CompressionLevel Optimal
+& pwsh.exe -NoProfile -File $verifyScriptPath $candidateZip
+if ($LASTEXITCODE -ne 0) {
+    throw "Package verification failed with exit code $LASTEXITCODE."
 }
+Assert-PlainRepositoryPath $zipPath
+Move-Item -LiteralPath $candidateZip -Destination $zipPath -Force
 
-Compress-Archive -LiteralPath $stageAddonRoot -DestinationPath $zipPath -CompressionLevel Optimal
-
+if ($archivePlan.Count) {
+    New-Item -ItemType Directory -Path $historyRoot -Force | Out-Null
+    foreach ($item in $archivePlan) {
+        if ($item.AlreadyArchived) {
+            Remove-Item -LiteralPath $item.Source
+        } else {
+            Move-Item -LiteralPath $item.Source -Destination $item.Destination
+        }
+        if ((Get-FileHash -LiteralPath $item.Destination).Hash -ne $item.Hash) {
+            throw "Archived package hash mismatch: $($item.Destination)"
+        }
+    }
+}
 if (-not $KeepStage) {
+    Assert-PlainRepositoryPath $stageRoot
     Remove-Item -LiteralPath $stageRoot -Recurse -Force
 }
-
 $zipItem = Get-Item -LiteralPath $zipPath
 Write-Host "Created $($zipItem.FullName)"
 Write-Host "Version $version"
 Write-Host "Size $([Math]::Round($zipItem.Length / 1MB, 2)) MB"
-
-& pwsh.exe -NoProfile -File $verifyScriptPath $zipPath
-if ($LASTEXITCODE -ne 0) {
-    throw "Package verification failed with exit code $LASTEXITCODE."
-}
+Write-Host "Historical packages archived: $($archivePlan.Count)"

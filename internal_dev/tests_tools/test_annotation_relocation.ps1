@@ -1,7 +1,7 @@
 # Offline relocation must retain provenance and reject changed input checkouts.
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$fixtureRoot = Join-Path $repoRoot ('releases/annotation-relocation-test-' + [guid]::NewGuid().ToString('N'))
+$fixtureRoot = Join-Path $repoRoot ('internal_dev/local_artifacts/test_runs/annotation-relocation-test-' + [guid]::NewGuid().ToString('N'))
 $tool = Join-Path $PSScriptRoot 'sync_wow_annotations.ps1'
 New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
 try {
@@ -48,10 +48,10 @@ try {
     if ((Get-FileHash -LiteralPath $receiptPath).Hash -ne $receiptHash) { throw 'Rejected relocation changed the receipt.' }
     Write-Host 'Annotation relocation regression checks passed.'
 } finally {
-    $allowedRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'releases')) + [IO.Path]::DirectorySeparatorChar
+    $allowedRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'internal_dev/local_artifacts/test_runs')) + [IO.Path]::DirectorySeparatorChar
     $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
     if (-not $resolvedFixture.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Refusing cleanup outside releases: $resolvedFixture"
+        throw "Refusing cleanup outside private test runs: $resolvedFixture"
     }
     Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
 }

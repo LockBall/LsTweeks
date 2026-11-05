@@ -37,6 +37,7 @@ function Get-LuaFiles {
                 -not (
                     $relative -like "LsTweeks/libs/*" -or
                     $relative -like "releases/*" -or
+                    $relative -like "internal_dev/local_artifacts/*" -or
                     $relative -like "internal_dev/tests_tools/.wow-api-source/*" -or
                     $relative -like "internal_dev/tests_tools/lua_checks/*" -or
                     $relative -eq "internal_dev/working_docs/SoundKitConstants.lua"

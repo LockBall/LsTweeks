@@ -151,7 +151,7 @@ A metadata upgrade alone may leave activation scripts and non-pip console launch
 
 The migration audit repaired activation using the selected base interpreter's venv.EnvBuilder.setup_scripts and rebuilt the existing pip/fontTools entry points from installed metadata using the bundled ScriptMaker. This was an offline local-environment repair, not an addon dependency or a package upgrade. Package names/versions stayed unchanged; all seven console launchers passed invocation checks. pyftmerge has no --help option: its normal no-argument usage response is the suitable startup probe.
 
-Before such a repair, preserve launcher/activation files and installed package versions; prefer recreating a disposable environment from reviewed dependency declarations when available. Local audit backups and logs are under ignored releases/final_audit.
+Before such a repair, preserve launcher/activation files and installed package versions; prefer recreating a disposable environment from reviewed dependency declarations when available. Local audit backups and logs are under ignored internal_dev/local_artifacts/final_audit.
 
 If activation reports the wrong $env:VIRTUAL_ENV, check:
 

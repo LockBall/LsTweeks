@@ -14,7 +14,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 - `package.ps1`: builds the release zip.
 - `package-policy.json`: single source of truth for package include/exclude behavior.
 - `verify-package.ps1`: verifies a generated release zip against `package-policy.json`.
-- `test_packaging.ps1`: isolated fixture checks for development-folder exclusion and nonzero builder exit when verification fails. Run with `pwsh.exe -NoProfile -File internal_dev/tests_tools/packaging/test_packaging.ps1`; its deliberate failure case prints an expected verification exception before the final pass message.
+- `test_packaging.ps1`: isolated fixture checks for exclusions, release/private boundaries, historical archive preservation/collisions, and failure propagation. Run with `pwsh.exe -NoProfile -File internal_dev/tests_tools/packaging/test_packaging.ps1`; its deliberate failure case prints an expected verification exception before the final pass message.
 
 
 ## Release Routine
@@ -43,7 +43,11 @@ Output:
 releases/<toc-name>-<version>.zip
 ```
 
-`releases/` is the single local destination for generated packages and temporary staging. It is ignored by Git and excluded from addon zips; keep prior version archives there rather than maintaining a second output folder.
+`releases/` contains the current generated package and temporary staging only. After candidate verification succeeds, the builder replaces the current zip and moves older output zips into ignored `internal_dev/local_artifacts/release_history/`. Same-name history with different contents fails visibly; identical archived copies are reused. Failed verification preserves the prior current zip and leaves older packages in place.
+
+Private rollback snapshots, audit reports, repair backups, and disposable test runs live under `internal_dev/local_artifacts/`, outside distributable output. Nothing in that private tree is automatically published or packaged. Legacy archives are retained unchanged and are not approved for public distribution by being archived.
+
+The optional OutputDir must remain under releases. Output/private-history paths and staging refuse filesystem links; unexpected non-package output files/directories fail preflight. KeepStage retains the addon staging tree for inspection. Publication remains separate from building.
 
 The addon package name comes from the addon-root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
 

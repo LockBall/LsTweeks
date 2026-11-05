@@ -141,5 +141,5 @@ Included roots/files are controlled by `package-policy.json`. Do not infer relea
 ## Edit Boundaries
 - Do not edit `libs/` for style or diagnostics unless intentionally updating a vendored dependency.
 - Do not copy Blizzard art assets into the addon without a reviewed packaging/legal plan.
-- Keep generated output under ignored tool folders or `releases/`.
+- Keep public package output under `releases/`; private backups, history, audit reports, and temporary test artifacts belong under ignored `internal_dev/local_artifacts/`.
 - Keep durable project facts in `project.md`; keep module facts in module memory; keep `agent_start.md` short.

@@ -115,6 +115,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - Agent configuration folders `.agents/` and `.claude/` are explicitly excluded and invariant-forbidden. Builder and fast validation propagate package failures; isolated packaging regression checks live beside the builder (see `package_me.md`).
 - README image assets and Audio Volumes reference/log files are public-facing and included.
+- Persistent local history/backups/reports and disposable test runs belong under ignored `internal_dev/local_artifacts/`. Packaging verifies a candidate before replacing the current zip, then archives older zips under `release_history/` without overwriting conflicts. `releases/` is only distributable output/staging; the packaging guide owns details.
 
 
 ## Project Overview
@@ -144,7 +145,7 @@ Repository layout:
 README.md               development entry point
 LsTweeks/               addon payload, public addon guide, changelog, license, and sources
 internal_dev/           project memory, planning, tools, tests, packaging, and API caches
-releases/               ignored package output and local rollback artifacts
+releases/               current package output and temporary staging; older packages archived privately
 ```
 
 Addon-relative layout:
