@@ -5,8 +5,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $tool = Join-Path $PSScriptRoot "process_af_cpu_profile_inbox.ps1"
-$inputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("lstweeks-af-profile-" + [guid]::NewGuid().ToString("N") + ".txt")
-$outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("lstweeks-af-profile-" + [guid]::NewGuid().ToString("N") + ".md")
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
+$scratchRoot = Join-Path $repoRoot 'internal_dev/scratch'
+$fixtureRoot = Join-Path $scratchRoot ('cpu-profile-test-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+$inputPath = Join-Path $fixtureRoot 'input.txt'
+$outputPath = Join-Path $fixtureRoot 'output.md'
 
 $fixture = @'
 old unrelated text
@@ -52,5 +56,10 @@ try {
 
     Write-Output "process_af_cpu_profile_inbox tests passed."
 } finally {
-    Remove-Item -LiteralPath $inputPath, $outputPath -Force -ErrorAction SilentlyContinue
+    $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
+    $allowedRoot = [IO.Path]::GetFullPath($scratchRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedFixture.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolvedFixture) -notmatch '^cpu-profile-test-[0-9a-f]{32}$') {
+        throw 'Unexpected scratch cleanup target.'
+    }
+    Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
 }

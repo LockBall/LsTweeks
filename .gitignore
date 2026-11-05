@@ -59,10 +59,11 @@ pkgmeta.yml
 .cataclysm/
 .toc.bak
 
-# Local release packages and staging output
-releases/
+# Ignore unrelated archives; public release zips are version-controlled
 *.zip
 *.zipped
+!/releases/*.zip
+!/releases/previous_versions/*.zip
 
-# Private local history, rollback files, audit reports, and disposable tests
-internal_dev/local_artifacts/
+# Disposable development scratch; never package or commit its contents
+/internal_dev/scratch/

@@ -7,8 +7,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $tool = Join-Path $PSScriptRoot "condense_lua_errors.ps1"
-$fixturePath = Join-Path ([System.IO.Path]::GetTempPath()) ("lstweeks-lua-errors-" + [guid]::NewGuid().ToString("N") + ".txt")
-$outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("lstweeks-lua-errors-" + [guid]::NewGuid().ToString("N") + ".md")
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$scratchRoot = Join-Path $repoRoot 'internal_dev/scratch'
+$fixtureRoot = Join-Path $scratchRoot ('lua-errors-test-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+$fixturePath = Join-Path $fixtureRoot 'input.txt'
+$outputPath = Join-Path $fixtureRoot 'output.md'
 
 $fixture = @'
 Message: Interface/AddOns/Blizzard_SharedXML/LayoutFrame.lua:491: secret value (execution tainted by 'LsTweeks')
@@ -89,5 +93,10 @@ try {
 
     Write-Output "condense_lua_errors tests passed."
 } finally {
-    Remove-Item -LiteralPath $fixturePath, $outputPath -Force -ErrorAction SilentlyContinue
+    $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
+    $allowedRoot = [IO.Path]::GetFullPath($scratchRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedFixture.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolvedFixture) -notmatch '^lua-errors-test-[0-9a-f]{32}$') {
+        throw 'Unexpected scratch cleanup target.'
+    }
+    Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
 }

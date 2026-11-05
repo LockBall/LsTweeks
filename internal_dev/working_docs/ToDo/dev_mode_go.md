@@ -13,7 +13,7 @@ Migration and live-edit workflow accepted November 4, 2026.
 - AddOns/LsTweeks is a Windows junction to F:\from_git\dev_LsTweeks\LsTweeks. Development files remain outside its target.
 - Full player documentation preserved as LsTweeks/ADDON_GUIDE.md; root README.md explains development.
 - User confirmed successful game loading, no issues so far, and a visible working-copy edit after /reload. The temporary edit was restored exactly.
-- All 153 original file contents verified across source, live link, final package, and rollback, allowing the intentional README.md to ADDON_GUIDE.md rename.
+- At the structural checkpoint, all 153 original file contents matched across source, live link, package, and rollback, allowing the README.md to ADDON_GUIDE.md rename. The later LICENSE heading/line-ending correction is documented in release_security_privacy.md; the current package matches the current payload.
 - All 28 headless suites, fast checks, full LuaLS, package verification, and packaging/annotation-relocation regressions passed. Stale helper-environment paths and documentation references were corrected.
 - Structural checkpoint: e17ac19. Baseline checkpoint: 19da6202818b132770b037c4e728d1bfca69c96a.
 
@@ -27,11 +27,11 @@ Loading and live reload are verified. Extended gameplay observation is still in 
 
 
 ## Rollback and Retention
-Keep these until extended gameplay observation is satisfactory; no automatic deletion is planned:
-- Previous physical installation: G:\Games\Blizzard\World of Warcraft\_retail_\Interface\LsTweeks_dev_backups\20261104_210036_release_00.24.00.
-- Local baseline payload, manifest, and repository snapshot: internal_dev/local_artifacts/migration_baseline/.
-- Final package: releases/LsTweeks-00.24.00.zip.
-- Audit logs and development-environment repair backups: internal_dev/local_artifacts/final_audit/.
+Keep the known-good physical installation until extended gameplay observation is satisfactory:
+- Rollback: G:\Games\Blizzard\World of Warcraft\_retail_\Interface\LsTweeks_dev_backups\20261104_210036_release_00.24.00.
+- Current package: releases/LsTweeks-00.24.00.zip.
+
+Obsolete packaged versions, duplicate Git-recoverable snapshots/patches, successful test logs, and verified-repair backups were deliberately removed. Packaging retains earlier public addon zips in releases/previous_versions/ when a new version is built; disposable development evidence is not archived. Audit conclusions remain in the existing migration/security notes; baseline content is recoverable from the recorded Git checkpoints. The redundant evidence folder was removed. Disposable tests use ignored internal_dev/scratch/ and clean up after themselves.
 
 Rollback with WoW closed: inspect and remove only the AddOns/LsTweeks junction itself, then move the preserved physical installation back to AddOns/LsTweeks. Never recursively delete the junction target. SavedVariables identity and files were left unchanged; runtime rollback is not a saved-data restore.
 

@@ -14,7 +14,7 @@ Tools in this folder build the public CurseForge/manual release zip.
 - `package.ps1`: builds the release zip.
 - `package-policy.json`: single source of truth for package include/exclude behavior.
 - `verify-package.ps1`: verifies a generated release zip against `package-policy.json`.
-- `test_packaging.ps1`: isolated fixture checks for exclusions, release/private boundaries, historical archive preservation/collisions, and failure propagation. Run with `pwsh.exe -NoProfile -File internal_dev/tests_tools/packaging/test_packaging.ps1`; its deliberate failure case prints an expected verification exception before the final pass message.
+- `test_packaging.ps1`: isolated fixture checks for exclusions, release/private boundaries, preservation of other versions and failed-candidate recovery, and failure propagation. Run with `pwsh.exe -NoProfile -File internal_dev/tests_tools/packaging/test_packaging.ps1`; its deliberate failure case prints an expected verification exception before the final pass message.
 
 
 ## Release Routine
@@ -43,11 +43,13 @@ Output:
 releases/<toc-name>-<version>.zip
 ```
 
-`releases/` contains the current generated package and temporary staging only. After candidate verification succeeds, the builder replaces the current zip and moves older output zips into ignored `internal_dev/local_artifacts/release_history/`. Same-name history with different contents fails visibly; identical archived copies are reused. Failed verification preserves the prior current zip and leaves older packages in place.
+The releases/ directory contains Git-tracked public release zips: the current finished zip and previous_versions/ for earlier packages. Commit the verified current zip, any previous-version moves, and the root README Downloads version/link together. Remove the empty-history wording in README once a previous version exists. Per-run package staging lives under ignored internal_dev/scratch/package-<run-id>/ and is removed on success or failure unless KeepStage is explicitly requested. The builder verifies a staged candidate before replacing that version's zip. Failed verification preserves the previous usable zip. After a verified new version is published, other addon-version zips move into previous_versions/ unchanged; conflicting archive filenames fail preflight. Same-version rebuilds replace that version without retaining another copy. Build logs are not retained automatically.
 
-Private rollback snapshots, audit reports, repair backups, and disposable test runs live under `internal_dev/local_artifacts/`, outside distributable output. Nothing in that private tree is automatically published or packaged. Legacy archives are retained unchanged and are not approved for public distribution by being archived.
+Retain only artifacts with a current purpose. During a risky migration, one known-good rollback and conclusions recorded in the existing review notes are normally enough. Keep a standalone hash manifest only while an active comparison requires it. Successful scratch logs, duplicate Git snapshots, and repaired-environment backups can be removed after verifying recovery/evidence needs are covered. Keep failing-case diagnostics only while needed to resolve the issue. Keep any genuinely needed private recovery material in a deliberately chosen ignored location, with a reason and retirement condition. No permanent artifact directory is required. Disposable regression fixtures use unique per-run directories under ignored internal_dev/scratch/ and remove them on completion.
 
-The optional OutputDir must remain under releases. Output/private-history paths and staging refuse filesystem links; unexpected non-package output files/directories fail preflight. KeepStage retains the addon staging tree for inspection. Publication remains separate from building.
+Keep one zip per previous version for rollback; repeated builds of the same current version do not create additional archives. Prune older versions deliberately when no longer needed; there is no automatic retention limit or cleanup service. No build publishes an artifact; select the individually verified zip for sharing.
+
+The optional OutputDir must remain under releases. Output paths and staging refuse filesystem links; unexpected non-package output files/directories other than previous_versions/ fail preflight. KeepStage retains the scratch staging tree for deliberate inspection and prints its location; remove that retained run when finished.
 
 The addon package name comes from the addon-root `.toc` filename. The version comes from `## Version:` in that `.toc` file.
 
@@ -87,7 +89,7 @@ Currently excluded workspace/private paths:
 - `releases/`
 - `.gitignore`
 
-Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, package build output, OS junk, and temporary/compiler output.
+Common ignored dev-only paths are excluded through `.gitignore`, including local virtual environments, editor caches, LuaLS check output, disposable package staging, OS junk, and temporary/compiler output.
 
 README image assets under `media/readme_images/` and `media/svg/` are public-facing and included. Audio Volumes reference/log files under `modules/audio_volumes/sounds/` are public-facing and included.
 

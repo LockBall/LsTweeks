@@ -47,7 +47,7 @@ Shared memory for coding agents. Keep this file concise and durable: architectur
 - Active working docs: `working_docs/`; project/module/function memory in `proj_mem/`, focused TODO/review notes in `ToDo/`.
 - Completed feature facts are consolidated into this file or the relevant module memory; do not create separate completed-feature notes unless a new active review explicitly needs temporary handoff context.
 - Before closing a resolved review finding, decide whether its cause or fix pattern can recur outside the module. Put unresolved work in a focused `ToDo/` note immediately; keep only durable generalized lessons in this file.
-- Public docs: root markdown.
+- Public addon docs: markdown under LsTweeks/; repository README.md introduces development.
 - Public source credits: `LsTweeks/sources.md`. Internal research references: `research_sources.md`.
 - Active verification/checklist scratchpads use numbered section headings and letter-only item labels, so references combine cleanly as `1a`, `2b`, etc. Example: `## 1. In-Game Behavior` with items `**a**`, `**b**`.
 - Tool recovery: `internal_dev/tests_tools/tools_notes.md`.
@@ -115,7 +115,7 @@ Read this section before editing, creating, or reorganizing any doc/memory markd
 - Packaging is data-driven. Update `package-policy.json` before changing public include/exclude behavior; verifier invariants still protect required/forbidden paths.
 - Agent configuration folders `.agents/` and `.claude/` are explicitly excluded and invariant-forbidden. Builder and fast validation propagate package failures; isolated packaging regression checks live beside the builder (see `package_me.md`).
 - README image assets and Audio Volumes reference/log files are public-facing and included.
-- Persistent local history/backups/reports and disposable test runs belong under ignored `internal_dev/local_artifacts/`. Packaging verifies a candidate before replacing the current zip, then archives older zips under `release_history/` without overwriting conflicts. `releases/` is only distributable output/staging; the packaging guide owns details.
+- Project-owned disposable work lives under Git-ignored internal_dev/scratch/, using unique per-run directories and checked owner cleanup. Keep audit conclusions in existing notes and retain recovery material only while needed. Packaging verifies candidates before replacing their versioned zips, moves earlier addon-version zips to releases/previous_versions/ after publishing a verified candidate; package_me.md owns the workflow.
 
 
 ## Project Overview
@@ -145,7 +145,7 @@ Repository layout:
 README.md               development entry point
 LsTweeks/               addon payload, public addon guide, changelog, license, and sources
 internal_dev/           project memory, planning, tools, tests, packaging, and API caches
-releases/               current package output and temporary staging; older packages archived privately
+releases/               Git-tracked current zip and previous_versions/ rollback zips; staging uses internal_dev/scratch
 ```
 
 Addon-relative layout:

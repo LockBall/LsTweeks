@@ -2,15 +2,23 @@
 Development workspace for the L's Tweeks World of Warcraft addon.
 
 ## Table of Contents
+- [Downloads](#downloads)
 - [Layout](#layout)
 - [Development](#development)
 
 
+## Downloads
+- [Download current release: 00.24.00](releases/LsTweeks-00.24.00.zip?raw=true)
+- [Previous versions](releases/previous_versions/) for rollback when needed. This folder is empty until the next version is released.
+- [Addon guide and installation instructions](LsTweeks/ADDON_GUIDE.md#installation)
+
+Extract the release zip into your WoW Interface/AddOns directory so it contains LsTweeks/LsTweeks.toc. Exit the game before replacing an installed version. Your settings are stored separately in WoW SavedVariables.
+
+
 ## Layout
 - `LsTweeks/`: installable addon and public documentation. See the [full addon guide](LsTweeks/ADDON_GUIDE.md), [changelog](LsTweeks/CHANGELOG.md), [license](LsTweeks/LICENSE), and [credits](LsTweeks/sources.md).
-- `internal_dev/`: project memory, planning, tools, tests, and packaging scripts.
-- `releases/`: current generated addon package and temporary build staging.
-- `internal_dev/local_artifacts/`: ignored private release history, rollback snapshots, audit reports, and disposable test runs.
+- `internal_dev/`: project memory, planning, tools, tests, and packaging scripts. Its ignored scratch/ folder owns disposable per-run work; tests remove their own fixtures.
+- `releases/`: current addon zip plus previous_versions/ for rollback zips; share the selected verified zip.
 
 
 ## Development
